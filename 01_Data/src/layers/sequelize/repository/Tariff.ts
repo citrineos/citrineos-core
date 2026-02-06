@@ -1,22 +1,26 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { ITariffRepository, TariffQueryString } from '../../../interfaces';
-import { Tariff } from '../model/Tariff';
+import { SequelizeRepository } from './Base.js';
+import type { ITariffRepository, TariffQueryString } from '../../../interfaces/index.js';
+import { Tariff } from '../model/index.js';
 import { Sequelize } from 'sequelize-typescript';
-import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Op } from 'sequelize';
 
-export class SequelizeTariffRepository extends SequelizeRepository<Tariff> implements ITariffRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeTariffRepository
+  extends SequelizeRepository<Tariff>
+  implements ITariffRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async findByStationIds(stationIds: string[]): Promise<Tariff[] | undefined> {
-    return super.readAllByQuery({
+  async findByStationIds(tenantId: number, stationIds: string[]): Promise<Tariff[] | undefined> {
+    return super.readAllByQuery(tenantId, {
       where: {
         stationId: {
           [Op.in]: stationIds,
@@ -25,17 +29,18 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async findByStationId(stationId: string): Promise<Tariff | undefined> {
-    return super.readOnlyOneByQuery({
+  async findByStationId(tenantId: number, stationId: string): Promise<Tariff | undefined> {
+    return super.readOnlyOneByQuery(tenantId, {
       where: {
         stationId: stationId,
       },
     });
   }
 
-  async upsertTariff(tariff: Tariff): Promise<Tariff> {
+  async upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff> {
+    tariff.tenantId = tenantId;
     return await this.s.transaction(async (transaction) => {
-      const savedTariff = await this.readOnlyOneByQuery({
+      const savedTariff = await this.readOnlyOneByQuery(tenantId, {
         where: { id: tariff.id },
         transaction,
       });
@@ -50,19 +55,19 @@ export class SequelizeTariffRepository extends SequelizeRepository<Tariff> imple
     });
   }
 
-  async readAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
-    return super.readAllByQuery({
+  async readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]> {
+    return super.readAllByQuery(tenantId, {
       where: {
         ...(query.id && { id: query.id }),
       },
     });
   }
 
-  async deleteAllByQuerystring(query: TariffQueryString): Promise<Tariff[]> {
+  async deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]> {
     if (!query.id) {
       throw new Error('Must specify at least one query parameter');
     }
-    return super.deleteAllByQuery({
+    return super.deleteAllByQuery(tenantId, {
       where: {
         ...(query.id && { id: query.id }),
       },

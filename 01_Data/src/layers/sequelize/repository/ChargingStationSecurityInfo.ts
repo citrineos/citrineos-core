@@ -1,23 +1,35 @@
-import { SequelizeRepository } from './Base';
-import { ChargingStationSecurityInfo } from '../model/ChargingStationSecurityInfo';
-import { ILogObj, Logger } from 'tslog';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import { SequelizeRepository } from './Base.js';
+import { ChargingStationSecurityInfo } from '../model/index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
-import { SystemConfig } from '@citrineos/base';
-import { IChargingStationSecurityInfoRepository } from '../../../interfaces';
+import type { BootstrapConfig } from '@citrineos/base';
+import type { IChargingStationSecurityInfoRepository } from '../../../interfaces/index.js';
 
-export class SequelizeChargingStationSecurityInfoRepository extends SequelizeRepository<ChargingStationSecurityInfo> implements IChargingStationSecurityInfoRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeChargingStationSecurityInfoRepository
+  extends SequelizeRepository<ChargingStationSecurityInfo>
+  implements IChargingStationSecurityInfoRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, ChargingStationSecurityInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readChargingStationPublicKeyFileId(stationId: string): Promise<string> {
-    const existingInfo = await this.readOnlyOneByQuery({ where: { stationId } });
+  async readChargingStationPublicKeyFileId(tenantId: number, stationId: string): Promise<string> {
+    const existingInfo = await this.readOnlyOneByQuery(tenantId, { where: { stationId } });
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }
 
-  async readOrCreateChargingStationInfo(stationId: string, publicKeyFileId: string): Promise<void> {
-    await this.readOrCreateByQuery({
+  async readOrCreateChargingStationInfo(
+    tenantId: number,
+    stationId: string,
+    publicKeyFileId: string,
+  ): Promise<void> {
+    await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         stationId,
       },
       defaults: {

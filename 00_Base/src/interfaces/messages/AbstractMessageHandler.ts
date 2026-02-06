@@ -1,20 +1,14 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { ILogObj, Logger } from 'tslog';
-import {
-  IMessage,
-  IMessageHandler,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-} from '../..';
-import { SystemConfig } from '../../config/types';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IModule } from '../modules';
-import { HandlerProperties } from '.';
+// SPDX-License-Identifier: Apache-2.0
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IMessage, IMessageHandler, OcppRequest, OcppResponse } from '../../index.js';
+import { OcppError } from '../../index.js';
+import type { SystemConfig } from '../../config/types.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import type { IModule } from '../modules/index.js';
+import type { HandlerProperties } from './index.js';
 
 /**
  * Abstract class implementing {@link IMessageHandler}.
@@ -34,11 +28,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
    * @param config The system configuration.
    * @param logger [Optional] The logger to use.
    */
-  constructor(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-  ) {
+  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
     this._config = config;
     this._module = module;
     this._logger = logger
@@ -78,5 +68,6 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
     filter?: { [k: string]: string },
   ): Promise<boolean>;
   abstract unsubscribe(identifier: string): Promise<boolean>;
-  abstract shutdown(): void;
+  abstract shutdown(): Promise<void>;
+  abstract initConnection(): Promise<void>;
 }

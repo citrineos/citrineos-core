@@ -1,21 +1,27 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { MessageInfo } from '../model/MessageInfo';
-import { IMessageInfoRepository } from '../../../interfaces';
-import { MessageInfoType, SystemConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import { MessageInfo } from '../model/index.js';
+import type { IMessageInfoRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
-export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageInfo> implements IMessageInfoRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeMessageInfoRepository
+  extends SequelizeRepository<MessageInfo>
+  implements IMessageInfoRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, MessageInfo.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async deactivateAllByStationId(stationId: string): Promise<void> {
+  async deactivateAllByStationId(tenantId: number, stationId: string): Promise<void> {
     await this.updateAllByQuery(
+      tenantId,
       {
         active: false,
       },
@@ -29,7 +35,12 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
     );
   }
 
-  async createOrUpdateByMessageInfoTypeAndStationId(message: MessageInfoType, stationId: string, componentId?: number): Promise<MessageInfo> {
+  async createOrUpdateByMessageInfoTypeAndStationId(
+    tenantId: number,
+    message: OCPP2_0_1.MessageInfoType,
+    stationId: string,
+    componentId?: number,
+  ): Promise<MessageInfo> {
     return await this.s.transaction(async (transaction) => {
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
@@ -40,6 +51,7 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
       });
 
       const messageInfo = {
+        tenantId: tenantId,
         stationId: stationId,
         displayComponentId: componentId ?? null,
         id: message.id,
@@ -52,7 +64,11 @@ export class SequelizeMessageInfoRepository extends SequelizeRepository<MessageI
         active: true,
       };
       if (savedMessageInfo) {
-        return (await this.updateByKey(messageInfo, savedMessageInfo.dataValues.databaseId)) as MessageInfo;
+        return (await this.updateByKey(
+          tenantId,
+          messageInfo,
+          savedMessageInfo.dataValues.databaseId,
+        )) as MessageInfo;
       }
       const createdMessageInfo = await MessageInfo.create(messageInfo, { transaction });
       this.emit('created', [createdMessageInfo]);

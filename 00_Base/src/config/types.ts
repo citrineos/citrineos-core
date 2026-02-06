@@ -1,20 +1,33 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { RegistrationStatusEnumType } from '../ocpp/model';
-import { EventGroup } from '..';
+import { EventGroup } from '../interfaces/messages/index.js';
+import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
+import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
+
+const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
+const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
+
+const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
+
+export const oidcClientConfigSchema = z
+  .object({
+    tokenUrl: z.string(),
+    clientId: z.string(),
+    clientSecret: z.string(),
+    audience: z.string(),
+  })
+  .optional();
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
-  // TODO: Add support for tenant ids on server level for tenant-specific behavior
   id: z.string().optional(),
   host: z.string().default('localhost').optional(),
-  port: z.number().int().positive().default(8080).optional(),
-  pingInterval: z.number().int().positive().default(60).optional(),
-  protocol: z.string().default('ocpp2.0.1').optional(),
+  port: z.number().int().min(1).default(8080).optional(),
+  pingInterval: z.number().int().min(1).default(60).optional(),
+  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -23,74 +36,107 @@ export const websocketServerInputSchema = z.object({
   // charging station certificate and csms certificate)
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
+  tenantId: z.number(),
 });
 
 export const systemConfigInputSchema = z.object({
   env: z.enum(['development', 'production']),
   centralSystem: z.object({
     host: z.string().default('localhost').optional(),
-    port: z.number().int().positive().default(8081).optional(),
+    port: z.number().int().min(1).default(8081).optional(),
   }),
   modules: z.object({
     certificates: z
       .object({
         endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     configuration: z.object({
-      heartbeatInterval: z.number().int().positive().default(60).optional(),
-      bootRetryInterval: z.number().int().positive().default(10).optional(),
-      unknownChargerStatus: z
-        .enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
-        ])
-        .default(RegistrationStatusEnumType.Accepted)
-        .optional(), // Unknown chargers have no entry in BootConfig table
-      getBaseReportOnPending: z.boolean().default(true).optional(),
-      bootWithRejectedVariables: z.boolean().default(true).optional(),
-      autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+      heartbeatInterval: z.number().int().min(1).default(60).optional(),
+      bootRetryInterval: z.number().int().min(1).default(10).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
+      ocpp2_0_1: z
+        .object({
+          unknownChargerStatus: z
+            .enum([
+              OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+              OCPP2_0_1.RegistrationStatusEnumType.Pending,
+              OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+            ])
+            .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
+            .optional(), // Unknown chargers have no entry in BootConfig table
+          getBaseReportOnPending: z.boolean().default(true).optional(),
+          bootWithRejectedVariables: z.boolean().default(true).optional(),
+          autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+        })
+        .optional(),
+      ocpp1_6: z
+        .object({
+          unknownChargerStatus: z
+            .enum([
+              OCPP1_6.BootNotificationResponseStatus.Accepted,
+              OCPP1_6.BootNotificationResponseStatus.Pending,
+              OCPP1_6.BootNotificationResponseStatus.Rejected,
+            ])
+            .default(OCPP1_6.BootNotificationResponseStatus.Accepted)
+            .optional(), // Unknown chargers have no entry in BootConfig table
+        })
+        .optional(),
       endpointPrefix: z.string().default(EventGroup.Configuration).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
     }),
     evdriver: z.object({
       endpointPrefix: z.string().default(EventGroup.EVDriver).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     monitoring: z.object({
       endpointPrefix: z.string().default(EventGroup.Monitoring).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     reporting: z.object({
       endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
     }),
     smartcharging: z
       .object({
         endpointPrefix: z.string().default(EventGroup.SmartCharging).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     tenant: z
       .object({
         endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
         host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8081).optional(),
+        port: z.number().int().min(1).default(8081).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       })
       .optional(),
     transactions: z.object({
       endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
+      requests: z.array(CallActionSchema),
+      responses: z.array(CallActionSchema),
       host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(8081).optional(),
-      costUpdatedInterval: z.number().int().positive().default(60).optional(),
+      port: z.number().int().min(1).default(8081).optional(),
+      costUpdatedInterval: z.number().int().min(1).default(60).optional(),
       sendCostUpdatedOnMeterValue: z.boolean().default(false).optional(),
       signedMeterValuesConfiguration: z
         .object({
@@ -100,28 +146,22 @@ export const systemConfigInputSchema = z.object({
         .optional(),
     }),
   }),
-  data: z.object({
-    sequelize: z.object({
-      host: z.string().default('localhost').optional(),
-      port: z.number().int().positive().default(5432).optional(),
-      database: z.string().default('csms').optional(),
-      dialect: z.any().default('sqlite').optional(),
-      username: z.string().optional(),
-      password: z.string().optional(),
-      storage: z.string().default('csms.sqlite').optional(),
-      sync: z.boolean().default(false).optional(),
-      alter: z.boolean().default(false).optional(),
-    }),
-  }),
   util: z.object({
     cache: z
       .object({
         memory: z.boolean().optional(),
         redis: z
-          .object({
-            host: z.string().default('localhost').optional(),
-            port: z.number().int().positive().default(6379).optional(),
-          })
+          .union([
+            z.object({
+              host: z.string().default('localhost').optional(),
+              port: z.number().int().min(1).default(6379).optional(),
+            }),
+            z.object({
+              url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                message: 'Redis URL must start with redis:// or rediss://',
+              }),
+            }),
+          ])
           .optional(),
       })
       .refine((obj) => obj.memory || obj.redis, {
@@ -129,13 +169,6 @@ export const systemConfigInputSchema = z.object({
       }),
     messageBroker: z
       .object({
-        pubsub: z
-          .object({
-            topicPrefix: z.string().default('ocpp').optional(),
-            topicName: z.string().optional(),
-            servicePath: z.string().optional(),
-          })
-          .optional(),
         kafka: z
           .object({
             topicPrefix: z.string().optional(),
@@ -155,8 +188,24 @@ export const systemConfigInputSchema = z.object({
           })
           .optional(),
       })
-      .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+      .refine((obj) => obj.kafka || obj.amqp, {
         message: 'A message broker implementation must be set',
+      }),
+    authProvider: z
+      .object({
+        oidc: z
+          .object({
+            jwksUri: z.string(),
+            issuer: z.string(),
+            audience: z.string(),
+            cacheTime: z.number().int().min(1).optional(),
+            rateLimit: z.boolean().default(false).optional(),
+          })
+          .optional(),
+        localByPass: z.boolean().default(false).optional(),
+      })
+      .refine((obj) => obj.oidc || obj.localByPass, {
+        message: 'An auth provider implementation must be set',
       }),
     swagger: z
       .object({
@@ -164,19 +213,6 @@ export const systemConfigInputSchema = z.object({
         logoPath: z.string(),
         exposeData: z.boolean().default(true).optional(),
         exposeMessage: z.boolean().default(true).optional(),
-      })
-      .optional(),
-    directus: z
-      .object({
-        host: z.string().default('localhost').optional(),
-        port: z.number().int().positive().default(8055).optional(),
-        token: z.string().optional(),
-        username: z.string().optional(),
-        password: z.string().optional(),
-        generateFlows: z.boolean().default(false).optional(),
-      })
-      .refine((obj) => obj.generateFlows && !obj.host, {
-        message: 'Directus host must be set if generateFlows is true',
       })
       .optional(),
     networkConnection: z.object({
@@ -188,17 +224,13 @@ export const systemConfigInputSchema = z.object({
           name: z.enum(['hubject']).default('hubject'),
           hubject: z
             .object({
-              baseUrl: z
-                .string()
-                .default('https://open.plugncharge-test.hubject.com'),
+              baseUrl: z.string().default('https://open.plugncharge-test.hubject.com'),
               tokenUrl: z
                 .string()
                 .default(
                   'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
                 ),
-              isoVersion: z
-                .enum(['ISO15118-2', 'ISO15118-20'])
-                .default('ISO15118-2'),
+              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2'),
             })
             .optional(),
         })
@@ -230,30 +262,37 @@ export const systemConfigInputSchema = z.object({
     }),
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
-  maxCallLengthSeconds: z.number().int().positive().default(5).optional(),
-  maxCachingSeconds: z.number().int().positive().default(10).optional(),
+  maxCallLengthSeconds: z.number().int().min(1).default(5).optional(),
+  maxCachingSeconds: z.number().int().min(1).default(10).optional(),
+  maxReconnectDelay: z.number().int().min(1).default(30).optional(),
   ocpiServer: z.object({
     host: z.string().default('localhost').optional(),
-    port: z.number().int().positive().default(8085).optional(),
+    port: z.number().int().min(1).default(8085).optional(),
   }),
+  userPreferences: z.object({
+    telemetryConsent: z.boolean().default(false).optional(),
+  }),
+  rbacRulesFileName: z.string().default('rbac-rules.json').optional(),
+  rbacRulesDir: z.string().optional(),
+  realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15).optional(),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
 
 export const websocketServerSchema = z
   .object({
-    // TODO: Add support for tenant ids on server level for tenant-specific behavior
     id: z.string(),
     host: z.string(),
-    port: z.number().int().positive(),
-    pingInterval: z.number().int().positive(),
-    protocol: z.string(),
+    port: z.number().int().min(1),
+    pingInterval: z.number().int().min(1),
+    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
+    tenantId: z.number(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -278,68 +317,101 @@ export const systemConfigSchema = z
     env: z.enum(['development', 'production']),
     centralSystem: z.object({
       host: z.string(),
-      port: z.number().int().positive(),
+      port: z.number().int().min(1),
     }),
     modules: z.object({
       certificates: z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
         })
         .optional(),
       evdriver: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
-      configuration: z.object({
-        heartbeatInterval: z.number().int().positive(),
-        bootRetryInterval: z.number().int().positive(),
-        unknownChargerStatus: z.enum([
-          RegistrationStatusEnumType.Accepted,
-          RegistrationStatusEnumType.Pending,
-          RegistrationStatusEnumType.Rejected,
-        ]), // Unknown chargers have no entry in BootConfig table
-        getBaseReportOnPending: z.boolean(),
-        bootWithRejectedVariables: z.boolean(),
-        /**
-         * If false, only data endpoint can update boot status to accepted
-         */
-        autoAccept: z.boolean(),
-        endpointPrefix: z.string(),
-        host: z.string().optional(),
-        port: z.number().int().positive().optional(),
-      }), // Configuration module is required
+      configuration: z
+        .object({
+          heartbeatInterval: z.number().int().min(1),
+          bootRetryInterval: z.number().int().min(1),
+          ocpp2_0_1: z
+            .object({
+              unknownChargerStatus: z.enum([
+                OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+                OCPP2_0_1.RegistrationStatusEnumType.Pending,
+                OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+              ]), // Unknown chargers have no entry in BootConfig table
+              getBaseReportOnPending: z.boolean(),
+              bootWithRejectedVariables: z.boolean(),
+              /**
+               * If false, only data endpoint can update boot status to accepted
+               */
+              autoAccept: z.boolean(),
+            })
+            .optional(),
+          ocpp1_6: z
+            .object({
+              unknownChargerStatus: z.enum([
+                OCPP1_6.BootNotificationResponseStatus.Accepted,
+                OCPP1_6.BootNotificationResponseStatus.Pending,
+                OCPP1_6.BootNotificationResponseStatus.Rejected,
+              ]), // Unknown chargers have no entry in BootConfig table
+            })
+            .optional(),
+          endpointPrefix: z.string(),
+          host: z.string().optional(),
+          port: z.number().int().min(1).optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
+        })
+        .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1, {
+          message: 'A protocol configuration must be set',
+        }), // Configuration module is required
       monitoring: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       reporting: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       smartcharging: z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
         })
         .optional(),
       tenant: z.object({
         endpointPrefix: z.string(),
         host: z.string().optional(),
-        port: z.number().int().positive().optional(),
+        port: z.number().int().min(1).optional(),
+        requests: z.array(CallActionSchema),
+        responses: z.array(CallActionSchema),
       }),
       transactions: z
         .object({
           endpointPrefix: z.string(),
           host: z.string().optional(),
-          port: z.number().int().positive().optional(),
-          costUpdatedInterval: z.number().int().positive().optional(),
+          port: z.number().int().min(1).optional(),
+          costUpdatedInterval: z.number().int().min(1).optional(),
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
+          requests: z.array(CallActionSchema),
+          responses: z.array(CallActionSchema),
           signedMeterValuesConfiguration: z
             .object({
               publicKeyFileId: z.string(),
@@ -356,32 +428,24 @@ export const systemConfigSchema = z
               'Can only update cost based on the interval or in response to a transaction event /meter value' +
               ' update. Not allowed to have both costUpdatedInterval and sendCostUpdatedOnMeterValue configured',
           },
-        ), // Transactions module is required
-    }),
-    data: z.object({
-      sequelize: z.object({
-        host: z.string(),
-        port: z.number().int().positive(),
-        database: z.string(),
-        dialect: z.any(),
-        username: z.string(),
-        password: z.string(),
-        storage: z.string(),
-        sync: z.boolean(),
-        alter: z.boolean().optional(),
-        maxRetries: z.number().int().positive().optional(),
-        retryDelay: z.number().int().positive().optional(),
-      }),
+        ),
     }),
     util: z.object({
       cache: z
         .object({
           memory: z.boolean().optional(),
           redis: z
-            .object({
-              host: z.string(),
-              port: z.number().int().positive(),
-            })
+            .union([
+              z.object({
+                host: z.string(),
+                port: z.number().int().min(1),
+              }),
+              z.object({
+                url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+                  message: 'Redis URL must start with redis:// or rediss://',
+                }),
+              }),
+            ])
             .optional(),
         })
         .refine((obj) => obj.memory || obj.redis, {
@@ -389,13 +453,6 @@ export const systemConfigSchema = z
         }),
       messageBroker: z
         .object({
-          pubsub: z
-            .object({
-              topicPrefix: z.string(),
-              topicName: z.string().optional(),
-              servicePath: z.string().optional(),
-            })
-            .optional(),
           kafka: z
             .object({
               topicPrefix: z.string().optional(),
@@ -415,8 +472,24 @@ export const systemConfigSchema = z
             })
             .optional(),
         })
-        .refine((obj) => obj.pubsub || obj.kafka || obj.amqp, {
+        .refine((obj) => obj.kafka || obj.amqp, {
           message: 'A message broker implementation must be set',
+        }),
+      authProvider: z
+        .object({
+          oidc: z
+            .object({
+              jwksUri: z.string(),
+              issuer: z.string(),
+              audience: z.string(),
+              cacheTime: z.number().int().min(1).optional(),
+              rateLimit: z.boolean(),
+            })
+            .optional(),
+          localByPass: z.boolean().default(false).optional(),
+        })
+        .refine((obj) => obj.oidc || obj.localByPass, {
+          message: 'An auth provider implementation must be set',
         }),
       swagger: z
         .object({
@@ -424,16 +497,6 @@ export const systemConfigSchema = z
           logoPath: z.string(),
           exposeData: z.boolean(),
           exposeMessage: z.boolean(),
-        })
-        .optional(),
-      directus: z
-        .object({
-          host: z.string(),
-          port: z.number().int().positive(),
-          token: z.string().optional(),
-          username: z.string().optional(),
-          password: z.string().optional(),
-          generateFlows: z.boolean(),
         })
         .optional(),
       networkConnection: z.object({
@@ -489,16 +552,43 @@ export const systemConfigSchema = z
       }),
     }),
     logLevel: z.number().min(0).max(6),
-    maxCallLengthSeconds: z.number().int().positive(),
-    maxCachingSeconds: z.number().int().positive(),
+    maxCallLengthSeconds: z.number().int().min(1),
+    maxCachingSeconds: z.number().int().min(1),
+    maxReconnectDelay: z.number().int().min(1).default(30),
     ocpiServer: z.object({
       host: z.string(),
-      port: z.number().int().positive(),
+      port: z.number().int().min(1),
     }),
+    userPreferences: z.object({
+      telemetryConsent: z.boolean().optional(),
+    }),
+    rbacRulesFileName: z.string().optional(),
+    rbacRulesDir: z.string().optional(),
+    oidcClient: oidcClientConfigSchema,
+    realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',
   });
+
+export const HttpMethodSchema = z.record(
+  z.string(), // HTTP method (GET, POST, etc., or * for all methods)
+  z.array(z.string()), // Array of role names required for this method
+);
+
+export const UrlPatternSchema = z.record(
+  z.string(), // URL pattern (/api/users, /api/users/:id, etc.)
+  HttpMethodSchema,
+);
+
+export const TenantSchema = z.record(
+  z.string(), // Tenant ID
+  UrlPatternSchema,
+);
+
+export const RbacRulesSchema = TenantSchema;
+
+export type RbacRules = z.infer<typeof RbacRulesSchema>;
 
 export type WebsocketServerConfig = z.infer<typeof websocketServerSchema>;
 export type SystemConfig = z.infer<typeof systemConfigSchema>;

@@ -1,6 +1,11 @@
-import { ITariffRepository, Tariff } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './TransactionService';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type { ITariffRepository } from '@citrineos/data';
+import { Tariff } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { TransactionService } from './TransactionService.js';
 import { Money } from '@citrineos/base';
 
 export class CostCalculator {
@@ -34,29 +39,30 @@ export class CostCalculator {
    * @returns A promise that resolves to the total cost.
    */
   async calculateTotalCost(
+    tenantId: number,
     stationId: string,
     transactionDbId: number,
     totalKwh?: number | null,
   ): Promise<number> {
     if (totalKwh === undefined || totalKwh === null) {
-      const kwh =
-        await this._transactionService.recalculateTotalKwh(transactionDbId);
-      return this._calculateTotalCost(stationId, kwh);
+      const kwh = await this._transactionService.recalculateTotalKwh(tenantId, transactionDbId);
+      return this._calculateTotalCost(tenantId, stationId, kwh);
     }
-    return this._calculateTotalCost(stationId, totalKwh);
+    return this._calculateTotalCost(tenantId, stationId, totalKwh);
   }
 
   private async _calculateTotalCost(
+    tenantId: number,
     stationId: string,
     totalKwh: number,
   ): Promise<number> {
     // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
     //  implementation is finalized
-    this._logger.debug(
-      `Calculating total cost for ${stationId} station and ${totalKwh} kWh`,
+    this._logger.debug(`Calculating total cost for ${stationId} station and ${totalKwh} kWh`);
+    const tariff: Tariff | undefined = await this._tariffRepository.findByStationId(
+      tenantId,
+      stationId,
     );
-    const tariff: Tariff | undefined =
-      await this._tariffRepository.findByStationId(stationId);
     if (tariff) {
       this._logger.debug(`Tariff ${tariff.id} found for ${stationId} station`);
       return Money.of(tariff.pricePerKwh, tariff.currency)

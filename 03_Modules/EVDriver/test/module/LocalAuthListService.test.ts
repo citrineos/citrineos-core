@@ -1,6 +1,6 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   IDeviceModelRepository,
@@ -10,39 +10,37 @@ import {
   VariableAttribute,
   VariableCharacteristics,
 } from '@citrineos/data';
-import { LocalAuthListService } from '../../src/module/LocalAuthListService';
-import {
-  AuthorizationData,
-  DataEnumType,
-  UpdateEnumType,
-} from '@citrineos/base';
+import { LocalAuthListService } from '../../src/module/LocalAuthListService.js';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('LocalAuthListService', () => {
-  let mockLocalAuthListRepository: jest.Mocked<ILocalAuthListRepository>;
-  let mockDeviceModelRepository: jest.Mocked<IDeviceModelRepository>;
+  let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let mockDeviceModelRepository: Mocked<IDeviceModelRepository>;
   let localAuthListService: LocalAuthListService;
 
+  const tenantId = DEFAULT_TENANT_ID;
   const stationId = 'station-1';
   const correlationId = 'test-correlation-id';
   const initialVersionNumber = 2;
-  const baseMockLocalListVersion = jest.mocked<LocalListVersion>({
+  const baseMockLocalListVersion = vi.mocked<LocalListVersion>({
     stationId: stationId,
     versionNumber: initialVersionNumber,
   } as unknown as LocalListVersion);
-  const baseMockVariableCharacteristics = jest.mocked<VariableCharacteristics>({
-    dataType: DataEnumType.integer,
+  const baseMockVariableCharacteristics = vi.mocked<VariableCharacteristics>({
+    dataType: OCPP2_0_1.DataEnumType.integer,
   } as unknown as VariableCharacteristics);
 
   beforeEach(() => {
     mockLocalAuthListRepository = {
-      readOnlyOneByQuery: jest.fn(),
-      createSendLocalListFromRequestData: jest.fn(),
-    } as unknown as jest.Mocked<ILocalAuthListRepository>;
+      readOnlyOneByQuery: vi.fn(),
+      createSendLocalListFromRequestData: vi.fn(),
+    } as unknown as Mocked<ILocalAuthListRepository>;
 
     mockDeviceModelRepository = {
-      findVariableCharacteristicsByVariableNameAndVariableInstance: jest.fn(),
-      readAllByQuerystring: jest.fn(),
-    } as unknown as jest.Mocked<IDeviceModelRepository>;
+      findVariableCharacteristicsByVariableNameAndVariableInstance: vi.fn(),
+      readAllByQuerystring: vi.fn(),
+    } as unknown as Mocked<IDeviceModelRepository>;
 
     localAuthListService = new LocalAuthListService(
       mockLocalAuthListRepository,
@@ -52,7 +50,7 @@ describe('LocalAuthListService', () => {
 
   it('should persist SendLocalListRequest and return the SendLocalList, validating input arguments', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
     const expectedCorrelationId = correlationId;
 
     const sendLocalListRequest = {
@@ -62,11 +60,11 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN', type: 'Central' },
           idTokenInfo: { status: 'Accepted' },
         },
-      ] as [AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData],
       updateType: expectedUpdateType,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: expectedCorrelationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -74,15 +72,11 @@ describe('LocalAuthListService', () => {
       localAuthorizationList: [],
     } as unknown as SendLocalList);
 
-    const testMockVariableCharacteristics = Object.assign(
-      {},
-      baseMockVariableCharacteristics,
-      { maxLimit: 10 },
-    );
+    const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
+      maxLimit: 10,
+    });
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(
-      baseMockLocalListVersion,
-    );
+    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(baseMockLocalListVersion);
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
@@ -93,15 +87,15 @@ describe('LocalAuthListService', () => {
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
       );
 
     expect(result).toEqual(mockSendLocalList);
-    expect(
-      mockLocalAuthListRepository.createSendLocalListFromRequestData,
-    ).toHaveBeenCalledWith(
+    expect(mockLocalAuthListRepository.createSendLocalListFromRequestData).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
       stationId,
       expectedCorrelationId,
       expectedUpdateType,
@@ -113,11 +107,12 @@ describe('LocalAuthListService', () => {
   it('should throw an error when SendLocalListRequest.versionNumber is less than or equal to 0', async () => {
     const sendLocalListRequest_0 = {
       versionNumber: 0,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest_0,
@@ -126,32 +121,30 @@ describe('LocalAuthListService', () => {
 
     const sendLocalListRequest_negative = {
       versionNumber: -1,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest_negative,
       ),
-    ).rejects.toThrow(
-      'Version number -1 must be greater than 0, see D01.FR.18',
-    );
+    ).rejects.toThrow('Version number -1 must be greater than 0, see D01.FR.18');
   });
 
   it('should throw an error when versionNumber is less than the current LocalListVersion', async () => {
     const sendLocalListRequest = {
       versionNumber: 1,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(
-      baseMockLocalListVersion,
-    );
+    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(baseMockLocalListVersion);
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -163,7 +156,7 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when there are duplicate idTokens in the localAuthorizationList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: newVersionNumber,
@@ -177,10 +170,10 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -194,22 +187,21 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
       ),
-    ).rejects.toThrow(
-      'Duplicated idToken in SendLocalList ["ID_TOKENCentral","ID_TOKENCentral"]',
-    );
+    ).rejects.toThrow('Duplicated idToken in SendLocalList ["ID_TOKENCentral","ID_TOKENCentral"]');
   });
 
   it('should throw an error when updated list length exceeds maxLocalAuthListEntries', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 3,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
       localAuthorizationList: [
         {
           idToken: { idToken: 'ID_TOKEN1', type: 'Central' },
@@ -219,10 +211,10 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -239,11 +231,9 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const testMockVariableCharacteristics = Object.assign(
-      {},
-      baseMockVariableCharacteristics,
-      { maxLimit: 1 },
-    );
+    const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
+      maxLimit: 1,
+    });
 
     mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(undefined); // No previous list version
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
@@ -255,6 +245,7 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -266,14 +257,14 @@ describe('LocalAuthListService', () => {
 
   it('should throw an error when getMaxLocalAuthListEntries returns null', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 2,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -289,25 +280,24 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
       ),
-    ).rejects.toThrow(
-      'Could not get max local auth list entries, required by D01.FR.12',
-    );
+    ).rejects.toThrow('Could not get max local auth list entries, required by D01.FR.12');
   });
 
   it('should throw an error when getMaxLocalAuthListEntries returns variable characteristics without maxLimit', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 2,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -323,22 +313,21 @@ describe('LocalAuthListService', () => {
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
       ),
-    ).rejects.toThrow(
-      'Could not get max local auth list entries, required by D01.FR.12',
-    );
+    ).rejects.toThrow('Could not get max local auth list entries, required by D01.FR.12');
   });
 
   it('should throw an error when localAuthorizationList exceeds itemsPerMessageSendLocalList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: 3,
-      updateType: UpdateEnumType.Full,
+      updateType: OCPP2_0_1.UpdateEnumType.Full,
       localAuthorizationList: [
         {
           idToken: { idToken: 'ID_TOKEN1', type: 'Central' },
@@ -348,10 +337,10 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -368,14 +357,12 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const testMockVariableCharacteristics = Object.assign(
-      {},
-      baseMockVariableCharacteristics,
-      { maxLimit: 10 },
-    );
-    const mockVariableAttribute = jest.mocked<VariableAttribute>({
+    const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
+      maxLimit: 10,
+    });
+    const mockVariableAttribute = vi.mocked<VariableAttribute>({
       stationId: stationId,
-      dataType: DataEnumType.integer,
+      dataType: OCPP2_0_1.DataEnumType.integer,
       value: '1', // Max 1 item per message
     } as unknown as VariableAttribute);
 
@@ -385,12 +372,11 @@ describe('LocalAuthListService', () => {
     mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
       testMockVariableCharacteristics,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([
-      mockVariableAttribute,
-    ]);
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,
@@ -402,7 +388,7 @@ describe('LocalAuthListService', () => {
 
   it('should not throw an error when localAuthorizationList is less than itemsPerMessageSendLocalList', async () => {
     const newVersionNumber = 3;
-    const expectedUpdateType = UpdateEnumType.Full;
+    const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
     const sendLocalListRequest = {
       versionNumber: newVersionNumber,
@@ -416,10 +402,10 @@ describe('LocalAuthListService', () => {
           idToken: { idToken: 'ID_TOKEN2', type: 'Central' },
           idTokenInfo: { status: 'Blocked' },
         },
-      ] as [AuthorizationData, AuthorizationData],
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
     };
 
-    const mockSendLocalList = jest.mocked<SendLocalList>({
+    const mockSendLocalList = vi.mocked<SendLocalList>({
       correlationId: correlationId,
       stationId: stationId,
       updateType: expectedUpdateType,
@@ -436,14 +422,12 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const testMockVariableCharacteristics = Object.assign(
-      {},
-      baseMockVariableCharacteristics,
-      { maxLimit: 10 },
-    );
-    const mockVariableAttribute = jest.mocked<VariableAttribute>({
+    const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
+      maxLimit: 10,
+    });
+    const mockVariableAttribute = vi.mocked<VariableAttribute>({
       stationId: stationId,
-      dataType: DataEnumType.integer,
+      dataType: OCPP2_0_1.DataEnumType.integer,
       value: '3', // Max 1 item per message
     } as unknown as VariableAttribute);
 
@@ -453,12 +437,11 @@ describe('LocalAuthListService', () => {
     mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
       testMockVariableCharacteristics,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([
-      mockVariableAttribute,
-    ]);
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
         stationId,
         correlationId,
         sendLocalListRequest,

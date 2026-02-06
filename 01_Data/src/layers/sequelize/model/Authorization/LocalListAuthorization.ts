@@ -1,14 +1,25 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { type AuthorizationData, type CustomDataType, IdTokenInfoType, IdTokenType, Namespace } from '@citrineos/base';
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { Authorization, IdToken, IdTokenInfo, LocalListVersion, SendLocalList } from '.';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization';
-import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { type AuthorizationRestrictions } from '../../../../interfaces/index.js';
+import { Tenant } from '../Tenant.js';
+import { Authorization, LocalListVersion, SendLocalList } from './index.js';
+import { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
+import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 
 /**
  *
@@ -20,9 +31,9 @@ import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
  * In turn, the 'authorization' relation on this table links back to the "actual" authorization.
  *
  **/
-@Table
-export class LocalListAuthorization extends Model implements AuthorizationData, AuthorizationRestrictions {
-  static readonly MODEL_NAME: string = Namespace.LocalListAuthorization;
+@Table // implements the same as Authorization, not OCPP2_0_1.AuthorizationData
+export class LocalListAuthorization extends Model implements AuthorizationRestrictions {
+  static readonly MODEL_NAME: string = 'LocalListAuthorization';
 
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
@@ -30,25 +41,45 @@ export class LocalListAuthorization extends Model implements AuthorizationData, 
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  @ForeignKey(() => IdToken)
+  @Column(DataType.STRING)
+  declare idToken: string;
+
+  @Column(DataType.STRING)
+  declare idTokenType?: string | null;
+
+  @Column(DataType.JSONB)
+  declare additionalInfo?: any | null;
+
+  @Column(DataType.STRING)
+  declare status: string;
+
+  @Column(DataType.DATE)
+  declare cacheExpiryDateTime?: string | null;
+
   @Column(DataType.INTEGER)
-  declare idTokenId?: number;
+  declare chargingPriority?: number | null;
 
-  @BelongsTo(() => IdToken)
-  declare idToken: IdTokenType;
+  @Column(DataType.STRING)
+  declare language1?: string | null;
 
-  @ForeignKey(() => IdTokenInfo)
+  @Column(DataType.STRING)
+  declare language2?: string | null;
+
+  @Column(DataType.JSON)
+  declare personalMessage?: any | null;
+
+  @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
-  declare idTokenInfoId?: number | null;
+  declare groupAuthorizationId?: number | null;
 
-  @BelongsTo(() => IdTokenInfo)
-  declare idTokenInfo?: IdTokenInfoType;
+  @BelongsTo(() => Authorization, { foreignKey: 'groupAuthorizationId', as: 'groupAuthorization' })
+  declare groupAuthorization?: Authorization;
 
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
   declare authorizationId?: string;
 
-  @BelongsTo(() => Authorization)
+  @BelongsTo(() => Authorization, { foreignKey: 'authorizationId', as: 'authorization' })
   declare authorization?: Authorization;
 
   @BelongsToMany(() => SendLocalList, () => SendLocalListAuthorization)
@@ -57,5 +88,32 @@ export class LocalListAuthorization extends Model implements AuthorizationData, 
   @BelongsToMany(() => LocalListVersion, () => LocalListVersionAuthorization)
   declare localListVersions?: LocalListVersion[];
 
-  declare customData?: CustomDataType | null;
+  declare customData?: any | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: LocalListAuthorization) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

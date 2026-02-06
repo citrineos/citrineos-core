@@ -1,30 +1,47 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { CrudRepository, SystemConfig, type BootConfig, type RegistrationStatusEnumType, type StatusInfoType } from '@citrineos/base';
-import { type IBootRepository } from '../../../interfaces';
-import { Boot } from '../model/Boot';
-import { VariableAttribute } from '../model/DeviceModel';
-import { SequelizeRepository } from '..';
-import { Logger, ILogObj } from 'tslog';
+// SPDX-License-Identifier: Apache-2.0
+import type { BootConfig, BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import type { IBootRepository } from '../../../interfaces/index.js';
+import { Boot } from '../model/Boot.js';
+import { VariableAttribute } from '../model/index.js';
+import { SequelizeRepository } from '../index.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { Sequelize } from 'sequelize-typescript';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, variableAttributes?: CrudRepository<VariableAttribute>) {
+  constructor(
+    config: BootstrapConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    variableAttributes?: CrudRepository<VariableAttribute>,
+  ) {
     super(config, Boot.MODEL_NAME, logger, sequelizeInstance);
-    this.variableAttributes = variableAttributes ? variableAttributes : new SequelizeRepository<VariableAttribute>(config, VariableAttribute.MODEL_NAME, logger, sequelizeInstance);
+    this.variableAttributes = variableAttributes
+      ? variableAttributes
+      : new SequelizeRepository<VariableAttribute>(
+          config,
+          VariableAttribute.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
   }
 
-  async createOrUpdateByKey(value: BootConfig, key: string): Promise<Boot | undefined> {
+  async createOrUpdateByKey(
+    tenantId: number,
+    value: BootConfig,
+    key: string,
+  ): Promise<Boot | undefined> {
     let savedBootConfig: Boot | undefined;
     let created;
     await this.s.transaction(async (sequelizeTransaction) => {
-      const [boot, bootCreated] = await this.readOrCreateByQuery({
+      const [boot, bootCreated] = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId,
           id: key,
         },
         defaults: {
@@ -44,7 +61,12 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
     if (savedBootConfig) {
       if (value.pendingBootSetVariableIds) {
-        savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(value.pendingBootSetVariableIds, key, savedBootConfig.id);
+        savedBootConfig.pendingBootSetVariables = await this.manageSetVariables(
+          tenantId,
+          value.pendingBootSetVariableIds,
+          key,
+          savedBootConfig.id,
+        );
       }
 
       this.emit(created ? 'created' : 'updated', [savedBootConfig]);
@@ -53,22 +75,37 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     return savedBootConfig;
   }
 
-  async updateStatusByKey(status: RegistrationStatusEnumType, statusInfo: StatusInfoType | undefined, key: string): Promise<Boot | undefined> {
-    return await this.updateByKey({ status, statusInfo }, key);
+  async updateStatusByKey(
+    tenantId: number,
+    status: OCPP2_0_1.RegistrationStatusEnumType,
+    statusInfo: OCPP2_0_1.StatusInfoType | undefined,
+    key: string,
+  ): Promise<Boot | undefined> {
+    return await this.updateByKey(tenantId, { status, statusInfo }, key);
   }
 
-  async updateLastBootTimeByKey(lastBootTime: string, key: string): Promise<Boot | undefined> {
-    return await this.updateByKey({ lastBootTime }, key);
+  async updateLastBootTimeByKey(
+    tenantId: number,
+    lastBootTime: string,
+    key: string,
+  ): Promise<Boot | undefined> {
+    return await this.updateByKey(tenantId, { lastBootTime }, key);
   }
 
   /**
    * Private Methods
    */
 
-  private async manageSetVariables(setVariableIds: number[], stationId: string, bootConfigId: string): Promise<VariableAttribute[]> {
+  private async manageSetVariables(
+    tenantId: number,
+    setVariableIds: number[],
+    stationId: string,
+    bootConfigId: string,
+  ): Promise<VariableAttribute[]> {
     const managedSetVariables: VariableAttribute[] = [];
     // Unassigns variables
     await this.variableAttributes.updateAllByQuery(
+      tenantId,
       { bootConfigId: null },
       {
         where: {
@@ -78,7 +115,11 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     );
     // Assigns variables, or throws an error if variable with id does not exist
     for (const setVariableId of setVariableIds) {
-      const setVariable: VariableAttribute | undefined = await this.variableAttributes.updateByKey({ bootConfigId }, setVariableId.toString());
+      const setVariable: VariableAttribute | undefined = await this.variableAttributes.updateByKey(
+        tenantId,
+        { bootConfigId },
+        setVariableId.toString(),
+      );
       if (!setVariable) {
         // When this is called from createOrUpdateByKey, this code should be impossible to reach
         // Since the boot object would have already been upserted with the pendingBootSetVariableIds as foreign keys

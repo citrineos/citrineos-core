@@ -1,33 +1,47 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { SystemConfig, type SecurityEventNotificationRequest } from '@citrineos/base';
-import { SecurityEvent } from '../model/SecurityEvent';
-import { SequelizeRepository } from './Base';
+// SPDX-License-Identifier: Apache-2.0
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
+import { SecurityEvent } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
 import { Op } from 'sequelize';
-import { type ISecurityEventRepository } from '../../../interfaces/repositories';
+import type { ISecurityEventRepository } from '../../../interfaces/index.js';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
-export class SequelizeSecurityEventRepository extends SequelizeRepository<SecurityEvent> implements ISecurityEventRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeSecurityEventRepository
+  extends SequelizeRepository<SecurityEvent>
+  implements ISecurityEventRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, SecurityEvent.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createByStationId(value: SecurityEventNotificationRequest, stationId: string): Promise<SecurityEvent> {
+  async createByStationId(
+    tenantId: number,
+    value: OCPP2_0_1.SecurityEventNotificationRequest,
+    stationId: string,
+  ): Promise<SecurityEvent> {
     return await this.create(
+      tenantId,
       SecurityEvent.build({
+        tenantId,
         stationId,
         ...value,
       }),
     );
   }
 
-  async readByStationIdAndTimestamps(stationId: string, from?: Date, to?: Date): Promise<SecurityEvent[]> {
+  async readByStationIdAndTimestamps(
+    tenantId: number,
+    stationId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<SecurityEvent[]> {
     const timestampQuery = this.generateTimestampQuery(from?.toISOString(), to?.toISOString());
-    return await this.readAllByQuery({
+    return await this.readAllByQuery(tenantId, {
       where: {
         stationId,
         ...timestampQuery,
@@ -35,8 +49,8 @@ export class SequelizeSecurityEventRepository extends SequelizeRepository<Securi
     }).then((row) => row as SecurityEvent[]);
   }
 
-  async deleteByKey(key: string): Promise<SecurityEvent | undefined> {
-    return await super.deleteByKey(key);
+  async deleteByKey(tenantId: number, key: string): Promise<SecurityEvent | undefined> {
+    return await super.deleteByKey(tenantId, key);
   }
 
   /**

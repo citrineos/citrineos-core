@@ -1,8 +1,9 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { TransactionEvent } from './TransactionEvent';
-export { Transaction } from './Transaction';
-export { MeterValue } from './MeterValue';
+export { TransactionEvent } from './TransactionEvent.js';
+export { Transaction } from './Transaction.js';
+export { MeterValue } from './MeterValue.js';
+export { StartTransaction } from './StartTransaction.js';
+export { StopTransaction } from './StopTransaction.js';

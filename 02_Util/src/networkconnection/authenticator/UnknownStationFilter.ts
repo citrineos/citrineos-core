@@ -1,8 +1,13 @@
-import { ILogObj, Logger } from 'tslog';
-import { ILocationRepository } from '@citrineos/data';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ILocationRepository } from '@citrineos/data';
 import { IncomingMessage } from 'http';
-import { AuthenticatorFilter } from './AuthenticatorFilter';
-import { AuthenticationOptions } from '@citrineos/base';
+import { AuthenticatorFilter } from './AuthenticatorFilter.js';
+import type { AuthenticationOptions } from '@citrineos/base';
+import { UpgradeUnknownError } from './errors/UnknownError.js';
 
 /**
  * Filter used to block connections from charging stations that are not recognized in the system.
@@ -11,10 +16,7 @@ import { AuthenticationOptions } from '@citrineos/base';
 export class UnknownStationFilter extends AuthenticatorFilter {
   private _locationRepository: ILocationRepository;
 
-  constructor(
-    locationRepository: ILocationRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(locationRepository: ILocationRepository, logger?: Logger<ILogObj>) {
     super(logger);
     this._locationRepository = locationRepository;
   }
@@ -24,15 +26,16 @@ export class UnknownStationFilter extends AuthenticatorFilter {
   }
 
   protected async filter(
+    tenantId: number,
     identifier: string,
     _request: IncomingMessage,
   ): Promise<void> {
-    const isStationKnown =
-      await this._locationRepository.doesChargingStationExistByStationId(
-        identifier,
-      );
+    const isStationKnown = await this._locationRepository.doesChargingStationExistByStationId(
+      tenantId,
+      identifier,
+    );
     if (!isStationKnown) {
-      throw Error(`Unknown identifier ${identifier}`);
+      throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }
   }
 }

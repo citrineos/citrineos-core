@@ -1,15 +1,15 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { type AttributeEnumType, QuerySchema, type SetVariableStatusEnumType } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, QuerySchema } from '@citrineos/base';
 
 export interface VariableAttributeQuerystring {
   stationId: string;
-  type?: AttributeEnumType;
+  tenantId: number;
+  type?: OCPP2_0_1.AttributeEnumType;
   value?: string;
-  status?: SetVariableStatusEnumType;
+  status?: OCPP2_0_1.SetVariableStatusEnumType;
   component_evse_id?: number;
   component_evse_connectorId?: number | null;
   component_name?: string;
@@ -18,24 +18,58 @@ export interface VariableAttributeQuerystring {
   variable_instance?: string | null;
 }
 
-export const VariableAttributeQuerySchema = QuerySchema(
-  'VariableAttributeQuerySchema',
-  [
-    ['stationId', 'string'],
-    ['type', 'string'],
-    ['value', 'string'],
-    ['status', 'string'],
-    ['component_evse_id', 'number'],
-    ['component_evse_connectorId', 'number'],
-    ['component_name', 'string'],
-    ['component_instance', 'string'],
-    ['variable_name', 'string'],
-    ['variable_instance', 'string'],
-  ],
-  ['stationId'],
-);
+export const VariableAttributeQuerySchema = QuerySchema('VariableAttributeQuerySchema', [
+  {
+    key: 'stationId',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+  {
+    key: 'type',
+    type: 'string',
+  },
+  {
+    key: 'value',
+    type: 'string',
+  },
+  {
+    key: 'status',
+    type: 'string',
+  },
+  {
+    key: 'component_evse_id',
+    type: 'number',
+  },
+  {
+    key: 'component_evse_connectorId',
+    type: 'number',
+  },
+  {
+    key: 'component_name',
+    type: 'string',
+  },
+  {
+    key: 'component_instance',
+    type: 'string',
+  },
+  {
+    key: 'variable_name',
+    type: 'string',
+  },
+  {
+    key: 'variable_instance',
+    type: 'string',
+  },
+]);
 
 export interface CreateOrUpdateVariableAttributeQuerystring {
+  tenantId: number;
   stationId: string;
   setOnCharger?: boolean; // Used to indicate value has already been accepted by the station via means other than ocpp
 }
@@ -43,8 +77,20 @@ export interface CreateOrUpdateVariableAttributeQuerystring {
 export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema(
   'CreateOrUpdateVariableAttributeQuerySchema',
   [
-    ['stationId', 'string'],
-    ['setOnCharger', 'boolean'],
+    {
+      key: 'tenantId',
+      type: 'number',
+      required: true,
+      defaultValue: String(DEFAULT_TENANT_ID),
+    },
+    {
+      key: 'stationId',
+      type: 'string',
+      required: true,
+    },
+    {
+      key: 'setOnCharger',
+      type: 'boolean',
+    },
   ],
-  ['stationId'],
 );

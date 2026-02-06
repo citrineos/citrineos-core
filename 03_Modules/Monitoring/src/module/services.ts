@@ -1,9 +1,10 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { AttributeEnumType } from '@citrineos/base';
-import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
+import { OCPP2_0_1 } from '@citrineos/base';
+import type { IDeviceModelRepository } from '@citrineos/data';
+import { VariableAttribute } from '@citrineos/data';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -25,15 +26,17 @@ export class DeviceModelService {
   async getItemsPerMessageByComponentAndVariableInstanceAndStationId(
     componentName: string,
     variableInstance: string,
+    tenantId: number,
     stationId: string,
   ): Promise<number | null> {
     const itemsPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: componentName,
         variable_name: 'ItemsPerMessage',
         variable_instance: variableInstance,
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (itemsPerMessageAttributes.length === 0) {
       return null;
@@ -58,15 +61,17 @@ export class DeviceModelService {
   async getBytesPerMessageByComponentAndVariableInstanceAndStationId(
     componentName: string,
     variableInstance: string,
+    tenantId: number,
     stationId: string,
   ): Promise<number | null> {
     const bytesPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring({
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
         stationId: stationId,
         component_name: componentName,
         variable_name: 'BytesPerMessage',
         variable_instance: variableInstance,
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     if (bytesPerMessageAttributes.length === 0) {
       return null;

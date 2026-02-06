@@ -1,25 +1,35 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 /* eslint-disable */
-
-import {
-  CacheNamespace,
+import type {
   IAuthenticator,
   ICache,
   IMessageRouter,
+  INetworkConnection,
+  IWebsocketConnection,
+  OCPPVersionType,
   SystemConfig,
   WebsocketServerConfig,
 } from '@citrineos/base';
-import { Duplex } from 'stream';
+import {
+  CacheNamespace,
+  createIdentifier,
+  getStationIdFromIdentifier,
+  getTenantIdFromIdentifier,
+} from '@citrineos/base';
+import fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import fs from 'fs';
-import { ErrorEvent, MessageEvent, WebSocket, WebSocketServer } from 'ws';
-import { ILogObj, Logger } from 'tslog';
-import { SecureContextOptions } from 'tls';
+import { Duplex } from 'stream';
+import type { SecureContextOptions } from 'tls';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ErrorEvent, MessageEvent } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
+import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
-export class WebsocketNetworkConnection {
+export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
@@ -46,72 +56,10 @@ export class WebsocketNetworkConnection {
     this._router = router;
 
     this._httpServersMap = new Map<string, http.Server | https.Server>();
-    this._config.util.networkConnection.websocketServers.forEach(
-      (websocketServerConfig) => {
-        let _httpServer;
-        switch (websocketServerConfig.securityProfile) {
-          case 3: // mTLS
-          case 2: // TLS
-            _httpServer = https.createServer(
-              this._generateServerOptions(websocketServerConfig),
-              this._onHttpRequest.bind(this),
-            );
-            break;
-          case 1:
-          case 0:
-          default: // No TLS
-            _httpServer = http.createServer(this._onHttpRequest.bind(this));
-            break;
-        }
-
-        // TODO: stop using handleProtocols and switch to shouldHandle or verifyClient; see https://github.com/websockets/ws/issues/1552
-        let _socketServer = new WebSocketServer({
-          noServer: true,
-          handleProtocols: (protocols, req) =>
-            this._handleProtocols(
-              protocols,
-              req,
-              websocketServerConfig.protocol,
-            ),
-          clientTracking: false,
-        });
-
-        _socketServer.on(
-          'connection',
-          (ws: WebSocket, req: http.IncomingMessage) =>
-            this._onConnection(ws, websocketServerConfig.pingInterval, req),
-        );
-        _socketServer.on('error', (wss: WebSocketServer, error: Error) =>
-          this._onError(wss, error),
-        );
-        _socketServer.on('close', (wss: WebSocketServer) => this._onClose(wss));
-
-        _httpServer.on('upgrade', (request, socket, head) =>
-          this._upgradeRequest(
-            request,
-            socket,
-            head,
-            _socketServer,
-            websocketServerConfig,
-          ),
-        );
-        _httpServer.on('error', (error) => _socketServer.emit('error', error));
-        // socketServer.close() will not do anything; use httpServer.close()
-        _httpServer.on('close', () => _socketServer.emit('close'));
-        const protocol =
-          websocketServerConfig.securityProfile > 1 ? 'wss' : 'ws';
-        _httpServer.listen(
-          websocketServerConfig.port,
-          websocketServerConfig.host,
-          () => {
-            this._logger.info(
-              `WebsocketServer running on ${protocol}://${websocketServerConfig.host}:${websocketServerConfig.port}/`,
-            );
-          },
-        );
-        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-      },
-    );
+    this._config.util.networkConnection.websocketServers.forEach(async (websocketServerConfig) => {
+      const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
+      this._httpServersMap.set(websocketServerConfig.id, _httpServer);
+    });
   }
 
   /**
@@ -119,57 +67,66 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The identifier of the client.
    * @param {string} message - The message to send.
-   * @return {boolean} True if the method sends the message successfully, false otherwise.
+   * @return {void} rejects the promise if message fails to send, otherwise returns void.
    */
-  sendMessage(identifier: string, message: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this._cache
-        .get(identifier, CacheNamespace.Connections)
-        .then((clientConnection) => {
-          if (clientConnection) {
-            const websocketConnection =
-              this._identifierConnections.get(identifier);
-            if (
-              websocketConnection &&
-              websocketConnection.readyState === WebSocket.OPEN
-            ) {
-              websocketConnection.send(message, (error) => {
-                if (error) {
-                  this._logger.error('On message send error', error);
-                  reject(error); // Reject the promise with the error
-                } else {
-                  resolve(true); // Resolve the promise with true indicating success
-                }
-              });
-            } else {
-              const errorMsg =
-                'Websocket connection is not ready - ' + identifier;
-              this._logger.fatal(errorMsg);
-              websocketConnection?.close(1011, errorMsg);
-              reject(new Error(errorMsg)); // Reject with a new error
-            }
+  sendMessage(identifier: string, message: string): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const clientConnection = await this._cache.get(identifier, CacheNamespace.Connections);
+        if (clientConnection) {
+          const websocketConnection = this._identifierConnections.get(identifier);
+          if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+            websocketConnection.send(message, (error) => {
+              if (error) {
+                reject(error); // Reject the promise with the error
+              } else {
+                resolve(); // Resolve the promise with true indicating success
+              }
+            });
           } else {
-            const errorMsg =
-              'Cannot identify client connection for ' + identifier;
-            // This can happen when a charging station disconnects in the moment a message is trying to send.
-            // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-            this._logger.error(errorMsg);
-            this._identifierConnections
-              .get(identifier)
-              ?.close(
-                1011,
-                'Failed to get connection information for ' + identifier,
-              );
+            const errorMsg = 'Websocket connection is not ready - ' + identifier;
+            this._logger.fatal(errorMsg);
+            websocketConnection?.close(1011, errorMsg);
             reject(new Error(errorMsg)); // Reject with a new error
           }
-        })
-        .catch(reject); // In case `_cache.get` fails
+        } else {
+          const errorMsg = 'Cannot identify client connection for ' + identifier;
+          // This can happen when a charging station disconnects in the moment a message is trying to send.
+          // Retry logic on the message sender might not suffice as charging station might connect to different instance.
+          this._logger.error(errorMsg);
+          this._identifierConnections
+            .get(identifier)
+            ?.close(1011, 'Failed to get connection information for ' + identifier);
+          reject(new Error(errorMsg)); // Reject with a new error
+        }
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
-  shutdown(): void {
+  bindNetworkHook(): (identifier: string, message: string) => Promise<void> {
+    return (identifier: string, message: string) => this.sendMessage(identifier, message);
+  }
+
+  async disconnect(tenantId: number, stationId: string): Promise<boolean> {
+    const identifier = createIdentifier(tenantId, stationId);
+
+    const websocketConnection = this._identifierConnections.get(identifier);
+
+    if (!websocketConnection) {
+      this._logger.warn(
+        `No websocket connection found for tenantId ${tenantId} and stationId ${stationId}, will still deregister from router.`,
+      );
+    }
+    websocketConnection?.close(1000, 'Disconnected by admin request');
+    const deregistered = await this._router?.deregisterConnection(tenantId, stationId);
+
+    return !!websocketConnection && deregistered;
+  }
+
+  async shutdown(): Promise<void> {
     this._httpServersMap.forEach((server) => server.close());
-    this._router.shutdown();
   }
 
   /**
@@ -199,12 +156,21 @@ export class WebsocketNetworkConnection {
         secureContextOptions.ca = rootCA;
       }
       httpsServer.setSecureContext(secureContextOptions);
-      this._logger.info(
-        `Updated TLS certificates in SecureContextOptions for server ${serverId}`,
-      );
+      this._logger.info(`Updated TLS certificates in SecureContextOptions for server ${serverId}`);
     } else {
       throw new TypeError(`Server ${serverId} is not a https server.`);
     }
+  }
+
+  /**
+   * Dynamically adds a new websocket server at runtime and starts it.
+   *
+   * @param {WebsocketServerConfig} websocketServerConfig
+   * @returns {Promise<void>}
+   */
+  async addWebsocketServer(websocketServerConfig: WebsocketServerConfig): Promise<void> {
+    const httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
+    this._httpServersMap.set(websocketServerConfig.id, httpServer);
   }
 
   private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -243,46 +209,35 @@ export class WebsocketNetworkConnection {
     this._logger.debug('On upgrade request', req.method, req.url, req.headers);
 
     try {
-      const { identifier } = await this._authenticator.authenticate(req, {
-        securityProfile: websocketServerConfig.securityProfile,
-        allowUnknownChargingStations:
-          websocketServerConfig.allowUnknownChargingStations,
-      });
-
-      // Register client
-      const registered = await this._cache.set(
-        identifier,
-        websocketServerConfig.id,
-        CacheNamespace.Connections,
+      const { identifier } = await this._authenticator.authenticate(
+        req,
+        websocketServerConfig.tenantId,
+        {
+          securityProfile: websocketServerConfig.securityProfile,
+          allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
+        },
       );
-      if (!registered) {
-        this._logger.fatal('Failed to register websocket client', identifier);
-        return false;
-      } else {
-        this._logger.debug(
-          'Successfully registered websocket client',
-          identifier,
-        );
-      }
+
+      this._logger.debug('Successfully registered websocket client', identifier);
 
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
-    } catch (error) {
+    } catch (error: any) {
+      /**
+       * See {@link IUpgradeError.terminateConnection}
+       **/
+      error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
       this._logger.warn(error);
-      this._rejectUpgradeUnauthorized(socket);
     }
   }
 
   /**
-   * Utility function to reject websocket upgrade requests with 401 status code.
+   * Utility function to reject websocket upgrade requests with 500 status code.
    * @param socket - Websocket duplex stream.
    */
-  private _rejectUpgradeUnauthorized(socket: Duplex) {
-    socket.write('HTTP/1.1 401 Unauthorized\r\n');
-    socket.write(
-      'WWW-Authenticate: Basic realm="Access to the WebSocket", charset="UTF-8"\r\n',
-    );
+  private _terminateConnectionInternalError(socket: Duplex) {
+    socket.write('HTTP/1.1 500 Internal Server Error\r\n');
     socket.write('\r\n');
     socket.end();
     socket.destroy();
@@ -292,21 +247,21 @@ export class WebsocketNetworkConnection {
    * Internal method to handle new client connection and ensures supported protocols are used.
    *
    * @param {Set<string>} protocols - The set of protocols to handle.
-   * @param {IncomingMessage} req - The request object.
+   * @param {IncomingMessage} _req - The request object.
    * @param {string} wsServerProtocol - The websocket server protocol.
    * @return {boolean|string} - Returns the protocol version if successful, otherwise false.
    */
   private _handleProtocols(
     protocols: Set<string>,
-    req: http.IncomingMessage,
-    wsServerProtocol: string,
+    _req: http.IncomingMessage,
+    wsServerProtocol: OCPPVersionType,
   ) {
     // Only supports configured protocol version
     if (protocols.has(wsServerProtocol)) {
       return wsServerProtocol;
     }
     this._logger.error(
-      `Protocol mismatch. Supported protocols: [${[...protocols].join(', ')}], but requested protocol: '${wsServerProtocol}' not supported.`,
+      `Protocol mismatch. Charger supports: [${[...protocols].join(', ')}], but server expects: '${wsServerProtocol}'.`,
     );
     // Reject the client trying to connect
     return false;
@@ -317,64 +272,79 @@ export class WebsocketNetworkConnection {
    * This happens after successful protocol exchange with client.
    *
    * @param {WebSocket} ws - The WebSocket object representing the connection.
+   * @param {WebsocketServerConfig} websocketServerConfig - The websocket server configuration.
    * @param {number} pingInterval - The ping interval in seconds.
    * @param {IncomingMessage} req - The request object associated with the connection.
    * @return {void}
    */
   private async _onConnection(
     ws: WebSocket,
+    websocketServerConfig: WebsocketServerConfig,
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
-    // Pause the WebSocket event emitter until broker is established
-    ws.pause();
+    if (!ws.protocol) {
+      this._logger.debug('Websocket connection without protocol');
+      return;
+    } else {
+      // Pause the WebSocket event emitter until broker is established
+      ws.pause();
 
-    const identifier = this._getClientIdFromUrl(req.url as string);
-    this._identifierConnections.set(identifier, ws);
+      const stationId = this._getClientIdFromUrl(req.url as string);
+      const tenantId = websocketServerConfig.tenantId;
+      const identifier = createIdentifier(tenantId, stationId);
 
-    try {
-      // Get IP address of client
-      const ip =
-        req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
-        req.socket.remoteAddress ||
-        'N/A';
-      const port = req.socket.remotePort as number;
-      this._logger.info('Client websocket connected', identifier, ip, port);
+      this._identifierConnections.set(identifier, ws);
 
-      this._router.registerConnection(identifier);
+      try {
+        // Get IP address of client
+        const ip =
+          req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+          req.socket.remoteAddress ||
+          'N/A';
+        const port = req.socket.remotePort as number;
+        this._logger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
-      this._logger.info(
-        'Successfully connected new charging station.',
-        identifier,
-      );
+        // Register client
+        const websocketConnection: IWebsocketConnection = {
+          id: websocketServerConfig.id,
+          protocol: ws.protocol,
+        };
+        let registered = await this._cache.set(
+          identifier,
+          JSON.stringify(websocketConnection),
+          CacheNamespace.Connections,
+        );
+        registered =
+          registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
+        if (!registered) {
+          this._logger.fatal('Failed to register websocket client', identifier);
+          throw new Error('Failed to register websocket client');
+        }
 
-      // Register all websocket events
-      this._registerWebsocketEvents(identifier, ws, pingInterval);
+        this._logger.info('Successfully connected new charging station.', identifier);
 
-      // Resume the WebSocket event emitter after events have been subscribed to
-      ws.resume();
-    } catch (error) {
-      this._logger.fatal(
-        'Failed to subscribe to message broker for ',
-        identifier,
-      );
-      ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
+        // Register all websocket events
+        this._registerWebsocketEvents(identifier, ws, pingInterval);
+
+        // Resume the WebSocket event emitter after events have been subscribed to
+        ws.resume();
+      } catch (error) {
+        this._logger.fatal('Failed to subscribe to message broker for ', identifier);
+        ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
+      }
     }
   }
 
   /**
    * Internal method to register event listeners for the WebSocket connection.
    *
-   * @param {string} identifier - The unique identifier for the connection.
+   * @param {string} identifier - The unique identifier of the connection, i.e. the combination of tenantId and stationId.
    * @param {WebSocket} ws - The WebSocket object representing the connection.
    * @param {number} pingInterval - The ping interval in seconds.
    * @return {void} This function does not return anything.
    */
-  private _registerWebsocketEvents(
-    identifier: string,
-    ws: WebSocket,
-    pingInterval: number,
-  ): void {
+  private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
     ws.onerror = (event: ErrorEvent) => {
       this._logger.error(
         'Connection error encountered for',
@@ -386,7 +356,7 @@ export class WebsocketNetworkConnection {
       ws.close(1011, event.message);
     };
     ws.onmessage = (event: MessageEvent) => {
-      this._onMessage(identifier, event.data.toString());
+      this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
     };
 
     ws.once('close', () => {
@@ -394,13 +364,14 @@ export class WebsocketNetworkConnection {
       this._logger.info('Connection closed for', identifier);
       this._cache.remove(identifier, CacheNamespace.Connections);
       this._identifierConnections.delete(identifier);
-      this._router.deregisterConnection(identifier);
+      this._router.deregisterConnection(
+        getTenantIdFromIdentifier(identifier),
+        getStationIdFromIdentifier(identifier),
+      );
     });
 
     ws.on('ping', async (message) => {
-      this._logger.debug(
-        `Ping received for ${identifier} with message ${JSON.stringify(message)}`,
-      );
+      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
       ws.pong(message);
     });
 
@@ -413,18 +384,10 @@ export class WebsocketNetworkConnection {
 
       if (clientConnection) {
         // Remove expiration for connection and send ping to client in pingInterval seconds.
-        await this._cache.set(
-          identifier,
-          clientConnection,
-          CacheNamespace.Connections,
-        );
+        await this._cache.set(identifier, clientConnection, CacheNamespace.Connections);
         this._ping(identifier, ws, pingInterval);
       } else {
-        this._logger.debug(
-          'Pong received for',
-          identifier,
-          'but client is not alive',
-        );
+        this._logger.debug('Pong received for', identifier, 'but client is not alive');
         ws.close(1011, 'Client is not alive');
       }
     });
@@ -437,10 +400,11 @@ export class WebsocketNetworkConnection {
    *
    * @param {string} identifier - The client identifier.
    * @param {string} message - The incoming message from the client.
+   * @param {OCPPVersionType} protocol - The OCPP protocol version of the client, 'ocpp1.6' or 'ocpp2.0.1'.
    * @return {void} This function does not return anything.
    */
-  private _onMessage(identifier: string, message: string): void {
-    this._router.onMessage(identifier, message, new Date());
+  private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
+    this._router.onMessage(identifier, message, new Date(), protocol);
   }
 
   /**
@@ -474,11 +438,7 @@ export class WebsocketNetworkConnection {
    * @param {number} pingInterval - The ping interval in milliseconds.
    * @return {void} This function does not return anything.
    */
-  private async _ping(
-    identifier: string,
-    ws: WebSocket,
-    pingInterval: number,
-  ): Promise<void> {
+  private async _ping(identifier: string, ws: WebSocket, pingInterval: number): Promise<void> {
     setTimeout(async () => {
       const clientConnection: string | null = await this._cache.get(
         identifier,
@@ -508,18 +468,14 @@ export class WebsocketNetworkConnection {
     return url.split('/').pop() as string;
   }
 
-  private _generateServerOptions(
-    config: WebsocketServerConfig,
-  ): https.ServerOptions {
+  private _generateServerOptions(config: WebsocketServerConfig): https.ServerOptions {
     const serverOptions: https.ServerOptions = {
       key: fs.readFileSync(config.tlsKeyFilePath as string),
       cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
     };
 
     if (config.rootCACertificateFilePath) {
-      serverOptions.ca = fs.readFileSync(
-        config.rootCACertificateFilePath as string,
-      );
+      serverOptions.ca = fs.readFileSync(config.rootCACertificateFilePath as string);
     }
 
     if (config.securityProfile > 2) {
@@ -530,5 +486,54 @@ export class WebsocketNetworkConnection {
     }
 
     return serverOptions;
+  }
+
+  private _createAndStartWebsocketServer(
+    wsConfig: WebsocketServerConfig,
+  ): Promise<http.Server | https.Server> {
+    return new Promise((resolve) => {
+      let httpServer: http.Server | https.Server;
+      switch (wsConfig.securityProfile) {
+        case 3: // mTLS
+        case 2: // TLS
+          httpServer = https.createServer(
+            this._generateServerOptions(wsConfig),
+            this._onHttpRequest.bind(this),
+          );
+          break;
+        case 1:
+        case 0:
+        default:
+          httpServer = http.createServer(this._onHttpRequest.bind(this));
+          break;
+      }
+
+      const wss = new WebSocketServer({
+        noServer: true,
+        handleProtocols: (protocols, req) =>
+          this._handleProtocols(protocols, req, wsConfig.protocol as OCPPVersionType),
+        clientTracking: false,
+      });
+
+      wss.on('connection', (ws, req) =>
+        this._onConnection(ws, wsConfig, wsConfig.pingInterval, req),
+      );
+      wss.on('error', (server: any, error: any) => this._onError(server, error));
+      wss.on('close', (server: any) => this._onClose(server));
+
+      httpServer.on('upgrade', (req, socket, head) =>
+        this._upgradeRequest(req, socket, head, wss, wsConfig),
+      );
+      httpServer.on('error', (error) => wss.emit('error', error));
+      httpServer.on('close', () => wss.emit('close'));
+
+      const protocol = wsConfig.securityProfile > 1 ? 'wss' : 'ws';
+      httpServer.listen(wsConfig.port, wsConfig.host, () => {
+        this._logger.info(
+          `WebsocketServer running on ${protocol}://${wsConfig.host}:${wsConfig.port}/`,
+        );
+        resolve(httpServer);
+      });
+    });
   }
 }

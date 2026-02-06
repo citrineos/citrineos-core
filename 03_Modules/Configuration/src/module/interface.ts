@@ -1,28 +1,8 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import {
-  IMessageConfirmation,
-  ResetRequest,
-  SetNetworkProfileRequest,
-} from '@citrineos/base';
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Interface for the Configuration module.
  */
-export interface IConfigurationModuleApi {
-  setNetworkProfile(
-    identifier: string,
-    tenantId: string,
-    request: SetNetworkProfileRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
-  reset(
-    identifier: string,
-    tenantId: string,
-    request: ResetRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation>;
-}
+export interface IConfigurationModuleApi {}

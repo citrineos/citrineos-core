@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: Boots
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: bootConfigId
+        table:
+          name: VariableAttributes
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - bootWithRejectedVariables
+        - changeConfigurationsOnPending
+        - getBaseReportOnPending
+        - getConfigurationsOnPending
+        - id
+        - status
+        - bootRetryInterval
+        - heartbeatInterval
+        - tenantId
+        - statusInfo
+        - variablesRejectedOnLastBoot
+        - createdAt
+        - lastBootTime
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

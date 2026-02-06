@@ -1,0 +1,23 @@
+{
+  "title": "DataTransferResponse",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/DataTransferResponseStatus"
+    },
+    "data": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "DataTransferResponse",
+  "definitions": {
+    "DataTransferResponseStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
+      "tsEnumNames": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"]
+    }
+  }
+}

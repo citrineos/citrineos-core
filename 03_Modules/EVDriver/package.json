@@ -1,6 +1,7 @@
 {
   "name": "@citrineos/evdriver",
-  "version": "1.5.0",
+  "version": "1.8.2",
+  "type": "module",
   "description": "The EVDriver module for OCPP v2.0.1. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,22 +10,16 @@
   ],
   "scripts": {
     "prepublish": "npx eslint",
-    "test": "jest --config jest.config.ts"
+    "test": "vitest run"
   },
   "keywords": [
     "ocpp",
     "ocpp_v201"
   ],
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/deasync-promise": "1.0.0",
-    "eslint": "8.48.0",
-    "typescript": "5.0.4"
-  },
   "dependencies": {
-    "@citrineos/base": "1.5.0",
-    "@citrineos/data": "1.5.0",
-    "@citrineos/util": "1.5.0",
-    "fastify": "4.22.2"
+    "@citrineos/base": "1.8.2",
+    "@citrineos/data": "1.8.2",
+    "@citrineos/util": "1.8.2"
   }
 }

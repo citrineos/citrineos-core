@@ -1,0 +1,8 @@
+const path = require('path');
+
+module.exports = {
+  'config': path.resolve('Server', 'dist', 'config','sequelize.bridge.config.js'),
+  'models-path': path.resolve('01_Data', 'src','layers', 'model'),
+  'seeders-path': path.resolve('dist/seeders'),
+  'migrations-path': path.resolve('dist/migrations')
+};

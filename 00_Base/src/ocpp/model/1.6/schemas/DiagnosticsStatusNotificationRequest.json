@@ -1,0 +1,20 @@
+{
+  "title": "DiagnosticsStatusNotificationRequest",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/DiagnosticsStatusNotificationRequestStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "DiagnosticsStatusNotificationRequest",
+  "definitions": {
+    "DiagnosticsStatusNotificationRequestStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Idle", "Uploaded", "UploadFailed", "Uploading"],
+      "tsEnumNames": ["Idle", "Uploaded", "UploadFailed", "Uploading"]
+    }
+  }
+}

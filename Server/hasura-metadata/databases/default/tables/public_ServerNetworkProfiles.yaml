@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: ServerNetworkProfiles
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: ChargingStationNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: websocketServerConfigId
+        table:
+          name: ChargingStationNetworkProfiles
+          schema: public
+  - name: SetNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: websocketServerConfigId
+        table:
+          name: SetNetworkProfiles
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - allowUnknownChargingStations
+        - host
+        - id
+        - mtlsCertificateAuthorityKeyFilePath
+        - protocol
+        - rootCACertificateFilePath
+        - tlsCertificateChainFilePath
+        - tlsKeyFilePath
+        - messageTimeout
+        - pingInterval
+        - port
+        - securityProfile
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

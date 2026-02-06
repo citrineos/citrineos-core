@@ -1,8 +1,7 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { ReportingModuleApi } from './module/api';
-export { IReportingModuleApi } from './module/interface';
-export { ReportingModule } from './module/module';
+export { ReportingOcpp201Api } from './module/2.0.1/MessageApi.js';
+export type { IReportingModuleApi } from './module/interface.js';
+export { ReportingModule } from './module/module.js';

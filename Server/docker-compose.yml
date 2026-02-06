@@ -1,4 +1,6 @@
-version: '3'
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 services:
   amqp-broker:
     image: rabbitmq:3-management
@@ -11,12 +13,14 @@ services:
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
+      test: rabbitmq-diagnostics -q check_port_connectivity
       interval: 10s
       timeout: 10s
       retries: 3
+
   ocpp-db:
-    image: citrineos/postgis:v1.1.0
+    image: postgis/postgis:16-3.5
+    platform: linux/amd64
     ports:
       - 5432:5432
     volumes:
@@ -52,6 +56,7 @@ services:
       - ../03_Modules/Reporting:/usr/local/apps/citrineos/03_Modules/Reporting
       - ../03_Modules/SmartCharging:/usr/local/apps/citrineos/03_Modules/SmartCharging
       - ../03_Modules/Transactions:/usr/local/apps/citrineos/03_Modules/Transactions
+      - ../03_Modules/Tenant:/usr/local/apps/citrineos/03_Modules/Tenant
       - /usr/local/apps/citrineos/node_modules
       - /usr/local/apps/citrineos/Server/node_modules
       - /usr/local/apps/citrineos/00_Base/node_modules
@@ -65,6 +70,7 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Reporting/node_modules
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/node_modules
       - /usr/local/apps/citrineos/03_Modules/Transactions/node_modules
+      - /usr/local/apps/citrineos/03_Modules/Tenant/node_modules
       - /usr/local/apps/citrineos/dist/
       - /usr/local/apps/citrineos/Server/dist/
       - /usr/local/apps/citrineos/00_Base/dist/
@@ -78,57 +84,115 @@ services:
       - /usr/local/apps/citrineos/03_Modules/Reporting/dist/
       - /usr/local/apps/citrineos/03_Modules/SmartCharging/dist/
       - /usr/local/apps/citrineos/03_Modules/Transactions/dist/
+      - /usr/local/apps/citrineos/03_Modules/Tenant/dist/
     environment:
       APP_NAME: 'all'
       APP_ENV: 'docker'
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
+      # Add AWS region (required by the SDK)
+      AWS_REGION: us-east-1
+      # Skip authentication completely - use public access
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      # Database Strategy
+      DB_STRATEGY: 'migrate'
+      # Bootstrap Configuration Environment Variables
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
     depends_on:
       ocpp-db:
         condition: service_healthy
       amqp-broker:
         condition: service_healthy
-      directus:
-        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     ports:
       - 8080:8080
       - 8081:8081
       - 8082:8082
-      - 8085:8085
       - 8443:8443
       - 8444:8444
       - 9229:9229
+      - 8092:8092
+      - 10000-10500:10000-10500 # for dynamic websocket servers
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "const net = require(\"net\"); const client = net.createConnection(8080, \"127.0.0.1\", () => { client.end(); process.exit(0); }); client.on(\"error\", () => process.exit(1)); client.setTimeout(5000, () => { client.destroy(); process.exit(1); });"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
-  directus:
-    build:
-      context: ../DirectusExtensions
-      dockerfile: ./directus.Dockerfile
+  minio:
+    image: minio/minio
+    container_name: minio
     ports:
-      - 8055:8055
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      # Use default credentials for simplicity
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # Enable public buckets
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+      MINIO_SERVER_URL: http://localhost:9000
     volumes:
-      - ./data/directus/uploads:/directus/uploads
-      - ./directus-env-config.cjs:/directus/config.cjs
+      - ./data/minio:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # Initialize MinIO
+  minio-init:
+    image: minio/mc
     depends_on:
-      ocpp-db:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      # Enable command echoing and error reporting
+      set -x
+
+      echo 'Setting up MinIO alias'
+      mc alias set myminio http://minio:9000 minioadmin minioadmin || echo 'FAILED: alias setup'
+      "
+
+  graphql-engine:
+    image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
+    volumes:
+      - ./hasura-metadata:/hasura-metadata
+    ports:
+      - 8090:8080
+    restart: always
+    depends_on:
+      citrine:
+        # ensures hasura migrations will run only after citrine is healthy,
+        # meaning 01_Data/dist/layers/sequelize/util.js was executed and logged
+        # CitrineOS Logger:DefaultSequelizeInstance Database altered,
+        # which means the database is ready to be used by hasura
         condition: service_healthy
     environment:
-      APP_NAME: 'all'
-      KEY: '1234567890'
-      SECRET: '0987654321'
-      ADMIN_EMAIL: 'admin@citrineos.com'
-      ADMIN_PASSWORD: 'CitrineOS!'
-      CONFIG_PATH: '/directus/config.cjs'
-      EXTENSIONS_AUTO_RELOAD: 'true'
-      EXTENSIONS_CACHE_TTL: '1s'
-      DB_CLIENT: 'pg'
-      DB_HOST: ocpp-db
-      DB_PORT: 5432
-      DB_DATABASE: 'citrine'
-      DB_USER: 'citrine'
-      DB_PASSWORD: 'citrine'
-      WEBSOCKETS_ENABLED: 'true'
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: 'true'
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
+      ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
+      # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+      ## uncomment next line to set an admin secret - warning, without configuration this will cause upstream services to fail
+      # HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
+      HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health || exit 1
-      start_period: 15s
-      interval: 15s
-      timeout: 15s
-      retries: 3
+      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 5s

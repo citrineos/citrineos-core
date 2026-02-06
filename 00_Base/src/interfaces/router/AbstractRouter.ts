@@ -1,14 +1,14 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Ajv, ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
+import { Ajv } from 'ajv';
 
-import {
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   Call,
-  CALL_RESULT_SCHEMA_MAP,
-  CALL_SCHEMA_MAP,
   CallAction,
   CallResult,
   ICache,
@@ -16,15 +16,24 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-  MessageState,
-  OcppError,
   OcppRequest,
   OcppResponse,
+  OCPPVersionType,
   SystemConfig,
-} from '../..';
-import { ILogObj, Logger } from 'tslog';
-import { IMessageRouter } from './Router';
+} from '../../index.js';
+import {
+  MessageOrigin,
+  MessageState,
+  OCPP1_6_CALL_RESULT_SCHEMA_MAP,
+  OCPP1_6_CALL_SCHEMA_MAP,
+  OCPP1_6_CallAction,
+  OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
+  OCPP2_0_1_CALL_SCHEMA_MAP,
+  OCPP2_0_1_CallAction,
+  OcppError,
+  OCPPVersion,
+} from '../../index.js';
+import type { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -37,10 +46,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   protected _logger: Logger<ILogObj>;
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
-  protected _networkHook: (
-    identifier: string,
-    message: string,
-  ) => Promise<boolean>;
+  protected _networkHook: (identifier: string, message: string) => Promise<void>;
 
   /**
    * Constructor of abstract ocpp router.
@@ -52,7 +58,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     cache: ICache,
     handler: IMessageHandler,
     sender: IMessageSender,
-    networkHook: (identifier: string, message: string) => Promise<boolean>,
+    networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
     ajv?: Ajv,
   ) {
@@ -97,9 +103,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     return this._config;
   }
 
-  set networkHook(
-    value: (identifier: string, message: string) => Promise<boolean>,
-  ) {
+  set networkHook(value: (identifier: string, message: string) => Promise<void>) {
     this._networkHook = value;
   }
 
@@ -119,19 +123,27 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    * Public Methods
    */
 
-  async handle(
-    message: IMessage<OcppRequest | OcppResponse | OcppError>,
-  ): Promise<void> {
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>): Promise<void> {
     this._logger.debug('Received message:', message);
 
     if (message.state === MessageState.Response) {
-      if (message.payload instanceof OcppError) {
+      if (message.payload && (message.payload as any)._errorCode) {
+        // Create OcppError from payload properties for sendCallError method
+        const errorPayload = message.payload as any;
+        const ocppError = new OcppError(
+          errorPayload._messageId,
+          errorPayload._errorCode,
+          errorPayload.message || '',
+          errorPayload._errorDetails || {},
+        );
+
         await this.sendCallError(
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
+          message.protocol,
           message.action,
-          message.payload,
+          ocppError,
           message.origin,
         );
       } else {
@@ -139,6 +151,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
           message.context.correlationId,
           message.context.stationId,
           message.context.tenantId,
+          message.protocol,
           message.action,
           message.payload,
           message.origin,
@@ -148,6 +161,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       await this.sendCall(
         message.context.stationId,
         message.context.tenantId,
+        message.protocol,
         message.action,
         message.payload,
         message.context.correlationId,
@@ -165,23 +179,65 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    *
    * @param {string} identifier - The identifier of the EVSE.
    * @param {Call} message - The Call object to validate.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @return {boolean} - Returns true if the Call object is valid, false otherwise.
    */
   protected _validateCall(
     identifier: string,
     message: Call,
+    protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
-    const action = message[2] as CallAction;
+    const action = message[2];
     const payload = message[3];
 
-    const schema = CALL_SCHEMA_MAP.get(action);
+    let schema: any;
+    switch (protocol) {
+      case OCPPVersion.OCPP1_6:
+        schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
+        break;
+      case OCPPVersion.OCPP2_0_1:
+        schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', protocol);
+        return { isValid: false };
+    }
+
     if (schema) {
-      const validate = this._ajv.compile(schema);
+      let validate = this._ajv.getSchema(schema['$id']);
+      if (!validate) {
+        schema['$id'] = `${protocol}-${schema['$id']}`;
+        this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
+        validate = this._ajv.compile(schema);
+      }
       const result = validate(payload);
       if (!result) {
-        this._logger.debug('Validate Call failed', validate.errors);
-        return { isValid: false, errors: validate.errors };
+        const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
+        this._logger.debug('Validate Call failed', validationErrorsDeepCopy);
+        return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
+        if (
+          action === OCPP1_6_CallAction.DataTransfer ||
+          action === OCPP2_0_1_CallAction.DataTransfer
+        ) {
+          const dataTransferRequest: { vendorId: string; messageId?: string; data: string } =
+            payload as any;
+          const dataTransferPayloadValidate = this._ajv.getSchema(
+            `${protocol}-${dataTransferRequest.vendorId}${dataTransferRequest.messageId ? `-${dataTransferRequest.messageId}` : ''}`,
+          );
+          if (dataTransferPayloadValidate) {
+            const dataTransferPayloadResult = dataTransferPayloadValidate(
+              JSON.parse(dataTransferRequest.data),
+            );
+            if (!dataTransferPayloadResult) {
+              const validationErrorsDeepCopy = JSON.parse(
+                JSON.stringify(dataTransferPayloadValidate.errors),
+              );
+              this._logger.debug('Validate DataTransfer payload failed', validationErrorsDeepCopy);
+              return { isValid: false, errors: validationErrorsDeepCopy };
+            }
+          }
+        }
         return { isValid: true };
       }
     } else {
@@ -196,31 +252,46 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    * @param {string} identifier - The identifier of the EVSE.
    * @param {CallAction} action - The original CallAction.
    * @param {CallResult} message - The CallResult object to validate.
+   * @param {string} protocol - The protocol of the Websocket.
    * @return {boolean} - Returns true if the CallResult object is valid, false otherwise.
    */
   protected _validateCallResult(
     identifier: string,
     action: CallAction,
     message: CallResult,
+    protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const payload = message[2];
 
-    const schema = CALL_RESULT_SCHEMA_MAP.get(action);
+    let schema: any;
+    switch (protocol) {
+      case OCPPVersion.OCPP1_6:
+        schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
+        break;
+      case OCPPVersion.OCPP2_0_1:
+        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', protocol);
+        return { isValid: false };
+    }
     if (schema) {
-      const validate = this._ajv.compile(schema);
+      let validate = this._ajv.getSchema(schema['$id']);
+      if (!validate) {
+        schema['$id'] = `${protocol}-${schema['$id']}`;
+        this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
+        validate = this._ajv.compile(schema);
+      }
       const result = validate(payload);
       if (!result) {
-        this._logger.debug('Validate CallResult failed', validate.errors);
-        return { isValid: false, errors: validate.errors };
+        const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
+        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
+        return { isValid: false, errors: validationErrorsDeepCopy };
       } else {
         return { isValid: true };
       }
     } else {
-      this._logger.error(
-        'No schema found for call result with action',
-        action,
-        message,
-      );
+      this._logger.error('No schema found for call result with action', action, message);
       return { isValid: false }; // TODO: Implement config for this behavior
     }
   }
@@ -229,14 +300,20 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     identifier: string,
     message: string,
     timestamp: Date,
+    protocol: string,
   ): Promise<boolean>;
 
-  abstract registerConnection(connectionIdentifier: string): Promise<boolean>;
-  abstract deregisterConnection(connectionIdentifier: string): Promise<boolean>;
+  abstract registerConnection(
+    tenantId: number,
+    stationId: string,
+    protocol: string,
+  ): Promise<boolean>;
+  abstract deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
 
   abstract sendCall(
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId?: string,
@@ -244,20 +321,22 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ): Promise<IMessageConfirmation>;
   abstract sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
   abstract sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
 
-  abstract shutdown(): void;
+  abstract shutdown(): Promise<void>;
 }

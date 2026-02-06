@@ -2,15 +2,19 @@
 //
 // SPDX-License-Identifier: Apache 2.0
 
-import { SequelizeRepository } from './Base';
-import { SystemConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { DeleteCertificateAttempt } from '../model/Certificate';
-import { IDeleteCertificateAttemptRepository } from '../../../interfaces';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { DeleteCertificateAttempt } from '../model/index.js';
+import type { IDeleteCertificateAttemptRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
 
-export class SequelizeDeleteCertificateAttemptRepository extends SequelizeRepository<DeleteCertificateAttempt> implements IDeleteCertificateAttemptRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeDeleteCertificateAttemptRepository
+  extends SequelizeRepository<DeleteCertificateAttempt>
+  implements IDeleteCertificateAttemptRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, DeleteCertificateAttempt.MODEL_NAME, logger, sequelizeInstance);
   }
 }

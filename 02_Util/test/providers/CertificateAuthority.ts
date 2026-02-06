@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import * as asn1js from 'asn1js';
 import { CertificateSetItem } from 'pkijs';
 import * as pkijs from 'pkijs';
@@ -5,9 +8,7 @@ import jsrsasign from 'jsrsasign';
 import X509 = jsrsasign.X509;
 import x509 = jsrsasign.KJUR.asn1.x509;
 
-export const aValidCertificateItemArray = (
-  pem: string,
-): CertificateSetItem[] => {
+export const aValidCertificateItemArray = (pem: string): CertificateSetItem[] => {
   const cmsSignedBuffer = Buffer.from(pem, 'base64');
   const asn1 = asn1js.fromBER(cmsSignedBuffer);
   const cmsContent = new pkijs.ContentInfo({ schema: asn1.result });

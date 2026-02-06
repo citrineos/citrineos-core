@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { IncomingMessage } from 'http';
-import { ILogObj, Logger } from 'tslog';
-import { AuthenticationOptions } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { AuthenticationOptions } from '@citrineos/base';
 
 export abstract class AuthenticatorFilter {
   protected _logger: Logger<ILogObj>;
@@ -13,12 +17,14 @@ export abstract class AuthenticatorFilter {
 
   protected abstract shouldFilter(options: AuthenticationOptions): boolean;
   protected abstract filter(
+    tenantId: number,
     identifier: string,
     request: IncomingMessage,
-    options?: AuthenticationOptions
+    options?: AuthenticationOptions,
   ): Promise<void>;
 
   async authenticate(
+    tenantId: number,
     identifier: string,
     request: IncomingMessage,
     options: AuthenticationOptions,
@@ -26,7 +32,7 @@ export abstract class AuthenticatorFilter {
     if (this.shouldFilter(options)) {
       this._logger.debug(`Applying filter for: ${identifier}`);
       try {
-        await this.filter(identifier, request, options);
+        await this.filter(tenantId, identifier, request, options);
         this._logger.debug(`Filter passed for: ${identifier}`);
       } catch (error) {
         this._logger.warn(`Filter failed for: ${identifier}`);

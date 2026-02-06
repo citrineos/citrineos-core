@@ -1,31 +1,47 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { CrudRepository, ReserveNowRequest, SystemConfig } from '@citrineos/base';
-import { IReservationRepository } from '../../../interfaces';
-import { SequelizeRepository } from './Base';
+// SPDX-License-Identifier: Apache-2.0
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import type { IReservationRepository } from '../../../interfaces/index.js';
+import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { Reservation } from '../model/Reservation';
-import { Evse } from '../model/DeviceModel';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { EvseType, Reservation } from '../model/index.js';
 
-export class SequelizeReservationRepository extends SequelizeRepository<Reservation> implements IReservationRepository {
-  evse: CrudRepository<Evse>;
+export class SequelizeReservationRepository
+  extends SequelizeRepository<Reservation>
+  implements IReservationRepository
+{
+  evse: CrudRepository<EvseType>;
   logger: Logger<ILogObj>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, evse?: CrudRepository<Evse>) {
+  constructor(
+    config: BootstrapConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    evse?: CrudRepository<EvseType>,
+  ) {
     super(config, Reservation.MODEL_NAME, logger, sequelizeInstance);
-    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
+    this.evse = evse
+      ? evse
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
 
-    this.logger = logger ? logger.getSubLogger({ name: this.constructor.name }) : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async createOrUpdateReservation(reserveNowRequest: ReserveNowRequest, stationId: string, isActive?: boolean): Promise<Reservation | undefined> {
+  async createOrUpdateReservation(
+    tenantId: number,
+    reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
+    stationId: string,
+    isActive?: boolean,
+  ): Promise<Reservation | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
-      const [evse] = await this.evse.readAllByQuery({
+      const [evse] = await this.evse.readAllByQuery(tenantId, {
         where: {
           id: reserveNowRequest.evseId,
           connectorId: null,
@@ -39,8 +55,9 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
       }
     }
 
-    const [storedReservation, created] = await this.readOrCreateByQuery({
+    const [storedReservation, created] = await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId,
         // unique constraints
         stationId,
         id: reserveNowRequest.id,
@@ -56,6 +73,7 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
 
     if (!created) {
       return await this.updateByKey(
+        tenantId,
         {
           expiryDateTime: reserveNowRequest.expiryDateTime,
           connectorType: reserveNowRequest.connectorType ?? null,
@@ -71,7 +89,7 @@ export class SequelizeReservationRepository extends SequelizeRepository<Reservat
     }
   }
 
-  async getNextReservationId(stationId: string): Promise<number> {
-    return await this.readNextValue('id', { where: { stationId } });
+  async getNextReservationId(tenantId: number, stationId: string): Promise<number> {
+    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 }

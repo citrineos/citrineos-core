@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: SalesTariffs
+  schema: public
+object_relationships:
+  - name: ChargingSchedule
+    using:
+      foreign_key_constraint_on: chargingScheduleDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - salesTariffDescription
+        - chargingScheduleDatabaseId
+        - databaseId
+        - id
+        - numEPriceLevels
+        - tenantId
+        - salesTariffEntry
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

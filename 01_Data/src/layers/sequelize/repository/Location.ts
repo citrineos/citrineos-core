@@ -1,94 +1,175 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository, StatusNotificationRequest, SystemConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Location, SequelizeRepository } from '..';
-import { type ILocationRepository } from '../../..';
-import { StatusNotification } from '../model/Location';
+import type { BootstrapConfig, OCPP2_0_1 } from '@citrineos/base';
+import { CrudRepository, OCPPVersion } from '@citrineos/base';
 import { Op } from 'sequelize';
-import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { type ILocationRepository } from '../../../index.js';
+import {
+  ChargingStation,
+  Connector,
+  Location,
+  SequelizeRepository,
+  StatusNotification,
+} from '../index.js';
+import { Evse, LatestStatusNotification } from '../model/index.js';
 
-export class SequelizeLocationRepository extends SequelizeRepository<Location> implements ILocationRepository {
+export class SequelizeLocationRepository
+  extends SequelizeRepository<Location>
+  implements ILocationRepository
+{
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
+  connector: CrudRepository<Connector>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     chargingStation?: CrudRepository<ChargingStation>,
     statusNotification?: CrudRepository<StatusNotification>,
     latestStatusNotification?: CrudRepository<LatestStatusNotification>,
+    connector?: CrudRepository<Connector>,
   ) {
     super(config, Location.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingStation = chargingStation ? chargingStation : new SequelizeRepository<ChargingStation>(config, ChargingStation.MODEL_NAME, logger, sequelizeInstance);
-    this.statusNotification = statusNotification ? statusNotification : new SequelizeRepository<StatusNotification>(config, StatusNotification.MODEL_NAME, logger, sequelizeInstance);
-    this.latestStatusNotification = latestStatusNotification ? latestStatusNotification : new SequelizeRepository<LatestStatusNotification>(config, LatestStatusNotification.MODEL_NAME, logger, sequelizeInstance);
+    this.chargingStation = chargingStation
+      ? chargingStation
+      : new SequelizeRepository<ChargingStation>(
+          config,
+          ChargingStation.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.statusNotification = statusNotification
+      ? statusNotification
+      : new SequelizeRepository<StatusNotification>(
+          config,
+          StatusNotification.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.latestStatusNotification = latestStatusNotification
+      ? latestStatusNotification
+      : new SequelizeRepository<LatestStatusNotification>(
+          config,
+          LatestStatusNotification.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.connector = connector
+      ? connector
+      : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async readLocationById(id: number): Promise<Location | undefined> {
-    return await this.readOnlyOneByQuery({
+  async readLocationById(tenantId: number, id: number): Promise<Location | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
       where: { id },
       include: [ChargingStation],
     });
   }
 
-  async readChargingStationByStationId(stationId: string): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.readByKey(stationId);
+  async readChargingStationByStationId(
+    tenantId: number,
+    stationId: string,
+  ): Promise<ChargingStation | undefined> {
+    return (
+      (await ChargingStation.findOne({
+        where: {
+          id: stationId,
+          tenantId,
+        },
+        include: [{ model: Evse, include: [Connector] }],
+      })) ?? undefined
+    );
   }
 
-  async setChargingStationIsOnline(stationId: string, isOnline: boolean): Promise<boolean> {
-    return !!(await this.chargingStation.updateByKey({ isOnline: isOnline }, stationId));
-  }
-
-  async doesChargingStationExistByStationId(stationId: string): Promise<boolean> {
-    return await this.chargingStation.existsByKey(stationId);
-  }
-
-  async addStatusNotificationToChargingStation(stationId: string, statusNotification: StatusNotificationRequest): Promise<void> {
-    const notification = StatusNotification.build({
+  async setChargingStationIsOnlineAndOCPPVersion(
+    tenantId: number,
+    stationId: string,
+    isOnline: boolean,
+    ocppVersion: OCPPVersion | null,
+  ): Promise<ChargingStation | undefined> {
+    return await this.chargingStation.updateByKey(
+      tenantId,
+      { isOnline: isOnline, protocol: ocppVersion },
       stationId,
-      ...statusNotification,
-    });
-    const savedStatusNotification = await this.statusNotification.create(notification);
+    );
+  }
+
+  async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
+    return await this.chargingStation.existsByKey(tenantId, stationId);
+  }
+
+  async addStatusNotificationToChargingStation(
+    tenantId: number,
+    stationId: string,
+    statusNotification: StatusNotification,
+  ): Promise<void> {
+    const savedStatusNotification = await this.statusNotification.create(
+      tenantId,
+      statusNotification,
+    );
     try {
-      await this.updateLatestStatusNotification(stationId, savedStatusNotification);
+      await this.updateLatestStatusNotification(tenantId, stationId, savedStatusNotification);
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
   }
 
-  async updateLatestStatusNotification(stationId: string, statusNotification: StatusNotification): Promise<void> {
+  async updateLatestStatusNotification(
+    tenantId: number,
+    stationId: string,
+    statusNotification: StatusNotification,
+  ): Promise<void> {
     const evseId = statusNotification.evseId;
     const connectorId = statusNotification.connectorId;
     const statusNotificationId = statusNotification.id;
-    await this.latestStatusNotification.deleteAllByQuery({
+    // delete operation doesn't support "include" in query
+    // so we need to find them at first and then delete
+    const existingLatestStatusNotifications: LatestStatusNotification[] =
+      await this.latestStatusNotification.readAllByQuery(tenantId, {
+        where: {
+          stationId,
+        },
+        include: [
+          {
+            model: StatusNotification,
+            where: {
+              evseId,
+              connectorId,
+            },
+            require: true,
+          },
+        ],
+      });
+    const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
+    await this.latestStatusNotification.deleteAllByQuery(tenantId, {
       where: {
         stationId,
-      },
-      include: [
-        {
-          model: StatusNotification,
-          where: {
-            evseId,
-            connectorId,
-          },
+        id: {
+          [Op.in]: idsToDelete,
         },
-      ],
+      },
     });
     await this.latestStatusNotification.create(
+      tenantId,
       LatestStatusNotification.build({
+        tenantId,
         stationId,
         statusNotificationId,
       }),
     );
   }
 
-  async getChargingStationsByIds(stationIds: string[]): Promise<ChargingStation[]> {
+  async getChargingStationsByIds(
+    tenantId: number,
+    stationIds: string[],
+  ): Promise<ChargingStation[]> {
     const query = {
       where: {
         id: {
@@ -97,14 +178,19 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
       },
     };
 
-    return this.chargingStation.readAllByQuery(query);
+    return this.chargingStation.readAllByQuery(tenantId, query);
   }
 
-  async createOrUpdateLocationWithChargingStations(location: Partial<Location>): Promise<Location> {
+  async createOrUpdateLocationWithChargingStations(
+    tenantId: number,
+    location: Partial<Location>,
+  ): Promise<Location> {
+    location.tenantId = tenantId;
     let savedLocation;
     if (location.id) {
-      const result = await this.readOrCreateByQuery({
+      const result = await this.readOrCreateByQuery(tenantId, {
         where: {
+          tenantId,
           id: location.id,
         },
         defaults: {
@@ -131,37 +217,61 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
         values.country = location.country ?? undefined;
         values.coordinates = location.coordinates ?? undefined;
 
-        await this.updateByKey({ ...values }, savedLocation.id);
+        await this.updateByKey(tenantId, { ...values }, savedLocation.id);
       }
     } else {
-      savedLocation = await this.create(Location.build({ ...location }));
+      savedLocation = await this.create(tenantId, Location.build({ ...location }));
     }
 
     if (location.chargingPool && location.chargingPool.length > 0) {
       for (const chargingStation of location.chargingPool) {
         chargingStation.locationId = savedLocation.id;
-        await this.createOrUpdateChargingStation(chargingStation);
+        await this.createOrUpdateChargingStation(tenantId, chargingStation);
       }
     }
 
     return savedLocation.reload({ include: ChargingStation });
   }
 
-  async createOrUpdateChargingStation(chargingStation: ChargingStation): Promise<ChargingStation> {
+  async createOrUpdateChargingStation(
+    tenantId: number,
+    chargingStation: ChargingStation,
+  ): Promise<ChargingStation> {
+    chargingStation.tenantId = tenantId;
     if (chargingStation.id) {
-      const [savedChargingStation, chargingStationCreated] = await this.chargingStation.readOrCreateByQuery({
-        where: {
-          id: chargingStation.id,
-        },
-        defaults: {
-          id: chargingStation.id,
-          locationId: chargingStation.locationId,
-        },
-      });
+      const [savedChargingStation, chargingStationCreated] =
+        await this.chargingStation.readOrCreateByQuery(tenantId, {
+          where: {
+            tenantId,
+            id: chargingStation.id,
+          },
+          defaults: {
+            locationId: chargingStation.locationId,
+            chargePointVendor: chargingStation.chargePointVendor,
+            chargePointModel: chargingStation.chargePointModel,
+            chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+            chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+            firmwareVersion: chargingStation.firmwareVersion,
+            iccid: chargingStation.iccid,
+            imsi: chargingStation.imsi,
+            meterType: chargingStation.meterType,
+            meterSerialNumber: chargingStation.meterSerialNumber,
+          },
+        });
       if (!chargingStationCreated) {
         await this.chargingStation.updateByKey(
+          tenantId,
           {
             locationId: chargingStation.locationId,
+            chargePointVendor: chargingStation.chargePointVendor,
+            chargePointModel: chargingStation.chargePointModel,
+            chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+            chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+            firmwareVersion: chargingStation.firmwareVersion,
+            iccid: chargingStation.iccid,
+            imsi: chargingStation.imsi,
+            meterType: chargingStation.meterType,
+            meterSerialNumber: chargingStation.meterSerialNumber,
           },
           savedChargingStation.id,
         );
@@ -169,7 +279,104 @@ export class SequelizeLocationRepository extends SequelizeRepository<Location> i
 
       return savedChargingStation;
     } else {
-      return await this.chargingStation.create(ChargingStation.build({ ...chargingStation }));
+      return await this.chargingStation.create(
+        tenantId,
+        ChargingStation.build({ ...chargingStation }),
+      );
     }
+  }
+
+  async createOrUpdateConnector(
+    tenantId: number,
+    connector: Connector,
+  ): Promise<Connector | undefined> {
+    let result;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
+        tenantId,
+        {
+          where: {
+            tenantId,
+            stationId: connector.stationId,
+            connectorId: connector.connectorId,
+          },
+          defaults: {
+            ...connector,
+          },
+          transaction: sequelizeTransaction,
+        },
+      );
+      if (!connectorCreated) {
+        const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connector, {
+          where: {
+            id: savedConnector.id,
+          },
+          transaction: sequelizeTransaction,
+        });
+        result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
+      } else {
+        result = savedConnector;
+      }
+    });
+    return result;
+  }
+
+  async updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]> {
+    return await this.connector.updateAllByQuery(tenantId, value, query);
+  }
+
+  async readConnectorByStationIdAndOcpp16ConnectorId(
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ): Promise<Connector | undefined> {
+    return (
+      (await Connector.findOne({
+        where: {
+          tenantId,
+          stationId,
+          connectorId: ocpp16ConnectorId,
+        },
+        include: [Evse],
+      })) ?? undefined
+    );
+  }
+
+  async readEvseByStationIdAndOcpp201EvseId(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ): Promise<Evse | undefined> {
+    return (
+      (await Evse.findOne({
+        where: {
+          stationId,
+          evseTypeId: ocpp201EvseId,
+          tenantId,
+        },
+        include: [Connector],
+      })) ?? undefined
+    );
+  }
+
+  async readConnectorByStationIdAndOcpp201EvseType(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+  ): Promise<Connector | undefined> {
+    return (
+      (await Connector.findOne({
+        where: {
+          tenantId,
+          stationId,
+          evseTypeConnectorId: ocpp201EvseType.connectorId,
+        },
+        include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
+      })) ?? undefined
+    );
   }
 }

@@ -1,14 +1,25 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { Namespace } from '@citrineos/base';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
-import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index';
+import type { CertificateDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index.js';
 
 @Table
-export class Certificate extends Model {
-  static readonly MODEL_NAME: string = Namespace.Certificate;
+export class Certificate extends Model implements CertificateDto {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Certificate;
 
   /**
    * Fields
@@ -74,4 +85,31 @@ export class Certificate extends Model {
 
   @Column(DataType.STRING)
   declare signedBy?: string | null; // certificate id
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Certificate) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

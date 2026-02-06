@@ -1,0 +1,20 @@
+{
+  "title": "ResetRequest",
+  "type": "object",
+  "properties": {
+    "type": {
+      "$ref": "#/definitions/ResetRequestType"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type"],
+  "$id": "ResetRequest",
+  "definitions": {
+    "ResetRequestType": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Hard", "Soft"],
+      "tsEnumNames": ["Hard", "Soft"]
+    }
+  }
+}

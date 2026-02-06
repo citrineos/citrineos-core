@@ -1,21 +1,37 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { QuerySchema } from '@citrineos/base';
 
-export const TlsCertificateSchema = QuerySchema(
-  'TlsCertificateSchema',
-  [
-    ['certificateChain', 'string[]'],
-    ['privateKey', 'string'],
-    ['rootCA', 'string'],
-    ['subCAKey', 'string'],
-  ],
-  ['certificateChain', 'privateKey'],
-);
+export const TlsCertificateSchema = QuerySchema('TlsCertificateSchema', [
+  {
+    key: 'certificateChain',
+    type: 'string[]',
+    required: true,
+  },
+  {
+    key: 'privateKey',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'rootCA',
+    type: 'string',
+  },
+  {
+    key: 'subCAKey',
+    type: 'string',
+  },
+]);
 
-export const UpdateTlsCertificateQuerySchema = QuerySchema('UpdateTlsCertificateQuerySchema', [['id', 'string']], ['id']);
+export const UpdateTlsCertificateQuerySchema = QuerySchema('UpdateTlsCertificateQuerySchema', [
+  {
+    key: 'id',
+    type: 'string',
+    required: true,
+  },
+]);
 
 export interface UpdateTlsCertificateQueryString {
   id: string; // websocket server id

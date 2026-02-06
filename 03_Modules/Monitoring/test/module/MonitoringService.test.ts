@@ -1,19 +1,20 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { IVariableMonitoringRepository } from '@citrineos/data';
-import { MonitoringService } from '../../src/module/MonitoringService';
-import {
-  ClearMonitoringResultType,
-  ClearMonitoringStatusEnumType,
-} from '@citrineos/base';
-import { aClearMonitoringResult } from '../providers/Monitoring';
+import { MonitoringService } from '../../src/module/MonitoringService.js';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { aClearMonitoringResult } from '../providers/Monitoring.js';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('MonitoringService', () => {
-  let mockVariableMonitoringRepository: jest.Mocked<IVariableMonitoringRepository>;
+  let mockVariableMonitoringRepository: Mocked<IVariableMonitoringRepository>;
   let monitoringService: MonitoringService;
 
   beforeEach(() => {
     mockVariableMonitoringRepository = {
-      rejectVariableMonitoringByIdAndStationId: jest.fn(),
-    } as unknown as jest.Mocked<IVariableMonitoringRepository>;
+      rejectVariableMonitoringByIdAndStationId: vi.fn(),
+    } as unknown as Mocked<IVariableMonitoringRepository>;
 
     monitoringService = new MonitoringService(mockVariableMonitoringRepository);
   });
@@ -21,16 +22,17 @@ describe('MonitoringService', () => {
   describe('processClearMonitoringResult', () => {
     it('should reject variable monitoring because clear monitoring result status is either Accepted or NotFound', async () => {
       const monitoringResults: [
-        ClearMonitoringResultType,
-        ...ClearMonitoringResultType[],
+        OCPP2_0_1.ClearMonitoringResultType,
+        ...OCPP2_0_1.ClearMonitoringResultType[],
       ] = [
         aClearMonitoringResult(),
         aClearMonitoringResult(
-          (cmr) => (cmr.status = ClearMonitoringStatusEnumType.NotFound),
+          (cmr) => (cmr.status = OCPP2_0_1.ClearMonitoringStatusEnumType.NotFound),
         ),
       ];
 
       await monitoringService.processClearMonitoringResult(
+        DEFAULT_TENANT_ID,
         'stationId',
         monitoringResults,
       );
@@ -42,15 +44,16 @@ describe('MonitoringService', () => {
 
     it('should not reject variable monitoring because  clear monitoring result status is Rejected (so neither Accepted nor NotFound)', async () => {
       const monitoringResults: [
-        ClearMonitoringResultType,
-        ...ClearMonitoringResultType[],
+        OCPP2_0_1.ClearMonitoringResultType,
+        ...OCPP2_0_1.ClearMonitoringResultType[],
       ] = [
         aClearMonitoringResult(
-          (cmr) => (cmr.status = ClearMonitoringStatusEnumType.Rejected),
+          (cmr) => (cmr.status = OCPP2_0_1.ClearMonitoringStatusEnumType.Rejected),
         ),
       ];
 
       await monitoringService.processClearMonitoringResult(
+        DEFAULT_TENANT_ID,
         'stationId',
         monitoringResults,
       );

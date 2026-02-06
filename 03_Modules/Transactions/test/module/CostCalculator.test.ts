@@ -1,23 +1,27 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { faker } from '@faker-js/faker';
-import { jest } from '@jest/globals';
 import { ITariffRepository, Tariff } from '@citrineos/data';
-import { CostCalculator } from '../../src/module/CostCalculator';
-import { TransactionService } from '../../src/module/TransactionService';
-import { aTariff } from '../providers/Tariff';
+import { CostCalculator } from '../../src/module/CostCalculator.js';
+import { TransactionService } from '../../src/module/TransactionService.js';
+import { aTariff } from '../providers/Tariff.js';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('CostCalculator', () => {
-  let tariffRepository: jest.Mocked<ITariffRepository>;
-  let transactionService: jest.Mocked<TransactionService>;
+  let tariffRepository: Mocked<ITariffRepository>;
+  let transactionService: Mocked<TransactionService>;
   let costCalculator: CostCalculator;
 
   beforeEach(() => {
     tariffRepository = {
-      findByStationId: jest.fn(),
-    } as unknown as jest.Mocked<ITariffRepository>;
+      findByStationId: vi.fn(),
+    } as unknown as Mocked<ITariffRepository>;
 
     transactionService = {
-      recalculateTotalKwh: jest.fn(),
-    } as unknown as jest.Mocked<TransactionService>;
+      recalculateTotalKwh: vi.fn(),
+    } as unknown as Mocked<TransactionService>;
 
     costCalculator = new CostCalculator(tariffRepository, transactionService);
   });
@@ -35,19 +39,17 @@ describe('CostCalculator', () => {
       { tariff: aTariff({ pricePerKwh: 0.25 }), kwh: 20, expectedCost: 5.0 },
       { tariff: aTariff({ pricePerKwh: 0.47 }), kwh: 20, expectedCost: 9.4 },
       { tariff: aTariff({ pricePerKwh: 0.61 }), kwh: 20, expectedCost: 12.2 },
-    ])(
-      'should calculate cost using provided kWh',
-      async ({ tariff, kwh, expectedCost }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(expectedCost);
-      },
-    );
+    ])('should calculate cost using provided kWh', async ({ tariff, kwh, expectedCost }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
+          tariff.stationId,
+          faker.number.int(),
+          kwh,
+        ),
+      ).toBe(expectedCost);
+    });
 
     it.each([
       { tariff: aTariff({ pricePerKwh: 0.09 }), kwh: 20, expectedCost: 1.8 },
@@ -65,11 +67,13 @@ describe('CostCalculator', () => {
 
         expect(
           await costCalculator.calculateTotalCost(
+            DEFAULT_TENANT_ID,
             tariff.stationId,
             transactionDbId,
           ),
         ).toBe(expectedCost);
         expect(transactionService.recalculateTotalKwh).toHaveBeenCalledWith(
+          DEFAULT_TENANT_ID,
           transactionDbId,
         );
       },
@@ -106,24 +110,23 @@ describe('CostCalculator', () => {
         kwh: 20.99,
         expectedCost: 12.8,
       },
-    ])(
-      'should floor cost to 2 decimal places',
-      async ({ tariff, kwh, expectedCost }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(expectedCost);
-      },
-    );
+    ])('should floor cost to 2 decimal places', async ({ tariff, kwh, expectedCost }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
+          tariff.stationId,
+          faker.number.int(),
+          kwh,
+        ),
+      ).toBe(expectedCost);
+    });
 
     it('should return 0 when tariff not found', async () => {
       const anyStationId = faker.string.uuid();
       expect(
         await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
           anyStationId,
           faker.number.int(),
           20.99,
@@ -135,6 +138,7 @@ describe('CostCalculator', () => {
       const tariff = givenTariff(aTariff({ pricePerKwh: 0.0 }));
       expect(
         await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
           tariff.stationId,
           faker.number.int(),
           20.99,
@@ -146,6 +150,7 @@ describe('CostCalculator', () => {
       const tariff = givenTariff(aTariff({ pricePerKwh: 0.61 }));
       expect(
         await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
           tariff.stationId,
           faker.number.int(),
           0,
@@ -157,19 +162,17 @@ describe('CostCalculator', () => {
       { tariff: aTariff({ pricePerKwh: 0.01 }), kwh: 0.99 },
       { tariff: aTariff({ pricePerKwh: 0.2 }), kwh: 0.049 },
       { tariff: aTariff({ pricePerKwh: 0.23 }), kwh: 0.02 },
-    ])(
-      'should return 0 when calculated cost is less than 0.01',
-      async ({ tariff, kwh }) => {
-        givenTariff(tariff);
-        expect(
-          await costCalculator.calculateTotalCost(
-            tariff.stationId,
-            faker.number.int(),
-            kwh,
-          ),
-        ).toBe(0);
-      },
-    );
+    ])('should return 0 when calculated cost is less than 0.01', async ({ tariff, kwh }) => {
+      givenTariff(tariff);
+      expect(
+        await costCalculator.calculateTotalCost(
+          DEFAULT_TENANT_ID,
+          tariff.stationId,
+          faker.number.int(),
+          kwh,
+        ),
+      ).toBe(0);
+    });
   });
 
   function givenTariff(tariff: Tariff) {

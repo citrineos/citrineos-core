@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: ChargingStations
+  schema: public
+object_relationships:
+  - name: Location
+    using:
+      foreign_key_constraint_on: locationId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: ChargingStationNetworkProfiles
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: ChargingStationNetworkProfiles
+          schema: public
+  - name: ChargingStationSequences
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: ChargingStationSequences
+          schema: public
+  - name: Connectors
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: Connectors
+          schema: public
+  - name: Evses
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: Evses
+          schema: public
+  - name: LatestStatusNotifications
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: LatestStatusNotifications
+          schema: public
+  - name: StatusNotifications
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: StatusNotifications
+          schema: public
+  - name: Transactions
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: Transactions
+          schema: public
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: VariableAttributes
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - isOnline
+        - chargeBoxSerialNumber
+        - chargePointModel
+        - chargePointSerialNumber
+        - chargePointVendor
+        - firmwareVersion
+        - iccid
+        - id
+        - imsi
+        - meterSerialNumber
+        - meterType
+        - protocol
+        - locationId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

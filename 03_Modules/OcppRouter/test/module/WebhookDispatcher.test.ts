@@ -1,16 +1,15 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { faker } from '@faker-js/faker';
-import { jest } from '@jest/globals';
-import {
-  ISubscriptionRepository,
-  OCPPLog,
-  Subscription,
-} from '@citrineos/data';
+import { ISubscriptionRepository, OCPPMessage, Subscription } from '@citrineos/data';
 import { WebhookDispatcher } from '../../src';
-import { MessageOrigin } from '@citrineos/base';
-import { aSubscription } from '../providers/SubscriptionProvider';
+import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin } from '@citrineos/base';
+import { aSubscription } from '../providers/SubscriptionProvider.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('WebhookDispatcher', () => {
-  const fetch = jest.fn(() =>
+  const fetch = vi.fn(() =>
     Promise.resolve({
       ok: true,
       status: 200,
@@ -19,31 +18,37 @@ describe('WebhookDispatcher', () => {
   );
   global.fetch = fetch;
 
-  let subscriptionRepository: jest.Mocked<ISubscriptionRepository>;
+  // Mock transaction object
+  const mockTransaction = {
+    commit: vi.fn(),
+    rollback: vi.fn(),
+  };
+  let subscriptionRepository: Mocked<ISubscriptionRepository>;
   let webhookDispatcher: WebhookDispatcher;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     subscriptionRepository = {
-      readAllByStationId: jest.fn(),
-    } as unknown as jest.Mocked<ISubscriptionRepository>;
+      readAllByStationId: vi.fn(),
+    } as unknown as Mocked<ISubscriptionRepository>;
+
+    Object.defineProperty(OCPPMessage, 'sequelize', {
+      configurable: true, // Allow further modifications
+      value: {
+        transaction: vi.fn(() => mockTransaction),
+      },
+    });
+    OCPPMessage.findOne = vi.fn(() => Promise.resolve(null));
+    OCPPMessage.create = vi.fn(() => Promise.resolve({} as any));
 
     webhookDispatcher = new WebhookDispatcher(subscriptionRepository);
-
-    // Force the mock to be recognized as the same type as OCPPLog.create
-    OCPPLog.create = jest.fn() as unknown as typeof OCPPLog.create;
-
-    // Now you can give the mock an implementation safely
-    (OCPPLog.create as jest.Mock).mockImplementation((values, options) => {
-      return Promise.resolve({} as OCPPLog);
-    });
   });
 
   afterEach(() => {
     fetch.mockClear();
     subscriptionRepository.readAllByStationId.mockReset();
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   describe('register', () => {
@@ -51,9 +56,10 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription();
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.stationId);
+      await webhookDispatcher.register(subscription.tenantId, subscription.stationId);
 
       expect(subscriptionRepository.readAllByStationId).toBeCalledWith(
+        subscription.tenantId,
         subscription.stationId,
       );
     });
@@ -62,7 +68,7 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription({ onConnect: true });
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.stationId);
+      await webhookDispatcher.register(subscription.tenantId, subscription.stationId);
 
       expect(fetch).toBeCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -81,7 +87,7 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription({ onConnect: false });
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.stationId);
+      await webhookDispatcher.register(subscription.tenantId, subscription.stationId);
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -93,7 +99,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.deregister(subscription.stationId);
+      await webhookDispatcher.deregister(subscription.tenantId, subscription.stationId);
 
       expect(fetch).toBeCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -113,7 +119,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.stationId);
 
-      await webhookDispatcher.deregister(subscription.stationId);
+      await webhookDispatcher.deregister(subscription.tenantId, subscription.stationId);
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -127,18 +133,24 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
-      await webhookDispatcher.deregister(subscription.stationId);
+      await webhookDispatcher.deregister(subscription.tenantId, subscription.stationId);
 
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -151,8 +163,11 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -167,9 +182,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Accepted reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -182,6 +204,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -195,9 +224,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = 'Rejected reservation';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -210,6 +246,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStation,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'cs',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -223,8 +266,11 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageReceived(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Rejected reservation',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -238,8 +284,11 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -254,9 +303,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -269,6 +325,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -282,9 +345,16 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
       const message = '"totalCost": 12.54';
 
+      const timestamp = 'Any timestamp';
+      const protocol = 'ocpp2.0.1';
+      const correlationId = '123';
+      const action = 'BootNotification';
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         message,
+        timestamp,
+        protocol,
+        [2, correlationId, action, {}],
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -297,6 +367,13 @@ describe('WebhookDispatcher', () => {
           event: 'message',
           origin: MessageOrigin.ChargingStationManagementSystem,
           message: message,
+          info: {
+            correlationId: correlationId,
+            origin: 'csms',
+            timestamp: timestamp,
+            protocol: protocol,
+            action: action,
+          },
         }),
       });
     });
@@ -310,8 +387,11 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         '"partialCost": 10.54',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -328,8 +408,11 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -343,32 +426,34 @@ describe('WebhookDispatcher', () => {
 
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
 
       subscriptionRepository.readAllByStationId.mockClear();
-      await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      await vi.runOnlyPendingTimersAsync();
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
+        subscription.tenantId,
         subscription.stationId,
       );
 
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
-        subscription.stationId,
+        createIdentifier(subscription.tenantId, subscription.stationId),
         'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        newSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(newSubscription.url, expect.anything());
     });
 
     it('should periodically remove deleted subscriptions for registered stations', async () => {
@@ -386,44 +471,52 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription, anotherSubscription);
       await givenRegisteredStations(stationId);
 
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        createIdentifier(subscription.tenantId, subscription.stationId),
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Simulate 'anotherSubscription' was deleted
       givenSubscriptions(subscription);
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        createIdentifier(subscription.tenantId, subscription.stationId),
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
 
       // Run pending timers to trigger subscription refresh
       subscriptionRepository.readAllByStationId.mockClear();
-      await jest.runOnlyPendingTimersAsync();
-      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(
-        1,
-      );
+      await vi.runOnlyPendingTimersAsync();
+      expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.readAllByStationId).toHaveBeenCalledWith(
+        subscription.tenantId,
         subscription.stationId,
       );
 
       fetch.mockClear();
-      await webhookDispatcher.dispatchMessageSent(stationId, 'Any message');
+      await webhookDispatcher.dispatchMessageSent(
+        createIdentifier(subscription.tenantId, subscription.stationId),
+        'Any message',
+        'Any timestamp',
+        'ocpp2.0.1',
+        [2, '123', 'BootNotification', {}],
+      );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
-      expect(fetch).not.toHaveBeenCalledWith(
-        anotherSubscription.url,
-        expect.anything(),
-      );
+      expect(fetch).not.toHaveBeenCalledWith(anotherSubscription.url, expect.anything());
     });
   });
 
@@ -433,7 +526,7 @@ describe('WebhookDispatcher', () => {
 
   async function givenRegisteredStations(...stationIds: string[]) {
     for (const stationId of stationIds) {
-      await webhookDispatcher.register(stationId);
+      await webhookDispatcher.register(DEFAULT_TENANT_ID, stationId);
     }
     fetch.mockClear();
   }

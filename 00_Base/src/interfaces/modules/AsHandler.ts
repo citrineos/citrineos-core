@@ -1,10 +1,10 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { CallAction } from '../../ocpp/rpc/message';
-import { IHandlerDefinition } from './HandlerDefinition';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import { OCPPVersion } from '../../ocpp/rpc/message.js';
+import type { IHandlerDefinition } from './HandlerDefinition.js';
 
 /**
  * Decorators for module components.
@@ -18,12 +18,8 @@ export const AS_HANDLER_METADATA = 'AS_HANDLER_METADATA';
  * @param {CallAction} action - the call action parameter
  * @return {PropertyDescriptor} - the property descriptor
  */
-export const AsHandler = function (action: CallAction) {
-  return (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): PropertyDescriptor => {
+export const AsHandler = function (protocol: OCPPVersion, action: CallAction) {
+  return (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
     if (!Reflect.hasMetadata(AS_HANDLER_METADATA, target.constructor)) {
       Reflect.defineMetadata(AS_HANDLER_METADATA, [], target.constructor);
     }
@@ -33,6 +29,7 @@ export const AsHandler = function (action: CallAction) {
     ) as Array<IHandlerDefinition>;
     handlers.push({
       action: action,
+      protocol: protocol,
       methodName: propertyKey,
       method: descriptor.value,
     });

@@ -1,13 +1,25 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-import { ComponentType, type CustomDataType, type EventDataType, EventNotificationEnumType, EventTriggerEnumType, Namespace, VariableType } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Index, Model, Table } from 'sequelize-typescript';
-import { Component, Variable } from '../DeviceModel';
+// SPDX-License-Identifier: Apache-2.0
+import type { ComponentDto, EventDataDto, VariableDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Component, Variable } from '../DeviceModel/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class EventData extends Model implements EventDataType {
-  static readonly MODEL_NAME: string = Namespace.EventDataType;
+export class EventData extends Model implements OCPP2_0_1.EventDataType, EventDataDto {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.EventDataType;
 
   /**
    * Fields
@@ -26,7 +38,7 @@ export class EventData extends Model implements EventDataType {
   declare eventId: number;
 
   @Column(DataType.STRING)
-  declare trigger: EventTriggerEnumType;
+  declare trigger: OCPP2_0_1.EventTriggerEnumType;
 
   @Column(DataType.INTEGER)
   declare cause?: number | null;
@@ -59,13 +71,13 @@ export class EventData extends Model implements EventDataType {
   declare variableMonitoringId?: number | null;
 
   @Column(DataType.STRING)
-  declare eventNotificationType: EventNotificationEnumType;
+  declare eventNotificationType: OCPP2_0_1.EventNotificationEnumType;
 
   /**
    * Relations
    */
   @BelongsTo(() => Variable)
-  declare variable: VariableType;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -74,7 +86,7 @@ export class EventData extends Model implements EventDataType {
   declare variableId?: number;
 
   @BelongsTo(() => Component)
-  declare component: ComponentType;
+  declare component: ComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -82,5 +94,32 @@ export class EventData extends Model implements EventDataType {
   })
   declare componentId?: number;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: EventData) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

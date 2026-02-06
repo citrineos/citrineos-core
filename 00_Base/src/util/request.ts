@@ -1,28 +1,20 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import {
-  CallAction,
-  EventGroup,
-  IMessage,
-  MessageOrigin,
-  MessageState,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-} from '..';
+import type { CallAction, IMessage, OcppRequest, OcppResponse, OCPPVersionType } from '../index.js';
+import { EventGroup, MessageOrigin, MessageState, OcppError } from '../index.js';
 
 export class RequestBuilder {
   static buildCall(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppRequest,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
   ): IMessage<OcppRequest> {
     return {
@@ -36,6 +28,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Request,
+      protocol,
       payload,
     };
   }
@@ -43,11 +36,12 @@ export class RequestBuilder {
   static buildCallResult(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppResponse,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
   ): IMessage<OcppResponse> {
     return {
@@ -61,6 +55,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }
@@ -68,11 +63,12 @@ export class RequestBuilder {
   static buildCallError(
     stationId: string,
     correlationId: string,
-    tenantId: string,
+    tenantId: number,
     action: CallAction,
     payload: OcppError,
     eventGroup: EventGroup,
     origin: MessageOrigin,
+    protocol: OCPPVersionType,
     timestamp: Date = new Date(),
   ): IMessage<OcppError> {
     return {
@@ -86,6 +82,7 @@ export class RequestBuilder {
         timestamp: timestamp.toISOString(),
       },
       state: MessageState.Response,
+      protocol,
       payload,
     };
   }

@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: ChargingProfiles
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: Transaction
+    using:
+      foreign_key_constraint_on: transactionDatabaseId
+array_relationships:
+  - name: ChargingSchedules
+    using:
+      foreign_key_constraint_on:
+        column: chargingProfileDatabaseId
+        table:
+          name: ChargingSchedules
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - isActive
+        - chargingLimitSource
+        - chargingProfileKind
+        - chargingProfilePurpose
+        - recurrencyKind
+        - stationId
+        - databaseId
+        - evseId
+        - id
+        - stackLevel
+        - tenantId
+        - transactionDatabaseId
+        - createdAt
+        - updatedAt
+        - validFrom
+        - validTo
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

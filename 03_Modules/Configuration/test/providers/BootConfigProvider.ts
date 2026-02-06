@@ -1,18 +1,16 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { Boot } from '@citrineos/data';
-import {
-  AttributeEnumType,
-  RegistrationStatusEnumType,
-  type SetVariableResultType,
-  SetVariableStatusEnumType,
-} from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 
 export const aValidSetVariableResult = (
-  updateFunction?: UpdateFunction<SetVariableResultType>,
-): SetVariableResultType => {
-  const item: SetVariableResultType = {
-    attributeStatus: SetVariableStatusEnumType.Accepted,
+  updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>,
+): OCPP2_0_1.SetVariableResultType => {
+  const item: OCPP2_0_1.SetVariableResultType = {
+    attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
     component: {
       name: faker.lorem.word(),
       instance: faker.string.uuid(),
@@ -24,7 +22,7 @@ export const aValidSetVariableResult = (
     customData: {
       vendorId: faker.string.uuid(),
     },
-    attributeType: AttributeEnumType.Actual,
+    attributeType: OCPP2_0_1.AttributeEnumType.Actual,
     attributeStatusInfo: {
       reasonCode: faker.lorem.word(),
       additionalInfo: faker.lorem.sentence(),
@@ -34,15 +32,13 @@ export const aValidSetVariableResult = (
   return applyUpdateFunction(item, updateFunction);
 };
 
-export const aValidBootConfig = (
-  updateFunction?: UpdateFunction<Boot>,
-): Boot => {
+export const aValidBootConfig = (updateFunction?: UpdateFunction<Boot>): Boot => {
   const item: Boot = {
     id: faker.string.uuid(),
     lastBootTime: faker.date.recent().toISOString(),
     heartbeatInterval: faker.number.int({ min: 30, max: 3600 }),
     bootRetryInterval: faker.number.int({ min: 30, max: 3600 }),
-    status: RegistrationStatusEnumType.Pending,
+    status: OCPP2_0_1.RegistrationStatusEnumType.Pending,
     getBaseReportOnPending: false,
     variablesRejectedOnLastBoot: [aValidSetVariableResult()],
     bootWithRejectedVariables: faker.datatype.boolean(),

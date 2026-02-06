@@ -1,10 +1,17 @@
+![CitrineOS Logo](logo_white.png#gh-dark-mode-only)
+![CitrineOS Logo](logo_black.png#gh-light-mode-only)
+
+<div align="center">
+<img src="OCPP_201_Logo_core_and_advanced_security.png" alt="CitrineOS Certification Logo" width="200" height="100" />
+</div>
+
 # Welcome to CitrineOS
 
 CitrineOS is an open-source project aimed at providing a modular server runtime for managing Electric Vehicle (EV)
 charging infrastructure. This README will guide you through the process of installing and running CitrineOS.
 
 This is the main part of CitrineOS containing the actual charging station management logic, OCPP message routing and all
-modules.
+await (await sequelize).sync(); // Use { force: true } for dropping and recreating tables
 
 All other documentation and the issue tracking can be found in our main repository
 here: <https://github.com/citrineos/citrineos>.
@@ -22,6 +29,9 @@ here: <https://github.com/citrineos/citrineos>.
 - [Linting and Prettier](#linting-and-prettier)
 - [Information on Docker setup](#information-on-docker-setup)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
+- [Validating custom OCPP DataTransfer messages](#data-transfer-messages)
+- [Hasura Metadata](#hasura-metadata)
+- [Database Sync vs. Migration](#database-sync-vs-migration)
 - [Contributing](#contributing)
 - [Licensing](#licensing)
 - [Support and contact](#support-and-contact)
@@ -41,7 +51,7 @@ The system features:
   - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported brokers are `RabbitMQ` and Google Cloud `PubSub`
+  - Currently supported brokers are `RabbitMQ` and `Kafka`
   - Currently supported caches are `In Memory` and `Redis`
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
@@ -50,7 +60,7 @@ For more information on the project go to [citrineos.github.io](https://citrineo
 
 Before you begin, make sure you have the following installed on your system:
 
-- Node.js (v18 or higher): [Download Node.js](https://nodejs.org/)
+- Node.js (v22.11 or higher): [Download Node.js](https://nodejs.org/)
 - npm (Node Package Manager): [Download npm](https://www.npmjs.com/get-npm)
 - Docker (Optional). Version >= 20.10: [Download Docker](https://docs.docker.com/get-docker/)
 
@@ -81,6 +91,37 @@ Before you begin, make sure you have the following installed on your system:
    port for the underlying NodeJS process. A variety of tools can be utilized to establish a debugger connection
    with the exposed localhost 9229 port which is forwarded to the NodeJS service running within docker. The IntelliJ
    `Attach Debugger` Run Configuration was made to attach to a debugging session.
+
+### Database Sync vs. Migration
+
+By default, CitrineOS uses migrations to manage database schema changes. This is the recommended approach for production environments.
+
+For development purposes, you can also use `sync` to automatically synchronize your database schema with the models. There are two sync scripts available:
+
+- `npm run sync-db`: This will synchronize the database schema with the models without altering existing tables. This is useful for development when you want to quickly update the schema without losing data.
+- `npm run force-sync-db`: This will drop all tables and recreate them based on the models. This is useful when you want to start with a fresh database.
+
+**Disclaimer:** Using `sync` in a production environment is not recommended as it can lead to data loss. Always use migrations for production deployments.
+
+### Runtime configuration
+
+Values from configuration files (`local.ts`, `docker.ts`, `swarm.docker.ts`) may be overridden at runtime via environment variables. Environment variables prefixed with `citrineos_` and hierarchically separated by an underscore will result in overriding said value. For example, the amqp URL:
+
+```json
+util: {
+    (...)
+    messageBroker: {
+        amqp: {
+            url: 'amqp://guest:guest@localhost:5672'
+            (...)
+        }
+        (...)
+    }
+    (...)
+}
+```
+
+may be overridden by setting the environment variable `CITRINEOS_util_messageBroker_amqp_url` (case-insensitive).
 
 ### Starting the Server without Docker
 
@@ -165,6 +206,31 @@ Furthermore, [Visual Studio
 Code](https://code.visualstudio.com/docs/setup/linux) might be handy as
 a common integrated development environment.
 
+### ARM64 (Apple Silicon) Compatibility
+
+If you're running on Apple Silicon Macs (ARM64 architecture), use the ARM64-compatible docker-compose file:
+
+```shell
+cd Server
+docker-compose -f docker-compose.arm64.yml up -d
+```
+
+The `docker-compose.arm64.yml` file includes platform specifications (`platform: linux/amd64`) and compatible image versions for:
+
+- RabbitMQ (uses version 3.12-management for better emulation compatibility)
+- PostGIS/PostgreSQL
+- MinIO and MinIO client
+- Hasura GraphQL Engine
+
+**Note:** The ARM64 version runs these services through x86_64 emulation, which may have slightly reduced performance but provides full compatibility.
+
+For regular x86_64 systems, continue using the standard `docker-compose.yml`:
+
+```shell
+cd Server
+docker-compose up -d
+```
+
 Once Docker is running, the following services should be available:
 
 - **CitrineOS** (service name: citrineos) with ports
@@ -176,8 +242,8 @@ Once Docker is running, the following services should be available:
   - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
   - `5432`: sql tcp connection
-- **Directus** (service name: directus) on port 8055 with endpoints
-  - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
+- **Localstack** (service name: localstack) on port 4566 for mocking aws services
+  - `:4566`: unified AWS service endpoint
 
 These three services are defined in `docker-compose.yml` and they
 live inside the docker network `docker_default` with their respective
@@ -186,6 +252,57 @@ ports. By default these ports are directly accessible by using
 
 So, if you want to access the **amqp-broker** default management port via your
 localhost, you need to access `localhost:15672`.
+
+# Bootstrap Configuration Environment Variables
+
+All environment variables use the `CITRINEOS_` prefix.
+Additional prefixes can be added by passing the --env-prefix argument to nodemon (see "start:instance1" in Server/package.json)
+Here's the complete list of environment variables that are used in bootstrapping the application (this is not the full system configuration):
+
+## Basic Bootstrap Configuration
+
+- `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
+- `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `gcp`
+
+## Database Configuration
+
+Database connection details (moved from system config to bootstrap config for better security and 12-factor compliance):
+
+- `BOOTSTRAP_CITRINEOS_DATABASE_HOST` - Database host (default: `localhost`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PORT` - Database port (default: `5432`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_NAME` - Database name (default: `citrine`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_DIALECT` - Database dialect (default: `postgres`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_USERNAME` - Database username (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD` - Database password (optional)
+- `BOOTSTRAP_CITRINEOS_DATABASE_SYNC` - Enable database sync (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_ALTER` - Enable database alter (via sequelize) (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_MAX_RETRIES` - Maximum connection retries (default: `3`)
+- `BOOTSTRAP_CITRINEOS_DATABASE_RETRY_DELAY` - Retry delay in milliseconds (default: `1000`)
+
+## Local File Access
+
+When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local`:
+
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH` - Default file path (default: `/data`)
+
+## S3 File Access
+
+When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=s3`:
+
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_REGION` - AWS region (optional)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ENDPOINT` - S3 endpoint URL (for MinIO or custom S3)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME` - S3 bucket name (default: `citrineos-s3-bucket`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE` - Force path style (true/false, default: `true`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
+
+## GCP File Access
+
+When `CITRINEOS_FILE_ACCESS_TYPE=gcp`:
+
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_PROJECTID` - Project ID
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_CREDENTIALS` - GCP Credentials object (Optional, if not set will use Application Default Credentials such as GOOGLE_APPLICATION_CREDENTIALS environment variable or gcloud CLI credentials)
 
 ## Generating OCPP Interfaces
 
@@ -197,7 +314,70 @@ It can be rerun:
 npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
 ```
 
-This will replace all the files in `00_Base/src/ocpp/model/`,
+This will replace all the files in `00_Base/src/ocpp/model/`.
+As of release 1.8.0, the schema files used by CitrineOS are not the raw output of this function; we have added field-level validation that the official schemas lack.
+
+## Data Transfer Messages
+
+It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by all OCPP versions.
+In the Server/index.ts code, there is a function ajvInstance() that creates the AJV instance. Here, you could register DataTransfer schemas:
+
+```
+import { MyDataTransferRequestSchema } from './path'
+...
+ajvInstance.compile(MyDataTransferRequestSchema);
+```
+
+Note: The schema's `$id` field must follow this format:
+
+```
+${protocol}-${dataTransferRequest.vendorId}${dataTransferRequest.messageId ? `-${dataTransferRequest.messageId}` : ''}
+```
+
+'Protocol' is the OCPP websocket subprotocol, i.e. "ocpp1.6", "ocpp2.0.1", or so on.
+
+CitrineOS's validation logic assumes that the data field is a string field with JSON structure, and uses JSON.parse before validation. Other approaches to custom DataTransfer message types are not supported.
+
+## Hasura Metadata
+
+In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata already exported into the `hasura-metadata` folder.
+Running the Docker container will automatically import this metadata and track all tables and relationships.
+
+Unfortunately, Hasura doesn't currently support importing metadata from a JSON (which is the format if you export your metadata from the Hasura UI or API).
+Refer to this issue for more information: https://github.com/hasura/graphql-engine/issues/8423#issuecomment-1115996153.
+
+Therefore, you must use the Hasura CLI to re-export your metadata, should something change with it. As explained in the Hasura docs https://hasura.io/docs/2.0/migrations-metadata-seeds/auto-apply-migrations/#auto-apply-metadata,
+Hasura provides an image called `hasura/graphql-engine:<version>.cli-migrations-v3` that will process and import the metadata first before starting the server and
+runs the Hasura CLI internally. This is the image CitrineOS normally uses in order to automatically load accurate metadata. However, if you want to capture the current state of your database, you should use a normal version tag (such as `v2.40.3` instead of `v2.40.3.cli-migrations-v3`). Then proceed to the hasura console at `localhost:8090`, go to the data tab, use the sidebar to navigate to the database schema at default>public, and track all of the tables, relationships, and functions you need. Then proceed with the below instructions.
+
+You can follow these steps to re-export your metadata via the Hasura CLI in the `graphql-engine` container:
+
+- (if the hasura cli isn't installed):
+
+```
+curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+```
+
+- (If not yet initialized) Initialize the Hasura project in the `graphql-engine` container (you can do this via the Docker Desktop `exec` view):
+
+```
+hasura-cli init
+OR
+hasura init
+
+enter any name you wish for the project (i.e. citrine)
+```
+
+- Export the metadata by executing this command in `graphql-engine` container:
+
+```
+hasura-cli metadata export
+OR
+hasura metadata export
+```
+
+- Find the exported files in the `graphql-engine` container's files in the metadata filepath `<name of project i.e. citrine>/metadata` and pull that metadata backup onto your local machine
+- Copy the contents of the copied `metadata` folder into the `hasura-metadata` folder in this repository
 
 ## Contributing
 

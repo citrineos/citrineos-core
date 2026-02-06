@@ -1,20 +1,17 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { VariableAttribute, VariableStatus } from '@citrineos/data';
 import { faker } from '@faker-js/faker';
-import {
-  AttributeEnumType,
-  DataEnumType,
-  MutabilityEnumType,
-} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, IVariableAttributeDto, OCPP2_0_1 } from '@citrineos/base';
 
-export function aVariableAttribute(
-  override?: Partial<VariableAttribute>,
-): VariableAttribute {
+export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
     stationId: faker.string.uuid(),
-    type: AttributeEnumType.Actual,
-    dataType: DataEnumType.string,
+    type: OCPP2_0_1.AttributeEnumType.Actual,
+    dataType: OCPP2_0_1.DataEnumType.string,
     value: faker.string.alpha(),
-    mutability: MutabilityEnumType.ReadWrite,
+    mutability: OCPP2_0_1.MutabilityEnumType.ReadWrite,
     persistent: true,
     constant: false,
     generatedAt: faker.date.recent().toISOString(),
@@ -27,12 +24,11 @@ export function aVariableAttribute(
     },
     variableId: faker.number.int({ min: 1, max: 100_000 }),
     ...override,
-  } as VariableAttribute;
+  } as IVariableAttributeDto;
 
   variableAttribute.statuses =
     override?.statuses?.map(
-      (status) =>
-        ({ ...status, variable: variableAttribute }) as VariableStatus,
+      (status) => ({ ...status, variable: variableAttribute }) as VariableStatus,
     ) ??
     ([
       {
@@ -42,7 +38,7 @@ export function aVariableAttribute(
       },
     ] as VariableStatus[]);
 
-  return variableAttribute;
+  return variableAttribute as VariableAttribute;
 }
 
 export function aBasicAuthPasswordVariable(
@@ -50,16 +46,18 @@ export function aBasicAuthPasswordVariable(
 ): VariableAttribute {
   return aVariableAttribute({
     ...override,
-    dataType: DataEnumType.passwordString,
-    mutability: MutabilityEnumType.WriteOnly,
+    dataType: OCPP2_0_1.DataEnumType.passwordString,
+    mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
     component: {
+      tenantId: DEFAULT_TENANT_ID,
       ...override?.component,
       name: 'SecurityCtrlr',
     },
     variable: {
+      tenantId: DEFAULT_TENANT_ID,
       ...override?.variable,
       name: 'BasicAuthPassword',
     },
-    type: AttributeEnumType.Actual,
+    type: OCPP2_0_1.AttributeEnumType.Actual,
   });
 }

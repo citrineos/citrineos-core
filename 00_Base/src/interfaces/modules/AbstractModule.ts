@@ -1,27 +1,29 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import 'reflect-metadata';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { AS_HANDLER_METADATA, IHandlerDefinition, IModule } from '.';
-import { OcppRequest, OcppResponse } from '../..';
-import { SystemConfig } from '../../config/types';
-import { CallAction, ErrorCode, OcppError } from '../../ocpp/rpc/message';
-import { RequestBuilder } from '../../util/request';
-import { CacheNamespace, ICache } from '../cache/cache';
-import {
-  EventGroup,
+import type { IHandlerDefinition, IModule } from './index.js';
+import { AS_HANDLER_METADATA } from './index.js';
+import type { OcppRequest, OcppResponse } from '../../index.js';
+import type { SystemConfig } from '../../config/types.js';
+import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import { ErrorCode, OcppError } from '../../ocpp/rpc/message.js';
+import { RequestBuilder } from '../../util/request.js';
+import type { ICache } from '../cache/cache.js';
+import type { IWebsocketConnection } from '../cache/types.js';
+import { CacheNamespace, createIdentifier } from '../cache/types.js';
+import type {
   HandlerProperties,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-  MessageState,
-} from '../messages';
+} from '../messages/index.js';
+import { EventGroup, MessageOrigin, MessageState } from '../messages/index.js';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';
@@ -33,6 +35,10 @@ export abstract class AbstractModule implements IModule {
   protected readonly _eventGroup: EventGroup;
   protected readonly _logger: Logger<ILogObj>;
 
+  protected _requests: CallAction[] = [];
+  protected _responses: CallAction[] = [];
+  private startTime = Date.now();
+
   constructor(
     config: SystemConfig,
     cache: ICache,
@@ -41,13 +47,13 @@ export abstract class AbstractModule implements IModule {
     eventGroup: EventGroup,
     logger?: Logger<ILogObj>,
   ) {
+    this._logger = this._initLogger(logger);
+    this._logger.info('Initializing...');
     this._config = config;
     this._handler = handler;
     this._sender = sender;
     this._eventGroup = eventGroup;
     this._cache = cache;
-
-    this._logger = this._initLogger(logger);
 
     // Set module for proper message flow.
     this.handler.module = this;
@@ -81,9 +87,7 @@ export abstract class AbstractModule implements IModule {
   set config(config: SystemConfig) {
     this._config = config;
     // Update all necessary settings for hot reload
-    this._logger.info(
-      `Updating system configuration for ${this._eventGroup} module...`,
-    );
+    this._logger.info(`Updating system configuration for ${this._eventGroup} module...`);
     this._logger.settings.minLevel = this._config.logLevel;
   }
 
@@ -103,8 +107,8 @@ export abstract class AbstractModule implements IModule {
     props?: HandlerProperties,
   ): Promise<void> {
     if (message.state === MessageState.Response) {
-      this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-      this._cache.set(
+      await this.handleMessageApiCallback(message as IMessage<OcppResponse>);
+      await this._cache.set(
         message.context.correlationId,
         JSON.stringify(message.payload),
         message.context.stationId,
@@ -113,12 +117,9 @@ export abstract class AbstractModule implements IModule {
     }
     try {
       const handlerDefinition = (
-        Reflect.getMetadata(
-          AS_HANDLER_METADATA,
-          this.constructor,
-        ) as Array<IHandlerDefinition>
+        Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>
       )
-        .filter((h) => h.action === message.action)
+        .filter((h) => h.protocol === message.protocol && h.action === message.action)
         .pop();
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
@@ -126,10 +127,7 @@ export abstract class AbstractModule implements IModule {
         throw new OcppError(
           message.context.correlationId,
           ErrorCode.NotSupported,
-          'No handler found for action: ' +
-            message.action +
-            ' at module ' +
-            this._eventGroup,
+          'No handler found for action: ' + message.action + ' at module ' + this._eventGroup,
         );
       }
     } catch (error) {
@@ -139,9 +137,9 @@ export abstract class AbstractModule implements IModule {
         this._logger.error('Sending CallError to ChargingStation...');
         message.origin = MessageOrigin.ChargingStationManagementSystem;
         if (error instanceof OcppError) {
-          this._sender.sendResponse(message, error);
+          await this._sender.sendResponse(message, error);
         } else if (error instanceof Error) {
-          this._sender.sendResponse(
+          await this._sender.sendResponse(
             message,
             new OcppError(
               message.context.correlationId,
@@ -169,14 +167,15 @@ export abstract class AbstractModule implements IModule {
    * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
    */
 
-  async handleMessageApiCallback(
-    message: IMessage<OcppResponse>,
-  ): Promise<void> {
+  async handleMessageApiCallback(message: IMessage<OcppResponse>): Promise<void> {
     const url: string | null = await this._cache.get(
       message.context.correlationId,
       AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.stationId,
     );
     if (url) {
+      this._logger.debug(
+        `Sending call result to callback URL: ${url} for correlationId: ${message.context.correlationId}`,
+      );
       try {
         await fetch(url, {
           method: 'POST',
@@ -198,9 +197,9 @@ export abstract class AbstractModule implements IModule {
    * Note: To be overwritten by subclass if other logic is necessary.
    *
    */
-  shutdown(): void {
-    this._handler.shutdown();
-    this._sender.shutdown();
+  async shutdown(): Promise<void> {
+    await this._handler.shutdown();
+    await this._sender.shutdown();
   }
 
   /**
@@ -208,10 +207,11 @@ export abstract class AbstractModule implements IModule {
    */
 
   /**
-   * Sends a call with the specified identifier, tenantId, action, payload, and origin.
+   * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
    *
-   * @param {string} identifier - The identifier of the call.
-   * @param {string} tenantId - The tenant ID.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The action to be performed.
    * @param {OcppRequest} payload - The payload of the call.
    * @param {string} [callbackUrl] - The callback URL for the call.
@@ -219,61 +219,83 @@ export abstract class AbstractModule implements IModule {
    * @param {MessageOrigin} [origin] - The origin of the call.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
-  public sendCall(
-    identifier: string,
-    tenantId: string,
+  public async sendCall(
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     callbackUrl?: string,
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    const _correlationId: string =
-      correlationId === undefined ? uuidv4() : correlationId;
+    const identifier = createIdentifier(tenantId, stationId);
+    const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
+
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-      this._cache.set(
-        _correlationId,
-        callbackUrl,
-        AbstractModule.CALLBACK_URL_CACHE_PREFIX + identifier,
-        this._config.maxCachingSeconds,
+      this._logger.debug(
+        `Setting callback URL: ${callbackUrl} for correlationId: ${_correlationId}`,
       );
+      this._cache
+        .set(
+          _correlationId,
+          callbackUrl,
+          AbstractModule.CALLBACK_URL_CACHE_PREFIX + stationId,
+          this._config.maxCachingSeconds,
+        )
+        .then((value) => {
+          if (value) {
+            this._logger.debug(`Successfully set cache for correlationId: ${_correlationId}`);
+          } else {
+            this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
+          }
+        })
+        .catch((error) => this._logger.error('Error setting cache: ', error));
     }
     // TODO: Future - Compound key with tenantId
-    return this._cache
-      .get(identifier, CacheNamespace.Connections)
-      .then((connection) => {
-        if (connection) {
-          return this._sender.sendRequest(
-            RequestBuilder.buildCall(
-              identifier,
-              _correlationId,
-              tenantId,
-              action,
-              payload,
-              this._eventGroup,
-              origin,
-            ),
-          );
-        } else {
+    return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
+      if (connection) {
+        const websocketConnection: IWebsocketConnection = JSON.parse(connection);
+        if (websocketConnection.protocol !== protocol) {
           this._logger.error(
-            'Failed sending call. No connection found for identifier: ',
+            `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
             identifier,
           );
           return Promise.resolve({
             success: false,
-            payload: 'No connection found for identifier: ' + identifier,
+            payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
           });
         }
-      });
+        return this._sender.sendRequest(
+          RequestBuilder.buildCall(
+            stationId,
+            _correlationId,
+            tenantId,
+            action,
+            payload,
+            this._eventGroup,
+            origin,
+            protocol,
+          ),
+        );
+      } else {
+        this._logger.error('Failed sending call. No connection found for identifier: ', identifier);
+        return Promise.resolve({
+          success: false,
+          payload: 'No connection found for identifier: ' + identifier,
+        });
+      }
+    });
   }
 
   /**
    * Sends the call result message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} identifier - The identifier of the message.
-   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.
    * @param {OcppResponse} payload - The payload of the call result message.
    * @param {MessageOrigin} origin - (optional) The origin of the message.
@@ -281,21 +303,23 @@ export abstract class AbstractModule implements IModule {
    */
   public sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallResult(
-        identifier,
+        stationId,
         correlationId,
         tenantId,
         action,
         payload,
         this._eventGroup,
         origin,
+        protocol,
       ),
     );
   }
@@ -320,8 +344,9 @@ export abstract class AbstractModule implements IModule {
    * Sends the call error message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} identifier - The identifier of the message.
-   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} stationId - The identifier of the station making the call.
+   * @param {number} tenantId - The identifier of the tenant.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.
    * @param {OcppError} payload - The payload of the call error message.
    * @param {MessageOrigin} origin - (optional) The origin of the message.
@@ -329,21 +354,23 @@ export abstract class AbstractModule implements IModule {
    */
   public sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppError,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
     return this._sender.sendResponse(
       RequestBuilder.buildCallError(
-        identifier,
+        stationId,
         correlationId,
         tenantId,
         action,
         payload,
         this._eventGroup,
         origin,
+        protocol,
       ),
     );
   }
@@ -381,17 +408,26 @@ export abstract class AbstractModule implements IModule {
 
   /**
    * Initializes the handler for handling requests and responses.
+   */
+  public async initHandlers(): Promise<void> {
+    const result = await this._initHandler(this._requests, this._responses);
+    if (!result) {
+      throw new Error('Could not initialize module due to failure in handler initialization.');
+    }
+    this._logger.info(`Initialized in ${Date.now() - this.startTime}ms...`);
+  }
+
+  /**
+   * Initializes the handler for handling requests and responses.
    *
    * @param {CallAction[]} requests - The array of call actions for requests.
    * @param {CallAction[]} responses - The array of call actions for responses.
    * @return {Promise<boolean>} Returns a promise that resolves to a boolean indicating if the initialization was successful.
    */
-  protected async _initHandler(
-    requests: CallAction[],
-    responses: CallAction[],
-  ): Promise<boolean> {
+  private async _initHandler(requests: CallAction[], responses: CallAction[]): Promise<boolean> {
     this._handler.module = this;
 
+    await this.handler.initConnection();
     let success = await this._handler.subscribe(
       this._eventGroup.toString() + '_requests',
       requests,
@@ -402,13 +438,9 @@ export abstract class AbstractModule implements IModule {
 
     success =
       success &&
-      (await this._handler.subscribe(
-        this._eventGroup.toString() + '_responses',
-        responses,
-        {
-          state: MessageState.Response.toString(),
-        },
-      ));
+      (await this._handler.subscribe(this._eventGroup.toString() + '_responses', responses, {
+        state: MessageState.Response.toString(),
+      }));
 
     return success;
   }

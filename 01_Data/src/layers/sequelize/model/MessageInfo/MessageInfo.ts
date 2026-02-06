@@ -1,14 +1,27 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { Namespace, CustomDataType, ComponentType, MessageInfoType, MessagePriorityEnumType, MessageStateEnumType, MessageContentType } from '@citrineos/base';
-import { Table, Model, AutoIncrement, Column, DataType, PrimaryKey, Index, BelongsTo, ForeignKey } from 'sequelize-typescript';
-import { Component } from '../DeviceModel';
+// SPDX-License-Identifier: Apache-2.0
+import type { ComponentDto, MessageInfoDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  AutoIncrement,
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { Component } from '../DeviceModel/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class MessageInfo extends Model implements MessageInfoType {
-  static readonly MODEL_NAME: string = Namespace.MessageInfoType;
+export class MessageInfo extends Model implements MessageInfoDto {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.MessageInfoType;
 
   /**
    * Fields
@@ -21,6 +34,7 @@ export class MessageInfo extends Model implements MessageInfoType {
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_id',
   })
   declare stationId: string;
@@ -32,10 +46,10 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare id: number;
 
   @Column(DataType.STRING)
-  declare priority: MessagePriorityEnumType;
+  declare priority: OCPP2_0_1.MessagePriorityEnumType;
 
   @Column(DataType.STRING)
-  declare state?: MessageStateEnumType | null;
+  declare state?: OCPP2_0_1.MessageStateEnumType | null;
 
   @Column({
     type: DataType.DATE,
@@ -59,7 +73,7 @@ export class MessageInfo extends Model implements MessageInfoType {
   declare transactionId?: string | null;
 
   @Column(DataType.JSON)
-  declare message: MessageContentType;
+  declare message: OCPP2_0_1.MessageContentType;
 
   @Column(DataType.BOOLEAN)
   declare active: boolean;
@@ -69,7 +83,7 @@ export class MessageInfo extends Model implements MessageInfoType {
    */
 
   @BelongsTo(() => Component)
-  declare display: ComponentType;
+  declare display: ComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -77,5 +91,32 @@ export class MessageInfo extends Model implements MessageInfoType {
   })
   declare displayComponentId?: number | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: MessageInfo) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

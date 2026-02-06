@@ -1,12 +1,11 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { IMessage, OcppRequest, OcppResponse } from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IModule } from '../modules';
-import { HandlerProperties } from '.';
+import type { IMessage, OcppRequest, OcppResponse } from '../../index.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import type { IModule } from '../modules/index.js';
+import type { HandlerProperties } from './index.js';
 
 /**
  * MessageHandler
@@ -42,16 +41,15 @@ export interface IMessageHandler {
    * @param message - The message to be handled.
    * @param props - Optional properties for the handler.
    */
-  handle(
-    message: IMessage<OcppRequest | OcppResponse>,
-    props?: HandlerProperties,
-  ): void;
+  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): void;
 
   /**
    * Shuts down the handler. Unregister all handlers and opening up any resources.
    */
-  shutdown(): void;
+  shutdown(): Promise<void>;
 
   get module(): IModule | undefined;
   set module(value: IModule | undefined);
+
+  initConnection(): Promise<void>;
 }

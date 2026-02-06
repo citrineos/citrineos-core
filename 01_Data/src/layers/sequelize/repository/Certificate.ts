@@ -1,20 +1,28 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { ICertificateRepository } from '../../../interfaces';
-import { Certificate } from '../model/Certificate';
-import { SystemConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import type { ICertificateRepository } from '../../../interfaces/index.js';
+import { Certificate } from '../model/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
-export class SequelizeCertificateRepository extends SequelizeRepository<Certificate> implements ICertificateRepository {
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
+export class SequelizeCertificateRepository
+  extends SequelizeRepository<Certificate>
+  implements ICertificateRepository
+{
+  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Certificate.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async createOrUpdateCertificate(certificate: Certificate): Promise<Certificate> {
+  async createOrUpdateCertificate(
+    tenantId: number,
+    certificate: Certificate,
+  ): Promise<Certificate> {
+    certificate.tenantId = tenantId;
     return await this.s.transaction(async (transaction) => {
       const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
         where: {
@@ -29,7 +37,7 @@ export class SequelizeCertificateRepository extends SequelizeRepository<Certific
         return savedCertificate;
       } else {
         return (
-          await this.updateAllByQuery(certificate, {
+          await this.updateAllByQuery(tenantId, certificate, {
             where: {
               serialNumber: certificate.serialNumber,
               issuerName: certificate.issuerName,

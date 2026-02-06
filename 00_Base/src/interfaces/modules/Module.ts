@@ -1,24 +1,18 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import {
-  ICache,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-  SystemConfig,
-} from '../..';
-import { CallAction } from '../../ocpp/rpc/message';
-import {
+import type { ICache, OcppRequest, OcppResponse, SystemConfig } from '../../index.js';
+import { OcppError } from '../../index.js';
+import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import type {
   HandlerProperties,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-} from '../messages';
+} from '../messages/index.js';
+import { MessageOrigin } from '../messages/index.js';
 
 /**
  * Base interface for all OCPP modules.
@@ -30,8 +24,9 @@ export interface IModule {
   sender: IMessageSender;
   handler: IMessageHandler;
   sendCall(
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
     correlationId?: string,
@@ -39,24 +34,23 @@ export interface IModule {
   ): Promise<IMessageConfirmation>;
   sendCallResult(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppResponse,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
   sendCallError(
     correlationId: string,
-    identifier: string,
-    tenantId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
     action: CallAction,
     error: OcppError,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
 
-  handle(
-    message: IMessage<OcppRequest | OcppResponse>,
-    props?: HandlerProperties,
-  ): Promise<void>;
-  shutdown(): void;
+  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void>;
+  shutdown(): Promise<void>;
 }

@@ -1,28 +1,25 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { IMessageEndpointDefinition, METADATA_MESSAGE_ENDPOINTS } from '.';
-import { CallAction } from '../../ocpp/rpc/message';
+import type { IMessageEndpointDefinition } from './index.js';
+import { METADATA_MESSAGE_ENDPOINTS } from './index.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
 
 /**
  * Decorator for use in module API class to expose methods as REST OCPP message endpoints.
  *
  * @param {CallAction} action - The call action.
  * @param {object} bodySchema - The body schema.
+ * @param {Record<string, any>} optionalQuerystrings - The optional querystrings.
  * @return {void} This function does not return anything.
  */
 export const AsMessageEndpoint = function (
   action: CallAction,
   bodySchema: object,
-  optionalQuerystrings?: Record<string, any>
+  optionalQuerystrings?: Record<string, any>,
 ) {
-  return (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): void => {
+  return (target: any, propertyKey: string, descriptor: PropertyDescriptor): void => {
     if (!Reflect.hasMetadata(METADATA_MESSAGE_ENDPOINTS, target.constructor)) {
       Reflect.defineMetadata(
         METADATA_MESSAGE_ENDPOINTS,
@@ -39,12 +36,8 @@ export const AsMessageEndpoint = function (
       method: descriptor.value,
       methodName: propertyKey,
       bodySchema: bodySchema,
-      optionalQuerystrings: optionalQuerystrings
+      optionalQuerystrings: optionalQuerystrings,
     });
-    Reflect.defineMetadata(
-      METADATA_MESSAGE_ENDPOINTS,
-      messageEndpoints,
-      target.constructor,
-    );
+    Reflect.defineMetadata(METADATA_MESSAGE_ENDPOINTS, messageEndpoints, target.constructor);
   };
 };

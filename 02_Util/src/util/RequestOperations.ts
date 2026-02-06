@@ -1,5 +1,8 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { IncomingMessage } from 'http';
-import { splitOnce } from './StringOperations';
+import { splitOnce } from './StringOperations.js';
 
 /**
  * Extracts credentials from the Authorization header.
@@ -20,10 +23,7 @@ export function extractBasicCredentials(req: IncomingMessage): {
   }
 
   const base64Credentials = authHeader.split(' ')[1];
-  const decodedCredentials = Buffer.from(
-    base64Credentials,
-    'base64',
-  ).toString();
+  const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString();
 
   const [username, password] = splitOnce(decodedCredentials, ':');
 

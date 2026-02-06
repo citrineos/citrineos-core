@@ -1,19 +1,17 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { type SystemConfig } from '@citrineos/base';
+import { type BootstrapConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
-import { ComponentVariable } from './model/DeviceModel/ComponentVariable';
+import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
 import {
-  AdditionalInfo,
   Authorization,
   Boot,
-  CallMessage,
   Certificate,
+  ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
@@ -23,19 +21,35 @@ import {
   ChargingStationSequence,
   Component,
   CompositeSchedule,
+  Connector,
   DeleteCertificateAttempt,
   EventData,
   Evse,
-  IdToken,
-  IdTokenInfo,
+  EvseType,
   InstallCertificateAttempt,
   InstalledCertificate,
+  LatestStatusNotification,
+  LocalListAuthorization,
+  LocalListVersion,
+  LocalListVersionAuthorization,
   Location,
+  MessageInfo,
   MeterValue,
+  OCPPMessage,
   Reservation,
   SalesTariff,
   SecurityEvent,
+  SendLocalList,
+  SendLocalListAuthorization,
   ServerNetworkProfile,
+  SetNetworkProfile,
+  StartTransaction,
+  StatusNotification,
+  StopTransaction,
+  Subscription,
+  Tariff,
+  Tenant,
+  TenantPartner,
   Transaction,
   TransactionEvent,
   Variable,
@@ -43,15 +57,8 @@ import {
   VariableCharacteristics,
   VariableMonitoring,
   VariableMonitoringStatus,
-} from '.';
-import { VariableStatus } from './model/DeviceModel';
-import { MessageInfo } from './model/MessageInfo';
-import { Subscription } from './model/Subscription';
-import { Tariff } from './model/Tariff';
-import { IdTokenAdditionalInfo } from './model/Authorization/IdTokenAdditionalInfo';
-import { OCPPLog, SetNetworkProfile, StatusNotification } from './model/Location';
-import { LatestStatusNotification } from './model/Location/LatestStatusNotification';
-import { UserPreferences } from './model/UserPreferences';
+  VariableStatus,
+} from './index.js';
 
 export class DefaultSequelizeInstance {
   /**
@@ -61,14 +68,16 @@ export class DefaultSequelizeInstance {
   private static readonly DEFAULT_RETRY_DELAY = 5000;
   private static instance: Sequelize | null = null;
   private static logger: Logger<ILogObj>;
-  private static config: SystemConfig;
+  private static config: BootstrapConfig;
 
   private constructor() {}
 
-  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
+  public static getInstance(config: BootstrapConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger ? logger.getSubLogger({ name: this.name }) : new Logger<ILogObj>({ name: this.name });
+      DefaultSequelizeInstance.logger = logger
+        ? logger.getSubLogger({ name: this.name })
+        : new Logger<ILogObj>({ name: this.name });
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
@@ -77,8 +86,8 @@ export class DefaultSequelizeInstance {
 
   public static async initializeSequelize(_sync: boolean = false): Promise<void> {
     let retryCount = 0;
-    const maxRetries = this.config.data.sequelize.maxRetries ?? this.DEFAULT_RETRIES;
-    const retryDelay = this.config.data.sequelize.retryDelay ?? this.DEFAULT_RETRY_DELAY;
+    const maxRetries = this.config.database.maxRetries ?? this.DEFAULT_RETRIES;
+    const retryDelay = this.config.database.retryDelay ?? this.DEFAULT_RETRY_DELAY;
     while (retryCount < maxRetries) {
       try {
         await this.instance!.authenticate();
@@ -88,7 +97,10 @@ export class DefaultSequelizeInstance {
         break;
       } catch (error) {
         retryCount++;
-        this.logger.error(`Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`, error);
+        this.logger.error(
+          `Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`,
+          error,
+        );
         if (retryCount < maxRetries) {
           this.logger.info(`Retrying in ${retryDelay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -97,36 +109,45 @@ export class DefaultSequelizeInstance {
         }
       }
     }
+    this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
   }
 
-  private static async syncDb() {
-    if (this.config.data.sequelize.alter) {
-      await this.instance!.sync({ alter: true });
-      this.logger.info('Database altered');
-    } else if (this.config.data.sequelize.sync) {
-      await this.instance!.sync({ force: true });
-      this.logger.info('Database synchronized');
+  private static async syncDb(): Promise<void> {
+    if (this.config.database.sync) {
+      const alter = this.config.database.alter;
+      const force = this.config.database.force;
+      if (force) {
+        this.logger.info('Database force synchronizing');
+        await this.instance!.sync({ force: true });
+        this.logger.info('Database force synchronized');
+      } else if (alter) {
+        this.logger.info('Database altering');
+        await this.instance!.sync({ alter: true });
+        this.logger.info('Database altered');
+      } else {
+        this.logger.info('Database synchronizing');
+        await this.instance!.sync();
+        this.logger.info('Database synchronized');
+      }
     }
   }
 
   private static createSequelizeInstance() {
     return new Sequelize({
-      host: this.config.data.sequelize.host,
-      port: this.config.data.sequelize.port,
-      database: this.config.data.sequelize.database,
-      dialect: this.config.data.sequelize.dialect as Dialect,
-      username: this.config.data.sequelize.username,
-      password: this.config.data.sequelize.password,
-      storage: this.config.data.sequelize.storage,
+      host: this.config.database.host,
+      port: this.config.database.port,
+      database: this.config.database.database,
+      dialect: this.config.database.dialect as Dialect,
+      username: this.config.database.username,
+      password: this.config.database.password,
       models: [
-        AdditionalInfo,
         Authorization,
         Boot,
-        CallMessage,
         Certificate,
         InstalledCertificate,
         InstallCertificateAttempt,
         DeleteCertificateAttempt,
+        ChangeConfiguration,
         ChargingNeeds,
         ChargingProfile,
         ChargingSchedule,
@@ -137,34 +158,42 @@ export class DefaultSequelizeInstance {
         Component,
         ComponentVariable,
         CompositeSchedule,
+        Connector,
         Evse,
+        EvseType,
         EventData,
-        IdToken,
-        IdTokenAdditionalInfo,
-        IdTokenInfo,
         Location,
         MeterValue,
         MessageInfo,
-        OCPPLog,
+        OCPPMessage,
         Reservation,
         SalesTariff,
         SecurityEvent,
         SetNetworkProfile,
         ServerNetworkProfile,
+        Transaction,
+        StartTransaction,
         StatusNotification,
+        StopTransaction,
         LatestStatusNotification,
         Subscription,
-        Transaction,
         TransactionEvent,
         Tariff,
-        UserPreferences,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
+        LocalListAuthorization,
+        LocalListVersion,
+        LocalListVersionAuthorization,
+        SendLocalList,
+        SendLocalListAuthorization,
+        Tenant,
+        TenantPartner,
       ],
+      pool: this.config.database.pool,
       logging: (_sql: string, _timing?: number) => {},
     });
   }

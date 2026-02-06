@@ -1,9 +1,9 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { SmartChargingModuleApi } from './module/api';
-export { ISmartChargingModuleApi } from './module/interface';
-export { SmartChargingModule } from './module/module';
-export { ISmartCharging, InternalSmartCharging } from './module/smartCharging';
+export { SmartChargingOcpp201Api } from './module/2.0.1/MessageApi.js';
+export type { ISmartChargingModuleApi } from './module/interface.js';
+export { SmartChargingModule } from './module/module.js';
+export type { ISmartCharging } from './module/smartCharging/index.js';
+export { InternalSmartCharging } from './module/smartCharging/index.js';

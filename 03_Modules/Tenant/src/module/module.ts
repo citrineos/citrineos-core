@@ -1,29 +1,29 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import {
-  AbstractModule,
+// SPDX-License-Identifier: Apache-2.0
+import type {
+  BootstrapConfig,
   CallAction,
-  EventGroup,
   ICache,
   IMessageHandler,
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { RabbitMqReceiver, RabbitMqSender, Timer } from '@citrineos/util';
-import deasyncPromise from 'deasync-promise';
-import { ILogObj, Logger } from 'tslog';
+import { AbstractModule, EventGroup } from '@citrineos/base';
+import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { type ITenantRepository, SequelizeTenantRepository } from '@citrineos/data';
 
 export class TenantModule extends AbstractModule {
   /**
    * Fields
    */
 
-  protected _requests: CallAction[] = [];
+  _requests: CallAction[] = [];
+  _responses: CallAction[] = [];
 
-  protected _responses: CallAction[] = [];
+  protected _tenantRepository: ITenantRepository;
 
   /**
    * Constructor
@@ -32,7 +32,7 @@ export class TenantModule extends AbstractModule {
   /**
    * This is the constructor function that initializes the {@link TenantModule}.
    *
-   * @param {SystemConfig} config - The `config` contains configuration settings for the module.
+   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
    *
    * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
    *
@@ -45,13 +45,17 @@ export class TenantModule extends AbstractModule {
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
+   * @param {ITenantRepository} [tenantRepository] - An optional parameter of type {@link ITenantRepository}
+   * which represents a repository for tenant data.
+   * If no `tenantRepository` is provided, a default {@link sequelize:tenantRepository} instance is created and used.
    */
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    tenantRepository?: ITenantRepository,
   ) {
     super(
       config,
@@ -61,16 +65,13 @@ export class TenantModule extends AbstractModule {
       EventGroup.Tenant,
       logger,
     );
+    this._requests = config.modules.tenant.requests;
+    this._responses = config.modules.tenant.responses;
 
-    const timer = new Timer();
-    this._logger.info('Initializing...');
+    this._tenantRepository = tenantRepository || new SequelizeTenantRepository(config, logger);
+  }
 
-    if (!deasyncPromise(this._initHandler(this._requests, this._responses))) {
-      throw new Error(
-        'Could not initialize module due to failure in handler initialization.',
-      );
-    }
-
-    this._logger.info(`Initialized in ${timer.end()}ms...`);
+  get tenantRepository(): ITenantRepository {
+    return this._tenantRepository;
   }
 }

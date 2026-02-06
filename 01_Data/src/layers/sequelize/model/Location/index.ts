@@ -1,11 +1,13 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { Location } from './Location';
-export { ChargingStation } from './ChargingStation';
-export { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile';
-export { StatusNotification } from './StatusNotification';
-export { ServerNetworkProfile } from './ServerNetworkProfile'
-export { SetNetworkProfile } from './SetNetworkProfile'
-export { OCPPLog } from './OCPPLog'
+export { Location } from './Location.js';
+export { ChargingStation } from './ChargingStation.js';
+export { Evse } from './Evse.js';
+export { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
+export { LatestStatusNotification } from './LatestStatusNotification.js';
+export { StatusNotification } from './StatusNotification.js';
+export { ServerNetworkProfile } from './ServerNetworkProfile.js';
+export { SetNetworkProfile } from './SetNetworkProfile.js';
+export { Connector } from './Connector.js';

@@ -1,46 +1,101 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType, ChargingProfileType, CompositeScheduleType, CrudRepository, NotifyEVChargingNeedsRequest, SystemConfig } from '@citrineos/base';
-import { SequelizeRepository } from './Base';
-import { IChargingProfileRepository } from '../../../interfaces';
-import { Evse } from '../model/DeviceModel';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import type { IChargingProfileRepository } from '../../../interfaces/index.js';
+import {
+  ChargingNeeds,
+  ChargingProfile,
+  ChargingSchedule,
+  CompositeSchedule,
+  Evse,
+  EvseType,
+  SalesTariff,
+  Transaction,
+} from '../model/index.js';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
-import { ChargingNeeds, ChargingProfile, ChargingSchedule, CompositeSchedule, SalesTariff } from '../model/ChargingProfile';
-import { Transaction } from '../model/TransactionEvent';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
-export class SequelizeChargingProfileRepository extends SequelizeRepository<ChargingProfile> implements IChargingProfileRepository {
+export class SequelizeChargingProfileRepository
+  extends SequelizeRepository<ChargingProfile>
+  implements IChargingProfileRepository
+{
   chargingNeeds: CrudRepository<ChargingNeeds>;
   chargingSchedule: CrudRepository<ChargingSchedule>;
   salesTariff: CrudRepository<SalesTariff>;
   transaction: CrudRepository<Transaction>;
-  evse: CrudRepository<Evse>;
+  evse: CrudRepository<EvseType>;
   compositeSchedule: CrudRepository<CompositeSchedule>;
 
   constructor(
-    config: SystemConfig,
+    config: BootstrapConfig,
     logger?: Logger<ILogObj>,
     sequelizeInstance?: Sequelize,
     chargingNeeds?: CrudRepository<ChargingNeeds>,
     chargingSchedule?: CrudRepository<ChargingSchedule>,
     salesTariff?: CrudRepository<SalesTariff>,
     transaction?: CrudRepository<Transaction>,
-    evse?: CrudRepository<Evse>,
+    evse?: CrudRepository<EvseType>,
     compositeSchedule?: CrudRepository<CompositeSchedule>,
   ) {
     super(config, ChargingProfile.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingNeeds = chargingNeeds ? chargingNeeds : new SequelizeRepository<ChargingNeeds>(config, ChargingNeeds.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingSchedule = chargingSchedule ? chargingSchedule : new SequelizeRepository<ChargingSchedule>(config, ChargingSchedule.MODEL_NAME, logger, sequelizeInstance);
-    this.evse = evse ? evse : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
-    this.salesTariff = salesTariff ? salesTariff : new SequelizeRepository<SalesTariff>(config, SalesTariff.MODEL_NAME, logger, sequelizeInstance);
-    this.transaction = transaction ? transaction : new SequelizeRepository<Transaction>(config, Transaction.MODEL_NAME, logger, sequelizeInstance);
-    this.compositeSchedule = compositeSchedule ? compositeSchedule : new SequelizeRepository<CompositeSchedule>(config, CompositeSchedule.MODEL_NAME, logger, sequelizeInstance);
+    this.chargingNeeds = chargingNeeds
+      ? chargingNeeds
+      : new SequelizeRepository<ChargingNeeds>(
+          config,
+          ChargingNeeds.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.chargingSchedule = chargingSchedule
+      ? chargingSchedule
+      : new SequelizeRepository<ChargingSchedule>(
+          config,
+          ChargingSchedule.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.evse = evse
+      ? evse
+      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
+    this.salesTariff = salesTariff
+      ? salesTariff
+      : new SequelizeRepository<SalesTariff>(
+          config,
+          SalesTariff.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.transaction = transaction
+      ? transaction
+      : new SequelizeRepository<Transaction>(
+          config,
+          Transaction.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
+    this.compositeSchedule = compositeSchedule
+      ? compositeSchedule
+      : new SequelizeRepository<CompositeSchedule>(
+          config,
+          CompositeSchedule.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
   }
 
-  async createOrUpdateChargingProfile(chargingProfile: ChargingProfileType, stationId: string, evseId?: number | null, chargingLimitSource?: ChargingLimitSourceEnumType, isActive?: boolean): Promise<ChargingProfile> {
+  async createOrUpdateChargingProfile(
+    tenantId: number,
+    chargingProfile: OCPP2_0_1.ChargingProfileType,
+    stationId: string,
+    evseId?: number | null,
+    chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType,
+    isActive?: boolean,
+  ): Promise<ChargingProfile> {
     let transactionDBId;
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
@@ -52,8 +107,9 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       transactionDBId = activeTransaction?.id;
     }
 
-    const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery({
+    const [savedChargingProfile, profileCreated] = await this.readOrCreateByQuery(tenantId, {
       where: {
+        tenantId: tenantId,
         stationId: stationId,
         id: chargingProfile.id,
       },
@@ -61,30 +117,35 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
         ...chargingProfile,
         evseId: evseId,
         transactionDatabaseId: transactionDBId,
-        chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+        chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
         isActive: isActive === undefined ? false : isActive,
       },
     });
     if (!profileCreated) {
       await this.updateByKey(
+        tenantId,
         {
           ...chargingProfile,
+          chargingSchedule: chargingProfile.chargingSchedule.map((s) => ({ ...s })) as
+            | [ChargingSchedule]
+            | [ChargingSchedule, ChargingSchedule]
+            | [ChargingSchedule, ChargingSchedule, ChargingSchedule],
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
-          chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnumType.CSO,
+          chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
           isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),
       );
       // delete existed charging schedules and sales tariff
-      const deletedChargingSchedules = await this.chargingSchedule.deleteAllByQuery({
+      const deletedChargingSchedules = await this.chargingSchedule.deleteAllByQuery(tenantId, {
         where: {
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
         },
       });
       for (const deletedSchedule of deletedChargingSchedules) {
-        await this.salesTariff.deleteAllByQuery({
+        await this.salesTariff.deleteAllByQuery(tenantId, {
           where: {
             chargingScheduleDatabaseId: deletedSchedule.databaseId,
           },
@@ -94,7 +155,9 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
 
     for (const chargingSchedule of chargingProfile.chargingSchedule) {
       const savedChargingSchedule = await this.chargingSchedule.create(
+        tenantId,
         ChargingSchedule.build({
+          tenantId,
           stationId,
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
           ...chargingSchedule,
@@ -102,7 +165,9 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
       );
       if (chargingSchedule.salesTariff) {
         await this.salesTariff.create(
+          tenantId,
           SalesTariff.build({
+            tenantId,
             chargingScheduleDatabaseId: savedChargingSchedule.databaseId,
             ...chargingSchedule.salesTariff,
           }),
@@ -113,32 +178,44 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return savedChargingProfile;
   }
 
-  async createChargingNeeds(chargingNeedsReq: NotifyEVChargingNeedsRequest, stationId: string): Promise<ChargingNeeds> {
+  async createChargingNeeds(
+    tenantId: number,
+    chargingNeedsReq: OCPP2_0_1.NotifyEVChargingNeedsRequest,
+    stationId: string,
+  ): Promise<ChargingNeeds> {
     const activeTransaction = await Transaction.findOne({
       where: {
         stationId,
         isActive: true,
       },
-      include: [{ model: Evse, where: { id: chargingNeedsReq.evseId }, required: true }], // required: true ensures the inner join
+      include: [{ model: Evse, where: { evseTypeId: chargingNeedsReq.evseId }, required: true }],
     });
     if (!activeTransaction) {
-      throw new Error(`No active transaction found on station ${stationId} evse ${chargingNeedsReq.evseId}`);
+      throw new Error(
+        `No active transaction found on station ${stationId} evse ${chargingNeedsReq.evseId}`,
+      );
     }
 
     return await this.chargingNeeds.create(
+      tenantId,
       ChargingNeeds.build({
+        tenantId,
         ...chargingNeedsReq.chargingNeeds,
-        evseDatabaseId: activeTransaction.evseDatabaseId,
+        evseId: activeTransaction.evseId,
         transactionDatabaseId: activeTransaction.id,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
     );
   }
 
-  async findChargingNeedsByEvseDBIdAndTransactionDBId(evseDBId: number, transactionDataBaseId: number | null): Promise<ChargingNeeds | undefined> {
-    const chargingNeedsArray = await this.chargingNeeds.readAllByQuery({
+  async findChargingNeedsByEvseDBIdAndTransactionDBId(
+    tenantId: number,
+    evseDBId: number,
+    transactionDataBaseId: number | null,
+  ): Promise<ChargingNeeds | undefined> {
+    const chargingNeedsArray = await this.chargingNeeds.readAllByQuery(tenantId, {
       where: {
-        evseDatabaseId: evseDBId,
+        evseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
       },
       order: [['createdAt', 'DESC']],
@@ -147,24 +224,46 @@ export class SequelizeChargingProfileRepository extends SequelizeRepository<Char
     return chargingNeedsArray.length > 0 ? chargingNeedsArray[0] : undefined;
   }
 
-  async createCompositeSchedule(compositeSchedule: CompositeScheduleType, stationId: string): Promise<CompositeSchedule> {
+  async createCompositeSchedule(
+    tenantId: number,
+    compositeSchedule: OCPP2_0_1.CompositeScheduleType,
+    stationId: string,
+  ): Promise<CompositeSchedule> {
     return await this.compositeSchedule.create(
+      tenantId,
       CompositeSchedule.build({
+        tenantId,
         ...compositeSchedule,
         stationId,
       }),
     );
   }
 
-  async getNextChargingScheduleId(stationId: string): Promise<number> {
-    return await this.chargingSchedule.readNextValue('id', { where: { stationId } });
+  async getNextChargingScheduleId(tenantId: number, stationId: string): Promise<number> {
+    return await this.chargingSchedule.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 
-  async getNextChargingProfileId(stationId: string): Promise<number> {
-    return await this.readNextValue('id', { where: { stationId } });
+  async getNextChargingProfileId(tenantId: number, stationId: string): Promise<number> {
+    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
   }
 
-  async getNextStackLevel(stationId: string, transactionDatabaseId: number | null, profilePurpose: ChargingProfilePurposeEnumType): Promise<number> {
-    return await this.readNextValue('stackLevel', { where: { stationId, transactionDatabaseId: transactionDatabaseId, chargingProfilePurpose: profilePurpose } }, 0);
+  async getNextStackLevel(
+    tenantId: number,
+    stationId: string,
+    transactionDatabaseId: number | null,
+    profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
+  ): Promise<number> {
+    return await this.readNextValue(
+      tenantId,
+      'stackLevel',
+      {
+        where: {
+          stationId,
+          transactionDatabaseId: transactionDatabaseId,
+          chargingProfilePurpose: profilePurpose,
+        },
+      },
+      0,
+    );
   }
 }

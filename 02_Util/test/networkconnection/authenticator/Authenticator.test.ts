@@ -1,36 +1,42 @@
-import { jest } from '@jest/globals';
-import { Authenticator } from '../../../src';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
+  NetworkProfileFilter,
+  UnknownStationFilter,
+} from '../../../src';
 import { faker } from '@faker-js/faker';
-import { ConnectedStationFilter } from '../../../src/networkconnection/authenticator/ConnectedStationFilter';
-import { NetworkProfileFilter } from '../../../src/networkconnection/authenticator/NetworkProfileFilter';
-import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import { UnknownStationFilter } from '../../../src/networkconnection/authenticator/UnknownStationFilter';
-import { aRequest } from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { aRequest } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('Authenticator', () => {
-  let unknownStationFilter: jest.Mocked<UnknownStationFilter>;
-  let connectedStationFilter: jest.Mocked<ConnectedStationFilter>;
-  let networkProfileFilter: jest.Mocked<NetworkProfileFilter>;
-  let basicAuthenticationFilter: jest.Mocked<BasicAuthenticationFilter>;
+  let unknownStationFilter: Mocked<UnknownStationFilter>;
+  let connectedStationFilter: Mocked<ConnectedStationFilter>;
+  let networkProfileFilter: Mocked<NetworkProfileFilter>;
+  let basicAuthenticationFilter: Mocked<BasicAuthenticationFilter>;
   let authenticator: Authenticator;
 
   beforeEach(() => {
     unknownStationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<UnknownStationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<UnknownStationFilter>;
 
     connectedStationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<ConnectedStationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<ConnectedStationFilter>;
 
     networkProfileFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<NetworkProfileFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<NetworkProfileFilter>;
 
     basicAuthenticationFilter = {
-      authenticate: jest.fn(),
-    } as unknown as jest.Mocked<BasicAuthenticationFilter>;
+      authenticate: vi.fn(),
+    } as unknown as Mocked<BasicAuthenticationFilter>;
 
     authenticator = new Authenticator(
       unknownStationFilter,
@@ -49,13 +55,12 @@ describe('Authenticator', () => {
 
   it('should reject when unknown station filter rejects', async () => {
     const stationId = faker.string.uuid().toString();
-    unknownStationFilter.authenticate.mockRejectedValue(
-      new Error('Unknown station'),
-    );
+    unknownStationFilter.authenticate.mockRejectedValue(new Error('Unknown station'));
 
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -68,13 +73,12 @@ describe('Authenticator', () => {
   it('should reject when connected station filter rejects', async () => {
     const stationId = faker.string.uuid().toString();
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
-    connectedStationFilter.authenticate.mockRejectedValue(
-      new Error('Station already connected'),
-    );
+    connectedStationFilter.authenticate.mockRejectedValue(new Error('Station already connected'));
 
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -87,13 +91,12 @@ describe('Authenticator', () => {
     const stationId = faker.string.uuid().toString();
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
     connectedStationFilter.authenticate.mockResolvedValue(undefined);
-    networkProfileFilter.authenticate.mockRejectedValue(
-      new Error('Unauthorized'),
-    );
+    networkProfileFilter.authenticate.mockRejectedValue(new Error('Unauthorized'));
 
     await expect(
       authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       ),
     ).rejects.toThrow();
@@ -106,13 +109,12 @@ describe('Authenticator', () => {
     unknownStationFilter.authenticate.mockResolvedValue(undefined);
     connectedStationFilter.authenticate.mockResolvedValue(undefined);
     networkProfileFilter.authenticate.mockResolvedValue(undefined);
-    basicAuthenticationFilter.authenticate.mockRejectedValue(
-      new Error('Unauthorized'),
-    );
+    basicAuthenticationFilter.authenticate.mockRejectedValue(new Error('Unauthorized'));
 
     await expect(async () => {
       await authenticator.authenticate(
         aRequest({ url: `wss://citrineos.io/${stationId}` }),
+        DEFAULT_TENANT_ID,
         anAuthenticationOptions(),
       );
     }).rejects.toThrow();
@@ -127,6 +129,7 @@ describe('Authenticator', () => {
 
     const identifier = await authenticator.authenticate(
       aRequest({ url: `wss://citrineos.io/${stationId}` }),
+      DEFAULT_TENANT_ID,
       anAuthenticationOptions(),
     );
 

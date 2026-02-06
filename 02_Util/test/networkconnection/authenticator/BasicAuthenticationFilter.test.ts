@@ -1,14 +1,14 @@
-import { jest } from '@jest/globals';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
-import { AttributeEnumType } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
-import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import {
-  aRequestWithAuthorization,
-  basicAuth,
-} from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider.js';
+import { BasicAuthenticationFilter } from '../../../src';
+import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 type PasswordPair = {
   plaintext: string;
@@ -18,21 +18,21 @@ type PasswordPair = {
 describe('BasicAuthenticationFilter', () => {
   const password: PasswordPair = {
     plaintext: 'SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3',
-    hash: '$2b$10$p2i423u55xbzTZ4yiiRog.QIKEQpg6G3oMtv.FTMfZdST7f9NSC2u',
+    hash: 'PBKDF2:1000:64:sha512:salt:8a9ee05c38e81af180a43e5a707cfd70bf3624400e7c986ab4b8ef9c7a7647cd17a3c0f1860ebe08f7173dc1414c13f5a25528b08e9facd16fa4d089b35ba808',
   };
 
   const anotherPassword: PasswordPair = {
     plaintext: '_Oec8yF4r1hH6ildo4yvM25:SU2hpL*jobDskYos',
-    hash: '$2b$10$rLoAseNoS.CC2tBBfowOFudwh0g8PiJeD1a7Zcw5ux.HREo/qblzC',
+    hash: 'PBKDF2:1000:64:sha512:salt:7f87adf79f3050b0639c079c30c6696efaa1a84b437907de7f6545aac15322ee29a2d9cd66d459d41de9af56b2834c2a7cd3c3f7fa897db3d8f94a3a1c147ca2',
   };
 
-  let deviceModelRepository: jest.Mocked<IDeviceModelRepository>;
+  let deviceModelRepository: Mocked<IDeviceModelRepository>;
   let filter: BasicAuthenticationFilter;
 
   beforeEach(() => {
     deviceModelRepository = {
-      readAllByQuerystring: jest.fn(),
-    } as unknown as jest.Mocked<IDeviceModelRepository>;
+      readAllByQuerystring: vi.fn(),
+    } as unknown as Mocked<IDeviceModelRepository>;
 
     filter = new BasicAuthenticationFilter(deviceModelRepository);
   });
@@ -48,26 +48,11 @@ describe('BasicAuthenticationFilter', () => {
     });
 
     it.each([
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        ' 9a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7b ',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '9a06661c-2332-4897-b0d4-2187671dbe7bb',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        '8a06661c-2332-4897-b0d4-2187671dbe7b',
-      ],
-      [
-        '9a06661c-2332-4897-b0d4-2187671dbe7b',
-        'bc2696f3-66d5-4027-9eae-be74c1e85fa7',
-      ],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', ' 9a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7b '],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '9a06661c-2332-4897-b0d4-2187671dbe7bb'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', '8a06661c-2332-4897-b0d4-2187671dbe7b'],
+      ['9a06661c-2332-4897-b0d4-2187671dbe7b', 'bc2696f3-66d5-4027-9eae-be74c1e85fa7'],
     ])(
       'should reject when station identifier does not match username',
       async (stationId, username) => {
@@ -75,14 +60,13 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(
           filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
             aRequestWithAuthorization(basicAuth(username, password.plaintext)),
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
-        expect(
-          deviceModelRepository.readAllByQuerystring,
-        ).not.toHaveBeenCalled();
+        expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
       },
     );
 
@@ -91,6 +75,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(undefined),
           authenticationOptions,
@@ -104,6 +89,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(''),
           authenticationOptions,
@@ -117,6 +103,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(
             `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6ImNwMDAxIiwiaWF0IjoxNTE2MjM5MDIyfQ.Y3LDdxSufp_2nOqUmBWTR5CyQ2eEBWPPzjRIJqc6bn8`,
@@ -132,6 +119,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth('', password.plaintext)),
           authenticationOptions,
@@ -145,6 +133,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth(stationId, '')),
           authenticationOptions,
@@ -158,6 +147,7 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth('', '')),
           authenticationOptions,
@@ -172,16 +162,18 @@ describe('BasicAuthenticationFilter', () => {
 
       await expect(
         filter.authenticate(
+          DEFAULT_TENANT_ID,
           stationId,
           aRequestWithAuthorization(basicAuth(stationId, password.plaintext)),
           authenticationOptions,
         ),
       ).rejects.toThrow(`Unauthorized ${stationId}`);
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith({
+      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
+        tenantId: DEFAULT_TENANT_ID,
         stationId: stationId,
         component_name: 'SecurityCtrlr',
         variable_name: 'BasicAuthPassword',
-        type: AttributeEnumType.Actual,
+        type: OCPP2_0_1.AttributeEnumType.Actual,
       });
     });
 
@@ -218,10 +210,9 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(
           filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${stationId}`);
@@ -245,10 +236,9 @@ describe('BasicAuthenticationFilter', () => {
 
         await expect(async () => {
           await filter.authenticate(
+            DEFAULT_TENANT_ID,
             stationId,
-            aRequestWithAuthorization(
-              basicAuth(stationId, authenticationPassword),
-            ),
+            aRequestWithAuthorization(basicAuth(stationId, authenticationPassword)),
             authenticationOptions,
           );
         }).not.toThrow();
@@ -266,6 +256,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequestWithAuthorization(undefined),
         authenticationOptions,
@@ -277,6 +268,7 @@ describe('BasicAuthenticationFilter', () => {
       const stationId = faker.string.uuid().toString();
 
       await filter.authenticate(
+        DEFAULT_TENANT_ID,
         stationId,
         aRequestWithAuthorization(basicAuth(stationId, password.plaintext)),
         authenticationOptions,
@@ -292,9 +284,7 @@ describe('BasicAuthenticationFilter', () => {
       value: passwordHash,
     } as Partial<VariableAttribute>);
 
-    deviceModelRepository.readAllByQuerystring.mockResolvedValue([
-      passwordVariable,
-    ]);
+    deviceModelRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
   }
 
   function givenNoPassword() {

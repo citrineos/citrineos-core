@@ -1,32 +1,37 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { Transaction as SequelizeTransaction } from 'sequelize';
 
 export { SequelizeTransaction };
-export { IdTokenAdditionalInfo } from './layers/sequelize/model/Authorization/IdTokenAdditionalInfo';
-export * as sequelize from './layers/sequelize';
-export * from './interfaces';
+export * as sequelize from './layers/sequelize/index.js';
+export * from './interfaces/index.js';
 export * from 'sequelize-typescript';
+export type { PaginatedParams } from './layers/sequelize/index.js';
 export {
   Authorization,
   Boot,
-  CallMessage,
+  ChangeConfiguration,
+  ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   ChargingStation,
   ChargingStationSequence,
   Component,
+  Connector,
   DefaultSequelizeInstance,
+  Evse,
   Location,
   MeterValue,
+  OCPPMessage,
   Tariff,
+  StartTransaction,
+  StopTransaction,
   Transaction,
   Reservation,
   Subscription,
-  Evse,
+  EvseType,
   Variable,
   VariableAttribute,
   VariableCharacteristics,
@@ -37,26 +42,30 @@ export {
   DeleteCertificateAttempt,
   CountryNameEnumType,
   TransactionEvent,
-  IdToken,
-  IdTokenInfo,
-  AdditionalInfo,
   LocalListAuthorization,
   LocalListVersion,
-  OCPPLog,
   SendLocalList,
   ServerNetworkProfile,
   SetNetworkProfile,
   StatusNotification,
   ChargingStationSecurityInfo,
   ChargingStationNetworkProfile,
+  Tenant,
+  TenantPartner,
+  AsyncJobStatus,
+  AsyncJobStatusDTO,
+  AsyncJobRequest,
+  AsyncJobName,
+  AsyncJobAction,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
-  SequelizeCallMessageRepository,
+  SequelizeOCPPMessageRepository,
   SequelizeCertificateRepository,
   SequelizeInstalledCertificateRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeDeleteCertificateAttemptRepository,
+  SequelizeChangeConfigurationRepository,
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeDeviceModelRepository,
@@ -70,6 +79,11 @@ export {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
   SequelizeChargingStationSequenceRepository,
-  UserPreferences,
-} from './layers/sequelize'; // TODO ensure all needed modules are properly exported
-export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore';
+  SequelizeTenantRepository,
+  SequelizeAsyncJobStatusRepository,
+  SequelizeServerNetworkProfileRepository,
+  OCPP2_0_1_Mapper,
+  OCPP1_6_Mapper,
+} from './layers/sequelize/index.js'; // TODO ensure all needed modules are properly exported
+export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore.js';
+export { CryptoUtils } from './util/CryptoUtils.js';

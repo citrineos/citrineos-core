@@ -1,14 +1,32 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { ChargingProfileType, ChargingRateUnitEnumType, ChargingSchedulePeriodType, ChargingScheduleType, CustomDataType, Namespace, SalesTariffType } from '@citrineos/base';
-import { AutoIncrement, BelongsTo, Column, DataType, ForeignKey, HasOne, Model, PrimaryKey, Table } from 'sequelize-typescript';
-import { ChargingProfile } from './ChargingProfile';
-import { SalesTariff } from './SalesTariff';
+// SPDX-License-Identifier: Apache-2.0
+import type {
+  ChargingProfileDto,
+  ChargingScheduleDto,
+  SalesTariffDto,
+  TenantDto,
+} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import {
+  AutoIncrement,
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasOne,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { ChargingProfile } from './ChargingProfile.js';
+import { SalesTariff } from './SalesTariff.js';
 
 @Table
-export class ChargingSchedule extends Model implements ChargingScheduleType {
+export class ChargingSchedule extends Model implements ChargingScheduleDto {
   static readonly MODEL_NAME: string = Namespace.ChargingSchedule;
 
   /**
@@ -32,10 +50,10 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare chargingRateUnit: ChargingRateUnitEnumType;
+  declare chargingRateUnit: string;
 
   @Column(DataType.JSONB)
-  declare chargingSchedulePeriod: [ChargingSchedulePeriodType, ...ChargingSchedulePeriodType[]];
+  declare chargingSchedulePeriod: [any, ...any[]];
 
   @Column(DataType.INTEGER)
   declare duration?: number | null;
@@ -61,14 +79,41 @@ export class ChargingSchedule extends Model implements ChargingScheduleType {
    * Relations
    */
   @BelongsTo(() => ChargingProfile)
-  declare chargingProfile: ChargingProfileType;
+  declare chargingProfile: ChargingProfileDto;
 
   @ForeignKey(() => ChargingProfile)
   @Column(DataType.INTEGER)
   declare chargingProfileDatabaseId?: number;
 
   @HasOne(() => SalesTariff)
-  declare salesTariff?: SalesTariffType;
+  declare salesTariff?: SalesTariffDto;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: object | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ChargingSchedule) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

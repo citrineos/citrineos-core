@@ -1,4 +1,8 @@
-import { ILogObj, Logger } from 'tslog';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export abstract class Scheduler {
   protected readonly _logger: Logger<ILogObj>;
@@ -11,15 +15,9 @@ export abstract class Scheduler {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  protected schedule(
-    key: string,
-    task: () => void,
-    intervalSeconds: number,
-  ): void {
+  protected schedule(key: string, task: () => void, intervalSeconds: number): void {
     if (this._isAlreadyRegistered(key)) {
-      this._logger.debug(
-        `Skipping task registration for ${key} as it is already registered`,
-      );
+      this._logger.debug(`Skipping task registration for ${key} as it is already registered`);
       return;
     }
     this._logger.debug(`Registering scheduled task for ${key}`);

@@ -1,16 +1,10 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import {
-  IMessage,
-  IMessageConfirmation,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-} from '../..';
-import { MessageState } from '.';
+import type { IMessage, IMessageConfirmation, OcppRequest, OcppResponse } from '../../index.js';
+import { OcppError } from '../../index.js';
+import { MessageState } from './index.js';
 
 /**
  * IMessageSender
@@ -29,10 +23,7 @@ export interface IMessageSender {
    * @param payload - The payload object.
    * @returns A promise that resolves to the message confirmation.
    */
-  sendRequest(
-    message: IMessage<OcppRequest>,
-    payload?: OcppRequest,
-  ): Promise<IMessageConfirmation>;
+  sendRequest(message: IMessage<OcppRequest>, payload?: OcppRequest): Promise<IMessageConfirmation>;
 
   /**
    * Sends a response message.
@@ -63,5 +54,5 @@ export interface IMessageSender {
   /**
    * Shuts down the sender.
    */
-  shutdown(): void; // Turning off the sender
+  shutdown(): Promise<void>; // Turning off the sender
 }

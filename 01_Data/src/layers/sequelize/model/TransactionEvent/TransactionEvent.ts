@@ -1,24 +1,33 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
-
-import { type CustomDataType, EVSEType, Namespace, TransactionEventEnumType, type TransactionEventRequest, TransactionType, TriggerReasonEnumType } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
-import { IdToken } from '../Authorization';
-import { Evse } from '../DeviceModel';
-import { MeterValue } from './MeterValue';
-import { Transaction } from './Transaction';
+// SPDX-License-Identifier: Apache-2.0
+import type { TenantDto, TransactionEventDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { EvseType } from '../DeviceModel/index.js';
+import { MeterValue } from './MeterValue.js';
+import { Transaction } from './Transaction.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class TransactionEvent extends Model implements TransactionEventRequest {
-  static readonly MODEL_NAME: string = Namespace.TransactionEventRequest;
+export class TransactionEvent extends Model implements TransactionEventDto {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.TransactionEventRequest;
 
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare eventType: TransactionEventEnumType;
+  declare eventType: OCPP2_0_1.TransactionEventEnumType;
 
   @HasMany(() => MeterValue)
   declare meterValue?: [MeterValue, ...MeterValue[]];
@@ -31,8 +40,8 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   })
   declare timestamp: string;
 
-  @Column
-  declare triggerReason: TriggerReasonEnumType;
+  @Column(DataType.STRING)
+  declare triggerReason: OCPP2_0_1.TriggerReasonEnumType;
 
   @Column(DataType.INTEGER)
   declare seqNo: number;
@@ -50,25 +59,52 @@ export class TransactionEvent extends Model implements TransactionEventRequest {
   declare reservationId?: number | null;
 
   @ForeignKey(() => Transaction)
-  declare transactionDatabaseId?: string;
+  declare transactionDatabaseId?: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: TransactionType;
+  declare transaction?: Transaction;
 
   @Column(DataType.JSON)
-  declare transactionInfo: TransactionType;
+  declare transactionInfo: OCPP2_0_1.TransactionType;
 
-  @ForeignKey(() => Evse)
+  @ForeignKey(() => EvseType)
   declare evseId?: number | null;
 
-  @BelongsTo(() => Evse)
-  declare evse?: EVSEType;
+  @BelongsTo(() => EvseType)
+  declare evse?: OCPP2_0_1.EVSEType;
 
-  @ForeignKey(() => IdToken)
-  declare idTokenId?: number | null;
+  @Column(DataType.STRING)
+  declare idTokenValue?: string | null;
 
-  @BelongsTo(() => IdToken)
-  declare idToken?: IdToken;
+  @Column(DataType.STRING)
+  declare idTokenType?: string | null;
 
-  declare customData?: CustomDataType | null;
+  declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: TransactionEvent) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
 version: '3'
 services:
   amqp-broker:
@@ -16,7 +19,7 @@ services:
       timeout: 10s
       retries: 3
   ocpp-db:
-    image: citrineos/postgres:preseeded
+    image: postgis/postgis:16-3.5
     ports:
       - 5432:5432
     volumes:
@@ -36,28 +39,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-  directus:
-    image: directus/directus:latest
-    ports:
-      - 8055:8055
-    volumes:
-      - ./data/directus/uploads:/directus/uploads
-      - ./data/directus/extensions:/directus/extensions
-    environment:
-      KEY: '1234567890'
-      SECRET: '0987654321'
-      ADMIN_EMAIL: 'admin@citrineos.com'
-      ADMIN_PASSWORD: 'CitrineOS!'
-      DB_CLIENT: 'pg'
-      DB_HOST: ocpp-db
-      DB_PORT: 5432
-      DB_DATABASE: 'citrine'
-      DB_USER: 'citrine'
-      DB_PASSWORD: 'citrine'
-      WEBSOCKETS_ENABLED: 'true'
   citrine:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -73,11 +57,16 @@ services:
     expose:
       - 8080-8082
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'general'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   certificates:
     build:
-      context: ..
+      context: ../
       dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
@@ -91,12 +80,17 @@ services:
     expose:
       - 8083
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'certificates'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   configuration:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -112,12 +106,17 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'configuration'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   evdriver:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -133,12 +132,17 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'evdriver'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   monitoring:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -154,12 +158,17 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'monitoring'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   reporting:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -175,12 +184,17 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'reporting'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   smartcharging:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -196,12 +210,17 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'smartcharging'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   tenant:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -217,12 +236,17 @@ services:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'tenant'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+
   transactions:
     build:
-      context: ../..
-      dockerfile: .deploy.Dockerfile
+      context: ../
+      dockerfile: ./Server/deploy.Dockerfile
     depends_on:
       ocpp-db:
         condition: service_started
@@ -238,5 +262,10 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
-      CITRINEOS_UTIL_DIRECTUS_TOKEN: '-ssaT85n4S-wVD21LKOCDwvXN5PtnJc0'
       APP_NAME: 'transactions'
+      APP_ENV: 'docker'
+      # Bootstrap Configuration
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+

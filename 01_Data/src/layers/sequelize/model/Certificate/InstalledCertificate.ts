@@ -1,11 +1,25 @@
-import { GetCertificateIdUseEnumType, HashAlgorithmEnumType, Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { ChargingStation } from '../Location';
-import { Certificate } from './Certificate';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type { CertificateUseEnumType, InstalledCertificateDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ChargingStation } from '../Location/index.js';
+import { Tenant } from '../Tenant.js';
+import { Certificate } from './Certificate.js';
 
 @Table
-export class InstalledCertificate extends Model {
-  static readonly MODEL_NAME: string = Namespace.InstalledCertificate;
+export class InstalledCertificate extends Model implements InstalledCertificateDto {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.InstalledCertificate;
 
   @ForeignKey(() => ChargingStation)
   @Column({
@@ -18,7 +32,7 @@ export class InstalledCertificate extends Model {
     type: DataType.STRING,
     allowNull: true,
   })
-  declare hashAlgorithm?: HashAlgorithmEnumType | undefined;
+  declare hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType;
 
   @Column({
     type: DataType.STRING,
@@ -39,10 +53,10 @@ export class InstalledCertificate extends Model {
   declare serialNumber?: string | undefined;
 
   @Column({
-    type: DataType.ENUM('V2GRootCertificate', 'MORootCertificate', 'CSMSRootCertificate', 'V2GCertificateChain', 'ManufacturerRootCertificate'),
+    type: DataType.STRING,
     allowNull: false,
   })
-  declare certificateType: GetCertificateIdUseEnumType;
+  declare certificateType: CertificateUseEnumType;
 
   @ForeignKey(() => Certificate)
   @Column(DataType.INTEGER)
@@ -50,4 +64,31 @@ export class InstalledCertificate extends Model {
 
   @BelongsTo(() => Certificate)
   certificate!: Certificate;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: InstalledCertificate) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

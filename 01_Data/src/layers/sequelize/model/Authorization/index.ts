@@ -1,12 +1,10 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { Authorization } from './Authorization';
-export { IdToken } from './IdToken';
-export { IdTokenInfo } from './IdTokenInfo';
-export { AdditionalInfo } from './AdditionalInfo';
-export { LocalListVersion } from './LocalListVersion';
-export { SendLocalList } from './SendLocalList';
-export { LocalListAuthorization } from './LocalListAuthorization';
+export { Authorization } from './Authorization.js';
+export { LocalListVersion } from './LocalListVersion.js';
+export { SendLocalList } from './SendLocalList.js';
+export { LocalListAuthorization } from './LocalListAuthorization.js';
+export { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
+export { SendLocalListAuthorization } from './SendLocalListAuthorization.js';

@@ -1,8 +1,13 @@
-import { ITransactionEventRepository } from '@citrineos/data';
-import { AbstractModule, CallAction } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
-import { CostCalculator } from './CostCalculator';
-import { Scheduler } from './Scheduler';
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type { ITransactionEventRepository } from '@citrineos/data';
+import { Transaction } from '@citrineos/data';
+import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { CostCalculator } from './CostCalculator.js';
+import { Scheduler } from './Scheduler.js';
 
 export class CostNotifier extends Scheduler {
   private readonly _transactionEventRepository: ITransactionEventRepository;
@@ -28,13 +33,13 @@ export class CostNotifier extends Scheduler {
    * @param {string} stationId - The identifier of the client connection.
    * @param {string} transactionId - The identifier of the transaction.
    * @param {number} intervalSeconds - The costUpdated interval in seconds.
-   * @param {string} tenantId - The identifier of the tenant.
+   * @param {number} tenantId - The identifier of the tenant.
    * @return {void} This function does not return anything.
    */
   notifyWhileActive(
     stationId: string,
     transactionId: string,
-    tenantId: string,
+    tenantId: number,
     intervalSeconds: number,
   ): void {
     this._logger.debug(
@@ -47,14 +52,39 @@ export class CostNotifier extends Scheduler {
     );
   }
 
-  private async _tryNotify(
-    stationId: string,
-    transactionId: string,
-    tenantId: string,
-  ) {
+  async calculateCostAndNotify(transaction: Transaction, tenantId: number): Promise<void> {
+    const cost = await this._costCalculator.calculateTotalCost(
+      tenantId,
+      transaction.stationId,
+      transaction.id,
+    );
+
+    await this._transactionEventRepository.updateTransactionTotalCostById(
+      tenantId,
+      cost,
+      transaction.id,
+    );
+
+    await this._module.sendCall(
+      transaction.stationId,
+      tenantId,
+      OCPPVersion.OCPP2_0_1,
+      OCPP2_0_1_CallAction.CostUpdated,
+      {
+        totalCost: cost,
+        transactionId: transaction.transactionId,
+      },
+    );
+    this._logger.debug(
+      `Sent CostUpdated call for ${transaction.transactionId} transaction with ${cost} cost`,
+    );
+  }
+
+  private async _tryNotify(stationId: string, transactionId: string, tenantId: number) {
     try {
       const transaction =
         await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          tenantId,
           stationId,
           transactionId,
         );
@@ -67,33 +97,9 @@ export class CostNotifier extends Scheduler {
         return;
       }
 
-      const cost = await this._costCalculator.calculateTotalCost(
-        transaction.stationId,
-        transaction.id,
-      );
-
-      await this._transactionEventRepository.updateTransactionTotalCostById(
-        cost,
-        transaction.id,
-      );
-
-      await this._module.sendCall(
-        transaction.stationId,
-        tenantId,
-        CallAction.CostUpdated,
-        {
-          totalCost: cost,
-          transactionId: transaction.transactionId,
-        },
-      );
-      this._logger.debug(
-        `Sent CostUpdated call for ${transaction.transactionId} transaction with ${cost} cost`,
-      );
+      await this.calculateCostAndNotify(transaction, tenantId);
     } catch (error) {
-      this._logger.error(
-        `Failed to send CostUpdated call for ${transactionId} transaction`,
-        error,
-      );
+      this._logger.error(`Failed to send CostUpdated call for ${transactionId} transaction`, error);
     }
   }
 

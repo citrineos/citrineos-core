@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: VariableAttributes
+  schema: public
+object_relationships:
+  - name: Boot
+    using:
+      foreign_key_constraint_on: bootConfigId
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: Component
+    using:
+      foreign_key_constraint_on: componentId
+  - name: EvseType
+    using:
+      foreign_key_constraint_on: evseDatabaseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: Variable
+    using:
+      foreign_key_constraint_on: variableId
+array_relationships:
+  - name: VariableStatuses
+    using:
+      foreign_key_constraint_on:
+        column: variableAttributeId
+        table:
+          name: VariableStatuses
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - constant
+        - persistent
+        - bootConfigId
+        - dataType
+        - mutability
+        - stationId
+        - type
+        - value
+        - componentId
+        - evseDatabaseId
+        - id
+        - tenantId
+        - variableId
+        - createdAt
+        - generatedAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

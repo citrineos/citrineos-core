@@ -1,9 +1,8 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { AdminApi } from './module/api';
-export { IAdminApi } from './module/interface';
-export { MessageRouterImpl } from './module/router';
-export { WebhookDispatcher } from './module/webhook.dispatcher';
+export { AdminApi } from './module/DataApi.js';
+export type { IAdminApi } from './module/interface.js';
+export { MessageRouterImpl } from './module/router.js';
+export { WebhookDispatcher } from './module/webhook.dispatcher.js';

@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: EvseTypes
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: Components
+    using:
+      foreign_key_constraint_on:
+        column: evseDatabaseId
+        table:
+          name: Components
+          schema: public
+  - name: Reservations
+    using:
+      foreign_key_constraint_on:
+        column: evseId
+        table:
+          name: Reservations
+          schema: public
+  - name: TransactionEvents
+    using:
+      foreign_key_constraint_on:
+        column: evseId
+        table:
+          name: TransactionEvents
+          schema: public
+  - name: VariableAttributes
+    using:
+      foreign_key_constraint_on:
+        column: evseDatabaseId
+        table:
+          name: VariableAttributes
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - databaseId
+        - connectorId
+        - tenantId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

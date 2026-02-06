@@ -1,9 +1,9 @@
-// Copyright (c) 2023 S44, LLC
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-export { IMessageRouter } from './Router';
-export { AbstractMessageRouter } from './AbstractRouter';
-export { IAuthenticator } from './Authenticator';
-export { AuthenticationOptions } from './AuthenticationOptions';
+export { AbstractMessageRouter } from './AbstractRouter.js';
+export type { AuthenticationOptions } from './AuthenticationOptions.js';
+export type { IAuthenticator } from './Authenticator.js';
+export type { INetworkConnection } from './INetworkConnection.js';
+export type { IMessageRouter } from './Router.js';

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+actions: []
+custom_types:
+  enums: []
+  input_objects: []
+  objects: []
+  scalars: []

@@ -1,60 +1,112 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { EventData, VariableMonitoring, VariableMonitoringStatus } from '../model/VariableMonitoring';
-import { type IVariableMonitoringRepository } from '../../../interfaces';
-import { CallAction, CrudRepository, type EventDataType, type MonitoringDataType, type SetMonitoringDataType, type SetMonitoringResultType, SetMonitoringStatusEnumType, SystemConfig } from '@citrineos/base';
-import { Component, Variable } from '../model/DeviceModel';
+import { SequelizeRepository } from './Base.js';
+import {
+  Component,
+  EventData,
+  Variable,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from '../model/index.js';
+import type { IVariableMonitoringRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig, CallAction } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
-export class SequelizeVariableMonitoringRepository extends SequelizeRepository<VariableMonitoring> implements IVariableMonitoringRepository {
+export class SequelizeVariableMonitoringRepository
+  extends SequelizeRepository<VariableMonitoring>
+  implements IVariableMonitoringRepository
+{
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize, eventData?: CrudRepository<EventData>, variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>) {
+  constructor(
+    config: BootstrapConfig,
+    logger?: Logger<ILogObj>,
+    sequelizeInstance?: Sequelize,
+    eventData?: CrudRepository<EventData>,
+    variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>,
+  ) {
     super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
-    this.eventData = eventData ? eventData : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
-    this.variableMonitoringStatus = variableMonitoringStatus ? variableMonitoringStatus : new SequelizeRepository<VariableMonitoringStatus>(config, VariableMonitoringStatus.MODEL_NAME, logger, sequelizeInstance);
+    this.eventData = eventData
+      ? eventData
+      : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
+    this.variableMonitoringStatus = variableMonitoringStatus
+      ? variableMonitoringStatus
+      : new SequelizeRepository<VariableMonitoringStatus>(
+          config,
+          VariableMonitoringStatus.MODEL_NAME,
+          logger,
+          sequelizeInstance,
+        );
   }
 
-  async createOrUpdateByMonitoringDataTypeAndStationId(value: MonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring[]> {
+  async createOrUpdateByMonitoringDataTypeAndStationId(
+    tenantId: number,
+    value: OCPP2_0_1.MonitoringDataType,
+    componentId: string,
+    variableId: string,
+    stationId: string,
+  ): Promise<VariableMonitoring[]> {
     return await Promise.all(
       value.variableMonitoring.map(async (variableMonitoring) => {
-        const savedVariableMonitoring: VariableMonitoring = await this.s.transaction(async (transaction) => {
-          const existingVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
-            where: { stationId, variableId, componentId },
-            transaction,
-          });
-
-          if (!existingVariableMonitoring) {
-            // If the record does not exist, build and save a new instance
-            const vm = VariableMonitoring.build({
-              stationId,
-              variableId,
-              componentId,
-              ...variableMonitoring,
+        const savedVariableMonitoring: VariableMonitoring = await this.s.transaction(
+          async (transaction) => {
+            const existingVariableMonitoring = await this.s.models[
+              VariableMonitoring.MODEL_NAME
+            ].findOne({
+              where: { stationId, variableId, componentId },
+              transaction,
             });
-            const createdVariableMonitoring = await vm.save({ transaction });
-            this.emit('created', [createdVariableMonitoring]);
-            return createdVariableMonitoring;
-          } else {
-            // If the record exists, update it
-            return (await this.updateByKey({ ...variableMonitoring }, existingVariableMonitoring.dataValues.databaseId)) as VariableMonitoring;
-          }
-        });
-        await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Accepted, CallAction.NotifyMonitoringReport, savedVariableMonitoring.get('databaseId'));
+
+            if (!existingVariableMonitoring) {
+              // If the record does not exist, build and save a new instance
+              const vm = VariableMonitoring.build({
+                tenantId,
+                stationId,
+                variableId,
+                componentId,
+                ...variableMonitoring,
+              });
+              const createdVariableMonitoring = await vm.save({ transaction });
+              this.emit('created', [createdVariableMonitoring]);
+              return createdVariableMonitoring;
+            } else {
+              // If the record exists, update it
+              return (await this.updateByKey(
+                tenantId,
+                { ...variableMonitoring },
+                existingVariableMonitoring.dataValues.databaseId,
+              )) as VariableMonitoring;
+            }
+          },
+        );
+        await this.createVariableMonitoringStatus(
+          tenantId,
+          OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
+          OCPP2_0_1_CallAction.NotifyMonitoringReport,
+          savedVariableMonitoring.get('databaseId'),
+        );
 
         return savedVariableMonitoring;
       }),
     );
   }
 
-  async createVariableMonitoringStatus(status: SetMonitoringStatusEnumType, action: CallAction, variableMonitoringId: number): Promise<void> {
+  async createVariableMonitoringStatus(
+    tenantId: number,
+    status: OCPP2_0_1.SetMonitoringStatusEnumType,
+    action: CallAction,
+    variableMonitoringId: number,
+  ): Promise<void> {
     await this.variableMonitoringStatus.create(
+      tenantId,
       VariableMonitoringStatus.build({
+        tenantId,
         status,
         statusInfo: { reasonCode: action },
         variableMonitoringId,
@@ -62,7 +114,13 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
     );
   }
 
-  async createOrUpdateBySetMonitoringDataTypeAndStationId(value: SetMonitoringDataType, componentId: string, variableId: string, stationId: string): Promise<VariableMonitoring> {
+  async createOrUpdateBySetMonitoringDataTypeAndStationId(
+    tenantId: number,
+    value: OCPP2_0_1.SetMonitoringDataType,
+    componentId: string,
+    variableId: string,
+    stationId: string,
+  ): Promise<VariableMonitoring> {
     let result: VariableMonitoring | null = null;
 
     await this.s.transaction(async (transaction) => {
@@ -73,6 +131,7 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
 
       if (!savedVariableMonitoring) {
         const variableMonitoring = VariableMonitoring.build({
+          tenantId,
           stationId,
           variableId,
           componentId,
@@ -97,37 +156,57 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
     return result;
   }
 
-  async rejectAllVariableMonitoringsByStationId(action: CallAction, stationId: string): Promise<void> {
-    await this.readAllByQuery({
+  async rejectAllVariableMonitoringsByStationId(
+    tenantId: number,
+    action: CallAction,
+    stationId: string,
+  ): Promise<void> {
+    await this.readAllByQuery(tenantId, {
       where: {
         stationId,
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
-        await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Rejected, action, variableMonitoring.databaseId);
+        await this.createVariableMonitoringStatus(
+          tenantId,
+          OCPP2_0_1.SetMonitoringStatusEnumType.Rejected,
+          action,
+          variableMonitoring.databaseId,
+        );
       }
     });
   }
 
-  async rejectVariableMonitoringByIdAndStationId(action: CallAction, id: number, stationId: string): Promise<void> {
-    // use findAll since according to the OCPP 2.0.1 installed VariableMonitors should have unique id’s
-    // but the id’s of removed Installed monitors should have unique id’s
-    // but the id’s of removed monitors MAY be reused.
-    await this.readAllByQuery({
+  async rejectVariableMonitoringByIdAndStationId(
+    tenantId: number,
+    action: CallAction,
+    id: number,
+    stationId: string,
+  ): Promise<void> {
+    await this.readAllByQuery(tenantId, {
       where: {
         id,
         stationId,
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
-        await this.createVariableMonitoringStatus(SetMonitoringStatusEnumType.Rejected, action, variableMonitoring.databaseId);
+        await this.createVariableMonitoringStatus(
+          tenantId,
+          OCPP2_0_1.SetMonitoringStatusEnumType.Rejected,
+          action,
+          variableMonitoring.databaseId,
+        );
       }
     });
   }
 
-  async updateResultByStationId(result: SetMonitoringResultType, stationId: string): Promise<VariableMonitoring> {
+  async updateResultByStationId(
+    tenantId: number,
+    result: OCPP2_0_1.SetMonitoringResultType,
+    stationId: string,
+  ): Promise<VariableMonitoring> {
     const savedVariableMonitoring = await super
-      .readAllByQuery({
+      .readAllByQuery(tenantId, {
         where: { stationId, type: result.type, severity: result.severity },
         include: [
           {
@@ -150,8 +229,9 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
 
     if (savedVariableMonitoring) {
       // The Id is only returned from Charging Station when status is accepted.
-      if (result.status === SetMonitoringStatusEnumType.Accepted && result.id) {
+      if (result.status === OCPP2_0_1.SetMonitoringStatusEnumType.Accepted && result.id) {
         await this.updateByKey(
+          tenantId,
           {
             id: result.id,
           },
@@ -160,14 +240,16 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
       }
 
       await this.variableMonitoringStatus.create(
+        tenantId,
         VariableMonitoringStatus.build({
+          tenantId,
           status: result.status,
           statusInfo: result.statusInfo,
           variableMonitoringId: savedVariableMonitoring.get('databaseId'),
         }),
       );
       // Reload in order to include the statuses
-      return await this.readAllByQuery({
+      return await this.readAllByQuery(tenantId, {
         where: { databaseId: savedVariableMonitoring.get('databaseId') },
         include: [VariableMonitoringStatus],
       }).then((variableMonitorings) => variableMonitorings[0]);
@@ -176,9 +258,17 @@ export class SequelizeVariableMonitoringRepository extends SequelizeRepository<V
     }
   }
 
-  async createEventDatumByComponentIdAndVariableIdAndStationId(event: EventDataType, componentId: string, variableId: string, stationId: string): Promise<EventData> {
+  async createEventDatumByComponentIdAndVariableIdAndStationId(
+    tenantId: number,
+    event: OCPP2_0_1.EventDataType,
+    componentId: string,
+    variableId: string,
+    stationId: string,
+  ): Promise<EventData> {
     return await this.eventData.create(
+      tenantId,
       EventData.build({
+        tenantId,
         stationId,
         variableId,
         componentId,

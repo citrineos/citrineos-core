@@ -1,17 +1,25 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 process.env.APP_ENV = 'local'; // needs to be before systemConfig import - careful with prettier formatter!
 
 import { DefaultSequelizeInstance } from '@citrineos/data';
-import { systemConfig } from './Server/src/config';
+import { loadBootstrapConfig } from '@citrineos/base';
 
-const sequelize = DefaultSequelizeInstance.getInstance(systemConfig);
+async function initializeDatabase() {
+  const bootstrapConfig = loadBootstrapConfig();
+  return DefaultSequelizeInstance.getInstance(bootstrapConfig);
+}
+
+export const sequelize = initializeDatabase();
 
 const syncDatabase = async () => {
-  try {
-    await sequelize.sync({ alter: true }); // Use { force: true } for dropping and recreating tables
-    console.log('Database synchronized successfully');
-  } catch (error) {
-    console.error('Error synchronizing database:', error);
-  }
+  await (await sequelize).sync({ alter: true }); // Use { force: true } for dropping and recreating tables
+  console.log('Database synchronized successfully');
 };
 
-syncDatabase().then();
+syncDatabase()
+  .then()
+  .catch((error) => {
+    console.error('Error synchronizing database:', error);
+  });

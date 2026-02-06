@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: VariableMonitorings
+  schema: public
+object_relationships:
+  - name: Component
+    using:
+      foreign_key_constraint_on: componentId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: Variable
+    using:
+      foreign_key_constraint_on: variableId
+array_relationships:
+  - name: VariableMonitoringStatuses
+    using:
+      foreign_key_constraint_on:
+        column: variableMonitoringId
+        table:
+          name: VariableMonitoringStatuses
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - transaction
+        - stationId
+        - type
+        - componentId
+        - databaseId
+        - id
+        - severity
+        - tenantId
+        - value
+        - variableId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

@@ -1,11 +1,12 @@
-// Copyright Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
-import { IV2GCertificateAuthorityClient } from './interface';
-import { SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
-import { createPemBlock } from '../CertificateUtil';
+import type { IV2GCertificateAuthorityClient } from './interface.js';
+import type { SystemConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { createPemBlock } from '../CertificateUtil.js';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;
@@ -20,8 +21,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
 
     this._baseUrl = config.util.certificateAuthority.v2gCA.hubject.baseUrl;
     this._tokenUrl = config.util.certificateAuthority.v2gCA.hubject.tokenUrl;
-    this._isoVersion =
-      config.util.certificateAuthority.v2gCA.hubject.isoVersion;
+    this._isoVersion = config.util.certificateAuthority.v2gCA.hubject.isoVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -102,9 +102,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
 
     if (response.status !== 200) {
       const errorResponse = await response.text();
-      this._logger.error(
-        `Unexpected response ${response.status} from Hubject: ${errorResponse}`,
-      );
+      this._logger.error(`Unexpected response ${response.status} from Hubject: ${errorResponse}`);
       let errorMessages = 'Failed to get signed contract data';
       if (errorResponse && errorResponse.includes('errorMessages')) {
         errorMessages = JSON.parse(errorResponse).errorMessages;
@@ -117,17 +115,10 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     ) as SignedContractDataResponse;
 
     let certificateInstallationRes: string | undefined;
-    if (
-      contractData.CCPResponse.emaidContent &&
-      contractData.CCPResponse.emaidContent.length > 0
-    ) {
+    if (contractData.CCPResponse.emaidContent && contractData.CCPResponse.emaidContent.length > 0) {
       for (const emaidContent of contractData.CCPResponse.emaidContent) {
-        if (
-          emaidContent.messageDef &&
-          emaidContent.messageDef.certificateInstallationRes
-        ) {
-          certificateInstallationRes =
-            emaidContent.messageDef.certificateInstallationRes;
+        if (emaidContent.messageDef && emaidContent.messageDef.certificateInstallationRes) {
+          certificateInstallationRes = emaidContent.messageDef.certificateInstallationRes;
         }
       }
     }
@@ -160,11 +151,8 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     }
 
     const certificates: string[] = [];
-    const rootCertificatesResponse: RootCertificatesResponse = JSON.parse(
-      await response.text(),
-    );
-    for (const root of rootCertificatesResponse.RootCertificateCollection
-      .rootCertificates) {
+    const rootCertificatesResponse: RootCertificatesResponse = JSON.parse(await response.text());
+    for (const root of rootCertificatesResponse.RootCertificateCollection.rootCertificates) {
       certificates.push(createPemBlock('CERTIFICATE', root.caCertificate));
     }
 
