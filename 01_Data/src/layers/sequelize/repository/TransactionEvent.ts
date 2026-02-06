@@ -18,7 +18,8 @@ import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
 } from '../../../interfaces/index.js';
-import { MeterValueMapper } from '../mapper/2.0.1/index.js';
+import { OCPP2_0_1_Mapper } from '../index.js';
+import { AuthorizationMapper, MeterValueMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
   ChargingStation,
@@ -40,7 +41,6 @@ export class SequelizeTransactionEventRepository
   implements ITransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
-  authorization: CrudRepository<Authorization>;
   evse: CrudRepository<Evse>;
   station: CrudRepository<ChargingStation>;
   meterValue: CrudRepository<MeterValue>;
@@ -55,7 +55,6 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
-    authorization?: CrudRepository<Authorization>,
     station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     meterValue?: CrudRepository<MeterValue>,
@@ -70,14 +69,6 @@ export class SequelizeTransactionEventRepository
       : new SequelizeRepository<Transaction>(
           config,
           Transaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.authorization = authorization
-      ? authorization
-      : new SequelizeRepository<Authorization>(
-          config,
-          Authorization.MODEL_NAME,
           logger,
           sequelizeInstance,
         );
@@ -185,10 +176,13 @@ export class SequelizeTransactionEventRepository
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
+              tenantId,
               idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
@@ -237,7 +231,7 @@ export class SequelizeTransactionEventRepository
               evseTypeId: value.evse.id,
             },
           });
-          newTransaction.evseId = evse.id;
+          newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
             const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
               where: {
@@ -248,22 +242,25 @@ export class SequelizeTransactionEventRepository
               },
               include: [Tariff],
             });
-            newTransaction.connectorId = connector.id;
-            newTransaction.tariffId = connector.tariffs?.[0]?.id;
+            newTransaction.set('connectorId', connector.id);
+            newTransaction.set('tariffId', connector.tariffs?.[0]?.id);
           }
         }
 
         if (value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
+              tenantId,
               idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
           if (authorization) {
-            newTransaction.authorizationId = authorization.id;
+            newTransaction.set('authorizationId', authorization.id);
           } else {
             this.logger.warn(
               `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${newTransaction.transactionId} will not be associated with an authorization.`,
@@ -276,7 +273,7 @@ export class SequelizeTransactionEventRepository
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
         } else {
           if (chargingStation.locationId) {
-            newTransaction.locationId = chargingStation.locationId;
+            newTransaction.set('locationId', chargingStation.locationId);
           } else {
             this.logger.warn(
               `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
@@ -300,8 +297,9 @@ export class SequelizeTransactionEventRepository
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         const authorization = await Authorization.findOne({
           where: {
+            tenantId,
             idToken: value.idToken.idToken,
-            idTokenType: value.idToken.type,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
           transaction: sequelizeTransaction,
         });
@@ -670,8 +668,9 @@ export class SequelizeTransactionEventRepository
       event.connectorDatabaseId = connector.id;
 
       // Find Authorization by IdToken
-      const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+      const authorization = await Authorization.findOne({
         where: {
+          tenantId,
           idToken: request.idTag,
         },
         transaction: sequelizeTransaction,
@@ -702,7 +701,7 @@ export class SequelizeTransactionEventRepository
       const chargingStation = await this.station.readByKey(tenantId, stationId);
       if (chargingStation) {
         if (chargingStation.locationId) {
-          newTransaction.locationId = chargingStation.locationId;
+          newTransaction.set('locationId', chargingStation.locationId);
         } else {
           this.logger.warn(
             `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,

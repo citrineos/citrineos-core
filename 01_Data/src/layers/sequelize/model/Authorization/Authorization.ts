@@ -8,6 +8,7 @@ import type {
   AuthorizationStatusEnumType,
   AuthorizationWhitelistEnumType,
   IdTokenEnumType,
+  RealTimeAuthLastAttempt,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
@@ -36,7 +37,7 @@ export class Authorization extends Model implements AuthorizationDto {
   declare disallowedEvseIdPrefixes?: string[];
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.CITEXT,
     unique: 'idToken_type',
   })
   declare idToken: string;
@@ -75,6 +76,12 @@ export class Authorization extends Model implements AuthorizationDto {
 
   @Column(DataType.STRING)
   declare realTimeAuth?: AuthorizationWhitelistEnumType | null;
+
+  @Column(DataType.JSONB)
+  declare realTimeAuthLastAttempt?: RealTimeAuthLastAttempt | null;
+
+  @Column(DataType.INTEGER)
+  declare realTimeAuthTimeout?: number | null;
 
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;

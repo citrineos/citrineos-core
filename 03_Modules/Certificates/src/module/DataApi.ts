@@ -448,7 +448,7 @@ export class CertificatesDataApi
    * @param certPem certificate pem to be stored in file storage
    * @param keyPem private key pem to be stored in file storage
    * @param filePrefix prefix for file name to be stored in file storage
-   * @param filePath file path in file storage (For directus files, it is the folder id)
+   * @param filePath file path in file storage
    * @return certificate stored in db
    */
   private async _storeCertificateAndKey(

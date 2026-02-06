@@ -21,7 +21,6 @@ export * from './certificate/index.js';
 
 export { initSwagger } from './util/swagger.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './util/parser.js';
-export { DirectusUtil } from './util/directus.js';
 export {
   validateLanguageTag,
   validateChargingProfileType,

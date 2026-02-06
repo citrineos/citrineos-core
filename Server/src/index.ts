@@ -35,7 +35,7 @@ import {
   ConfigurationOcpp16Api,
   ConfigurationOcpp201Api,
 } from '@citrineos/configuration';
-import { RepositoryStore, sequelize, Sequelize, ServerNetworkProfile } from '@citrineos/data';
+import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
 import {
   EVDriverDataApi,
   EVDriverModule,
@@ -44,13 +44,14 @@ import {
 } from '@citrineos/evdriver';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
-import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import { ReportingModule, ReportingOcpp16Api, ReportingOcpp201Api } from '@citrineos/reporting';
 import type { ISmartCharging } from '@citrineos/smartcharging';
 import {
   InternalSmartCharging,
   SmartChargingModule,
   SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 import {
   TransactionsDataApi,
   TransactionsModule,
@@ -61,7 +62,6 @@ import {
   BasicAuthenticationFilter,
   CertificateAuthorityService,
   ConnectedStationFilter,
-  DirectusUtil,
   IdGenerator,
   initSwagger,
   LocalBypassAuthProvider,
@@ -78,7 +78,7 @@ import {
 import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import type { FastifyInstance, RouteOptions } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fastify from 'fastify';
 import type {
   FastifyRouteSchemaDef,
@@ -86,7 +86,6 @@ import type {
   FastifyValidationResult,
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
-import { TenantDataApi, TenantModule } from '@citrineos/tenant';
 import { type ILogObj, Logger } from 'tslog';
 import { getSystemConfig } from './config/index.js';
 
@@ -170,23 +169,6 @@ export class CitrineOSServer {
     this.initSwagger()
       .then()
       .catch((error) => this._logger.error('Could not initialize swagger', { error }));
-
-    // Add Directus Message API flow creation if enabled
-    if (this._config.fileAccess.directus?.generateFlows) {
-      const directusUtil = ConfigStoreFactory.getInstance() as DirectusUtil;
-      this._server.addHook('onRoute', (routeOptions: RouteOptions) => {
-        directusUtil!
-          .addDirectusMessageApiFlowsFastifyRouteHook(routeOptions, this._server.getSchemas())
-          .then()
-          .catch((error) => {
-            this._logger.error('Could not add Directus Message API flow', { error });
-          });
-      });
-
-      this._server.addHook('onReady', async () => {
-        this._logger.info('Directus actions initialization finished');
-      });
-    }
 
     // Register API authentication
     this.registerApiAuth();
@@ -599,7 +581,10 @@ export class CitrineOSServer {
       this._repositoryStore.variableMonitoringRepository,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new ReportingOcpp201Api(module, this._server, this._logger));
+    this.apis.push(
+      new ReportingOcpp201Api(module, this._server, this._logger),
+      new ReportingOcpp16Api(module, this._server, this._logger),
+    );
   }
 
   private async initSmartChargingModule() {
@@ -655,10 +640,11 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
-    console.log('Tenant module initialized');
+    this._logger.info('Tenant module initialized');
   }
 
   private async initModule(eventGroup = this.eventGroup) {
+    this._logger.info(`Initializing module: ${this.appName}`);
     switch (eventGroup) {
       case EventGroup.Certificates:
         await this.initCertificatesModule();
@@ -696,10 +682,17 @@ export class CitrineOSServer {
     this.port = this._config.centralSystem.port;
 
     if (this.eventGroup === EventGroup.All) {
+      this._logger.info('Initializing in ALL mode: WebSocket server and all modules');
       this.initNetworkConnection();
       await this.initAllModules();
-    } else if (this.eventGroup === EventGroup.General) {
+    } else if (this.eventGroup === EventGroup.Router) {
+      this._logger.info('Initializing in ROUTER mode: WebSocket server, no modules');
+      // OCPP Router only: WebSocket server, no modules
       this.initNetworkConnection();
+    } else if (this.eventGroup === EventGroup.Modules) {
+      // All modules, no WebSocket server
+      this._logger.info('Initializing in MODULES mode: all modules without NetworkConnection');
+      await this.initAllModules();
     } else {
       await this.initModule();
     }
@@ -722,7 +715,11 @@ export class CitrineOSServer {
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._cache,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {
@@ -743,7 +740,11 @@ export class CitrineOSServer {
 async function main() {
   const bootstrapConfig = loadBootstrapConfig();
   const config = await getSystemConfig(bootstrapConfig);
-  const server = new CitrineOSServer(process.env.APP_NAME as EventGroup, bootstrapConfig, config);
+  const server = new CitrineOSServer(
+    process.env.APP_NAME?.toLowerCase() as EventGroup,
+    bootstrapConfig,
+    config,
+  );
   server.run().catch((error: any) => {
     console.error(error);
     process.exit(1);

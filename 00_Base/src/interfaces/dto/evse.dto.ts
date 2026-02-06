@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { ConnectorSchema } from './connector.dto.js';
+import { ConnectorSchemaWithoutParent } from './connector.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 
 export const EvseSchema = BaseSchema.extend({
@@ -13,7 +13,7 @@ export const EvseSchema = BaseSchema.extend({
   evseId: z.string(), // eMI3 compliant EVSE ID
   physicalReference: z.string().nullable().optional(),
   removed: z.boolean().optional(),
-  connectors: z.array(ConnectorSchema).nullable().optional(),
+  connectors: z.array(ConnectorSchemaWithoutParent).nullable().optional(),
 });
 
 export const EvseProps = EvseSchema.keyof().enum;

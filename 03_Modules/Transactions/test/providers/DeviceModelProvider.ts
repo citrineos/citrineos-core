@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { ChargingStation, Component, EvseType, Variable } from '@citrineos/data';
+import { ChargingStation, Component, Connector, Evse, EvseType, Variable } from '@citrineos/data';
 
 export const MOCK_STATION_ID = 'Station01';
 export const MOCK_EVSE_ID = 1;
@@ -24,6 +24,31 @@ export function anEvse(updateFunction?: UpdateFunction<EvseType>): EvseType {
     id: MOCK_CONNECTOR_ID,
     connectorId: MOCK_CONNECTOR_ID,
   } as EvseType;
+
+  return applyUpdateFunction(evse, updateFunction);
+}
+
+export function aConnector(updateFunction?: UpdateFunction<Connector>): Connector {
+  const connector: Connector = {
+    id: MOCK_CONNECTOR_ID,
+    stationId: MOCK_STATION_ID,
+    evseId: MOCK_EVSE_ID,
+    connectorId: MOCK_CONNECTOR_ID,
+    evseTypeConnectorId: MOCK_CONNECTOR_ID,
+    status: 'Available',
+  } as unknown as Connector;
+
+  return applyUpdateFunction(connector, updateFunction);
+}
+
+export function aEvse(updateFunction?: UpdateFunction<Evse>): Evse {
+  const evse: Evse = {
+    id: MOCK_EVSE_ID,
+    stationId: MOCK_STATION_ID,
+    evseTypeId: MOCK_EVSE_ID,
+    evseId: MOCK_EVSE_ID,
+    connectors: [aConnector()],
+  } as unknown as Evse;
 
   return applyUpdateFunction(evse, updateFunction);
 }

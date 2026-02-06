@@ -18,6 +18,7 @@ import type {
   ChargingStation,
   Component,
   EventData,
+  Evse,
   Location,
   SecurityEvent,
   Transaction,
@@ -210,6 +211,21 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     stationId: string,
   ) => Promise<ChargingStation | undefined>;
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+  ) => Promise<Connector | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     stationId: string,
@@ -227,6 +243,11 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {

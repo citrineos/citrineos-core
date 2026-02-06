@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.4.1'
+          node-version: "24.4.1"
 
       - name: Cache Node.js modules
         uses: actions/cache@v4
@@ -27,8 +27,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies
-        run: npm install && npm run build
+      - name: Clean and install dependencies
+        run: |
+          npm run remove-dependencies
+          npm install
+          npm run build
 
       - name: Run tests
         env:

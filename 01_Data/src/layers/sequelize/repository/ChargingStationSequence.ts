@@ -64,7 +64,7 @@ export class SequelizeChargingStationSequenceRepository
         await storedSequence.reload({ transaction });
       }
 
-      return this._ensureNumber(storedSequence.value);
+      return this._ensureNumber(storedSequence.get('value'));
     });
   }
 }

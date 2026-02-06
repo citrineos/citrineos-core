@@ -4,7 +4,7 @@
 
 import { z } from 'zod/v4';
 import { TenantPartnerSchema } from './tenant.partner.dto.js';
-import { AdditionalInfoSchema } from './types/authorization.js';
+import { AdditionalInfoSchema, RealTimeAuthLastAttemptSchema } from './types/authorization.js';
 import { BaseSchema } from './types/base.dto.js';
 import {
   AuthorizationStatusEnumSchema,
@@ -27,6 +27,8 @@ const authorizationFields = {
   personalMessage: z.any().nullable().optional(),
   concurrentTransaction: z.boolean().optional(),
   realTimeAuth: AuthorizationWhitelistEnumSchema.nullable().optional(),
+  realTimeAuthLastAttempt: RealTimeAuthLastAttemptSchema.nullable().optional(),
+  realTimeAuthTimeout: z.number().int().nullable().optional(),
   realTimeAuthUrl: z.string().optional(),
   tenantPartnerId: z.number().int().nullable().optional(),
   tenantPartner: TenantPartnerSchema.nullable().optional(),

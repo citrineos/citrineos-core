@@ -230,17 +230,29 @@ export const systemConfigInputSchema = z.object({
                 .default(
                   'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
                 ),
-              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2'),
+              clientId: z.string().default('YOUR_CLIENT_ID'),
+              clientSecret: z.string().default('YOUR_CLIENT_SECRET'),
             })
             .optional(),
         })
-        .refine((obj) => {
-          if (obj.name === 'hubject') {
-            return obj.hubject;
-          } else {
-            return false;
-          }
-        }),
+        .refine(
+          (obj) => {
+            if (obj.name === 'hubject') {
+              return (
+                obj.hubject &&
+                obj.hubject.baseUrl &&
+                obj.hubject.tokenUrl &&
+                obj.hubject.clientId &&
+                obj.hubject.clientSecret
+              );
+            } else {
+              return false;
+            }
+          },
+          {
+            message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+          },
+        ),
       chargingStationCA: z
         .object({
           name: z.enum(['acme']).default('acme'),
@@ -274,6 +286,7 @@ export const systemConfigInputSchema = z.object({
   }),
   rbacRulesFileName: z.string().default('rbac-rules.json').optional(),
   rbacRulesDir: z.string().optional(),
+  realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15).optional(),
 });
 
 export type SystemConfigInput = z.infer<typeof systemConfigInputSchema>;
@@ -519,17 +532,29 @@ export const systemConfigSchema = z
               .object({
                 baseUrl: z.string(),
                 tokenUrl: z.string(),
-                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+                clientId: z.string(),
+                clientSecret: z.string(),
               })
               .optional(),
           })
-          .refine((obj) => {
-            if (obj.name === 'hubject') {
-              return obj.hubject;
-            } else {
-              return false;
-            }
-          }),
+          .refine(
+            (obj) => {
+              if (obj.name === 'hubject') {
+                return (
+                  obj.hubject &&
+                  obj.hubject.baseUrl &&
+                  obj.hubject.tokenUrl &&
+                  obj.hubject.clientId &&
+                  obj.hubject.clientSecret
+                );
+              } else {
+                return false;
+              }
+            },
+            {
+              message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+            },
+          ),
         chargingStationCA: z
           .object({
             name: z.enum(['acme']),
@@ -564,6 +589,7 @@ export const systemConfigSchema = z
     rbacRulesFileName: z.string().optional(),
     rbacRulesDir: z.string().optional(),
     oidcClient: oidcClientConfigSchema,
+    realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
   })
   .refine((obj) => obj.maxCachingSeconds >= obj.maxCallLengthSeconds, {
     message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',

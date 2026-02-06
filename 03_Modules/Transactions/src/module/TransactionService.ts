@@ -4,6 +4,8 @@
 import type {
   AuthorizationDto,
   AuthorizationStatusEnumType,
+  ConnectorDto,
+  EvseDto,
   IAuthorizer,
   IMessageContext,
 } from '@citrineos/base';
@@ -16,6 +18,7 @@ import {
 } from '@citrineos/base';
 import type {
   IAuthorizationRepository,
+  ILocationRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
@@ -27,6 +30,7 @@ import { Logger } from 'tslog';
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizeRepository: IAuthorizationRepository;
+  private _locationRepository: ILocationRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -35,6 +39,7 @@ export class TransactionService {
   constructor(
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
+    locationRepository: ILocationRepository,
     reservationRepository: IReservationRepository,
     ocppMessageRepository: IOCPPMessageRepository,
     realTimeAuthorizer: IAuthorizer,
@@ -43,6 +48,7 @@ export class TransactionService {
   ) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizeRepository = authorizeRepository;
+    this._locationRepository = locationRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
     this._logger = logger
@@ -78,7 +84,8 @@ export class TransactionService {
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
-      ...idToken,
+      idToken: idToken.idToken,
+      type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idToken.type),
     });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
@@ -124,7 +131,26 @@ export class TransactionService {
         }
       }
 
-      const result = await this._applyAuthorizers(authorization, messageContext);
+      let evse: EvseDto | undefined = undefined;
+      let connector: ConnectorDto | undefined = undefined;
+      if (transactionEvent.evse) {
+        if (transactionEvent.evse.connectorId) {
+          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse,
+          );
+        }
+        evse =
+          connector?.evse ??
+          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse.id,
+          ));
+      }
+
+      const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
       response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
     this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
@@ -161,6 +187,7 @@ export class TransactionService {
   async authorizeOcpp16IdToken(
     context: IMessageContext,
     idToken: string,
+    connectorId: number,
   ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
       idTagInfo: {
@@ -213,9 +240,14 @@ export class TransactionService {
       }
 
       // Check authorizers
+      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+        tenantId,
+        context.stationId,
+        connectorId,
+      );
       response.idTagInfo.status =
         OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-          await this._applyAuthorizers(authorization, context),
+          await this._applyAuthorizers(authorization, context, connector?.evse, connector),
         );
       if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         return response;
@@ -306,6 +338,8 @@ export class TransactionService {
   private async _applyAuthorizers(
     authorization: AuthorizationDto,
     messageContext: IMessageContext,
+    evse?: EvseDto,
+    connector?: ConnectorDto,
   ): Promise<AuthorizationStatusEnumType> {
     let result = authorization.status;
     for (const authorizer of this._authorizers) {
@@ -313,7 +347,7 @@ export class TransactionService {
         break;
       }
 
-      result = await authorizer.authorize(authorization, messageContext);
+      result = await authorizer.authorize(authorization, messageContext, evse, connector);
     }
     return result;
   }

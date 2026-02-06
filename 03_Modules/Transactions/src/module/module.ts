@@ -220,6 +220,7 @@ export class TransactionsModule extends AbstractModule {
     this._transactionService = new TransactionService(
       this._transactionEventRepository,
       this._authorizeRepository,
+      this._locationRepository,
       this._reservationRepository,
       this._ocppMessageRepository,
       this._realTimeAuthorizer,
@@ -615,6 +616,7 @@ export class TransactionsModule extends AbstractModule {
     const response = await this._transactionService.authorizeOcpp16IdToken(
       message.context,
       request.idTag,
+      request.connectorId,
     );
 
     // Send response to charger
@@ -671,7 +673,6 @@ export class TransactionsModule extends AbstractModule {
     const authorization: Authorization | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         })
       : undefined;
 
