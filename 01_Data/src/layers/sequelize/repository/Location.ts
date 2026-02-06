@@ -329,6 +329,18 @@ export class SequelizeLocationRepository
     return await this.connector.updateAllByQuery(tenantId, value, query);
   }
 
+  async updateChargingStationTimestamp(
+    tenantId: number,
+    stationId: string,
+    timestamp: string,
+  ): Promise<void> {
+    await this.chargingStation.updateAllByQuery(
+      tenantId,
+      { latestOcppMessageTimestamp: timestamp },
+      { where: { id: stationId } },
+    );
+  }
+
   async readConnectorByStationIdAndOcpp16ConnectorId(
     tenantId: number,
     stationId: string,

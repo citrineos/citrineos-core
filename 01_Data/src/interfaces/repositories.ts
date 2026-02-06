@@ -249,6 +249,11 @@ export interface ILocationRepository extends CrudRepository<Location> {
     value: Partial<Connector>,
     query: object,
   ): Promise<Connector[]>;
+  updateChargingStationTimestamp(
+    tenantId: number,
+    stationId: string,
+    timestamp: string,
+  ): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {

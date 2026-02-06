@@ -215,6 +215,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
     let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
+
     try {
       try {
         rpcMessage = JSON.parse(message);
@@ -288,6 +289,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       protocol,
       rpcMessage,
     );
+
+    // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
+    const tenantId = getTenantIdFromIdentifier(identifier);
+    const stationId = getStationIdFromIdentifier(identifier);
+    this._locationRepository
+      .updateChargingStationTimestamp(tenantId, stationId, timestamp.toISOString())
+      .catch((error: any) => {
+        this._logger.error(`Failed to update latestOcppMessageTimestamp for ${identifier}:`, error);
+      });
+
     return success;
   }
 
