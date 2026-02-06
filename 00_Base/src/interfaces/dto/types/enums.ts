@@ -237,7 +237,9 @@ export const MeasurandEnumSchema = z.enum([
   'Power.Offered',
   'Power.Reactive.Export',
   'Power.Reactive.Import',
+  'RPM',
   'SoC',
+  'Temperature',
   'Voltage',
 ]);
 
@@ -289,6 +291,32 @@ export const TriggerReasonEnumSchema = z.enum([
   'ResetCommand',
 ]);
 
+export const ReadingContextEnumSchema = z.enum([
+  'Interruption.Begin',
+  'Interruption.End',
+  'Other',
+  'Sample.Clock',
+  'Sample.Periodic',
+  'Transaction.Begin',
+  'Transaction.End',
+  'Trigger',
+]);
+
+export const PhaseEnumSchema = z.enum([
+  'L1',
+  'L2',
+  'L3',
+  'N',
+  'L1-N',
+  'L2-N',
+  'L3-N',
+  'L1-L2',
+  'L2-L3',
+  'L3-L1',
+]);
+
+export const LocationEnumSchema = z.enum(['Body', 'Cable', 'EV', 'Inlet', 'Outlet']);
+
 // ============================================================================
 // Enum Exports
 // ============================================================================
@@ -313,6 +341,9 @@ export const MeasurandEnum = MeasurandEnumSchema.enum;
 export const ReasonEnum = ReasonEnumSchema.enum;
 export const TransactionEventEnum = TransactionEventEnumSchema.enum;
 export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
+export const ReadingContextEnum = ReadingContextEnumSchema.enum;
+export const PhaseEnum = PhaseEnumSchema.enum;
+export const LocationEnum = LocationEnumSchema.enum;
 
 // ============================================================================
 // Type Exports
@@ -340,3 +371,6 @@ export type MeasurandEnumType = z.infer<typeof MeasurandEnumSchema>;
 export type ReasonEnumType = z.infer<typeof ReasonEnumSchema>;
 export type TransactionEventEnumType = z.infer<typeof TransactionEventEnumSchema>;
 export type TriggerReasonEnumType = z.infer<typeof TriggerReasonEnumSchema>;
+export type ReadingContextEnumType = z.infer<typeof ReadingContextEnumSchema>;
+export type PhaseEnumType = z.infer<typeof PhaseEnumSchema>;
+export type LocationEnumType = z.infer<typeof LocationEnumSchema>;

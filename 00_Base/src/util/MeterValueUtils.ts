@@ -1,13 +1,21 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP2_0_1 } from '../ocpp/model/index.js';
+import type { MeterValueDto } from '../interfaces/dto/meter.value.dto.js';
+import {
+  MeasurandEnum,
+  PhaseEnum,
+  ReadingContextEnum,
+  type MeasurandEnumType,
+  type ReadingContextEnumType,
+} from '../interfaces/dto/types/enums.js';
+import type { SampledValue } from '../interfaces/dto/types/sampled.value.dto.js';
 
 export class MeterValueUtils {
-  private static readonly validContexts = new Set([
-    OCPP2_0_1.ReadingContextEnumType.Transaction_Begin,
-    OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-    OCPP2_0_1.ReadingContextEnumType.Transaction_End,
+  private static readonly validContexts = new Set<ReadingContextEnumType>([
+    ReadingContextEnum['Transaction.Begin'],
+    ReadingContextEnum['Sample.Periodic'],
+    ReadingContextEnum['Transaction.End'],
   ]);
 
   /**
@@ -16,7 +24,11 @@ export class MeterValueUtils {
    * @param {array} meterValues - meterValues of a transaction.
    * @return {number} total Kwh based on the best available energy measurement.
    */
-  public static getTotalKwh(meterValues: OCPP2_0_1.MeterValueType[]): number {
+  public static getTotalKwh(
+    meterValues: MeterValueDto[],
+    currentTotal: number,
+    meterStart?: number,
+  ): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     if (filteredValues.length === 0) {
       return 0;
@@ -25,13 +37,16 @@ export class MeterValueUtils {
     const registerMap = this.getRegisterValuesMap(filteredValues);
     if (registerMap.size > 0) {
       const sorted = this.getSortedKwhByTimestampAscending(registerMap);
-      return this.calculateTotalKwh(sorted);
+      if (meterStart === undefined) {
+        return sorted[sorted.length - 1] - sorted[0];
+      }
+      return sorted[sorted.length - 1] - meterStart;
     }
 
     const intervalMap = this.getIntervalValuesMap(filteredValues);
     if (intervalMap.size > 0) {
       const sorted = this.getSortedKwhByTimestampAscending(intervalMap);
-      return sorted.reduce((sum, v) => sum + v, 0);
+      return sorted.reduce((sum, v) => sum + v, currentTotal);
     }
 
     const netMap = this.getNetValuesMap(filteredValues);
@@ -43,14 +58,27 @@ export class MeterValueUtils {
     return 0;
   }
 
+  public static getMeterStart(meterValues: MeterValueDto[]): number | null {
+    const filteredValues = this.filterValidMeterValues(meterValues);
+    if (filteredValues.length === 0) {
+      return null;
+    }
+
+    const registerMap = this.getRegisterValuesMap(filteredValues);
+    if (registerMap.size > 0) {
+      const sorted = this.getSortedKwhByTimestampAscending(registerMap);
+      return sorted[0];
+    }
+
+    return null;
+  }
+
   /**
    * Filter out meter values whose context is not one of the valid reading contexts.
    * @param meterValues Array of MeterValueType to filter.
    * @returns Filtered array containing only meter values in Transaction_Begin, Sample_Periodic or Transaction_End contexts.
    */
-  private static filterValidMeterValues(
-    meterValues: OCPP2_0_1.MeterValueType[],
-  ): OCPP2_0_1.MeterValueType[] {
+  private static filterValidMeterValues(meterValues: MeterValueDto[]): MeterValueDto[] {
     return meterValues.filter(
       (mv) =>
         // When missing, context is by default Sample_Periodic by spec
@@ -63,22 +91,17 @@ export class MeterValueUtils {
    * @param meterValues Array of MeterValueType to search for register readings.
    * @returns Map where each key is the reading timestamp (ms since epoch) and each value is the normalized kWh.
    */
-  private static getRegisterValuesMap(
-    meterValues: OCPP2_0_1.MeterValueType[],
-  ): Map<number, number> {
+  private static getRegisterValuesMap(meterValues: MeterValueDto[]): Map<number, number> {
     const valuesMap = new Map<number, number>();
     for (const mv of meterValues) {
       const ts = Date.parse(mv.timestamp);
       let val = this.findMeasurandValue(
         mv.sampledValue,
-        OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
+        MeasurandEnum['Energy.Active.Import.Register'],
         false,
       );
       if (val === null) {
-        val = this.sumPhasedValues(
-          mv.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
-        );
+        val = this.sumPhasedValues(mv.sampledValue, MeasurandEnum['Energy.Active.Import.Register']);
       }
       if (val !== null) {
         valuesMap.set(ts, val);
@@ -92,22 +115,17 @@ export class MeterValueUtils {
    * @param meterValues Array of MeterValueType to search for interval readings.
    * @returns Map where each key is the reading timestamp (ms since epoch) and each value is the normalized kWh.
    */
-  private static getIntervalValuesMap(
-    meterValues: OCPP2_0_1.MeterValueType[],
-  ): Map<number, number> {
+  private static getIntervalValuesMap(meterValues: MeterValueDto[]): Map<number, number> {
     const valuesMap = new Map<number, number>();
     for (const mv of meterValues) {
       const ts = Date.parse(mv.timestamp);
       let val = this.findMeasurandValue(
         mv.sampledValue,
-        OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
+        MeasurandEnum['Energy.Active.Import.Interval'],
         false,
       );
       if (val === null) {
-        val = this.sumPhasedValues(
-          mv.sampledValue,
-          OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
-        );
+        val = this.sumPhasedValues(mv.sampledValue, MeasurandEnum['Energy.Active.Import.Interval']);
       }
       if (val !== null) {
         valuesMap.set(ts, val);
@@ -121,13 +139,13 @@ export class MeterValueUtils {
    * @param meterValues Array of MeterValueType to search for net readings.
    * @returns Map where each key is the reading timestamp (ms since epoch) and each value is the normalized kWh.
    */
-  private static getNetValuesMap(meterValues: OCPP2_0_1.MeterValueType[]): Map<number, number> {
+  private static getNetValuesMap(meterValues: MeterValueDto[]): Map<number, number> {
     const valuesMap = new Map<number, number>();
     for (const mv of meterValues) {
       const ts = Date.parse(mv.timestamp);
       const val = this.findMeasurandValue(
         mv.sampledValue,
-        OCPP2_0_1.MeasurandEnumType.Energy_Active_Net,
+        MeasurandEnum['Energy.Active.Net'],
         false,
       );
       if (val !== null) {
@@ -145,15 +163,15 @@ export class MeterValueUtils {
    * @returns The normalized value in kWh, or null if not found
    */
   private static findMeasurandValue(
-    sampledValues: OCPP2_0_1.SampledValueType[],
-    measurand: OCPP2_0_1.MeasurandEnumType,
+    sampledValues: SampledValue[],
+    measurand: MeasurandEnumType,
     phased: boolean,
   ): number | null {
     const value = sampledValues.find(
       (sv) =>
         (sv.measurand === measurand ||
           (!sv.measurand && // Default to Energy.Active.Import.Register if measurand is missing
-            measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register)) &&
+            measurand === MeasurandEnum['Energy.Active.Import.Register'])) &&
         !phased === !sv.phase,
     );
     return value ? this.normalizeToKwh(value) : null;
@@ -166,17 +184,15 @@ export class MeterValueUtils {
    * @returns The sum of phase values in kWh, or null if no valid phase values found
    */
   private static sumPhasedValues(
-    sampledValues: OCPP2_0_1.SampledValueType[],
-    measurand: OCPP2_0_1.MeasurandEnumType,
+    sampledValues: SampledValue[],
+    measurand: MeasurandEnumType,
   ): number | null {
     // Find all values for this measurand that have individual phases L1, L2, or L3
     const phaseValues = sampledValues.filter(
       (sv) =>
         sv.measurand === measurand &&
         sv.phase && // Must have a phase specified
-        (sv.phase === OCPP2_0_1.PhaseEnumType.L1 ||
-          sv.phase === OCPP2_0_1.PhaseEnumType.L2 ||
-          sv.phase === OCPP2_0_1.PhaseEnumType.L3),
+        (sv.phase === PhaseEnum.L1 || sv.phase === PhaseEnum.L2 || sv.phase === PhaseEnum.L3),
     );
 
     // If no phase values found, try phase-to-neutral as a last resort
@@ -185,9 +201,9 @@ export class MeterValueUtils {
         (sv) =>
           sv.measurand === measurand &&
           sv.phase && // Must have a phase specified
-          (sv.phase === OCPP2_0_1.PhaseEnumType.L1_N ||
-            sv.phase === OCPP2_0_1.PhaseEnumType.L2_N ||
-            sv.phase === OCPP2_0_1.PhaseEnumType.L3_N),
+          (sv.phase === PhaseEnum['L1-N'] ||
+            sv.phase === PhaseEnum['L2-N'] ||
+            sv.phase === PhaseEnum['L3-N']),
       );
 
       if (phaseNeutralValues.length === 0) {
@@ -222,7 +238,7 @@ export class MeterValueUtils {
    * @param value A SampledValueType entry.
    * @returns The converted value in kWh, or null if unit is missing.
    */
-  private static normalizeToKwh(value: OCPP2_0_1.SampledValueType): number | null {
+  private static normalizeToKwh(value: SampledValue): number | null {
     let powerOfTen = value.unitOfMeasure?.multiplier ?? 0;
     const unit = value.unitOfMeasure?.unit?.toUpperCase();
 
@@ -253,17 +269,5 @@ export class MeterValueUtils {
     return Array.from(valuesMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([, v]) => v);
-  }
-
-  /**
-   * Calculate the total kWh consumed from a sorted array of kWh readings.
-   * @param sortedValues Array of kWh values sorted by timestamp.
-   * @returns The difference between last and first reading, or 0 if fewer than two readings.
-   */
-  private static calculateTotalKwh(sortedValues: number[]): number {
-    if (sortedValues.length < 2) {
-      return 0;
-    }
-    return sortedValues[sortedValues.length - 1] - sortedValues[0];
   }
 }

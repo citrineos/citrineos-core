@@ -53,6 +53,9 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @Column(DataType.STRING)
   declare protocol?: OCPPVersion | null;
 
+  @Column(DataType.DATE)
+  declare latestOcppMessageTimestamp?: string | null;
+
   @Column(DataType.STRING(20))
   declare chargePointVendor?: string | null;
 

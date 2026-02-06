@@ -8,6 +8,7 @@ import type {
   EvseDto,
   IAuthorizer,
   IMessageContext,
+  MeterValueDto,
 } from '@citrineos/base';
 import {
   AuthorizationStatusEnum,
@@ -22,6 +23,7 @@ import type {
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
+  MeterValue,
 } from '@citrineos/data';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
@@ -57,23 +59,25 @@ export class TransactionService {
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 
-  async recalculateTotalKwh(tenantId: number, transactionDbId: number) {
-    const meterValues =
-      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-        tenantId,
-        transactionDbId,
-      );
-    const meterValueTypes = meterValues.map((meterValue) =>
-      OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue),
+  async recalculateTotalKwh(
+    transaction: Transaction,
+    newMeterValues: MeterValueDto[],
+  ): Promise<number> {
+    let meterStart = transaction.meterStart;
+    if (meterStart === null || meterStart === undefined) {
+      meterStart = MeterValueUtils.getMeterStart(newMeterValues);
+      transaction.set('meterStart', meterStart);
+    }
+    const totalKwh = MeterValueUtils.getTotalKwh(
+      newMeterValues,
+      transaction.totalKwh ?? 0,
+      meterStart ?? undefined,
     );
-    const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
-    await Transaction.update(
-      { totalKwh: totalKwh },
-      { where: { id: transactionDbId }, returning: false },
-    );
+    transaction.set('totalKwh', totalKwh);
+    await transaction.save();
 
-    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`);
+    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transaction.id} transaction`);
     return totalKwh;
   }
 
@@ -163,14 +167,14 @@ export class TransactionService {
     transactionDbId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ) {
+  ): Promise<MeterValue[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
         const hasPeriodic: boolean = meterValue.sampledValue?.some(
           (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
         if (transactionDbId && hasPeriodic) {
-          await this._transactionEventRepository.createMeterValue(
+          return await this._transactionEventRepository.createMeterValue(
             tenantId,
             meterValue,
             transactionDbId,
@@ -178,7 +182,7 @@ export class TransactionService {
             tariffId,
           );
         } else {
-          await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
+          return await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
         }
       }),
     );
