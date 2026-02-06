@@ -293,13 +293,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
     const tenantId = getTenantIdFromIdentifier(identifier);
     const stationId = getStationIdFromIdentifier(identifier);
-    this._locationRepository.chargingStation
-      .updateAllByQuery(
-        tenantId,
-        { latestOcppMessageTimestamp: timestamp.toISOString() },
-        { where: { id: stationId } },
-      )
-      .catch((error) => {
+    this._locationRepository
+      .updateChargingStationTimestamp(tenantId, stationId, timestamp.toISOString())
+      .catch((error: any) => {
         this._logger.error(`Failed to update latestOcppMessageTimestamp for ${identifier}:`, error);
       });
 
