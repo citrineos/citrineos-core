@@ -44,7 +44,7 @@ import {
 } from '@citrineos/evdriver';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
-import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import { ReportingModule, ReportingOcpp16Api, ReportingOcpp201Api } from '@citrineos/reporting';
 import type { ISmartCharging } from '@citrineos/smartcharging';
 import {
   InternalSmartCharging,
@@ -581,7 +581,10 @@ export class CitrineOSServer {
       this._repositoryStore.variableMonitoringRepository,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new ReportingOcpp201Api(module, this._server, this._logger));
+    this.apis.push(
+      new ReportingOcpp201Api(module, this._server, this._logger),
+      new ReportingOcpp16Api(module, this._server, this._logger),
+    );
   }
 
   private async initSmartChargingModule() {
