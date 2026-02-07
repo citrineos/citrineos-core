@@ -3,7 +3,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 
 # Use a specific base image with platform support
-FROM --platform=${BUILDPLATFORM:-linux/amd64} node:24.4.1 AS build
+FROM --platform=${BUILDPLATFORM:-linux/arm64} node:24.4.1 AS build
 
 WORKDIR /usr/local/apps/citrineos
 
