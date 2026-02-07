@@ -1,4 +1,4 @@
-# for the apple arm deployment
+# for the apple silicon arm deployment
 FROM postgres:16
 
 RUN apt-get update \

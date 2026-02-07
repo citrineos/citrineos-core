@@ -18,6 +18,7 @@ services:
       timeout: 10s
       retries: 3
 
+# apple silicon postgres postgris installation in own Doverfile
   ocpp-db:
     build:
       context: ./docker/db
