@@ -152,10 +152,10 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @BelongsTo(() => Tenant)
   declare tenant?: TenantDto;
 
-  @BeforeUpdate
   @BeforeCreate
+  @BeforeUpdate
   static setDefaultTenant(instance: ChargingStation) {
-    if (instance.tenantId == null) {
+    if (instance.isNewRecord && instance.tenantId == null) {
       instance.tenantId = DEFAULT_TENANT_ID;
     }
   }

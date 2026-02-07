@@ -22,6 +22,15 @@ export interface IMessageRouter extends IModule {
   deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
 
   /**
+   * Resolve tenant ID for a charging station by station ID (e.g. from DB when not in cache).
+   * Used at WebSocket connection time to avoid registering with the wrong tenant.
+   *
+   * @param {string} stationId - The charging station ID.
+   * @return {Promise<number | undefined>} The tenant ID if the station exists, undefined otherwise.
+   */
+  resolveTenantIdByStationId?(stationId: string): Promise<number | undefined>;
+
+  /**
    * Receive a message from the Network Connection.
    * Timestamp here should be when the message was received from the charger.
    * If CitrineOS is running behind cloud infrastructure, it is optimal for the timestamp to be generated when the infrastructure receives the message rather than when CitrineOS is first notified.
