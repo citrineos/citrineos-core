@@ -55,6 +55,26 @@ export class EVDriverOcpp16Api
     return Promise.all(results);
   }
 
+  @AsMessageEndpoint(OCPP1_6_CallAction.SetChargingProfile, OCPP1_6.SetChargingProfileRequestSchema)
+  async setChargingProfile(
+    identifier: string[],
+    request: OCPP1_6.SetChargingProfileRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.SetChargingProfile,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
   @AsMessageEndpoint(
     OCPP1_6_CallAction.RemoteStopTransaction,
     OCPP1_6.RemoteStopTransactionRequestSchema,

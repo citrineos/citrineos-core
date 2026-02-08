@@ -122,6 +122,9 @@
     "/ocpp/1.6/evdriver/remoteStartTransaction": {
       "POST": ["user", "admin"]
     },
+    "/ocpp/1.6/evdriver/setChargingProfile": {
+      "POST": ["user", "admin"]
+    },
     "/ocpp/1.6/evdriver/remoteStopTransaction": {
       "POST": ["user", "admin"]
     },

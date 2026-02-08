@@ -20,6 +20,9 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
+// import { OCPP1_6, OCPP1_6_CallAction } from '@citrineos/base' for a no-op handling of OCPP1.6 SetChargingProfile
+import { OCPP1_6, OCPP1_6_CallAction } from '@citrineos/base';
+
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
@@ -449,6 +452,21 @@ export class SmartChargingModule extends AbstractModule {
         } as OCPP2_0_1.GetChargingProfilesRequest,
       );
     }
+  }
+
+  /**
+   * OCPP 1.6 SetChargingProfile is handled via EVDriver.
+   * SmartCharging must not fail when it receives the router CallResult copy.
+   */
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.SetChargingProfile)
+  async _ignoreOcpp16SetChargingProfile(
+    message: IMessage<OCPP1_6.SetChargingProfileResponse>,
+  ): Promise<void> {
+    // Intentionally ignore.
+    // Optional debug log if you want visibility:
+    this._logger?.debug?.(
+      `Ignoring OCPP1.6 SetChargingProfile message in SmartCharging (corrId=${message.context?.correlationId})`,
+    );
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.ClearedChargingLimit)

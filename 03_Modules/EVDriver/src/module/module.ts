@@ -863,6 +863,14 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
   }
 
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.SetChargingProfile)
+  protected async _handleSetChargingProfile(
+    message: IMessage<OCPP1_6.SetChargingProfileResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('SetChargingProfileResponse received:', message, props);
+  }
+
   private _updateAuthorizationFromDto(
     auth: Authorization,
     dto: Partial<AuthorizationDto>,
