@@ -91,6 +91,7 @@ export function createDockerConfig() {
           OCPP2_0_1_CallAction.UnlockConnector,
           OCPP1_6_CallAction.RemoteStopTransaction,
           OCPP1_6_CallAction.RemoteStartTransaction,
+          OCPP1_6_CallAction.SetChargingProfile,
         ],
         requests: [OCPP2_0_1_CallAction.Authorize, OCPP2_0_1_CallAction.ReservationStatusUpdate],
       },
