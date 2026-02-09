@@ -180,7 +180,7 @@ export class StatusNotificationService {
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
 
-      if (statusNotificationRequest.connectorId === 0) {
+      if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
         // update all connectors
         await this._locationRepository.updateAllConnectorsByQuery(
           tenantId,

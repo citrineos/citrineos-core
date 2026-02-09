@@ -23,7 +23,8 @@ export enum MessageOrigin {
 
 export enum EventGroup {
   All = 'all',
-  General = 'general',
+  Router = 'router',
+  Modules = 'modules',
   Certificates = 'certificates',
   Configuration = 'configuration',
   EVDriver = 'evdriver',
@@ -51,11 +52,11 @@ export const eventGroupFromString = (source: string): EventGroup => {
   return eventGroup;
 };
 
-export type { IMessage } from './Message.js';
-export { Message } from './Message.js';
-export type { IMessageHandler } from './MessageHandler.js';
-export type { IMessageSender } from './MessageSender.js';
-export type { IMessageContext } from './MessageContext.js';
-export type { IMessageConfirmation } from './MessageConfirmation.js';
 export { AbstractMessageHandler } from './AbstractMessageHandler.js';
 export { AbstractMessageSender } from './AbstractMessageSender.js';
+export { Message } from './Message.js';
+export type { IMessage } from './Message.js';
+export type { IMessageConfirmation } from './MessageConfirmation.js';
+export type { IMessageContext } from './MessageContext.js';
+export type { IMessageHandler } from './MessageHandler.js';
+export type { IMessageSender } from './MessageSender.js';

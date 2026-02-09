@@ -242,8 +242,6 @@ Once Docker is running, the following services should be available:
   - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
   - `5432`: sql tcp connection
-- **Directus** (service name: directus) on port 8055 with endpoints
-  - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 - **Localstack** (service name: localstack) on port 4566 for mocking aws services
   - `:4566`: unified AWS service endpoint
 
@@ -265,7 +263,7 @@ Here's the complete list of environment variables that are used in bootstrapping
 
 - `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
 - `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `gcp`
 
 ## Database Configuration
 
@@ -299,16 +297,12 @@ When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=s3`:
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
 
-## Directus File Access
+## GCP File Access
 
-When `CITRINEOS_FILE_ACCESS_TYPE=directus`:
+When `CITRINEOS_FILE_ACCESS_TYPE=gcp`:
 
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_HOST` - Directus host (default: `localhost`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PORT` - Directus port (default: `8055`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN` - Directus API token
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_USERNAME` - Directus username
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PASSWORD` - Directus password
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS` - Generate flows (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_PROJECTID` - Project ID
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_CREDENTIALS` - GCP Credentials object (Optional, if not set will use Application Default Credentials such as GOOGLE_APPLICATION_CREDENTIALS environment variable or gcloud CLI credentials)
 
 ## Generating OCPP Interfaces
 

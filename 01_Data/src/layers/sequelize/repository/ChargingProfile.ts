@@ -215,7 +215,7 @@ export class SequelizeChargingProfileRepository
   ): Promise<ChargingNeeds | undefined> {
     const chargingNeedsArray = await this.chargingNeeds.readAllByQuery(tenantId, {
       where: {
-        evseDatabaseId: evseDBId,
+        evseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
       },
       order: [['createdAt', 'DESC']],

@@ -6,8 +6,10 @@ import { z } from 'zod';
 
 export const PointSchema = z.object({
   type: z.literal('Point'),
-  coordinates: z.array(z.number()), // [longitude, latitude], doesn't restrict to 2 elements bc geojson Point type doesn't
+  coordinates: z.array(z.number()), // [longitude, latitude], doesn't restrict to 2 elements bc Point type doesn't
 });
+
+export type Point = z.infer<typeof PointSchema>;
 
 export const LocationHoursSchema = z.any();
 

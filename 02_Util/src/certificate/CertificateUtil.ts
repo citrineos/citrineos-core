@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as pkijs from 'pkijs';
+import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
+import { fromBER } from 'asn1js';
 import { Certificate, SignatureAlgorithmEnumType } from '@citrineos/data';
 import jsrsasign from 'jsrsasign';
+import { fromBase64, stringToArrayBuffer } from 'pvutils';
+import moment from 'moment';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import X509 = jsrsasign.X509;
-import { CertificationRequest } from 'pkijs';
-import { fromBase64, stringToArrayBuffer } from 'pvutils';
-import { fromBER } from 'asn1js';
-import moment from 'moment';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import KEYUTIL = jsrsasign.KEYUTIL;
 
 export const dateTimeFormat = 'YYMMDDHHmmssZ';
@@ -24,8 +24,8 @@ export function getValidityTimeString(time: moment.Moment) {
   return time.utc().format('YYMMDDHHmmss').concat('Z');
 }
 
-export function createPemBlock(type: string, content: string) {
-  return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
+export function createPemBlock(content: string) {
+  return `-----BEGIN CERTIFICATE-----\n${content}\n-----END CERTIFICATE-----\n`;
 }
 
 /*

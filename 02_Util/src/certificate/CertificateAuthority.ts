@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { SystemConfig } from '@citrineos/base';
+import type { ICache, SystemConfig } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/base';
 import type {
   IChargingStationCertificateAuthorityClient,
@@ -36,20 +36,24 @@ export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
   private readonly _chargingStationClient: IChargingStationCertificateAuthorityClient;
   private readonly _logger: Logger<ILogObj>;
+  private readonly _cache: ICache;
+  private readonly _config: SystemConfig;
 
   constructor(
     config: SystemConfig,
+    cache: ICache,
     logger?: Logger<ILogObj>,
     chargingStationClient?: IChargingStationCertificateAuthorityClient,
     v2gClient?: IV2GCertificateAuthorityClient,
   ) {
+    this._config = config;
+    this._cache = cache;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
 
-    this._chargingStationClient =
-      chargingStationClient || this._instantiateChargingStationClient(config, this._logger);
-    this._v2gClient = v2gClient || this._instantiateV2GClient(config);
+    this._chargingStationClient = chargingStationClient || this._instantiateChargingStationClient();
+    this._v2gClient = v2gClient || this._instantiateV2GClient();
   }
 
   /**
@@ -102,10 +106,7 @@ export class CertificateAuthorityService {
         const caCerts = await this._v2gClient.getCACertificates();
         const rootCACert = extractCertificateArrayFromEncodedString(caCerts).pop();
         if (rootCACert) {
-          return createPemBlock(
-            'CERTIFICATE',
-            Buffer.from(rootCACert.toSchema().toBER(false)).toString('base64'),
-          );
+          return createPemBlock(Buffer.from(rootCACert.toSchema().toBER(false)).toString('base64'));
         } else {
           throw new Error(`V2GRootCertificate not found from ${caCerts}`);
         }
@@ -256,7 +257,6 @@ export class CertificateAuthorityService {
     const leafRaw = extractCertificateArrayFromEncodedString(signedCert)[0];
     if (leafRaw) {
       certificateChain += createPemBlock(
-        'CERTIFICATE',
         Buffer.from(leafRaw.toSchema().toBER(false)).toString('base64'),
       );
     } else {
@@ -268,7 +268,6 @@ export class CertificateAuthorityService {
     chainWithoutRoot.forEach((certItem) => {
       const cert = certItem as Certificate;
       certificateChain += createPemBlock(
-        'CERTIFICATE',
         Buffer.from(cert.toSchema().toBER(false)).toString('base64'),
       );
     });
@@ -276,28 +275,25 @@ export class CertificateAuthorityService {
     return certificateChain;
   }
 
-  private _instantiateV2GClient(config: SystemConfig): IV2GCertificateAuthorityClient {
-    switch (config.util.certificateAuthority.v2gCA.name) {
+  private _instantiateV2GClient(): IV2GCertificateAuthorityClient {
+    switch (this._config.util.certificateAuthority.v2gCA.name) {
       case 'hubject': {
-        return new Hubject(config);
+        return new Hubject(this._config, this._cache, this._logger);
       }
       default: {
-        throw new Error(`Unsupported V2G CA: ${config.util.certificateAuthority.v2gCA.name}`);
+        throw new Error(`Unsupported V2G CA: ${this._config.util.certificateAuthority.v2gCA.name}`);
       }
     }
   }
 
-  private _instantiateChargingStationClient(
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-  ): IChargingStationCertificateAuthorityClient {
-    switch (config.util.certificateAuthority.chargingStationCA.name) {
+  private _instantiateChargingStationClient(): IChargingStationCertificateAuthorityClient {
+    switch (this._config.util.certificateAuthority.chargingStationCA.name) {
       case 'acme': {
-        return new Acme(config, logger);
+        return new Acme(this._config, this._logger);
       }
       default: {
         throw new Error(
-          `Unsupported Charging Station CA: ${config.util.certificateAuthority.chargingStationCA.name}`,
+          `Unsupported Charging Station CA: ${this._config.util.certificateAuthority.chargingStationCA.name}`,
         );
       }
     }

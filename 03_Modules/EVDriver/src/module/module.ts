@@ -22,7 +22,6 @@ import {
   ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
-  // AuthorizationStatusType, // Remove, not needed as value
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
@@ -197,7 +196,7 @@ export class EVDriverModule extends AbstractModule {
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, logger);
+      certificateAuthorityService || new CertificateAuthorityService(config, cache, logger);
 
     this._localAuthListService = new LocalAuthListService(
       this._localAuthListRepository,
@@ -862,6 +861,14 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearCache)
+  protected async _handleOcpp16ClearCache(
+    message: IMessage<OCPP1_6.ClearCacheResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
   private _updateAuthorizationFromDto(

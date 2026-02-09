@@ -91,6 +91,7 @@ export function createLocalConfig() {
           OCPP2_0_1_CallAction.UnlockConnector,
           OCPP1_6_CallAction.RemoteStopTransaction,
           OCPP1_6_CallAction.RemoteStartTransaction,
+          OCPP1_6_CallAction.ClearCache,
         ],
         requests: [OCPP2_0_1_CallAction.Authorize, OCPP2_0_1_CallAction.ReservationStatusUpdate],
       },
@@ -115,6 +116,7 @@ export function createLocalConfig() {
           OCPP2_0_1_CallAction.GetReport,
           OCPP2_0_1_CallAction.GetBaseReport,
           OCPP2_0_1_CallAction.GetMonitoringReport,
+          OCPP1_6_CallAction.GetDiagnostics,
         ],
         requests: [
           OCPP2_0_1_CallAction.LogStatusNotification,
@@ -122,6 +124,7 @@ export function createLocalConfig() {
           OCPP2_0_1_CallAction.NotifyReport,
           OCPP2_0_1_CallAction.SecurityEventNotification,
           OCPP2_0_1_CallAction.NotifyMonitoringReport,
+          OCPP1_6_CallAction.DiagnosticsStatusNotification,
         ],
       },
       smartcharging: {
@@ -220,7 +223,8 @@ export function createLocalConfig() {
             baseUrl: 'https://open.plugncharge-test.hubject.com',
             tokenUrl:
               'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-            isoVersion: 'ISO15118-2',
+            clientId: 'YOUR_CLIENT_ID',
+            clientSecret: 'YOUR_CLIENT_SECRET',
           },
         },
         chargingStationCA: {
