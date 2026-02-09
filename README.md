@@ -84,22 +84,27 @@ Here’s a **flowchart-style overview** of CitrineOS architecture and message fl
 │ (RabbitMQ / │       │ Persistence │
 │  Kafka)     │       │             │
 └─────────────┘       └─────────────┘
-      │                     │
-      ▼                     ▼
-┌─────────────┐       ┌─────────────┐
-│ Directus    │       │ Localstack  │
-│ (File/CMS)  │       │ (AWS Mock)  │
-└─────────────┘       └─────────────┘
+      │
+      ▼
+┌─────────────┐
+│ Other       │
+│ Modules     │
+└─────────────┘
+
+┌─────────────┐
+│ File Storage│
+│ (S3 / GCS / │
+│  MinIO)     │
+└─────────────┘
 ```
 
 ## Flow Overview
 
-1. **Charging Stations** send messages via **OCPP 1.6** or **OCPP 2.0.1**.
-2. **CitrineOS Server** handles routing to the appropriate modules using **WebSocket**.
-3. Messages may go through **RabbitMQ** or **Kafka** for asynchronous processing.
-4. Data is persisted in **PostgreSQL**.
-5. Files and assets are managed via **Directus**.
-6. **Localstack** is used for AWS service simulation in development and testing.
+1. **Charging Stations** send messages using **OCPP 1.6** or **OCPP 2.0.1**.
+2. **CitrineOS Server** receives and routes messages via **WebSocket** to the **OCPP Router**.
+3. The **Message Broker (RabbitMQ/Kafka)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
+4. Operational and configuration data are persisted in **PostgreSQL**.
+5. Files and assets are stored in **Amazon S3** or **Google Cloud Storage (GCS)** in supported environments. **MinIO** is used for **local development**, providing **S3-compatible storage only**. Local development does **not** support a GCS-compatible storage backend.
 
 ### Prerequisites
 
