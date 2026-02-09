@@ -861,6 +861,31 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
+
+    if (message.payload.status === OCPP1_6.RemoteStartTransactionResponseStatus.Accepted) {
+      const tenantId = message.context.tenantId;
+      const stationId: string = message.context.stationId;
+      // Set stored profile to isActive true
+      await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
+        {
+          isActive: true,
+        },
+        {
+          where: {
+            tenantId: tenantId,
+            stationId: stationId,
+            isActive: false,
+            chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          },
+          returning: false,
+        },
+      );
+    } else {
+      this._logger.error(
+        `OCPP 1.6 RemoteStartTransaction rejected: ${JSON.stringify(message.payload)}`,
+      );
+    }
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearCache)

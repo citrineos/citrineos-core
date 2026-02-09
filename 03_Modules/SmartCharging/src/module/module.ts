@@ -17,6 +17,8 @@ import {
   ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
@@ -537,5 +539,111 @@ export class SmartChargingModule extends AbstractModule {
       evseId,
       chargingProfile,
     } as OCPP2_0_1.SetChargingProfileRequest;
+  }
+
+  /**
+   * OCPP 1.6 response handlers
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.SetChargingProfile)
+  protected async _handleOcpp16SetChargingProfile(
+    message: IMessage<OCPP1_6.SetChargingProfileResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 SetChargingProfileResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    if (message.payload.status === OCPP1_6.SetChargingProfileResponseStatus.Accepted) {
+      const stationId: string = message.context.stationId;
+      // Set stored profile to isActive true
+      await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
+        {
+          isActive: true,
+        },
+        {
+          where: {
+            tenantId: tenantId,
+            stationId: stationId,
+            isActive: false,
+            chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          },
+          returning: false,
+        },
+      );
+    } else {
+      this._logger.error(
+        `OCPP 1.6 SetChargingProfile rejected: ${JSON.stringify(message.payload)}`,
+      );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearChargingProfile)
+  protected async _handleOcpp16ClearChargingProfile(
+    message: IMessage<OCPP1_6.ClearChargingProfileResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 ClearChargingProfileResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    if (message.payload.status === OCPP1_6.ClearChargingProfileResponseStatus.Accepted) {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            tenantId: tenantId,
+            stationId: stationId,
+            isActive: true,
+          },
+          returning: false,
+        },
+      );
+    } else {
+      this._logger.error(
+        `OCPP 1.6 ClearChargingProfile failed: ${JSON.stringify(message.payload)}`,
+      );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetCompositeSchedule)
+  protected async _handleOcpp16GetCompositeSchedule(
+    message: IMessage<OCPP1_6.GetCompositeScheduleResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 GetCompositeScheduleResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+    const response = message.payload;
+    if (
+      response.status === OCPP1_6.GetCompositeScheduleResponseStatus.Accepted &&
+      response.chargingSchedule
+    ) {
+      const compositeSchedule: OCPP2_0_1.CompositeScheduleType = {
+        evseId: response.connectorId ?? 0,
+        duration: response.chargingSchedule.duration ?? 0,
+        scheduleStart: response.chargingSchedule.startSchedule ?? new Date().toISOString(),
+        chargingRateUnit: response.chargingSchedule
+          .chargingRateUnit as unknown as OCPP2_0_1.ChargingRateUnitEnumType,
+        chargingSchedulePeriod: response.chargingSchedule.chargingSchedulePeriod.map((p) => ({
+          startPeriod: p.startPeriod,
+          limit: p.limit,
+          numberPhases: p.numberPhases ?? undefined,
+        })) as [OCPP2_0_1.ChargingSchedulePeriodType, ...OCPP2_0_1.ChargingSchedulePeriodType[]],
+      };
+      const saved = await this._chargingProfileRepository.createCompositeSchedule(
+        tenantId,
+        compositeSchedule,
+        stationId,
+      );
+      this._logger.info(`OCPP 1.6 Composite schedule created: ${JSON.stringify(saved)}`);
+    } else {
+      this._logger.error(`OCPP 1.6 GetCompositeSchedule failed: ${JSON.stringify(response)}`);
+    }
   }
 }

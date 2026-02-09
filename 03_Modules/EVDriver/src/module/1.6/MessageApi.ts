@@ -14,8 +14,10 @@ import {
   DEFAULT_TENANT_ID,
   OCPP1_6,
   OCPP1_6_CallAction,
+  OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
+import { OCPP1_6_Mapper } from '@citrineos/data';
 
 export class EVDriverOcpp16Api
   extends AbstractModuleApi<EVDriverModule>
@@ -42,17 +44,33 @@ export class EVDriverOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results = identifier.map((id) =>
-      this._module.sendCall(
-        id,
-        tenantId,
-        OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.RemoteStartTransaction,
-        request,
-        callbackUrl,
-      ),
+    return Promise.all(
+      identifier.map(async (id) => {
+        if (request.chargingProfile) {
+          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.remoteStartToChargingProfileType(
+            request.chargingProfile,
+          );
+
+          // Save the charging profile, set the source to "CSO"
+          await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
+            tenantId,
+            mapped,
+            id,
+            request.connectorId ?? null,
+            OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          );
+        }
+
+        return this._module.sendCall(
+          id,
+          tenantId,
+          OCPPVersion.OCPP1_6,
+          OCPP1_6_CallAction.RemoteStartTransaction,
+          request,
+          callbackUrl,
+        );
+      }),
     );
-    return Promise.all(results);
   }
 
   @AsMessageEndpoint(
