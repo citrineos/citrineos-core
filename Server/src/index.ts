@@ -407,7 +407,7 @@ export class CitrineOSServer {
       this._authenticator,
       this._router,
       this._logger,
-      this._repositoryStore.locationRepository.findTenantIdByStationId.bind(
+      this._repositoryStore.locationRepository.doesChargingStationExistByStationId.bind(
         this._repositoryStore.locationRepository,
       ),
     );

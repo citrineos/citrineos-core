@@ -22,13 +22,13 @@ export interface IMessageRouter extends IModule {
   deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
 
   /**
-   * Resolve tenant ID for a charging station by station ID (e.g. from DB when not in cache).
-   * Used at WebSocket connection time to avoid registering with the wrong tenant.
+   * Check if a charging station exists for a given tenant.
    *
-   * @param {string} stationId - The charging station ID.
-   * @return {Promise<number | undefined>} The tenant ID if the station exists, undefined otherwise.
+   * @param tenantId The tenant ID.
+   * @param stationId The station ID.
+   * @returns true if the station exists for this tenant, false otherwise
    */
-  resolveTenantIdByStationId?(stationId: string): Promise<number | undefined>;
+  doesChargingStationExistByStationId?(tenantId: number, stationId: string): Promise<boolean>;
 
   /**
    * Receive a message from the Network Connection.
