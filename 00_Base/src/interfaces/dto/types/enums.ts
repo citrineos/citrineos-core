@@ -317,6 +317,8 @@ export const PhaseEnumSchema = z.enum([
 
 export const LocationEnumSchema = z.enum(['Body', 'Cable', 'EV', 'Inlet', 'Outlet']);
 
+export const OCPIVersionNumberSchema = z.enum(['2.2.1']);
+
 // ============================================================================
 // Enum Exports
 // ============================================================================
@@ -344,6 +346,7 @@ export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
 export const ReadingContextEnum = ReadingContextEnumSchema.enum;
 export const PhaseEnum = PhaseEnumSchema.enum;
 export const LocationEnum = LocationEnumSchema.enum;
+export const OCPIVersionNumberEnum = OCPIVersionNumberSchema.enum;
 
 // ============================================================================
 // Type Exports
@@ -374,3 +377,4 @@ export type TriggerReasonEnumType = z.infer<typeof TriggerReasonEnumSchema>;
 export type ReadingContextEnumType = z.infer<typeof ReadingContextEnumSchema>;
 export type PhaseEnumType = z.infer<typeof PhaseEnumSchema>;
 export type LocationEnumType = z.infer<typeof LocationEnumSchema>;
+export type OCPIVersionNumberEnumType = z.infer<typeof OCPIVersionNumberSchema>;
