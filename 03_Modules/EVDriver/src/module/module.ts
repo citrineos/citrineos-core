@@ -862,25 +862,41 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
 
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+
     if (message.payload.status === OCPP1_6.RemoteStartTransactionResponseStatus.Accepted) {
-      const tenantId = message.context.tenantId;
-      const stationId: string = message.context.stationId;
-      // Set stored profile to isActive true
-      await this._chargingProfileRepository.updateAllByQuery(
-        tenantId,
-        {
-          isActive: true,
+      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId: tenantId,
+          stationId: stationId,
+          correlationId: message.context.correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
         },
-        {
-          where: {
-            tenantId: tenantId,
-            stationId: stationId,
-            isActive: false,
-            chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
-          },
-          returning: false,
-        },
-      );
+      });
+
+      if (originalMessage) {
+        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+
+        if (originalRequest.chargingProfile) {
+          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.remoteStartToChargingProfileInput(
+            originalRequest.chargingProfile,
+          );
+
+          await this._chargingProfileRepository.createOrUpdateChargingProfile(
+            tenantId,
+            mapped,
+            stationId,
+            originalRequest.connectorId ?? null,
+            undefined,
+            true,
+          );
+        }
+      } else {
+        this._logger.error(
+          `OCPP 1.6 RemoteStartTransaction accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
+        );
+      }
     } else {
       this._logger.error(
         `OCPP 1.6 RemoteStartTransaction rejected: ${JSON.stringify(message.payload)}`,

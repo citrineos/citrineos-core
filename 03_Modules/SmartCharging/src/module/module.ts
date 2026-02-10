@@ -17,6 +17,7 @@ import {
   ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
+  MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -26,9 +27,11 @@ import {
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
+  IOCPPMessageRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
+  OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
@@ -55,6 +58,7 @@ export class SmartChargingModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   protected _smartChargingService: ISmartCharging;
 
@@ -109,6 +113,7 @@ export class SmartChargingModule extends AbstractModule {
     chargingProfileRepository?: IChargingProfileRepository,
     smartChargingService?: ISmartCharging,
     idGenerator?: IdGenerator,
+    ocppMessageRepository?: IOCPPMessageRepository,
   ) {
     super(
       config,
@@ -130,6 +135,8 @@ export class SmartChargingModule extends AbstractModule {
     this._chargingProfileRepository =
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
 
     this._smartChargingService =
       smartChargingService || new InternalSmartCharging(this._chargingProfileRepository);
@@ -149,6 +156,10 @@ export class SmartChargingModule extends AbstractModule {
 
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
+  }
+
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   /**
@@ -553,24 +564,37 @@ export class SmartChargingModule extends AbstractModule {
     this._logger.debug('OCPP 1.6 SetChargingProfileResponse received:', message, props);
 
     const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+
     if (message.payload.status === OCPP1_6.SetChargingProfileResponseStatus.Accepted) {
-      const stationId: string = message.context.stationId;
-      // Set stored profile to isActive true
-      await this._chargingProfileRepository.updateAllByQuery(
-        tenantId,
-        {
-          isActive: true,
+      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId: tenantId,
+          stationId: stationId,
+          correlationId: message.context.correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
         },
-        {
-          where: {
-            tenantId: tenantId,
-            stationId: stationId,
-            isActive: false,
-            chargingLimitSource: OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
-          },
-          returning: false,
-        },
-      );
+      });
+
+      if (originalMessage) {
+        const originalRequest = originalMessage.message[3] as OCPP1_6.SetChargingProfileRequest;
+        const mapped = OCPP1_6_Mapper.ChargingProfileMapper.toChargingProfileInput(
+          originalRequest.csChargingProfiles,
+        );
+
+        await this._chargingProfileRepository.createOrUpdateChargingProfile(
+          tenantId,
+          mapped,
+          stationId,
+          originalRequest.connectorId,
+          undefined,
+          true,
+        );
+      } else {
+        this._logger.error(
+          `OCPP 1.6 SetChargingProfile accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
+        );
+      }
     } else {
       this._logger.error(
         `OCPP 1.6 SetChargingProfile rejected: ${JSON.stringify(message.payload)}`,

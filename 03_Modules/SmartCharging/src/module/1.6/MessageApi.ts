@@ -13,11 +13,9 @@ import {
   DEFAULT_TENANT_ID,
   OCPP1_6,
   OCPP1_6_CallAction,
-  OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
-import { OCPP1_6_Mapper } from '@citrineos/data';
 
 /**
  * Server API for the OCPP 1.6 SmartCharging module.
@@ -42,37 +40,23 @@ export class SmartChargingOcpp16Api
   }
 
   @AsMessageEndpoint(OCPP1_6_CallAction.SetChargingProfile, OCPP1_6.SetChargingProfileRequestSchema)
-  async setChargingProfile(
+  setChargingProfile(
     identifier: string[],
     request: OCPP1_6.SetChargingProfileRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
-      identifier.map(async (id) => {
-        const mapped = OCPP1_6_Mapper.ChargingProfileMapper.toChargingProfileType(
-          request.csChargingProfiles,
-        );
-
-        // Save the charging profile, set the source to "CSO"
-        await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
-          tenantId,
-          mapped,
-          id,
-          request.connectorId,
-          OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
-        );
-
-        // Finally, send the call to the station
-        return this._module.sendCall(
+      identifier.map((id) =>
+        this._module.sendCall(
           id,
           tenantId,
           OCPPVersion.OCPP1_6,
           OCPP1_6_CallAction.SetChargingProfile,
           request,
           callbackUrl,
-        );
-      }),
+        ),
+      ),
     );
   }
 
