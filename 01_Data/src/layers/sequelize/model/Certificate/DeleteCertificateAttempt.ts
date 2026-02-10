@@ -1,10 +1,10 @@
-import { DeleteCertificateStatusEnumType, HashAlgorithmEnumType, Namespace } from '@citrineos/base';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { ChargingStation } from '../Location';
+import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { ChargingStation } from '../Location/index.js';
 
 @Table
 export class DeleteCertificateAttempt extends Model {
-  static readonly MODEL_NAME: string = Namespace.DeleteCertificateAttempt;
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.DeleteCertificateAttempt;
 
   @ForeignKey(() => ChargingStation)
   @Column({
@@ -20,7 +20,7 @@ export class DeleteCertificateAttempt extends Model {
     type: DataType.ENUM('SHA256', 'SHA384', 'SHA512'),
     allowNull: false,
   })
-  declare hashAlgorithm: HashAlgorithmEnumType;
+  declare hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType;
 
   @Column(DataType.STRING)
   declare issuerNameHash: string;
@@ -35,5 +35,5 @@ export class DeleteCertificateAttempt extends Model {
     type: DataType.ENUM('Accepted', 'Failed', 'NotFound'),
     allowNull: true,
   })
-  declare status?: DeleteCertificateStatusEnumType | null;
+  declare status?: OCPP2_0_1.DeleteCertificateStatusEnumType | null;
 }

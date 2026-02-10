@@ -531,12 +531,38 @@ export class CertificatesDataApi
       Body: UploadExistingCertificate;
       Querystring: IMessageQuerystring;
     }>,
-  ): Promise<InstalledCertificate> {
+  ): Promise<InstalledCertificate[]> {
     const uploadExistingCertificate = request.body as UploadExistingCertificate;
     const messageQuerystring = request.query as IMessageQuerystring;
     const tenantId = messageQuerystring.tenantId || DEFAULT_TENANT_ID;
+    const identifier = messageQuerystring.identifier;
+    const isIdentifierList = Array.isArray(identifier);
+    if (isIdentifierList) {
+      let promises: Promise<InstalledCertificate>[] = [];
+      for (let identifierElement of identifier) {
+        promises.push(
+          this.handleUploadExistingCertificate(
+            tenantId,
+            identifierElement,
+            uploadExistingCertificate,
+          ),
+        );
+      }
+      return await Promise.all(promises);
+    } else {
+      return [
+        await this.handleUploadExistingCertificate(tenantId, identifier, uploadExistingCertificate),
+      ];
+    }
+  }
+
+  async handleUploadExistingCertificate(
+    tenantId: number,
+    identifier: string,
+    uploadExistingCertificate: UploadExistingCertificate,
+  ): Promise<InstalledCertificate> {
     this._logger.info(
-      `Uploading existing ${uploadExistingCertificate.certificateType} certificate for charger ${messageQuerystring.identifier}`,
+      `Uploading existing ${uploadExistingCertificate.certificateType} certificate for charger ${identifier}`,
     );
     const certificate = uploadExistingCertificate.certificate;
     const {
@@ -552,7 +578,7 @@ export class CertificatesDataApi
     let existingInstalledCertificate =
       await this._module.installedCertificateRepository.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId: messageQuerystring.identifier,
+          stationId: identifier,
           certificateType: uploadExistingCertificate.certificateType,
         },
       });
@@ -609,7 +635,7 @@ export class CertificatesDataApi
         signatureAlgorithm,
       );
       existingInstalledCertificate = new InstalledCertificate();
-      existingInstalledCertificate.stationId = messageQuerystring.identifier;
+      existingInstalledCertificate.stationId = identifier;
       existingInstalledCertificate.certificateId = newCertificate.id;
       existingInstalledCertificate.certificateType = uploadExistingCertificate.certificateType;
       existingInstalledCertificate = await existingInstalledCertificate.save();
@@ -858,10 +884,9 @@ export class CertificatesDataApi
 
       // Get the raw DER encoding of the certificate
       const derHex = cert.hex;
-      const derBuffer = Buffer.from(derHex, 'hex');
 
       // Compute SHA-256 hash
-      const hash = crypto.createHash('sha256').update(derBuffer).digest('hex');
+      const hash = jsrsasign.KJUR.crypto.Util.sha256(derHex);
 
       return hash;
     } catch (error) {

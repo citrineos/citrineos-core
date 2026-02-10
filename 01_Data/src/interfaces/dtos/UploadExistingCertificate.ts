@@ -1,6 +1,6 @@
-import { GetCertificateIdUseEnumType } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 
 export class UploadExistingCertificate {
   certificate!: string;
-  certificateType!: GetCertificateIdUseEnumType;
+  certificateType!: OCPP2_0_1.GetCertificateIdUseEnumType;
 }
