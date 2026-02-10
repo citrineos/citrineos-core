@@ -307,7 +307,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         throw new Error('No method available to check if charging station exists');
       }
 
-      // Use the resolved checker
       const exists = await checker(tenantId, stationId);
 
       if (!exists && !websocketServerConfig.allowUnknownChargingStations) {
