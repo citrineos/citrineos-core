@@ -317,6 +317,21 @@ export const PhaseEnumSchema = z.enum([
 
 export const LocationEnumSchema = z.enum(['Body', 'Cable', 'EV', 'Inlet', 'Outlet']);
 
+export const ChargingProfileKindEnumSchema = z.enum(['Absolute', 'Recurring', 'Relative']);
+
+export const ChargingProfilePurposeEnumSchema = z.enum([
+  'ChargingStationExternalConstraints',
+  'ChargingStationMaxProfile',
+  'TxDefaultProfile',
+  'TxProfile',
+]);
+
+export const RecurrencyKindEnumSchema = z.enum(['Daily', 'Weekly']);
+
+export const ChargingRateUnitEnumSchema = z.enum(['W', 'A']);
+
+export const ChargingLimitSourceEnumSchema = z.enum(['EMS', 'Other', 'SO', 'CSO']);
+
 export const OCPIVersionNumberSchema = z.enum(['2.2.1']);
 
 // ============================================================================
@@ -335,6 +350,11 @@ export const ConnectorFormatEnum = ConnectorFormatEnumSchema.enum;
 export const ConnectorPowerTypeEnum = ConnectorPowerTypeEnumSchema.enum;
 export const ConnectorStatusEnum = ConnectorStatusEnumSchema.enum;
 export const ConnectorTypeEnum = ConnectorTypeEnumSchema.enum;
+export const ChargingProfileKindEnum = ChargingProfileKindEnumSchema.enum;
+export const ChargingProfilePurposeEnum = ChargingProfilePurposeEnumSchema.enum;
+export const RecurrencyKindEnum = RecurrencyKindEnumSchema.enum;
+export const ChargingRateUnitEnum = ChargingRateUnitEnumSchema.enum;
+export const ChargingLimitSourceEnum = ChargingLimitSourceEnumSchema.enum;
 export const CostKindEnum = CostKindEnumSchema.enum;
 export const IdTokenEnum = IdTokenEnumSchema.enum;
 export const LocationFacilityEnum = LocationFacilityEnumSchema.enum;
@@ -366,6 +386,11 @@ export type ConnectorFormatEnumType = z.infer<typeof ConnectorFormatEnumSchema>;
 export type ConnectorPowerTypeEnumType = z.infer<typeof ConnectorPowerTypeEnumSchema>;
 export type ConnectorStatusEnumType = z.infer<typeof ConnectorStatusEnumSchema>;
 export type ConnectorTypeEnumType = z.infer<typeof ConnectorTypeEnumSchema>;
+export type ChargingProfileKindEnumType = z.infer<typeof ChargingProfileKindEnumSchema>;
+export type ChargingProfilePurposeEnumType = z.infer<typeof ChargingProfilePurposeEnumSchema>;
+export type RecurrencyKindEnumType = z.infer<typeof RecurrencyKindEnumSchema>;
+export type ChargingRateUnitEnumType = z.infer<typeof ChargingRateUnitEnumSchema>;
+export type ChargingLimitSourceEnumType = z.infer<typeof ChargingLimitSourceEnumSchema>;
 export type CostKindEnumType = z.infer<typeof CostKindEnumSchema>;
 export type IdTokenEnumType = z.infer<typeof IdTokenEnumSchema>;
 export type LocationFacilityEnumType = z.infer<typeof LocationFacilityEnumSchema>;
