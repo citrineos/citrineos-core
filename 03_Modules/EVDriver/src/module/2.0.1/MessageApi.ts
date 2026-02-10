@@ -17,6 +17,7 @@ import {
   OCPPVersion,
 } from '@citrineos/base';
 import { validateChargingProfileType } from '@citrineos/util';
+import { OCPP2_0_1_Mapper } from '@citrineos/data';
 import { v4 as uuidv4 } from 'uuid';
 
 export class EVDriverOcpp201Api
@@ -100,7 +101,7 @@ export class EVDriverOcpp201Api
           } else {
             await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
               tenantId,
-              chargingProfile,
+              OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
               i,
               request.evseId,
             );

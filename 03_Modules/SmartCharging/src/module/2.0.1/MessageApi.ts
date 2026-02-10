@@ -19,7 +19,7 @@ import {
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
-import { VariableAttribute } from '@citrineos/data';
+import { OCPP2_0_1_Mapper, VariableAttribute } from '@citrineos/data';
 import { stringToSet, validateChargingProfileType } from '@citrineos/util';
 
 /**
@@ -493,10 +493,10 @@ export class SmartChargingOcpp201Api
         // Save the charging profile, set the source to "CSO"
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
           tenantId,
-          chargingProfile,
+          OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
           id,
           request.evseId,
-          OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          'CSO',
         );
 
         // Finally, send the call to the station

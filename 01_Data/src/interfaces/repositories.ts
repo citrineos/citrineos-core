@@ -5,6 +5,8 @@
 import type {
   BootConfig,
   CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
   MeterValueDto,
@@ -12,6 +14,10 @@ import type {
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type {
   Authorization,
   Boot,
@@ -416,10 +422,10 @@ export interface IInstalledCertificateRepository extends CrudRepository<Installe
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
     tenantId: number,
-    chargingProfile: OCPP2_0_1.ChargingProfileType,
+    chargingProfile: ChargingProfileInput,
     stationId: string,
     evseId?: number | null,
-    chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType,
+    chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
   ): Promise<ChargingProfile>;
   createChargingNeeds(
@@ -434,7 +440,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: OCPP2_0_1.CompositeScheduleType,
+    compositeSchedule: CompositeScheduleInput,
     stationId: string,
   ): Promise<CompositeSchedule>;
   getNextChargingProfileId(tenantId: number, stationId: string): Promise<number>;
@@ -443,7 +449,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
-    profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
+    profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number>;
 }
 
