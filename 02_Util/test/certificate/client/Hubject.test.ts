@@ -1,7 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { HttpStatus, SystemConfig } from '@citrineos/base';
+import {
+  HttpStatus,
+  HUBJECT_DEFAULT_AUTH_TOKEN,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_TOKENURL,
+  SystemConfig,
+} from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { faker } from '@faker-js/faker';
@@ -13,9 +21,7 @@ import { MemoryCache } from '../../../src';
 describe('Hubject', () => {
   const mockBaseURL = 'https://hubject.base.test';
   const mockTokenURL = 'https://hubject.token.test';
-  const mockBearerToken =
-    'Bearer ' +
-    'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkJ3eEV0TkFGUnpSM3JlNVF2elM2QyJ9.eyJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vcm9sZSI6WyJBRE1JTiIsIk9FTSIsIkNQTyIsIk1PX0hVQkpFQ1RfUEtJIl0sImh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbS9wY2lkIjpbIkhVQiIsImh1YiJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZW1haWQiOlsiREVIVUIiLCJFTVA3NyJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X25hbWUiOlsiSHViamVjdCJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZGFzaDIwIjpbInRydWUiXSwiaHR0cHM6Ly9ldS5wbHVnbmNoYXJnZS10ZXN0Lmh1YmplY3QuY29tL2NsaWVudF9hcHAiOiJPcGVuIFRlc3QgRW52aXJvbm1lbnQiLCJpc3MiOiJodHRwczovL2F1dGguZXUucGx1Z25jaGFyZ2UuaHViamVjdC5jb20vIiwic3ViIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmdAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbSIsImlhdCI6MTc3MDA5NjUwMywiZXhwIjoxNzcwMTgyOTAzLCJzY29wZSI6InJjcHNlcnZpY2UgcGNwc2VydmljZSBjY3BzZXJ2aWNlIGNwc2VydmljZSBwa2lnYXRld2F5IiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIiwiYXpwIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmciLCJwZXJtaXNzaW9ucyI6WyJyY3BzZXJ2aWNlIiwicGNwc2VydmljZSIsImNjcHNlcnZpY2UiLCJjcHNlcnZpY2UiLCJwa2lnYXRld2F5Il19.o5TIIVQH7u9kPQHpNPOta6zAu1EoQCzPfG-29JM2EjxW_9kKlzCNa5EVAwVt2QiRWrVm3ozA6Gb7dvvzDJ0Oe-IkDCKPlNq7tOVhhiO2qSUtHH6vH-EHLADAITCisDAvY8HT1u0AkEEql5xznRea54EvSiCQ6PLlyxfIVhR4PjDPDGhmeg-W3kaITy1DZC7jC2v4hsj5WfNJ_GVq1NWQSxNARBv50us2qNNHoWorwwQaRodSRbzmSITmPMW0wv6NKV6j3n5SuSfpc73KvLCkXLUE4c0ZRKERSWEnTKWpZT4G3KPPS8mIyz8koiTP7Dy554OMoWLvdVfqPgFbYzPrAg';
+  const mockBearerToken = 'Bearer ' + HUBJECT_DEFAULT_AUTH_TOKEN;
   const mockClientID = 'test-client-id';
   const mockClientSecret = 'test-client-secret';
 
@@ -55,6 +61,32 @@ describe('Hubject', () => {
       // Clear cache before each token test
       await cache.remove('HUBJECT_AUTH_TOKEN', 'hubject');
       await cache.remove('HUBJECT_AUTH_TOKEN_LOCK', 'hubject');
+    });
+
+    it('should return default Bearer token when using default credentials', async () => {
+      // Create a new instance with default credentials
+      const defaultConfig: SystemConfig = {
+        util: {
+          certificateAuthority: {
+            v2gCA: {
+              name: 'hubject',
+              hubject: {
+                baseUrl: HUBJECT_DEFAULT_BASEURL,
+                tokenUrl: HUBJECT_DEFAULT_TOKENURL,
+                clientId: HUBJECT_DEFAULT_CLIENTID,
+                clientSecret: HUBJECT_DEFAULT_CLIENTSECRET,
+              },
+            },
+          },
+        },
+      } as SystemConfig;
+
+      const hubjectWithDefaults = new Hubject(defaultConfig, cache, logger);
+
+      const token = await (hubjectWithDefaults as any)._getAuthorizationToken();
+
+      expect(token).toBe(`Bearer ${HUBJECT_DEFAULT_AUTH_TOKEN}`);
+      expect(fetch).not.toHaveBeenCalled(); // No token fetch should occur
     });
 
     it('should successfully retrieve an authorization token', async () => {

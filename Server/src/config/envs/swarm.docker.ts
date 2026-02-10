@@ -5,6 +5,10 @@
 import {
   DEFAULT_TENANT_ID,
   defineConfig,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_TOKENURL,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -226,11 +230,10 @@ export function createDockerConfig() {
         v2gCA: {
           name: 'hubject',
           hubject: {
-            baseUrl: 'https://open.plugncharge-test.hubject.com',
-            tokenUrl:
-              'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-            clientId: 'YOUR_CLIENT_ID',
-            clientSecret: 'YOUR_CLIENT_SECRET',
+            baseUrl: HUBJECT_DEFAULT_BASEURL,
+            tokenUrl: HUBJECT_DEFAULT_TOKENURL,
+            clientId: HUBJECT_DEFAULT_CLIENTID,
+            clientSecret: HUBJECT_DEFAULT_CLIENTSECRET,
           },
         },
         chargingStationCA: {
