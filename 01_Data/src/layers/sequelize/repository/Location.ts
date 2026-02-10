@@ -94,11 +94,20 @@ export class SequelizeLocationRepository
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.updateByKey(
+    const result = await this.chargingStation.updateByKey(
       tenantId,
-      { isOnline: isOnline, protocol: ocppVersion },
+      { isOnline, protocol: ocppVersion },
       stationId,
     );
+
+    if (!result) {
+      this.logger.error(
+        `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with stationId ${stationId}. Update skipped to prevent modifying a station from a different tenant.`,
+      );
+      return undefined;
+    }
+
+    return result;
   }
 
   async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
