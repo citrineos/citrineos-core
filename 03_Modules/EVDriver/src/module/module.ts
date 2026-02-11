@@ -880,7 +880,7 @@ export class EVDriverModule extends AbstractModule {
         const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
 
         if (originalRequest.chargingProfile) {
-          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.remoteStartToChargingProfileInput(
+          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(
             originalRequest.chargingProfile,
           );
 

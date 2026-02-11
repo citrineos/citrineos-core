@@ -579,7 +579,7 @@ export class SmartChargingModule extends AbstractModule {
 
       if (originalMessage) {
         const originalRequest = originalMessage.message[3] as OCPP1_6.SetChargingProfileRequest;
-        const mapped = OCPP1_6_Mapper.ChargingProfileMapper.toChargingProfileInput(
+        const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromSetChargingProfileRequest(
           originalRequest.csChargingProfiles,
         );
 
