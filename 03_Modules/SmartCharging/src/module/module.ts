@@ -14,6 +14,7 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  ChargingLimitSourceEnum,
   ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
@@ -587,7 +588,7 @@ export class SmartChargingModule extends AbstractModule {
           mapped,
           stationId,
           originalRequest.connectorId,
-          undefined,
+          ChargingLimitSourceEnum.CSO,
           true,
         );
       } else {

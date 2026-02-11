@@ -19,6 +19,7 @@ import {
   AbstractModule,
   AsHandler,
   AuthorizationStatusEnum,
+  ChargingLimitSourceEnum,
   ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
@@ -888,7 +889,7 @@ export class EVDriverModule extends AbstractModule {
             mapped,
             stationId,
             originalRequest.connectorId ?? null,
-            undefined,
+            ChargingLimitSourceEnum.CSO,
             true,
           );
         }

@@ -2,8 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6 } from '@citrineos/base';
-import type { ChargingProfileInput } from '../../../../interfaces/index.js';
+import {
+  ChargingProfileKindEnum,
+  ChargingProfilePurposeEnum,
+  ChargingRateUnitEnum,
+  OCPP1_6,
+  RecurrencyKindEnum,
+} from '@citrineos/base';
+import type {
+  ChargingProfileInput,
+  ChargingSchedulePeriodInput,
+} from '../2.0.1/ChargingProfileMapper.js';
+
+/**
+ * Maps OCPP 1.6 charging profile purpose to the native enum.
+ * OCPP 1.6 uses 'ChargePointMaxProfile' while the native enum uses 'ChargingStationMaxProfile'.
+ */
+const PURPOSE_MAP: Record<string, keyof typeof ChargingProfilePurposeEnum> = {
+  ChargePointMaxProfile: 'ChargingStationMaxProfile',
+  TxDefaultProfile: 'TxDefaultProfile',
+  TxProfile: 'TxProfile',
+};
 
 export class ChargingProfileMapper {
   /**
@@ -16,21 +35,23 @@ export class ChargingProfileMapper {
     return {
       id: profile.chargingProfileId,
       stackLevel: profile.stackLevel,
-      chargingProfilePurpose: profile.chargingProfilePurpose,
-      chargingProfileKind: profile.chargingProfileKind,
-      recurrencyKind: profile.recurrencyKind ?? undefined,
+      chargingProfilePurpose: PURPOSE_MAP[profile.chargingProfilePurpose],
+      chargingProfileKind: profile.chargingProfileKind as keyof typeof ChargingProfileKindEnum,
+      recurrencyKind:
+        (profile.recurrencyKind as keyof typeof RecurrencyKindEnum | undefined) ?? undefined,
       validFrom: profile.validFrom ?? undefined,
       validTo: profile.validTo ?? undefined,
       transactionId: profile.transactionId?.toString(),
       chargingSchedule: [
         {
           id: profile.chargingProfileId,
-          chargingRateUnit: profile.chargingSchedule.chargingRateUnit,
+          chargingRateUnit: profile.chargingSchedule
+            .chargingRateUnit as keyof typeof ChargingRateUnitEnum,
           chargingSchedulePeriod: profile.chargingSchedule.chargingSchedulePeriod.map((p) => ({
             startPeriod: p.startPeriod,
             limit: p.limit,
             numberPhases: p.numberPhases ?? undefined,
-          })),
+          })) as [ChargingSchedulePeriodInput, ...ChargingSchedulePeriodInput[]],
           duration: profile.chargingSchedule.duration ?? undefined,
           startSchedule: profile.chargingSchedule.startSchedule ?? undefined,
           minChargingRate: profile.chargingSchedule.minChargingRate ?? undefined,
@@ -49,21 +70,23 @@ export class ChargingProfileMapper {
     return {
       id: profile.chargingProfileId ?? 0,
       stackLevel: profile.stackLevel,
-      chargingProfilePurpose: profile.chargingProfilePurpose,
-      chargingProfileKind: profile.chargingProfileKind,
-      recurrencyKind: profile.recurrencyKind ?? undefined,
+      chargingProfilePurpose: PURPOSE_MAP[profile.chargingProfilePurpose],
+      chargingProfileKind: profile.chargingProfileKind as keyof typeof ChargingProfileKindEnum,
+      recurrencyKind:
+        (profile.recurrencyKind as keyof typeof RecurrencyKindEnum | undefined) ?? undefined,
       validFrom: profile.validFrom ?? undefined,
       validTo: profile.validTo ?? undefined,
       transactionId: profile.transactionId?.toString(),
       chargingSchedule: [
         {
           id: profile.chargingProfileId ?? 0,
-          chargingRateUnit: profile.chargingSchedule.chargingRateUnit,
+          chargingRateUnit: profile.chargingSchedule
+            .chargingRateUnit as keyof typeof ChargingRateUnitEnum,
           chargingSchedulePeriod: profile.chargingSchedule.chargingSchedulePeriod.map((p) => ({
             startPeriod: p.startPeriod,
             limit: p.limit,
             numberPhases: p.numberPhases ?? undefined,
-          })),
+          })) as [ChargingSchedulePeriodInput, ...ChargingSchedulePeriodInput[]],
           duration: profile.chargingSchedule.duration ?? undefined,
           startSchedule: profile.chargingSchedule.startSchedule ?? undefined,
           minChargingRate: profile.chargingSchedule.minChargingRate ?? undefined,
