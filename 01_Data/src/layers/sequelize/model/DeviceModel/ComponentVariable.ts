@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import type { ComponentVariableDto, TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -19,7 +19,7 @@ import { Component } from './Component.js';
 import { Variable } from './Variable.js';
 
 @Table
-export class ComponentVariable extends Model {
+export class ComponentVariable extends Model implements ComponentVariableDto {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ComponentVariable';
 
