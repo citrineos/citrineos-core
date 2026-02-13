@@ -138,6 +138,9 @@ export function createLocalConfig() {
           OCPP2_0_1_CallAction.GetChargingProfiles,
           OCPP2_0_1_CallAction.GetCompositeSchedule,
           OCPP2_0_1_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.ClearChargingProfile,
+          OCPP1_6_CallAction.GetCompositeSchedule,
         ],
         requests: [
           OCPP2_0_1_CallAction.ClearedChargingLimit,

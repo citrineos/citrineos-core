@@ -362,6 +362,7 @@ export class SmartChargingOcpp201Api
           const existedChargingProfiles =
             await this._module.chargingProfileRepository.readAllByQuery(tenantId, {
               where: {
+                stationId: id,
                 stackLevel: chargingProfile.stackLevel,
                 chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
                 evseId: request.evseId,
