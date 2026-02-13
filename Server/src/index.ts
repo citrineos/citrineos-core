@@ -58,6 +58,7 @@ import {
   TransactionsOcpp201Api,
 } from '@citrineos/transactions';
 import {
+  apiAuthPluginFp,
   Authenticator,
   BasicAuthenticationFilter,
   CertificateAuthorityService,
@@ -75,7 +76,6 @@ import {
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import type { FastifyInstance } from 'fastify';
@@ -353,7 +353,7 @@ export class CitrineOSServer {
 
   private registerApiAuth() {
     const authProvider = this.initApiAuthProvider();
-    this._server.register(ApiAuthPlugin, {
+    this._server.register(apiAuthPluginFp, {
       provider: authProvider,
       options: {
         excludedRoutes: [
