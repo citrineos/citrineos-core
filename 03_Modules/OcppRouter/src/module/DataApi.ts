@@ -288,6 +288,8 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
       securityProfile,
       tenantId,
       allowUnknownChargingStations,
+      dynamicTenantResolution: false,
+      maxConnectionsPerTenant: undefined,
     };
 
     // save new config in db

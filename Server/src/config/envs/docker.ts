@@ -197,6 +197,7 @@ export function createDockerConfig() {
             port: 8081,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
           {
             id: '1',
@@ -207,6 +208,7 @@ export function createDockerConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
           {
             id: '2',
@@ -229,6 +231,7 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
           {
             id: '3',
@@ -255,6 +258,8 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
+            maxConnectionsPerTenant: 1,
           },
           {
             id: '4',
@@ -265,6 +270,8 @@ export function createDockerConfig() {
             port: 8092,
             protocol: 'ocpp1.6',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
+            maxConnectionsPerTenant: 1,
           },
         ],
       },

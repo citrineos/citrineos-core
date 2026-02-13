@@ -35,6 +35,7 @@ import type {
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
+  ITenantRepository,
 } from '@citrineos/data';
 import {
   Boot,
@@ -129,6 +130,7 @@ export class ConfigurationModule extends AbstractModule {
     changeConfigurationRepository?: IChangeConfigurationRepository,
     ocppMessageRepository?: IOCPPMessageRepository,
     idGenerator?: IdGenerator,
+    tenantRepository?: ITenantRepository,
   ) {
     super(
       config,
@@ -156,6 +158,9 @@ export class ConfigurationModule extends AbstractModule {
     this._ocppMessageRepository =
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 
+    this._tenantRepository =
+      tenantRepository || new sequelize.SequelizeTenantRepository(config, this._logger);
+
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 
     this._bootService = new BootNotificationService(
@@ -168,6 +173,12 @@ export class ConfigurationModule extends AbstractModule {
     this._idGenerator =
       idGenerator ||
       new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
+  }
+
+  protected _tenantRepository: ITenantRepository;
+
+  get tenantRepository(): ITenantRepository {
+    return this._tenantRepository;
   }
 
   protected _bootRepository: IBootRepository;
@@ -221,6 +232,35 @@ export class ConfigurationModule extends AbstractModule {
     const tenantId = message.context.tenantId;
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
+
+    // Quick guard: validate tenant exists before proceeding.
+    try {
+      const tenantRecord = await this._tenantRepository.readByKey(tenantId, tenantId);
+      if (!tenantRecord) {
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
+            message.context.correlationId,
+            ErrorCode.SecurityError,
+            `Unknown tenant ${tenantId}`,
+            {},
+          ),
+        );
+        return;
+      }
+    } catch (err) {
+      this._logger.warn('Tenant validation failed', err);
+      await this.sendCallErrorWithMessage(
+        message,
+        new OcppError(
+          message.context.correlationId,
+          ErrorCode.SecurityError,
+          `Tenant validation error for ${tenantId}`,
+          {},
+        ),
+      );
+      return;
+    }
 
     const bootNotificationResponse: OCPP2_0_1.BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(tenantId, stationId);
