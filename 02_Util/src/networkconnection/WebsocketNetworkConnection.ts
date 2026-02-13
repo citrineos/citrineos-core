@@ -552,7 +552,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       // Path segment: assume /{tenant}/{station} or /.../{tenant}/{station}
       const segments = url.pathname.split('/').filter(Boolean);
       if (segments.length >= 2) {
-        const candidate = segments[segments.length - 1];
+        const candidate = segments[segments.length - 2];
         if (candidate && !Number.isNaN(Number(candidate))) return Number(candidate);
       }
     } catch (err) {
