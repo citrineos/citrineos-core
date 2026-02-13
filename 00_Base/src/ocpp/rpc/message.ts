@@ -49,9 +49,10 @@ export enum MessageTypeId {
 export enum OCPPVersion {
   OCPP1_6 = 'ocpp1.6',
   OCPP2_0_1 = 'ocpp2.0.1',
+  OCPP2_1 = 'ocpp2.1',
 }
 
-export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1';
+export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
 
 /**
  * The different OCPP action types.
@@ -275,6 +276,7 @@ export function mapToCallAction(version: OCPPVersionType, action: string): CallA
       throw new Error(`Invalid OCPP 1.6 action: ${action}`);
 
     case 'ocpp2.0.1':
+    case 'ocpp2.1': //Placeholder for 2.1, TODO
       if (action in OCPP2_0_1_CallAction) {
         return OCPP2_0_1_CallAction[action as keyof typeof OCPP2_0_1_CallAction];
       }

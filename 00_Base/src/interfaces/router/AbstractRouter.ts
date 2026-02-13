@@ -198,6 +198,9 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
       case OCPPVersion.OCPP2_0_1:
         schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
         break;
+      case OCPPVersion.OCPP2_1: //Placeholder for 2.1, TODO
+        schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
+        break;
       default:
         this._logger.error('Unknown subprotocol', protocol);
         return { isValid: false };
@@ -269,6 +272,9 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
       case OCPPVersion.OCPP2_0_1:
+        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
+        break;
+      case OCPPVersion.OCPP2_1: //Placeholder for 2.1, TODO
         schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
         break;
       default:
