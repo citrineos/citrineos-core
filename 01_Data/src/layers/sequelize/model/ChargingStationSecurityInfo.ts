@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import type { ChargingStationSecurityInfoDto, TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -19,7 +19,7 @@ import { Tenant } from './Tenant.js';
  * Represents the security information found on a particular charging station.
  */
 @Table
-export class ChargingStationSecurityInfo extends Model {
+export class ChargingStationSecurityInfo extends Model implements ChargingStationSecurityInfoDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ChargingStationSecurityInfo;
 
   @Column({

@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingScheduleDto, SalesTariffDto, TenantDto } from '@citrineos/base';
+import type {
+  ChargingScheduleDto,
+  SalesTariffDto,
+  SalesTariffEntry,
+  TenantDto,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -43,7 +48,7 @@ export class SalesTariff extends Model implements SalesTariffDto {
   declare salesTariffDescription?: string | null;
 
   @Column(DataType.JSONB)
-  declare salesTariffEntry: [OCPP2_0_1.SalesTariffEntryType, ...OCPP2_0_1.SalesTariffEntryType[]];
+  declare salesTariffEntry: [SalesTariffEntry, ...SalesTariffEntry[]];
 
   /**
    * Relations

@@ -22,7 +22,7 @@ export const TransactionSchema = BaseSchema.extend({
   isActive: z.boolean(),
   locationId: z.number().int().optional(),
   location: LocationSchema.optional(),
-  station: ChargingStationSchema.optional(),
+  station: ChargingStationSchema,
   evseId: z.number().int().optional(),
   evse: EvseSchema.nullable().optional(),
   connectorId: z.number().int().optional(),
@@ -37,6 +37,7 @@ export const TransactionSchema = BaseSchema.extend({
   stopTransaction: StopTransactionSchema.optional(),
   chargingState: z.string().nullable().optional(),
   timeSpentCharging: z.number().int().nullable().optional(), // BIGINT
+  meterStart: z.number().int().nullable().optional(),
   totalKwh: z.number().nullable().optional(), // DECIMAL
   stoppedReason: z.string().nullable().optional(),
   remoteStartId: z.number().int().nullable().optional(),

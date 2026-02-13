@@ -26,6 +26,7 @@ import {
   type ChargingStation as ChargingStationType,
   ChargingStation,
 } from '../Location/ChargingStation.js';
+// keep the direct import to avoid circular dependency
 import { Connector } from '../Location/Connector.js';
 import { Evse } from '../Location/Evse.js';
 import { type Location as LocationType, Location } from '../Location/Location.js';

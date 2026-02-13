@@ -12,6 +12,7 @@ export const TenantSchema = z.object({
   countryCode: z.string().nullable().optional(),
   partyId: z.string().nullable().optional(),
   serverProfileOCPI: ServerProfileSchema.nullable().optional(),
+  isUserTenant: z.boolean().default(false),
   updatedAt: z.date().optional(),
   createdAt: z.date().optional(),
 });

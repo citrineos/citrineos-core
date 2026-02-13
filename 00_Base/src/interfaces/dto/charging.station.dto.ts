@@ -31,7 +31,7 @@ export const ChargingStationSchema = BaseSchema.extend({
   floorLevel: z.string().nullable().optional(),
   parkingRestrictions: z.array(ChargingStationParkingRestrictionSchema).nullable().optional(),
   capabilities: z.array(ChargingStationCapabilitySchema).nullable().optional(),
-  use16StatusNotification0: z.boolean().nullable().optional(),
+  use16StatusNotification0: z.boolean().default(true).nullable().optional(),
   locationId: z.number().int().nullable().optional(),
   networkProfiles: z.any().optional(),
   evses: z.array(EvseSchema).nullable().optional(),

@@ -9,7 +9,7 @@ import { BaseSchema } from './types/base.dto.js';
 export const LatestStatusNotificationSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   stationId: z.string(),
-  statusNotificationId: z.number().int(),
+  statusNotificationId: z.string(),
   chargingStation: ChargingStationSchema.optional(),
   statusNotification: StatusNotificationSchema.optional(),
 });

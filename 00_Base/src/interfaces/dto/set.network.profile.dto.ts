@@ -5,6 +5,11 @@
 import { z } from 'zod';
 import { ServerNetworkProfileSchema } from './server.network.profile.dto.js';
 import { BaseSchema } from './types/base.dto.js';
+import {
+  OCPPInterfaceEnumSchema,
+  OCPPTransportEnumSchema,
+  OCPPVersionEnumSchema,
+} from './types/enums.js';
 
 export const SetNetworkProfileSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -13,12 +18,12 @@ export const SetNetworkProfileSchema = BaseSchema.extend({
   websocketServerConfigId: z.string().optional(),
   websocketServerConfig: ServerNetworkProfileSchema.optional(),
   configurationSlot: z.number().int(),
-  ocppVersion: z.string(),
-  ocppTransport: z.string(),
+  ocppVersion: OCPPVersionEnumSchema,
+  ocppTransport: OCPPTransportEnumSchema,
   ocppCsmsUrl: z.string(),
   messageTimeout: z.number().int(),
   securityProfile: z.number().int(),
-  ocppInterface: z.string(),
+  ocppInterface: OCPPInterfaceEnumSchema,
   apn: z.string().optional(), // Stringified JSON
   vpn: z.string().optional(), // Stringified JSON
 });

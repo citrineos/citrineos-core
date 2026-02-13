@@ -5,6 +5,7 @@ import type {
   VariableMonitoringDto,
   VariableMonitoringStatusDto,
   TenantDto,
+  StatusInfo,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
@@ -28,7 +29,7 @@ export class VariableMonitoringStatus extends Model implements VariableMonitorin
   declare status: string;
 
   @Column(DataType.JSON)
-  declare statusInfo?: OCPP2_0_1.StatusInfoType | null;
+  declare statusInfo?: StatusInfo | null;
 
   /**
    * Relations
