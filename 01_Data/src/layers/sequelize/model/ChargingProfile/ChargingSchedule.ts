@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   ChargingProfileDto,
+  ChargingRateUnitEnumType,
   ChargingScheduleDto,
   SalesTariffDto,
   TenantDto,
@@ -50,7 +51,7 @@ export class ChargingSchedule extends Model implements ChargingScheduleDto {
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare chargingRateUnit: string;
+  declare chargingRateUnit: ChargingRateUnitEnumType;
 
   @Column(DataType.JSONB)
   declare chargingSchedulePeriod: [any, ...any[]];

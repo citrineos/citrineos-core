@@ -3,7 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IV2GCertificateAuthorityClient } from './interface.js';
-import { HttpMethod, HttpStatus, type ICache, type SystemConfig } from '@citrineos/base';
+import {
+  HttpMethod,
+  HttpStatus,
+  HUBJECT_DEFAULT_AUTH_TOKEN,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_TOKENURL,
+  type ICache,
+  type SystemConfig,
+} from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { createPemBlock } from '../CertificateUtil.js';
@@ -141,6 +151,18 @@ export class Hubject implements IV2GCertificateAuthorityClient {
   }
 
   private async _getAuthorizationToken(retryCount = 0): Promise<string> {
+    if (
+      this._baseUrl === HUBJECT_DEFAULT_BASEURL &&
+      this._tokenUrl === HUBJECT_DEFAULT_TOKENURL &&
+      this._clientId === HUBJECT_DEFAULT_CLIENTID &&
+      this._clientSecret === HUBJECT_DEFAULT_CLIENTSECRET
+    ) {
+      this._logger.warn(
+        'Using default Hubject credentials. Please set them in the configuration if needed.',
+      );
+      return `Bearer ${HUBJECT_DEFAULT_AUTH_TOKEN}`;
+    }
+
     const MAX_RETRIES = 10;
 
     if (retryCount >= MAX_RETRIES) {

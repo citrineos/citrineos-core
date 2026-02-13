@@ -237,7 +237,9 @@ export const MeasurandEnumSchema = z.enum([
   'Power.Offered',
   'Power.Reactive.Export',
   'Power.Reactive.Import',
+  'RPM',
   'SoC',
+  'Temperature',
   'Voltage',
 ]);
 
@@ -289,6 +291,49 @@ export const TriggerReasonEnumSchema = z.enum([
   'ResetCommand',
 ]);
 
+export const ReadingContextEnumSchema = z.enum([
+  'Interruption.Begin',
+  'Interruption.End',
+  'Other',
+  'Sample.Clock',
+  'Sample.Periodic',
+  'Transaction.Begin',
+  'Transaction.End',
+  'Trigger',
+]);
+
+export const PhaseEnumSchema = z.enum([
+  'L1',
+  'L2',
+  'L3',
+  'N',
+  'L1-N',
+  'L2-N',
+  'L3-N',
+  'L1-L2',
+  'L2-L3',
+  'L3-L1',
+]);
+
+export const LocationEnumSchema = z.enum(['Body', 'Cable', 'EV', 'Inlet', 'Outlet']);
+
+export const ChargingProfileKindEnumSchema = z.enum(['Absolute', 'Recurring', 'Relative']);
+
+export const ChargingProfilePurposeEnumSchema = z.enum([
+  'ChargingStationExternalConstraints',
+  'ChargingStationMaxProfile',
+  'TxDefaultProfile',
+  'TxProfile',
+]);
+
+export const RecurrencyKindEnumSchema = z.enum(['Daily', 'Weekly']);
+
+export const ChargingRateUnitEnumSchema = z.enum(['W', 'A']);
+
+export const ChargingLimitSourceEnumSchema = z.enum(['EMS', 'Other', 'SO', 'CSO']);
+
+export const OCPIVersionNumberSchema = z.enum(['2.2.1']);
+
 // ============================================================================
 // Enum Exports
 // ============================================================================
@@ -305,6 +350,11 @@ export const ConnectorFormatEnum = ConnectorFormatEnumSchema.enum;
 export const ConnectorPowerTypeEnum = ConnectorPowerTypeEnumSchema.enum;
 export const ConnectorStatusEnum = ConnectorStatusEnumSchema.enum;
 export const ConnectorTypeEnum = ConnectorTypeEnumSchema.enum;
+export const ChargingProfileKindEnum = ChargingProfileKindEnumSchema.enum;
+export const ChargingProfilePurposeEnum = ChargingProfilePurposeEnumSchema.enum;
+export const RecurrencyKindEnum = RecurrencyKindEnumSchema.enum;
+export const ChargingRateUnitEnum = ChargingRateUnitEnumSchema.enum;
+export const ChargingLimitSourceEnum = ChargingLimitSourceEnumSchema.enum;
 export const CostKindEnum = CostKindEnumSchema.enum;
 export const IdTokenEnum = IdTokenEnumSchema.enum;
 export const LocationFacilityEnum = LocationFacilityEnumSchema.enum;
@@ -313,6 +363,10 @@ export const MeasurandEnum = MeasurandEnumSchema.enum;
 export const ReasonEnum = ReasonEnumSchema.enum;
 export const TransactionEventEnum = TransactionEventEnumSchema.enum;
 export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
+export const ReadingContextEnum = ReadingContextEnumSchema.enum;
+export const PhaseEnum = PhaseEnumSchema.enum;
+export const LocationEnum = LocationEnumSchema.enum;
+export const OCPIVersionNumberEnum = OCPIVersionNumberSchema.enum;
 
 // ============================================================================
 // Type Exports
@@ -332,6 +386,11 @@ export type ConnectorFormatEnumType = z.infer<typeof ConnectorFormatEnumSchema>;
 export type ConnectorPowerTypeEnumType = z.infer<typeof ConnectorPowerTypeEnumSchema>;
 export type ConnectorStatusEnumType = z.infer<typeof ConnectorStatusEnumSchema>;
 export type ConnectorTypeEnumType = z.infer<typeof ConnectorTypeEnumSchema>;
+export type ChargingProfileKindEnumType = z.infer<typeof ChargingProfileKindEnumSchema>;
+export type ChargingProfilePurposeEnumType = z.infer<typeof ChargingProfilePurposeEnumSchema>;
+export type RecurrencyKindEnumType = z.infer<typeof RecurrencyKindEnumSchema>;
+export type ChargingRateUnitEnumType = z.infer<typeof ChargingRateUnitEnumSchema>;
+export type ChargingLimitSourceEnumType = z.infer<typeof ChargingLimitSourceEnumSchema>;
 export type CostKindEnumType = z.infer<typeof CostKindEnumSchema>;
 export type IdTokenEnumType = z.infer<typeof IdTokenEnumSchema>;
 export type LocationFacilityEnumType = z.infer<typeof LocationFacilityEnumSchema>;
@@ -340,3 +399,7 @@ export type MeasurandEnumType = z.infer<typeof MeasurandEnumSchema>;
 export type ReasonEnumType = z.infer<typeof ReasonEnumSchema>;
 export type TransactionEventEnumType = z.infer<typeof TransactionEventEnumSchema>;
 export type TriggerReasonEnumType = z.infer<typeof TriggerReasonEnumSchema>;
+export type ReadingContextEnumType = z.infer<typeof ReadingContextEnumSchema>;
+export type PhaseEnumType = z.infer<typeof PhaseEnumSchema>;
+export type LocationEnumType = z.infer<typeof LocationEnumSchema>;
+export type OCPIVersionNumberEnumType = z.infer<typeof OCPIVersionNumberSchema>;

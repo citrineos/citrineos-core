@@ -13,6 +13,7 @@ import type {
   FindOptions,
   ModelStatic,
   UpdateOptions,
+  WhereOptions,
 } from 'sequelize';
 import { QueryTypes } from 'sequelize';
 
@@ -147,13 +148,23 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string,
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
-    const primaryKey = this.s.models[namespace].primaryKeyAttribute;
-    return await this._updateAllByQuery(
+    const model = this.s.models[namespace] as ModelStatic<T>;
+    const pk = model.primaryKeyAttribute;
+
+    const { tenantId: _ignored, ...safeValue } = value as any;
+
+    const where: WhereOptions<any> = {
+      [pk]: key,
       tenantId,
-      value,
-      { where: { [primaryKey]: key } },
-      namespace,
-    ).then((rows) => (rows && rows.length === 1 ? rows[0] : undefined));
+    };
+
+    const row = await model.findOne({ where });
+
+    if (!row) return undefined;
+
+    await row.update(safeValue);
+
+    return row.reload();
   }
 
   protected async _updateAllByQuery(
@@ -162,17 +173,25 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<T[]> {
-    const updateOptions = query as UpdateOptions<any>;
-    updateOptions.returning = true;
-    // Lengthy type conversion to satisfy sequelize-typescript
-    return await (this.s.models[namespace] as ModelStatic<T>)
-      .update(
-        value,
-        updateOptions as Omit<UpdateOptions<Attributes<T>>, 'returning'> & {
-          returning: Exclude<UpdateOptions<Attributes<T>>['returning'], undefined | false>;
-        },
-      )
-      .then((result) => result[1] as T[]);
+    const model = this.s.models[namespace] as ModelStatic<T>;
+
+    const where: WhereOptions<any> = {
+      ...(query as any).where,
+      tenantId,
+    };
+
+    const rows = await model.findAll({
+      ...(query as any),
+      where,
+    });
+
+    if (rows.length === 0) return [];
+
+    for (const row of rows) {
+      await row.update(value);
+    }
+
+    return Promise.all(rows.map((r) => r.reload()));
   }
 
   protected async _deleteByKey(

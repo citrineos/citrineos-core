@@ -2,8 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
+  ChargingLimitSourceEnumType,
   ChargingProfileDto,
+  ChargingProfileKindEnumType,
+  ChargingProfilePurposeEnumType,
   ChargingScheduleDto,
+  RecurrencyKindEnumType,
   TenantDto,
   TransactionDto,
 } from '@citrineos/base';
@@ -50,13 +54,13 @@ export class ChargingProfile extends Model implements ChargingProfileDto {
   declare id: number;
 
   @Column(DataType.STRING)
-  declare chargingProfileKind: string;
+  declare chargingProfileKind: ChargingProfileKindEnumType;
 
   @Column(DataType.STRING)
-  declare chargingProfilePurpose: string;
+  declare chargingProfilePurpose: ChargingProfilePurposeEnumType;
 
   @Column(DataType.STRING)
-  declare recurrencyKind?: string | null;
+  declare recurrencyKind?: RecurrencyKindEnumType | null;
 
   @Column(DataType.INTEGER)
   declare stackLevel: number;
@@ -93,7 +97,7 @@ export class ChargingProfile extends Model implements ChargingProfileDto {
     type: DataType.STRING,
     defaultValue: 'CSO',
   })
-  declare chargingLimitSource?: string | null;
+  declare chargingLimitSource?: ChargingLimitSourceEnumType | null;
 
   /**
    * Relations

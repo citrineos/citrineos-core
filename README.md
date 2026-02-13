@@ -19,6 +19,7 @@ here: <https://github.com/citrineos/citrineos>.
 ## Table of Contents
 
 - [Overview](#overview)
+- [Architecture Flow](#architecture-flow)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Starting the Server without Docker](#starting-the-server-without-docker)
@@ -44,17 +45,66 @@ and [fastify](https://fastify.dev/).
 
 The system features:
 
-- Dynamic OCPP 2.0.1 message schema validation, prior to transmission using `AJV`
+- Dynamic **OCPP 1.6 and 2.0.1** message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
 - Configurable logical modules with decorators
-  - `@AsHandler` to handle incoming OCPP 2.0.1 messages
-  - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
+  - `@AsHandler` to handle incoming OCPP messages (1.6 or 2.0.1)
+  - `@AsMessageEndpoint` to expose functions allowing sending messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported brokers are `RabbitMQ` and `Kafka`
-  - Currently supported caches are `In Memory` and `Redis`
+  - Currently supported brokers are **RabbitMQ** and **Kafka**
+  - Currently supported caches are **In Memory** and **Redis**
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
+
+## Architecture Flow
+
+Here’s a **flowchart-style overview** of CitrineOS architecture and message flow:
+
+```text
+       ┌───────────────────┐
+       │ Charging Stations │
+       │   (OCPP 1.6 &     │
+       │    2.0.1)         │
+       └────────┬──────────┘
+                │
+                ▼
+       ┌───────────────────┐
+       │  CitrineOS Server │
+       │  (WebSocket +     │
+       │   Modules)        │
+       └────────┬──────────┘
+                │
+      ┌─────────┴───────────┐
+      │                     │
+      ▼                     ▼
+┌─────────────┐       ┌─────────────┐
+│ Message     │       │ PostgreSQL  │
+│ Broker      │       │ Database    │
+│ (RabbitMQ / │       │ Persistence │
+│  Kafka)     │       │             │
+└─────────────┘       └─────────────┘
+      │
+      ▼
+┌─────────────┐
+│ Other       │
+│ Modules     │
+└─────────────┘
+
+┌─────────────┐
+│ File Storage│
+│ (S3 / GCS / │
+│  MinIO)     │
+└─────────────┘
+```
+
+## Flow Overview
+
+1. **Charging Stations** send messages using **OCPP 1.6** or **OCPP 2.0.1**.
+2. **CitrineOS Server** receives and routes messages via **WebSocket** to the **OCPP Router**.
+3. The **Message Broker (RabbitMQ/Kafka)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
+4. Operational and configuration data are persisted in **PostgreSQL**.
+5. Files and assets are stored in **Amazon S3** or **Google Cloud Storage (GCS)** in supported environments. **MinIO** is used for **local development**, providing **S3-compatible storage only**. Local development does **not** support a GCS-compatible storage backend.
 
 ### Prerequisites
 
@@ -174,7 +224,8 @@ charging stations to point to the server's IP address and port as specified in t
 
 ## Testing with EVerest
 
-This [README](./Server/everest/README.md)
+For testing charging stations using EVerest, see:
+[README](./Server/everest/README.md)
 
 ## Running `clean` and `fresh`
 

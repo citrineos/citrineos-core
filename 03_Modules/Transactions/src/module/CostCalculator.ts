@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { Money } from '@citrineos/base';
 import type { ITariffRepository } from '@citrineos/data';
 import { Tariff } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { TransactionService } from './TransactionService.js';
-import { Money } from '@citrineos/base';
 
 export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
@@ -38,16 +38,7 @@ export class CostCalculator {
    *
    * @returns A promise that resolves to the total cost.
    */
-  async calculateTotalCost(
-    tenantId: number,
-    stationId: string,
-    transactionDbId: number,
-    totalKwh?: number | null,
-  ): Promise<number> {
-    if (totalKwh === undefined || totalKwh === null) {
-      const kwh = await this._transactionService.recalculateTotalKwh(tenantId, transactionDbId);
-      return this._calculateTotalCost(tenantId, stationId, kwh);
-    }
+  async calculateTotalCost(tenantId: number, stationId: string, totalKwh: number): Promise<number> {
     return this._calculateTotalCost(tenantId, stationId, totalKwh);
   }
 

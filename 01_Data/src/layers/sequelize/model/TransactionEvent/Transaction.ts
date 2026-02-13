@@ -20,8 +20,8 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { MeterValue } from './MeterValue.js';
-import { TransactionEvent } from './TransactionEvent.js';
+import { Authorization } from '../Authorization/index.js';
+import { Tariff, Tenant } from '../index.js';
 import {
   type ChargingStation as ChargingStationType,
   ChargingStation,
@@ -30,8 +30,8 @@ import { Connector } from '../Location/Connector.js';
 import { Evse } from '../Location/Evse.js';
 import { type Location as LocationType, Location } from '../Location/Location.js';
 import { StartTransaction, StopTransaction } from './index.js';
-import { Authorization } from '../Authorization/index.js';
-import { Tariff, Tenant } from '../index.js';
+import { MeterValue } from './MeterValue.js';
+import { TransactionEvent } from './TransactionEvent.js';
 
 @Table
 export class Transaction extends Model implements TransactionDto {
@@ -120,6 +120,9 @@ export class Transaction extends Model implements TransactionDto {
 
   @Column(DataType.BIGINT)
   declare timeSpentCharging?: number | null;
+
+  @Column(DataType.DECIMAL)
+  declare meterStart?: number | null;
 
   @Column(DataType.DECIMAL)
   declare totalKwh?: number | null;

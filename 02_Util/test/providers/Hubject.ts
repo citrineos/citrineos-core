@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
+import { HUBJECT_DEFAULT_AUTH_TOKEN } from '@citrineos/base';
 
 export const aValidSignedContractData = (updateFunction?: UpdateFunction<object>): object => {
   // This example is from https://hubject.stoplight.io/docs/open-plugncharge/9fabe1661696f-get-signed-contract-data
@@ -38,9 +39,7 @@ export const aValidAuthorizationToken = (updateFunction?: UpdateFunction<object>
     links: {},
     outbound_edges: [],
     inbound_edges: [],
-    data:
-      '# Authorization Token\n> Please use the following token to authorize your requests on Open' +
-      ' Plugncharge:\n\n```\nBearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkJ3eEV0TkFGUnpSM3JlNVF2elM2QyJ9.eyJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vcm9sZSI6WyJBRE1JTiIsIk9FTSIsIkNQTyIsIk1PX0hVQkpFQ1RfUEtJIl0sImh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbS9wY2lkIjpbIkhVQiIsImh1YiJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZW1haWQiOlsiREVIVUIiLCJFTVA3NyJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X25hbWUiOlsiSHViamVjdCJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X2FwcCI6Ik9wZW4gVGVzdCBFbnZpcm9ubWVudCIsImlzcyI6Imh0dHBzOi8vYXV0aC5ldS5wbHVnbmNoYXJnZS5odWJqZWN0LmNvbS8iLCJzdWIiOiJvNTdRYXdxMW9uazdVa1pyaEZtRXFqU09NcWRoMzRSZ0BjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9ldS5wbHVnbmNoYXJnZS10ZXN0Lmh1YmplY3QuY29tIiwiaWF0IjoxNzIzNjExOTk3LCJleHAiOjE3MjM2OTgzOTcsInNjb3BlIjoicmNwc2VydmljZSBwY3BzZXJ2aWNlIGNjcHNlcnZpY2UgY3BzZXJ2aWNlIHBraWdhdGV3YXkiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJvNTdRYXdxMW9uazdVa1pyaEZtRXFqU09NcWRoMzRSZyIsInBlcm1pc3Npb25zIjpbInJjcHNlcnZpY2UiLCJwY3BzZXJ2aWNlIiwiY2Nwc2VydmljZSIsImNwc2VydmljZSIsInBraWdhdGV3YXkiXX0.Ep81vOgj-IRAQ3BsxgdP52DImo7-5hcBKZYSOL7v8oi2HjopPc8KRUdqS6J-qly6uD4lREWw3MZpnm6RKpD5Xr7K337wkMVhlM86EnMUpc4iy975lTQGg4mg7l5rbtpDoY2PPnAawU9Ky0cTq23dNNlRwljKdbjLm6xMd6K_xX5LUm5QeP_qy9EeTvRiRYc086M3AoL-iPtau5pU_0IlvoFeB8BbiJxR5xp8OOFU5ma84MFNK6p-GX7m5oJf-T-wSB7hb6qtT-HbZbYL5Jkm1eDJmE3iEIvJGVve5KHSEYU5SLX4Mr6OAsImHl2qFrWPx0uWoep33M1__qCbT70o5g\n```',
+    data: `# Authorization Token\n> Please use the following token to authorize your requests on Open Plugncharge:\n\n\`\`\`\nBearer ${HUBJECT_DEFAULT_AUTH_TOKEN}\n\`\`\``,
   };
   return applyUpdateFunction(item, updateFunction);
 };

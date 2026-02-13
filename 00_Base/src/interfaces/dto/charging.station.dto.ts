@@ -17,6 +17,7 @@ export const ChargingStationSchema = BaseSchema.extend({
   id: z.string().max(36),
   isOnline: z.boolean(),
   protocol: OCPPVersionSchema.nullable().optional(),
+  latestOcppMessageTimestamp: z.string().datetime().nullable().optional(),
   chargePointVendor: z.string().max(20).nullable().optional(),
   chargePointModel: z.string().max(20).nullable().optional(),
   chargePointSerialNumber: z.string().max(25).nullable().optional(),
