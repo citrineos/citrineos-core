@@ -44,7 +44,7 @@ import {
 } from '@citrineos/evdriver';
 import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
 import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
-import { ReportingModule, ReportingOcpp201Api } from '@citrineos/reporting';
+import { ReportingModule, ReportingOcpp16Api, ReportingOcpp201Api } from '@citrineos/reporting';
 import type { ISmartCharging } from '@citrineos/smartcharging';
 import {
   InternalSmartCharging,
@@ -58,6 +58,7 @@ import {
   TransactionsOcpp201Api,
 } from '@citrineos/transactions';
 import {
+  apiAuthPluginFp,
   Authenticator,
   BasicAuthenticationFilter,
   CertificateAuthorityService,
@@ -75,7 +76,6 @@ import {
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import ApiAuthPlugin from '@citrineos/util/dist/authorization/ApiAuthPlugin.js';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import type { FastifyInstance } from 'fastify';
@@ -353,7 +353,7 @@ export class CitrineOSServer {
 
   private registerApiAuth() {
     const authProvider = this.initApiAuthProvider();
-    this._server.register(ApiAuthPlugin, {
+    this._server.register(apiAuthPluginFp, {
       provider: authProvider,
       options: {
         excludedRoutes: [
@@ -407,6 +407,9 @@ export class CitrineOSServer {
       this._authenticator,
       this._router,
       this._logger,
+      this._repositoryStore.locationRepository.doesChargingStationExistByStationId.bind(
+        this._repositoryStore.locationRepository,
+      ),
     );
 
     this._router.networkHook = this._networkConnection.bindNetworkHook();
@@ -585,7 +588,10 @@ export class CitrineOSServer {
       this._repositoryStore.variableMonitoringRepository,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new ReportingOcpp201Api(module, this._server, this._logger));
+    this.apis.push(
+      new ReportingOcpp201Api(module, this._server, this._logger),
+      new ReportingOcpp16Api(module, this._server, this._logger),
+    );
   }
 
   private async initSmartChargingModule() {
@@ -716,7 +722,11 @@ export class CitrineOSServer {
   }
 
   private initCertificateAuthorityService() {
-    this._certificateAuthorityService = new CertificateAuthorityService(this._config, this._logger);
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._cache,
+      this._logger,
+    );
   }
 
   private initSmartChargingService() {

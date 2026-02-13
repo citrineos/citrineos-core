@@ -24,8 +24,8 @@ export function getValidityTimeString(time: moment.Moment) {
   return time.utc().format('YYMMDDHHmmss').concat('Z');
 }
 
-export function createPemBlock(type: string, content: string) {
-  return `-----BEGIN ${type}-----\n${content}\n-----END ${type}-----\n`;
+export function createPemBlock(content: string) {
+  return `-----BEGIN CERTIFICATE-----\n${content}\n-----END CERTIFICATE-----\n`;
 }
 
 /*

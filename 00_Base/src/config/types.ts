@@ -39,6 +39,14 @@ export const websocketServerInputSchema = z.object({
   tenantId: z.number(),
 });
 
+export const HUBJECT_DEFAULT_BASEURL = 'https://open.plugncharge-test.hubject.com';
+export const HUBJECT_DEFAULT_TOKENURL =
+  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token';
+export const HUBJECT_DEFAULT_CLIENTID = 'YOUR_CLIENT_ID';
+export const HUBJECT_DEFAULT_CLIENTSECRET = 'YOUR_CLIENT_SECRET';
+export const HUBJECT_DEFAULT_AUTH_TOKEN =
+  'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkJ3eEV0TkFGUnpSM3JlNVF2elM2QyJ9.eyJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vcm9sZSI6WyJBRE1JTiIsIk9FTSIsIkNQTyIsIk1PX0hVQkpFQ1RfUEtJIl0sImh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbS9wY2lkIjpbIkhVQiIsImh1YiJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZW1haWQiOlsiREVIVUIiLCJFTVA3NyJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X25hbWUiOlsiSHViamVjdCJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZGFzaDIwIjpbInRydWUiXSwiaHR0cHM6Ly9ldS5wbHVnbmNoYXJnZS10ZXN0Lmh1YmplY3QuY29tL2NsaWVudF9hcHAiOiJPcGVuIFRlc3QgRW52aXJvbm1lbnQiLCJpc3MiOiJodHRwczovL2F1dGguZXUucGx1Z25jaGFyZ2UuaHViamVjdC5jb20vIiwic3ViIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmdAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbSIsImlhdCI6MTc3MDcwMTgxMSwiZXhwIjoxNzcwNzg4MjExLCJzY29wZSI6InJjcHNlcnZpY2UgcGNwc2VydmljZSBjY3BzZXJ2aWNlIGNwc2VydmljZSBwa2lnYXRld2F5IiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIiwiYXpwIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmciLCJwZXJtaXNzaW9ucyI6WyJyY3BzZXJ2aWNlIiwicGNwc2VydmljZSIsImNjcHNlcnZpY2UiLCJjcHNlcnZpY2UiLCJwa2lnYXRld2F5Il19.qpkB0reRKznCNXnbxCs0WMPCZx2ezo3Uv7vb0FW0qtMFHLF88IjzA0TUn4azD3zwjIG0N6rnTws4kzKkzwC-_XejCF-RvTEWKM4iUisdbl3Hz8nov0QmAME9U7BYJ52BHaQxP0S6o89qWRgtkzB63XRbbI_Z1fAh9Pzz-eVJePgD2GANNb8JqCzlV0vgyZU3jvdmVvJDYMyqyGe_lLlU5E0ocUntAWaP_TyrmRqctb5VB82WEdwdsRB5Wusqc5C0rLUwsySOff5gcDg5LXtGwUZtsA7TTtVQSqhQ1HrPVYhlKl-s5TZ-v7uho8wCnaCoJt6GPvZzKqHJHydBMlWDWg';
+
 export const systemConfigInputSchema = z.object({
   env: z.enum(['development', 'production']),
   centralSystem: z.object({
@@ -224,23 +232,31 @@ export const systemConfigInputSchema = z.object({
           name: z.enum(['hubject']).default('hubject'),
           hubject: z
             .object({
-              baseUrl: z.string().default('https://open.plugncharge-test.hubject.com'),
-              tokenUrl: z
-                .string()
-                .default(
-                  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-                ),
-              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2'),
+              baseUrl: z.string().default(HUBJECT_DEFAULT_BASEURL),
+              tokenUrl: z.string().default(HUBJECT_DEFAULT_TOKENURL),
+              clientId: z.string().default(HUBJECT_DEFAULT_CLIENTID),
+              clientSecret: z.string().default(HUBJECT_DEFAULT_CLIENTSECRET),
             })
             .optional(),
         })
-        .refine((obj) => {
-          if (obj.name === 'hubject') {
-            return obj.hubject;
-          } else {
-            return false;
-          }
-        }),
+        .refine(
+          (obj) => {
+            if (obj.name === 'hubject') {
+              return (
+                obj.hubject &&
+                obj.hubject.baseUrl &&
+                obj.hubject.tokenUrl &&
+                obj.hubject.clientId &&
+                obj.hubject.clientSecret
+              );
+            } else {
+              return false;
+            }
+          },
+          {
+            message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+          },
+        ),
       chargingStationCA: z
         .object({
           name: z.enum(['acme']).default('acme'),
@@ -520,17 +536,29 @@ export const systemConfigSchema = z
               .object({
                 baseUrl: z.string(),
                 tokenUrl: z.string(),
-                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+                clientId: z.string(),
+                clientSecret: z.string(),
               })
               .optional(),
           })
-          .refine((obj) => {
-            if (obj.name === 'hubject') {
-              return obj.hubject;
-            } else {
-              return false;
-            }
-          }),
+          .refine(
+            (obj) => {
+              if (obj.name === 'hubject') {
+                return (
+                  obj.hubject &&
+                  obj.hubject.baseUrl &&
+                  obj.hubject.tokenUrl &&
+                  obj.hubject.clientId &&
+                  obj.hubject.clientSecret
+                );
+              } else {
+                return false;
+              }
+            },
+            {
+              message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+            },
+          ),
         chargingStationCA: z
           .object({
             name: z.enum(['acme']),

@@ -192,7 +192,7 @@ const apiAuthPlugin: FastifyPluginAsync<{
   _logger.info('Authentication plugin registered');
 };
 
-export default fp(apiAuthPlugin, {
+export const apiAuthPluginFp = fp(apiAuthPlugin, {
   name: 'apiAuth',
   fastify: '5.x',
 });

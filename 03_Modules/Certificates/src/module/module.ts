@@ -164,10 +164,8 @@ export class CertificatesModule extends AbstractModule {
       new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
     this._locationRepository =
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, this._logger);
-    this._fileStorage = fileStorage;
+      certificateAuthorityService || new CertificateAuthorityService(config, cache, this._logger);
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {

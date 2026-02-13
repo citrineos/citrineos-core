@@ -22,6 +22,15 @@ export interface IMessageRouter extends IModule {
   deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
 
   /**
+   * Check if a charging station exists for a given tenant.
+   *
+   * @param tenantId The tenant ID.
+   * @param stationId The station ID.
+   * @returns true if the station exists for this tenant, false otherwise
+   */
+  doesChargingStationExistByStationId?(tenantId: number, stationId: string): Promise<boolean>;
+
+  /**
    * Receive a message from the Network Connection.
    * Timestamp here should be when the message was received from the charger.
    * If CitrineOS is running behind cloud infrastructure, it is optimal for the timestamp to be generated when the infrastructure receives the message rather than when CitrineOS is first notified.

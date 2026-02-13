@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ISmartCharging } from './SmartCharging.js';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { ChargingProfilePurposeEnum, OCPP2_0_1 } from '@citrineos/base';
 import type { IChargingProfileRepository } from '@citrineos/data';
 import { ChargingProfile, ChargingSchedule, Transaction } from '@citrineos/data';
 import type { ILogObj } from 'tslog';
@@ -49,14 +49,13 @@ export class InternalSmartCharging implements ISmartCharging {
       tenantId,
       stationId,
     );
-    const profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType =
-      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
+    const nativePurpose = ChargingProfilePurposeEnum.TxProfile;
     // Find existing charging profile and then add 1 as stack level
     const stackLevel = await this._chargingProfileRepository.getNextStackLevel(
       tenantId,
       stationId,
       transaction.id,
-      profilePurpose,
+      nativePurpose,
     );
 
     // Create charging schedule
@@ -132,7 +131,7 @@ export class InternalSmartCharging implements ISmartCharging {
     return {
       id: profileId,
       stackLevel,
-      chargingProfilePurpose: profilePurpose,
+      chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
       chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
       validFrom: currentTime.toISOString(), // Now
       validTo: chargingNeeds.departureTime, // Until departure
@@ -205,7 +204,7 @@ export class InternalSmartCharging implements ISmartCharging {
           tenantId,
           stationId,
           transactionDatabaseId,
-          chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+          chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
         },
         order: [['stackLevel', 'DESC']],
         limit: 1,
