@@ -10,6 +10,7 @@ import {
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
+import type { WebsocketServerConfig } from '@citrineos/base';
 import { TenantModule } from './module.js';
 import type { ITenantModuleApi } from './interface.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -30,15 +31,29 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
    */
   constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(tenantModule, server, null, logger);
+    this._module.on('TenantCreated', (tenant, websocketServerConfig) => {
+      this._logger?.info(
+        `TenantDataApi detected new tenant: ${tenant.id}`,
+        websocketServerConfig ? `with websocket server config: ${websocketServerConfig.id}` : '',
+      );
+    });
   }
 
   @AsDataEndpoint(Namespace.Tenant, HttpMethod.Post, undefined, CreateTenantQuerySchema)
   async createTenant(
     request: FastifyRequest<{
-      Body: Tenant;
+      Body: Tenant & { websocketServerConfig?: WebsocketServerConfig };
     }>,
   ): Promise<Tenant> {
-    return await this._module.tenantRepository.createTenant(request.body);
+    const { websocketServerConfig, ...tenantData } = request.body;
+    const createdTenant = await this._module.createTenant(
+      tenantData as Tenant,
+      websocketServerConfig,
+    );
+
+    this._logger?.info(`Tenant created: ${createdTenant.id}`);
+
+    return createdTenant;
   }
 
   /**

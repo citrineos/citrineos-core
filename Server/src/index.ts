@@ -642,6 +642,44 @@ export class CitrineOSServer {
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);
+
+    // Subscribe to TenantCreated events to dynamically add websocket servers
+    module.on('TenantCreated', async (tenant, websocketServerConfig) => {
+      if (websocketServerConfig && this._networkConnection) {
+        try {
+          this._logger.info(
+            `Creating websocket server for tenant ${tenant.id} with config:`,
+            websocketServerConfig,
+          );
+
+          // Ensure the websocket server config has the correct tenant ID
+          const configWithTenantId = {
+            ...websocketServerConfig,
+            tenantId: tenant.id,
+          };
+
+          await this._networkConnection.addWebsocketServer(configWithTenantId);
+
+          // Also persist the websocket server configuration to the database
+          await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+            configWithTenantId,
+            this._config.maxCallLengthSeconds,
+          );
+
+          this._logger.info(
+            `Successfully created websocket server for tenant ${tenant.id} on port ${websocketServerConfig.port}`,
+          );
+        } catch (error) {
+          this._logger.error(`Failed to create websocket server for tenant ${tenant.id}:`, error);
+        }
+      } else if (websocketServerConfig && !this._networkConnection) {
+        this._logger.warn(
+          `Websocket server config provided for tenant ${tenant.id}, but network connection is not initialized. ` +
+            `This server is likely running in MODULES mode. Websocket servers can only be added in ALL or ROUTER mode.`,
+        );
+      }
+    });
+
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
     this._logger.info('Tenant module initialized');
   }

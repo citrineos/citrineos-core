@@ -8,20 +8,28 @@ import type {
   IMessageHandler,
   IMessageSender,
   SystemConfig,
+  WebsocketServerConfig,
 } from '@citrineos/base';
 import { AbstractModule, EventGroup } from '@citrineos/base';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { type ITenantRepository, SequelizeTenantRepository } from '@citrineos/data';
+import { type ITenantRepository, SequelizeTenantRepository, Tenant } from '@citrineos/data';
+
+/**
+ * Type-safe tenant events
+ */
+export interface TenantEvents {
+  TenantCreated: (tenant: Tenant, websocketServerConfig?: WebsocketServerConfig) => void;
+}
 
 export class TenantModule extends AbstractModule {
   /**
    * Fields
    */
-
   _requests: CallAction[] = [];
   _responses: CallAction[] = [];
+  private _listeners: Partial<{ [K in keyof TenantEvents]: TenantEvents[K][] }> = {};
 
   protected _tenantRepository: ITenantRepository;
 
@@ -73,5 +81,33 @@ export class TenantModule extends AbstractModule {
 
   get tenantRepository(): ITenantRepository {
     return this._tenantRepository;
+  }
+
+  /**
+   * Event system
+   */
+  on<K extends keyof TenantEvents>(event: K, listener: TenantEvents[K]) {
+    this._listeners[event] ??= [];
+    this._listeners[event]!.push(listener);
+  }
+
+  private _emit<K extends keyof TenantEvents>(event: K, ...args: Parameters<TenantEvents[K]>) {
+    this._listeners[event]?.forEach((listener) => (listener as any)(...args));
+  }
+
+  /**
+   * Creates a tenant and emits an event
+   */
+  async createTenant(
+    tenant: Tenant,
+    websocketServerConfig?: WebsocketServerConfig,
+  ): Promise<Tenant> {
+    const createdTenant = await this._tenantRepository.createTenant(tenant);
+
+    this._logger?.info(`Tenant created: ${createdTenant.id} — emitting TenantCreated event`);
+
+    this._emit('TenantCreated', createdTenant, websocketServerConfig);
+
+    return createdTenant;
   }
 }
