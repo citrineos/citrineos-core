@@ -48,6 +48,12 @@ export class ServerNetworkProfile extends Model implements WebsocketServerConfig
   @Column(DataType.BOOLEAN)
   declare allowUnknownChargingStations: boolean;
 
+  @Column(DataType.BOOLEAN)
+  declare dynamicTenantResolution: boolean;
+
+  @Column(DataType.INTEGER)
+  declare maxConnectionsPerTenant?: number;
+
   @Column(DataType.STRING)
   declare tlsKeyFilePath?: string;
 

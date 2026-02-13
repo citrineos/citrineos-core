@@ -37,6 +37,13 @@ export const websocketServerInputSchema = z.object({
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
   tenantId: z.number(),
+  // When true, tenant can be resolved at connection upgrade time from the request
+  // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+  dynamicTenantResolution: z.boolean().optional().default(false),
+  // Optional soft limit for concurrent connections per tenant for this server.
+  // If set and the tenant exceeds this number of concurrent connections, new
+  // connections will be rejected at upgrade time with a 1013 close code.
+  maxConnectionsPerTenant: z.number().int().min(1).optional(),
 });
 
 export const HUBJECT_DEFAULT_BASEURL = 'https://open.plugncharge-test.hubject.com';
@@ -309,6 +316,13 @@ export const websocketServerSchema = z
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number(),
+    // When true, tenant can be resolved at connection upgrade time from the request
+    // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+    dynamicTenantResolution: z.boolean().optional().default(false),
+    // Optional soft limit for concurrent connections per tenant for this server.
+    // If set and the tenant exceeds this number of concurrent connections, new
+    // connections will be rejected at upgrade time with a 1013 close code.
+    maxConnectionsPerTenant: z.number().int().min(1).optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
