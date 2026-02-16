@@ -148,6 +148,7 @@ export class CertificatesModule extends AbstractModule {
 
     this._requests = config.modules.certificates?.requests ?? [];
     this._responses = config.modules.certificates?.responses ?? [];
+    this._fileStorage = fileStorage;
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
