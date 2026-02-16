@@ -31,7 +31,7 @@ export class InstallCertificateAttempt extends Model {
     type: DataType.STRING,
     allowNull: false,
   })
-  declare certificateType: OCPP2_0_1.GetCertificateIdUseEnumType;
+  declare certificateType: OCPP2_0_1.InstallCertificateUseEnumType;
 
   @ForeignKey(() => Certificate)
   @Column({
