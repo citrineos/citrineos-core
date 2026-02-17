@@ -491,7 +491,7 @@ export class CitrineOSServer {
       this._repositoryStore.installedCertificateRepository,
       this._repositoryStore.installCertificateAttemptRepository,
       this._repositoryStore.deleteCertificateAttemptRepository,
-      this._repositoryStore.locationRepository,
+      this._repositoryStore.ocppMessageRepository,
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(

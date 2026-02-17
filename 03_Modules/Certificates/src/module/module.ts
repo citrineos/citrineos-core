@@ -1,36 +1,37 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  CallAction,
-  HandlerProperties,
-  ICache,
-  IFileStorage,
-  IMessage,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
-} from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
+  type BootstrapConfig,
+  type CallAction,
   ErrorCode,
   EventGroup,
+  type HandlerProperties,
+  type ICache,
+  type IFileStorage,
+  type IMessage,
+  type IMessageHandler,
+  type IMessageSender,
+  MessageOrigin,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/base';
-import type {
-  ICertificateRepository,
-  IDeleteCertificateAttemptRepository,
-  IDeviceModelRepository,
-  IInstallCertificateAttemptRepository,
-  IInstalledCertificateRepository,
-  ILocationRepository,
+import {
+  type ICertificateRepository,
+  type IDeleteCertificateAttemptRepository,
+  type IDeviceModelRepository,
+  type IInstallCertificateAttemptRepository,
+  type IInstalledCertificateRepository,
+  InstalledCertificate,
+  type IOCPPMessageRepository,
+  sequelize,
+  SequelizeOCPPMessageRepository,
 } from '@citrineos/data';
-import { InstalledCertificate, sequelize } from '@citrineos/data';
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
@@ -70,7 +71,7 @@ export class CertificatesModule extends AbstractModule {
   protected _installedCertificateRepository: IInstalledCertificateRepository;
   protected _installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _fileStorage: IFileStorage;
   protected _installCertificateHelperService: InstallCertificateHelperService;
@@ -118,12 +119,11 @@ export class CertificatesModule extends AbstractModule {
    * represents a repository for accessing and manipulating deleted certificate attempt data.
    * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.DeleteCertificateAttemptRepository} instance is created and used.
    *
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.locationRepository} instance is created and used.
+   * @param {IOCPPMessageRepository} [ocppMessageRepository] - repository to check ocpp messages
    *
-   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
-   * type {@link CertificateAuthorityService} which handles certificate authority operations.
+   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of type {@link CertificateAuthorityService} which handles certificate authority operations.
+   *
+   * @param {InstallCertificateHelperService} [installCertificateHelperService] - helper service for installing certificates
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
@@ -138,7 +138,7 @@ export class CertificatesModule extends AbstractModule {
     installedCertificateRepository?: IInstalledCertificateRepository,
     installCertificateAttemptRepository?: IInstallCertificateAttemptRepository,
     deleteCertificateAttemptRepository?: IDeleteCertificateAttemptRepository,
-    locationRepository?: ILocationRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
     installCertificateHelperService?: InstallCertificateHelperService,
   ) {
@@ -168,8 +168,8 @@ export class CertificatesModule extends AbstractModule {
     this._deleteCertificateAttemptRepository =
       deleteCertificateAttemptRepository ||
       new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
-    this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._certificateAuthorityService =
       certificateAuthorityService || new CertificateAuthorityService(config, cache, this._logger);
 
@@ -421,8 +421,52 @@ export class CertificatesModule extends AbstractModule {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
     const tenantId = message.context.tenantId;
     const stationId = message.context.stationId;
+    const correlationId = message.context.correlationId;
     const certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
+    if (message.payload.status === OCPP2_0_1.GetInstalledCertificateStatusEnumType.NotFound) {
+      const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId,
+          stationId,
+          correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
+        },
+      });
+      if (request) {
+        // should always be true
+        const getInstalledCertificateIdsRequest = request
+          .message[3] as OCPP2_0_1.GetInstalledCertificateIdsRequest;
+        let certificateType;
+        if (
+          getInstalledCertificateIdsRequest &&
+          getInstalledCertificateIdsRequest.certificateType
+        ) {
+          certificateType = getInstalledCertificateIdsRequest.certificateType;
+        }
+        if (certificateType) {
+          this._logger.debug(
+            `GetInstalledCertificateIdsRequest sent to ${stationId} had certificateType: ${certificateType}. Cleaning up installed certificates of this type in DB if any.`,
+          );
+          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
+            where: {
+              stationId,
+              certificateType,
+            },
+          });
+        } else {
+          this._logger.debug(
+            `GetInstalledCertificateIdsRequest sent to ${stationId} had no certificateType. Cleaning up all installed certificates in DB if any.`,
+          );
+          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
+            where: {
+              stationId,
+            },
+          });
+        }
+      }
+      return;
+    }
     if (certificateHashDataList && certificateHashDataList.length > 0) {
       for (let certificateHashDataWrap of certificateHashDataList) {
         const certificateHashData = certificateHashDataWrap.certificateHashData;
