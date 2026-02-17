@@ -54,6 +54,7 @@ import {
   RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
+import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
@@ -164,6 +165,7 @@ export class TransactionsModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -182,6 +184,7 @@ export class TransactionsModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Transactions,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.transactions.requests;

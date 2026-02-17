@@ -16,13 +16,13 @@ import type {
   SystemConfig,
 } from '@citrineos/base';
 import {
-  addFormats,
   Ajv,
   ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
   loadBootstrapConfig,
+  OCPPValidator,
 } from '@citrineos/base';
 import {
   CertificatesDataApi,
@@ -156,8 +156,7 @@ export class CitrineOSServer {
     this.initHealthCheck();
 
     // Create Ajv JSON schema validator instance
-    this._ajv = this.initAjv(ajv);
-    this.addAjvFormats();
+    this._ajv = OCPPValidator.createServerAjvInstance(ajv);
 
     // Initialize parent logger
     this._logger = this.initLogger();
@@ -264,45 +263,6 @@ export class CitrineOSServer {
     this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
-  private initAjv(ajv?: Ajv.Ajv) {
-    const ajvInstance =
-      ajv ||
-      new Ajv.Ajv({
-        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
-        useDefaults: true,
-        strict: false,
-        strictNumbers: true,
-        strictRequired: true,
-        validateFormats: true,
-        allErrors: true, // Report all validation errors
-      });
-
-    // Add custom keywords for OCPP schema metadata
-    ajvInstance.addKeyword({
-      keyword: 'comment',
-      compile: () => () => true,
-    });
-
-    ajvInstance.addKeyword({
-      keyword: 'javaType',
-      compile: () => () => true,
-    });
-
-    ajvInstance.addKeyword({
-      keyword: 'tsEnumNames',
-      compile: () => () => true,
-    });
-
-    return ajvInstance;
-  }
-
-  private addAjvFormats() {
-    addFormats.default(this._ajv, {
-      mode: 'fast',
-      formats: ['date-time', 'uri'],
-    });
-  }
-
   private initLogger() {
     const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
 
@@ -385,6 +345,7 @@ export class CitrineOSServer {
     );
 
     const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.ocppMessageRepository,
       this._repositoryStore.subscriptionRepository,
       this._logger,
     );
@@ -481,6 +442,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.certificateRepository,
       this._repositoryStore.locationRepository,
@@ -506,6 +468,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.bootRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.messageInfoRepository,
@@ -529,6 +492,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.localAuthListRepository,
       this._repositoryStore.deviceModelRepository,
@@ -558,6 +522,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.variableMonitoringRepository,
       this._idGenerator,
@@ -576,6 +541,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.securityEventRepository,
       this._repositoryStore.variableMonitoringRepository,
@@ -594,6 +560,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.chargingProfileRepository,
@@ -612,6 +579,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.deviceModelRepository,
@@ -636,6 +604,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ajv,
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);

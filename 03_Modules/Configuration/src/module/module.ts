@@ -55,6 +55,7 @@ import {
   RabbitMqSender,
   validateMessageContentType,
 } from '@citrineos/util';
+import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -122,6 +123,7 @@ export class ConfigurationModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
@@ -137,6 +139,7 @@ export class ConfigurationModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Configuration,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.configuration.requests;

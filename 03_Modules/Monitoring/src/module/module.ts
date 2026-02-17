@@ -27,6 +27,7 @@ import {
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { MonitoringService } from './MonitoringService.js';
@@ -80,6 +81,7 @@ export class MonitoringModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     deviceModelRepository?: IDeviceModelRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
     idGenerator?: IdGenerator,
@@ -91,6 +93,7 @@ export class MonitoringModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Monitoring,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.monitoring.requests;

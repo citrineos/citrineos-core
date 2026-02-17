@@ -36,6 +36,7 @@ import {
   MessageOrigin,
   MessageState,
   MessageTypeId,
+  NO_ACTION,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
@@ -211,6 +212,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     timestamp: Date,
     protocol: OCPPVersionType,
   ): Promise<boolean> {
+    const tenantId = getTenantIdFromIdentifier(identifier);
+    const stationId = getStationIdFromIdentifier(identifier);
     let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
@@ -266,8 +269,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     } catch (error) {
       success = false; // ensure we return false in case of an error
       this._logger.error('Error processing message:', message, error);
+      const action = this.getActionFromIncompletelyParsedRpcMessage(rpcMessage, messageTypeId);
       if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
-        let callError =
+        const callError =
           error instanceof OcppError
             ? error.asCallError()
             : [
@@ -277,22 +281,40 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
                 'Unable to process message',
                 { error: error },
               ];
-        callError = this.removeNulls(callError);
         const rawMessage = JSON.stringify(callError);
-        await this._sendMessage(identifier, protocol, rawMessage, callError);
+        await this._sendMessage(
+          identifier,
+          protocol,
+          action,
+          MessageState.Response,
+          rawMessage,
+          callError,
+        );
       }
+      let state = MessageState.Unknown;
+      switch (messageTypeId) {
+        case MessageTypeId.Call:
+          state = MessageState.Request;
+          break;
+        case MessageTypeId.CallResult:
+        case MessageTypeId.CallError:
+          state = MessageState.Response;
+          break;
+        default: // keep as Unknown
+          break;
+      }
+      await this._webhookDispatcher.dispatchMessageReceivedUnparsed(
+        tenantId,
+        stationId,
+        message,
+        timestamp.toISOString(),
+        protocol,
+        action,
+        state,
+      );
     }
-    await this._webhookDispatcher.dispatchMessageReceived(
-      identifier,
-      message,
-      timestamp.toISOString(),
-      protocol,
-      rpcMessage,
-    );
 
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
-    const tenantId = getTenantIdFromIdentifier(identifier);
-    const stationId = getStationIdFromIdentifier(identifier);
     this._locationRepository
       .updateChargingStationTimestamp(tenantId, stationId, timestamp.toISOString())
       .catch((error: any) => {
@@ -325,7 +347,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<IMessageConfirmation> {
     const identifier = createIdentifier(tenantId, stationId);
 
-    let message: Call = [MessageTypeId.Call, correlationId, action, payload];
+    const message: Call = [MessageTypeId.Call, correlationId, action, payload];
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
         await this._cache.setIfNotExist(
@@ -335,9 +357,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           this._config.maxCallLengthSeconds,
         )
       ) {
-        message = this.removeNulls(message);
         const rawMessage = JSON.stringify(message);
-        const success = await this._sendMessage(identifier, protocol, rawMessage, message);
+        const success = await this._sendMessage(
+          identifier,
+          protocol,
+          action,
+          MessageState.Request,
+          rawMessage,
+          message,
+        );
         return { success };
       } else {
         this._logger.info(
@@ -374,7 +402,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     payload: OcppResponse,
     _origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    let message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
+    const message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
     const identifier = createIdentifier(tenantId, stationId);
 
     const cachedActionMessageId = await this._cache.get<string>(
@@ -391,10 +419,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
     const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
     if (cachedAction === action && cachedMessageId === correlationId) {
-      message = this.removeNulls(message);
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, protocol, rawMessage, message),
+        this._sendMessage(
+          identifier,
+          protocol,
+          cachedAction,
+          MessageState.Response,
+          rawMessage,
+          message,
+        ),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
@@ -426,11 +460,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     stationId: string,
     tenantId: number,
     protocol: OCPPVersionType,
-    _action: CallAction,
+    action: CallAction,
     error: OcppError,
     _origin?: MessageOrigin | undefined,
   ): Promise<IMessageConfirmation> {
-    let message: CallError = error.asCallError();
+    const message: CallError = error.asCallError();
     const identifier = createIdentifier(tenantId, stationId);
 
     const cachedActionMessageId = await this._cache.get<string>(
@@ -441,20 +475,27 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       this._logger.error('Failed to send callError due to missing message id', identifier, message);
       return { success: false };
     }
-    const [_cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
-    if (cachedMessageId === correlationId) {
-      message = this.removeNulls(message);
+    const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
+    if (cachedMessageId === correlationId && cachedAction === action) {
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
-        this._sendMessage(identifier, protocol, rawMessage, message),
+        this._sendMessage(
+          identifier,
+          protocol,
+          cachedAction,
+          MessageState.Response,
+          rawMessage,
+          message,
+        ),
         this._cache.remove(identifier, CacheNamespace.Transactions),
       ]).then((successes) => successes.every(Boolean));
       return { success };
     } else {
       this._logger.error(
-        'Failed to send callError due to mismatch in message id',
+        'Failed to send callError due to mismatch in message id or action',
         identifier,
         cachedActionMessageId,
+        cachedAction,
         message,
       );
       return { success: false };
@@ -489,10 +530,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const tenantId = getTenantIdFromIdentifier(identifier);
     const stationId = getStationIdFromIdentifier(identifier);
 
-    let action = null;
+    let action = message[2];
 
     try {
-      action = mapToCallAction(protocol, message[2]);
+      action = mapToCallAction(protocol, action);
       const isAllowed = await this._onCallIsAllowed(action, identifier);
       if (!isAllowed) {
         throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
@@ -546,7 +587,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       this._logger.error('Failed to process Call message', identifier, message, error);
 
       // Send manual reply since cache was unable to be set
-      let callError =
+      const callError =
         error instanceof OcppError
           ? error.asCallError()
           : [
@@ -556,9 +597,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               'Unable to process message',
               { error: (error as Error).message },
             ];
-      callError = this.removeNulls(callError);
       const rawMessage = JSON.stringify(callError);
-      await this._sendMessage(identifier, protocol, rawMessage, callError);
+      await this._sendMessage(
+        identifier,
+        protocol,
+        action,
+        MessageState.Response,
+        rawMessage,
+        callError,
+      );
       return;
     }
 
@@ -598,79 +645,71 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {CallResult} message - The OCPP CallResult message.
    * @param {Date} timestamp Time at which the message was received from the charger.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message
-   * @return {void}
    */
-  _onCallResult(
+  async _onCallResult(
     identifier: string,
     message: CallResult,
     timestamp: Date,
     protocol: OCPPVersionType,
-  ): void {
+  ): Promise<void> {
     const messageId = message[1];
     const payload = message[2];
 
     this._logger.debug('Process CallResult', identifier, messageId, payload);
 
-    this._cache
-      .get<string>(identifier, CacheNamespace.Transactions)
-      .catch((err) => {
-        this._logger.error('cache get failed', err);
-      })
-      .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
-          this._logger.error('_onCallResult cache remove failed', err);
-        });
-        if (!cachedActionMessageId) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            'MessageId not found, call may have timed out',
-            { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
-          );
-        }
-        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-        if (messageId !== cachedMessageId) {
-          throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
-            expectedMessageId: cachedMessageId,
-          });
-        }
-        return {
-          action,
-          ...this._validateCallResult(
-            identifier,
-            mapToCallAction(protocol, action),
-            message,
-            protocol,
-          ),
-        }; // Run schema validation for incoming CallResult message
-      })
-      .then(({ action, isValid, errors }) => {
-        if (!isValid || errors) {
-          throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
-            errors: errors,
-          });
-        }
-        // Route call result
-        return this._routeCallResult(
-          identifier,
-          message,
-          mapToCallAction(protocol, action),
-          timestamp,
-          protocol,
-        );
-      })
-      .then((confirmation) => {
-        if (!confirmation.success) {
-          throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', {
-            details: confirmation.payload,
-          });
-        }
-      })
-      .catch((error) => {
-        // TODO: There's no such thing as a CallError in response to a CallResult. The above call error exceptions should be replaced.
-        // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
-        this._logger.error('Failed processing call result: ', error);
+    const cachedActionMessageId = await this._cache.get<string>(
+      identifier,
+      CacheNamespace.Transactions,
+    );
+
+    await this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+      this._logger.error('_onCallResult cache remove failed', err);
+    });
+
+    if (!cachedActionMessageId) {
+      throw new OcppError(
+        messageId,
+        ErrorCode.InternalError,
+        'MessageId not found, call may have timed out',
+        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+      );
+    }
+
+    const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    if (messageId !== cachedMessageId) {
+      throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
+        expectedMessageId: cachedMessageId,
       });
+    }
+
+    // Run schema validation for incoming CallResult message
+    const { isValid, errors } = this._validateCallResult(
+      identifier,
+      mapToCallAction(protocol, action),
+      message,
+      protocol,
+    );
+
+    if (!isValid || errors) {
+      throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
+        errors: errors,
+      });
+    }
+
+    // Route call result
+    const confirmation = await this._routeCallResult(
+      identifier,
+      message,
+      mapToCallAction(protocol, action),
+      timestamp,
+      protocol,
+    );
+
+    if (!confirmation.success) {
+      throw new OcppError(messageId, ErrorCode.InternalError, 'CallResult failed', {
+        details: confirmation.payload,
+      });
+    }
   }
 
   /**
@@ -680,55 +719,59 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {CallError} message - The error message.
    * @param {Date} timestamp Time at which the message was received from the charger.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message
-   * @return {void} This function doesn't return anything.
    */
-  _onCallError(
+  async _onCallError(
     identifier: string,
     message: CallError,
     timestamp: Date,
     protocol: OCPPVersionType,
-  ): void {
+  ): Promise<void> {
     const messageId = message[1];
 
     this._logger.debug('Process CallError', identifier, message);
 
-    this._cache
-      .get<string>(identifier, CacheNamespace.Transactions)
-      .then((cachedActionMessageId) => {
-        this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
-          this._logger.error('_onCallError cache remove failed', err);
-        }); // Always remove pending call transaction
-        if (!cachedActionMessageId) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.InternalError,
-            'MessageId not found, call may have timed out',
-            { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
-          );
-        }
-        const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-        if (messageId !== cachedMessageId) {
-          throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
-            expectedMessageId: cachedMessageId,
-          });
-        }
-        return this._routeCallError(
-          identifier,
-          message,
-          mapToCallAction(protocol, action),
-          timestamp,
-          protocol,
-        );
-      })
-      .then((confirmation) => {
-        if (!confirmation.success) {
-          this._logger.warn('Unable to route call error: ', confirmation);
-        }
-      })
-      .catch((error) => {
-        // TODO: Ideally the error log is also stored in the database in a failed invocations table to ensure these are visible outside of a log file.
-        this._logger.error('Failed processing call error: ', error);
+    const cachedActionMessageId = await this._cache.get<string>(
+      identifier,
+      CacheNamespace.Transactions,
+    );
+
+    // Always remove pending call transaction
+    await this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+      this._logger.error('_onCallError cache remove failed', err);
+    });
+
+    if (!cachedActionMessageId) {
+      throw new OcppError(
+        messageId,
+        ErrorCode.InternalError,
+        'MessageId not found, call may have timed out',
+        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+      );
+    }
+
+    const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
+    if (messageId !== cachedMessageId) {
+      throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
+        expectedMessageId: cachedMessageId,
       });
+    }
+
+    const confirmation = await this._routeCallError(
+      identifier,
+      message,
+      mapToCallAction(protocol, action),
+      timestamp,
+      protocol,
+    );
+
+    if (!confirmation.success) {
+      // Below code commented out with debug log because currently there is no error routing implemented, so this block will always be reached for CallErrors.
+      // Once error routing is implemented, this block can be uncommented to throw an error if the CallError routing fails.
+      this._logger.debug('Unable to route call error: ', confirmation);
+      // throw new OcppError(messageId, ErrorCode.InternalError, 'CallError failed', {
+      //   details: confirmation.payload,
+      // });
+    }
   }
 
   /**
@@ -745,6 +788,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
+    action: string,
+    state: MessageState,
     rawMessage: string,
     rpcMessage: any,
   ): Promise<boolean> {
@@ -756,7 +801,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       return false;
     }
     this._webhookDispatcher
-      .dispatchMessageSent(identifier, rawMessage, new Date().toISOString(), protocol, rpcMessage)
+      .dispatchMessageSent(
+        identifier,
+        action,
+        state,
+        new Date().toISOString(),
+        protocol,
+        rpcMessage,
+      )
       .catch((err) => {
         this._logger.error('dispatchMessageSent failed', err);
       });
@@ -807,7 +859,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
-    return this._sender.send(_message);
+    return this.emitMessage(_message, message);
   }
 
   private async _routeCallResult(
@@ -834,7 +886,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
-    return this._sender.send(_message);
+    return this.emitMessage(_message, message);
   }
 
   private async _routeCallError(
@@ -866,9 +918,32 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       this._logger.error('_handleMessageApiCallback failed', err);
     });
 
-    // No error routing currently done
-    this._logger.warn('Error routing not implemented');
-    return { success: false };
+    return this.emitMessage(_message, message);
+  }
+
+  private async emitMessage(
+    message: IMessage<any>,
+    rpcMessage: any,
+  ): Promise<IMessageConfirmation> {
+    let confirmation: IMessageConfirmation;
+    if (message.payload instanceof OcppError) {
+      // No error routing currently done
+      this._logger.warn('OCPP Error routing not implemented');
+      confirmation = { success: false };
+    } else {
+      confirmation = await this._sender.send(message);
+    }
+
+    await this._webhookDispatcher.dispatchMessageReceived(
+      message.context.stationId,
+      message.context.timestamp,
+      message.protocol,
+      message.action,
+      message.state,
+      rpcMessage,
+    );
+
+    return confirmation;
   }
 
   private async _handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
@@ -897,22 +972,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         body: JSON.stringify(message.payload),
       });
     }
-  }
-
-  // Intentionally removing NULL values from object for OCPP conformity
-  private removeNulls<T>(obj: T): T {
-    if (obj === null) return undefined as T;
-    if (typeof obj !== 'object') return obj;
-
-    if (Array.isArray(obj)) {
-      return obj.filter((item) => item !== null).map((item) => this.removeNulls(item)) as T;
-    }
-
-    const result = {} as T;
-    for (const [key, value] of Object.entries(obj as object)) {
-      result[key as keyof T] = this.removeNulls(value);
-    }
-    return result;
   }
 
   protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
@@ -989,5 +1048,23 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
   protected onBrokerReconnect() {
     this._circuitBreaker?.triggerSuccess();
+  }
+
+  private getActionFromIncompletelyParsedRpcMessage(
+    rpcMessage: any,
+    messageTypeId?: MessageTypeId,
+  ) {
+    let action;
+    switch (messageTypeId) {
+      case MessageTypeId.Call:
+        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : NO_ACTION;
+        break;
+      case MessageTypeId.CallResult:
+      case MessageTypeId.CallError:
+      default:
+        action = NO_ACTION;
+        break;
+    }
+    return action;
   }
 }

@@ -2,16 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { Ajv } from 'ajv';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import type { IHandlerDefinition, IModule } from './index.js';
-import { AS_HANDLER_METADATA } from './index.js';
-import type { OcppRequest, OcppResponse } from '../../index.js';
 import type { SystemConfig } from '../../config/types.js';
+import { type OcppRequest, type OcppResponse } from '../../index.js';
 import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
-import { ErrorCode, OcppError } from '../../ocpp/rpc/message.js';
+import { ErrorCode, OcppError, OCPPVersion } from '../../ocpp/rpc/message.js';
 import { RequestBuilder } from '../../util/request.js';
 import type { ICache } from '../cache/cache.js';
 import type { IWebsocketConnection } from '../cache/types.js';
@@ -24,11 +23,15 @@ import type {
   IMessageSender,
 } from '../messages/index.js';
 import { EventGroup, MessageOrigin, MessageState } from '../messages/index.js';
+import type { IHandlerDefinition, IModule } from './index.js';
+import { AS_HANDLER_METADATA } from './index.js';
+import { OCPPValidator } from './OCPPValidator.js';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';
 
   protected _config: SystemConfig;
+  protected _ocppValidator: OCPPValidator;
   protected readonly _cache: ICache;
   protected readonly _handler: IMessageHandler;
   protected readonly _sender: IMessageSender;
@@ -46,8 +49,18 @@ export abstract class AbstractModule implements IModule {
     sender: IMessageSender,
     eventGroup: EventGroup,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
   ) {
+    const _ajv =
+      ajv ||
+      new Ajv({
+        removeAdditional: 'all',
+        useDefaults: true,
+        coerceTypes: 'array',
+        strict: false,
+      });
     this._logger = this._initLogger(logger);
+    this._ocppValidator = new OCPPValidator(logger, _ajv);
     this._logger.info('Initializing...');
     this._config = config;
     this._handler = handler;
@@ -62,6 +75,10 @@ export abstract class AbstractModule implements IModule {
   /**
    * Getters & Setters
    */
+
+  get ocppValidator(): OCPPValidator {
+    return this._ocppValidator;
+  }
 
   get cache(): ICache {
     return this._cache;
@@ -106,14 +123,58 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest | OcppResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    if (message.state === MessageState.Response) {
-      await this.handleMessageApiCallback(message as IMessage<OcppResponse>);
-      await this._cache.set(
-        message.context.correlationId,
-        JSON.stringify(message.payload),
-        message.context.stationId,
-        this._config.maxCachingSeconds,
-      );
+    message.payload = this._ocppValidator.sanitizeOCPPPayload(message.payload);
+    switch (message.state) {
+      case MessageState.Request: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
+
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+        break;
+      }
+      case MessageState.Response: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
+
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+
+        await this.handleMessageApiCallback(message as IMessage<OcppResponse>);
+        await this._cache.set(
+          message.context.correlationId,
+          JSON.stringify(message.payload),
+          message.context.stationId,
+          this._config.maxCachingSeconds,
+        );
+
+        break;
+      }
+      default:
+        this._logger.error('Unknown message state', message);
+        throw new Error('Unknown message state: ' + message.state);
     }
     try {
       const handlerDefinition = (
@@ -232,6 +293,19 @@ export abstract class AbstractModule implements IModule {
     const identifier = createIdentifier(tenantId, stationId);
     const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
 
+    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
+    const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+      action,
+      payload,
+      protocol as OCPPVersion,
+    );
+
+    if (!isValid || errors) {
+      throw new OcppError(_correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
+        errors: errors,
+      });
+    }
+
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
       this._logger.debug(
@@ -310,6 +384,19 @@ export abstract class AbstractModule implements IModule {
     payload: OcppResponse,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
+    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
+    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+      action,
+      payload,
+      protocol as OCPPVersion,
+    );
+
+    if (!isValid || errors) {
+      throw new OcppError(correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
+        errors: errors,
+      });
+    }
+
     return this._sender.sendResponse(
       RequestBuilder.buildCallResult(
         stationId,
@@ -336,6 +423,24 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation> {
+    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
+    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+      message.action,
+      payload,
+      message.protocol as OCPPVersion,
+    );
+
+    if (!isValid || errors) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.FormatViolation,
+        'Invalid message format',
+        {
+          errors: errors,
+        },
+      );
+    }
+
     message.origin = MessageOrigin.ChargingStationManagementSystem;
     return this._sender.sendResponse(message, payload);
   }

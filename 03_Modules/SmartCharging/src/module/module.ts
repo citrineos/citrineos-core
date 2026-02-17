@@ -33,6 +33,7 @@ import {
   Transaction,
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ISmartCharging } from './smartCharging/index.js';
@@ -102,6 +103,7 @@ export class SmartChargingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     transactionEventRepository?: ITransactionEventRepository,
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
@@ -115,6 +117,7 @@ export class SmartChargingModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.SmartCharging,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.smartcharging?.requests ?? [];

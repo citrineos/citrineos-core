@@ -58,6 +58,7 @@ import {
   RealTimeAuthorizer,
   validateIdToken,
 } from '@citrineos/util';
+import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { LocalAuthListService } from './LocalAuthListService.js';
@@ -149,6 +150,7 @@ export class EVDriverModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     authorizeRepository?: IAuthorizationRepository,
     localAuthListRepository?: ILocalAuthListRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -170,6 +172,7 @@ export class EVDriverModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.EVDriver,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.evdriver.requests;

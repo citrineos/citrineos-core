@@ -22,7 +22,6 @@ import {
   OcppError,
   OCPPVersion,
 } from '@citrineos/base';
-import { Op } from 'sequelize';
 import type {
   ICertificateRepository,
   IDeviceModelRepository,
@@ -38,12 +37,14 @@ import {
   sendOCSPRequest,
   validatePEMEncodedCSR,
 } from '@citrineos/util';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { Crypto } from '@peculiar/webcrypto';
+import { Ajv } from 'ajv';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import { Crypto } from '@peculiar/webcrypto';
+import { Op } from 'sequelize';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -108,6 +109,7 @@ export class CertificatesModule extends AbstractModule {
     sender: IMessageSender,
     handler: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ajv?: Ajv,
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
     locationRepository?: ILocationRepository,
@@ -120,6 +122,7 @@ export class CertificatesModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Certificates,
       logger,
+      ajv,
     );
 
     this._requests = config.modules.certificates?.requests ?? [];
