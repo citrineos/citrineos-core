@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ICache, SystemConfig } from '@citrineos/base';
 import { OCPP2_1 } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/base';
-import { OCPP2_1 } from '@citrineos/base';
 import type {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
