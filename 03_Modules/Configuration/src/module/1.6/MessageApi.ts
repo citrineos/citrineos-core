@@ -258,6 +258,26 @@ export class ConfigurationOcpp16Api
     return Promise.all(results);
   }
 
+  @AsMessageEndpoint(OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferRequestSchema)
+  dataTransfer(
+    identifier: string[],
+    request: OCPP1_6.DataTransferRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.DataTransfer,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
   /**
    * Overrides superclass method to generate the URL path based on the input {@link CallAction} and the module's endpoint prefix configuration.
    *
