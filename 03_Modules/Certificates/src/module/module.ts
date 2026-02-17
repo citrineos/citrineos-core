@@ -19,7 +19,6 @@ import {
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPP2_0_1_Namespace,
   OcppError,
   OCPPVersion,
 } from '@citrineos/base';
@@ -421,6 +420,7 @@ export class CertificatesModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
     const tenantId = message.context.tenantId;
+    const stationId = message.context.stationId;
     const certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
     if (certificateHashDataList && certificateHashDataList.length > 0) {
@@ -430,7 +430,7 @@ export class CertificatesModule extends AbstractModule {
         let existingInstalledCertificate =
           await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
             where: {
-              stationId: message.context.stationId,
+              stationId: stationId,
               certificateType: certificateType,
               serialNumber: certificateHashData.serialNumber,
             },
@@ -448,7 +448,7 @@ export class CertificatesModule extends AbstractModule {
           existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
           existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
           existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          existingInstalledCertificate.stationId = message.context.stationId;
+          existingInstalledCertificate.stationId = stationId;
           existingInstalledCertificate.certificateType = certificateType;
           await existingInstalledCertificate.save();
           this._logger.debug(
@@ -456,41 +456,6 @@ export class CertificatesModule extends AbstractModule {
             existingInstalledCertificate,
           );
         }
-      }
-
-      // delete previous hashes for station
-      await this.installCertificateHelperService.deleteExistingMatchingCertificateHashes(
-        message.context.tenantId,
-        message.context.stationId,
-        certificateHashDataList,
-      );
-      // save new hashes
-      const records = certificateHashDataList.map(
-        (certificateHashDataWrap: OCPP2_0_1.CertificateHashDataChainType) => {
-          const certificateHashData = certificateHashDataWrap.certificateHashData;
-          const certificateType = certificateHashDataWrap.certificateType;
-          return {
-            tenantId: message.context.tenantId,
-            stationId: message.context.stationId,
-            hashAlgorithm: certificateHashData.hashAlgorithm,
-            issuerNameHash: certificateHashData.issuerNameHash,
-            issuerKeyHash: certificateHashData.issuerKeyHash,
-            serialNumber: certificateHashData.serialNumber,
-            certificateType: certificateType,
-          } as InstalledCertificate;
-        },
-      );
-      this._logger.info('Attempting to save', records);
-      const response = await this._installedCertificateRepository.bulkCreate(
-        message.context.tenantId,
-        records,
-        OCPP2_0_1_Namespace.InstalledCertificate,
-      );
-      if (response.length === records.length) {
-        this._logger.info(
-          'Successfully updated installed certificate information for station',
-          message.context.stationId,
-        );
       }
     }
   }

@@ -18,7 +18,6 @@ import {
 } from '@citrineos/util';
 import { type IFileStorage, OCPP2_0_1, type WebsocketServerConfig } from '@citrineos/base';
 import { type ILogObj, Logger } from 'tslog';
-import { Op } from 'sequelize';
 import fs from 'fs';
 
 export const enum PemType {
@@ -205,31 +204,6 @@ export class InstallCertificateHelperService {
     );
     newCertificate.certificateFileHash = certificateHash;
     return await newCertificate.save();
-  }
-
-  async deleteExistingMatchingCertificateHashes(
-    tenantId: number,
-    stationId: string,
-    certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[],
-  ) {
-    try {
-      const certificateTypes = certificateHashDataList.map((certificateHashData) => {
-        return certificateHashData.certificateType;
-      });
-      if (certificateTypes && certificateTypes.length > 0) {
-        await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
-          where: {
-            tenantId,
-            stationId,
-            certificateType: {
-              [Op.in]: certificateTypes,
-            },
-          },
-        });
-      }
-    } catch (error: any) {
-      this.logger.error('GetInstalledCertificateIds failed to delete previous certificates', error);
-    }
   }
 
   async handleUploadExistingCertificate(
