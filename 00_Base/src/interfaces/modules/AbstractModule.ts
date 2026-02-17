@@ -6,10 +6,8 @@ import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import type { IHandlerDefinition, IModule } from './index.js';
-import { AS_HANDLER_METADATA } from './index.js';
-import type { OcppRequest, OcppResponse } from '../../index.js';
 import type { SystemConfig } from '../../config/types.js';
+import type { OcppRequest, OcppResponse } from '../../index.js';
 import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
 import { ErrorCode, OcppError } from '../../ocpp/rpc/message.js';
 import { RequestBuilder } from '../../util/request.js';
@@ -24,6 +22,8 @@ import type {
   IMessageSender,
 } from '../messages/index.js';
 import { EventGroup, MessageOrigin, MessageState } from '../messages/index.js';
+import type { IHandlerDefinition, IModule } from './index.js';
+import { AS_HANDLER_METADATA } from './index.js';
 
 export abstract class AbstractModule implements IModule {
   public static readonly CALLBACK_URL_CACHE_PREFIX: string = 'CALLBACK_URL_';
@@ -432,6 +432,7 @@ export abstract class AbstractModule implements IModule {
       this._eventGroup.toString() + '_requests',
       requests,
       {
+        origin: MessageOrigin.ChargingStation.toString(),
         state: MessageState.Request.toString(),
       },
     );
@@ -439,6 +440,7 @@ export abstract class AbstractModule implements IModule {
     success =
       success &&
       (await this._handler.subscribe(this._eventGroup.toString() + '_responses', responses, {
+        origin: MessageOrigin.ChargingStation.toString(),
         state: MessageState.Response.toString(),
       }));
 
