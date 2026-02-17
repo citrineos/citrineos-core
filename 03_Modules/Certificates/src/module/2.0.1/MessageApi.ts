@@ -15,6 +15,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ICertificatesModuleApi } from '../interface.js';
 import { CertificatesModule } from '../module.js';
+import { DeleteCertificateAttempt } from '@citrineos/data';
 
 /**
  * Server API for the Certificates module.
@@ -75,16 +76,22 @@ export class CertificatesOcpp201Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
+    const results: Promise<IMessageConfirmation>[] = identifier.map(async (id) => {
+      await this._module.installCertificateHelperService.prepareToInstallCertificate(
+        tenantId,
+        id,
+        request.certificate,
+        request.certificateType,
+      );
+      return this._module.sendCall(
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.InstallCertificate,
         request,
         callbackUrl,
-      ),
-    );
+      );
+    });
     return Promise.all(results);
   }
 
@@ -98,7 +105,7 @@ export class CertificatesOcpp201Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map(async (id) =>
       this._module.sendCall(
         id,
         tenantId,
@@ -121,16 +128,37 @@ export class CertificatesOcpp201Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
-      this._module.sendCall(
+    const results: Promise<IMessageConfirmation>[] = identifier.map(async (id) => {
+      const certificateHashData = request.certificateHashData;
+      const existingPendingDeleteCertificateAttempt =
+        await this._module.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
+          where: {
+            stationId: id,
+            hashAlgorithm: certificateHashData.hashAlgorithm,
+            issuerNameHash: certificateHashData.issuerNameHash,
+            issuerKeyHash: certificateHashData.issuerKeyHash,
+            serialNumber: certificateHashData.serialNumber,
+            status: null,
+          },
+        });
+      if (!existingPendingDeleteCertificateAttempt) {
+        const deleteCertificateAttempt = new DeleteCertificateAttempt();
+        deleteCertificateAttempt.stationId = id;
+        deleteCertificateAttempt.hashAlgorithm = certificateHashData.hashAlgorithm;
+        deleteCertificateAttempt.issuerNameHash = certificateHashData.issuerNameHash;
+        deleteCertificateAttempt.issuerKeyHash = certificateHashData.issuerKeyHash;
+        deleteCertificateAttempt.serialNumber = certificateHashData.serialNumber;
+        await deleteCertificateAttempt.save();
+      }
+      return this._module.sendCall(
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
         OCPP2_0_1_CallAction.DeleteCertificate,
         request,
         callbackUrl,
-      ),
-    );
+      );
+    });
     return Promise.all(results);
   }
 

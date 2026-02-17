@@ -4,7 +4,6 @@
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   HttpMethod,
   type IFileStorage,
@@ -22,7 +21,6 @@ import {
 import {
   Certificate,
   CountryNameEnumType,
-  DeleteCertificateAttempt,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
   InstalledCertificate,
@@ -79,116 +77,6 @@ export class CertificatesDataApi
     super(certificatesModule, server, OCPPVersion.OCPP2_0_1, logger);
     this._fileStorage = fileStorage;
     this._websocketServersConfig = websocketServersConfig;
-  }
-
-  /**
-   * Interface implementation
-   */
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.CertificateSigned,
-    OCPP2_0_1.CertificateSignedRequestSchema,
-  )
-  certificateSigned(
-    identifier: string,
-    tenantId: number,
-    request: OCPP2_0_1.CertificateSignedRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.CertificateSigned,
-      request,
-      callbackUrl,
-    );
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.InstallCertificate,
-    OCPP2_0_1.InstallCertificateRequestSchema,
-  )
-  async installCertificate(
-    identifier: string,
-    tenantId: number,
-    request: OCPP2_0_1.InstallCertificateRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    await this._module.installCertificateHelperService.prepareToInstallCertificate(
-      tenantId,
-      identifier,
-      request.certificate,
-      request.certificateType,
-    );
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.InstallCertificate,
-      request,
-      callbackUrl,
-    );
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-    OCPP2_0_1.GetInstalledCertificateIdsRequestSchema,
-  )
-  getInstalledCertificateIds(
-    identifier: string,
-    tenantId: number,
-    request: OCPP2_0_1.GetInstalledCertificateIdsRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.GetInstalledCertificateIds,
-      request,
-      callbackUrl,
-    );
-  }
-
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.DeleteCertificate,
-    OCPP2_0_1.DeleteCertificateRequestSchema,
-  )
-  async deleteCertificate(
-    identifier: string,
-    tenantId: number,
-    request: OCPP2_0_1.DeleteCertificateRequest,
-    callbackUrl?: string,
-  ): Promise<IMessageConfirmation> {
-    const certificateHashData = request.certificateHashData;
-    const existingPendingDeleteCertificateAttempt =
-      await this._module.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          stationId: identifier,
-          hashAlgorithm: certificateHashData.hashAlgorithm,
-          issuerNameHash: certificateHashData.issuerNameHash,
-          issuerKeyHash: certificateHashData.issuerKeyHash,
-          serialNumber: certificateHashData.serialNumber,
-          status: null,
-        },
-      });
-    if (!existingPendingDeleteCertificateAttempt) {
-      const deleteCertificateAttempt = new DeleteCertificateAttempt();
-      deleteCertificateAttempt.stationId = identifier;
-      deleteCertificateAttempt.hashAlgorithm = certificateHashData.hashAlgorithm;
-      deleteCertificateAttempt.issuerNameHash = certificateHashData.issuerNameHash;
-      deleteCertificateAttempt.issuerKeyHash = certificateHashData.issuerKeyHash;
-      deleteCertificateAttempt.serialNumber = certificateHashData.serialNumber;
-      await deleteCertificateAttempt.save();
-    }
-    return this._module.sendCall(
-      identifier,
-      tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.DeleteCertificate,
-      request,
-      callbackUrl,
-    );
   }
 
   /**
