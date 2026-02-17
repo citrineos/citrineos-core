@@ -44,7 +44,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
-  chargingProfileType: OCPP2_0_1.ChargingProfileType,
+  chargingProfileType: OCPP2_0_1.ChargingProfileType | OCPP2_1.ChargingProfileType,
   tenantId: number,
   stationId: string,
   deviceModelRepository: IDeviceModelRepository,
@@ -132,7 +132,7 @@ export async function validateChargingProfileType(
     }
 
     for (const chargingSchedulePeriod of chargingSchedule.chargingSchedulePeriod) {
-      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit) > 1) {
+      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit ?? 0) > 1) {
         throw new Error(
           `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).`,
         );

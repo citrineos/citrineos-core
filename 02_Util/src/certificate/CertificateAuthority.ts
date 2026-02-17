@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ICache, SystemConfig } from '@citrineos/base';
 import { OCPP2_1 } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/base';
+import { OCPP2_1 } from '@citrineos/base';
 import type {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
@@ -139,6 +141,7 @@ export class CertificateAuthorityService {
     this._logger.debug(`Found ${certificatePems.length} certificates in chain.`);
     if (certificatePems.length < 1) {
       return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
     }
 
     try {
@@ -153,7 +156,7 @@ export class CertificateAuthorityService {
         if (
           root.getSubjectString() === lastCertInChain.getIssuerString() &&
           root.getExtSubjectKeyIdentifier().kid.hex ===
-          lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
+            lastCertInChain.getExtAuthorityKeyIdentifier().kid.hex
         ) {
           rootCertPem = rootCert;
           break;

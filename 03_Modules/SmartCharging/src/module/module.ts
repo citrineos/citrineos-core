@@ -14,10 +14,10 @@ import type {
 import {
   AbstractModule,
   AsHandler,
-  ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
   OCPP2_1,
+  OCPP2_0_1,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
@@ -465,15 +465,15 @@ export class SmartChargingModule extends AbstractModule {
     await this.sendCallResultWithMessage(message, response);
   }
 
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCompositeSchedule)
+  @AsHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.GetCompositeSchedule)
   protected async _handleGetCompositeSchedule(
-    message: IMessage<OCPP2_1.GetCompositeScheduleResponse>,
+    message: IMessage<OCPP2_0_1.GetCompositeScheduleResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetCompositeSchedule response received:', message, props);
     const tenantId = message.context.tenantId;
     const response = message.payload;
-    if (response.status === OCPP2_1.GenericStatusEnumType.Accepted) {
+    if (response.status === OCPP2_0_1.GenericStatusEnumType.Accepted) {
       if (response.schedule) {
         const compositeSchedule = await this._chargingProfileRepository.createCompositeSchedule(
           tenantId,
@@ -492,6 +492,9 @@ export class SmartChargingModule extends AbstractModule {
       );
     }
   }
+
+  //TODO: 2.1 GetCompositeSchedule
+  // We need to add a specific handler for 2.1 or we need to change how we do our mapping / create a mapper for 2.1
 
   /**
    * Generates a `SetChargingProfileRequest` from the given `NotifyEVChargingScheduleRequest`.

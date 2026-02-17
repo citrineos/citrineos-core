@@ -5,8 +5,6 @@
 import type {
   BootConfig,
   CallAction,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
   MeterValueDto,
@@ -14,11 +12,9 @@ import type {
   OCPP2_0_1,
   OCPP2_1,
   OCPPVersion,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
 } from '@citrineos/base';
-import type {
-  ChargingProfileInput,
-  CompositeScheduleInput,
-} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type {
   Authorization,
   Boot,
@@ -62,6 +58,10 @@ import {
 import type { VariableAttributeQuerystring } from './index.js';
 import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (
@@ -431,7 +431,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingProfile>;
   createChargingNeeds(
     tenantId: number,
-    chargingNeeds: OCPP2_1.NotifyEVChargingNeedsRequest,
+    chargingNeeds: OCPP2_0_1.NotifyEVChargingNeedsRequest | OCPP2_1.NotifyEVChargingNeedsRequest,
     stationId: string,
   ): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(

@@ -152,7 +152,7 @@ export class ChargingProfileMapper {
    * Converts OCPP2_0_1.ChargingProfileType to a native ChargingProfileInput.
    */
   static fromChargingProfileType(
-    chargingProfile: OCPP2_1.ChargingProfileType,
+    chargingProfile: OCPP2_0_1.ChargingProfileType | OCPP2_1.ChargingProfileType,
   ): ChargingProfileInput {
     return {
       id: chargingProfile.id,
@@ -208,7 +208,7 @@ export class ChargingProfileMapper {
    * Converts OCPP2_0_1.CompositeScheduleType to a native CompositeScheduleInput.
    */
   static fromCompositeScheduleType(
-    compositeSchedule: OCPP2_1.CompositeScheduleType,
+    compositeSchedule: OCPP2_0_1.CompositeScheduleType,
   ): CompositeScheduleInput {
     return {
       chargingSchedulePeriod: compositeSchedule.chargingSchedulePeriod.map((period) => ({
