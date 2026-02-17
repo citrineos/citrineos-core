@@ -11,6 +11,7 @@ import type {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MeterValueDto,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -40,7 +41,7 @@ import type {
 import {
   Authorization,
   Component,
-  MeterValue,
+  OCPP1_6_Mapper,
   sequelize,
   SequelizeOCPPMessageRepository,
   SequelizeRepository,
@@ -286,7 +287,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
-    let transaction;
+    let transaction: Transaction | undefined = undefined;
     if (transactionEvent.idToken) {
       response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
@@ -347,11 +348,15 @@ export class TransactionsModule extends AbstractModule {
 
       if (message.payload.eventType === OCPP2_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
-        if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
+        if (
+          transaction &&
+          transaction.isActive &&
+          transaction.totalKwh &&
+          this._sendCostUpdatedOnMeterValue
+        ) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
             tenantId,
             stationId,
-            transaction.id,
             transaction.totalKwh,
           );
         }
@@ -381,7 +386,6 @@ export class TransactionsModule extends AbstractModule {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           tenantId,
           stationId,
-          transaction.id,
           transaction.totalKwh,
         );
       }
@@ -446,7 +450,7 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
-      await this._transactionService.createMeterValues(
+      const meterValuesCreated = await this._transactionService.createMeterValues(
         tenantId,
         meterValues,
         activeTransaction?.id,
@@ -455,6 +459,7 @@ export class TransactionsModule extends AbstractModule {
       );
 
       if (activeTransaction) {
+        await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
         await this._costNotifier.calculateCostAndNotify(
           activeTransaction,
           message.context.tenantId,
@@ -579,16 +584,13 @@ export class TransactionsModule extends AbstractModule {
 
     if (connectorId !== 0 && transactionId && meterValues.length > 0) {
       try {
-        const meterValueEntities: MeterValue[] = [];
+        const meterValueEntities: MeterValueDto[] = [];
         for (const meterValue of meterValues) {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
-            meterValueEntities.push(
-              MeterValue.build({
-                tenantId,
-                ...meterValue,
-                connectorId,
-              }),
-            );
+            const meterValueEntity = OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
+            meterValueEntity.tenantId = tenantId;
+            meterValueEntity.connectorId = connectorId;
+            meterValueEntities.push(meterValueEntity);
           }
         }
         if (meterValueEntities.length > 0) {
@@ -740,7 +742,11 @@ export class TransactionsModule extends AbstractModule {
       stationId,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
+      request.transactionData?.map((data) =>
+        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+        ),
+      ) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
       authorization?.id,
     );

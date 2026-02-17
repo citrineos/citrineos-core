@@ -14,6 +14,7 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
   OCPP2_1,
@@ -27,6 +28,7 @@ import type {
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
+  OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
   Transaction,
@@ -224,7 +226,7 @@ export class SmartChargingModule extends AbstractModule {
     const storedChargingProfile =
       await this.chargingProfileRepository.createOrUpdateChargingProfile(
         tenantId,
-        chargingProfile,
+        OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
         stationId,
         request.evseId,
       );
@@ -325,10 +327,12 @@ export class SmartChargingModule extends AbstractModule {
     for (const chargingProfile of chargingProfiles) {
       await this._chargingProfileRepository.createOrUpdateChargingProfile(
         tenantId,
-        chargingProfile,
+        OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
         message.context.stationId,
         message.payload.evseId,
-        message.payload.chargingLimitSource,
+        OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingLimitSourceEnumType(
+          message.payload.chargingLimitSource,
+        ),
         true,
       );
     }
@@ -475,7 +479,7 @@ export class SmartChargingModule extends AbstractModule {
       if (response.schedule) {
         const compositeSchedule = await this._chargingProfileRepository.createCompositeSchedule(
           tenantId,
-          response.schedule,
+          OCPP2_0_1_Mapper.ChargingProfileMapper.fromCompositeScheduleType(response.schedule),
           message.context.stationId,
         );
         this._logger.info(`Composite schedule created: ${JSON.stringify(compositeSchedule)}`);
@@ -522,7 +526,7 @@ export class SmartChargingModule extends AbstractModule {
         tenantId,
         stationId,
         transaction.id,
-        purpose,
+        nativePurpose,
       ),
       chargingProfilePurpose: purpose,
       chargingProfileKind: OCPP2_1.ChargingProfileKindEnumType.Absolute,

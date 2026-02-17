@@ -95,7 +95,15 @@ export { ConfigStoreFactory } from './config/ConfigStore.js';
 export type { ConfigStore } from './config/ConfigStore.js';
 export { DEFAULT_TENANT_ID, defineConfig } from './config/defineConfig.js';
 export { SignedMeterValuesConfig } from './config/signedMeterValuesConfig.js';
-export { RbacRulesSchema, systemConfigSchema } from './config/types.js';
+export {
+  RbacRulesSchema,
+  systemConfigSchema,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_TOKENURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_AUTH_TOKEN,
+} from './config/types.js';
 export type { RbacRules, SystemConfig, WebsocketServerConfig } from './config/types.js';
 
 // Utils

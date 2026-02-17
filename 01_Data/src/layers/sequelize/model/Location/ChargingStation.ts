@@ -8,11 +8,11 @@ import type {
   ConnectorDto,
   EvseDto,
   LocationDto,
+  Point,
   TenantDto,
   TransactionDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
-import type { Point } from 'geojson';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -52,6 +52,9 @@ export class ChargingStation extends Model implements ChargingStationDto {
 
   @Column(DataType.STRING)
   declare protocol?: OCPPVersion | null;
+
+  @Column(DataType.DATE)
+  declare latestOcppMessageTimestamp?: string | null;
 
   @Column(DataType.STRING(20))
   declare chargePointVendor?: string | null;
@@ -95,6 +98,19 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @Column(DataType.JSONB)
   declare capabilities?: ChargingStationCapabilityEnumType[] | null;
 
+  /**
+   * In OCPP 1.6, StatusNotifications can be sent with a connectorId of 0 to report the status of the whole charging station.
+   * Some charging stations instead use it in ways that cannot be applied to all connectors
+   * (such as sending Available when at least one connector is available, while others are charging).
+   * When true, this flag indicates that StatusNotifications with connectorId 0 should be used to update all connector statuses.
+   * When false, StatusNotifications with connectorId 0 should be ignored.
+   */
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare use16StatusNotification0: boolean;
+
   @ForeignKey(() => Location)
   @Column(DataType.INTEGER)
   declare locationId?: number | null;
@@ -136,10 +152,10 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @BelongsTo(() => Tenant)
   declare tenant?: TenantDto;
 
-  @BeforeUpdate
   @BeforeCreate
+  @BeforeUpdate
   static setDefaultTenant(instance: ChargingStation) {
-    if (instance.tenantId == null) {
+    if (instance.isNewRecord && instance.tenantId == null) {
       instance.tenantId = DEFAULT_TENANT_ID;
     }
   }

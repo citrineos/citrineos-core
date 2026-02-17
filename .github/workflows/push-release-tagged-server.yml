@@ -22,10 +22,6 @@ jobs:
             context: ./
             dockerfile: ./Server/deploy.Dockerfile
             config: ''
-          - name: citrineos-directus
-            context: ./DirectusExtensions
-            dockerfile: ./DirectusExtensions/directus.deploy.Dockerfile
-            config: directus-env-config.cjs
 
     steps:
       - uses: actions/checkout@v4
@@ -73,26 +69,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      - name: Prepare Directus build context
-        if: ${{ matrix.image.name == 'citrineos-directus' }}
-        run: |
-          cp ./Server/directus-env-config.cjs ./DirectusExtensions/
-
-      - name: Build and push Directus image
-        if: ${{ matrix.image.name == 'citrineos-directus' }}
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          build-args: |
-            CONFIG_FILE=${{ matrix.image.config }}
 
       # Move cache to avoid ever-growing cache
       - name: Move cache

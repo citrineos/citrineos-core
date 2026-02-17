@@ -55,9 +55,8 @@ describe('CertificateUtil', () => {
   describe('createPemBlock', () => {
     it('successes', async () => {
       const givenContent = 'PemString';
-      const givenType = 'CERTIFICATE';
 
-      const actualResult = createPemBlock(givenType, givenContent);
+      const actualResult = createPemBlock(givenContent);
 
       expect(actualResult).toBe(
         `-----BEGIN CERTIFICATE-----\nPemString\n-----END CERTIFICATE-----\n`,

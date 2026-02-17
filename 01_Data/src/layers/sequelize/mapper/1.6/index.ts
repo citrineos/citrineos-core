@@ -5,3 +5,4 @@
 export { BootMapper } from './BootMapper.js';
 export { AuthorizationMapper } from './AuthorizationMapper.js';
 export { LocationMapper } from './LocationMapper.js';
+export { MeterValueMapper } from './MeterValueMapper.js';

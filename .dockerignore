@@ -20,8 +20,6 @@
 **/*.Dockerfile
 
 # Specific directories to ignore
-**/DirectusExtensions
-**/Swarm
 **/data
 
 # include sequelize bridge

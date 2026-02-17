@@ -21,6 +21,7 @@ import {
   OCPP2_0_1_Namespace,
   OCPP_2_VER_LIST,
   OcppError,
+  OCPPVersion,
 } from '@citrineos/base';
 import { Op } from 'sequelize';
 import type {
@@ -137,7 +138,7 @@ export class CertificatesModule extends AbstractModule {
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, this._logger);
+      certificateAuthorityService || new CertificateAuthorityService(config, cache, this._logger);
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {

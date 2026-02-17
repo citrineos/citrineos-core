@@ -413,4 +413,30 @@ export class ReportingModule extends AbstractModule {
   ): void {
     this._logger.debug('CustomerInformation response received:', message, props);
   }
+
+  /**
+   * OCPP 1.6 Handlers
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.DiagnosticsStatusNotification)
+  protected async _handleDiagnosticsStatusNotification(
+    message: IMessage<OCPP1_6.DiagnosticsStatusNotificationRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('DiagnosticsStatusNotification received:', message, props);
+
+    // Create response
+    const response: OCPP1_6.DiagnosticsStatusNotificationResponse = {};
+
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('DiagnosticsStatusNotification response sent: ', messageConfirmation);
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetDiagnostics)
+  protected _handleGetDiagnostics(
+    message: IMessage<OCPP1_6.GetDiagnosticsResponse>,
+    props?: HandlerProperties,
+  ): void {
+    this._logger.debug('GetDiagnostics response received:', message, props);
+  }
 }

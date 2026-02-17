@@ -19,6 +19,7 @@ here: <https://github.com/citrineos/citrineos>.
 ## Table of Contents
 
 - [Overview](#overview)
+- [Architecture Flow](#architecture-flow)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Starting the Server without Docker](#starting-the-server-without-docker)
@@ -44,17 +45,66 @@ and [fastify](https://fastify.dev/).
 
 The system features:
 
-- Dynamic OCPP 2.0.1 message schema validation, prior to transmission using `AJV`
+- Dynamic **OCPP 1.6 and 2.0.1** message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
 - Configurable logical modules with decorators
-  - `@AsHandler` to handle incoming OCPP 2.0.1 messages
-  - `@AsMessageEndpoint` to expose functions allowing to send messages to charging stations
+  - `@AsHandler` to handle incoming OCPP messages (1.6 or 2.0.1)
+  - `@AsMessageEndpoint` to expose functions allowing sending messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported brokers are `RabbitMQ` and `Kafka`
-  - Currently supported caches are `In Memory` and `Redis`
+  - Currently supported brokers are **RabbitMQ** and **Kafka**
+  - Currently supported caches are **In Memory** and **Redis**
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
+
+## Architecture Flow
+
+Here’s a **flowchart-style overview** of CitrineOS architecture and message flow:
+
+```text
+       ┌───────────────────┐
+       │ Charging Stations │
+       │   (OCPP 1.6 &     │
+       │    2.0.1)         │
+       └────────┬──────────┘
+                │
+                ▼
+       ┌───────────────────┐
+       │  CitrineOS Server │
+       │  (WebSocket +     │
+       │   Modules)        │
+       └────────┬──────────┘
+                │
+      ┌─────────┴───────────┐
+      │                     │
+      ▼                     ▼
+┌─────────────┐       ┌─────────────┐
+│ Message     │       │ PostgreSQL  │
+│ Broker      │       │ Database    │
+│ (RabbitMQ / │       │ Persistence │
+│  Kafka)     │       │             │
+└─────────────┘       └─────────────┘
+      │
+      ▼
+┌─────────────┐
+│ Other       │
+│ Modules     │
+└─────────────┘
+
+┌─────────────┐
+│ File Storage│
+│ (S3 / GCS / │
+│  MinIO)     │
+└─────────────┘
+```
+
+## Flow Overview
+
+1. **Charging Stations** send messages using **OCPP 1.6** or **OCPP 2.0.1**.
+2. **CitrineOS Server** receives and routes messages via **WebSocket** to the **OCPP Router**.
+3. The **Message Broker (RabbitMQ/Kafka)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
+4. Operational and configuration data are persisted in **PostgreSQL**.
+5. Files and assets are stored in **Amazon S3** or **Google Cloud Storage (GCS)** in supported environments. **MinIO** is used for **local development**, providing **S3-compatible storage only**. Local development does **not** support a GCS-compatible storage backend.
 
 ### Prerequisites
 
@@ -174,7 +224,8 @@ charging stations to point to the server's IP address and port as specified in t
 
 ## Testing with EVerest
 
-This [README](./Server/everest/README.md)
+For testing charging stations using EVerest, see:
+[README](./Server/everest/README.md)
 
 ## Running `clean` and `fresh`
 
@@ -242,8 +293,6 @@ Once Docker is running, the following services should be available:
   - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostgreSQL database for persistence
   - `5432`: sql tcp connection
-- **Directus** (service name: directus) on port 8055 with endpoints
-  - `:8055/admin`: web interface (login = admin@citrineos.com:CitrineOS!)
 - **Localstack** (service name: localstack) on port 4566 for mocking aws services
   - `:4566`: unified AWS service endpoint
 
@@ -265,7 +314,7 @@ Here's the complete list of environment variables that are used in bootstrapping
 
 - `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
 - `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `directus`
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `gcp`
 
 ## Database Configuration
 
@@ -299,16 +348,12 @@ When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=s3`:
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
 
-## Directus File Access
+## GCP File Access
 
-When `CITRINEOS_FILE_ACCESS_TYPE=directus`:
+When `CITRINEOS_FILE_ACCESS_TYPE=gcp`:
 
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_HOST` - Directus host (default: `localhost`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PORT` - Directus port (default: `8055`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_TOKEN` - Directus API token
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_USERNAME` - Directus username
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_PASSWORD` - Directus password
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_DIRECTUS_GENERATE_FLOWS` - Generate flows (true/false, default: `false`)
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_PROJECTID` - Project ID
+- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_CREDENTIALS` - GCP Credentials object (Optional, if not set will use Application Default Credentials such as GOOGLE_APPLICATION_CREDENTIALS environment variable or gcloud CLI credentials)
 
 ## Generating OCPP Interfaces
 

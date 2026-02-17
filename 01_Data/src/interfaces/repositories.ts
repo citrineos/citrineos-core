@@ -5,13 +5,20 @@
 import type {
   BootConfig,
   CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
+  MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPP2_1,
   OCPPVersion,
 } from '@citrineos/base';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type {
   Authorization,
   Boot,
@@ -244,6 +251,16 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]>;
+  updateChargingStationTimestamp(
+    tenantId: number,
+    stationId: string,
+    timestamp: string,
+  ): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
@@ -279,7 +296,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<void>;
+  ): Promise<MeterValue>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
@@ -287,7 +304,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction>;
   updateTransactionByMeterValues(
     tenantId: number,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     stationId: string,
     transactionId: number,
   ): Promise<void>;
@@ -327,7 +344,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     stationId: string,
     meterStop: number,
     timestamp: Date,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction>;
