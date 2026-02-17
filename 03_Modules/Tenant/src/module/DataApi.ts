@@ -31,10 +31,14 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
    */
   constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(tenantModule, server, null, logger);
-    this._module.on('TenantCreated', (tenant, websocketServerConfig) => {
+    this._module.on('TenantCreated', (tenant, websocketServerConfig, websocketServerId) => {
       this._logger?.info(
-        `TenantDataApi detected new tenant: ${tenant.id}`,
-        websocketServerConfig ? `with websocket server config: ${websocketServerConfig.id}` : '',
+        `Detected new tenant: ${tenant.id}`,
+        websocketServerConfig
+          ? `with websocket server config: ${websocketServerConfig.id}`
+          : websocketServerId
+            ? `associated with websocket server: ${websocketServerId}`
+            : '',
       );
     });
   }
@@ -42,13 +46,17 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
   @AsDataEndpoint(Namespace.Tenant, HttpMethod.Post, undefined, CreateTenantQuerySchema)
   async createTenant(
     request: FastifyRequest<{
-      Body: Tenant & { websocketServerConfig?: WebsocketServerConfig };
+      Body: Tenant & {
+        websocketServerConfig?: WebsocketServerConfig;
+        websocketServerId?: string;
+      };
     }>,
   ): Promise<Tenant> {
-    const { websocketServerConfig, ...tenantData } = request.body;
+    const { websocketServerConfig, websocketServerId, ...tenantData } = request.body;
     const createdTenant = await this._module.createTenant(
       tenantData as Tenant,
       websocketServerConfig,
+      websocketServerId,
     );
 
     this._logger?.info(`Tenant created: ${createdTenant.id}`);

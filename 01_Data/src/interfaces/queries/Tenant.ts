@@ -30,4 +30,12 @@ export const CreateTenantQuerySchema = QuerySchema('CreateTenantQuerySchema', [
     key: 'url',
     type: 'string',
   },
+  {
+    key: 'websocketServerConfig',
+    type: 'object',
+  },
+  {
+    key: 'websocketServerId',
+    type: 'string',
+  },
 ]);

@@ -20,7 +20,11 @@ import { type ITenantRepository, SequelizeTenantRepository, Tenant } from '@citr
  * Type-safe tenant events
  */
 export interface TenantEvents {
-  TenantCreated: (tenant: Tenant, websocketServerConfig?: WebsocketServerConfig) => void;
+  TenantCreated: (
+    tenant: Tenant,
+    websocketServerConfig?: WebsocketServerConfig,
+    websocketServerId?: string,
+  ) => void;
 }
 
 export class TenantModule extends AbstractModule {
@@ -101,12 +105,13 @@ export class TenantModule extends AbstractModule {
   async createTenant(
     tenant: Tenant,
     websocketServerConfig?: WebsocketServerConfig,
+    websocketServerId?: string,
   ): Promise<Tenant> {
     const createdTenant = await this._tenantRepository.createTenant(tenant);
 
     this._logger?.info(`Tenant created: ${createdTenant.id} — emitting TenantCreated event`);
 
-    this._emit('TenantCreated', createdTenant, websocketServerConfig);
+    this._emit('TenantCreated', createdTenant, websocketServerConfig, websocketServerId);
 
     return createdTenant;
   }
