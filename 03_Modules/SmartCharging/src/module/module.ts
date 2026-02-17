@@ -330,9 +330,7 @@ export class SmartChargingModule extends AbstractModule {
         OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
         message.context.stationId,
         message.payload.evseId,
-        OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingLimitSourceEnumType(
-          message.payload.chargingLimitSource,
-        ),
+        message.payload.chargingLimitSource,
         true,
       );
     }
@@ -526,7 +524,7 @@ export class SmartChargingModule extends AbstractModule {
         tenantId,
         stationId,
         transaction.id,
-        nativePurpose,
+        purpose,
       ),
       chargingProfilePurpose: purpose,
       chargingProfileKind: OCPP2_1.ChargingProfileKindEnumType.Absolute,

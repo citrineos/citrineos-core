@@ -98,7 +98,7 @@ export class EVDriverOcpp16Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.ClearCache, OCPP1_6.ClearCacheRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.ClearCache, OCPP1_6.ClearCacheRequestSchema)
   async clearCache(
     identifier: string[],
     request: OCPP1_6.ClearCacheRequest,
@@ -110,7 +110,7 @@ export class EVDriverOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.ClearCache,
+        OCPP_CallAction.ClearCache,
         request,
         callbackUrl,
       ),

@@ -18,6 +18,7 @@ import {
   ErrorCode,
   EventGroup,
   Namespace,
+  OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP2_1,
   OCPP_CallAction,
@@ -418,7 +419,7 @@ export class ReportingModule extends AbstractModule {
    * OCPP 1.6 Handlers
    */
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.DiagnosticsStatusNotification)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.DiagnosticsStatusNotification)
   protected async _handleDiagnosticsStatusNotification(
     message: IMessage<OCPP1_6.DiagnosticsStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -432,7 +433,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('DiagnosticsStatusNotification response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetDiagnostics)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetDiagnostics)
   protected _handleGetDiagnostics(
     message: IMessage<OCPP1_6.GetDiagnosticsResponse>,
     props?: HandlerProperties,

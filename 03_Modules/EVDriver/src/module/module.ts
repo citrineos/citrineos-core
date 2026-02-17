@@ -863,7 +863,7 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearCache)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.ClearCache)
   protected async _handleOcpp16ClearCache(
     message: IMessage<OCPP1_6.ClearCacheResponse>,
     props?: HandlerProperties,

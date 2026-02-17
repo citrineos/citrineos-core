@@ -418,15 +418,15 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
   createOrUpdateCertificate(tenantId: number, certificate: Certificate): Promise<Certificate>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> { }
+export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
     tenantId: number,
-    chargingProfile: OCPP2_1.ChargingProfileType,
+    chargingProfile: ChargingProfileInput,
     stationId: string,
     evseId?: number | null,
-    chargingLimitSource?: OCPP2_1.ChargingLimitSourceEnumType,
+    chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
   ): Promise<ChargingProfile>;
   createChargingNeeds(
@@ -441,7 +441,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: OCPP2_1.CompositeScheduleType,
+    compositeSchedule: CompositeScheduleInput,
     stationId: string,
   ): Promise<CompositeSchedule>;
   getNextChargingProfileId(tenantId: number, stationId: string): Promise<number>;
@@ -450,7 +450,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
-    profilePurpose: OCPP2_1.ChargingProfilePurposeEnumType,
+    profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number>;
 }
 
@@ -463,7 +463,7 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> { }
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {
