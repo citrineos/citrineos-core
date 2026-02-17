@@ -382,7 +382,10 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      if (message.payload.eventType === OCPP2_1.TransactionEventEnumType.Ended && transaction.totalKwh) {
+      if (
+        message.payload.eventType === OCPP2_1.TransactionEventEnumType.Ended &&
+        transaction.totalKwh
+      ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           tenantId,
           stationId,
@@ -679,8 +682,8 @@ export class TransactionsModule extends AbstractModule {
 
     const authorization: Authorization | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
-        idToken: request.idTag,
-      })
+          idToken: request.idTag,
+        })
       : undefined;
 
     let idTokenInfoStatus = authorization?.status;
@@ -712,12 +715,12 @@ export class TransactionsModule extends AbstractModule {
     const stopTransactionResponse: OCPP1_6.StopTransactionResponse = {
       ...(request.idTag
         ? {
-          idTagInfo: {
-            expiryDate: authorization?.cacheExpiryDateTime,
-            parentIdTag,
-            status: idTokenInfoStatus as unknown as OCPP1_6.StopTransactionResponseStatus,
-          },
-        }
+            idTagInfo: {
+              expiryDate: authorization?.cacheExpiryDateTime,
+              parentIdTag,
+              status: idTokenInfoStatus as unknown as OCPP1_6.StopTransactionResponseStatus,
+            },
+          }
         : {}),
     };
 

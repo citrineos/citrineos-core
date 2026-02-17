@@ -84,7 +84,7 @@ describe('validateISO15693IdToken', () => {
     ['0123456789ABCD F', 'contains space'],
     [null as any, 'null value'],
     [undefined as any, 'undefined value'],
-  ])('should return false for invalid token: %s (%s)', (token, description) => {
+  ])('should return false for invalid token: %s (%s)', (token, _) => {
     expect(validateISO15693IdToken(token)).toBe(false);
   });
 });
@@ -113,7 +113,7 @@ describe('validateISO14443IdToken', () => {
     ['01234567-', 'contains hyphen'],
     [null as any, 'null value'],
     [undefined as any, 'undefined value'],
-  ])('should return false for invalid token: %s (%s)', (token, description) => {
+  ])('should return false for invalid token: %s (%s)', (token, _) => {
     expect(validateISO14443IdToken(token)).toBe(false);
   });
 });
@@ -155,7 +155,7 @@ describe('validateIdentifierStringIdToken', () => {
     ['token!exclamation', 'contains exclamation'],
     [null as any, 'null value'],
     [undefined as any, 'undefined value'],
-  ])('should return false for invalid token: %s (%s)', (token, description) => {
+  ])('should return false for invalid token: %s (%s)', (token, _) => {
     expect(validateIdentifierStringIdToken(token)).toBe(false);
   });
 });
@@ -165,7 +165,7 @@ describe('validateNoAuthorizationIdToken', () => {
     ['', 'empty string'],
     [null as any, 'null value'],
     [undefined as any, 'undefined value'],
-  ])('should return true for %s (%s)', (token, description) => {
+  ])('should return true for %s (%s)', (token, _) => {
     expect(validateNoAuthorizationIdToken(token)).toBe(true);
   });
 
@@ -174,7 +174,7 @@ describe('validateNoAuthorizationIdToken', () => {
     ['123', 'numeric string'],
     ['a', 'single character'],
     ['   ', 'whitespace'],
-  ])('should return false for %s (%s)', (token, description) => {
+  ])('should return false for %s (%s)', (token, _) => {
     expect(validateNoAuthorizationIdToken(token)).toBe(false);
   });
 });
@@ -200,7 +200,7 @@ describe('validateIdToken', () => {
       ['123', 'too short'],
       ['0123456789ABCDEF0', 'too long'],
       ['0123456789ABCDEG', 'invalid character'],
-    ])('should return error for %s (%s)', (token, description) => {
+    ])('should return error for %s (%s)', (token, _) => {
       const result = validateIdToken(OCPP2_0_1.IdTokenEnumType.ISO15693, token);
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe(
@@ -215,7 +215,7 @@ describe('validateIdToken', () => {
     it.each([
       [validToken8, 'valid 8-char token'],
       [validToken14, 'valid 14-char token'],
-    ])('Happy path, should return valid and no description for %s (%s)', (token, description) => {
+    ])('Happy path, should return valid and no description for %s (%s)', (token, _) => {
       const result = validateIdToken(OCPP2_0_1.IdTokenEnumType.ISO14443, token);
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeUndefined();
@@ -227,7 +227,7 @@ describe('validateIdToken', () => {
       ['123456789', 'too long (9 chars)'],
       ['1234567890123', 'too short (13 chars)'],
       ['123456789012345', 'too long (15 chars)'],
-    ])('should return error for %s (%s)', (token, description) => {
+    ])('should return error for %s (%s)', (token, _) => {
       const result = validateIdToken(OCPP2_0_1.IdTokenEnumType.ISO14443, token);
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe(
@@ -847,7 +847,7 @@ describe('validateASCIIContent', () => {
 
   it.each(INVALID_ASCII_CONTENT)(
     'should return false for invalid ASCII content: %s (%s)',
-    (content, description) => {
+    (content, _) => {
       expect(validateASCIIContent(content)).toBe(false);
     },
   );
@@ -860,7 +860,7 @@ describe('validateHTMLContent', () => {
 
   it.each(INVALID_HTML_CONTENT)(
     'should return false for invalid HTML content: %s (%s)',
-    (content, description) => {
+    (content, _) => {
       expect(validateHTMLContent(content)).toBe(false);
     },
   );
@@ -873,7 +873,7 @@ describe('validateURIContent', () => {
 
   it.each(INVALID_URI_CONTENT)(
     'should return false for invalid URI content: %s (%s)',
-    (content, description) => {
+    (content, _) => {
       expect(validateURIContent(content)).toBe(false);
     },
   );
@@ -891,7 +891,7 @@ describe('validateMessageContent', () => {
     [OCPP2_0_1.MessageFormatEnumType.HTML, '<div>Test</div>', 'HTML format with valid content'],
     [OCPP2_0_1.MessageFormatEnumType.URI, 'http://example.com', 'URI format with valid content'],
     [OCPP2_0_1.MessageFormatEnumType.UTF8, 'Hello 世界', 'UTF8 format with valid content'],
-  ])('should validate %s: %s (%s)', (format, content, description) => {
+  ])('should validate %s: %s (%s)', (format, content, _) => {
     const result = validateMessageContent(format, content);
     expect(result.isValid).toBe(true);
     expect(result.errorMessage).toBeUndefined();
@@ -916,7 +916,7 @@ describe('validateMessageContent', () => {
       'URI format with empty content',
       'URI format requires a valid URI that the Charging Station can download',
     ],
-  ])('should return error for %s: %s (%s)', (format, content, description, expectedError) => {
+  ])('should return error for %s: %s (%s)', (format, content, _, expectedError) => {
     const result = validateMessageContent(format, content);
     expect(result.isValid).toBe(false);
     expect(result.errorMessage).toBe(expectedError);
@@ -938,7 +938,7 @@ describe('validateMessageContentType', () => {
     [OCPP2_0_1.MessageFormatEnumType.UTF8, '日本語', 'ja-JP', 'UTF8 with Japanese language'],
   ])(
     'should validate %s format with content "%s" and language "%s" (%s)',
-    (format, content, language, description) => {
+    (format, content, language, _) => {
       const messageContent = aMessageContent({
         format,
         content,
@@ -950,27 +950,29 @@ describe('validateMessageContentType', () => {
     },
   );
 
-  it.each([
-    ['en_US', 'invalid language tag with underscore'],
-    ['en-', 'invalid language tag with trailing dash'],
-    ['123', 'invalid numeric language tag'],
-    ['', 'empty language tag'],
-    [
-      'this-is-a-very-long-language-tag-exceeding-the-maximum-length-of-fifty-characters',
-      'too long language tag',
-    ],
-  ])('should return error for invalid language tag: %s (%s)', (language, description) => {
-    const messageContent = aMessageContent({ language });
-    const result = validateMessageContentType(messageContent);
-    // expect(result.isValid).toBe(false);
-    // expect(result.errorMessage).toContain('Invalid language tag');
-  });
+  //TODO: Need to either uncomment below and fix what was commented or remove the block
+
+  // it.each([
+  //   ['en_US', 'invalid language tag with underscore'],
+  //   ['en-', 'invalid language tag with trailing dash'],
+  //   ['123', 'invalid numeric language tag'],
+  //   ['', 'empty language tag'],
+  //   [
+  //     'this-is-a-very-long-language-tag-exceeding-the-maximum-length-of-fifty-characters',
+  //     'too long language tag',
+  //   ],
+  // ])('should return error for invalid language tag: %s (%s)', (language, _) => {
+  //   const messageContent = aMessageContent({ language });
+  //   const result = validateMessageContentType(messageContent);
+  //   // expect(result.isValid).toBe(false);
+  //   // expect(result.errorMessage).toContain('Invalid language tag');
+  // });
 
   it.each([
     [OCPP2_0_1.MessageFormatEnumType.ASCII, 'Hello 😀', 'ASCII with emoji'],
     [OCPP2_0_1.MessageFormatEnumType.HTML, '<div>Unclosed', 'HTML with unclosed tag'],
     [OCPP2_0_1.MessageFormatEnumType.URI, '', 'URI with empty content'],
-  ])('should return error for %s: %s (%s)', (format, content, description) => {
+  ])('should return error for %s: %s (%s)', (format, content, _) => {
     const messageContent = aMessageContent({ format, content });
     const result = validateMessageContentType(messageContent);
     expect(result.isValid).toBe(false);
