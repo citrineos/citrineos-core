@@ -1,0 +1,743 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type {
+  AbstractModule,
+  BootstrapConfig,
+  IApiAuthProvider,
+  IAuthorizer,
+  ICache,
+  IFileStorage,
+  IMessageHandler,
+  IMessageRouter,
+  IMessageSender,
+  IModule,
+  IModuleApi,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  addFormats,
+  Ajv,
+  ConfigStoreFactory,
+  EventGroup,
+  eventGroupFromString,
+  type IAuthenticator,
+} from '@citrineos/base';
+import {
+  CertificatesDataApi,
+  CertificatesModule,
+  CertificatesOcpp201Api,
+} from '@citrineos/certificates';
+import {
+  ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp201Api,
+} from '@citrineos/configuration';
+import { RepositoryStore, sequelize, Sequelize } from '@citrineos/data';
+import {
+  EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp201Api,
+} from '@citrineos/evdriver';
+import { MonitoringDataApi, MonitoringModule, MonitoringOcpp201Api } from '@citrineos/monitoring';
+import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/ocpprouter';
+import { ReportingModule, ReportingOcpp16Api, ReportingOcpp201Api } from '@citrineos/reporting';
+import type { ISmartCharging } from '@citrineos/smartcharging';
+import {
+  InternalSmartCharging,
+  SmartChargingModule,
+  SmartChargingOcpp201Api,
+} from '@citrineos/smartcharging';
+import { TenantDataApi, TenantModule } from '@citrineos/tenant';
+import {
+  TransactionsDataApi,
+  TransactionsModule,
+  TransactionsOcpp201Api,
+} from '@citrineos/transactions';
+import {
+  apiAuthPluginFp,
+  Authenticator,
+  BasicAuthenticationFilter,
+  CertificateAuthorityService,
+  ConnectedStationFilter,
+  IdGenerator,
+  initSwagger,
+  LocalBypassAuthProvider,
+  MemoryCache,
+  NetworkProfileFilter,
+  OIDCAuthProvider,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  RealTimeAuthorizer,
+  RedisCache,
+  UnknownStationFilter,
+  WebsocketNetworkConnection,
+} from '@citrineos/util';
+import cors from '@fastify/cors';
+import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import type { FastifyInstance } from 'fastify';
+import fastify from 'fastify';
+import type {
+  FastifyRouteSchemaDef,
+  FastifySchemaCompiler,
+  FastifyValidationResult,
+} from 'fastify/types/schema.js';
+import type { RedisClientOptions } from 'redis';
+import { type ILogObj, Logger } from 'tslog';
+
+export class CitrineOSServer {
+  /**
+   * Fields
+   */
+  private readonly _config: BootstrapConfig & SystemConfig;
+  private readonly _logger: Logger<ILogObj>;
+  private readonly _server: FastifyInstance;
+  private readonly _cache: ICache;
+  private readonly _ajv: Ajv.Ajv;
+  private readonly _fileStorage: IFileStorage;
+  private readonly modules: IModule[] = [];
+  private readonly apis: IModuleApi[] = [];
+  private _sequelizeInstance!: Sequelize;
+  private host?: string;
+  private port?: number;
+  private eventGroup?: EventGroup;
+  private _authenticator?: IAuthenticator;
+  private _router?: IMessageRouter;
+  private _networkConnection?: WebsocketNetworkConnection;
+  private _repositoryStore!: RepositoryStore;
+  private _idGenerator!: IdGenerator;
+  private _certificateAuthorityService!: CertificateAuthorityService;
+  private _smartChargingService!: ISmartCharging;
+  private _realTimeAuthorizer!: IAuthorizer;
+
+  private readonly appName: string;
+
+  /**
+   * Constructor for the class.
+   *
+   * @param {EventGroup} appName - app type
+   * @param {SystemConfig} systemConfig - config
+   * @param {FastifyInstance} server - optional Fastify server instance
+   * @param {Ajv} ajv - optional Ajv JSON schema validator instance
+   * @param {ICache} cache - cache
+   * @param {IFileStorage} _fileStorage - file storage
+   */
+  // todo rename event group to type
+  constructor(
+    appName: string,
+    bootstrapConfig: BootstrapConfig,
+    systemConfig: SystemConfig,
+    server?: FastifyInstance,
+    ajv?: Ajv.Ajv,
+    cache?: ICache,
+    _fileStorage?: IFileStorage,
+  ) {
+    // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
+    if (!systemConfig.util.messageBroker.amqp) {
+      throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
+    }
+
+    this.appName = appName;
+    this._config = { ...bootstrapConfig, ...systemConfig };
+    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+
+    // enable cors
+    (this._server as any).register(cors, {
+      origin: true, // This can be customized to specify allowed origins
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
+    });
+
+    console.log('Bootstrap configuration loaded');
+    // Add health check
+    this.initHealthCheck();
+
+    // Create Ajv JSON schema validator instance
+    this._ajv = this.initAjv(ajv);
+    this.addAjvFormats();
+
+    // Initialize parent logger
+    this._logger = this.initLogger();
+
+    // Set cache implementation
+    this._cache = this.initCache(cache);
+
+    // Initialize Swagger if enabled
+    this.initSwagger()
+      .then()
+      .catch((error) => this._logger.error('Could not initialize swagger', { error }));
+
+    // Register API authentication
+    this.registerApiAuth();
+
+    // Initialize File Access Implementation
+    this._fileStorage = ConfigStoreFactory.getInstance();
+
+    // Register AJV for schema validation
+    this.registerAjv();
+
+    // Initialize repository store
+    this.initRepositoryStore();
+    this.initIdGenerator();
+    this.initCertificateAuthorityService();
+    this.initSmartChargingService();
+    this.initRealTimeAuthorizer();
+  }
+
+  async initialize(): Promise<void> {
+    // Initialize module & API
+    // Always initialize API after SwaggerUI
+    await this.initSystem();
+
+    // Initialize database
+    await this.initDb();
+
+    // Set up shutdown handlers
+    for (const event of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
+      process.on(event, async () => {
+        await this.shutdown();
+      });
+    }
+  }
+
+  async shutdown() {
+    // todo shut down depending on setup
+    // Shut down all modules and central system
+    for (const module of this.modules) {
+      await module.shutdown();
+    }
+    await this._networkConnection?.shutdown();
+    await this._router?.shutdown();
+
+    // Shutdown server
+    await this._server.close();
+
+    setTimeout(() => {
+      console.log('Exiting...');
+      process.exit(1);
+    }, 2000);
+  }
+
+  async run(): Promise<void> {
+    try {
+      await this.initialize();
+      await this._syncWebsocketConfig();
+      await this._server
+        .listen({
+          host: this.host,
+          port: this.port,
+        })
+        .then((address) => {
+          this._logger?.info(`Server listening at ${address}`);
+        })
+        .catch((error) => {
+          this._logger?.error(error);
+          process.exit(1);
+        });
+      // TODO Push config to microservices
+    } catch (error) {
+      await Promise.reject(error);
+    }
+  }
+
+  protected async _syncWebsocketConfig() {
+    for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
+      await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+        websocketServerConfig,
+        this._config.maxCallLengthSeconds,
+      );
+    }
+  }
+
+  protected _createSender(): IMessageSender {
+    return new RabbitMqSender(this._config, this._logger);
+  }
+
+  protected _createHandler(): IMessageHandler {
+    return new RabbitMqReceiver(this._config, this._logger);
+  }
+
+  private initHealthCheck() {
+    this._server.get('/health', async () => ({ status: 'healthy' }));
+  }
+
+  private initAjv(ajv?: Ajv.Ajv) {
+    const ajvInstance =
+      ajv ||
+      new Ajv.Ajv({
+        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
+        useDefaults: true,
+        strict: false,
+        strictNumbers: true,
+        strictRequired: true,
+        validateFormats: true,
+        allErrors: true, // Report all validation errors
+      });
+
+    // Add custom keywords for OCPP schema metadata
+    ajvInstance.addKeyword({
+      keyword: 'comment',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'javaType',
+      compile: () => () => true,
+    });
+
+    ajvInstance.addKeyword({
+      keyword: 'tsEnumNames',
+      compile: () => () => true,
+    });
+
+    return ajvInstance;
+  }
+
+  private addAjvFormats() {
+    addFormats.default(this._ajv, {
+      mode: 'fast',
+      formats: ['date-time', 'uri'],
+    });
+  }
+
+  private initLogger() {
+    const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
+
+    const loggerSettings = {
+      name: 'CitrineOS Logger',
+      minLevel: this._config.logLevel,
+      hideLogPositionForProduction: this._config.env === 'production',
+      type: isCloud ? ('json' as const) : ('pretty' as const),
+    };
+
+    return new Logger<ILogObj>(loggerSettings);
+  }
+
+  private async initDb() {
+    await sequelize.DefaultSequelizeInstance.initializeSequelize();
+  }
+
+  private initCache(cache?: ICache): ICache {
+    if (cache) return cache;
+    if (this._config.util.cache.redis) {
+      const redisClientOptions: RedisClientOptions =
+        'url' in this._config.util.cache.redis
+          ? { url: this._config.util.cache.redis.url }
+          : {
+              socket: {
+                host: this._config.util.cache.redis.host,
+                port: this._config.util.cache.redis.port,
+              },
+            };
+      return new RedisCache(redisClientOptions);
+    }
+    return new MemoryCache();
+  }
+
+  private async initSwagger() {
+    if (this._config.util.swagger) {
+      await initSwagger(this._config, this._server);
+    }
+  }
+
+  private registerAjv() {
+    // todo type schema instead of any
+    const fastifySchemaCompiler: FastifySchemaCompiler<any> = (
+      routeSchema: FastifyRouteSchemaDef<any>,
+    ) => this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
+    this._server.setValidatorCompiler(fastifySchemaCompiler);
+  }
+
+  private registerApiAuth() {
+    const authProvider = this.initApiAuthProvider();
+    this._server.register(apiAuthPluginFp, {
+      provider: authProvider,
+      options: {
+        excludedRoutes: [
+          '/health', // Health check endpoint
+          '/docs', // API documentation
+        ],
+        debug: this._config.logLevel <= 2, // Enable debug logs in dev mode
+      },
+      logger: this._logger,
+    });
+  }
+
+  private initNetworkConnection() {
+    this._authenticator = new Authenticator(
+      new UnknownStationFilter(
+        new sequelize.SequelizeLocationRepository(this._config, this._logger),
+        this._logger,
+      ),
+      new ConnectedStationFilter(this._cache, this._logger),
+      new NetworkProfileFilter(
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
+        this._logger,
+      ),
+      new BasicAuthenticationFilter(
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
+        this._logger,
+      ),
+      this._logger,
+    );
+
+    const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.subscriptionRepository,
+      this._logger,
+    );
+
+    this._router = new MessageRouterImpl(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      webhookDispatcher,
+      async (_identifier: string, _message: string) => {},
+      this._logger,
+      this._ajv,
+      this._repositoryStore.locationRepository,
+    );
+
+    this._networkConnection = new WebsocketNetworkConnection(
+      this._config,
+      this._cache,
+      this._authenticator,
+      this._router,
+      this._logger,
+      this._repositoryStore.locationRepository.doesChargingStationExistByStationId.bind(
+        this._repositoryStore.locationRepository,
+      ),
+    );
+
+    this._router.networkHook = this._networkConnection.bindNetworkHook();
+
+    this.apis.push(
+      new AdminApi(
+        this._router,
+        this._networkConnection,
+        this._server,
+        this._config,
+        this._logger,
+        this._repositoryStore.subscriptionRepository,
+        this._repositoryStore.serverNetworkProfileRepository,
+      ),
+    );
+  }
+
+  private async initHandlersAndAddModule(module: AbstractModule) {
+    await module.initHandlers();
+    this.modules.push(module);
+  }
+
+  private async initAllModules() {
+    if (this._config.modules.certificates) {
+      await this.initCertificatesModule();
+    }
+
+    if (this._config.modules.configuration) {
+      await this.initConfigurationModule();
+    }
+
+    if (this._config.modules.evdriver) {
+      await this.initEVDriverModule();
+    }
+
+    if (this._config.modules.monitoring) {
+      await this.initMonitoringModule();
+    }
+
+    if (this._config.modules.reporting) {
+      await this.initReportingModule();
+    }
+
+    if (this._config.modules.smartcharging) {
+      await this.initSmartChargingModule();
+    }
+
+    if (this._config.modules.transactions) {
+      await this.initTransactionsModule();
+    }
+
+    if (this._config.modules.tenant) {
+      await this.initTenantModule();
+    }
+  }
+
+  private initApiAuthProvider(): IApiAuthProvider {
+    this._logger.info('Initializing API authentication provider,', this._config.util.authProvider);
+    if (this._config.util.authProvider.oidc) {
+      return new OIDCAuthProvider(this._config.util.authProvider.oidc, this._logger);
+    } else if (this._config.util.authProvider.localByPass) {
+      return new LocalBypassAuthProvider(this._logger);
+    } else {
+      throw new Error('No valid API authentication provider configured');
+    }
+  }
+
+  private async initCertificatesModule() {
+    const module = new CertificatesModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._fileStorage,
+      this._networkConnection!,
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.certificateRepository,
+      this._repositoryStore.installedCertificateRepository,
+      this._repositoryStore.installCertificateAttemptRepository,
+      this._repositoryStore.deleteCertificateAttemptRepository,
+      this._repositoryStore.ocppMessageRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new CertificatesOcpp201Api(module, this._server, this._logger),
+      new CertificatesDataApi(
+        module,
+        this._server,
+        this._fileStorage,
+        this._config.util.networkConnection.websocketServers,
+        this._logger,
+      ),
+    );
+  }
+
+  private async initConfigurationModule() {
+    const module = new ConfigurationModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.bootRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.messageInfoRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.changeConfigurationRepository,
+      this._repositoryStore.ocppMessageRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new ConfigurationOcpp201Api(module, this._server, this._logger),
+      new ConfigurationOcpp16Api(module, this._server, this._logger),
+      new ConfigurationDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initEVDriverModule() {
+    const module = new EVDriverModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.localAuthListRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.tariffRepository,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._repositoryStore.reservationRepository,
+      this._repositoryStore.ocppMessageRepository,
+      this._repositoryStore.locationRepository,
+      this._certificateAuthorityService,
+      this._realTimeAuthorizer,
+      [],
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new EVDriverOcpp201Api(module, this._server, this._logger),
+      new EVDriverOcpp16Api(module, this._server, this._logger),
+      new EVDriverDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initMonitoringModule() {
+    const module = new MonitoringModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.variableMonitoringRepository,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new MonitoringOcpp201Api(module, this._server, this._logger),
+      new MonitoringDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initReportingModule() {
+    const module = new ReportingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.securityEventRepository,
+      this._repositoryStore.variableMonitoringRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new ReportingOcpp201Api(module, this._server, this._logger),
+      new ReportingOcpp16Api(module, this._server, this._logger),
+    );
+  }
+
+  private async initSmartChargingModule() {
+    const module = new SmartChargingModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.chargingProfileRepository,
+      this._smartChargingService,
+      this._idGenerator,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new SmartChargingOcpp201Api(module, this._server, this._logger));
+  }
+
+  private async initTransactionsModule() {
+    const module = new TransactionsModule(
+      this._config,
+      this._cache,
+      this._fileStorage,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.transactionEventRepository,
+      this._repositoryStore.authorizationRepository,
+      this._repositoryStore.deviceModelRepository,
+      this._repositoryStore.componentRepository,
+      this._repositoryStore.locationRepository,
+      this._repositoryStore.tariffRepository,
+      this._repositoryStore.reservationRepository,
+      this._repositoryStore.ocppMessageRepository,
+      this._realTimeAuthorizer,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(
+      new TransactionsOcpp201Api(module, this._server, this._logger),
+      new TransactionsDataApi(module, this._server, this._logger),
+    );
+  }
+
+  private async initTenantModule() {
+    const module = new TenantModule(
+      this._config,
+      this._cache,
+      this._createSender(),
+      this._createHandler(),
+      this._logger,
+      this._repositoryStore.tenantRepository,
+    );
+    await this.initHandlersAndAddModule(module);
+    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+    this._logger.info('Tenant module initialized');
+  }
+
+  private async initModule(eventGroup = this.eventGroup) {
+    this._logger.info(`Initializing module: ${this.appName}`);
+    switch (eventGroup) {
+      case EventGroup.Certificates:
+        await this.initCertificatesModule();
+        break;
+      case EventGroup.Configuration:
+        await this.initConfigurationModule();
+        break;
+      case EventGroup.EVDriver:
+        await this.initEVDriverModule();
+        break;
+      case EventGroup.Monitoring:
+        await this.initMonitoringModule();
+        break;
+      case EventGroup.Reporting:
+        await this.initReportingModule();
+        break;
+      case EventGroup.SmartCharging:
+        await this.initSmartChargingModule();
+        break;
+      case EventGroup.Transactions:
+        await this.initTransactionsModule();
+        break;
+      case EventGroup.Tenant:
+        await this.initTenantModule();
+        break;
+      default:
+        throw new Error('Unhandled module type: ' + this.appName);
+    }
+  }
+
+  private async initSystem() {
+    this.eventGroup = eventGroupFromString(this.appName);
+
+    this.host = this._config.centralSystem.host;
+    this.port = this._config.centralSystem.port;
+
+    if (this.eventGroup === EventGroup.All) {
+      this._logger.info('Initializing in ALL mode: WebSocket server and all modules');
+      this.initNetworkConnection();
+      await this.initAllModules();
+    } else if (this.eventGroup === EventGroup.Router) {
+      this._logger.info('Initializing in ROUTER mode: WebSocket server, no modules');
+      // OCPP Router only: WebSocket server, no modules
+      this.initNetworkConnection();
+    } else if (this.eventGroup === EventGroup.Modules) {
+      // All modules, no WebSocket server
+      this._logger.info('Initializing in MODULES mode: all modules without NetworkConnection');
+      await this.initAllModules();
+    } else {
+      await this.initModule();
+    }
+  }
+
+  private initRepositoryStore() {
+    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+    );
+    this._repositoryStore = new RepositoryStore(
+      this._config,
+      this._logger,
+      this._sequelizeInstance,
+    );
+  }
+
+  private initIdGenerator() {
+    this._idGenerator = new IdGenerator(this._repositoryStore.chargingStationSequenceRepository);
+  }
+
+  private initCertificateAuthorityService() {
+    this._certificateAuthorityService = new CertificateAuthorityService(
+      this._config,
+      this._cache,
+      this._logger,
+    );
+  }
+
+  private initSmartChargingService() {
+    this._smartChargingService = new InternalSmartCharging(
+      this._repositoryStore.chargingProfileRepository,
+    );
+  }
+
+  private initRealTimeAuthorizer() {
+    this._realTimeAuthorizer = new RealTimeAuthorizer(
+      this._repositoryStore.locationRepository,
+      this._config,
+      this._logger,
+    );
+  }
+}
