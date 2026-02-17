@@ -715,11 +715,8 @@ export class CitrineOSServer {
             );
           }
         }
-      } else if (websocketServerConfig && !this._networkConnection) {
       } else if ((websocketServerConfig || websocketServerId) && !this._networkConnection) {
         this._logger.warn(
-          `Websocket server config provided for tenant ${tenant.id}, but network connection is not initialized. ` +
-            `This server is likely running in MODULES mode. Websocket servers can only be added in ALL or ROUTER mode.`,
           `Websocket server association requested for tenant ${tenant.id}, but network connection is not initialized. ` +
             `This server is likely running in MODULES mode. Websocket servers can only be managed in ALL or ROUTER mode.`,
         );
