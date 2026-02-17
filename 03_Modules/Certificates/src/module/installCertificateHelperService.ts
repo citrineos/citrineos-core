@@ -19,6 +19,7 @@ import {
 import { type IFileStorage, OCPP2_0_1, type WebsocketServerConfig } from '@citrineos/base';
 import { type ILogObj, Logger } from 'tslog';
 import fs from 'fs';
+import jsrsasign from 'jsrsasign';
 
 export const enum PemType {
   Root = 'Root',
@@ -196,7 +197,7 @@ export class InstallCertificateHelperService {
     newCertificate.organizationName = organizationName!;
     newCertificate.commonName = commonName!;
     newCertificate.countryName = countryName!;
-    newCertificate.validBefore = validBefore?.toISOString()!;
+    newCertificate.validBefore = validBefore?.toISOString();
     newCertificate.signatureAlgorithm = signatureAlgorithm!;
     newCertificate.certificateFileId = await this.fileStorage.saveFile(
       `Existing_Cert_${serialNumber}.pem`,
