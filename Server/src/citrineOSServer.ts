@@ -640,6 +640,91 @@ export class CitrineOSServer {
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);
+    module.on('TenantCreated', async (tenant, websocketServerConfig, websocketServerId) => {
+      if (this._networkConnection) {
+        if (websocketServerConfig) {
+          try {
+            this._logger.info(
+              `Creating new websocket server for tenant ${tenant.id} with config:`,
+              websocketServerConfig,
+            );
+
+            // Ensure the websocket server config has the correct tenant ID
+            const configWithTenantId = {
+              ...websocketServerConfig,
+              tenantId: tenant.id,
+            };
+
+            await this._networkConnection.addWebsocketServer(configWithTenantId);
+
+            // Also persist the websocket server configuration to the database
+            await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+              configWithTenantId,
+              this._config.maxCallLengthSeconds,
+            );
+
+            this._logger.info(
+              `Successfully created websocket server for tenant ${tenant.id} on port ${websocketServerConfig.port}`,
+            );
+          } catch (error) {
+            this._logger.error(`Failed to create websocket server for tenant ${tenant.id}:`, error);
+          }
+        } else if (websocketServerId) {
+          try {
+            this._logger.info(
+              `Associating tenant ${tenant.id} with existing websocket server: ${websocketServerId}`,
+            );
+
+            const existingServerConfig = this._config.util.networkConnection.websocketServers.find(
+              (ws) => ws?.id === websocketServerId,
+            );
+
+            if (!existingServerConfig) {
+              this._logger.error(`Websocket server with ID ${websocketServerId} not found`);
+              return;
+            }
+
+            // Enable dynamic resolution if not already enabled
+            if (!existingServerConfig.dynamicTenantResolution) {
+              existingServerConfig.dynamicTenantResolution = true;
+              this._logger.info(
+                `Enabled dynamicTenantResolution for websocket server ${websocketServerId}`,
+              );
+              // Save updated config
+              await ConfigStoreFactory.getInstance().saveConfig(this._config);
+            }
+
+            // Persist the server network profile for this tenant
+            const tenantServerConfig = {
+              ...existingServerConfig,
+              tenantId: tenant.id,
+            };
+
+            await this._repositoryStore.serverNetworkProfileRepository.upsertServerNetworkProfile(
+              tenantServerConfig,
+              this._config.maxCallLengthSeconds,
+            );
+
+            this._logger.info(
+              `Successfully associated tenant ${tenant.id} with websocket server ${websocketServerId}`,
+            );
+          } catch (error) {
+            this._logger.error(
+              `Failed to associate tenant ${tenant.id} with websocket server ${websocketServerId}:`,
+              error,
+            );
+          }
+        }
+      } else if (websocketServerConfig && !this._networkConnection) {
+      } else if ((websocketServerConfig || websocketServerId) && !this._networkConnection) {
+        this._logger.warn(
+          `Websocket server config provided for tenant ${tenant.id}, but network connection is not initialized. ` +
+            `This server is likely running in MODULES mode. Websocket servers can only be added in ALL or ROUTER mode.`,
+          `Websocket server association requested for tenant ${tenant.id}, but network connection is not initialized. ` +
+            `This server is likely running in MODULES mode. Websocket servers can only be managed in ALL or ROUTER mode.`,
+        );
+      }
+    });
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
     this._logger.info('Tenant module initialized');
   }
