@@ -84,6 +84,10 @@ export const UploadExistingCertificateSchema = QuerySchema('UploadExistingCertif
     type: 'string',
     required: true,
   },
+  {
+    key: 'filePath',
+    type: 'string',
+  },
 ]);
 
 export const RegenerateInstalledCertificateSchema = QuerySchema(

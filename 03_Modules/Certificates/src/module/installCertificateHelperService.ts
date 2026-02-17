@@ -211,6 +211,7 @@ export class InstallCertificateHelperService {
     tenantId: number,
     identifier: string,
     uploadExistingCertificate: UploadExistingCertificate,
+    filePath?: string,
   ): Promise<InstalledCertificate> {
     this.logger.info(
       `Uploading existing ${uploadExistingCertificate.certificateType} certificate for charger ${identifier}`,
@@ -246,7 +247,7 @@ export class InstallCertificateHelperService {
         existingCertificate.certificateFileId = await this.fileStorage.saveFile(
           `Existing_Key_${serialNumber}.pem`,
           Buffer.from(certificate),
-          'filePath', // TODO: should we use the same folder?
+          filePath,
         );
         await existingCertificate.save();
       } else {

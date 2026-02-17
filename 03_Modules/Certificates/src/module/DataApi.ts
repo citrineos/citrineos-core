@@ -373,13 +373,14 @@ export class CertificatesDataApi
     const identifier = messageQuerystring.identifier;
     const isIdentifierList = Array.isArray(identifier);
     if (isIdentifierList) {
-      let promises: Promise<InstalledCertificate>[] = [];
-      for (let identifierElement of identifier) {
+      const promises: Promise<InstalledCertificate>[] = [];
+      for (const identifierElement of identifier) {
         promises.push(
           this._module.installCertificateHelperService.handleUploadExistingCertificate(
             tenantId,
             identifierElement,
             uploadExistingCertificate,
+            request.body.filePath,
           ),
         );
       }
@@ -390,6 +391,7 @@ export class CertificatesDataApi
           tenantId,
           identifier,
           uploadExistingCertificate,
+          request.body.filePath,
         ),
       ];
     }
