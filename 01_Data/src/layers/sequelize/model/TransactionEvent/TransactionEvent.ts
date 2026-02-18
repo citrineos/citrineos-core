@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { TenantDto, TransactionEventDto } from '@citrineos/base';
+import type {
+  TenantDto,
+  TransactionEventDto,
+  TransactionEventEnumType,
+  TriggerReasonEnumType,
+  TransactionType,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -27,7 +33,7 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   declare stationId: string;
 
   @Column(DataType.STRING)
-  declare eventType: OCPP2_0_1.TransactionEventEnumType;
+  declare eventType: TransactionEventEnumType;
 
   @HasMany(() => MeterValue)
   declare meterValue?: [MeterValue, ...MeterValue[]];
@@ -41,7 +47,7 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   declare timestamp: string;
 
   @Column(DataType.STRING)
-  declare triggerReason: OCPP2_0_1.TriggerReasonEnumType;
+  declare triggerReason: TriggerReasonEnumType;
 
   @Column(DataType.INTEGER)
   declare seqNo: number;
@@ -65,7 +71,7 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   declare transaction?: Transaction;
 
   @Column(DataType.JSON)
-  declare transactionInfo: OCPP2_0_1.TransactionType;
+  declare transactionInfo: TransactionType;
 
   @ForeignKey(() => EvseType)
   declare evseId?: number | null;

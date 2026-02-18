@@ -6,14 +6,15 @@ import { z } from 'zod';
 import { ComponentSchema } from './component.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import { VariableSchema } from './variable.dto.js';
+import { MonitorEnumSchema } from './types/enums.js';
 
 export const VariableMonitoringSchema = BaseSchema.extend({
   databaseId: z.number().int(),
-  id: z.number().int().optional(),
+  id: z.number().int(),
   stationId: z.string(),
   transaction: z.boolean(),
   value: z.number().int(),
-  type: z.string(),
+  type: MonitorEnumSchema,
   severity: z.number().int(),
   variable: VariableSchema,
   variableId: z.number().int().nullable().optional(),

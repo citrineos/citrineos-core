@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  DEFAULT_TENANT_ID,
+  type LatestStatusNotificationDto,
+  OCPP2_0_1_Namespace,
+} from '@citrineos/base';
 import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -18,7 +22,7 @@ import { ChargingStation } from './ChargingStation.js';
 import { StatusNotification } from './StatusNotification.js';
 
 @Table
-export class LatestStatusNotification extends Model {
+export class LatestStatusNotification extends Model implements LatestStatusNotificationDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.LatestStatusNotification;
 
   @ForeignKey(() => ChargingStation)
