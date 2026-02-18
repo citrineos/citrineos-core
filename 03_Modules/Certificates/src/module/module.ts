@@ -427,7 +427,6 @@ export class CertificatesModule extends AbstractModule {
     if (message.payload.status === OCPP2_0_1.GetInstalledCertificateStatusEnumType.NotFound) {
       const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
         where: {
-          tenantId,
           stationId,
           correlationId,
           origin: MessageOrigin.ChargingStationManagementSystem,
@@ -476,7 +475,6 @@ export class CertificatesModule extends AbstractModule {
             where: {
               stationId: stationId,
               certificateType: certificateType,
-              serialNumber: certificateHashData.serialNumber,
             },
           });
         if (existingInstalledCertificate) {

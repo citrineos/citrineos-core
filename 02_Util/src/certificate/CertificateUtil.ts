@@ -313,10 +313,10 @@ export function generateCSR(certificate: Certificate): [string, string] {
 export const parseX509Date = (date: string): Date | null => {
   if (/^\d{14}Z$/.test(date)) {
     // GeneralizedTime: YYYYMMDDHHMMSSZ
-    return moment(date, 'YYYYMMDDHHMMSSZ').toDate();
+    return moment.utc(date, 'YYYYMMDDHHmmss[Z]', true).toDate();
   } else if (/^\d{12}Z$/.test(date)) {
-    // UTCTime: YYMMDDHHMMSSZ
-    return moment(date, 'YYMMDDHHMMSSZ').toDate();
+    // UTCTime: YYMMDDHHMMSSZ (YY interpreted as 1950-2049)
+    return moment.utc(date, 'YYMMDDHHmmss[Z]', true).toDate();
   } else {
     console.error(`Invalid X.509 date format: ${date}`);
     return null;

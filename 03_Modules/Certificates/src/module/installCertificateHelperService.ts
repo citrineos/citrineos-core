@@ -165,10 +165,8 @@ export class InstallCertificateHelperService {
             const certificateString = certificateBuffer.toString();
             const cert = new jsrsasign.X509();
             cert.readCertPEM(certificateString);
-            const serialNumber = parseInt(cert.getSerialNumberHex());
             const installedCertificate = new InstalledCertificate();
             installedCertificate.stationId = stationId;
-            installedCertificate.serialNumber = serialNumber.toString();
             installedCertificate.certificateId =
               existingPendingInstallCertificateAttempt.certificateId;
             installedCertificate.certificateType =
@@ -274,20 +272,28 @@ export class InstallCertificateHelperService {
         existingInstalledCertificate = await existingInstalledCertificate.save();
       }
     } else {
+      // check if certificate record exists
+      let existingCertificate = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          certificateFileHash: this.getCertificateHash(certificate),
+        },
+      });
       // create new certificate record
-      const newCertificate: Certificate = await this.createNewCertificate(
-        certificate,
-        serialNumber,
-        issuerName,
-        organizationName,
-        commonName,
-        countryName,
-        validBefore,
-        signatureAlgorithm,
-      );
+      if (!existingCertificate) {
+        existingCertificate = await this.createNewCertificate(
+          certificate,
+          serialNumber,
+          issuerName,
+          organizationName,
+          commonName,
+          countryName,
+          validBefore,
+          signatureAlgorithm,
+        );
+      }
       existingInstalledCertificate = new InstalledCertificate();
       existingInstalledCertificate.stationId = identifier;
-      existingInstalledCertificate.certificateId = newCertificate.id;
+      existingInstalledCertificate.certificateId = existingCertificate.id;
       existingInstalledCertificate.certificateType = uploadExistingCertificate.certificateType;
       existingInstalledCertificate = await existingInstalledCertificate.save();
     }
