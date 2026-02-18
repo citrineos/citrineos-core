@@ -8,6 +8,7 @@ import {
   ChargingProfilePurposeEnum,
   ChargingRateUnitEnum,
   OCPP2_0_1,
+  OCPP2_1,
   RecurrencyKindEnum,
   type ChargingProfileDto,
   type ChargingScheduleDto,
@@ -86,7 +87,7 @@ export class ChargingProfileMapper {
   }
 
   static fromChargingProfileKindEnumType(
-    kind: OCPP2_0_1.ChargingProfileKindEnumType,
+    kind: OCPP2_1.ChargingProfileKindEnumType,
   ): keyof typeof ChargingProfileKindEnum {
     return kind as unknown as keyof typeof ChargingProfileKindEnum;
   }
@@ -98,7 +99,7 @@ export class ChargingProfileMapper {
   }
 
   static fromChargingProfilePurposeEnumType(
-    purpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
+    purpose: OCPP2_1.ChargingProfilePurposeEnumType,
   ): keyof typeof ChargingProfilePurposeEnum {
     return purpose as unknown as keyof typeof ChargingProfilePurposeEnum;
   }
@@ -137,7 +138,7 @@ export class ChargingProfileMapper {
   }
 
   static fromChargingLimitSourceEnumType(
-    source?: OCPP2_0_1.ChargingLimitSourceEnumType | null,
+    source?: OCPP2_1.ChargingLimitSourceEnumType | null,
   ): keyof typeof ChargingLimitSourceEnum | undefined {
     if (!source) return undefined;
     return source as unknown as keyof typeof ChargingLimitSourceEnum;
@@ -151,7 +152,7 @@ export class ChargingProfileMapper {
    * Converts OCPP2_0_1.ChargingProfileType to a native ChargingProfileInput.
    */
   static fromChargingProfileType(
-    chargingProfile: OCPP2_0_1.ChargingProfileType,
+    chargingProfile: OCPP2_0_1.ChargingProfileType | OCPP2_1.ChargingProfileType,
   ): ChargingProfileInput {
     return {
       id: chargingProfile.id,
@@ -177,7 +178,7 @@ export class ChargingProfileMapper {
   /**
    * Converts OCPP2_0_1.ChargingScheduleType to a native ChargingScheduleInput.
    */
-  static fromChargingScheduleType(schedule: OCPP2_0_1.ChargingScheduleType): ChargingScheduleInput {
+  static fromChargingScheduleType(schedule: OCPP2_1.ChargingScheduleType): ChargingScheduleInput {
     return {
       id: schedule.id,
       startSchedule: schedule.startSchedule,

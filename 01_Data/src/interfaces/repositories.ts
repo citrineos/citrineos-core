@@ -5,19 +5,16 @@
 import type {
   BootConfig,
   CallAction,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
   MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
+  OCPP2_1,
   OCPPVersion,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
 } from '@citrineos/base';
-import type {
-  ChargingProfileInput,
-  CompositeScheduleInput,
-} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type {
   Authorization,
   Boot,
@@ -61,6 +58,10 @@ import {
 import type { VariableAttributeQuerystring } from './index.js';
 import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (
@@ -396,11 +397,11 @@ export interface IVariableMonitoringRepository
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<OCPP2_1.MessageInfoType> {
   deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
-    value: OCPP2_0_1.MessageInfoType,
+    value: OCPP2_1.MessageInfoType,
     stationId: string,
     componentId?: number,
   ): Promise<MessageInfo>;
@@ -430,7 +431,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingProfile>;
   createChargingNeeds(
     tenantId: number,
-    chargingNeeds: OCPP2_0_1.NotifyEVChargingNeedsRequest,
+    chargingNeeds: OCPP2_0_1.NotifyEVChargingNeedsRequest | OCPP2_1.NotifyEVChargingNeedsRequest,
     stationId: string,
   ): Promise<ChargingNeeds>;
   findChargingNeedsByEvseDBIdAndTransactionDBId(

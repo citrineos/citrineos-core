@@ -10,7 +10,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP1_6,
-  OCPP1_6_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
@@ -35,7 +35,7 @@ export class ReportingOcpp16Api
     super(reportingModule, server, OCPPVersion.OCPP1_6, logger);
   }
 
-  @AsMessageEndpoint(OCPP1_6_CallAction.GetDiagnostics, OCPP1_6.GetDiagnosticsRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetDiagnostics, OCPP1_6.GetDiagnosticsRequestSchema)
   getDiagnostics(
     identifier: string[],
     request: OCPP1_6.GetDiagnosticsRequest,
@@ -47,7 +47,7 @@ export class ReportingOcpp16Api
         id,
         tenantId,
         OCPPVersion.OCPP1_6,
-        OCPP1_6_CallAction.GetDiagnostics,
+        OCPP_CallAction.GetDiagnostics,
         request,
         callbackUrl,
       ),

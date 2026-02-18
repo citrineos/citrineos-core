@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractModule, OCPP2_0_1_CallAction, OCPPVersion } from '@citrineos/base';
 import type { ITransactionEventRepository } from '@citrineos/data';
 import { Transaction } from '@citrineos/data';
+import { AbstractModule, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
@@ -69,7 +69,7 @@ export class CostNotifier extends Scheduler {
       transaction.stationId,
       tenantId,
       OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.CostUpdated,
+      OCPP_CallAction.CostUpdated,
       {
         totalCost: cost,
         transactionId: transaction.transactionId,

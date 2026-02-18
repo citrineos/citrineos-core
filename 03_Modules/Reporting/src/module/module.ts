@@ -9,6 +9,7 @@ import type {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  OCPP2_0_1,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -18,9 +19,9 @@ import {
   EventGroup,
   Namespace,
   OCPP1_6,
-  OCPP2_0_1,
-  OCPP2_0_1_CallAction,
-  OCPP1_6_CallAction,
+  OCPP_2_VER_LIST,
+  OCPP2_1,
+  OCPP_CallAction,
   OcppError,
   OCPPVersion,
 } from '@citrineos/base';
@@ -135,9 +136,9 @@ export class ReportingModule extends AbstractModule {
    * Handle Requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.LogStatusNotification)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.LogStatusNotification)
   protected async _handleLogStatusNotification(
-    message: IMessage<OCPP2_0_1.LogStatusNotificationRequest>,
+    message: IMessage<OCPP2_1.LogStatusNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('LogStatusNotification received:', message, props);
@@ -158,15 +159,15 @@ export class ReportingModule extends AbstractModule {
       return;
     }
     // Create response
-    const response: OCPP2_0_1.LogStatusNotificationResponse = {};
+    const response: OCPP2_1.LogStatusNotificationResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('LogStatusNotification response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyCustomerInformation)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
   protected async _handleNotifyCustomerInformation(
-    message: IMessage<OCPP2_0_1.NotifyCustomerInformationRequest>,
+    message: IMessage<OCPP2_1.NotifyCustomerInformationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('NotifyCustomerInformation request received:', message, props);
@@ -179,7 +180,7 @@ export class ReportingModule extends AbstractModule {
         where: {
           tenantId: message.context.tenantId,
           stationId: message.context.stationId,
-          action: OCPP2_0_1_CallAction.CustomerInformation,
+          action: OCPP_CallAction.CustomerInformation,
           message: {
             requestId: requestId,
           },
@@ -202,13 +203,13 @@ export class ReportingModule extends AbstractModule {
     }
 
     // Create response
-    const response: OCPP2_0_1.NotifyCustomerInformationResponse = {};
+    const response: OCPP2_1.NotifyCustomerInformationResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifyCustomerInformation response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyMonitoringReport)
+  @AsHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.NotifyMonitoringReport)
   protected async _handleNotifyMonitoringReport(
     message: IMessage<OCPP2_0_1.NotifyMonitoringReportRequest>,
     props?: HandlerProperties,
@@ -233,15 +234,18 @@ export class ReportingModule extends AbstractModule {
     }
 
     // Create response
-    const response: OCPP2_0_1.NotifyMonitoringReportResponse = {};
+    const response: OCPP2_1.NotifyMonitoringReportResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifyMonitoringReport response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.NotifyReport)
+  //TODO: Need to create a separate handler for OCPP 2.1 for handleSetVariableMonitoring
+  //      2.1's NotifyMonitoringReportRequest has an additional required enum compared to 2.0.1
+
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
   protected async _handleNotifyReport(
-    message: IMessage<OCPP2_0_1.NotifyReportRequest>,
+    message: IMessage<OCPP2_1.NotifyReportRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info('NotifyReport received:', message, props);
@@ -254,7 +258,7 @@ export class ReportingModule extends AbstractModule {
         // if it is not present, we set it to ReadWrite
         for (const variableAttr of reportDataType.variableAttribute) {
           if (!variableAttr.mutability) {
-            variableAttr.mutability = OCPP2_0_1.MutabilityEnumType.ReadWrite;
+            variableAttr.mutability = OCPP2_1.MutabilityEnumType.ReadWrite;
           }
         }
         const variableAttributes =
@@ -273,7 +277,7 @@ export class ReportingModule extends AbstractModule {
             message.context.tenantId,
             {
               attributeType: variableAttribute.type,
-              attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+              attributeStatus: OCPP2_1.SetVariableStatusEnumType.Accepted,
               attributeStatusInfo: { reasonCode: message.action },
               component: variableAttribute.component,
               variable: variableAttribute.variable,
@@ -319,15 +323,15 @@ export class ReportingModule extends AbstractModule {
     }
 
     // Create response
-    const response: OCPP2_0_1.NotifyReportResponse = {};
+    const response: OCPP2_1.NotifyReportResponse = {};
 
     await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifyReport response sent:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.SecurityEventNotification)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SecurityEventNotification)
   protected async _handleSecurityEventNotification(
-    message: IMessage<OCPP2_0_1.SecurityEventNotificationRequest>,
+    message: IMessage<OCPP2_1.SecurityEventNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
@@ -336,36 +340,33 @@ export class ReportingModule extends AbstractModule {
       message.payload,
       message.context.stationId,
     );
-    await this.sendCallResultWithMessage(
-      message,
-      {} as OCPP2_0_1.SecurityEventNotificationResponse,
-    );
+    await this.sendCallResultWithMessage(message, {} as OCPP2_1.SecurityEventNotificationResponse);
   }
 
   /**
    * Handle responses
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetBaseReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetBaseReport)
   protected _handleGetBaseReport(
-    message: IMessage<OCPP2_0_1.GetBaseReportResponse>,
+    message: IMessage<OCPP2_1.GetBaseReportResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('GetBaseReport response received:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetReport)
   protected _handleGetReport(
-    message: IMessage<OCPP2_0_1.GetReportResponse>,
+    message: IMessage<OCPP2_1.GetReportResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('GetReport response received:', message, props);
 
-    const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
+    const status: OCPP2_1.GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: OCPP2_1.StatusInfoType | undefined | null = message.payload.statusInfo;
     if (
-      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
-      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.NotSupported
+      status === OCPP2_1.GenericDeviceModelStatusEnumType.Rejected ||
+      status === OCPP2_1.GenericDeviceModelStatusEnumType.NotSupported
     ) {
       this._logger.error(
         'Failed to get report.',
@@ -376,18 +377,18 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetMonitoringReport)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
   protected async _handleGetMonitoringReport(
-    message: IMessage<OCPP2_0_1.GetMonitoringReportResponse>,
+    message: IMessage<OCPP2_1.GetMonitoringReportResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetMonitoringReport response received:', message, props);
 
-    const status: OCPP2_0_1.GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_0_1.StatusInfoType | undefined | null = message.payload.statusInfo;
+    const status: OCPP2_1.GenericDeviceModelStatusEnumType = message.payload.status;
+    const statusInfo: OCPP2_1.StatusInfoType | undefined | null = message.payload.statusInfo;
     if (
-      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.Rejected ||
-      status === OCPP2_0_1.GenericDeviceModelStatusEnumType.NotSupported
+      status === OCPP2_1.GenericDeviceModelStatusEnumType.Rejected ||
+      status === OCPP2_1.GenericDeviceModelStatusEnumType.NotSupported
     ) {
       this._logger.error(
         'Failed to get monitoring report.',
@@ -398,17 +399,17 @@ export class ReportingModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetLog)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetLog)
   protected _handleGetLog(
-    message: IMessage<OCPP2_0_1.GetLogResponse>,
+    message: IMessage<OCPP2_1.GetLogResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('GetLog response received:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CustomerInformation)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CustomerInformation)
   protected _handleCustomerInformation(
-    message: IMessage<OCPP2_0_1.CustomerInformationResponse>,
+    message: IMessage<OCPP2_1.CustomerInformationResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('CustomerInformation response received:', message, props);
@@ -418,7 +419,7 @@ export class ReportingModule extends AbstractModule {
    * OCPP 1.6 Handlers
    */
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.DiagnosticsStatusNotification)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.DiagnosticsStatusNotification)
   protected async _handleDiagnosticsStatusNotification(
     message: IMessage<OCPP1_6.DiagnosticsStatusNotificationRequest>,
     props?: HandlerProperties,
@@ -432,7 +433,7 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('DiagnosticsStatusNotification response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetDiagnostics)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetDiagnostics)
   protected _handleGetDiagnostics(
     message: IMessage<OCPP1_6.GetDiagnosticsResponse>,
     props?: HandlerProperties,
