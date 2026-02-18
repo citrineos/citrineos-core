@@ -280,7 +280,6 @@ export * from './interfaces/dto/charging.station.security.info.dto.js';
 export * from './interfaces/dto/charging.station.network.profile.dto.js';
 export * from './interfaces/dto/charging.station.sequence.dto.js';
 export * from './interfaces/dto/component.dto.js';
-export * from './interfaces/dto/component.variable.dto.js';
 export * from './interfaces/dto/composite.schedule.dto.js';
 export * from './interfaces/dto/connector.dto.js';
 export * from './interfaces/dto/event.data.dto.js';
