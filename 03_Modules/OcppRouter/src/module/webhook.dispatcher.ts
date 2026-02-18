@@ -17,18 +17,18 @@ import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 
 export class WebhookDispatcher {
-  private static readonly SUBSCRIPTION_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
+  protected static readonly SUBSCRIPTION_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 
-  private _logger: Logger<ILogObj>;
-  private _subscriptionRepository: ISubscriptionRepository;
+  protected _logger: Logger<ILogObj>;
+  protected _subscriptionRepository: ISubscriptionRepository;
 
-  private _identifiers: Set<string> = new Set();
+  protected _identifiers: Set<string> = new Set();
 
   // Structure of the maps: key = identifier, value = array of callbacks
-  private _onConnectionCallbacks: Map<string, OnConnectionCallback[]> = new Map();
-  private _onCloseCallbacks: Map<string, OnCloseCallback[]> = new Map();
-  private _onMessageCallbacks: Map<string, OnMessageCallback[]> = new Map();
-  private _sentMessageCallbacks: Map<string, OnSentMessageCallback[]> = new Map();
+  protected _onConnectionCallbacks: Map<string, OnConnectionCallback[]> = new Map();
+  protected _onCloseCallbacks: Map<string, OnCloseCallback[]> = new Map();
+  protected _onMessageCallbacks: Map<string, OnMessageCallback[]> = new Map();
+  protected _sentMessageCallbacks: Map<string, OnSentMessageCallback[]> = new Map();
 
   constructor(subscriptionRepository: ISubscriptionRepository, logger?: Logger<ILogObj>) {
     this._subscriptionRepository = subscriptionRepository;
@@ -290,7 +290,7 @@ export class WebhookDispatcher {
     }
   }
 
-  private async _refreshSubscriptions() {
+  protected async _refreshSubscriptions() {
     if (this._identifiers.size === 0) {
       return;
     }
@@ -310,7 +310,7 @@ export class WebhookDispatcher {
    * @param {string} stationId
    * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
    */
-  private async _loadSubscriptionsForConnection(tenantId: number, stationId: string) {
+  protected async _loadSubscriptionsForConnection(tenantId: number, stationId: string) {
     const onConnectionCallbacks: OnConnectionCallback[] = [];
     const onCloseCallbacks: OnCloseCallback[] = [];
     const onMessageCallbacks: OnMessageCallback[] = [];
@@ -355,7 +355,7 @@ export class WebhookDispatcher {
     this._sentMessageCallbacks.set(connectionIdentifier, sentMessageCallbacks);
   }
 
-  private _onConnectionCallback(subscription: Subscription) {
+  protected _onConnectionCallback(subscription: Subscription) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -367,7 +367,7 @@ export class WebhookDispatcher {
       );
   }
 
-  private _onCloseCallback(subscription: Subscription) {
+  protected _onCloseCallback(subscription: Subscription) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -379,7 +379,7 @@ export class WebhookDispatcher {
       );
   }
 
-  private _onMessageReceivedCallback(subscription: Subscription) {
+  protected _onMessageReceivedCallback(subscription: Subscription) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
@@ -402,7 +402,7 @@ export class WebhookDispatcher {
     };
   }
 
-  private _onMessageSentCallback(subscription: Subscription) {
+  protected _onMessageSentCallback(subscription: Subscription) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
@@ -432,7 +432,7 @@ export class WebhookDispatcher {
    * @param {string} url - the URL to fetch data from
    * @return {Promise<boolean>} a Promise that resolves to a boolean indicating success
    */
-  private async _subscriptionCallback(
+  protected async _subscriptionCallback(
     requestBody: {
       stationId: string;
       event: string;

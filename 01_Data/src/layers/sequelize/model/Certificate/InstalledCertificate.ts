@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CertificateUseEnumType, InstalledCertificateDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type {
+  CertificateUseEnumType,
+  HashAlgorithmEnumType,
+  InstalledCertificateDto,
+  TenantDto,
+} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -31,7 +36,7 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
     type: DataType.STRING,
     allowNull: false,
   })
-  declare hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType;
+  declare hashAlgorithm: HashAlgorithmEnumType;
 
   @Column({
     type: DataType.STRING,
