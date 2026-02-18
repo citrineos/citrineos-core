@@ -27,7 +27,7 @@ export const websocketServerInputSchema = z.object({
   host: z.string().default('localhost').optional(),
   port: z.number().int().min(1).default(8080).optional(),
   pingInterval: z.number().int().min(1).default(60).optional(),
-  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
+  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1']).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -81,6 +81,18 @@ export const systemConfigInputSchema = z.object({
           getBaseReportOnPending: z.boolean().default(true).optional(),
           bootWithRejectedVariables: z.boolean().default(true).optional(),
           autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+        })
+        .optional(),
+      ocpp2_1: z
+        .object({
+          unknownChargerStatus: z
+            .enum([
+              OCPP2_0_1.RegistrationStatusEnumType.Accepted, //Placeholder for 2.1, TODO
+              OCPP2_0_1.RegistrationStatusEnumType.Pending,
+              OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+            ])
+            .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
+            .optional(), // Unknown chargers have no entry in BootConfig table
         })
         .optional(),
       ocpp1_6: z
@@ -301,7 +313,7 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().min(1),
     pingInterval: z.number().int().min(1),
-    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
+    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1']),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),
@@ -371,6 +383,18 @@ export const systemConfigSchema = z
               autoAccept: z.boolean(),
             })
             .optional(),
+          ocpp2_1: z
+            .object({
+              unknownChargerStatus: z
+                .enum([
+                  OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+                  OCPP2_0_1.RegistrationStatusEnumType.Pending,
+                  OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+                ])
+                .default(OCPP2_0_1.RegistrationStatusEnumType.Accepted)
+                .optional(), // Unknown chargers have no entry in BootConfig table
+            })
+            .optional(),
           ocpp1_6: z
             .object({
               unknownChargerStatus: z.enum([
@@ -386,7 +410,7 @@ export const systemConfigSchema = z
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
         })
-        .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1, {
+        .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1 || obj.ocpp2_1, {
           message: 'A protocol configuration must be set',
         }), // Configuration module is required
       monitoring: z.object({
