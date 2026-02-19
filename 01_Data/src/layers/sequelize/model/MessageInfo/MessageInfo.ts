@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ComponentDto, MessageInfoDto, TenantDto } from '@citrineos/base';
+import type {
+  ComponentDto,
+  MessageInfoDto,
+  MessagePriorityEnumType,
+  MessageStateEnumType,
+  TenantDto,
+  MessageContent,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
@@ -46,10 +53,10 @@ export class MessageInfo extends Model implements MessageInfoDto {
   declare id: number;
 
   @Column(DataType.STRING)
-  declare priority: OCPP2_0_1.MessagePriorityEnumType;
+  declare priority: MessagePriorityEnumType;
 
   @Column(DataType.STRING)
-  declare state?: OCPP2_0_1.MessageStateEnumType | null;
+  declare state?: MessageStateEnumType | null;
 
   @Column({
     type: DataType.DATE,
@@ -73,7 +80,7 @@ export class MessageInfo extends Model implements MessageInfoDto {
   declare transactionId?: string | null;
 
   @Column(DataType.JSON)
-  declare message: OCPP2_0_1.MessageContentType;
+  declare message: MessageContent;
 
   @Column(DataType.BOOLEAN)
   declare active: boolean;

@@ -19,6 +19,7 @@ import {
   AbstractModule,
   AsHandler,
   AuthorizationStatusEnum,
+  ChargingLimitSourceEnum,
   ChargingStationSequenceTypeEnum,
   ErrorCode,
   EventGroup,
@@ -864,6 +865,47 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+
+    if (message.payload.status === OCPP1_6.RemoteStartTransactionResponseStatus.Accepted) {
+      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId: tenantId,
+          stationId: stationId,
+          correlationId: message.context.correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
+        },
+      });
+
+      if (originalMessage) {
+        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+
+        if (originalRequest.chargingProfile) {
+          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(
+            originalRequest.chargingProfile,
+          );
+
+          await this._chargingProfileRepository.createOrUpdateChargingProfile(
+            tenantId,
+            mapped,
+            stationId,
+            originalRequest.connectorId ?? null,
+            ChargingLimitSourceEnum.CSO,
+            true,
+          );
+        }
+      } else {
+        this._logger.error(
+          `OCPP 1.6 RemoteStartTransaction accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
+        );
+      }
+    } else {
+      this._logger.error(
+        `OCPP 1.6 RemoteStartTransaction rejected: ${JSON.stringify(message.payload)}`,
+      );
+    }
   }
 
   @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearCache)

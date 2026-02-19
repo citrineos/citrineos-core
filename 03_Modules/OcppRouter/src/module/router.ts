@@ -130,6 +130,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       config.maxReconnectDelay ?? MessageRouterImpl.DEFAULT_MAX_RECONNECT_DELAY;
   }
 
+  async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
+    return await this._locationRepository.doesChargingStationExistByStationId(tenantId, stationId);
+  }
+
   // TODO: Below method should lock these tables so that a rapid connect-disconnect cannot result in race condition.
   async registerConnection(
     tenantId: number,

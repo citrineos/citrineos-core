@@ -8,7 +8,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type { SystemConfig } from '../../config/types.js';
-import { type OcppRequest, type OcppResponse } from '../../index.js';
+import type { OcppRequest, OcppResponse } from '../../index.js';
 import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
 import { ErrorCode, OcppError, OCPPVersion } from '../../ocpp/rpc/message.js';
 import { RequestBuilder } from '../../util/request.js';
@@ -537,6 +537,7 @@ export abstract class AbstractModule implements IModule {
       this._eventGroup.toString() + '_requests',
       requests,
       {
+        origin: MessageOrigin.ChargingStation.toString(),
         state: MessageState.Request.toString(),
       },
     );
@@ -544,6 +545,7 @@ export abstract class AbstractModule implements IModule {
     success =
       success &&
       (await this._handler.subscribe(this._eventGroup.toString() + '_responses', responses, {
+        origin: MessageOrigin.ChargingStation.toString(),
         state: MessageState.Response.toString(),
       }));
 

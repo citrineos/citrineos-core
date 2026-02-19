@@ -8,7 +8,7 @@ import { SalesTariffEntrySchema } from './types/sales.tariff.js';
 
 export const SalesTariffSchema = BaseSchema.extend({
   databaseId: z.number().int(),
-  id: z.number().int().optional(),
+  id: z.number().int(),
   numEPriceLevels: z.number().int().nullable().optional(),
   salesTariffDescription: z.string().nullable().optional(),
   salesTariffEntry: z.tuple([SalesTariffEntrySchema]).rest(SalesTariffEntrySchema), // Non-empty array

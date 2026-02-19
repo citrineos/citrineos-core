@@ -38,6 +38,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
+  private _doesChargingStationExistByStationId?: (
+    tenantId: number,
+    stationId: string,
+  ) => Promise<boolean>;
 
   constructor(
     config: SystemConfig,
@@ -45,9 +49,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     authenticator: IAuthenticator,
     router: IMessageRouter,
     logger?: Logger<ILogObj>,
+    doesChargingStationExistByStationId?: (tenantId: number, stationId: string) => Promise<boolean>,
   ) {
     this._cache = cache;
     this._config = config;
+    this._doesChargingStationExistByStationId = doesChargingStationExistByStationId;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -292,10 +298,29 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
       const stationId = this._getClientIdFromUrl(req.url as string);
       const tenantId = websocketServerConfig.tenantId;
+
+      const checker =
+        this._doesChargingStationExistByStationId ??
+        this._router.doesChargingStationExistByStationId?.bind(this._router);
+
+      if (!checker) {
+        throw new Error('No method available to check if charging station exists');
+      }
+
+      const exists = await checker(tenantId, stationId);
+
+      if (!exists && !websocketServerConfig.allowUnknownChargingStations) {
+        this._logger.error(
+          'Rejecting connection: station %s not found in tenant %s',
+          stationId,
+          tenantId,
+        );
+        ws.close(1011, 'Unknown charging station');
+        return;
+      }
       const identifier = createIdentifier(tenantId, stationId);
 
       this._identifierConnections.set(identifier, ws);
-
       try {
         // Get IP address of client
         const ip =

@@ -148,6 +148,9 @@ export function createDockerConfig() {
           OCPP2_0_1_CallAction.GetChargingProfiles,
           OCPP2_0_1_CallAction.GetCompositeSchedule,
           OCPP2_0_1_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.ClearChargingProfile,
+          OCPP1_6_CallAction.GetCompositeSchedule,
         ],
         requests: [
           OCPP2_0_1_CallAction.ClearedChargingLimit,
@@ -250,8 +253,8 @@ export function createDockerConfig() {
       },
     },
     logLevel: 2, // debug
-    maxCallLengthSeconds: 5,
-    maxCachingSeconds: 10,
+    maxCallLengthSeconds: 20,
+    maxCachingSeconds: 30,
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,
