@@ -105,7 +105,6 @@ export class TenantModule extends AbstractModule {
   ): Promise<Tenant> {
     let effectivePath = tenantPath;
 
-    // Slugification if no path provided and dynamic resolution is enabled
     if (!effectivePath && tenant.name) {
       const hasDynamicEnabled = this._config.util.networkConnection.websocketServers.some(
         (ws) => ws.dynamicTenantResolution,
@@ -157,7 +156,6 @@ export class TenantModule extends AbstractModule {
     }
     const createdTenant = await this._tenantRepository.createTenant(tenant);
 
-    // Register Mapping
     if (effectivePath) {
       const serverIds = websocketServerId
         ? [websocketServerId]
@@ -207,14 +205,12 @@ export class TenantModule extends AbstractModule {
    * Deletes a tenant and removes all associated mappings from websocket servers
    */
   async deleteTenant(id: number): Promise<Tenant | undefined> {
-    // Resolve websocket servers to clean up
     const serverIds = this._config.util.networkConnection.websocketServers
       .map((ws) => ws.id)
       .filter((id): id is string => !!id);
 
     const baseUrl = this._getOcppRouterBaseUrl();
 
-    // Perform cleanup on all servers
     for (const serverId of serverIds) {
       const routerUrl = `${baseUrl}/data/ocpprouter/websocketMapping?id=${serverId}&tenantId=${id}`;
       try {
@@ -237,7 +233,6 @@ export class TenantModule extends AbstractModule {
       }
     }
 
-    // Delete from repository
     const deletedTenant = await this._tenantRepository.deleteByKey(
       DEFAULT_TENANT_ID,
       id.toString(),
