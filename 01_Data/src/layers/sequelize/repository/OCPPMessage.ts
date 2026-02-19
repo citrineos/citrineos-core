@@ -28,13 +28,12 @@ export class SequelizeOCPPMessageRepository
         },
       });
       if (correlatedMessages.length > 0) {
-        let correlatedMessage: OCPPMessage | undefined;
         if (correlatedMessages.length > 1) {
           this.logger.warn(
             `Multiple correlated messages found for correlationId ${message.correlationId} and tenantId ${tenantId}. This should not happen.`,
           );
         }
-        correlatedMessage = correlatedMessages.sort(
+        const correlatedMessage: OCPPMessage | undefined = correlatedMessages.sort(
           (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
         )[0]; // Get the oldest message
 

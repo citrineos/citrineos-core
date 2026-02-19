@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { faker } from '@faker-js/faker';
+import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin, MessageState } from '@citrineos/base';
 import {
   IOCPPMessageRepository,
   ISubscriptionRepository,
   OCPPMessage,
   Subscription,
 } from '@citrineos/data';
-import { WebhookDispatcher } from '../../src';
-import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin, MessageState } from '@citrineos/base';
-import { aSubscription } from '../providers/SubscriptionProvider.js';
+import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { WebhookDispatcher } from '../../src';
+import { aSubscription } from '../providers/SubscriptionProvider.js';
 
 describe('WebhookDispatcher', () => {
   const fetch = vi.fn(() =>
@@ -165,7 +165,8 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         'Any timestamp',
         'ocpp2.0.1',
         'BootNotification',
@@ -191,7 +192,8 @@ describe('WebhookDispatcher', () => {
       const action = 'BootNotification';
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         timestamp,
         protocol,
         action,
@@ -235,7 +237,8 @@ describe('WebhookDispatcher', () => {
       const action = 'BootNotification';
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         timestamp,
         protocol,
         action,
@@ -273,7 +276,8 @@ describe('WebhookDispatcher', () => {
       await givenRegisteredStations(subscription.stationId);
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         'Any timestamp',
         'ocpp2.0.1',
         'BootNotification',
@@ -295,7 +299,8 @@ describe('WebhookDispatcher', () => {
       const action = 'BootNotification';
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         timestamp,
         protocol,
         action,
@@ -333,7 +338,8 @@ describe('WebhookDispatcher', () => {
       const rpcMessage = [3, '123', { status: 'Accepted' }];
 
       await webhookDispatcher.dispatchMessageReceived(
-        createIdentifier(subscription.tenantId, subscription.stationId),
+        subscription.tenantId,
+        subscription.stationId,
         'Any timestamp',
         'ocpp2.0.1',
         undefined as any,

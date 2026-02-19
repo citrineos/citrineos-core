@@ -17,6 +17,7 @@ import {
   type CallAction,
   OCPP1_6_CallAction,
   OCPP2_0_1_CallAction,
+  OcppError,
   OCPPVersion,
 } from '../../ocpp/rpc/message.js';
 
@@ -200,9 +201,13 @@ export class OCPPValidator {
    */
   public validateOCPPResponse(
     action: CallAction,
-    payload: OcppResponse,
+    payload: OcppResponse | OcppError,
     protocol: OCPPVersion,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
+    if (payload instanceof OcppError) {
+      this._logger.debug('OcppError payload, skipping schema validation', payload);
+      return { isValid: true };
+    }
     let schema: any;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
