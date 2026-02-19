@@ -48,8 +48,14 @@ export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
   WebsocketRequestSchema,
+  WebsocketMappingQuerySchema,
+  WebsocketMappingRequestSchema,
 } from './queries/Websocket.js';
-export type { WebsocketDeleteQuerystring, WebsocketGetQuerystring } from './queries/Websocket.js';
+export type {
+  WebsocketDeleteQuerystring,
+  WebsocketGetQuerystring,
+  WebsocketMappingQuerystring,
+} from './queries/Websocket.js';
 
 // Data projection models
 export type { AuthorizationRestrictions } from './projections/AuthorizationRestrictions.js';

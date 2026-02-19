@@ -37,6 +37,9 @@ export const websocketServerInputSchema = z.object({
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
   tenantId: z.number(),
+  // Mapping from path segments to tenant IDs.
+  // Example: { "my-tenant": 1 }
+  tenantPathMapping: z.record(z.string(), z.number()).optional(),
   // When true, tenant can be resolved at connection upgrade time from the request
   // (query param, path segment, or header). Defaults to false for strict per-server tenant.
   dynamicTenantResolution: z.boolean().optional().default(false),
@@ -59,6 +62,7 @@ export const systemConfigInputSchema = z.object({
   centralSystem: z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().min(1).default(8081).optional(),
+    systemApiToken: z.string().optional(),
   }),
   modules: z.object({
     certificates: z
@@ -143,6 +147,7 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        ocppRouterBaseUrl: z.string().optional(),
       })
       .optional(),
     transactions: z.object({
@@ -316,6 +321,7 @@ export const websocketServerSchema = z
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number(),
+    tenantPathMapping: z.record(z.string(), z.number()).optional(),
     // When true, tenant can be resolved at connection upgrade time from the request
     // (query param, path segment, or header). Defaults to false for strict per-server tenant.
     dynamicTenantResolution: z.boolean().optional().default(false),
@@ -348,6 +354,7 @@ export const systemConfigSchema = z
     centralSystem: z.object({
       host: z.string(),
       port: z.number().int().min(1),
+      systemApiToken: z.string().optional(),
     }),
     modules: z.object({
       certificates: z
@@ -432,6 +439,7 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        ocppRouterBaseUrl: z.string().optional(),
       }),
       transactions: z
         .object({

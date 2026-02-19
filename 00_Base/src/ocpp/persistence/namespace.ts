@@ -23,6 +23,7 @@ export enum Namespace {
   StatusNotificationRequest = 'StatusNotification',
   TransactionType = 'Transaction',
   Websocket = 'Websocket',
+  WebsocketMapping = 'WebsocketMapping',
   Tenant = 'Tenant',
 }
 

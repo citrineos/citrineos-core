@@ -38,4 +38,9 @@ export const CreateTenantQuerySchema = QuerySchema('CreateTenantQuerySchema', [
     key: 'websocketServerId',
     type: 'string',
   },
+  {
+    key: 'tenantPath',
+    type: 'string',
+    pattern: '^[a-zA-Z0-9_-]+$',
+  },
 ]);

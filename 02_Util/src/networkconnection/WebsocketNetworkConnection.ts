@@ -224,7 +224,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       // Resolve tenant at upgrade time (query param, path segment, header),
       // falling back to the server-configured tenant if none provided.
       const resolvedTenantId = websocketServerConfig.dynamicTenantResolution
-        ? this._extractTenantIdFromRequest(req) ?? websocketServerConfig.tenantId
+        ? this._extractTenantIdFromRequest(req, websocketServerConfig) ??
+          websocketServerConfig.tenantId
         : websocketServerConfig.tenantId;
 
       // Attach resolved tenant to request so downstream handlers (connection) can use it
@@ -531,29 +532,24 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * Supported sources (in order): query `tenant`/`tenantId`, header `x-tenant-id`,
    * path segment (second-last segment if URL is `/tenant/station`).
    */
-  private _extractTenantIdFromRequest(req: http.IncomingMessage): number | undefined {
+  private _extractTenantIdFromRequest(
+    req: http.IncomingMessage,
+    config: WebsocketServerConfig,
+  ): number | undefined {
     try {
       const rawUrl = req.url ?? '';
       const url = new URL(rawUrl, 'http://localhost');
-
-      // Query params
-      const qTenant = url.searchParams.get('tenant') ?? url.searchParams.get('tenantId');
-      if (qTenant && !Number.isNaN(Number(qTenant))) {
-        return Number(qTenant);
-      }
-
-      // Header
-      const headerTenant = req.headers['x-tenant-id'] ?? req.headers['x-tenantid'];
-      if (headerTenant) {
-        const val = Array.isArray(headerTenant) ? headerTenant[0] : headerTenant.toString();
-        if (!Number.isNaN(Number(val))) return Number(val);
-      }
-
-      // Path segment: assume /{tenant}/{station} or /.../{tenant}/{station}
       const segments = url.pathname.split('/').filter(Boolean);
-      if (segments.length >= 2) {
-        const candidate = segments[segments.length - 2];
-        if (candidate && !Number.isNaN(Number(candidate))) return Number(candidate);
+
+      // Path segment mapping: assume /.../{pathSegment}/{station}
+      // We look for a mapping of pathSegment to tenantId.
+      if (segments.length >= 2 && config.tenantPathMapping) {
+        const pathSegment = segments[segments.length - 2];
+        if (config.tenantPathMapping[pathSegment]) {
+          return config.tenantPathMapping[pathSegment];
+        } else {
+          this._logger.debug(`No mapping found for path segment: ${pathSegment}`);
+        }
       }
     } catch (err) {
       // If parsing fails, ignore and fall back to server-configured tenant
