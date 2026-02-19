@@ -25,56 +25,55 @@ export class OCPPValidator {
   protected readonly _logger: Logger<ILogObj>;
 
   constructor(logger?: Logger<ILogObj>, ajv?: Ajv) {
-    this._ajv = ajv || OCPPValidator.createServerAjvInstance();
+    this._ajv = ajv || OCPPValidator.createValidatorAjvInstance();
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   /**
-   * Creates an Ajv instance configured for server use with OCPP schema validation.
-   * This includes custom keywords and format validation suitable for the CitrineOS server.
+   * Creates an Ajv instance configured for Fastify HTTP schema compilation.
+   * Enables type coercion since HTTP query/path params arrive as strings,
+   * and does not include OCPP-specific keywords.
    *
    * @param ajv - Optional existing Ajv instance to use instead of creating a new one
-   * @returns Configured Ajv instance for server use
+   * @returns Configured Ajv instance for Fastify schema compilation
    */
   static createServerAjvInstance(ajv?: Ajv): Ajv {
     const ajvInstance =
       ajv ||
       new Ajv({
-        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
+        removeAdditional: 'failing',
         useDefaults: true,
+        coerceTypes: true, // HTTP query/path params arrive as strings and need coercion
         strict: false,
-        strictNumbers: true,
-        strictRequired: true,
-        validateFormats: true,
-        allErrors: true, // Report all validation errors
+        allErrors: true,
       });
 
-    OCPPValidator.addOcppKeywords(ajvInstance);
     OCPPValidator.addFormats(ajvInstance);
 
     return ajvInstance;
   }
 
   /**
-   * Creates an Ajv instance configured for validator use with OCPP message validation.
-   * This configuration is optimized for validating OCPP messages with coercion and removal of additional properties.
+   * Creates an Ajv instance configured for OCPP message validation.
+   * Does not coerce types since OCPP messages arrive as parsed JSON with correct types.
+   * Includes OCPP-specific schema keywords and strict number/required validation.
    *
    * @param ajv - Optional existing Ajv instance to use instead of creating a new one
-   * @returns Configured Ajv instance for validator use
+   * @returns Configured Ajv instance for OCPP message validation
    */
   static createValidatorAjvInstance(ajv?: Ajv): Ajv {
     const ajvInstance =
       ajv ||
       new Ajv({
-        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
         useDefaults: true,
+        // No coerceTypes: OCPP messages are parsed JSON — types are already correct,
+        // and coercion could silently corrupt data that should instead be rejected.
         strict: false,
-        strictNumbers: true,
-        strictRequired: true,
+        strictNumbers: true, // Reject numeric strings where a number is required
         validateFormats: true,
-        allErrors: true, // Report all validation errors
+        allErrors: true,
       });
 
     OCPPValidator.addOcppKeywords(ajvInstance);

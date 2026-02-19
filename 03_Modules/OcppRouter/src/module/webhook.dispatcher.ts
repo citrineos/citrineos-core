@@ -119,16 +119,15 @@ export class WebhookDispatcher {
   }
 
   async dispatchMessageReceived(
-    identifier: string,
+    tenantId: number,
+    stationId: string,
     timestamp: string,
     protocol: OCPPVersionType,
     action: string,
     state: MessageState,
     rpcMessage: any,
   ) {
-    const tenantId = getTenantIdFromIdentifier(identifier);
-    const stationId = getStationIdFromIdentifier(identifier);
-
+    const identifier = createIdentifier(tenantId, stationId);
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStation;
 

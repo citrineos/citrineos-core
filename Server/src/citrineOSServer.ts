@@ -158,8 +158,10 @@ export class CitrineOSServer {
     // Initialize parent logger
     this._logger = this.initLogger();
 
-    // Create OCPPValidator instance using the same Ajv instance, for use in modules
-    this._ocppValidator = new OCPPValidator(this._logger, this._ajv);
+    // Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
+    // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
+    // whereas _ajv coerces types for Fastify's HTTP schema compilation.
+    this._ocppValidator = new OCPPValidator(this._logger);
 
     // Set cache implementation
     this._cache = this.initCache(cache);

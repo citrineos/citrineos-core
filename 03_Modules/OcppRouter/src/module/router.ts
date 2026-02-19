@@ -24,7 +24,6 @@ import {
   AbstractMessageRouter,
   AbstractModule,
   BOOT_STATUS,
-  OCPPValidator,
   CacheNamespace,
   CircuitBreaker,
   createIdentifier,
@@ -40,6 +39,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
   RequestBuilder,
   RetryMessageError,
@@ -939,6 +939,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     await this._webhookDispatcher.dispatchMessageReceived(
+      message.context.tenantId,
       message.context.stationId,
       message.context.timestamp,
       message.protocol,
