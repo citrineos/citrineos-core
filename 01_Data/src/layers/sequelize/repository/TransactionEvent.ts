@@ -168,6 +168,14 @@ export class SequelizeTransactionEventRepository
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
             },
+            defaults: {
+              tenantId,
+              stationId,
+              evseId: evse.id,
+              connectorId: value.evse.connectorId,
+              evseTypeConnectorId: value.evse.connectorId,
+              timestamp: value.timestamp ?? new Date().toISOString(),
+            },
             include: [Tariff],
           });
           connectorId = connector.id;
@@ -239,6 +247,14 @@ export class SequelizeTransactionEventRepository
                 stationId,
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
+              },
+              defaults: {
+                tenantId,
+                stationId,
+                evseId: evse.id,
+                connectorId: value.evse.connectorId,
+                evseTypeConnectorId: value.evse.connectorId,
+                timestamp: value.timestamp ?? new Date().toISOString(),
               },
               include: [Tariff],
             });
