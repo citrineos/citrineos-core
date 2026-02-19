@@ -48,6 +48,7 @@ import type { ISmartCharging } from '@citrineos/smartcharging';
 import {
   InternalSmartCharging,
   SmartChargingModule,
+  SmartChargingOcpp16Api,
   SmartChargingOcpp201Api,
 } from '@citrineos/smartcharging';
 import { TenantDataApi, TenantModule } from '@citrineos/tenant';
@@ -606,7 +607,10 @@ export class CitrineOSServer {
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new SmartChargingOcpp201Api(module, this._server, this._logger));
+    this.apis.push(
+      new SmartChargingOcpp201Api(module, this._server, this._logger),
+      new SmartChargingOcpp16Api(module, this._server, this._logger),
+    );
   }
 
   protected async initTransactionsModule() {

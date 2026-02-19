@@ -357,8 +357,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction | undefined>;
 }
 
-export interface IVariableMonitoringRepository
-  extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {
+export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
   createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_0_1.MonitoringDataType,
@@ -398,7 +397,7 @@ export interface IVariableMonitoringRepository
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
   deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,

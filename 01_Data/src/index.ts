@@ -55,8 +55,6 @@ export {
   AsyncJobStatus,
   AsyncJobStatusDTO,
   AsyncJobRequest,
-  AsyncJobName,
-  AsyncJobAction,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,

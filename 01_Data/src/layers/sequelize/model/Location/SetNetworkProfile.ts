@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import {
+  DEFAULT_TENANT_ID,
+  type OCPPInterfaceEnumType,
+  type OCPPTransportEnumType,
+  type SetNetworkProfileDto,
+} from '@citrineos/base';
+import type { OCPPVersionEnumType, TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -23,7 +28,7 @@ import { ServerNetworkProfile } from './ServerNetworkProfile.js';
  * e.g. chargingProfileId, for other correlationId related lookups.
  */
 @Table
-export class SetNetworkProfile extends Model {
+export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
   @ForeignKey(() => ChargingStation)
@@ -48,10 +53,10 @@ export class SetNetworkProfile extends Model {
   declare configurationSlot: number;
 
   @Column(DataType.STRING)
-  declare ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
+  declare ocppVersion: OCPPVersionEnumType;
 
   @Column(DataType.STRING)
-  declare ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
+  declare ocppTransport: OCPPTransportEnumType;
 
   /**
    * Communication_ Function. OCPP_ Central_ System_ URL. URI
@@ -79,7 +84,7 @@ export class SetNetworkProfile extends Model {
   declare securityProfile: number;
 
   @Column(DataType.STRING)
-  declare ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
+  declare ocppInterface: OCPPInterfaceEnumType;
 
   /**
    * Stringified JSON of {@link OCPP2_0_1.APNType} for display purposes only

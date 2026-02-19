@@ -4,16 +4,16 @@
 
 /* eslint-disable */
 
+import type { SystemConfig } from '@citrineos/base';
+import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
+import * as FastifyAuth from '@fastify/auth';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import fs from 'fs';
-import type { SystemConfig } from '@citrineos/base';
-import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
-import * as FastifyAuth from '@fastify/auth';
-import * as packageJson from '../../package.json' with { type: 'json' };
 import type { OpenAPIV3_1 } from 'openapi-types';
 import { OpenAPIV2, OpenAPIV3 } from 'openapi-types';
+import * as packageJson from '../../package.json' with { type: 'json' };
 
 /**
  * This transformation is used to set default tags
@@ -42,7 +42,8 @@ function OcppTransformObject({
               // Get tag index
               // e.g, '/ocpp/1.6/evdriver' -> 'evdriver'
               // e.g, '/data/evdriver' -> 'evdriver'
-              const tagIndex = pathKey.includes('data') ? 2 : 3;
+              const pathSegments = pathKey.split('/');
+              const tagIndex = pathSegments.find((segment) => segment === 'data') ? 2 : 3;
               method.tags = pathKey
                 .split('/')
                 .slice(tagIndex, -1)
