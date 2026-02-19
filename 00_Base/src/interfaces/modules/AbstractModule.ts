@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Ajv } from 'ajv';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -49,18 +48,10 @@ export abstract class AbstractModule implements IModule {
     sender: IMessageSender,
     eventGroup: EventGroup,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
   ) {
-    const _ajv =
-      ajv ||
-      new Ajv({
-        removeAdditional: 'all',
-        useDefaults: true,
-        coerceTypes: 'array',
-        strict: false,
-      });
     this._logger = this._initLogger(logger);
-    this._ocppValidator = new OCPPValidator(logger, _ajv);
+    this._ocppValidator = ocppValidator || new OCPPValidator(logger);
     this._logger.info('Initializing...');
     this._config = config;
     this._handler = handler;

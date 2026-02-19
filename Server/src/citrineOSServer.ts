@@ -94,6 +94,7 @@ export class CitrineOSServer {
   protected readonly _server: FastifyInstance;
   protected readonly _cache: ICache;
   protected readonly _ajv: Ajv.Ajv;
+  protected readonly _ocppValidator: OCPPValidator;
   protected readonly _fileStorage: IFileStorage;
   protected readonly modules: IModule[] = [];
   protected readonly apis: IModuleApi[] = [];
@@ -156,6 +157,9 @@ export class CitrineOSServer {
 
     // Initialize parent logger
     this._logger = this.initLogger();
+
+    // Create OCPPValidator instance using the same Ajv instance, for use in modules
+    this._ocppValidator = new OCPPValidator(this._logger, this._ajv);
 
     // Set cache implementation
     this._cache = this.initCache(cache);
@@ -354,7 +358,7 @@ export class CitrineOSServer {
       webhookDispatcher,
       async (_identifier: string, _message: string) => {},
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.locationRepository,
     );
 
@@ -441,7 +445,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.certificateRepository,
       this._repositoryStore.locationRepository,
@@ -467,7 +471,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.bootRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.messageInfoRepository,
@@ -491,7 +495,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.localAuthListRepository,
       this._repositoryStore.deviceModelRepository,
@@ -521,7 +525,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.variableMonitoringRepository,
       this._idGenerator,
@@ -540,7 +544,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.securityEventRepository,
       this._repositoryStore.variableMonitoringRepository,
@@ -559,7 +563,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.chargingProfileRepository,
@@ -581,7 +585,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.deviceModelRepository,
@@ -606,7 +610,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);

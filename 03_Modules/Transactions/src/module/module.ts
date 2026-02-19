@@ -26,6 +26,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -54,7 +55,6 @@ import {
   RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
-import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
@@ -165,7 +165,7 @@ export class TransactionsModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -184,7 +184,7 @@ export class TransactionsModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Transactions,
       logger,
-      ajv,
+      ocppValidator,
     );
 
     this._requests = config.modules.transactions.requests;

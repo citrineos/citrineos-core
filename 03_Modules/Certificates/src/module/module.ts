@@ -20,6 +20,7 @@ import {
   OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -38,7 +39,6 @@ import {
   validatePEMEncodedCSR,
 } from '@citrineos/util';
 import { Crypto } from '@peculiar/webcrypto';
-import { Ajv } from 'ajv';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
@@ -109,7 +109,7 @@ export class CertificatesModule extends AbstractModule {
     sender: IMessageSender,
     handler: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
     locationRepository?: ILocationRepository,
@@ -122,7 +122,7 @@ export class CertificatesModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Certificates,
       logger,
-      ajv,
+      ocppValidator,
     );
 
     this._requests = config.modules.certificates?.requests ?? [];

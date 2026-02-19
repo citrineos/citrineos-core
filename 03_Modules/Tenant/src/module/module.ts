@@ -9,10 +9,9 @@ import type {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { AbstractModule, EventGroup } from '@citrineos/base';
+import { AbstractModule, EventGroup, OCPPValidator } from '@citrineos/base';
 import { type ITenantRepository, SequelizeTenantRepository } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -56,7 +55,7 @@ export class TenantModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     tenantRepository?: ITenantRepository,
   ) {
     super(
@@ -66,7 +65,7 @@ export class TenantModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Tenant,
       logger,
-      ajv,
+      ocppValidator,
     );
     this._requests = config.modules.tenant.requests;
     this._responses = config.modules.tenant.responses;

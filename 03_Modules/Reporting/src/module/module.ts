@@ -22,6 +22,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -32,7 +33,6 @@ import type {
 } from '@citrineos/data';
 import { Component, sequelize, Variable } from '@citrineos/data';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { DeviceModelService } from './services.js';
@@ -92,7 +92,7 @@ export class ReportingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     securityEventRepository?: ISecurityEventRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
@@ -105,7 +105,7 @@ export class ReportingModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Reporting,
       logger,
-      ajv,
+      ocppValidator,
     );
 
     this._requests = config.modules.reporting.requests;

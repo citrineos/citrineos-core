@@ -23,8 +23,8 @@ import type {
 import {
   AbstractMessageRouter,
   AbstractModule,
-  Ajv,
   BOOT_STATUS,
+  OCPPValidator,
   CacheNamespace,
   CircuitBreaker,
   createIdentifier,
@@ -86,7 +86,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
-   * @param {Ajv} [ajv] - the Ajv object, for message validation (optional)
+   * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
    * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
    */
   constructor(
@@ -97,11 +97,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     dispatcher: WebhookDispatcher,
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv.Ajv,
+    ocppValidator?: OCPPValidator,
     locationRepository?: ILocationRepository,
     circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
-    super(config, cache, handler, sender, networkHook, logger, ajv);
+    super(config, cache, handler, sender, networkHook, logger, ocppValidator);
 
     this._cache = cache;
     this._sender = sender;

@@ -18,6 +18,7 @@ import {
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/data';
@@ -27,7 +28,6 @@ import {
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { MonitoringService } from './MonitoringService.js';
@@ -81,7 +81,7 @@ export class MonitoringModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
     idGenerator?: IdGenerator,
@@ -93,7 +93,7 @@ export class MonitoringModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Monitoring,
       logger,
-      ajv,
+      ocppValidator,
     );
 
     this._requests = config.modules.monitoring.requests;

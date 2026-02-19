@@ -23,6 +23,7 @@ import {
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -39,7 +40,6 @@ import {
   Transaction,
 } from '@citrineos/data';
 import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
-import { Ajv } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ISmartCharging } from './smartCharging/index.js';
@@ -110,7 +110,7 @@ export class SmartChargingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
@@ -125,7 +125,7 @@ export class SmartChargingModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.SmartCharging,
       logger,
-      ajv,
+      ocppValidator,
     );
 
     this._requests = config.modules.smartcharging?.requests ?? [];

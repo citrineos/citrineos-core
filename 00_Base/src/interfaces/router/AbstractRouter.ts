@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ErrorObject } from 'ajv';
-import { Ajv } from 'ajv';
 
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -41,7 +40,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
    * Constructor of abstract ocpp router.
    *
-   * @param {Ajv} ajv - The Ajv instance to use for schema validation.
+   * @param {OCPPValidator} ocppValidator - The OCPPValidator instance to use for message validation.
    */
   constructor(
     config: SystemConfig,
@@ -50,22 +49,14 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     sender: IMessageSender,
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
   ) {
     this._config = config;
     this._cache = cache;
     this._handler = handler;
     this._sender = sender;
     this._networkHook = networkHook;
-    const _ajv =
-      ajv ||
-      new Ajv({
-        removeAdditional: 'all',
-        useDefaults: true,
-        coerceTypes: 'array',
-        strict: false,
-      });
-    this._ocppValidator = new OCPPValidator(logger, _ajv);
+    this._ocppValidator = ocppValidator || new OCPPValidator(logger);
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
