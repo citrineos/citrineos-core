@@ -12,7 +12,6 @@ import type {
   FindAndCountOptions,
   FindOptions,
   ModelStatic,
-  UpdateOptions,
   WhereOptions,
 } from 'sequelize';
 import { QueryTypes } from 'sequelize';

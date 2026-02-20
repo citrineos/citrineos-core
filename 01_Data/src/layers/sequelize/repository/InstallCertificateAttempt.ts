@@ -4,7 +4,7 @@
 
 import { SequelizeRepository } from './Base.js';
 import type { IInstallCertificateAttemptRepository } from '../../../interfaces/index.js';
-import type { BootstrapConfig, SystemConfig } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

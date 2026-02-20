@@ -405,7 +405,7 @@ export class CertificatesModule extends AbstractModule {
           });
         // should always be true
         if (existingInstalledCertificates) {
-          for (let existingInstalledCertificate of existingInstalledCertificates) {
+          for (const existingInstalledCertificate of existingInstalledCertificates) {
             await existingInstalledCertificate.destroy();
           }
         }
@@ -467,7 +467,7 @@ export class CertificatesModule extends AbstractModule {
       return;
     }
     if (certificateHashDataList && certificateHashDataList.length > 0) {
-      for (let certificateHashDataWrap of certificateHashDataList) {
+      for (const certificateHashDataWrap of certificateHashDataList) {
         const certificateHashData = certificateHashDataWrap.certificateHashData;
         const certificateType = certificateHashDataWrap.certificateType;
         let existingInstalledCertificate =

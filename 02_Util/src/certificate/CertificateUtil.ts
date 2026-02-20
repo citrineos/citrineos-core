@@ -341,9 +341,9 @@ export const extractCertificateDetails = (
     // Extract details
     const serialNumber = parseInt(cert.getSerialNumberHex());
     const issuerName = cert.getIssuerString();
-    const organizationName = cert.getSubjectString().match(/\/O=([^\/]+)/)?.[1] || null;
-    const commonName = cert.getSubjectString().match(/\/CN=([^\/]+)/)?.[1] || null;
-    const countryName = (cert.getSubjectString().match(/\/C=([^\/]+)/)?.[1] ||
+    const organizationName = cert.getSubjectString().match(/\/O=([^/]+)/)?.[1] || null;
+    const commonName = cert.getSubjectString().match(/\/CN=([^/]+)/)?.[1] || null;
+    const countryName = (cert.getSubjectString().match(/\/C=([^/]+)/)?.[1] ||
       null) as CountryNameEnumType | null;
     const notAfter = cert.getNotAfter();
     const validBefore = parseX509Date(notAfter);
