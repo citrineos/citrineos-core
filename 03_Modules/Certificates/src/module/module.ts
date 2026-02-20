@@ -18,20 +18,19 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/base';
-import {
-  type ICertificateRepository,
-  type IDeleteCertificateAttemptRepository,
-  type IDeviceModelRepository,
-  type IInstallCertificateAttemptRepository,
-  type IInstalledCertificateRepository,
-  InstalledCertificate,
-  type IOCPPMessageRepository,
-  sequelize,
-  SequelizeOCPPMessageRepository,
+import type {
+  ICertificateRepository,
+  IDeleteCertificateAttemptRepository,
+  IDeviceModelRepository,
+  IInstallCertificateAttemptRepository,
+  IInstalledCertificateRepository,
+  IOCPPMessageRepository,
 } from '@citrineos/data';
+import { InstalledCertificate, sequelize, SequelizeOCPPMessageRepository } from '@citrineos/data';
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
@@ -41,13 +40,13 @@ import {
   validatePEMEncodedCSR,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import { Crypto } from '@peculiar/webcrypto';
 import { InstallCertificateHelperService } from './installCertificateHelperService.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -133,6 +132,7 @@ export class CertificatesModule extends AbstractModule {
     fileStorage: IFileStorage,
     networkConnection: WebsocketNetworkConnection,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
     installedCertificateRepository?: IInstalledCertificateRepository,
@@ -149,6 +149,7 @@ export class CertificatesModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Certificates,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.certificates?.requests ?? [];

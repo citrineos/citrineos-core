@@ -22,7 +22,7 @@ export const TransactionEventSchema = BaseSchema.extend({
   cableMaxCurrent: z.number().nullable().optional(), // DECIMAL
   reservationId: z.number().int().nullable().optional(),
   transactionDatabaseId: z.number().int().optional(),
-  transactionInfo: TransactionTypeSchema,
+  transactionInfo: TransactionTypeSchema.optional(),
   evseId: z.number().int().nullable().optional(),
   evse: EvseTypeSchema.omit({ tenantId: true }).optional(), // TenantId omitted so that raw OCPP data can be stored
   idTokenValue: z.string().nullable().optional(),

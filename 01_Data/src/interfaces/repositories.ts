@@ -12,6 +12,7 @@ import type {
   MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
+  OCPPMessageDto,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -467,7 +468,13 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
+  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage>;
+  getRequestByCorrelationId(
+    tenantId: number,
+    correlationId: string,
+  ): Promise<OCPPMessage | undefined>;
+}
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {

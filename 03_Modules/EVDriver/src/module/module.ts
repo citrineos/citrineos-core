@@ -29,6 +29,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -150,6 +151,7 @@ export class EVDriverModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     authorizeRepository?: IAuthorizationRepository,
     localAuthListRepository?: ILocalAuthListRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -171,6 +173,7 @@ export class EVDriverModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.EVDriver,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.evdriver.requests;

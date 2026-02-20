@@ -23,6 +23,7 @@ import {
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -109,6 +110,7 @@ export class SmartChargingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
@@ -123,6 +125,7 @@ export class SmartChargingModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.SmartCharging,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.smartcharging?.requests ?? [];

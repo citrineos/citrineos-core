@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
-import { type Model, type Sequelize } from 'sequelize-typescript';
-import { DefaultSequelizeInstance } from '../util.js';
-import { type ILogObj, Logger } from 'tslog';
 import type {
   AggregateOptions,
   Attributes,
@@ -15,6 +12,9 @@ import type {
   WhereOptions,
 } from 'sequelize';
 import { QueryTypes } from 'sequelize';
+import { type Model, type Sequelize } from 'sequelize-typescript';
+import { type ILogObj, Logger } from 'tslog';
+import { DefaultSequelizeInstance } from '../util.js';
 
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
