@@ -437,3 +437,5 @@ export type { CurrencyCode } from './money/Currency.js';
 export { Money } from './money/Money.js';
 export { addFormats, Ajv };
 export declare type Constructable<T> = new (...args: any[]) => T;
+export { IMessageQuerystringSchema } from './interfaces/api/MessageQuerystring.js';
+export type { IMessageQuerystring } from './interfaces/api/MessageQuerystring.js';

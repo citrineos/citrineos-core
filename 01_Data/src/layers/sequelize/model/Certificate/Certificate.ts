@@ -74,6 +74,12 @@ export class Certificate extends Model implements CertificateDto {
   @Column(DataType.STRING)
   declare certificateFileId?: string | null;
 
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
+  declare certificateFileHash?: string | null;
+
   @Column(DataType.STRING)
   declare privateKeyFileId?: string | null;
 

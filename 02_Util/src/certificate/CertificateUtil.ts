@@ -6,7 +6,7 @@ import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
-import { Certificate, SignatureAlgorithmEnumType } from '@citrineos/data';
+import { Certificate, CountryNameEnumType, SignatureAlgorithmEnumType } from '@citrineos/data';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
@@ -309,3 +309,57 @@ export function generateCSR(certificate: Certificate): [string, string] {
 
   return [csr.getPEM(), privateKeyPem];
 }
+
+export const parseX509Date = (date: string): Date | null => {
+  if (/^\d{14}Z$/.test(date)) {
+    // GeneralizedTime: YYYYMMDDHHMMSSZ
+    return moment.utc(date, 'YYYYMMDDHHmmss[Z]', true).toDate();
+  } else if (/^\d{12}Z$/.test(date)) {
+    // UTCTime: YYMMDDHHMMSSZ (YY interpreted as 1950-2049)
+    return moment.utc(date, 'YYMMDDHHmmss[Z]', true).toDate();
+  } else {
+    console.error(`Invalid X.509 date format: ${date}`);
+    return null;
+  }
+};
+
+export const extractCertificateDetails = (
+  pemString: string,
+): {
+  serialNumber: number | null;
+  issuerName: string | null;
+  organizationName: string | null;
+  commonName: string | null;
+  countryName: CountryNameEnumType | null;
+  validBefore: Date | null;
+  signatureAlgorithm: SignatureAlgorithmEnumType | null;
+} => {
+  try {
+    const cert = new jsrsasign.X509();
+    cert.readCertPEM(pemString);
+
+    // Extract details
+    const serialNumber = parseInt(cert.getSerialNumberHex());
+    const issuerName = cert.getIssuerString();
+    const organizationName = cert.getSubjectString().match(/\/O=([^/]+)/)?.[1] || null;
+    const commonName = cert.getSubjectString().match(/\/CN=([^/]+)/)?.[1] || null;
+    const countryName = (cert.getSubjectString().match(/\/C=([^/]+)/)?.[1] ||
+      null) as CountryNameEnumType | null;
+    const notAfter = cert.getNotAfter();
+    const validBefore = parseX509Date(notAfter);
+    const signatureAlgorithm = cert.getSignatureAlgorithmField() as SignatureAlgorithmEnumType;
+
+    return {
+      serialNumber,
+      issuerName,
+      organizationName,
+      commonName,
+      countryName,
+      validBefore,
+      signatureAlgorithm,
+    };
+  } catch (error) {
+    console.error('Error extracting certificate details:', error);
+    throw new Error('Invalid PEM format or unsupported certificate');
+  }
+};

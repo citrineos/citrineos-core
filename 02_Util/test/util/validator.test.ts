@@ -916,7 +916,7 @@ describe('validateMessageContent', () => {
       'URI format with empty content',
       'URI format requires a valid URI that the Charging Station can download',
     ],
-  ])('should return error for %s: %s (%s)', (format, content, description, expectedError) => {
+  ])('should return error for %s: %s (%s)', (format, content, _description, expectedError) => {
     const result = validateMessageContent(format, content);
     expect(result.isValid).toBe(false);
     expect(result.errorMessage).toBe(expectedError);

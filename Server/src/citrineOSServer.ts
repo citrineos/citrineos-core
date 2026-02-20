@@ -149,7 +149,7 @@ export class CitrineOSServer {
     // enable cors
     (this._server as any).register(cors, {
       origin: true, // This can be customized to specify allowed origins
-      methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
     });
 
     console.log('Bootstrap configuration loaded');
@@ -450,11 +450,16 @@ export class CitrineOSServer {
       this._cache,
       this._createSender(),
       this._createHandler(),
+      this._fileStorage,
+      this._networkConnection!,
       this._logger,
       this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.certificateRepository,
-      this._repositoryStore.locationRepository,
+      this._repositoryStore.installedCertificateRepository,
+      this._repositoryStore.installCertificateAttemptRepository,
+      this._repositoryStore.deleteCertificateAttemptRepository,
+      this._repositoryStore.ocppMessageRepository,
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
@@ -463,7 +468,6 @@ export class CitrineOSServer {
         module,
         this._server,
         this._fileStorage,
-        this._networkConnection!,
         this._config.util.networkConnection.websocketServers,
         this._logger,
       ),

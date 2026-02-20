@@ -1,13 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  CertificateUseEnumType,
-  HashAlgorithmEnumType,
-  InstalledCertificateDto,
-  TenantDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -18,13 +11,14 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Certificate } from './Certificate.js';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace, type TenantDto } from '@citrineos/base';
 import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
-import { Certificate } from './Certificate.js';
 
 @Table
-export class InstalledCertificate extends Model implements InstalledCertificateDto {
-  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.InstalledCertificate;
+export class InstallCertificateAttempt extends Model {
+  static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.InstallCertificateAttempt;
 
   @ForeignKey(() => ChargingStation)
   @Column({
@@ -33,42 +27,30 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
   })
   declare stationId: string;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  declare hashAlgorithm: HashAlgorithmEnumType;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  declare issuerNameHash?: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  declare issuerKeyHash?: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  declare serialNumber?: string | null;
+  @BelongsTo(() => ChargingStation)
+  station?: ChargingStation;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  declare certificateType: CertificateUseEnumType;
+  declare certificateType: OCPP2_0_1.InstallCertificateUseEnumType;
 
   @ForeignKey(() => Certificate)
-  @Column(DataType.INTEGER)
-  declare certificateId?: number | null;
+  @Column({
+    type: DataType.INTEGER,
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
+  declare certificateId: number;
 
   @BelongsTo(() => Certificate)
-  certificate!: Certificate;
+  certificate?: Certificate;
+
+  @Column({
+    type: DataType.STRING,
+  })
+  declare status?: OCPP2_0_1.InstallCertificateStatusEnumType | null;
 
   @ForeignKey(() => Tenant)
   @Column({
@@ -84,7 +66,7 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
 
   @BeforeUpdate
   @BeforeCreate
-  static setDefaultTenant(instance: InstalledCertificate) {
+  static setDefaultTenant(instance: InstallCertificateAttempt) {
     if (instance.tenantId == null) {
       instance.tenantId = DEFAULT_TENANT_ID;
     }

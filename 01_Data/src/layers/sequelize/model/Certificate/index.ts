@@ -4,6 +4,8 @@
 
 export { Certificate } from './Certificate.js';
 export { InstalledCertificate } from './InstalledCertificate.js';
+export { InstallCertificateAttempt } from './InstallCertificateAttempt.js';
+export { DeleteCertificateAttempt } from './DeleteCertificateAttempt.js';
 
 export const enum SignatureAlgorithmEnumType {
   RSA = 'SHA256withRSA',

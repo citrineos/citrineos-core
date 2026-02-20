@@ -72,3 +72,36 @@ export const InstallRootCertificateSchema = QuerySchema('InstallRootCertificateS
     type: 'string',
   },
 ]);
+
+export const UploadExistingCertificateSchema = QuerySchema('UploadExistingCertificateSchema', [
+  {
+    key: 'certificate',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'certificateType',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'filePath',
+    type: 'string',
+  },
+]);
+
+export const RegenerateInstalledCertificateSchema = QuerySchema(
+  'RegenerateInstalledCertificateSchema',
+  [
+    {
+      key: 'installedCertificateId',
+      type: 'number',
+      required: true,
+    },
+    {
+      key: 'validBefore',
+      type: 'string',
+      required: false,
+    },
+  ],
+);

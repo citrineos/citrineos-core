@@ -1,47 +1,52 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IFileStorage, WebsocketServerConfig } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  DEFAULT_TENANT_ID,
   HttpMethod,
+  type IFileStorage,
+  type IMessageConfirmation,
+  type IMessageQuerystring,
+  IMessageQuerystringSchema,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPP2_0_1_Namespace,
   OCPPVersion,
+  type WebsocketServerConfig,
 } from '@citrineos/base';
-import type { TenantQueryString, UpdateTlsCertificateQueryString } from '@citrineos/data';
 import {
   Certificate,
   CountryNameEnumType,
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
+  InstalledCertificate,
   InstallRootCertificateRequest,
   InstallRootCertificateSchema,
+  RegenerateExistingCertificate,
+  RegenerateInstalledCertificateSchema,
   SignatureAlgorithmEnumType,
   TenantQuerySchema,
+  type TenantQueryString,
   TlsCertificateSchema,
   TlsCertificatesRequest,
   UpdateTlsCertificateQuerySchema,
+  type UpdateTlsCertificateQueryString,
+  UploadExistingCertificate,
+  UploadExistingCertificateSchema,
 } from '@citrineos/data';
-import { generateCertificate, generateCSR, WebsocketNetworkConnection } from '@citrineos/util';
+import { generateCertificate } from '@citrineos/util';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import fs from 'fs';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ICertificatesModuleApi } from './interface.js';
 import { CertificatesModule } from './module.js';
-
-const enum PemType {
-  Root = 'Root',
-  SubCA = 'SubCA',
-  Leaf = 'Leaf',
-}
+import { PemType } from './installCertificateHelperService.js';
 
 /**
  * Server API for the Certificates module.
@@ -50,7 +55,6 @@ export class CertificatesDataApi
   extends AbstractModuleApi<CertificatesModule>
   implements ICertificatesModuleApi
 {
-  private readonly _networkConnection: WebsocketNetworkConnection;
   private readonly _websocketServersConfig: WebsocketServerConfig[];
   private readonly _fileStorage: IFileStorage;
 
@@ -67,16 +71,17 @@ export class CertificatesDataApi
     certificatesModule: CertificatesModule,
     server: FastifyInstance,
     fileStorage: IFileStorage,
-    networkConnection: WebsocketNetworkConnection,
     websocketServersConfig: WebsocketServerConfig[],
     logger?: Logger<ILogObj>,
   ) {
     super(certificatesModule, server, OCPPVersion.OCPP2_0_1, logger);
     this._fileStorage = fileStorage;
-    this._networkConnection = networkConnection;
     this._websocketServersConfig = websocketServersConfig;
   }
 
+  /**
+   * Data Endpoint Methods
+   */
   @AsDataEndpoint(
     OCPP2_0_1_Namespace.TlsCertificates,
     HttpMethod.Put,
@@ -117,7 +122,14 @@ export class CertificatesDataApi
       ? (await this._fileStorage.getFile(certRequest.subCAKey))!.toString()
       : undefined;
 
-    this._updateCertificates(serverConfig, serverId, tlsKey, tlsCertificateChain, subCAKey, rootCA);
+    this._module.installCertificateHelperService.updateCertificates(
+      serverConfig,
+      serverId,
+      tlsKey,
+      tlsCertificateChain,
+      subCAKey,
+      rootCA,
+    );
   }
 
   /**
@@ -173,14 +185,15 @@ export class CertificatesDataApi
         certificateFromReq,
         this._logger,
       );
-      certificateFromReq = await this._storeCertificateAndKey(
-        tenantId,
-        certificateFromReq,
-        rootCertificatePem,
-        rootPrivateKeyPem,
-        PemType.Root,
-        certRequest.filePath,
-      );
+      certificateFromReq =
+        await this._module.installCertificateHelperService.storeCertificateAndKey(
+          tenantId,
+          certificateFromReq,
+          rootCertificatePem,
+          rootPrivateKeyPem,
+          PemType.Root,
+          certRequest.filePath,
+        );
 
       // Generate sub CA certificate
       let subCertificate: Certificate = new Certificate();
@@ -200,7 +213,7 @@ export class CertificatesDataApi
         rootPrivateKeyPem,
         rootCertificatePem,
       );
-      subCertificate = await this._storeCertificateAndKey(
+      subCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
         tenantId,
         subCertificate,
         subCertificatePem,
@@ -226,7 +239,7 @@ export class CertificatesDataApi
         subPrivateKeyPem,
         subCertificatePem,
       );
-      leafCertificate = await this._storeCertificateAndKey(
+      leafCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
         tenantId,
         leafCertificate,
         leafCertificatePem,
@@ -242,15 +255,18 @@ export class CertificatesDataApi
       certificateFromReq.commonName = certRequest.commonName;
       certificateFromReq.pathLen = 0;
       const [certificatePem, privateKeyPem] =
-        await this._generateSubCACertificateSignedByCAServer(certificateFromReq);
-      certificateFromReq = await this._storeCertificateAndKey(
-        tenantId,
-        certificateFromReq,
-        certificatePem,
-        privateKeyPem,
-        PemType.SubCA,
-        certRequest.filePath,
-      );
+        await this._module.installCertificateHelperService.generateSubCACertificateSignedByCAServer(
+          certificateFromReq,
+        );
+      certificateFromReq =
+        await this._module.installCertificateHelperService.storeCertificateAndKey(
+          tenantId,
+          certificateFromReq,
+          certificatePem,
+          privateKeyPem,
+          PemType.SubCA,
+          certRequest.filePath,
+        );
 
       // Generate leaf certificate
       let leafCertificate: Certificate = new Certificate();
@@ -270,7 +286,7 @@ export class CertificatesDataApi
         privateKeyPem,
         certificatePem,
       );
-      leafCertificate = await this._storeCertificateAndKey(
+      leafCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
         tenantId,
         leafCertificate,
         leafCertificatePem,
@@ -295,7 +311,7 @@ export class CertificatesDataApi
     request: FastifyRequest<{
       Body: InstallRootCertificateRequest;
     }>,
-  ): Promise<void> {
+  ): Promise<IMessageConfirmation> {
     const installReq = request.body as InstallRootCertificateRequest;
     this._logger.info(
       `Installing ${installReq.certificateType} on charger ${installReq.stationId}`,
@@ -310,26 +326,168 @@ export class CertificatesDataApi
       );
     }
 
-    const confirmation = await this._module.sendCall(
-      installReq.stationId,
-      installReq.tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP2_0_1_CallAction.InstallCertificate,
-      {
-        certificateType: installReq.certificateType,
-        certificate: rootCAPem,
-      } as OCPP2_0_1.InstallCertificateRequest,
-      installReq.callbackUrl,
-    );
+    await this._module
+      .sendCall(
+        installReq.stationId,
+        installReq.tenantId,
+        OCPPVersion.OCPP2_0_1,
+        OCPP2_0_1_CallAction.InstallCertificate,
+        {
+          certificateType: installReq.certificateType,
+          certificate: rootCAPem,
+        } as OCPP2_0_1.InstallCertificateRequest,
+        installReq.callbackUrl,
+      )
+      .then((confirmation) => {
+        if (!confirmation.success) {
+          throw new Error(`Send InstallCertificateRequest failed: ${confirmation.payload}`);
+        }
+        this._logger.debug('InstallCertificate confirmation sent:', confirmation);
+      });
 
-    if (!confirmation.success) {
-      this._logger.error(
-        `InstallCertificateRequest failed for stationId: ${installReq.stationId}, payload: ${confirmation.payload}`,
-      );
-      throw new Error(`InstallCertificateRequest operations failed.`);
+    return {
+      success: true,
+    };
+  }
+
+  /**
+   * Endpoint to upload an existing certificate that is already installed on a given station to the CSMS
+   * @param request - UploadExistingCertificateSchema
+   * @return Promise<InstalledCertificate> - the installed certificate record
+   */
+  @AsDataEndpoint(
+    OCPP2_0_1_Namespace.UploadExistingCertificate,
+    HttpMethod.Post,
+    IMessageQuerystringSchema,
+    UploadExistingCertificateSchema,
+  )
+  async uploadExistingCertificate(
+    request: FastifyRequest<{
+      Body: UploadExistingCertificate;
+      Querystring: IMessageQuerystring;
+    }>,
+  ): Promise<InstalledCertificate[]> {
+    const uploadExistingCertificate = request.body as UploadExistingCertificate;
+    const messageQuerystring = request.query as IMessageQuerystring;
+    const tenantId = messageQuerystring.tenantId || DEFAULT_TENANT_ID;
+    const identifier = messageQuerystring.identifier;
+    const isIdentifierList = Array.isArray(identifier);
+    if (isIdentifierList) {
+      const promises: Promise<InstalledCertificate>[] = [];
+      for (const identifierElement of identifier) {
+        promises.push(
+          this._module.installCertificateHelperService.handleUploadExistingCertificate(
+            tenantId,
+            identifierElement,
+            uploadExistingCertificate,
+            request.body.filePath,
+          ),
+        );
+      }
+      return await Promise.all(promises);
+    } else {
+      return [
+        await this._module.installCertificateHelperService.handleUploadExistingCertificate(
+          tenantId,
+          identifier,
+          uploadExistingCertificate,
+          request.body.filePath,
+        ),
+      ];
     }
+  }
 
-    this._logger.debug('InstallCertificate confirmation:', confirmation);
+  /**
+   * Endpoint to regenerate an existing certificate that is already installed on a given station.
+   * Updates the InstalledCertificate record with the new certificate.
+   *
+   * @param request RegenerateInstalledCertificateSchema
+   * @return Promise<InstalledCertificate> - the updated installed certificate record
+   */
+  @AsDataEndpoint(
+    OCPP2_0_1_Namespace.RegenerateExistingCertificate,
+    HttpMethod.Post,
+    IMessageQuerystringSchema,
+    RegenerateInstalledCertificateSchema,
+  )
+  async regenerateExistingCertificate(
+    request: FastifyRequest<{
+      Body: RegenerateExistingCertificate;
+      Querystring: IMessageQuerystring;
+    }>,
+  ): Promise<InstalledCertificate> {
+    const installedCertificateId = request.body.installedCertificateId;
+    const validBeforeParam = request.body.validBefore;
+    const stationId = request.query.identifier;
+    const tenantId = request.query.tenantId || DEFAULT_TENANT_ID;
+    this._logger.info(
+      `Regenerating existing certificate ${installedCertificateId} for charger ${stationId}`,
+    );
+    const existingInstalledCertificate =
+      await this._module.installedCertificateRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          id: installedCertificateId,
+          stationId: stationId,
+        },
+      });
+    if (!existingInstalledCertificate) {
+      throw new Error('Installed certificate not found');
+    }
+    const existingCertificateRecord = await existingInstalledCertificate.$get('certificate');
+    if (!existingCertificateRecord) {
+      throw new Error('Certificate not found');
+    }
+    const fileId = existingCertificateRecord.certificateFileId;
+    if (!fileId) {
+      throw new Error('Certificate file not found');
+    }
+    const privateKeyFileId = existingCertificateRecord.privateKeyFileId;
+    if (!privateKeyFileId) {
+      throw new Error('Certificate privateKeyFileId not found');
+    }
+    const existingCertificateBuffer = await this._fileStorage.getFile(fileId);
+    const existingPrivateKeyBuffer = await this._fileStorage.getFile(privateKeyFileId);
+    if (!existingCertificateBuffer || !existingPrivateKeyBuffer) {
+      throw new Error('Certificate files not found');
+    }
+    const existingCertificateString = existingCertificateBuffer.toString();
+    const existingPrivateKey = existingPrivateKeyBuffer.toString();
+    const existingCertificate = new jsrsasign.X509();
+    existingCertificate.readCertPEM(existingCertificateString);
+    const existingSubjectString = existingCertificate.getSubjectString();
+    let newCertificateRecord = new Certificate();
+    newCertificateRecord.serialNumber = moment().valueOf();
+    newCertificateRecord.issuerName = existingSubjectString;
+    newCertificateRecord.organizationName = existingCertificateRecord.organizationName;
+    newCertificateRecord.commonName = existingCertificateRecord.commonName;
+    newCertificateRecord.keyLength = existingCertificateRecord.keyLength;
+    newCertificateRecord.validBefore = validBeforeParam;
+    newCertificateRecord.signatureAlgorithm = existingCertificateRecord.signatureAlgorithm;
+    newCertificateRecord.countryName = existingCertificateRecord.countryName;
+    newCertificateRecord.isCA = existingCertificateRecord.isCA;
+    newCertificateRecord.pathLen = existingCertificateRecord.pathLen;
+    newCertificateRecord.signedBy = existingCertificateRecord.id;
+    newCertificateRecord.certificateFileHash = existingCertificateRecord.certificateFileHash;
+    const [newCertificatePem, newPrivateKeyPem] = generateCertificate(
+      newCertificateRecord,
+      this._logger,
+      existingPrivateKey,
+      existingCertificateString,
+    );
+    newCertificateRecord.certificateFileHash =
+      this._module.installCertificateHelperService.getCertificateHash(newCertificatePem);
+    newCertificateRecord.certificateFileId = await this._fileStorage.saveFile(
+      `Regenerated_Cert_${newCertificateRecord.serialNumber}.pem`,
+      Buffer.from(newCertificatePem),
+    );
+    newCertificateRecord.privateKeyFileId = await this._fileStorage.saveFile(
+      `Regenerated_Key_${newCertificateRecord.serialNumber}.pem`,
+      Buffer.from(newPrivateKeyPem),
+    );
+    newCertificateRecord = await newCertificateRecord.save();
+    existingInstalledCertificate.certificateId = newCertificateRecord.id;
+    await existingInstalledCertificate.save();
+    return existingInstalledCertificate;
   }
 
   /**
@@ -343,146 +501,4 @@ export class CertificatesDataApi
     const endpointPrefix = this._module.config.modules.certificates?.endpointPrefix;
     return super._toDataPath(input, endpointPrefix);
   }
-
-  private _replaceFile(
-    targetFilePath: string,
-    newContent: string,
-    rollbackFiles: RollBackFile[],
-  ): RollBackFile[] {
-    // Back up old file
-    fs.renameSync(targetFilePath, targetFilePath.concat('.backup'));
-    rollbackFiles.push({
-      oldFilePath: targetFilePath,
-      newFilePath: targetFilePath.concat('.backup'),
-    });
-    // Write new content using target path
-    fs.writeFileSync(targetFilePath, newContent);
-    this._logger.debug(`Backed up and overwrote file ${targetFilePath}`);
-    return rollbackFiles;
-  }
-
-  private _updateCertificates(
-    serverConfig: WebsocketServerConfig,
-    serverId: string,
-    tlsKey: string,
-    tlsCertificateChain: string,
-    subCAKey?: string,
-    rootCA?: string,
-  ) {
-    let rollbackFiles: RollBackFile[] = [];
-
-    if (serverConfig.tlsKeyFilePath && serverConfig.tlsCertificateChainFilePath) {
-      try {
-        rollbackFiles = this._replaceFile(serverConfig.tlsKeyFilePath, tlsKey, rollbackFiles);
-        rollbackFiles = this._replaceFile(
-          serverConfig.tlsCertificateChainFilePath,
-          tlsCertificateChain,
-          rollbackFiles,
-        );
-        if (serverConfig.mtlsCertificateAuthorityKeyFilePath && subCAKey) {
-          rollbackFiles = this._replaceFile(
-            serverConfig.mtlsCertificateAuthorityKeyFilePath,
-            subCAKey,
-            rollbackFiles,
-          );
-        }
-        if (serverConfig.rootCACertificateFilePath && rootCA) {
-          rollbackFiles = this._replaceFile(
-            serverConfig.rootCACertificateFilePath,
-            rootCA,
-            rollbackFiles,
-          );
-        }
-
-        // Update the security context of the server without restarting it
-        this._networkConnection.updateTlsCertificates(
-          serverId,
-          tlsKey,
-          tlsCertificateChain,
-          rootCA,
-        );
-
-        // Update the map which stores sub CA certs and keys for websocket server securityProfile 3.
-        // This map is used when signing charging station certificates for use case A02 in OCPP 2.0.1 Part 2.
-        if (serverConfig.securityProfile === 3 && subCAKey) {
-          this._module.certificateAuthorityService.updateSecurityCertChainKeyMap(
-            serverId,
-            tlsCertificateChain,
-            subCAKey,
-          );
-        }
-
-        this._logger.info(`Updated TLS certificate for server ${serverId} successfully.`);
-      } catch (error) {
-        this._logger.error(`Failed to update certificate for server ${serverId}: `, error);
-
-        this._logger.info('Performing rollback...');
-        for (const { oldFilePath, newFilePath } of rollbackFiles) {
-          fs.renameSync(newFilePath, oldFilePath);
-          this._logger.info(`Rolled back ${newFilePath} to ${oldFilePath}`);
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  /**
-   * Generates a sub CA certificate signed by a CA server.
-   *
-   * @param {Certificate} certificate - The certificate information used for generating the root certificate.
-   * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
-   */
-  private async _generateSubCACertificateSignedByCAServer(
-    certificate: Certificate,
-  ): Promise<[string, string]> {
-    const [csrPem, privateKeyPem] = generateCSR(certificate);
-    const signedCertificate =
-      await this._module.certificateAuthorityService.signedSubCaCertificateByExternalCA(csrPem);
-    return [signedCertificate, privateKeyPem];
-  }
-
-  /**
-   * Store certificate in file storage and db.
-   * @param certificateEntity certificate to be stored in db
-   * @param certPem certificate pem to be stored in file storage
-   * @param keyPem private key pem to be stored in file storage
-   * @param filePrefix prefix for file name to be stored in file storage
-   * @param filePath file path in file storage
-   * @return certificate stored in db
-   */
-  private async _storeCertificateAndKey(
-    tenantId: number,
-    certificateEntity: Certificate,
-    certPem: string,
-    keyPem: string,
-    filePrefix: PemType,
-    filePath?: string,
-  ): Promise<Certificate> {
-    // Store certificate and private key in file storage
-    certificateEntity.privateKeyFileId = await this._fileStorage.saveFile(
-      `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
-      Buffer.from(keyPem),
-      filePath,
-    );
-    certificateEntity.certificateFileId = await this._fileStorage.saveFile(
-      `${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`,
-      Buffer.from(certPem),
-      filePath,
-    );
-    // Store certificate in db
-    const certObj = new jsrsasign.X509();
-    certObj.readCertPEM(certPem);
-    certificateEntity.issuerName = certObj.getIssuerString();
-    certificateEntity.tenantId = tenantId;
-    return await this._module.certificateRepository.createOrUpdateCertificate(
-      tenantId,
-      certificateEntity,
-    );
-  }
-}
-
-interface RollBackFile {
-  oldFilePath: string;
-  newFilePath: string;
 }

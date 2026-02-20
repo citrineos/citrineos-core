@@ -34,6 +34,7 @@ import { Evse } from './Evse.js';
 import { Location } from './Location.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
 import { StatusNotification } from './StatusNotification.js';
+import { InstalledCertificate } from '../Certificate/index.js';
 
 /**
  * Represents a charging station.
@@ -117,6 +118,9 @@ export class ChargingStation extends Model implements ChargingStationDto {
 
   @HasMany(() => StatusNotification)
   declare statusNotifications?: StatusNotification[] | null;
+
+  @HasMany(() => InstalledCertificate)
+  declare installedCertificates?: InstalledCertificate[];
 
   @HasMany(() => Transaction)
   declare transactions?: TransactionDto[] | null;
