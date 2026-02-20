@@ -536,81 +536,50 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     let action = message[2];
 
-    try {
-      action = mapToCallAction(protocol, action);
-      const isAllowed = await this._onCallIsAllowed(action, identifier);
-      if (!isAllowed) {
-        throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
-      }
-      // Run schema validation for incoming Call message
-      const { isValid, errors } = this._validateCall(identifier, message, protocol);
+    action = mapToCallAction(protocol, action);
+    const isAllowed = await this._onCallIsAllowed(action, identifier);
+    if (!isAllowed) {
+      throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
+    }
+    // Run schema validation for incoming Call message
+    const { isValid, errors } = this._validateCall(identifier, message, protocol);
 
-      if (!isValid || errors) {
-        throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
-          errors: errors,
-        });
-      }
+    if (!isValid || errors) {
+      throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
+        errors: errors,
+      });
+    }
 
-      // Ensure only one call is processed at a time
-      const callOngoing = this._cache.onChange(
+    // Ensure only one call is processed at a time
+    const callOngoing = this._cache.onChange(
+      identifier,
+      this.config.maxCallLengthSeconds,
+      CacheNamespace.Transactions,
+    );
+    let successfullySet = await this._cache.setIfNotExist(
+      identifier,
+      `${action}:${messageId}`,
+      CacheNamespace.Transactions,
+      this._config.maxCallLengthSeconds,
+    );
+
+    if (!successfullySet) {
+      this._logger.debug(
+        'Ongoing Call already in progress, waiting for ongoing call before handling',
         identifier,
-        this.config.maxCallLengthSeconds,
-        CacheNamespace.Transactions,
+        message,
       );
-      let successfullySet = await this._cache.setIfNotExist(
+      await callOngoing; // Wait for ongoing call to finish
+      this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
+      successfullySet = await this._cache.setIfNotExist(
         identifier,
         `${action}:${messageId}`,
         CacheNamespace.Transactions,
         this._config.maxCallLengthSeconds,
       );
-
       if (!successfullySet) {
-        this._logger.debug(
-          'Ongoing Call already in progress, waiting for ongoing call before handling',
-          identifier,
-          message,
-        );
-        await callOngoing; // Wait for ongoing call to finish
-        this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
-        successfullySet = await this._cache.setIfNotExist(
-          identifier,
-          `${action}:${messageId}`,
-          CacheNamespace.Transactions,
-          this._config.maxCallLengthSeconds,
-        );
-        if (!successfullySet) {
-          throw new OcppError(
-            messageId,
-            ErrorCode.RpcFrameworkError,
-            'Call already in progress',
-            {},
-          );
-        }
+        throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
       }
-    } catch (error) {
-      this._logger.error('Failed to process Call message', identifier, message, error);
-
-      // Send manual reply since cache was unable to be set
-      const callError =
-        error instanceof OcppError
-          ? error.asCallError()
-          : [
-              MessageTypeId.CallError,
-              messageId,
-              ErrorCode.InternalError,
-              'Unable to process message',
-              { error: (error as Error).message },
-            ];
-      const rawMessage = JSON.stringify(callError);
-      await this._sendMessage(
-        identifier,
-        protocol,
-        action,
-        MessageState.Response,
-        rawMessage,
-        callError,
-      );
-      return;
     }
 
     try {
