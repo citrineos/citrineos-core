@@ -9,7 +9,13 @@ import type {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { AbstractModule, EventGroup, BadRequestError, DEFAULT_TENANT_ID, OCPPValidator } from '@citrineos/base';
+import {
+  AbstractModule,
+  EventGroup,
+  BadRequestError,
+  DEFAULT_TENANT_ID,
+  OCPPValidator,
+} from '@citrineos/base';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
