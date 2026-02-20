@@ -7,6 +7,7 @@ import { EvseTypeSchema } from './evse.type.dto.js';
 import { MeterValueSchema } from './meter.value.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import { TransactionEventEnumSchema, TriggerReasonEnumSchema } from './types/enums.js';
+import { TransactionTypeSchema } from './types/transaction.type.js';
 
 export const TransactionEventSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -21,6 +22,7 @@ export const TransactionEventSchema = BaseSchema.extend({
   cableMaxCurrent: z.number().nullable().optional(), // DECIMAL
   reservationId: z.number().int().nullable().optional(),
   transactionDatabaseId: z.number().int().optional(),
+  transactionInfo: TransactionTypeSchema.optional(),
   evseId: z.number().int().nullable().optional(),
   evse: EvseTypeSchema.omit({ tenantId: true }).optional(), // TenantId omitted so that raw OCPP data can be stored
   idTokenValue: z.string().nullable().optional(),

@@ -13,6 +13,7 @@ import type {
   IMessageSender,
 } from '../messages/index.js';
 import { MessageOrigin } from '../messages/index.js';
+import type { OCPPValidator } from './OCPPValidator.js';
 
 /**
  * Base interface for all OCPP modules.
@@ -20,6 +21,7 @@ import { MessageOrigin } from '../messages/index.js';
  */
 export interface IModule {
   config: SystemConfig;
+  ocppValidator: OCPPValidator;
   cache: ICache;
   sender: IMessageSender;
   handler: IMessageHandler;

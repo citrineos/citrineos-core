@@ -14,19 +14,26 @@ import type {
 import {
   AbstractModule,
   AsHandler,
+  ChargingLimitSourceEnum,
   ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
   EventGroup,
+  MessageOrigin,
+  OCPP1_6,
+  OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
+  IOCPPMessageRepository,
   ITransactionEventRepository,
 } from '@citrineos/data';
 import {
+  OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
@@ -53,6 +60,7 @@ export class SmartChargingModule extends AbstractModule {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   protected _smartChargingService: ISmartCharging;
 
@@ -102,11 +110,13 @@ export class SmartChargingModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     deviceModelRepository?: IDeviceModelRepository,
     chargingProfileRepository?: IChargingProfileRepository,
     smartChargingService?: ISmartCharging,
     idGenerator?: IdGenerator,
+    ocppMessageRepository?: IOCPPMessageRepository,
   ) {
     super(
       config,
@@ -115,6 +125,7 @@ export class SmartChargingModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.SmartCharging,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.smartcharging?.requests ?? [];
@@ -128,6 +139,8 @@ export class SmartChargingModule extends AbstractModule {
     this._chargingProfileRepository =
       chargingProfileRepository ||
       new sequelize.SequelizeChargingProfileRepository(config, this._logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
 
     this._smartChargingService =
       smartChargingService || new InternalSmartCharging(this._chargingProfileRepository);
@@ -147,6 +160,10 @@ export class SmartChargingModule extends AbstractModule {
 
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
+  }
+
+  get ocppMessageRepository(): IOCPPMessageRepository {
+    return this._ocppMessageRepository;
   }
 
   /**
@@ -537,5 +554,124 @@ export class SmartChargingModule extends AbstractModule {
       evseId,
       chargingProfile,
     } as OCPP2_0_1.SetChargingProfileRequest;
+  }
+
+  /**
+   * OCPP 1.6 response handlers
+   */
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.SetChargingProfile)
+  protected async _handleOcpp16SetChargingProfile(
+    message: IMessage<OCPP1_6.SetChargingProfileResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 SetChargingProfileResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+
+    if (message.payload.status === OCPP1_6.SetChargingProfileResponseStatus.Accepted) {
+      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId: tenantId,
+          stationId: stationId,
+          correlationId: message.context.correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
+        },
+      });
+
+      if (originalMessage) {
+        const originalRequest = originalMessage.message[3] as OCPP1_6.SetChargingProfileRequest;
+        const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromSetChargingProfileRequest(
+          originalRequest.csChargingProfiles,
+        );
+
+        await this._chargingProfileRepository.createOrUpdateChargingProfile(
+          tenantId,
+          mapped,
+          stationId,
+          originalRequest.connectorId,
+          ChargingLimitSourceEnum.CSO,
+          true,
+        );
+      } else {
+        this._logger.error(
+          `OCPP 1.6 SetChargingProfile accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
+        );
+      }
+    } else {
+      this._logger.error(
+        `OCPP 1.6 SetChargingProfile rejected: ${JSON.stringify(message.payload)}`,
+      );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearChargingProfile)
+  protected async _handleOcpp16ClearChargingProfile(
+    message: IMessage<OCPP1_6.ClearChargingProfileResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 ClearChargingProfileResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    if (message.payload.status === OCPP1_6.ClearChargingProfileResponseStatus.Accepted) {
+      const stationId: string = message.context.stationId;
+      // Set existed profiles to isActive false
+      await this._chargingProfileRepository.updateAllByQuery(
+        tenantId,
+        {
+          isActive: false,
+        },
+        {
+          where: {
+            tenantId: tenantId,
+            stationId: stationId,
+            isActive: true,
+          },
+          returning: false,
+        },
+      );
+    } else {
+      this._logger.error(
+        `OCPP 1.6 ClearChargingProfile failed: ${JSON.stringify(message.payload)}`,
+      );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetCompositeSchedule)
+  protected async _handleOcpp16GetCompositeSchedule(
+    message: IMessage<OCPP1_6.GetCompositeScheduleResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 GetCompositeScheduleResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+    const response = message.payload;
+    if (
+      response.status === OCPP1_6.GetCompositeScheduleResponseStatus.Accepted &&
+      response.chargingSchedule
+    ) {
+      const compositeSchedule: OCPP2_0_1.CompositeScheduleType = {
+        evseId: response.connectorId ?? 0,
+        duration: response.chargingSchedule.duration ?? 0,
+        scheduleStart: response.chargingSchedule.startSchedule ?? new Date().toISOString(),
+        chargingRateUnit: response.chargingSchedule
+          .chargingRateUnit as unknown as OCPP2_0_1.ChargingRateUnitEnumType,
+        chargingSchedulePeriod: response.chargingSchedule.chargingSchedulePeriod.map((p) => ({
+          startPeriod: p.startPeriod,
+          limit: p.limit,
+          numberPhases: p.numberPhases ?? undefined,
+        })) as [OCPP2_0_1.ChargingSchedulePeriodType, ...OCPP2_0_1.ChargingSchedulePeriodType[]],
+      };
+      const saved = await this._chargingProfileRepository.createCompositeSchedule(
+        tenantId,
+        compositeSchedule,
+        stationId,
+      );
+      this._logger.info(`OCPP 1.6 Composite schedule created: ${JSON.stringify(saved)}`);
+    } else {
+      this._logger.error(`OCPP 1.6 GetCompositeSchedule failed: ${JSON.stringify(response)}`);
+    }
   }
 }

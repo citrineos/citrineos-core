@@ -26,6 +26,7 @@ import {
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -123,6 +124,7 @@ export class ConfigurationModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     bootRepository?: IBootRepository,
     deviceModelRepository?: IDeviceModelRepository,
     messageInfoRepository?: IMessageInfoRepository,
@@ -139,6 +141,7 @@ export class ConfigurationModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Configuration,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.configuration.requests;

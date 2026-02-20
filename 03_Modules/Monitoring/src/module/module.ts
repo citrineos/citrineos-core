@@ -18,6 +18,7 @@ import {
   EventGroup,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/data';
@@ -80,6 +81,7 @@ export class MonitoringModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     variableMonitoringRepository?: IVariableMonitoringRepository,
     idGenerator?: IdGenerator,
@@ -91,6 +93,7 @@ export class MonitoringModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Monitoring,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.monitoring.requests;

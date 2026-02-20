@@ -5,12 +5,7 @@
 import { z } from 'zod';
 import { TenantPartnerSchema } from './tenant.partner.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-
-export const AsyncJobNameSchema = z.enum(['FETCH_OCPI_TOKENS']);
-export const AsyncJobActionSchema = z.enum(['RESUME', 'STOP']);
-
-export type AsyncJobName = z.infer<typeof AsyncJobNameSchema>;
-export type AsyncJobAction = z.infer<typeof AsyncJobActionSchema>;
+import { AsyncJobNameSchema } from './types/enums.js';
 
 export const PaginatedParamsSchema = z.object({
   offset: z.number().int().optional(),
@@ -29,7 +24,7 @@ export const AsyncJobSchema = BaseSchema.extend({
   finishedAt: z.date().optional(),
   stoppedAt: z.date().nullable().optional(),
   stopScheduled: z.boolean().default(false),
-  isFailed: z.boolean().default(false).optional(),
+  isFailed: z.boolean().default(false),
   paginatedParams: PaginatedParamsSchema,
   totalObjects: z.number().int().optional(),
 });

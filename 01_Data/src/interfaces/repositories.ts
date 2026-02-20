@@ -12,6 +12,7 @@ import type {
   MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
+  OCPPMessageDto,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -355,8 +356,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction | undefined>;
 }
 
-export interface IVariableMonitoringRepository
-  extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {
+export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
   createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_0_1.MonitoringDataType,
@@ -396,7 +396,7 @@ export interface IVariableMonitoringRepository
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
   deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
@@ -462,7 +462,13 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
+  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage>;
+  getRequestByCorrelationId(
+    tenantId: number,
+    correlationId: string,
+  ): Promise<OCPPMessage | undefined>;
+}
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {
