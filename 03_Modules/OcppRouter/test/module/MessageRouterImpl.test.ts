@@ -534,8 +534,7 @@ describe('MessageRouterImpl', () => {
 
       const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      // _onCall handles the error internally (sends CallError and returns), so onMessage returns true
-      expect(result).toBe(true);
+      expect(result).toBe(false);
       expect(networkHook).toHaveBeenCalled();
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[0]).toBe(MessageTypeId.CallError);
@@ -558,8 +557,7 @@ describe('MessageRouterImpl', () => {
 
       const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      // _onCall handles validation errors internally
-      expect(result).toBe(true);
+      expect(result).toBe(false);
       expect(networkHook).toHaveBeenCalled();
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
@@ -603,8 +601,7 @@ describe('MessageRouterImpl', () => {
 
       const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      // _onCall handles this error internally
-      expect(result).toBe(true);
+      expect(result).toBe(false);
       expect(networkHook).toHaveBeenCalled();
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[2]).toBe(ErrorCode.RpcFrameworkError);
