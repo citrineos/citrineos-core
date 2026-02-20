@@ -30,16 +30,6 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
    */
   constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
     super(tenantModule, server, null, logger);
-    this._module.on('TenantCreated', (tenant, tenantPath, websocketServerId) => {
-      this._logger?.info(
-        `Detected new tenant: ${tenant.id}`,
-        tenantPath
-          ? `with path: ${tenantPath}`
-          : websocketServerId
-            ? `associated with websocket server: ${websocketServerId}`
-            : '',
-      );
-    });
   }
 
   @AsDataEndpoint(Namespace.Tenant, HttpMethod.Post, undefined, CreateTenantQuerySchema)

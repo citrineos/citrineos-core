@@ -15,22 +15,12 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { type ITenantRepository, SequelizeTenantRepository, Tenant } from '@citrineos/data';
 
-/**
- * Type-safe tenant events
- */
-export interface TenantEvents {
-  TenantCreated: (tenant: Tenant, tenantPath?: string, websocketServerId?: string) => void;
-  TenantDeleted: (tenantId: number) => void;
-}
-
 export class TenantModule extends AbstractModule {
   /**
    * Fields
    */
   _requests: CallAction[] = [];
   _responses: CallAction[] = [];
-  private _listeners: Partial<{ [K in keyof TenantEvents]: TenantEvents[K][] }> = {};
-
   protected _tenantRepository: ITenantRepository;
 
   /**
@@ -83,18 +73,6 @@ export class TenantModule extends AbstractModule {
 
   get tenantRepository(): ITenantRepository {
     return this._tenantRepository;
-  }
-
-  /**
-   * Event system
-   */
-  on<K extends keyof TenantEvents>(event: K, listener: TenantEvents[K]) {
-    this._listeners[event] ??= [];
-    this._listeners[event]!.push(listener);
-  }
-
-  private _emit<K extends keyof TenantEvents>(event: K, ...args: Parameters<TenantEvents[K]>) {
-    this._listeners[event]?.forEach((listener) => (listener as any)(...args));
   }
 
   /**
@@ -196,9 +174,7 @@ export class TenantModule extends AbstractModule {
       }
     }
 
-    this._logger?.info(`Tenant created: ${createdTenant.id} — emitting TenantCreated event`);
-
-    this._emit('TenantCreated', createdTenant, effectivePath, websocketServerId);
+    this._logger?.info(`Tenant created: ${createdTenant.id}`);
 
     return createdTenant;
   }
@@ -241,8 +217,7 @@ export class TenantModule extends AbstractModule {
     ); // DEFAULT_TENANT_ID for global tenant table
 
     if (deletedTenant) {
-      this._logger?.info(`Tenant deleted: ${id} — emitting TenantDeleted event`);
-      this._emit('TenantDeleted', id);
+      this._logger?.info(`Tenant deleted: ${id}`);
     }
 
     return deletedTenant;

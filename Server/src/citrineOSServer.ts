@@ -620,11 +620,6 @@ export class CitrineOSServer {
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);
-    module.on('TenantCreated', async (tenant, tenantPath, websocketServerId) => {
-      this._logger.info(
-        `Tenant created: ${tenant.id}. Mapping to ${tenantPath} on server ${websocketServerId} should be handled via OCPP Router API.`,
-      );
-    });
     this.apis.push(new TenantDataApi(module, this._server, this._logger));
     this._logger.info('Tenant module initialized');
   }

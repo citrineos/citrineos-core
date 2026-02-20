@@ -19,7 +19,6 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
-  OCPPVersion,
   UnauthorizedError,
 } from '@citrineos/base';
 import type {
