@@ -43,7 +43,7 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
     type: DataType.STRING,
     allowNull: true,
   })
-  declare issuerNameHash?: string | undefined;
+  declare issuerNameHash?: string | null;
 
   @Column({
     type: DataType.STRING,
