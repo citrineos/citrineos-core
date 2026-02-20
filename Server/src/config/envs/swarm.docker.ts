@@ -216,6 +216,7 @@ export function createDockerConfig() {
             port: 8081,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
           {
             id: '1',
@@ -226,6 +227,7 @@ export function createDockerConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
         ],
       },

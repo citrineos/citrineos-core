@@ -9,20 +9,24 @@ import type {
   IMessageSender,
   SystemConfig,
 } from '@citrineos/base';
-import { AbstractModule, EventGroup, OCPPValidator } from '@citrineos/base';
-import { type ITenantRepository, SequelizeTenantRepository } from '@citrineos/data';
+import {
+  AbstractModule,
+  EventGroup,
+  BadRequestError,
+  DEFAULT_TENANT_ID,
+  OCPPValidator,
+} from '@citrineos/base';
 import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { type ITenantRepository, SequelizeTenantRepository, Tenant } from '@citrineos/data';
 
 export class TenantModule extends AbstractModule {
   /**
    * Fields
    */
-
   _requests: CallAction[] = [];
   _responses: CallAction[] = [];
-
   protected _tenantRepository: ITenantRepository;
 
   /**
@@ -75,5 +79,191 @@ export class TenantModule extends AbstractModule {
 
   get tenantRepository(): ITenantRepository {
     return this._tenantRepository;
+  }
+
+  /**
+   * Creates a tenant and adds a mapping to a websocket server if provided
+   */
+  async createTenant(
+    tenant: Tenant,
+    tenantPath?: string,
+    websocketServerId?: string,
+  ): Promise<Tenant> {
+    let effectivePath = tenantPath;
+
+    if (!effectivePath && tenant.name) {
+      const hasDynamicEnabled = this._config.util.networkConnection.websocketServers.some(
+        (ws) => ws.dynamicTenantResolution,
+      );
+
+      if (hasDynamicEnabled) {
+        effectivePath = this._slugify(tenant.name);
+        this._logger?.info(
+          `No tenant path provided; generated slug '${effectivePath}' from name '${tenant.name}'`,
+        );
+      }
+    }
+
+    if (effectivePath) {
+      const serverIds = websocketServerId
+        ? [websocketServerId]
+        : this._config.util.networkConnection.websocketServers
+            .filter((ws) => ws.dynamicTenantResolution)
+            .map((ws) => ws.id)
+            .filter((id): id is string => !!id);
+
+      const baseUrl = this._getOcppRouterBaseUrl();
+
+      for (const id of serverIds) {
+        const routerUrl = `${baseUrl}/data/ocpprouter/websocket?id=${id}`;
+        try {
+          const response = await fetch(routerUrl, {
+            headers: this._getSystemHeaders(),
+          });
+          if (response.ok) {
+            const config = (await response.json()) as any;
+            if (config.tenantPathMapping && config.tenantPathMapping[effectivePath]) {
+              throw new BadRequestError(
+                `Tenant path '${effectivePath}' is already taken on server '${id}'`,
+              );
+            }
+          }
+        } catch (error) {
+          if (error instanceof BadRequestError) {
+            throw error;
+          }
+          this._logger?.warn(
+            `Could not verify path availability on server ${id}: ${
+              error instanceof Error ? error.message : error
+            }`,
+          );
+        }
+      }
+    }
+    const createdTenant = await this._tenantRepository.createTenant(tenant);
+
+    if (effectivePath) {
+      const serverIds = websocketServerId
+        ? [websocketServerId]
+        : this._config.util.networkConnection.websocketServers
+            .filter((ws) => ws.dynamicTenantResolution)
+            .map((ws) => ws.id)
+            .filter((id): id is string => !!id);
+
+      const baseUrl = this._getOcppRouterBaseUrl();
+
+      for (const id of serverIds) {
+        const routerUrl = `${baseUrl}/data/ocpprouter/websocketMapping?id=${id}`;
+        try {
+          const response = await fetch(routerUrl, {
+            method: 'PUT',
+            headers: this._getSystemHeaders(),
+            body: JSON.stringify({
+              path: effectivePath,
+              tenantId: createdTenant.id,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            this._logger?.error(
+              `Failed to add websocket mapping on server ${id}: ${response.status} ${errorBody}`,
+            );
+          } else {
+            this._logger?.info(
+              `Successfully added websocket mapping for tenant ${createdTenant.id} to path ${effectivePath} on server ${id}`,
+            );
+          }
+        } catch (error) {
+          this._logger?.error(`Error calling OcppRouter API at ${routerUrl}:`, error);
+        }
+      }
+    }
+
+    this._logger?.info(`Tenant created: ${createdTenant.id}`);
+
+    return createdTenant;
+  }
+
+  /**
+   * Deletes a tenant and removes all associated mappings from websocket servers
+   */
+  async deleteTenant(id: number): Promise<Tenant | undefined> {
+    const serverIds = this._config.util.networkConnection.websocketServers
+      .map((ws) => ws.id)
+      .filter((id): id is string => !!id);
+
+    const baseUrl = this._getOcppRouterBaseUrl();
+
+    for (const serverId of serverIds) {
+      const routerUrl = `${baseUrl}/data/ocpprouter/websocketMapping?id=${serverId}&tenantId=${id}`;
+      try {
+        const response = await fetch(routerUrl, {
+          method: 'DELETE',
+          headers: this._getSystemHeaders(),
+        });
+
+        if (!response.ok) {
+          this._logger?.error(
+            `Failed to cleanup websocket mapping for tenant ${id} on server ${serverId}: ${response.status}`,
+          );
+        } else {
+          this._logger?.info(
+            `Cleaned up websocket mappings for tenant ${id} on server ${serverId}`,
+          );
+        }
+      } catch (error) {
+        this._logger?.error(`Error cleaning up mapping at ${routerUrl}:`, error);
+      }
+    }
+
+    const deletedTenant = await this._tenantRepository.deleteByKey(
+      DEFAULT_TENANT_ID,
+      id.toString(),
+    ); // DEFAULT_TENANT_ID for global tenant table
+
+    if (deletedTenant) {
+      this._logger?.info(`Tenant deleted: ${id}`);
+    }
+
+    return deletedTenant;
+  }
+
+  /**
+   * Helper to resolve the OcppRouter Base URL
+   */
+  private _getOcppRouterBaseUrl(): string {
+    return (
+      (this._config.modules.tenant as any).ocppRouterBaseUrl ||
+      `http://${this._config.centralSystem.host}:${this._config.centralSystem.port}`
+    );
+  }
+
+  /**
+   * Helper to get system headers for internal communication
+   */
+  private _getSystemHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this._config.centralSystem.systemApiToken) {
+      headers['x-system-token'] = this._config.centralSystem.systemApiToken;
+    }
+
+    return headers;
+  }
+
+  /**
+   * Simple slugifier for tenant paths
+   */
+  private _slugify(text: string): string {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-') // Replace spaces with -
+      .replace(/[^\w-]+/g, '') // Remove all non-word chars
+      .replace(/--+/g, '-'); // Replace multiple - with single -
   }
 }

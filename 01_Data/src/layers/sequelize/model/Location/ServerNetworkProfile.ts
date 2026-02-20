@@ -56,6 +56,15 @@ export class ServerNetworkProfile
   @Column(DataType.BOOLEAN)
   declare allowUnknownChargingStations: boolean;
 
+  @Column(DataType.BOOLEAN)
+  declare dynamicTenantResolution: boolean;
+
+  @Column(DataType.JSONB)
+  declare tenantPathMapping?: Record<string, number>;
+
+  @Column(DataType.INTEGER)
+  declare maxConnectionsPerTenant?: number;
+
   @Column(DataType.STRING)
   declare tlsKeyFilePath?: string;
 

@@ -212,17 +212,29 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     websocketServerConfig: WebsocketServerConfig,
   ) {
     // Failed mTLS and TLS requests are rejected by the server before getting this far
-    this._logger.debug('On upgrade request', req.method, req.url, req.headers);
+    this._logger.debug(
+      'On upgrade request',
+      req.method,
+      req.url,
+      req.headers,
+      websocketServerConfig,
+    );
 
     try {
-      const { identifier } = await this._authenticator.authenticate(
-        req,
-        websocketServerConfig.tenantId,
-        {
-          securityProfile: websocketServerConfig.securityProfile,
-          allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
-        },
-      );
+      // Resolve tenant at upgrade time (query param, path segment, header),
+      // falling back to the server-configured tenant if none provided.
+      const resolvedTenantId = websocketServerConfig.dynamicTenantResolution
+        ? this._extractTenantIdFromRequest(req, websocketServerConfig) ??
+          websocketServerConfig.tenantId
+        : websocketServerConfig.tenantId;
+
+      // Attach resolved tenant to request so downstream handlers (connection) can use it
+      (req as any).__resolvedTenantId = resolvedTenantId;
+
+      const { identifier } = await this._authenticator.authenticate(req, resolvedTenantId, {
+        securityProfile: websocketServerConfig.securityProfile,
+        allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
+      });
 
       this._logger.debug('Successfully registered websocket client', identifier);
 
@@ -297,7 +309,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       ws.pause();
 
       const stationId = this._getClientIdFromUrl(req.url as string);
-      const tenantId = websocketServerConfig.tenantId;
+      // Prefer tenant resolved during upgrade; fallback to server-configured tenant.
+      const tenantId = (req as any).__resolvedTenantId ?? websocketServerConfig.tenantId;
 
       const checker =
         this._doesChargingStationExistByStationId ??
@@ -318,7 +331,23 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         ws.close(1011, 'Unknown charging station');
         return;
       }
+
       const identifier = createIdentifier(tenantId, stationId);
+
+      // Enforce optional per-tenant connection limit if configured
+      const maxConnections = websocketServerConfig.maxConnectionsPerTenant;
+      if (typeof maxConnections === 'number' && maxConnections > 0) {
+        const currentCount = [...this._identifierConnections.keys()].filter(
+          (k) => getTenantIdFromIdentifier(k) === tenantId,
+        ).length;
+        if (currentCount >= maxConnections) {
+          this._logger.warn(
+            `Tenant ${tenantId} exceeded max connections (${maxConnections}), rejecting ${identifier}`,
+          );
+          ws.close(1013, 'Tenant connection limit exceeded');
+          return;
+        }
+      }
 
       this._identifierConnections.set(identifier, ws);
       try {
@@ -328,7 +357,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           req.socket.remoteAddress ||
           'N/A';
         const port = req.socket.remotePort as number;
-        this._logger.info('Client websocket connected', identifier, ip, port, ws.protocol);
+        const connLogger = this._logger.getSubLogger({
+          name: `T${tenantId}:${stationId}`,
+        });
+        connLogger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
         // Register client
         const websocketConnection: IWebsocketConnection = {
@@ -343,11 +375,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         registered =
           registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
         if (!registered) {
-          this._logger.fatal('Failed to register websocket client', identifier);
+          connLogger.fatal('Failed to register websocket client', identifier);
           throw new Error('Failed to register websocket client');
         }
 
-        this._logger.info('Successfully connected new charging station.', identifier);
+        connLogger.info('Successfully connected new charging station.', identifier);
 
         // Register all websocket events
         this._registerWebsocketEvents(identifier, ws, pingInterval);
@@ -490,7 +522,40 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @returns Charger identifier
    */
   private _getClientIdFromUrl(url: string): string {
-    return url.split('/').pop() as string;
+    // Remove query string first
+    const pathOnly = url.split('?')[0];
+    return pathOnly.split('/').pop() as string;
+  }
+
+  /**
+   * Extract tenant id from the incoming upgrade request.
+   * Supported sources (in order): query `tenant`/`tenantId`, header `x-tenant-id`,
+   * path segment (second-last segment if URL is `/tenant/station`).
+   */
+  private _extractTenantIdFromRequest(
+    req: http.IncomingMessage,
+    config: WebsocketServerConfig,
+  ): number | undefined {
+    try {
+      const rawUrl = req.url ?? '';
+      const url = new URL(rawUrl, 'http://localhost');
+      const segments = url.pathname.split('/').filter(Boolean);
+
+      // Path segment mapping: assume /.../{pathSegment}/{station}
+      // We look for a mapping of pathSegment to tenantId.
+      if (segments.length >= 2 && config.tenantPathMapping) {
+        const pathSegment = segments[segments.length - 2];
+        if (config.tenantPathMapping[pathSegment]) {
+          return config.tenantPathMapping[pathSegment];
+        } else {
+          this._logger.debug(`No mapping found for path segment: ${pathSegment}`);
+        }
+      }
+    } catch (err) {
+      // If parsing fails, ignore and fall back to server-configured tenant
+      this._logger.debug('Failed to extract tenant from request', err);
+    }
+    return undefined;
   }
 
   private _generateServerOptions(config: WebsocketServerConfig): https.ServerOptions {
