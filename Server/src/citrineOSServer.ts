@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+
 import type {
   AbstractModule,
   BootstrapConfig,
@@ -16,12 +17,12 @@ import type {
   SystemConfig,
 } from '@citrineos/base';
 import {
-  addFormats,
   Ajv,
   ConfigStoreFactory,
   EventGroup,
   eventGroupFromString,
   type IAuthenticator,
+  OCPPValidator,
 } from '@citrineos/base';
 import {
   CertificatesDataApi,
@@ -97,6 +98,7 @@ export class CitrineOSServer {
   protected readonly _server: FastifyInstance;
   protected readonly _cache: ICache;
   protected readonly _ajv: Ajv.Ajv;
+  protected readonly _ocppValidator: OCPPValidator;
   protected readonly _fileStorage: IFileStorage;
   protected readonly modules: IModule[] = [];
   protected readonly apis: IModuleApi[] = [];
@@ -155,11 +157,15 @@ export class CitrineOSServer {
     this.initHealthCheck();
 
     // Create Ajv JSON schema validator instance
-    this._ajv = this.initAjv(ajv);
-    this.addAjvFormats();
+    this._ajv = OCPPValidator.createServerAjvInstance(ajv);
 
     // Initialize parent logger
     this._logger = this.initLogger();
+
+    // Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
+    // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
+    // whereas _ajv coerces types for Fastify's HTTP schema compilation.
+    this._ocppValidator = new OCPPValidator(this._logger);
 
     // Set cache implementation
     this._cache = this.initCache(cache);
@@ -263,45 +269,6 @@ export class CitrineOSServer {
     this._server.get('/health', async () => ({ status: 'healthy' }));
   }
 
-  protected initAjv(ajv?: Ajv.Ajv) {
-    const ajvInstance =
-      ajv ||
-      new Ajv.Ajv({
-        removeAdditional: 'failing', // Remove invalid additional properties but keep valid ones
-        useDefaults: true,
-        strict: false,
-        strictNumbers: true,
-        strictRequired: true,
-        validateFormats: true,
-        allErrors: true, // Report all validation errors
-      });
-
-    // Add custom keywords for OCPP schema metadata
-    ajvInstance.addKeyword({
-      keyword: 'comment',
-      compile: () => () => true,
-    });
-
-    ajvInstance.addKeyword({
-      keyword: 'javaType',
-      compile: () => () => true,
-    });
-
-    ajvInstance.addKeyword({
-      keyword: 'tsEnumNames',
-      compile: () => () => true,
-    });
-
-    return ajvInstance;
-  }
-
-  protected addAjvFormats() {
-    addFormats.default(this._ajv, {
-      mode: 'fast',
-      formats: ['date-time', 'uri'],
-    });
-  }
-
   protected initLogger() {
     const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
 
@@ -384,6 +351,7 @@ export class CitrineOSServer {
     );
 
     const webhookDispatcher = new WebhookDispatcher(
+      this._repositoryStore.ocppMessageRepository,
       this._repositoryStore.subscriptionRepository,
       this._logger,
     );
@@ -396,7 +364,7 @@ export class CitrineOSServer {
       webhookDispatcher,
       async (_identifier: string, _message: string) => {},
       this._logger,
-      this._ajv,
+      this._ocppValidator,
       this._repositoryStore.locationRepository,
     );
 
@@ -483,6 +451,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.certificateRepository,
       this._repositoryStore.locationRepository,
@@ -508,6 +477,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.bootRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.messageInfoRepository,
@@ -531,6 +501,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.localAuthListRepository,
       this._repositoryStore.deviceModelRepository,
@@ -560,6 +531,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.variableMonitoringRepository,
       this._idGenerator,
@@ -578,6 +550,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.securityEventRepository,
       this._repositoryStore.variableMonitoringRepository,
@@ -596,6 +569,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.chargingProfileRepository,
@@ -617,6 +591,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.transactionEventRepository,
       this._repositoryStore.authorizationRepository,
       this._repositoryStore.deviceModelRepository,
@@ -641,6 +616,7 @@ export class CitrineOSServer {
       this._createSender(),
       this._createHandler(),
       this._logger,
+      this._ocppValidator,
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);

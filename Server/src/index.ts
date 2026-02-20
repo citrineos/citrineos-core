@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+
 import { EventGroup, loadBootstrapConfig } from '@citrineos/base';
-import { getSystemConfig } from './config/index.js';
 import { CitrineOSServer } from './citrineOSServer.js';
+import { getSystemConfig } from './config/index.js';
 
 async function main() {
   const bootstrapConfig = loadBootstrapConfig();
