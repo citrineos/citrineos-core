@@ -204,7 +204,7 @@ export class OCPPValidator {
     payload: OcppResponse | OcppError,
     protocol: OCPPVersion,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
-    if (payload instanceof OcppError) {
+    if (payload instanceof OcppError || (payload as any).name === 'OcppError') {
       this._logger.debug('OcppError payload, skipping schema validation', payload);
       return { isValid: true };
     }
