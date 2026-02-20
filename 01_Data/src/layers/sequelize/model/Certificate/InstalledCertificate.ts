@@ -55,7 +55,7 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
     type: DataType.STRING,
     allowNull: true,
   })
-  declare serialNumber?: string | undefined;
+  declare serialNumber?: string | null;
 
   @Column({
     type: DataType.STRING,
