@@ -23,6 +23,7 @@ export enum Namespace {
   StatusNotificationRequest = 'StatusNotification',
   TransactionType = 'Transaction',
   Websocket = 'Websocket',
+  WebsocketMapping = 'WebsocketMapping',
   Tenant = 'Tenant',
 }
 
@@ -30,9 +31,13 @@ export enum OCPP2_0_1_Namespace {
   AdditionalInfoType = 'AdditionalInfoType',
   AuthorizationRestrictions = 'AuthorizationRestrictions',
   Certificate = 'Certificate',
-  ChargingNeeds = 'ChargingNeeds',
   InstalledCertificate = 'InstalledCertificate',
+  InstallCertificateAttempt = 'InstallCertificateAttempt',
+  DeleteCertificateAttempt = 'DeleteCertificateAttempt',
   CertificateChain = 'CertificateChain',
+  UploadExistingCertificate = 'UploadExistingCertificate',
+  RegenerateExistingCertificate = 'RegenerateExistingCertificate',
+  ChargingNeeds = 'ChargingNeeds',
   ChargingStationSecurityInfo = 'ChargingStationSecurityInfo',
   ComponentType = 'Component',
   EVSEType = 'EvseType',

@@ -5,17 +5,16 @@
 import { z } from 'zod';
 import { ComponentSchema } from './component.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-
-const MessagePrioritySchema = z.string();
-const MessageStateSchema = z.string();
-const MessageContentSchema = z.any();
+import { MessagePriorityEnumSchema } from './types/enums.js';
+import { MessageStateEnumSchema } from './types/enums.js';
+import { MessageContentSchema } from './types/message.info.js';
 
 export const MessageInfoSchema = BaseSchema.extend({
   databaseId: z.number().int(),
   stationId: z.string(),
-  id: z.number().int().optional(),
-  priority: MessagePrioritySchema,
-  state: MessageStateSchema.nullable().optional(),
+  id: z.number().int(),
+  priority: MessagePriorityEnumSchema,
+  state: MessageStateEnumSchema.nullable().optional(),
   startDateTime: z.iso.datetime().nullable().optional(),
   endDateTime: z.iso.datetime().nullable().optional(),
   transactionId: z.string().nullable().optional(),

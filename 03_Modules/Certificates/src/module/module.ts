@@ -1,35 +1,36 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  CallAction,
-  HandlerProperties,
-  ICache,
-  IMessage,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
-} from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
+  type BootstrapConfig,
+  type CallAction,
   ErrorCode,
   EventGroup,
+  type HandlerProperties,
+  type ICache,
+  type IFileStorage,
+  type IMessage,
+  type IMessageHandler,
+  type IMessageSender,
+  MessageOrigin,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
-  OCPP2_0_1_Namespace,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/base';
-import { Op } from 'sequelize';
 import type {
   ICertificateRepository,
+  IDeleteCertificateAttemptRepository,
   IDeviceModelRepository,
+  IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
-  ILocationRepository,
+  IOCPPMessageRepository,
 } from '@citrineos/data';
-import { InstalledCertificate, sequelize } from '@citrineos/data';
+import { InstalledCertificate, sequelize, SequelizeOCPPMessageRepository } from '@citrineos/data';
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
@@ -37,13 +38,15 @@ import {
   RabbitMqSender,
   sendOCSPRequest,
   validatePEMEncodedCSR,
+  WebsocketNetworkConnection,
 } from '@citrineos/util';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import { Crypto } from '@peculiar/webcrypto';
+import { InstallCertificateHelperService } from './installCertificateHelperService.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -65,8 +68,12 @@ export class CertificatesModule extends AbstractModule {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _certificateRepository: ICertificateRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+  protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
+  protected _fileStorage: IFileStorage;
+  protected _installCertificateHelperService: InstallCertificateHelperService;
 
   /**
    * Constructor
@@ -85,6 +92,10 @@ export class CertificatesModule extends AbstractModule {
    * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
    * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
    *
+   * @param {IFileStorage} [fileStorage]  - file storage for persisting certs
+   *
+   * @param {WebsocketNetworkConnection} [networkConnection] - network connection
+   *
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
@@ -95,23 +106,41 @@ export class CertificatesModule extends AbstractModule {
    * represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.certificateRepository} instance is created and used.
    *
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.locationRepository} instance is created and used.
+   * @param {IInstalledCertificateRepository} [installedCertificateRepository] - An optional parameter of type {@link IInstalledCertificateRepository} which
+   * represents a repository for accessing and manipulating installed certificate data.
+   * If no `installedCertificateRepository` is provided, a default {@link sequelize.InstalledCertificateRepository} instance is created and used.
    *
-   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
-   * type {@link CertificateAuthorityService} which handles certificate authority operations.
+   * @param {IInstallCertificateAttemptRepository} [installCertificateAttemptRepository] - An optional parameter of type {@link IInstallCertificateAttemptRepository} which
+   * represents a repository for accessing and manipulating installed certificate attempt data.
+   * If no `installCertificateAttemptRepository` is provided, a default {@link sequelize.InstallCertificateAttemptRepository} instance is created and used.
+   *
+   * @param {IDeleteCertificateAttemptRepository} [deleteCertificateAttemptRepository] - An optional parameter of type {@link IDeleteCertificateAttemptRepository} which
+   * represents a repository for accessing and manipulating deleted certificate attempt data.
+   * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.DeleteCertificateAttemptRepository} instance is created and used.
+   *
+   * @param {IOCPPMessageRepository} [ocppMessageRepository] - repository to check ocpp messages
+   *
+   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of type {@link CertificateAuthorityService} which handles certificate authority operations.
+   *
+   * @param {InstallCertificateHelperService} [installCertificateHelperService] - helper service for installing certificates
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
     cache: ICache,
     sender: IMessageSender,
     handler: IMessageHandler,
+    fileStorage: IFileStorage,
+    networkConnection: WebsocketNetworkConnection,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
     certificateRepository?: ICertificateRepository,
-    locationRepository?: ILocationRepository,
+    installedCertificateRepository?: IInstalledCertificateRepository,
+    installCertificateAttemptRepository?: IInstallCertificateAttemptRepository,
+    deleteCertificateAttemptRepository?: IDeleteCertificateAttemptRepository,
+    ocppMessageRepository?: IOCPPMessageRepository,
     certificateAuthorityService?: CertificateAuthorityService,
+    installCertificateHelperService?: InstallCertificateHelperService,
   ) {
     super(
       config,
@@ -120,24 +149,43 @@ export class CertificatesModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Certificates,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.certificates?.requests ?? [];
     this._responses = config.modules.certificates?.responses ?? [];
+    this._fileStorage = fileStorage;
 
     this._deviceModelRepository =
       deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
     this._certificateRepository =
       certificateRepository || new sequelize.SequelizeCertificateRepository(config, logger);
-    this._installedCertificateRepository = new sequelize.SequelizeInstalledCertificateRepository(
-      config,
-      logger,
-    );
-    this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-
+    this._installedCertificateRepository =
+      installedCertificateRepository ||
+      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
+    this._installCertificateAttemptRepository =
+      installCertificateAttemptRepository ||
+      new sequelize.SequelizeInstallCertificateAttemptRepository(config, logger);
+    this._deleteCertificateAttemptRepository =
+      deleteCertificateAttemptRepository ||
+      new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
+    this._ocppMessageRepository =
+      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._certificateAuthorityService =
       certificateAuthorityService || new CertificateAuthorityService(config, cache, this._logger);
+
+    this._installCertificateHelperService =
+      installCertificateHelperService ||
+      new InstallCertificateHelperService(
+        this._certificateRepository,
+        this._installedCertificateRepository,
+        this._installCertificateAttemptRepository,
+        this._deleteCertificateAttemptRepository,
+        this._certificateAuthorityService,
+        networkConnection,
+        this._fileStorage,
+        this._logger,
+      );
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {
@@ -146,6 +194,18 @@ export class CertificatesModule extends AbstractModule {
 
   get certificateRepository(): ICertificateRepository {
     return this._certificateRepository;
+  }
+
+  get installedCertificateRepository(): IInstalledCertificateRepository {
+    return this._installedCertificateRepository;
+  }
+
+  get deleteCertificateAttemptRepository(): IDeleteCertificateAttemptRepository {
+    return this._deleteCertificateAttemptRepository;
+  }
+
+  get installCertificateHelperService(): InstallCertificateHelperService {
+    return this._installCertificateHelperService;
   }
 
   /**
@@ -215,6 +275,7 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('Sign certificate request received:', message, props);
+    const tenantId = message.context.tenantId;
     const stationId: string = message.context.stationId;
     const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: OCPP2_0_1.CertificateSigningUseEnumType | undefined | null =
@@ -245,12 +306,7 @@ export class CertificatesModule extends AbstractModule {
 
     let certificateChainPem: string;
     try {
-      await this._verifySignCertRequest(
-        csrString,
-        message.context.tenantId,
-        stationId,
-        certificateType,
-      );
+      await this._verifySignCertRequest(csrString, tenantId, stationId, certificateType);
 
       certificateChainPem = await this._certificateAuthorityService.getCertificateChain(
         csrString,
@@ -277,9 +333,16 @@ export class CertificatesModule extends AbstractModule {
     //   status: GenericStatusEnumType.Accepted,
     // } as SignCertificateResponse);
 
+    await this.installCertificateHelperService.prepareToInstallCertificate(
+      tenantId,
+      stationId,
+      certificateChainPem,
+      certificateType as unknown as OCPP2_0_1.InstallCertificateUseEnumType,
+    );
+
     await this.sendCall(
       stationId,
-      message.context.tenantId,
+      tenantId,
       OCPPVersion.OCPP2_0_1,
       OCPP2_0_1_CallAction.CertificateSigned,
       {
@@ -294,11 +357,16 @@ export class CertificatesModule extends AbstractModule {
    */
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CertificateSigned)
-  protected _handleCertificateSigned(
+  protected async _handleCertificateSigned(
     message: IMessage<OCPP2_0_1.CertificateSignedResponse>,
     props?: HandlerProperties,
-  ): void {
+  ): Promise<void> {
     this._logger.debug('CertificateSigned received:', message, props);
+    await this.installCertificateHelperService.finalizeInstalledCertificate(
+      message.context.tenantId,
+      message.context.stationId,
+      message.payload.status as unknown as OCPP2_0_1.InstallCertificateStatusEnumType,
+    );
     // TODO: If rejected, retry and/or send to callbackUrl if originally part of a triggered refresh
     // TODO: If accepted, revoke old certificate
   }
@@ -309,6 +377,41 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('DeleteCertificate received:', message, props);
+    const tenantId = message.context.tenantId;
+    const stationId = message.context.stationId;
+    const existingPendingDeleteCertificateAttempt =
+      await this.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          stationId,
+          status: null,
+        },
+      });
+    // should always be true
+    if (existingPendingDeleteCertificateAttempt) {
+      existingPendingDeleteCertificateAttempt.status = message.payload.status;
+      await existingPendingDeleteCertificateAttempt.save();
+      if (
+        existingPendingDeleteCertificateAttempt.status ===
+        OCPP2_0_1.DeleteCertificateStatusEnumType.Accepted
+      ) {
+        const existingInstalledCertificates =
+          await this.installedCertificateRepository.readAllByQuery(tenantId, {
+            where: {
+              stationId,
+              hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
+              issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
+              issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
+              serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
+            },
+          });
+        // should always be true
+        if (existingInstalledCertificates) {
+          for (const existingInstalledCertificate of existingInstalledCertificates) {
+            await existingInstalledCertificate.destroy();
+          }
+        }
+      }
+    }
   }
 
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetInstalledCertificateIds)
@@ -317,43 +420,85 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetInstalledCertificateIds received:', message, props);
+    const tenantId = message.context.tenantId;
+    const stationId = message.context.stationId;
+    const correlationId = message.context.correlationId;
     const certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
-    // persist installed certificate information
-    if (certificateHashDataList && certificateHashDataList.length > 0) {
-      // delete previous hashes for station
-      await this.deleteExistingMatchingCertificateHashes(
-        message.context.tenantId,
-        message.context.stationId,
-        certificateHashDataList,
-      );
-      // save new hashes
-      const records = certificateHashDataList.map(
-        (certificateHashDataWrap: OCPP2_0_1.CertificateHashDataChainType) => {
-          const certificateHashData = certificateHashDataWrap.certificateHashData;
-          const certificateType = certificateHashDataWrap.certificateType;
-          return {
-            tenantId: message.context.tenantId,
-            stationId: message.context.stationId,
-            hashAlgorithm: certificateHashData.hashAlgorithm,
-            issuerNameHash: certificateHashData.issuerNameHash,
-            issuerKeyHash: certificateHashData.issuerKeyHash,
-            serialNumber: certificateHashData.serialNumber,
-            certificateType: certificateType,
-          } as InstalledCertificate;
+    if (message.payload.status === OCPP2_0_1.GetInstalledCertificateStatusEnumType.NotFound) {
+      const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          stationId,
+          correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
         },
-      );
-      this._logger.info('Attempting to save', records);
-      const response = await this._installedCertificateRepository.bulkCreate(
-        message.context.tenantId,
-        records,
-        OCPP2_0_1_Namespace.InstalledCertificate,
-      );
-      if (response.length === records.length) {
-        this._logger.info(
-          'Successfully updated installed certificate information for station',
-          message.context.stationId,
-        );
+      });
+      if (request) {
+        // should always be true
+        const getInstalledCertificateIdsRequest = request
+          .message[3] as OCPP2_0_1.GetInstalledCertificateIdsRequest;
+        let certificateType;
+        if (
+          getInstalledCertificateIdsRequest &&
+          getInstalledCertificateIdsRequest.certificateType
+        ) {
+          certificateType = getInstalledCertificateIdsRequest.certificateType;
+        }
+        if (certificateType) {
+          this._logger.debug(
+            `GetInstalledCertificateIdsRequest sent to ${stationId} had certificateType: ${certificateType}. Cleaning up installed certificates of this type in DB if any.`,
+          );
+          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
+            where: {
+              stationId,
+              certificateType,
+            },
+          });
+        } else {
+          this._logger.debug(
+            `GetInstalledCertificateIdsRequest sent to ${stationId} had no certificateType. Cleaning up all installed certificates in DB if any.`,
+          );
+          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
+            where: {
+              stationId,
+            },
+          });
+        }
+      }
+      return;
+    }
+    if (certificateHashDataList && certificateHashDataList.length > 0) {
+      for (const certificateHashDataWrap of certificateHashDataList) {
+        const certificateHashData = certificateHashDataWrap.certificateHashData;
+        const certificateType = certificateHashDataWrap.certificateType;
+        let existingInstalledCertificate =
+          await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
+            where: {
+              stationId: stationId,
+              certificateType: certificateType,
+            },
+          });
+        if (existingInstalledCertificate) {
+          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
+          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
+          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
+          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
+          await existingInstalledCertificate.save();
+          this._logger.debug('Updated installed certificate record', existingInstalledCertificate);
+        } else {
+          existingInstalledCertificate = new InstalledCertificate();
+          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
+          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
+          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
+          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
+          existingInstalledCertificate.stationId = stationId;
+          existingInstalledCertificate.certificateType = certificateType;
+          await existingInstalledCertificate.save();
+          this._logger.debug(
+            'Created new installed certificate record',
+            existingInstalledCertificate,
+          );
+        }
       }
     }
   }
@@ -364,6 +509,11 @@ export class CertificatesModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('InstallCertificate received:', message, props);
+    await this.installCertificateHelperService.finalizeInstalledCertificate(
+      message.context.tenantId,
+      message.context.stationId,
+      message.payload.status,
+    );
   }
 
   private async _verifySignCertRequest(
@@ -416,33 +566,5 @@ export class CertificatesModule extends AbstractModule {
     }
 
     this._logger.info(`Verified SignCertRequest for station ${stationId} successfully.`);
-  }
-
-  private async deleteExistingMatchingCertificateHashes(
-    tenantId: number,
-    stationId: string,
-    certificateHashDataList: OCPP2_0_1.CertificateHashDataChainType[],
-  ) {
-    try {
-      const certificateTypes = certificateHashDataList.map((certificateHashData) => {
-        return certificateHashData.certificateType;
-      });
-      if (certificateTypes && certificateTypes.length > 0) {
-        await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
-          where: {
-            tenantId,
-            stationId,
-            certificateType: {
-              [Op.in]: certificateTypes,
-            },
-          },
-        });
-      }
-    } catch (error: any) {
-      this._logger.error(
-        'GetInstalledCertificateIds failed to delete previous certificates',
-        error,
-      );
-    }
   }
 }

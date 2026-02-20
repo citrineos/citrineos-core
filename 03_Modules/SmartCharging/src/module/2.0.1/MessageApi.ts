@@ -2,14 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { ISmartChargingModuleApi } from '../interface.js';
-import { SmartChargingModule } from '../module.js';
 import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
+  ChargingLimitSourceEnum,
   DEFAULT_TENANT_ID,
   Namespace,
   OCPP1_6_Namespace,
@@ -18,9 +15,13 @@ import {
   OCPP2_0_1_Namespace,
   OCPPVersion,
 } from '@citrineos/base';
-import type { FastifyInstance } from 'fastify';
-import { VariableAttribute } from '@citrineos/data';
+import { OCPP2_0_1_Mapper, VariableAttribute } from '@citrineos/data';
 import { stringToSet, validateChargingProfileType } from '@citrineos/util';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ISmartChargingModuleApi } from '../interface.js';
+import { SmartChargingModule } from '../module.js';
 
 /**
  * Server API for the SmartCharging module.
@@ -361,6 +362,7 @@ export class SmartChargingOcpp201Api
           const existedChargingProfiles =
             await this._module.chargingProfileRepository.readAllByQuery(tenantId, {
               where: {
+                stationId: id,
                 stackLevel: chargingProfile.stackLevel,
                 chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
                 evseId: request.evseId,
@@ -493,10 +495,10 @@ export class SmartChargingOcpp201Api
         // Save the charging profile, set the source to "CSO"
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
           tenantId,
-          chargingProfile,
+          OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
           id,
           request.evseId,
-          OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          ChargingLimitSourceEnum.CSO,
         );
 
         // Finally, send the call to the station

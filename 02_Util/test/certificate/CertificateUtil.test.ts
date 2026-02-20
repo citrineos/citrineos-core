@@ -5,6 +5,7 @@ import {
   createPemBlock,
   createSignedCertificateFromCSR,
   extractCertificateArrayFromEncodedString,
+  extractCertificateDetails,
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
@@ -136,6 +137,28 @@ describe('CertificateUtil', () => {
       const actualResult = extractCertificateArrayFromEncodedString(givenEncodedString);
 
       expect(actualResult?.length).toBe(3);
+    });
+  });
+
+  describe('extractCertificateDetails', () => {
+    it('successes', async () => {
+      const givenEncodedString = readFile('LeafCertificateSample.pem');
+      const {
+        serialNumber,
+        issuerName,
+        organizationName,
+        commonName,
+        countryName,
+        validBefore,
+        signatureAlgorithm,
+      } = extractCertificateDetails(givenEncodedString);
+      expect(serialNumber).toEqual(1916);
+      expect(issuerName).toEqual('/CN=localhost SubCA/O=s44/C=US');
+      expect(organizationName).toEqual('s44');
+      expect(commonName).toEqual('localhost');
+      expect(countryName).toEqual('US');
+      expect(validBefore).toEqual(new Date('2034-08-19T00:00:00.000Z'));
+      expect(signatureAlgorithm).toEqual('SHA256withECDSA');
     });
   });
 });

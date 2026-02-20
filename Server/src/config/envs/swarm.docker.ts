@@ -5,6 +5,10 @@
 import {
   DEFAULT_TENANT_ID,
   defineConfig,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_TOKENURL,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
@@ -97,6 +101,7 @@ export function createDockerConfig() {
           OCPP2_0_1_CallAction.UnlockConnector,
           OCPP1_6_CallAction.RemoteStopTransaction,
           OCPP1_6_CallAction.RemoteStartTransaction,
+          OCPP1_6_CallAction.ClearCache,
         ],
         requests: [OCPP2_0_1_CallAction.Authorize, OCPP2_0_1_CallAction.ReservationStatusUpdate],
       },
@@ -143,6 +148,9 @@ export function createDockerConfig() {
           OCPP2_0_1_CallAction.GetChargingProfiles,
           OCPP2_0_1_CallAction.GetCompositeSchedule,
           OCPP2_0_1_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.SetChargingProfile,
+          OCPP1_6_CallAction.ClearChargingProfile,
+          OCPP1_6_CallAction.GetCompositeSchedule,
         ],
         requests: [
           OCPP2_0_1_CallAction.ClearedChargingLimit,
@@ -208,6 +216,7 @@ export function createDockerConfig() {
             port: 8081,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
           {
             id: '1',
@@ -218,6 +227,7 @@ export function createDockerConfig() {
             port: 8082,
             protocol: 'ocpp2.0.1',
             tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: true,
           },
         ],
       },
@@ -225,11 +235,10 @@ export function createDockerConfig() {
         v2gCA: {
           name: 'hubject',
           hubject: {
-            baseUrl: 'https://open.plugncharge-test.hubject.com',
-            tokenUrl:
-              'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-            clientId: 'YOUR_CLIENT_ID',
-            clientSecret: 'YOUR_CLIENT_SECRET',
+            baseUrl: HUBJECT_DEFAULT_BASEURL,
+            tokenUrl: HUBJECT_DEFAULT_TOKENURL,
+            clientId: HUBJECT_DEFAULT_CLIENTID,
+            clientSecret: HUBJECT_DEFAULT_CLIENTSECRET,
           },
         },
         chargingStationCA: {
@@ -246,8 +255,8 @@ export function createDockerConfig() {
       },
     },
     logLevel: 2, // debug
-    maxCallLengthSeconds: 5,
-    maxCachingSeconds: 10,
+    maxCallLengthSeconds: 20,
+    maxCachingSeconds: 30,
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,

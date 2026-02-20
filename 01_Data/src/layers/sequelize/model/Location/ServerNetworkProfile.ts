@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersionType, WebsocketServerConfig, TenantDto } from '@citrineos/base';
+import type {
+  OCPPVersionType,
+  WebsocketServerConfig,
+  TenantDto,
+  ServerNetworkProfileDto,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -20,7 +25,10 @@ import { ChargingStation } from './ChargingStation.js';
 import { ChargingStationNetworkProfile } from './ChargingStationNetworkProfile.js';
 
 @Table
-export class ServerNetworkProfile extends Model implements WebsocketServerConfig {
+export class ServerNetworkProfile
+  extends Model
+  implements WebsocketServerConfig, ServerNetworkProfileDto
+{
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.ServerNetworkProfile;
 
   @PrimaryKey
@@ -47,6 +55,15 @@ export class ServerNetworkProfile extends Model implements WebsocketServerConfig
 
   @Column(DataType.BOOLEAN)
   declare allowUnknownChargingStations: boolean;
+
+  @Column(DataType.BOOLEAN)
+  declare dynamicTenantResolution: boolean;
+
+  @Column(DataType.JSONB)
+  declare tenantPathMapping?: Record<string, number>;
+
+  @Column(DataType.INTEGER)
+  declare maxConnectionsPerTenant?: number;
 
   @Column(DataType.STRING)
   declare tlsKeyFilePath?: string;
