@@ -28,12 +28,11 @@
     "coverage": "vitest run --coverage",
     "prepare": "husky",
     "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully",
-    "pm2:build": "npm run build",
-    "pm2:start": "npm run pm2:build && ./node_modules/.bin/pm2 start ecosystem.config.cjs --env production",
-    "pm2:restart": "./node_modules/.bin/pm2 restart ecosystem.config.cjs --env production",
-    "pm2:stop": "./node_modules/.bin/pm2 stop ecosystem.config.cjs",
-    "pm2:delete": "./node_modules/.bin/pm2 delete ecosystem.config.cjs || true",
-    "pm2:logs": "./node_modules/.bin/pm2 logs --lines 200"
+    "pm2:start": "npm run pm2:start --prefix ./Server",
+    "pm2:restart": "npm run pm2:restart --prefix ./Server",
+    "pm2:stop": "npm run pm2:stop --prefix ./Server",
+    "pm2:delete": "npm run pm2:delete --prefix ./Server",
+    "pm2:logs": "npm run pm2:logs --prefix ./Server"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
@@ -58,7 +57,6 @@
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.2",
-    "typescript": "^5.8.2",
-    "pm2": "^5.3.0"
+    "typescript": "^5.8.2"
   }
 }
