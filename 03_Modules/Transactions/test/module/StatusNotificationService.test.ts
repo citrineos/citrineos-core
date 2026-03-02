@@ -173,6 +173,24 @@ describe('StatusNotificationService', () => {
       expect(locationRepository.createOrUpdateConnector).toHaveBeenCalled();
     });
 
+    it('should create connector without evseId for OCPP 1.6 chargers', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+      vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
+        return aStatusNotification();
+      });
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest(),
+      );
+
+      const connectorArg = (locationRepository.createOrUpdateConnector as any).mock.calls[0][1];
+      expect(connectorArg.evseId).toBeUndefined();
+      expect(connectorArg.connectorId).toBeDefined();
+      expect(connectorArg.stationId).toBe(MOCK_STATION_ID);
+    });
+
     it('should not save StatusNotification or connector when Charging Station does not exist', async () => {
       componentRepository.readAllByQuery.mockResolvedValue([aComponent()]);
 
