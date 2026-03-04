@@ -42,3 +42,4 @@ export { IdGenerator } from './util/idGenerator.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';
 
 export { SignedMeterValuesUtil } from './security/SignedMeterValuesUtil.js';
+export { CitrineOSContainer } from './citrineOSContainer.js';

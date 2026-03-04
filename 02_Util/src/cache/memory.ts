@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '@citrineos/base';
+import { type ICache, injectable } from '@citrineos/base';
 import type { ClassConstructor } from 'class-transformer';
 import { plainToInstance } from 'class-transformer';
 
 /**
  * Implementation of cache interface with memory storage
  */
+@injectable()
 export class MemoryCache implements ICache {
   private _cache: Map<string, string>;
   private _keySubscriptionMap: Map<string, (arg: string | null) => void>;

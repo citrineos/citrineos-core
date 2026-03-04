@@ -2,12 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { Options } from 'ajv';
 // Base Library Interfaces
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { OCPP1_6, OCPP2_0_1 } from './ocpp/model/index.js';
 import { type CallAction, OCPP1_6_CallAction, OCPP2_0_1_CallAction } from './ocpp/rpc/message.js';
 
+export type { ContainerOptions } from 'inversify';
+export { Container } from 'inversify';
+export { inject, injectable, unmanaged } from 'inversify';
+export { CitrineOSFastifyInstance } from './config/citrineOSFastifyInstance.js';
+export { ContainerType } from './config/ContainerType.js';
+export { CitrineOSLogger } from './config/citrineOSLogger.js';
+export { ServerAjv, ValidatorAjv } from './interfaces/modules/index.js';
 export { BadRequestError } from './interfaces/api/exceptions/BadRequestError.js';
 export { NotFoundError } from './interfaces/api/exceptions/NotFoundError.js';
 export {
@@ -435,7 +443,7 @@ export * from './interfaces/dto/variable.status.dto.js';
 export { Currency } from './money/Currency.js';
 export type { CurrencyCode } from './money/Currency.js';
 export { Money } from './money/Money.js';
-export { addFormats, Ajv };
+export { addFormats, Ajv, type Options };
 export declare type Constructable<T> = new (...args: any[]) => T;
 export { IMessageQuerystringSchema } from './interfaces/api/MessageQuerystring.js';
 export type { IMessageQuerystring } from './interfaces/api/MessageQuerystring.js';

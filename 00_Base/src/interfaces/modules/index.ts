@@ -9,3 +9,5 @@ export type { CircuitBreakerOptions, CircuitBreakerState } from './CircuitBreake
 export type { IHandlerDefinition } from './HandlerDefinition.js';
 export type { IModule } from './Module.js';
 export { OCPPValidator } from './OCPPValidator.js';
+export { ServerAjv } from './ServerAjv.js';
+export { ValidatorAjv } from './ValidatorAjv.js';

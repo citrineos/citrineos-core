@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '@citrineos/base';
+import { ContainerType, type ICache, inject, injectable, type SystemConfig } from '@citrineos/base';
 import type { ClassConstructor } from 'class-transformer';
 import { plainToInstance } from 'class-transformer';
 import type {
@@ -17,11 +17,21 @@ import { createClient } from 'redis';
 /**
  * Implementation of cache interface with redis storage
  */
+@injectable()
 export class RedisCache implements ICache {
   private _client: RedisClientType<RedisModules, RedisFunctions, RedisScripts>;
 
-  constructor(clientOptions?: RedisClientOptions) {
-    this._client = clientOptions ? createClient(clientOptions) : createClient();
+  constructor(@inject(ContainerType.SystemConfig) systemConfig: SystemConfig) {
+    const clientOptions: RedisClientOptions =
+      'url' in systemConfig.util.cache.redis!
+        ? { url: systemConfig.util.cache.redis.url }
+        : {
+            socket: {
+              host: systemConfig.util.cache.redis!.host,
+              port: systemConfig.util.cache.redis!.port,
+            },
+          };
+    this._client = createClient(clientOptions);
     this._client.on('connect', () => console.log('Redis client connected'));
     this._client.on('ready', () => console.log('Redis client ready to use'));
     this._client.on('error', (err) => console.error('Redis error', err));

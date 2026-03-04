@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Ajv, type ErrorObject } from 'ajv';
+import Ajv, { type ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import {
+  CitrineOSLogger,
   OCPP1_6_CALL_RESULT_SCHEMA_MAP,
   OCPP1_6_CALL_SCHEMA_MAP,
   OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
@@ -20,67 +20,23 @@ import {
   OcppError,
   OCPPVersion,
 } from '../../ocpp/rpc/message.js';
+import { inject, injectable } from 'inversify';
+import { ValidatorAjv } from './ValidatorAjv.js';
 
+// Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
+// This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
+// whereas _ajv coerces types for Fastify's HTTP schema compilation.
+@injectable()
 export class OCPPValidator {
-  protected _ajv: Ajv;
+  protected _ajv: Ajv.Ajv;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(logger?: Logger<ILogObj>, ajv?: Ajv) {
-    this._ajv = ajv || OCPPValidator.createValidatorAjvInstance();
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
-  }
-
-  /**
-   * Creates an Ajv instance configured for Fastify HTTP schema compilation.
-   * Enables type coercion since HTTP query/path params arrive as strings,
-   * and does not include OCPP-specific keywords.
-   *
-   * @param ajv - Optional existing Ajv instance to use instead of creating a new one
-   * @returns Configured Ajv instance for Fastify schema compilation
-   */
-  static createServerAjvInstance(ajv?: Ajv): Ajv {
-    const ajvInstance =
-      ajv ||
-      new Ajv({
-        removeAdditional: 'failing',
-        useDefaults: true,
-        coerceTypes: true, // HTTP query/path params arrive as strings and need coercion
-        strict: false,
-        allErrors: true,
-      });
-
-    OCPPValidator.addFormats(ajvInstance);
-
-    return ajvInstance;
-  }
-
-  /**
-   * Creates an Ajv instance configured for OCPP message validation.
-   * Does not coerce types since OCPP messages arrive as parsed JSON with correct types.
-   * Includes OCPP-specific schema keywords and strict number/required validation.
-   *
-   * @param ajv - Optional existing Ajv instance to use instead of creating a new one
-   * @returns Configured Ajv instance for OCPP message validation
-   */
-  static createValidatorAjvInstance(ajv?: Ajv): Ajv {
-    const ajvInstance =
-      ajv ||
-      new Ajv({
-        useDefaults: true,
-        // No coerceTypes: OCPP messages are parsed JSON — types are already correct,
-        // and coercion could silently corrupt data that should instead be rejected.
-        strict: false,
-        strictNumbers: true, // Reject numeric strings where a number is required
-        validateFormats: true,
-        allErrors: true,
-      });
-
-    OCPPValidator.addOcppKeywords(ajvInstance);
-    OCPPValidator.addFormats(ajvInstance);
-
-    return ajvInstance;
+  constructor(
+    @inject(CitrineOSLogger) logger?: Logger<ILogObj>,
+    @inject(ValidatorAjv) ajv?: Ajv.Ajv,
+  ) {
+    this._ajv = ajv || new ValidatorAjv();
+    this._logger = logger!.getSubLogger({ name: this.constructor.name });
   }
 
   /**
@@ -89,7 +45,7 @@ export class OCPPValidator {
    *
    * @param ajv - The Ajv instance to add keywords to
    */
-  static addOcppKeywords(ajv: Ajv): void {
+  static addOcppKeywords(ajv: Ajv.Ajv): void {
     // Add custom keywords for OCPP schema metadata
     ajv.addKeyword({
       keyword: 'comment',
@@ -112,7 +68,7 @@ export class OCPPValidator {
    *
    * @param ajv - The Ajv instance to add formats to
    */
-  static addFormats(ajv: Ajv): void {
+  static addFormats(ajv: Ajv.Ajv): void {
     addFormats.default(ajv, {
       mode: 'fast',
       formats: ['date-time', 'uri'],

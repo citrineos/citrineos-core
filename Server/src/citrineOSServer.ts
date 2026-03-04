@@ -2,27 +2,32 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  AbstractModule,
-  BootstrapConfig,
-  IApiAuthProvider,
-  IAuthorizer,
-  ICache,
-  IFileStorage,
-  IMessageHandler,
-  IMessageRouter,
-  IMessageSender,
-  IModule,
-  IModuleApi,
-  SystemConfig,
-} from '@citrineos/base';
 import {
+  type AbstractModule,
   Ajv,
+  type BootstrapConfig,
+  CitrineOSFastifyInstance,
+  CitrineOSLogger,
   ConfigStoreFactory,
+  ContainerType,
   EventGroup,
   eventGroupFromString,
+  type IApiAuthProvider,
   type IAuthenticator,
+  type IAuthorizer,
+  type ICache,
+  type IFileStorage,
+  type IMessageHandler,
+  type IMessageRouter,
+  type IMessageSender,
+  type IModule,
+  type IModuleApi,
+  inject,
+  injectable,
   OCPPValidator,
+  ServerAjv,
+  type SystemConfig,
+  unmanaged,
 } from '@citrineos/base';
 import {
   CertificatesDataApi,
@@ -67,35 +72,30 @@ import {
   IdGenerator,
   initSwagger,
   LocalBypassAuthProvider,
-  MemoryCache,
   NetworkProfileFilter,
   OIDCAuthProvider,
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
-  RedisCache,
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@citrineos/util';
 import cors from '@fastify/cors';
-import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import type { FastifyInstance } from 'fastify';
-import fastify from 'fastify';
 import type {
   FastifyRouteSchemaDef,
   FastifySchemaCompiler,
   FastifyValidationResult,
 } from 'fastify/types/schema.js';
-import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 
+@injectable()
 export class CitrineOSServer {
   /**
    * Fields
    */
   protected readonly _config: BootstrapConfig & SystemConfig;
   protected readonly _logger: Logger<ILogObj>;
-  protected readonly _server: FastifyInstance;
+  protected readonly _server: CitrineOSFastifyInstance;
   protected readonly _cache: ICache;
   protected readonly _ajv: Ajv.Ajv;
   protected readonly _ocppValidator: OCPPValidator;
@@ -129,13 +129,14 @@ export class CitrineOSServer {
    */
   // todo rename event group to type
   constructor(
-    appName: string,
-    bootstrapConfig: BootstrapConfig,
-    systemConfig: SystemConfig,
-    server?: FastifyInstance,
-    ajv?: Ajv.Ajv,
-    cache?: ICache,
-    _fileStorage?: IFileStorage,
+    @inject(ContainerType.AppName) appName: string,
+    @inject(ContainerType.SystemConfig) systemConfig: SystemConfig & BootstrapConfig,
+    @inject(CitrineOSLogger) logger: Logger<ILogObj>,
+    @inject(CitrineOSFastifyInstance) server: CitrineOSFastifyInstance,
+    @inject(ServerAjv) ajv: ServerAjv,
+    @inject(OCPPValidator) ocppValidator: OCPPValidator,
+    @inject(ContainerType.Cache) cache: ICache,
+    @unmanaged() _fileStorage?: IFileStorage,
   ) {
     // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
     if (!systemConfig.util.messageBroker.amqp) {
@@ -143,11 +144,11 @@ export class CitrineOSServer {
     }
 
     this.appName = appName;
-    this._config = { ...bootstrapConfig, ...systemConfig };
-    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
+    this._config = systemConfig;
+    this._server = server;
 
     // enable cors
-    (this._server as any).register(cors, {
+    this._server.instance.register(cors, {
       origin: true, // This can be customized to specify allowed origins
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
     });
@@ -157,18 +158,15 @@ export class CitrineOSServer {
     this.initHealthCheck();
 
     // Create Ajv JSON schema validator instance
-    this._ajv = OCPPValidator.createServerAjvInstance(ajv);
+    this._ajv = ajv;
 
     // Initialize parent logger
-    this._logger = this.initLogger();
+    this._logger = logger;
 
-    // Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
-    // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
-    // whereas _ajv coerces types for Fastify's HTTP schema compilation.
-    this._ocppValidator = new OCPPValidator(this._logger);
+    this._ocppValidator = ocppValidator;
 
     // Set cache implementation
-    this._cache = this.initCache(cache);
+    this._cache = cache;
 
     // Initialize Swagger if enabled
     this.initSwagger()
@@ -218,7 +216,7 @@ export class CitrineOSServer {
     await this._router?.shutdown();
 
     // Shutdown server
-    await this._server.close();
+    await this._server.instance.close();
 
     setTimeout(() => {
       console.log('Exiting...');
@@ -230,7 +228,7 @@ export class CitrineOSServer {
     try {
       await this.initialize();
       await this._syncWebsocketConfig();
-      await this._server
+      await this._server.instance
         .listen({
           host: this.host,
           port: this.port,
@@ -266,46 +264,46 @@ export class CitrineOSServer {
   }
 
   protected initHealthCheck() {
-    this._server.get('/health', async () => ({ status: 'healthy' }));
+    this._server.instance.get('/health', async () => ({ status: 'healthy' }));
   }
 
-  protected initLogger() {
-    const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
-
-    const loggerSettings = {
-      name: 'CitrineOS Logger',
-      minLevel: this._config.logLevel,
-      hideLogPositionForProduction: this._config.env === 'production',
-      type: isCloud ? ('json' as const) : ('pretty' as const),
-    };
-
-    return new Logger<ILogObj>(loggerSettings);
-  }
+  // protected initLogger() {
+  //   const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
+  //
+  //   const loggerSettings = {
+  //     name: 'CitrineOS Logger',
+  //     minLevel: this._config.logLevel,
+  //     hideLogPositionForProduction: this._config.env === 'production',
+  //     type: isCloud ? ('json' as const) : ('pretty' as const),
+  //   };
+  //
+  //   return new Logger<ILogObj>(loggerSettings);
+  // }
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
   }
 
-  protected initCache(cache?: ICache): ICache {
-    if (cache) return cache;
-    if (this._config.util.cache.redis) {
-      const redisClientOptions: RedisClientOptions =
-        'url' in this._config.util.cache.redis
-          ? { url: this._config.util.cache.redis.url }
-          : {
-              socket: {
-                host: this._config.util.cache.redis.host,
-                port: this._config.util.cache.redis.port,
-              },
-            };
-      return new RedisCache(redisClientOptions);
-    }
-    return new MemoryCache();
-  }
+  // protected initCache(cache?: ICache): ICache {
+  //   if (cache) return cache;
+  //   if (this._config.util.cache.redis) {
+  //     const redisClientOptions: RedisClientOptions =
+  //       'url' in this._config.util.cache.redis
+  //         ? { url: this._config.util.cache.redis.url }
+  //         : {
+  //             socket: {
+  //               host: this._config.util.cache.redis.host,
+  //               port: this._config.util.cache.redis.port,
+  //             },
+  //           };
+  //     return new RedisCache(redisClientOptions);
+  //   }
+  //   return new MemoryCache();
+  // }
 
   protected async initSwagger() {
     if (this._config.util.swagger) {
-      await initSwagger(this._config, this._server);
+      await initSwagger(this._config, this._server.instance);
     }
   }
 
@@ -314,12 +312,12 @@ export class CitrineOSServer {
     const fastifySchemaCompiler: FastifySchemaCompiler<any> = (
       routeSchema: FastifyRouteSchemaDef<any>,
     ) => this._ajv?.compile(routeSchema.schema) as FastifyValidationResult;
-    this._server.setValidatorCompiler(fastifySchemaCompiler);
+    this._server.instance.setValidatorCompiler(fastifySchemaCompiler);
   }
 
   protected registerApiAuth() {
     const authProvider = this.initApiAuthProvider();
-    this._server.register(apiAuthPluginFp, {
+    this._server.instance.register(apiAuthPluginFp, {
       provider: authProvider,
       options: {
         excludedRoutes: [
@@ -385,7 +383,7 @@ export class CitrineOSServer {
       new AdminApi(
         this._router,
         this._networkConnection,
-        this._server,
+        this._server.instance,
         this._config,
         this._logger,
         this._repositoryStore.subscriptionRepository,
@@ -463,10 +461,10 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new CertificatesOcpp201Api(module, this._server, this._logger),
+      new CertificatesOcpp201Api(module, this._server.instance, this._logger),
       new CertificatesDataApi(
         module,
-        this._server,
+        this._server.instance,
         this._fileStorage,
         this._config.util.networkConnection.websocketServers,
         this._logger,
@@ -492,9 +490,9 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new ConfigurationOcpp201Api(module, this._server, this._logger),
-      new ConfigurationOcpp16Api(module, this._server, this._logger),
-      new ConfigurationDataApi(module, this._server, this._logger),
+      new ConfigurationOcpp201Api(module, this._server.instance, this._logger),
+      new ConfigurationOcpp16Api(module, this._server.instance, this._logger),
+      new ConfigurationDataApi(module, this._server.instance, this._logger),
     );
   }
 
@@ -522,9 +520,9 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new EVDriverOcpp201Api(module, this._server, this._logger),
-      new EVDriverOcpp16Api(module, this._server, this._logger),
-      new EVDriverDataApi(module, this._server, this._logger),
+      new EVDriverOcpp201Api(module, this._server.instance, this._logger),
+      new EVDriverOcpp16Api(module, this._server.instance, this._logger),
+      new EVDriverDataApi(module, this._server.instance, this._logger),
     );
   }
 
@@ -542,8 +540,8 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new MonitoringOcpp201Api(module, this._server, this._logger),
-      new MonitoringDataApi(module, this._server, this._logger),
+      new MonitoringOcpp201Api(module, this._server.instance, this._logger),
+      new MonitoringDataApi(module, this._server.instance, this._logger),
     );
   }
 
@@ -561,8 +559,8 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new ReportingOcpp201Api(module, this._server, this._logger),
-      new ReportingOcpp16Api(module, this._server, this._logger),
+      new ReportingOcpp201Api(module, this._server.instance, this._logger),
+      new ReportingOcpp16Api(module, this._server.instance, this._logger),
     );
   }
 
@@ -582,8 +580,8 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new SmartChargingOcpp201Api(module, this._server, this._logger),
-      new SmartChargingOcpp16Api(module, this._server, this._logger),
+      new SmartChargingOcpp201Api(module, this._server.instance, this._logger),
+      new SmartChargingOcpp16Api(module, this._server.instance, this._logger),
     );
   }
 
@@ -608,8 +606,8 @@ export class CitrineOSServer {
     );
     await this.initHandlersAndAddModule(module);
     this.apis.push(
-      new TransactionsOcpp201Api(module, this._server, this._logger),
-      new TransactionsDataApi(module, this._server, this._logger),
+      new TransactionsOcpp201Api(module, this._server.instance, this._logger),
+      new TransactionsDataApi(module, this._server.instance, this._logger),
     );
   }
 
@@ -624,7 +622,7 @@ export class CitrineOSServer {
       this._repositoryStore.tenantRepository,
     );
     await this.initHandlersAndAddModule(module);
-    this.apis.push(new TenantDataApi(module, this._server, this._logger));
+    this.apis.push(new TenantDataApi(module, this._server.instance, this._logger));
     this._logger.info('Tenant module initialized');
   }
 
