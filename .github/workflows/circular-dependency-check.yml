@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Circular Dependency Check
+
+on:
+  push:
+    branches:
+      - main
+    pull_request:
+
+jobs:
+  circular-dependency-check:
+    name: Circular Dependency Check
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.4.1'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install madge
+        run: npm install -g madge
+
+      - name: Check circular dependencies
+        run: |
+          WORKSPACES=(
+            "00_Base"
+            "01_Data"
+            "02_Util"
+            "03_Modules/Certificates"
+            "03_Modules/Configuration"
+            "03_Modules/EVDriver"
+            "03_Modules/Monitoring"
+            "03_Modules/OcppRouter"
+            "03_Modules/Reporting"
+            "03_Modules/SmartCharging"
+            "03_Modules/Tenant"
+            "03_Modules/Transactions"
+            "Server"
+          )
+
+          FOUND_CIRCULAR=0
+
+          for WORKSPACE in "${WORKSPACES[@]}"; do
+            echo "Checking $WORKSPACE..."
+            if ! madge --circular --ts-config "$WORKSPACE/tsconfig.json" "$WORKSPACE/src"; then
+              echo "Circular dependencies found in $WORKSPACE"
+              FOUND_CIRCULAR=1
+            fi
+          done
+
+          if [ $FOUND_CIRCULAR -ne 0 ]; then
+            echo "Circular dependencies detected. See output above for details."
+            exit 1
+          fi
+
+          echo "No circular dependencies found."
