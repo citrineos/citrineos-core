@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { assert } from '../assertion/assertion.js';
+import type { Money } from './Money.js'; // TEST: circular dep — remove this line
 
 /**
  * ISO-4217 currency codes.
