@@ -111,6 +111,12 @@ const config = {
             label: 'REST API',
           },
           {
+            type: 'docSidebar',
+            sidebarId: 'websocketApiSidebar',
+            position: 'left',
+            label: 'WebSocket API',
+          },
+          {
             href: 'https://github.com/citrineos/citrineos-core',
             label: 'GitHub',
             position: 'right',

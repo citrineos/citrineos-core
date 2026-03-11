@@ -1,0 +1,52 @@
+---
+title: WebSocket API
+sidebar_label: WebSocket API
+---
+
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<BrowserOnly fallback={<div>Loading WebSocket API docs...</div>}>
+  {() => {
+    const { useState, useEffect } = require('react');
+    const AsyncApiComponent = require('@asyncapi/react-component').default;
+    const { Parser } = require('@asyncapi/parser');
+    require('@asyncapi/react-component/styles/default.min.css');
+
+    function AsyncApiDocs() {
+      const [parsedSchema, setParsedSchema] = useState(null);
+      const [error, setError] = useState(null);
+
+      useEffect(() => {
+        const parser = new Parser();
+        fetch('/citrineos-core/asyncapi.yaml')
+          .then(r => {
+            if (!r.ok) throw new Error(`Failed to fetch asyncapi.yaml: ${r.status}`);
+            return r.text();
+          })
+          .then(text => parser.parse(text))
+          .then(({ document, diagnostics }) => {
+            const errors = diagnostics.filter(d => d.severity === 0);
+            if (errors.length > 0) {
+              setError(errors.map(e => e.message).join('\n'));
+            } else {
+              setParsedSchema(document);
+            }
+          })
+          .catch(err => setError(err.message));
+      }, []);
+
+      if (error) return <div style={{color: 'red', padding: '1rem'}}><strong>Error:</strong> <pre>{error}</pre></div>;
+      if (!parsedSchema) return <div>Loading...</div>;
+
+      return (
+        <AsyncApiComponent
+          schema={parsedSchema}
+          config={{ show: { sidebar: true, errors: true } }}
+        />
+      );
+    }
+
+    return <AsyncApiDocs />;
+  }}
+</BrowserOnly>

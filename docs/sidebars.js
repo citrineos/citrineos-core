@@ -54,6 +54,14 @@ const sidebars = {
 
   // REST API — renders swagger-ui-react pointing at static/openapi.json
   restApiSidebar: ['rest-api/index'],
+
+  websocketApiSidebar: [
+    {
+      type: 'doc',
+      id: 'websocket-api/index',
+      label: 'WebSocket API',
+    },
+  ],
 };
 
 module.exports = sidebars;

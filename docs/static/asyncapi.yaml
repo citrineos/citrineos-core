@@ -1,0 +1,52 @@
+asyncapi: 3.0.0
+info:
+  title: CitrineOS OCPP WebSocket API
+  version: 1.0.0
+  description: OCPP 2.0.1 WebSocket interface for communicating with charge points
+
+servers:
+  production:
+    host: localhost:8080
+    protocol: ws
+    description: CitrineOS WebSocket server
+
+channels:
+  ocppStation:
+    address: /ocpp/{stationId}
+    parameters:
+      stationId:
+        description: The charge point station identifier
+    messages:
+      DataTransferRequest:
+        $ref: '#/components/messages/DataTransferRequest'
+
+operations:
+  sendDataTransfer:
+    action: send
+    channel:
+      $ref: '#/channels/ocppStation'
+    messages:
+      - $ref: '#/channels/ocppStation/messages/DataTransferRequest'
+
+components:
+  messages:
+    DataTransferRequest:
+      name: DataTransfer
+      title: DataTransfer
+      summary: Data transfer request
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - vendorId
+          - messageId
+        properties:
+          vendorId:
+            type: string
+            example: "vendorId"
+          messageId:
+            type: string
+            example: "messageId"
+          data:
+            type: string
+            example: '{"some":123}'

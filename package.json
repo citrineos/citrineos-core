@@ -60,5 +60,8 @@
     "typedoc": "0.28.17",
     "typedoc-plugin-markdown": "4.10.0",
     "typescript": "5.8.2"
+  },
+  "dependencies": {
+    "@asyncapi/parser": "^3.6.0"
   }
 }
