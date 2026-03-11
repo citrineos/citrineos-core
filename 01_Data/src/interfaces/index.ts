@@ -24,6 +24,8 @@ export type {
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
+  UploadExistingCertificateSchema,
+  RegenerateInstalledCertificateSchema,
 } from './queries/RootCertificate.js';
 export { CreateSubscriptionSchema } from './queries/Subscription.js';
 export { TariffQuerySchema } from './queries/Tariff.js';
@@ -48,8 +50,14 @@ export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
   WebsocketRequestSchema,
+  WebsocketMappingQuerySchema,
+  WebsocketMappingRequestSchema,
 } from './queries/Websocket.js';
-export type { WebsocketDeleteQuerystring, WebsocketGetQuerystring } from './queries/Websocket.js';
+export type {
+  WebsocketDeleteQuerystring,
+  WebsocketGetQuerystring,
+  WebsocketMappingQuerystring,
+} from './queries/Websocket.js';
 
 // Data projection models
 export type { AuthorizationRestrictions } from './projections/AuthorizationRestrictions.js';
@@ -60,3 +68,5 @@ export { default as TariffSchema } from './projections/schemas/TariffSchema.json
 export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest.js';
 export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest.js';
 export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest.js';
+export { UploadExistingCertificate } from './dtos/UploadExistingCertificate.js';
+export { RegenerateExistingCertificate } from './dtos/RegenerateExistingCertificate.js';

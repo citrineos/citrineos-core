@@ -10,7 +10,7 @@ export const TenantPartnerSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   countryCode: z.string().nullable().optional(),
   partyId: z.string().nullable().optional(),
-  partnerProfileOCPI: PartnerProfileSchema.nullable().optional(),
+  partnerProfileOCPI: PartnerProfileSchema,
 });
 
 export const TenantPartnerProps = TenantPartnerSchema.keyof().enum;

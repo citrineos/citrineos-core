@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { MeasurandEnumSchema } from './enums.js';
-
-export const ReadingContextSchema = z.string();
-export const PhaseSchema = z.string();
-export const SampleLocationSchema = z.string();
+import {
+  LocationEnumSchema,
+  MeasurandEnumSchema,
+  PhaseEnumSchema,
+  ReadingContextEnumSchema,
+} from './enums.js';
 
 export const UnitOfMeasureSchema = z.object({
-  unit: z.string().optional(),
-  multiplier: z.number().optional(),
+  unit: z.string().nullable().optional(),
+  multiplier: z.number().nullable().optional(),
 });
 
 export const SignedMeterValueSchema = z.object({
@@ -23,12 +24,12 @@ export const SignedMeterValueSchema = z.object({
 
 export const SampledValueSchema = z.object({
   value: z.number(),
-  context: ReadingContextSchema.optional(),
-  measurand: MeasurandEnumSchema.optional(),
-  phase: PhaseSchema.nullable().optional(),
-  location: SampleLocationSchema.optional(),
-  signedMeterValue: SignedMeterValueSchema.optional(),
-  unitOfMeasure: UnitOfMeasureSchema.optional(),
+  context: ReadingContextEnumSchema.nullable().optional(),
+  measurand: MeasurandEnumSchema.nullable().optional(),
+  phase: PhaseEnumSchema.nullable().optional(),
+  location: LocationEnumSchema.nullable().optional(),
+  signedMeterValue: SignedMeterValueSchema.nullable().optional(),
+  unitOfMeasure: UnitOfMeasureSchema.nullable().optional(),
 });
 
 export type SampledValue = z.infer<typeof SampledValueSchema>;

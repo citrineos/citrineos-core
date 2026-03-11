@@ -4,6 +4,7 @@
 
 export { AuthorizationMapper } from './AuthorizationMapper.js';
 export { BootMapper } from './BootMapper.js';
+export { ChargingProfileMapper } from './ChargingProfileMapper.js';
 export { MeterValueMapper } from './MeterValueMapper.js';
 export { TransactionMapper } from './TransactionMapper.js';
 export { LocationMapper } from './LocationMapper.js';

@@ -11,7 +11,10 @@ import type {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MeterValueDto,
   SystemConfig,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -21,10 +24,12 @@ import {
   ErrorCode,
   EventGroup,
   OCPP1_6,
-  OCPP1_6_CallAction,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP2_1,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
 import type {
@@ -39,7 +44,7 @@ import type {
 import {
   Authorization,
   Component,
-  MeterValue,
+  OCPP1_6_Mapper,
   sequelize,
   SequelizeOCPPMessageRepository,
   SequelizeRepository,
@@ -163,6 +168,7 @@ export class TransactionsModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -181,6 +187,7 @@ export class TransactionsModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Transactions,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.transactions.requests;
@@ -273,7 +280,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle OCPP 2.0.1 requests
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.TransactionEvent)
+  @AsHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.TransactionEvent)
   protected async _handleTransactionEvent(
     message: IMessage<OCPP2_0_1.TransactionEventRequest>,
     props?: HandlerProperties,
@@ -285,7 +292,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
-    let transaction;
+    let transaction: Transaction | undefined = undefined;
     if (transactionEvent.idToken) {
       response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
@@ -328,8 +335,8 @@ export class TransactionsModule extends AbstractModule {
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
       if (
-        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started &&
-        response.idTokenInfo?.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted &&
+        transactionEvent.eventType === OCPP2_1.TransactionEventEnumType.Started &&
+        response.idTokenInfo?.status === OCPP2_1.AuthorizationStatusEnumType.Accepted &&
         this._costUpdatedInterval
       ) {
         this._costNotifier.notifyWhileActive(
@@ -340,17 +347,21 @@ export class TransactionsModule extends AbstractModule {
         );
       }
     } else {
-      const response: OCPP2_0_1.TransactionEventResponse = {
+      const response: OCPP2_1.TransactionEventResponse = {
         // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
       };
 
-      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
+      if (message.payload.eventType === OCPP2_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
-        if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
+        if (
+          transaction &&
+          transaction.isActive &&
+          transaction.totalKwh &&
+          this._sendCostUpdatedOnMeterValue
+        ) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
             tenantId,
             stationId,
-            transaction.id,
             transaction.totalKwh,
           );
         }
@@ -363,7 +374,7 @@ export class TransactionsModule extends AbstractModule {
             component_name: 'TariffCostCtrlr',
             variable_instance: 'Tariff',
             variable_name: 'Available',
-            type: OCPP2_0_1.AttributeEnumType.Actual,
+            type: OCPP2_1.AttributeEnumType.Actual,
           });
         const supportTariff: boolean =
           tariffAvailableAttributes.length !== 0 && Boolean(tariffAvailableAttributes[0].value);
@@ -376,11 +387,13 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended && transaction) {
+      if (
+        message.payload.eventType === OCPP2_1.TransactionEventEnumType.Ended &&
+        transaction.totalKwh
+      ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           tenantId,
           stationId,
-          transaction.id,
           transaction.totalKwh,
         );
       }
@@ -413,7 +426,9 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.MeterValues)
+  //TODO: Need a transaction event handler for OCPP 2.1 as we need to tweak or extend the transaction service for ocpp 2.1
+
+  @AsHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.MeterValues)
   protected async _handleMeterValues(
     message: IMessage<OCPP2_0_1.MeterValuesRequest>,
     props?: HandlerProperties,
@@ -443,7 +458,7 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
-      await this._transactionService.createMeterValues(
+      const meterValuesCreated = await this._transactionService.createMeterValues(
         tenantId,
         meterValues,
         activeTransaction?.id,
@@ -452,6 +467,7 @@ export class TransactionsModule extends AbstractModule {
       );
 
       if (activeTransaction) {
+        await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
         await this._costNotifier.calculateCostAndNotify(
           activeTransaction,
           message.context.tenantId,
@@ -483,9 +499,11 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('MeterValues response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.StatusNotification)
+  //TODO: Need a meter event handler for OCPP 2.1 as we need to tweak or extend the transaction service for ocpp 2.1 (meter helper method is dependent on service)
+
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.StatusNotification)
   protected async _handleStatusNotification(
-    message: IMessage<OCPP2_0_1.StatusNotificationRequest>,
+    message: IMessage<OCPP2_request_types.StatusNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
@@ -501,26 +519,26 @@ export class TransactionsModule extends AbstractModule {
       });
 
     // Create response
-    const response: OCPP2_0_1.StatusNotificationResponse = {};
+    const response: OCPP2_response_types.StatusNotificationResponse = {};
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('StatusNotification response sent: ', messageConfirmation);
   }
 
   /**
-   * Handle OCPP 2.0.1 responses
+   * Handle OCPP 2.x common responses
    */
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.CostUpdated)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CostUpdated)
   protected _handleCostUpdated(
-    message: IMessage<OCPP2_0_1.CostUpdatedResponse>,
+    message: IMessage<OCPP2_response_types.CostUpdatedResponse>,
     props?: HandlerProperties,
   ): void {
     this._logger.debug('CostUpdated response received:', message, props);
   }
 
-  @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.GetTransactionStatus)
+  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetTransactionStatus)
   protected async _handleGetTransactionStatus(
-    message: IMessage<OCPP2_0_1.GetTransactionStatusResponse>,
+    message: IMessage<OCPP2_response_types.GetTransactionStatusResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('GetTransactionStatus response received:', message, props);
@@ -540,7 +558,7 @@ export class TransactionsModule extends AbstractModule {
    * Handle OCPP 1.6 requests
    */
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StatusNotification)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StatusNotification)
   protected async _handleOcpp16StatusNotification(
     message: IMessage<OCPP1_6.StatusNotificationRequest>,
     props?: HandlerProperties,
@@ -559,7 +577,7 @@ export class TransactionsModule extends AbstractModule {
     this._logger.debug('StatusNotification response sent: ', messageConfirmation);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.MeterValues)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.MeterValues)
   protected async _handleOcpp16MeterValues(
     message: IMessage<OCPP1_6.MeterValuesRequest>,
     props?: HandlerProperties,
@@ -574,16 +592,13 @@ export class TransactionsModule extends AbstractModule {
 
     if (connectorId !== 0 && transactionId && meterValues.length > 0) {
       try {
-        const meterValueEntities: MeterValue[] = [];
+        const meterValueEntities: MeterValueDto[] = [];
         for (const meterValue of meterValues) {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
-            meterValueEntities.push(
-              MeterValue.build({
-                tenantId,
-                ...meterValue,
-                connectorId,
-              }),
-            );
+            const meterValueEntity = OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
+            meterValueEntity.tenantId = tenantId;
+            meterValueEntity.connectorId = connectorId;
+            meterValueEntities.push(meterValueEntity);
           }
         }
         if (meterValueEntities.length > 0) {
@@ -602,7 +617,7 @@ export class TransactionsModule extends AbstractModule {
     await this.sendCallResultWithMessage(message, {} as OCPP1_6.MeterValuesResponse);
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StartTransaction)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
   protected async _handleOcpp16StartTransaction(
     message: IMessage<OCPP1_6.StartTransactionRequest>,
     props?: HandlerProperties,
@@ -659,7 +674,7 @@ export class TransactionsModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.StopTransaction)
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
   protected async _handleOcpp16StopTransaction(
     message: IMessage<OCPP1_6.StopTransactionRequest>,
     props?: HandlerProperties,
@@ -735,7 +750,11 @@ export class TransactionsModule extends AbstractModule {
       stationId,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
+      request.transactionData?.map((data) =>
+        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+        ),
+      ) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
       authorization?.id,
     );

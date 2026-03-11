@@ -32,6 +32,7 @@ const authorizationFields = {
   realTimeAuthUrl: z.string().optional(),
   tenantPartnerId: z.number().int().nullable().optional(),
   tenantPartner: TenantPartnerSchema.nullable().optional(),
+  groupAuthorizationId: z.number().int().nullable().optional(),
 };
 
 export const GroupAuthorizationSchema = BaseSchema.extend(authorizationFields);

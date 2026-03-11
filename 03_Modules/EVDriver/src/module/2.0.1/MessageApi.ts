@@ -13,10 +13,11 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import { validateChargingProfileType } from '@citrineos/util';
+import { OCPP2_0_1_Mapper } from '@citrineos/data';
 import { v4 as uuidv4 } from 'uuid';
 
 export class EVDriverOcpp201Api
@@ -35,7 +36,7 @@ export class EVDriverOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.RequestStartTransaction,
+    OCPP_CallAction.RequestStartTransaction,
     OCPP2_0_1.RequestStartTransactionRequestSchema,
   )
   async requestStartTransaction(
@@ -100,7 +101,7 @@ export class EVDriverOcpp201Api
           } else {
             await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
               tenantId,
-              chargingProfile,
+              OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
               i,
               request.evseId,
             );
@@ -120,7 +121,7 @@ export class EVDriverOcpp201Api
           i,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.RequestStartTransaction,
+          OCPP_CallAction.RequestStartTransaction,
           request,
           callbackUrl,
         );
@@ -146,7 +147,7 @@ export class EVDriverOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.RequestStopTransaction,
+    OCPP_CallAction.RequestStopTransaction,
     OCPP2_0_1.RequestStopTransactionRequestSchema,
   )
   async requestStopTransaction(
@@ -160,7 +161,7 @@ export class EVDriverOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.RequestStopTransaction,
+        OCPP_CallAction.RequestStopTransaction,
         request,
         callbackUrl,
       ),
@@ -168,10 +169,7 @@ export class EVDriverOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.CancelReservation,
-    OCPP2_0_1.CancelReservationRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.CancelReservation, OCPP2_0_1.CancelReservationRequestSchema)
   async cancelReservation(
     identifiers: string[],
     request: OCPP2_0_1.CancelReservationRequest,
@@ -209,7 +207,7 @@ export class EVDriverOcpp201Api
             identifier,
             tenantId,
             OCPPVersion.OCPP2_0_1,
-            OCPP2_0_1_CallAction.CancelReservation,
+            OCPP_CallAction.CancelReservation,
             request,
             callbackUrl,
           ),
@@ -231,7 +229,7 @@ export class EVDriverOcpp201Api
     }
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.ReserveNow, OCPP2_0_1.ReserveNowRequestSchema)
   async reserveNow(
     identifier: string[],
     request: OCPP2_0_1.ReserveNowRequest,
@@ -263,7 +261,7 @@ export class EVDriverOcpp201Api
           i,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.ReserveNow,
+          OCPP_CallAction.ReserveNow,
           request,
           callbackUrl,
         );
@@ -280,7 +278,7 @@ export class EVDriverOcpp201Api
     return results;
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.UnlockConnector, OCPP2_0_1.UnlockConnectorRequestSchema)
   unlockConnector(
     identifier: string[],
     request: OCPP2_0_1.UnlockConnectorRequest,
@@ -292,7 +290,7 @@ export class EVDriverOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.UnlockConnector,
+        OCPP_CallAction.UnlockConnector,
         request,
         callbackUrl,
       ),
@@ -300,7 +298,7 @@ export class EVDriverOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.ClearCache, OCPP2_0_1.ClearCacheRequestSchema)
   clearCache(
     identifier: string[],
     request: OCPP2_0_1.ClearCacheRequest,
@@ -312,7 +310,7 @@ export class EVDriverOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.ClearCache,
+        OCPP_CallAction.ClearCache,
         request,
         callbackUrl,
       ),
@@ -320,7 +318,7 @@ export class EVDriverOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.SendLocalList, OCPP2_0_1.SendLocalListRequestSchema)
   async sendLocalList(
     identifier: string[],
     request: OCPP2_0_1.SendLocalListRequest,
@@ -344,7 +342,7 @@ export class EVDriverOcpp201Api
           i,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.SendLocalList,
+          OCPP_CallAction.SendLocalList,
           request,
           callbackUrl,
           correlationId,
@@ -363,7 +361,7 @@ export class EVDriverOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetLocalListVersion,
+    OCPP_CallAction.GetLocalListVersion,
     OCPP2_0_1.GetLocalListVersionRequestSchema,
   )
   getLocalListVersion(
@@ -377,7 +375,7 @@ export class EVDriverOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetLocalListVersion,
+        OCPP_CallAction.GetLocalListVersion,
         request,
         callbackUrl,
       ),

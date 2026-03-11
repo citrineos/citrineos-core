@@ -10,7 +10,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
@@ -38,7 +38,7 @@ export class ReportingOcpp201Api
     super(reportingModule, server, OCPPVersion.OCPP2_0_1, logger);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetBaseReport, OCPP2_0_1.GetBaseReportRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetBaseReport, OCPP2_0_1.GetBaseReportRequestSchema)
   getBaseReport(
     identifier: string[],
     request: OCPP2_0_1.GetBaseReportRequest,
@@ -51,7 +51,7 @@ export class ReportingOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetBaseReport,
+        OCPP_CallAction.GetBaseReport,
         request,
         callbackUrl,
       ),
@@ -59,7 +59,7 @@ export class ReportingOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetReport, OCPP2_0_1.GetReportRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetReport, OCPP2_0_1.GetReportRequestSchema)
   async getCustomReport(
     identifier: string,
     request: OCPP2_0_1.GetReportRequest,
@@ -70,7 +70,7 @@ export class ReportingOcpp201Api
     const bytesPerMessageGetReport =
       await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        OCPP2_0_1_CallAction.GetReport,
+        OCPP_CallAction.GetReport,
         tenantId,
         identifier,
       );
@@ -88,7 +88,7 @@ export class ReportingOcpp201Api
         identifier,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetReport,
+        OCPP_CallAction.GetReport,
         request,
         callbackUrl,
       );
@@ -98,7 +98,7 @@ export class ReportingOcpp201Api
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        OCPP2_0_1_CallAction.GetReport,
+        OCPP_CallAction.GetReport,
         tenantId,
         identifier,
       );
@@ -116,7 +116,7 @@ export class ReportingOcpp201Api
           identifier,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.GetReport,
+          OCPP_CallAction.GetReport,
           {
             componentVariable: batch,
             componentCriteria: request.componentCriteria,
@@ -143,7 +143,7 @@ export class ReportingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetMonitoringReport,
+    OCPP_CallAction.GetMonitoringReport,
     OCPP2_0_1.GetMonitoringReportRequestSchema,
   )
   async getMonitoringReport(
@@ -162,7 +162,7 @@ export class ReportingOcpp201Api
         identifier,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetMonitoringReport,
+        OCPP_CallAction.GetMonitoringReport,
         request,
         callbackUrl,
       );
@@ -172,7 +172,7 @@ export class ReportingOcpp201Api
     let itemsPerMessageGetReport =
       await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
-        OCPP2_0_1_CallAction.GetReport,
+        OCPP_CallAction.GetReport,
         tenantId,
         identifier,
       );
@@ -189,7 +189,7 @@ export class ReportingOcpp201Api
           identifier,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.GetMonitoringReport,
+          OCPP_CallAction.GetMonitoringReport,
           {
             componentVariable: batch,
             monitoringCriteria,
@@ -214,7 +214,7 @@ export class ReportingOcpp201Api
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetLog, OCPP2_0_1.GetLogRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetLog, OCPP2_0_1.GetLogRequestSchema)
   getLog(
     identifier: string[],
     request: OCPP2_0_1.GetLogRequest,
@@ -226,7 +226,7 @@ export class ReportingOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.GetLog,
+        OCPP_CallAction.GetLog,
         request,
         callbackUrl,
       ),
@@ -235,7 +235,7 @@ export class ReportingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.CustomerInformation,
+    OCPP_CallAction.CustomerInformation,
     OCPP2_0_1.CustomerInformationRequestSchema,
   )
   customerInformation(
@@ -249,7 +249,7 @@ export class ReportingOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.CustomerInformation,
+        OCPP_CallAction.CustomerInformation,
         request,
         callbackUrl,
       ),

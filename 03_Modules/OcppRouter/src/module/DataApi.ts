@@ -19,7 +19,7 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
-  OCPPVersion,
+  UnauthorizedError,
 } from '@citrineos/base';
 import type {
   ChargingStationKeyQuerystring,
@@ -30,6 +30,7 @@ import type {
   TenantQueryString,
   WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
+  WebsocketMappingQuerystring,
 } from '@citrineos/data';
 import {
   ChargingStationKeyQuerySchema,
@@ -42,6 +43,8 @@ import {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
   WebsocketRequestSchema,
+  WebsocketMappingQuerySchema,
+  WebsocketMappingRequestSchema,
 } from '@citrineos/data';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
@@ -182,57 +185,124 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   }
 
   /**
-   * Add new websocket servers for the tenant without restarting the service.
+   * Adds or updates a mapping from a path segment to a tenant for a specific websocket server.
    */
-  @AsDataEndpoint(Namespace.Websocket, HttpMethod.Put, TenantQuerySchema)
-  async addWebsocketConfigurationsForTenant(
-    request: FastifyRequest<{ Body: { tenantId: number }; Querystring: TenantQueryString }>,
-  ): Promise<WebsocketServerConfig[]> {
-    const existingConfig = this._module.config.util.networkConnection.websocketServers.find(
-      (ws) => ws.tenantId === request.body.tenantId,
+  @AsDataEndpoint(
+    Namespace.WebsocketMapping,
+    HttpMethod.Put,
+    WebsocketMappingQuerySchema,
+    WebsocketMappingRequestSchema,
+  )
+  async putWebsocketMapping(
+    request: FastifyRequest<{
+      Body: { path: string; tenantId: number };
+      Querystring: WebsocketMappingQuerystring;
+    }>,
+  ): Promise<WebsocketServerConfig> {
+    this._validateSystemToken(request);
+
+    const serverId = request.query.id;
+    const { path, tenantId } = request.body;
+
+    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === serverId,
     );
 
-    if (existingConfig) {
+    if (!websocketConfig) {
+      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    }
+
+    if (!websocketConfig.tenantPathMapping) {
+      websocketConfig.tenantPathMapping = {};
+    }
+
+    if (
+      websocketConfig.tenantPathMapping[path] !== undefined &&
+      websocketConfig.tenantPathMapping[path] !== tenantId
+    ) {
       throw new BadRequestError(
-        `Websocket configurations for tenant ${request.body.tenantId} already exists.`,
+        `Path ${path} is already mapped to tenant ${websocketConfig.tenantPathMapping[path]}`,
       );
-    } else {
-      // 1. find the max port and max server id in the existing ws configs
-      const maxPort: number = this._module.config.util.networkConnection.websocketServers.reduce(
-        (max, ws) => Math.max(max, ws.port),
-        10000, // the stating value for dynamic ports
-      );
-      if (maxPort > 10500) {
-        throw new BadRequestError('Cannot create new websocket server: maximum port 9000 reached.');
+    }
+
+    websocketConfig.tenantPathMapping[path] = tenantId;
+    websocketConfig.dynamicTenantResolution = true;
+
+    await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+      websocketConfig,
+      this._module.config.maxCallLengthSeconds,
+    );
+
+    return websocketConfig;
+  }
+
+  /**
+   * Removes a mapping for a specific path OR all mappings for a specific tenant from a websocket server.
+   */
+  @AsDataEndpoint(Namespace.WebsocketMapping, HttpMethod.Delete, WebsocketMappingQuerySchema)
+  async deleteWebsocketMapping(
+    request: FastifyRequest<{
+      Querystring: WebsocketMappingQuerystring & { path?: string; tenantId?: number };
+    }>,
+  ): Promise<WebsocketServerConfig> {
+    this._validateSystemToken(request);
+
+    const serverId = request.query.id;
+    const path = (request.query as any).path;
+    const tenantId = (request.query as any).tenantId;
+
+    if (!path && !tenantId) {
+      throw new BadRequestError('Either path or tenantId is required to delete a mapping');
+    }
+
+    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === serverId,
+    );
+
+    if (!websocketConfig) {
+      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    }
+
+    if (websocketConfig.tenantPathMapping) {
+      let changed = false;
+      if (path && websocketConfig.tenantPathMapping[path] !== undefined) {
+        delete websocketConfig.tenantPathMapping[path];
+        changed = true;
+      } else if (tenantId) {
+        const tenantIdNum = Number(tenantId);
+        for (const [key, value] of Object.entries(websocketConfig.tenantPathMapping)) {
+          if (value === tenantIdNum) {
+            delete websocketConfig.tenantPathMapping[key];
+            changed = true;
+          }
+        }
       }
 
-      const maxServerId: number =
-        this._module.config.util.networkConnection.websocketServers.reduce(
-          (max, ws) => Math.max(max, Number(ws.id)),
-          0,
+      if (changed) {
+        await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+        await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+          websocketConfig,
+          this._module.config.maxCallLengthSeconds,
         );
-      // 2. create new ws servers, one for profile 0 and one for profile 1
-      const newServerForProfile0: WebsocketServerConfig = await this._createNewWebsocketServer(
-        request.body.tenantId,
-        maxPort + 1,
-        maxServerId + 1,
-        0,
-        true,
-        this._module.config.util.networkConnection.websocketServers[0],
-      );
-      const newServerForProfile1: WebsocketServerConfig = await this._createNewWebsocketServer(
-        request.body.tenantId,
-        maxPort + 2,
-        maxServerId + 2,
-        1,
-        false,
-        this._module.config.util.networkConnection.websocketServers[0],
-      );
+      }
+    }
 
-      // 3. Save the updated configs in the file store
-      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+    return websocketConfig;
+  }
 
-      return [newServerForProfile0, newServerForProfile1];
+  /**
+   * Helper to validate internal system calls
+   */
+  private _validateSystemToken(request: FastifyRequest): void {
+    const systemToken = this._module.config.centralSystem.systemApiToken;
+    if (!systemToken) {
+      return;
+    }
+
+    const providedToken = request.headers['x-system-token'];
+    if (providedToken !== systemToken) {
+      throw new UnauthorizedError('Invalid or missing system API token');
     }
   }
 
@@ -269,37 +339,5 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   protected _toDataPath(input: OCPP2_0_1_Namespace | OCPP1_6_Namespace | Namespace): string {
     const endpointPrefix = '/ocpprouter';
     return super._toDataPath(input, endpointPrefix);
-  }
-
-  private async _createNewWebsocketServer(
-    tenantId: number,
-    port: number,
-    serverId: number,
-    securityProfile: number,
-    allowUnknownChargingStations: boolean,
-    existingServerConfig: WebsocketServerConfig,
-  ): Promise<WebsocketServerConfig> {
-    const newServerConfig: WebsocketServerConfig = {
-      id: serverId.toString(),
-      host: existingServerConfig.host,
-      port,
-      pingInterval: existingServerConfig.pingInterval,
-      protocol: OCPPVersion.OCPP2_0_1,
-      securityProfile,
-      tenantId,
-      allowUnknownChargingStations,
-    };
-
-    // save new config in db
-    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
-      newServerConfig,
-      this._module.config.maxCallLengthSeconds,
-    );
-    // start the new ws server
-    await this._networkConnection.addWebsocketServer(newServerConfig);
-    // add the new ws server to the config
-    this._module.config.util.networkConnection.websocketServers.push(newServerConfig);
-
-    return newServerConfig;
   }
 }

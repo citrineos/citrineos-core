@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { type AsyncJobNameEnumType, DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -19,15 +19,6 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Tenant } from '../Tenant.js';
 import { TenantPartner } from '../TenantPartner.js';
-
-export enum AsyncJobName {
-  FETCH_OCPI_TOKENS = 'FETCH_OCPI_TOKENS',
-}
-
-export enum AsyncJobAction {
-  RESUME = 'RESUME',
-  STOP = 'STOP',
-}
 
 export interface PaginatedParams {
   offset?: number;
@@ -46,7 +37,7 @@ export class AsyncJobStatus extends Model {
   declare jobId: string;
 
   @Column(DataType.STRING)
-  declare jobName: AsyncJobName;
+  declare jobName: AsyncJobNameEnumType;
 
   @ForeignKey(() => TenantPartner)
   @Column(DataType.INTEGER)
@@ -121,7 +112,7 @@ export class AsyncJobStatus extends Model {
 
 export class AsyncJobStatusDTO {
   jobId!: string;
-  jobName!: AsyncJobName;
+  jobName!: AsyncJobNameEnumType;
   tenantPartnerId!: number;
   tenantPartner?: TenantPartner;
   createdAt!: Date;

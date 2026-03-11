@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-
-export const OCPIVersionNumberSchema = z.enum(['2.2.1']);
+import { OCPIVersionNumberSchema } from './enums.js';
 
 export const ImageSchema = z.object({
   url: z.string(),
@@ -55,7 +54,6 @@ export const PartnerProfileSchema = z.object({
   endpoints: z.array(EndpointSchema).optional(),
 });
 
-export type OCPIVersionNumber = z.infer<typeof OCPIVersionNumberSchema>;
 export type Image = z.infer<typeof ImageSchema>;
 export type BusinessDetails = z.infer<typeof BusinessDetailsSchema>;
 export type CredentialRole = z.infer<typeof CredentialRoleSchema>;

@@ -4,15 +4,16 @@
 
 import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
+import { CertificateUseEnumSchema, HashAlgorithmEnumSchema } from './types/enums.js';
 
 export const InstalledCertificateSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   stationId: z.string().max(36),
-  hashAlgorithm: z.string(),
-  issuerNameHash: z.string(),
-  issuerKeyHash: z.string(),
-  serialNumber: z.string(),
-  certificateType: z.string(),
+  hashAlgorithm: HashAlgorithmEnumSchema,
+  issuerNameHash: z.string().nullable().optional(),
+  issuerKeyHash: z.string().nullable().optional(),
+  serialNumber: z.string().nullable().optional(),
+  certificateType: CertificateUseEnumSchema,
 });
 
 export const InstalledCertificateProps = InstalledCertificateSchema.keyof().enum;

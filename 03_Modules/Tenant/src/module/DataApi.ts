@@ -15,7 +15,7 @@ import type { ITenantModuleApi } from './interface.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Tenant, CreateTenantQuerySchema } from '@citrineos/data';
+import { Tenant, CreateTenantQuerySchema, TenantQuerySchema } from '@citrineos/data';
 /**
  * Server API for the Tenant module.
  */
@@ -35,10 +35,30 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
   @AsDataEndpoint(Namespace.Tenant, HttpMethod.Post, undefined, CreateTenantQuerySchema)
   async createTenant(
     request: FastifyRequest<{
-      Body: Tenant;
+      Body: Tenant & {
+        tenantPath?: string;
+        websocketServerId?: string;
+      };
     }>,
   ): Promise<Tenant> {
-    return await this._module.tenantRepository.createTenant(request.body);
+    const { tenantPath, websocketServerId, ...tenantData } = request.body;
+    const createdTenant = await this._module.createTenant(
+      tenantData as Tenant,
+      tenantPath,
+      websocketServerId,
+    );
+
+    this._logger?.info(`Tenant created: ${createdTenant.id}`);
+
+    return createdTenant;
+  }
+
+  @AsDataEndpoint(Namespace.Tenant, HttpMethod.Delete, TenantQuerySchema)
+  async deleteTenant(
+    request: FastifyRequest<{ Querystring: { tenantId: number } }>,
+  ): Promise<boolean> {
+    const deletedTenant = await this._module.deleteTenant(request.query.tenantId);
+    return !!deletedTenant;
   }
 
   /**

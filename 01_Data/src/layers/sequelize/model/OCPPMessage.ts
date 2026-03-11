@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, OCPPMessageDto, TenantDto } from '@citrineos/base';
+import type { MessageState, OCPPMessageDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -11,6 +11,7 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Index,
   Model,
   Table,
@@ -34,13 +35,21 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   declare origin: MessageOrigin;
 
   @Column(DataType.STRING)
+  declare state: MessageState;
+
+  @Column(DataType.STRING)
   declare protocol: OCPPVersion;
 
   @Column(DataType.STRING)
-  declare action?: CallAction;
+  declare action: string;
 
   @Column(DataType.JSONB)
   declare message: any;
+
+  @ForeignKey(() => OCPPMessage)
+  @Index
+  @Column(DataType.INTEGER)
+  declare requestMessageId?: number;
 
   @Column({
     type: DataType.DATE,
@@ -61,6 +70,12 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
 
   @BelongsTo(() => Tenant)
   declare tenant?: TenantDto;
+
+  @BelongsTo(() => OCPPMessage, 'requestMessageId')
+  declare requestMessage?: OCPPMessage;
+
+  @HasMany(() => OCPPMessage, 'requestMessageId')
+  declare responseMessages?: OCPPMessage[];
 
   @BeforeUpdate
   @BeforeCreate

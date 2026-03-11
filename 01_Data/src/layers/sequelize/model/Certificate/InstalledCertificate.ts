@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CertificateUseEnumType, InstalledCertificateDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type {
+  CertificateUseEnumType,
+  HashAlgorithmEnumType,
+  InstalledCertificateDto,
+  TenantDto,
+} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -15,6 +20,7 @@ import {
 } from 'sequelize-typescript';
 import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
+import { Certificate } from './Certificate.js';
 
 @Table
 export class InstalledCertificate extends Model implements InstalledCertificateDto {
@@ -29,33 +35,40 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
-  declare hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType;
+  declare hashAlgorithm: HashAlgorithmEnumType;
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
-  declare issuerNameHash: string;
+  declare issuerNameHash?: string | null;
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
-  declare issuerKeyHash: string;
+  declare issuerKeyHash?: string | null;
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
-  declare serialNumber: string;
+  declare serialNumber?: string | null;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
   declare certificateType: CertificateUseEnumType;
+
+  @ForeignKey(() => Certificate)
+  @Column(DataType.INTEGER)
+  declare certificateId?: number | null;
+
+  @BelongsTo(() => Certificate)
+  certificate!: Certificate;
 
   @ForeignKey(() => Tenant)
   @Column({

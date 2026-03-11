@@ -43,21 +43,18 @@ export class Connector extends Model implements ConnectorDto {
   @ForeignKey(() => Evse)
   @Column({
     unique: 'evseId_evseTypeConnectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseId: number;
 
   @Column({
     unique: 'stationId_connectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare connectorId: number; // This is the serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station.
 
   @Column({
     unique: 'evseId_evseTypeConnectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.

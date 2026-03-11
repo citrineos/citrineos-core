@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import type { CompositeScheduleDto, TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -16,7 +16,7 @@ import {
 import { Tenant } from '../Tenant.js';
 
 @Table
-export class CompositeSchedule extends Model {
+export class CompositeSchedule extends Model implements CompositeScheduleDto {
   static readonly MODEL_NAME: string = Namespace.CompositeSchedule;
 
   @Column(DataType.STRING)

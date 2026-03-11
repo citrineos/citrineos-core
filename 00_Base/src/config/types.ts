@@ -5,12 +5,9 @@
 import { z } from 'zod';
 import { EventGroup } from '../interfaces/messages/index.js';
 import { OCPP1_6, OCPP2_0_1 } from '../ocpp/model/index.js';
-import { OCPP1_6_CallAction, OCPP2_0_1_CallAction } from '../ocpp/rpc/message.js';
+import { OCPP_CallAction } from '../ocpp/rpc/message.js';
 
-const OCPP1_6_CallActionSchema = z.nativeEnum(OCPP1_6_CallAction);
-const OCPP2_0_1_CallActionSchema = z.nativeEnum(OCPP2_0_1_CallAction);
-
-const CallActionSchema = z.union([OCPP1_6_CallActionSchema, OCPP2_0_1_CallActionSchema]);
+const CallActionSchema = z.nativeEnum(OCPP_CallAction);
 
 export const oidcClientConfigSchema = z
   .object({
@@ -21,13 +18,15 @@ export const oidcClientConfigSchema = z
   })
   .optional();
 
+const OCPP_VERSION_LIST: string[] = ['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1'] as const;
+
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
   id: z.string().optional(),
   host: z.string().default('localhost').optional(),
   port: z.number().int().min(1).default(8080).optional(),
   pingInterval: z.number().int().min(1).default(60).optional(),
-  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1']).default('ocpp2.0.1').optional(),
+  protocol: z.enum(OCPP_VERSION_LIST).default('ocpp2.0.1').optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
@@ -37,13 +36,32 @@ export const websocketServerInputSchema = z.object({
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
   tenantId: z.number(),
+  // Mapping from path segments to tenant IDs.
+  // Example: { "my-tenant": 1 }
+  tenantPathMapping: z.record(z.string(), z.number()).optional(),
+  // When true, tenant can be resolved at connection upgrade time from the request
+  // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+  dynamicTenantResolution: z.boolean().optional().default(false),
+  // Optional soft limit for concurrent connections per tenant for this server.
+  // If set and the tenant exceeds this number of concurrent connections, new
+  // connections will be rejected at upgrade time with a 1013 close code.
+  maxConnectionsPerTenant: z.number().int().min(1).optional(),
 });
+
+export const HUBJECT_DEFAULT_BASEURL = 'https://open.plugncharge-test.hubject.com';
+export const HUBJECT_DEFAULT_TOKENURL =
+  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token';
+export const HUBJECT_DEFAULT_CLIENTID = 'YOUR_CLIENT_ID';
+export const HUBJECT_DEFAULT_CLIENTSECRET = 'YOUR_CLIENT_SECRET';
+export const HUBJECT_DEFAULT_AUTH_TOKEN =
+  'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkJ3eEV0TkFGUnpSM3JlNVF2elM2QyJ9.eyJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vcm9sZSI6WyJBRE1JTiIsIk9FTSIsIkNQTyIsIk1PX0hVQkpFQ1RfUEtJIl0sImh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbS9wY2lkIjpbIkhVQiIsImh1YiJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZW1haWQiOlsiREVIVUIiLCJFTVA3NyJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X25hbWUiOlsiSHViamVjdCJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZGFzaDIwIjpbInRydWUiXSwiaHR0cHM6Ly9ldS5wbHVnbmNoYXJnZS10ZXN0Lmh1YmplY3QuY29tL2NsaWVudF9hcHAiOiJPcGVuIFRlc3QgRW52aXJvbm1lbnQiLCJpc3MiOiJodHRwczovL2F1dGguZXUucGx1Z25jaGFyZ2UuaHViamVjdC5jb20vIiwic3ViIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmdAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbSIsImlhdCI6MTc3MDcwMTgxMSwiZXhwIjoxNzcwNzg4MjExLCJzY29wZSI6InJjcHNlcnZpY2UgcGNwc2VydmljZSBjY3BzZXJ2aWNlIGNwc2VydmljZSBwa2lnYXRld2F5IiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIiwiYXpwIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmciLCJwZXJtaXNzaW9ucyI6WyJyY3BzZXJ2aWNlIiwicGNwc2VydmljZSIsImNjcHNlcnZpY2UiLCJjcHNlcnZpY2UiLCJwa2lnYXRld2F5Il19.qpkB0reRKznCNXnbxCs0WMPCZx2ezo3Uv7vb0FW0qtMFHLF88IjzA0TUn4azD3zwjIG0N6rnTws4kzKkzwC-_XejCF-RvTEWKM4iUisdbl3Hz8nov0QmAME9U7BYJ52BHaQxP0S6o89qWRgtkzB63XRbbI_Z1fAh9Pzz-eVJePgD2GANNb8JqCzlV0vgyZU3jvdmVvJDYMyqyGe_lLlU5E0ocUntAWaP_TyrmRqctb5VB82WEdwdsRB5Wusqc5C0rLUwsySOff5gcDg5LXtGwUZtsA7TTtVQSqhQ1HrPVYhlKl-s5TZ-v7uho8wCnaCoJt6GPvZzKqHJHydBMlWDWg';
 
 export const systemConfigInputSchema = z.object({
   env: z.enum(['development', 'production']),
   centralSystem: z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().min(1).default(8081).optional(),
+    systemApiToken: z.string().optional(),
   }),
   modules: z.object({
     certificates: z
@@ -140,6 +158,7 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        ocppRouterBaseUrl: z.string().optional(),
       })
       .optional(),
     transactions: z.object({
@@ -236,23 +255,31 @@ export const systemConfigInputSchema = z.object({
           name: z.enum(['hubject']).default('hubject'),
           hubject: z
             .object({
-              baseUrl: z.string().default('https://open.plugncharge-test.hubject.com'),
-              tokenUrl: z
-                .string()
-                .default(
-                  'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token',
-                ),
-              isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']).default('ISO15118-2'),
+              baseUrl: z.string().default(HUBJECT_DEFAULT_BASEURL),
+              tokenUrl: z.string().default(HUBJECT_DEFAULT_TOKENURL),
+              clientId: z.string().default(HUBJECT_DEFAULT_CLIENTID),
+              clientSecret: z.string().default(HUBJECT_DEFAULT_CLIENTSECRET),
             })
             .optional(),
         })
-        .refine((obj) => {
-          if (obj.name === 'hubject') {
-            return obj.hubject;
-          } else {
-            return false;
-          }
-        }),
+        .refine(
+          (obj) => {
+            if (obj.name === 'hubject') {
+              return (
+                obj.hubject &&
+                obj.hubject.baseUrl &&
+                obj.hubject.tokenUrl &&
+                obj.hubject.clientId &&
+                obj.hubject.clientSecret
+              );
+            } else {
+              return false;
+            }
+          },
+          {
+            message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+          },
+        ),
       chargingStationCA: z
         .object({
           name: z.enum(['acme']).default('acme'),
@@ -274,8 +301,8 @@ export const systemConfigInputSchema = z.object({
     }),
   }),
   logLevel: z.number().min(0).max(6).default(0).optional(),
-  maxCallLengthSeconds: z.number().int().min(1).default(5).optional(),
-  maxCachingSeconds: z.number().int().min(1).default(10).optional(),
+  maxCallLengthSeconds: z.number().int().min(1).default(20).optional(),
+  maxCachingSeconds: z.number().int().min(1).default(30).optional(),
   maxReconnectDelay: z.number().int().min(1).default(30).optional(),
   ocpiServer: z.object({
     host: z.string().default('localhost').optional(),
@@ -297,7 +324,7 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().min(1),
     pingInterval: z.number().int().min(1),
-    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1']),
+    protocol: z.enum(OCPP_VERSION_LIST),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
     tlsKeyFilePath: z.string().optional(),
@@ -305,6 +332,14 @@ export const websocketServerSchema = z
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number(),
+    tenantPathMapping: z.record(z.string(), z.number()).optional(),
+    // When true, tenant can be resolved at connection upgrade time from the request
+    // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+    dynamicTenantResolution: z.boolean().optional().default(false),
+    // Optional soft limit for concurrent connections per tenant for this server.
+    // If set and the tenant exceeds this number of concurrent connections, new
+    // connections will be rejected at upgrade time with a 1013 close code.
+    maxConnectionsPerTenant: z.number().int().min(1).optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -330,6 +365,7 @@ export const systemConfigSchema = z
     centralSystem: z.object({
       host: z.string(),
       port: z.number().int().min(1),
+      systemApiToken: z.string().optional(),
     }),
     modules: z.object({
       certificates: z
@@ -426,6 +462,7 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        ocppRouterBaseUrl: z.string().optional(),
       }),
       transactions: z
         .object({
@@ -544,17 +581,29 @@ export const systemConfigSchema = z
               .object({
                 baseUrl: z.string(),
                 tokenUrl: z.string(),
-                isoVersion: z.enum(['ISO15118-2', 'ISO15118-20']),
+                clientId: z.string(),
+                clientSecret: z.string(),
               })
               .optional(),
           })
-          .refine((obj) => {
-            if (obj.name === 'hubject') {
-              return obj.hubject;
-            } else {
-              return false;
-            }
-          }),
+          .refine(
+            (obj) => {
+              if (obj.name === 'hubject') {
+                return (
+                  obj.hubject &&
+                  obj.hubject.baseUrl &&
+                  obj.hubject.tokenUrl &&
+                  obj.hubject.clientId &&
+                  obj.hubject.clientSecret
+                );
+              } else {
+                return false;
+              }
+            },
+            {
+              message: 'Hubject requires baseUrl, tokenUrl, clientId, and clientSecret',
+            },
+          ),
         chargingStationCA: z
           .object({
             name: z.enum(['acme']),

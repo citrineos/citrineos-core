@@ -68,13 +68,8 @@ export { ChangeConfiguration } from './model/ChangeConfiguration.js';
 export { Tenant } from './model/Tenant.js';
 export { TenantPartner } from './model/TenantPartner.js';
 export type { PaginatedParams } from './model/AsyncJob/index.js';
-export {
-  AsyncJobStatus,
-  AsyncJobStatusDTO,
-  AsyncJobRequest,
-  AsyncJobName,
-  AsyncJobAction,
-} from './model/AsyncJob/index.js';
+export { AsyncJobStatus, AsyncJobStatusDTO, AsyncJobRequest } from './model/AsyncJob/index.js';
+export { DeleteCertificateAttempt, InstallCertificateAttempt } from './model/Certificate/index.js';
 
 // Sequelize Repositories
 export { SequelizeRepository } from './repository/Base.js';
@@ -100,6 +95,8 @@ export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfi
 export { SequelizeTenantRepository } from './repository/Tenant.js';
 export { SequelizeAsyncJobStatusRepository } from './repository/AsyncJobStatus.js';
 export { SequelizeServerNetworkProfileRepository } from './repository/ServerNetworkProfile.js';
+export { SequelizeInstallCertificateAttemptRepository } from './repository/InstallCertificateAttempt.js';
+export { SequelizeDeleteCertificateAttemptRepository } from './repository/DeleteCertificateAttempt.js';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util.js';

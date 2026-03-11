@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1, OCPP2_1 } from '@citrineos/base';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
@@ -44,7 +44,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
-  chargingProfileType: OCPP2_0_1.ChargingProfileType,
+  chargingProfileType: OCPP2_0_1.ChargingProfileType | OCPP2_1.ChargingProfileType,
   tenantId: number,
   stationId: string,
   deviceModelRepository: IDeviceModelRepository,
@@ -132,7 +132,7 @@ export async function validateChargingProfileType(
     }
 
     for (const chargingSchedulePeriod of chargingSchedule.chargingSchedulePeriod) {
-      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit) > 1) {
+      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit ?? 0) > 1) {
         throw new Error(
           `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).`,
         );
@@ -533,7 +533,7 @@ export function validateUTF8Content(content: string): boolean {
  * @returns {ValidationResult} Validation result with error message if invalid
  */
 export function validateMessageContent(
-  format: OCPP2_0_1.MessageFormatEnumType,
+  format: OCPP2_1.MessageFormatEnumType,
   content: string,
 ): ValidationResult {
   switch (format) {
@@ -590,7 +590,7 @@ export function validateMessageContent(
  * @returns {ValidationResult} Validation result with error message if invalid
  */
 export function validateMessageContentType(
-  messageContent: OCPP2_0_1.MessageContentType,
+  messageContent: OCPP2_1.MessageContentType,
 ): ValidationResult {
   // Validate language tag if present
   if (messageContent.language != null && !validateLanguageTag(messageContent.language)) {

@@ -6,7 +6,7 @@ import {
   IV2GCertificateAuthorityClient,
 } from '../../src/certificate/client/interface.js';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import { CertificateAuthorityService } from '../../src';
+import { CertificateAuthorityService, MemoryCache } from '../../src';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
@@ -53,6 +53,7 @@ describe('CertificateAuthorityService', () => {
 
     certificateAuthorityService = new CertificateAuthorityService(
       mockSystemConfig,
+      new MemoryCache(),
       undefined,
       mockChargingStationClient,
       mockV2GClient,

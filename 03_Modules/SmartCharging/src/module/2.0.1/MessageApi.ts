@@ -2,25 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { ISmartChargingModuleApi } from '../interface.js';
-import { SmartChargingModule } from '../module.js';
 import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
+  ChargingLimitSourceEnum,
   DEFAULT_TENANT_ID,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPP2_0_1_Namespace,
   OCPPVersion,
 } from '@citrineos/base';
-import type { FastifyInstance } from 'fastify';
-import { VariableAttribute } from '@citrineos/data';
+import { OCPP2_0_1_Mapper, VariableAttribute } from '@citrineos/data';
 import { stringToSet, validateChargingProfileType } from '@citrineos/util';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { ISmartChargingModuleApi } from '../interface.js';
+import { SmartChargingModule } from '../module.js';
 
 /**
  * Server API for the SmartCharging module.
@@ -45,7 +46,7 @@ export class SmartChargingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ClearChargingProfile,
+    OCPP_CallAction.ClearChargingProfile,
     OCPP2_0_1.ClearChargingProfileRequestSchema,
   )
   async clearChargingProfile(
@@ -108,7 +109,7 @@ export class SmartChargingOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.ClearChargingProfile,
+        OCPP_CallAction.ClearChargingProfile,
         request,
         callbackUrl,
       );
@@ -120,7 +121,7 @@ export class SmartChargingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetChargingProfiles,
+    OCPP_CallAction.GetChargingProfiles,
     OCPP2_0_1.GetChargingProfilesRequestSchema,
   )
   async getChargingProfiles(
@@ -185,7 +186,7 @@ export class SmartChargingOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.GetChargingProfiles,
+          OCPP_CallAction.GetChargingProfiles,
           request,
           callbackUrl,
         ),
@@ -195,10 +196,7 @@ export class SmartChargingOcpp201Api
     return results;
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetChargingProfile,
-    OCPP2_0_1.SetChargingProfileRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.SetChargingProfile, OCPP2_0_1.SetChargingProfileRequestSchema)
   async setChargingProfile(
     identifier: string[],
     request: OCPP2_0_1.SetChargingProfileRequest,
@@ -361,6 +359,7 @@ export class SmartChargingOcpp201Api
           const existedChargingProfiles =
             await this._module.chargingProfileRepository.readAllByQuery(tenantId, {
               where: {
+                stationId: id,
                 stackLevel: chargingProfile.stackLevel,
                 chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
                 evseId: request.evseId,
@@ -493,10 +492,10 @@ export class SmartChargingOcpp201Api
         // Save the charging profile, set the source to "CSO"
         await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
           tenantId,
-          chargingProfile,
+          OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
           id,
           request.evseId,
-          OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          ChargingLimitSourceEnum.CSO,
         );
 
         // Finally, send the call to the station
@@ -504,7 +503,7 @@ export class SmartChargingOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.SetChargingProfile,
+          OCPP_CallAction.SetChargingProfile,
           request,
           callbackUrl,
         );
@@ -513,7 +512,7 @@ export class SmartChargingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ClearedChargingLimit,
+    OCPP_CallAction.ClearedChargingLimit,
     OCPP2_0_1.ClearedChargingLimitRequestSchema,
   )
   clearedChargingLimit(
@@ -528,7 +527,7 @@ export class SmartChargingOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.ClearedChargingLimit,
+          OCPP_CallAction.ClearedChargingLimit,
           request,
           callbackUrl,
         ),
@@ -537,7 +536,7 @@ export class SmartChargingOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.GetCompositeSchedule,
+    OCPP_CallAction.GetCompositeSchedule,
     OCPP2_0_1.GetCompositeScheduleRequestSchema,
   )
   async getCompositeSchedule(
@@ -579,7 +578,7 @@ export class SmartChargingOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.GetCompositeSchedule,
+          OCPP_CallAction.GetCompositeSchedule,
           request,
           callbackUrl,
         );

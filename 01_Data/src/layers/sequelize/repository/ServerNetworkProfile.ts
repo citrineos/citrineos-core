@@ -44,6 +44,7 @@ export class SequelizeServerNetworkProfileRepository
     serverNetworkProfile.rootCACertificateFilePath =
       websocketServerConfig.rootCACertificateFilePath;
     serverNetworkProfile.tenantId = websocketServerConfig.tenantId;
+    serverNetworkProfile.tenantPathMapping = websocketServerConfig.tenantPathMapping;
     await serverNetworkProfile.save();
     return serverNetworkProfile;
   }

@@ -5,12 +5,13 @@
 import { z } from 'zod';
 import { SalesTariffSchema } from './sales.tariff.dto.js';
 import { BaseSchema } from './types/base.dto.js';
+import { ChargingRateUnitEnumSchema } from './types/enums.js';
 
 export const ChargingScheduleSchema = BaseSchema.extend({
   databaseId: z.number().int(),
-  id: z.number().int().optional(),
+  id: z.number().int(),
   stationId: z.string(),
-  chargingRateUnit: z.string(),
+  chargingRateUnit: ChargingRateUnitEnumSchema,
   chargingSchedulePeriod: z.tuple([z.any()]).rest(z.any()), // Non-empty array of JSONB
   duration: z.number().int().nullable().optional(),
   minChargingRate: z.number().nullable().optional(), // DECIMAL

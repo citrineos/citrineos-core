@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import type { ChangeConfigurationDto, TenantDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -16,7 +16,7 @@ import {
 import { Tenant } from './Tenant.js';
 
 @Table
-export class ChangeConfiguration extends Model {
+export class ChangeConfiguration extends Model implements ChangeConfigurationDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.ChangeConfiguration;
 
   @Column({

@@ -18,7 +18,7 @@ export const AS_HANDLER_METADATA = 'AS_HANDLER_METADATA';
  * @param {CallAction} action - the call action parameter
  * @return {PropertyDescriptor} - the property descriptor
  */
-export const AsHandler = function (protocol: OCPPVersion, action: CallAction) {
+export const AsHandler = function (protocols: OCPPVersion[], action: CallAction) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
     if (!Reflect.hasMetadata(AS_HANDLER_METADATA, target.constructor)) {
       Reflect.defineMetadata(AS_HANDLER_METADATA, [], target.constructor);
@@ -27,11 +27,13 @@ export const AsHandler = function (protocol: OCPPVersion, action: CallAction) {
       AS_HANDLER_METADATA,
       target.constructor,
     ) as Array<IHandlerDefinition>;
-    handlers.push({
-      action: action,
-      protocol: protocol,
-      methodName: propertyKey,
-      method: descriptor.value,
+    protocols.forEach((protocol) => {
+      handlers.push({
+        action: action,
+        protocol: protocol,
+        methodName: propertyKey,
+        method: descriptor.value,
+      });
     });
     Reflect.defineMetadata(AS_HANDLER_METADATA, handlers, target.constructor);
     return descriptor;

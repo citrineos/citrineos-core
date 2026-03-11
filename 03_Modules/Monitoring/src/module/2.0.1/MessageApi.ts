@@ -12,7 +12,7 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   OCPP2_0_1,
-  OCPP2_0_1_CallAction,
+  OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import type { FastifyInstance } from 'fastify';
@@ -44,7 +44,7 @@ export class MonitoringOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetVariableMonitoring,
+    OCPP_CallAction.SetVariableMonitoring,
     OCPP2_0_1.SetVariableMonitoringRequestSchema,
   )
   async setVariableMonitoring(
@@ -62,7 +62,7 @@ export class MonitoringOcpp201Api
         const maxBytes =
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
-            OCPP2_0_1_CallAction.SetVariableMonitoring,
+            OCPP_CallAction.SetVariableMonitoring,
             tenantId,
             id,
           );
@@ -109,7 +109,7 @@ export class MonitoringOcpp201Api
         const itemsPerMessage =
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
-            OCPP2_0_1_CallAction.SetVariableMonitoring,
+            OCPP_CallAction.SetVariableMonitoring,
             tenantId,
             id,
           )) ?? setMonitoringData.length;
@@ -119,7 +119,7 @@ export class MonitoringOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.SetVariableMonitoring,
+          OCPP_CallAction.SetVariableMonitoring,
           { setMonitoringData },
           'setMonitoringData',
           itemsPerMessage,
@@ -138,7 +138,7 @@ export class MonitoringOcpp201Api
   }
 
   @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.ClearVariableMonitoring,
+    OCPP_CallAction.ClearVariableMonitoring,
     OCPP2_0_1.ClearVariableMonitoringRequestSchema,
   )
   async clearVariableMonitoring(
@@ -157,7 +157,7 @@ export class MonitoringOcpp201Api
         const maxBytes =
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
-            OCPP2_0_1_CallAction.ClearVariableMonitoring,
+            OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
             id,
           );
@@ -174,7 +174,7 @@ export class MonitoringOcpp201Api
         const itemsPerMessage =
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
-            OCPP2_0_1_CallAction.ClearVariableMonitoring,
+            OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
             id,
           )) ?? ids.length;
@@ -184,7 +184,7 @@ export class MonitoringOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.ClearVariableMonitoring,
+          OCPP_CallAction.ClearVariableMonitoring,
           { id: ids },
           'id',
           itemsPerMessage,
@@ -202,10 +202,7 @@ export class MonitoringOcpp201Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetMonitoringLevel,
-    OCPP2_0_1.SetMonitoringLevelRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringLevel, OCPP2_0_1.SetMonitoringLevelRequestSchema)
   setMonitoringLevel(
     identifier: string[],
     request: OCPP2_0_1.SetMonitoringLevelRequest,
@@ -217,7 +214,7 @@ export class MonitoringOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.SetMonitoringLevel,
+        OCPP_CallAction.SetMonitoringLevel,
         request,
         callbackUrl,
       ),
@@ -225,10 +222,7 @@ export class MonitoringOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(
-    OCPP2_0_1_CallAction.SetMonitoringBase,
-    OCPP2_0_1.SetMonitoringBaseRequestSchema,
-  )
+  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringBase, OCPP2_0_1.SetMonitoringBaseRequestSchema)
   setMonitoringBase(
     identifier: string[],
     request: OCPP2_0_1.SetMonitoringBaseRequest,
@@ -240,7 +234,7 @@ export class MonitoringOcpp201Api
         id,
         tenantId,
         OCPPVersion.OCPP2_0_1,
-        OCPP2_0_1_CallAction.SetMonitoringBase,
+        OCPP_CallAction.SetMonitoringBase,
         request,
         callbackUrl,
       ),
@@ -248,7 +242,7 @@ export class MonitoringOcpp201Api
     return Promise.all(results);
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.SetVariables, OCPP2_0_1.SetVariablesRequestSchema)
   async setVariables(
     identifier: string[],
     request: OCPP2_0_1.SetVariablesRequest,
@@ -273,7 +267,7 @@ export class MonitoringOcpp201Api
         const itemsPerMessage =
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
-            OCPP2_0_1_CallAction.SetVariables,
+            OCPP_CallAction.SetVariables,
             tenantId,
             id,
           )) ?? setVariableData.length;
@@ -283,7 +277,7 @@ export class MonitoringOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.SetVariables,
+          OCPP_CallAction.SetVariables,
           { setVariableData },
           'setVariableData',
           itemsPerMessage,
@@ -301,7 +295,7 @@ export class MonitoringOcpp201Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(OCPP2_0_1_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
+  @AsMessageEndpoint(OCPP_CallAction.GetVariables, OCPP2_0_1.GetVariablesRequestSchema)
   async getVariables(
     identifier: string[],
     request: OCPP2_0_1.GetVariablesRequest,
@@ -316,7 +310,7 @@ export class MonitoringOcpp201Api
         const maxBytes =
           await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
-            OCPP2_0_1_CallAction.GetVariables,
+            OCPP_CallAction.GetVariables,
             tenantId,
             id,
           );
@@ -334,7 +328,7 @@ export class MonitoringOcpp201Api
         const itemsPerMessage =
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
-            OCPP2_0_1_CallAction.GetVariables,
+            OCPP_CallAction.GetVariables,
             tenantId,
             id,
           )) ?? getVariableData.length;
@@ -344,7 +338,7 @@ export class MonitoringOcpp201Api
           id,
           tenantId,
           OCPPVersion.OCPP2_0_1,
-          OCPP2_0_1_CallAction.GetVariables,
+          OCPP_CallAction.GetVariables,
           { getVariableData },
           'getVariableData',
           itemsPerMessage,
@@ -368,7 +362,7 @@ export class MonitoringOcpp201Api
    * @param {string} stationId - The station's identifier.
    * @param {string} tenantId - The tenant identifier.
    * @param {OCPPVersion} version - The OCPP version to use.
-   * @param {OCPP2_0_1_CallAction} action - The OCPP 2.0.1 action to call.
+   * @param {OCPP_CallAction} action - The OCPP 2.0.1 action to call.
    * @param {Record<string, any>} requestData - The request object containing the data array to batch.
    * @param {string} dataKey - The key in `requestData` that contains the array to batch.
    * @param {number} itemsPerMessage - The maximum number of items to include in a single batch message.
@@ -379,7 +373,7 @@ export class MonitoringOcpp201Api
     stationId: string,
     tenantId: number,
     version: OCPPVersion,
-    action: OCPP2_0_1_CallAction,
+    action: OCPP_CallAction,
     requestData: Record<string, any>,
     dataKey: string,
     itemsPerMessage: number,

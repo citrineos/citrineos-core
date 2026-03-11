@@ -6,6 +6,7 @@ export interface QuerySchemaProperties {
   type: string;
   defaultValue?: string;
   required?: boolean;
+  pattern?: string;
 }
 
 /**
@@ -24,7 +25,7 @@ export const QuerySchema = (name: string, properties: QuerySchemaProperties[]): 
   const required: string[] = [];
 
   properties.forEach((property: QuerySchemaProperties) => {
-    const { key, type, defaultValue, required: isRequired } = property;
+    const { key, type, defaultValue, required: isRequired, pattern } = property;
 
     if (isRequired) {
       required.push(key);
@@ -41,6 +42,7 @@ export const QuerySchema = (name: string, properties: QuerySchemaProperties[]): 
       (schema['properties'] as Record<string, string | object>)[key] = {
         type,
         default: defaultValue,
+        pattern,
       };
     }
   });

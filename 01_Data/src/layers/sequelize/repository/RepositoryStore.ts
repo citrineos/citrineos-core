@@ -8,7 +8,10 @@ import type {
   IChangeConfigurationRepository,
   IChargingProfileRepository,
   IChargingStationSequenceRepository,
+  IDeleteCertificateAttemptRepository,
   IDeviceModelRepository,
+  IInstallCertificateAttemptRepository,
+  IInstalledCertificateRepository,
   ILocalAuthListRepository,
   ILocationRepository,
   IMessageInfoRepository,
@@ -47,12 +50,18 @@ import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
 import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
 import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '../index.js';
 import { SequelizeServerNetworkProfileRepository } from './ServerNetworkProfile.js';
+import { SequelizeInstalledCertificateRepository } from './InstalledCertificate.js';
+import { SequelizeInstallCertificateAttemptRepository } from './InstallCertificateAttempt.js';
+import { SequelizeDeleteCertificateAttemptRepository } from './DeleteCertificateAttempt.js';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
   authorizationRepository: IAuthorizationRepository;
   bootRepository: IBootRepository;
   certificateRepository: ICertificateRepository;
+  installedCertificateRepository: IInstalledCertificateRepository;
+  installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+  deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
   chargingProfileRepository: IChargingProfileRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
@@ -80,6 +89,21 @@ export class RepositoryStore {
     );
     this.bootRepository = new SequelizeBootRepository(config, logger, sequelizeInstance);
     this.certificateRepository = new SequelizeCertificateRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
+    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
+    this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
+    this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository(
       config,
       logger,
       sequelizeInstance,

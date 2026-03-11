@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_1 } from '@citrineos/base';
 import { Transaction } from '@citrineos/data';
 
 export interface ISmartCharging {
@@ -16,11 +16,11 @@ export interface ISmartCharging {
    * @returns {Promise<ChargingProfileType>} charging profile
    **/
   calculateChargingProfile(
-    request: OCPP2_0_1.NotifyEVChargingNeedsRequest,
+    request: OCPP2_1.NotifyEVChargingNeedsRequest,
     transaction: Transaction,
     tenantId: number,
     stationId: string,
-  ): Promise<OCPP2_0_1.ChargingProfileType>;
+  ): Promise<OCPP2_1.ChargingProfileType>;
 
   /**
    * Inteface for checking EV charging schedule is within limits of CSMS ChargingSchedule
@@ -30,7 +30,7 @@ export interface ISmartCharging {
    * @param {string} stationId
    **/
   checkLimitsOfChargingSchedule(
-    request: OCPP2_0_1.NotifyEVChargingScheduleRequest,
+    request: OCPP2_1.NotifyEVChargingScheduleRequest,
     tenantId: number,
     stationId: string,
     transaction: Transaction,
