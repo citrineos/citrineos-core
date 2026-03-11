@@ -1,0 +1,30 @@
+/**
+ * CitrineOS documentation theme overrides.
+ * Citrine yellow primary, dark navy secondary.
+ */
+
+/* Citrine yellow */
+:root {
+  --ifm-color-primary: #d4a017;
+  --ifm-color-primary-dark: #bf9015;
+  --ifm-color-primary-darker: #b58812;
+  --ifm-color-primary-darkest: #95700f;
+  --ifm-color-primary-light: #e9b11a;
+  --ifm-color-primary-lighter: #edb52a;
+  --ifm-color-primary-lightest: #f2c555;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(212, 160, 23, 0.1);
+}
+
+/* Dark mode */
+[data-theme='dark'] {
+  --ifm-color-primary: #f2c555;
+  --ifm-color-primary-dark: #eebc38;
+  --ifm-color-primary-darker: #ecb72a;
+  --ifm-color-primary-darkest: #d9a015;
+  --ifm-color-primary-light: #f6ce72;
+  --ifm-color-primary-lighter: #f8d380;
+  --ifm-color-primary-lightest: #fce2ad;
+  --docusaurus-highlighted-code-line-bg: rgba(242, 197, 85, 0.1);
+}
+

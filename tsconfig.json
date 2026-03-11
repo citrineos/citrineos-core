@@ -4,7 +4,13 @@
     "rootDir": "./",
     "outDir": "./dist"
   },
-  "exclude": ["./dist/**/*", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
+  "exclude": [
+    "./dist/**/*",
+    "**/node_modules/**",
+    "**/vitest.config.ts",
+    "**/test/**",
+    "**/docs/**"
+  ],
   "references": [
     {
       "path": "./Server"

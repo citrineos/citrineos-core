@@ -27,7 +27,12 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prepare": "husky",
-    "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully"
+    "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "docs:openapi": "npm run generage:openapi --prefix ./Server",
+    "docs:generate": "npx typedoc",
+    "docs:dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 npm run docs:build && npm --prefix ./docs run start",
+    "docs:build": "npm run docs:openapi && npm run docs:generate && npm --prefix ./docs run build",
+    "docs:serve": "npm --prefix ./docs run serve"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
@@ -51,7 +56,9 @@
     "node": ">=24.4.1"
   },
   "devDependencies": {
-    "sequelize-cli": "^6.6.2",
-    "typescript": "^5.8.2"
+    "sequelize-cli": "6.6.2",
+    "typedoc": "0.28.17",
+    "typedoc-plugin-markdown": "4.10.0",
+    "typescript": "5.8.2"
   }
 }

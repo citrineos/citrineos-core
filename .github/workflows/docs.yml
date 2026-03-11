@@ -1,0 +1,59 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # Install root workspace deps (needed by TypeDoc to resolve types)
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      # Install docs site deps
+      - name: Install docs dependencies
+        run: npm ci
+        working-directory: ./docs
+
+      # Run TypeDoc from root — outputs MD into docs/docs/api/
+      - name: Generate TypeDoc API docs
+        run: npm run docs:generate
+
+      - name: Generate OpenAPI spec
+        run: npm run docs:openapi
+
+      # Build the Docusaurus site (plugin generates REST API MDX automatically)
+      - name: Build Docusaurus
+        run: npm run build
+        working-directory: ./docs
+
+      # Deploy to gh-pages branch
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+

@@ -1,0 +1,6 @@
+.docusaurus
+build
+node_modules
+docs/api
+# Plugin-generated REST API MDX — keep index.mdx, ignore everything else
+docs/rest-api/sidebar.ts
