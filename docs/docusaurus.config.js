@@ -117,6 +117,11 @@ const config = {
             label: 'WebSocket API',
           },
           {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
+          },
+          {
             href: 'https://github.com/citrineos/citrineos-core',
             label: 'GitHub',
             position: 'right',

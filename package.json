@@ -30,6 +30,7 @@
     "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully",
     "docs:openapi": "npm run generage:openapi --prefix ./Server",
     "docs:generate": "npx typedoc",
+    "docs:version": "npm --prefix ./docs run docusaurus -- docs:version",
     "docs:dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 npm run docs:build && npm --prefix ./docs run start",
     "docs:build": "npm run docs:openapi && npm run docs:generate && npm --prefix ./docs run build",
     "docs:serve": "npm --prefix ./docs run serve"

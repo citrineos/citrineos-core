@@ -1,0 +1,27 @@
+---
+title: REST API
+sidebar_label: REST API
+sidebar_position: 1
+hide_table_of_contents: true
+---
+
+import React from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import 'swagger-ui-react/swagger-ui.css';
+
+<BrowserOnly fallback={<div>Loading API Reference...</div>}>
+  {() => {
+    const SwaggerUI = require('swagger-ui-react').default;
+    return (
+      <SwaggerUI
+        url="/citrineos-core/openapi.json"
+        docExpansion="list"
+        defaultModelsExpandDepth={1}
+        displayRequestDuration={true}
+        filter={true}
+        tryItOutEnabled={false}
+      />
+    );
+  }}
+</BrowserOnly>
+

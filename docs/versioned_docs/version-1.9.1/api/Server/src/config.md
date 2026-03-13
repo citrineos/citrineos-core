@@ -1,0 +1,3349 @@
+[**CitrineOS Core**](../../index.md)
+
+---
+
+[CitrineOS Core](../../index.md) / Server/src/config
+
+# Server/src/config
+
+## Variables
+
+### systemConfig
+
+```ts
+const systemConfig: Promise<SystemConfig>;
+```
+
+Defined in: [Server/src/config/index.ts:36](https://github.com/citrineos/citrineos-core/blob/def27d2c18695e68d1cb53d23c8d4cfb26151d5f/Server/src/config/index.ts#L36)
+
+## Functions
+
+### getSystemConfig()
+
+```ts
+function getSystemConfig(bootstrapConfig): Promise<{
+  centralSystem: {
+    host: string;
+    port: number;
+    systemApiToken?: string;
+  };
+  env: 'development' | 'production';
+  logLevel: number;
+  maxCachingSeconds: number;
+  maxCallLengthSeconds: number;
+  maxReconnectDelay: number;
+  modules: {
+    certificates?: {
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    configuration: {
+      bootRetryInterval: number;
+      endpointPrefix: string;
+      heartbeatInterval: number;
+      host?: string;
+      ocpp1_6?: {
+        unknownChargerStatus: BootNotificationResponseStatus;
+      };
+      ocpp2_0_1?: {
+        autoAccept: boolean;
+        bootWithRejectedVariables: boolean;
+        getBaseReportOnPending: boolean;
+        unknownChargerStatus: RegistrationStatusEnumType;
+      };
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    evdriver: {
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    monitoring: {
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    reporting: {
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    smartcharging?: {
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    tenant: {
+      endpointPrefix: string;
+      host?: string;
+      ocppRouterBaseUrl?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+    };
+    transactions: {
+      costUpdatedInterval?: number;
+      endpointPrefix: string;
+      host?: string;
+      port?: number;
+      requests: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      responses: (
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | ChangeAvailability
+        | ChangeConfiguration
+        | ClearCache
+        | ClearChargingProfile
+        | DataTransfer
+        | DiagnosticsStatusNotification
+        | FirmwareStatusNotification
+        | GetCompositeSchedule
+        | GetConfiguration
+        | GetDiagnostics
+        | GetLocalListVersion
+        | Heartbeat
+        | MeterValues
+        | RemoteStartTransaction
+        | RemoteStopTransaction
+        | ReserveNow
+        | Reset
+        | SendLocalList
+        | SetChargingProfile
+        | StartTransaction
+        | StatusNotification
+        | StopTransaction
+        | TriggerMessage
+        | UnlockConnector
+        | UpdateFirmware
+        | Authorize
+        | BootNotification
+        | CancelReservation
+        | CertificateSigned
+        | ChangeAvailability
+        | ClearCache
+        | ClearChargingProfile
+        | ClearDisplayMessage
+        | ClearedChargingLimit
+        | ClearVariableMonitoring
+        | CostUpdated
+        | CustomerInformation
+        | DataTransfer
+        | DeleteCertificate
+        | FirmwareStatusNotification
+        | Get15118EVCertificate
+        | GetBaseReport
+        | GetCertificateStatus
+        | GetChargingProfiles
+        | GetCompositeSchedule
+        | GetDisplayMessages
+        | GetInstalledCertificateIds
+        | GetLocalListVersion
+        | GetLog
+        | GetMonitoringReport
+        | GetReport
+        | GetTransactionStatus
+        | GetVariables
+        | Heartbeat
+        | InstallCertificate
+        | LogStatusNotification
+        | MeterValues
+        | NotifyChargingLimit
+        | NotifyCustomerInformation
+        | NotifyDisplayMessages
+        | NotifyEVChargingNeeds
+        | NotifyEVChargingSchedule
+        | NotifyEvent
+        | NotifyMonitoringReport
+        | NotifyReport
+        | PublishFirmware
+        | PublishFirmwareStatusNotification
+        | ReportChargingProfiles
+        | RequestStartTransaction
+        | RequestStopTransaction
+        | ReservationStatusUpdate
+        | ReserveNow
+        | Reset
+        | SecurityEventNotification
+        | SendLocalList
+        | SetChargingProfile
+        | SetDisplayMessage
+        | SetMonitoringBase
+        | SetMonitoringLevel
+        | SetNetworkProfile
+        | SetVariableMonitoring
+        | SetVariables
+        | SignCertificate
+        | StatusNotification
+        | TransactionEvent
+        | TriggerMessage
+        | UnlockConnector
+        | UnpublishFirmware
+        | UpdateFirmware
+      )[];
+      sendCostUpdatedOnMeterValue?: boolean;
+      signedMeterValuesConfiguration?: {
+        publicKeyFileId: string;
+        signingMethod: 'RSASSA-PKCS1-v1_5' | 'ECDSA';
+      };
+    };
+  };
+  ocpiServer: {
+    host: string;
+    port: number;
+  };
+  oidcClient?: {
+    audience: string;
+    clientId: string;
+    clientSecret: string;
+    tokenUrl: string;
+  };
+  rbacRulesDir?: string;
+  rbacRulesFileName?: string;
+  realTimeAuthDefaultTimeoutSeconds: number;
+  userPreferences: {
+    telemetryConsent?: boolean;
+  };
+  util: {
+    authProvider: {
+      localByPass?: boolean;
+      oidc?: {
+        audience: string;
+        cacheTime?: number;
+        issuer: string;
+        jwksUri: string;
+        rateLimit: boolean;
+      };
+    };
+    cache: {
+      memory?: boolean;
+      redis?:
+        | {
+            host: string;
+            port: number;
+          }
+        | {
+            url: string;
+          };
+    };
+    certificateAuthority: {
+      chargingStationCA: {
+        acme?: {
+          accountKeyFilePath: string;
+          email: string;
+          env: 'production' | 'staging';
+        };
+        name: 'acme';
+      };
+      v2gCA: {
+        hubject?: {
+          baseUrl: string;
+          clientId: string;
+          clientSecret: string;
+          tokenUrl: string;
+        };
+        name: 'hubject';
+      };
+    };
+    messageBroker: {
+      amqp?: {
+        exchange: string;
+        url: string;
+      };
+    };
+    networkConnection: {
+      websocketServers: object[];
+    };
+    swagger?: {
+      exposeData: boolean;
+      exposeMessage: boolean;
+      logoPath: string;
+      path: string;
+    };
+  };
+}>;
+```
+
+Defined in: [Server/src/config/index.ts:27](https://github.com/citrineos/citrineos-core/blob/def27d2c18695e68d1cb53d23c8d4cfb26151d5f/Server/src/config/index.ts#L27)
+
+#### Parameters
+
+| Parameter                                          | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bootstrapConfig`                                  | \{ `configDir?`: `string`; `configFileName`: `string`; `database`: \{ `alter`: `boolean`; `database`: `string`; `dialect`: `string`; `force`: `boolean`; `host`: `string`; `maxRetries`: `number`; `password`: `string`; `pool?`: \{ `acquire?`: `number`; `idle?`: `number`; `max?`: `number`; `min?`: `number`; \}; `port`: `number`; `retryDelay`: `number`; `sync`: `boolean`; `username`: `string`; \}; `fileAccess`: \{ `gcp?`: \{ `credentials?`: `Record`\<`string`, `never`\>; `projectId`: `string`; \}; `local?`: \{ `defaultFilePath`: `string`; \}; `s3?`: \{ `accessKeyId?`: `string`; `defaultBucketName`: `string`; `endpoint?`: `string`; `region?`: `string`; `s3ForcePathStyle`: `boolean`; `secretAccessKey?`: `string`; \}; `type`: `"local"` \| `"s3"` \| `"gcp"`; \}; \} |
+| `bootstrapConfig.configDir?`                       | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.configFileName`                   | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database`                         | \{ `alter`: `boolean`; `database`: `string`; `dialect`: `string`; `force`: `boolean`; `host`: `string`; `maxRetries`: `number`; `password`: `string`; `pool?`: \{ `acquire?`: `number`; `idle?`: `number`; `max?`: `number`; `min?`: `number`; \}; `port`: `number`; `retryDelay`: `number`; `sync`: `boolean`; `username`: `string`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.alter`                   | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `bootstrapConfig.database.database`                | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.dialect`                 | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.force`                   | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `bootstrapConfig.database.host`                    | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.maxRetries`              | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.password`                | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.pool?`                   | \{ `acquire?`: `number`; `idle?`: `number`; `max?`: `number`; `min?`: `number`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `bootstrapConfig.database.pool.acquire?`           | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.pool.idle?`              | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.pool.max?`               | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.pool.min?`               | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.port`                    | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.retryDelay`              | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.database.sync`                    | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `bootstrapConfig.database.username`                | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess`                       | \{ `gcp?`: \{ `credentials?`: `Record`\<`string`, `never`\>; `projectId`: `string`; \}; `local?`: \{ `defaultFilePath`: `string`; \}; `s3?`: \{ `accessKeyId?`: `string`; `defaultBucketName`: `string`; `endpoint?`: `string`; `region?`: `string`; `s3ForcePathStyle`: `boolean`; `secretAccessKey?`: `string`; \}; `type`: `"local"` \| `"s3"` \| `"gcp"`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `bootstrapConfig.fileAccess.gcp?`                  | \{ `credentials?`: `Record`\<`string`, `never`\>; `projectId`: `string`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `bootstrapConfig.fileAccess.gcp.credentials?`      | `Record`\<`string`, `never`\>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `bootstrapConfig.fileAccess.gcp.projectId`         | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.local?`                | \{ `defaultFilePath`: `string`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `bootstrapConfig.fileAccess.local.defaultFilePath` | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.s3?`                   | \{ `accessKeyId?`: `string`; `defaultBucketName`: `string`; `endpoint?`: `string`; `region?`: `string`; `s3ForcePathStyle`: `boolean`; `secretAccessKey?`: `string`; \}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `bootstrapConfig.fileAccess.s3.accessKeyId?`       | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.s3.defaultBucketName`  | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.s3.endpoint?`          | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.s3.region?`            | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.s3.s3ForcePathStyle`   | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `bootstrapConfig.fileAccess.s3.secretAccessKey?`   | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bootstrapConfig.fileAccess.type`                  | `"local"` \| `"s3"` \| `"gcp"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+#### Returns
+
+`Promise`\<\{
+`centralSystem`: \{
+`host`: `string`;
+`port`: `number`;
+`systemApiToken?`: `string`;
+\};
+`env`: `"development"` \| `"production"`;
+`logLevel`: `number`;
+`maxCachingSeconds`: `number`;
+`maxCallLengthSeconds`: `number`;
+`maxReconnectDelay`: `number`;
+`modules`: \{
+`certificates?`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`configuration`: \{
+`bootRetryInterval`: `number`;
+`endpointPrefix`: `string`;
+`heartbeatInterval`: `number`;
+`host?`: `string`;
+`ocpp1_6?`: \{
+`unknownChargerStatus`: `BootNotificationResponseStatus`;
+\};
+`ocpp2_0_1?`: \{
+`autoAccept`: `boolean`;
+`bootWithRejectedVariables`: `boolean`;
+`getBaseReportOnPending`: `boolean`;
+`unknownChargerStatus`: `RegistrationStatusEnumType`;
+\};
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`evdriver`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`monitoring`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`reporting`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`smartcharging?`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`tenant`: \{
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`ocppRouterBaseUrl?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+\};
+`transactions`: \{
+`costUpdatedInterval?`: `number`;
+`endpointPrefix`: `string`;
+`host?`: `string`;
+`port?`: `number`;
+`requests`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`responses`: (
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `ChangeAvailability`
+\| `ChangeConfiguration`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `DataTransfer`
+\| `DiagnosticsStatusNotification`
+\| `FirmwareStatusNotification`
+\| `GetCompositeSchedule`
+\| `GetConfiguration`
+\| `GetDiagnostics`
+\| `GetLocalListVersion`
+\| `Heartbeat`
+\| `MeterValues`
+\| `RemoteStartTransaction`
+\| `RemoteStopTransaction`
+\| `ReserveNow`
+\| `Reset`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `StartTransaction`
+\| `StatusNotification`
+\| `StopTransaction`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UpdateFirmware`
+\| `Authorize`
+\| `BootNotification`
+\| `CancelReservation`
+\| `CertificateSigned`
+\| `ChangeAvailability`
+\| `ClearCache`
+\| `ClearChargingProfile`
+\| `ClearDisplayMessage`
+\| `ClearedChargingLimit`
+\| `ClearVariableMonitoring`
+\| `CostUpdated`
+\| `CustomerInformation`
+\| `DataTransfer`
+\| `DeleteCertificate`
+\| `FirmwareStatusNotification`
+\| `Get15118EVCertificate`
+\| `GetBaseReport`
+\| `GetCertificateStatus`
+\| `GetChargingProfiles`
+\| `GetCompositeSchedule`
+\| `GetDisplayMessages`
+\| `GetInstalledCertificateIds`
+\| `GetLocalListVersion`
+\| `GetLog`
+\| `GetMonitoringReport`
+\| `GetReport`
+\| `GetTransactionStatus`
+\| `GetVariables`
+\| `Heartbeat`
+\| `InstallCertificate`
+\| `LogStatusNotification`
+\| `MeterValues`
+\| `NotifyChargingLimit`
+\| `NotifyCustomerInformation`
+\| `NotifyDisplayMessages`
+\| `NotifyEVChargingNeeds`
+\| `NotifyEVChargingSchedule`
+\| `NotifyEvent`
+\| `NotifyMonitoringReport`
+\| `NotifyReport`
+\| `PublishFirmware`
+\| `PublishFirmwareStatusNotification`
+\| `ReportChargingProfiles`
+\| `RequestStartTransaction`
+\| `RequestStopTransaction`
+\| `ReservationStatusUpdate`
+\| `ReserveNow`
+\| `Reset`
+\| `SecurityEventNotification`
+\| `SendLocalList`
+\| `SetChargingProfile`
+\| `SetDisplayMessage`
+\| `SetMonitoringBase`
+\| `SetMonitoringLevel`
+\| `SetNetworkProfile`
+\| `SetVariableMonitoring`
+\| `SetVariables`
+\| `SignCertificate`
+\| `StatusNotification`
+\| `TransactionEvent`
+\| `TriggerMessage`
+\| `UnlockConnector`
+\| `UnpublishFirmware`
+\| `UpdateFirmware`)[];
+`sendCostUpdatedOnMeterValue?`: `boolean`;
+`signedMeterValuesConfiguration?`: \{
+`publicKeyFileId`: `string`;
+`signingMethod`: `"RSASSA-PKCS1-v1_5"` \| `"ECDSA"`;
+\};
+\};
+\};
+`ocpiServer`: \{
+`host`: `string`;
+`port`: `number`;
+\};
+`oidcClient?`: \{
+`audience`: `string`;
+`clientId`: `string`;
+`clientSecret`: `string`;
+`tokenUrl`: `string`;
+\};
+`rbacRulesDir?`: `string`;
+`rbacRulesFileName?`: `string`;
+`realTimeAuthDefaultTimeoutSeconds`: `number`;
+`userPreferences`: \{
+`telemetryConsent?`: `boolean`;
+\};
+`util`: \{
+`authProvider`: \{
+`localByPass?`: `boolean`;
+`oidc?`: \{
+`audience`: `string`;
+`cacheTime?`: `number`;
+`issuer`: `string`;
+`jwksUri`: `string`;
+`rateLimit`: `boolean`;
+\};
+\};
+`cache`: \{
+`memory?`: `boolean`;
+`redis?`: \| \{
+`host`: `string`;
+`port`: `number`;
+\}
+\| \{
+`url`: `string`;
+\};
+\};
+`certificateAuthority`: \{
+`chargingStationCA`: \{
+`acme?`: \{
+`accountKeyFilePath`: `string`;
+`email`: `string`;
+`env`: `"production"` \| `"staging"`;
+\};
+`name`: `"acme"`;
+\};
+`v2gCA`: \{
+`hubject?`: \{
+`baseUrl`: `string`;
+`clientId`: `string`;
+`clientSecret`: `string`;
+`tokenUrl`: `string`;
+\};
+`name`: `"hubject"`;
+\};
+\};
+`messageBroker`: \{
+`amqp?`: \{
+`exchange`: `string`;
+`url`: `string`;
+\};
+\};
+`networkConnection`: \{
+`websocketServers`: `object`[];
+\};
+`swagger?`: \{
+`exposeData`: `boolean`;
+`exposeMessage`: `boolean`;
+`logoPath`: `string`;
+`path`: `string`;
+\};
+\};
+\}\>
