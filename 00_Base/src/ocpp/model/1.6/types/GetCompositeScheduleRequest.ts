@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { GetCompositeScheduleRequestChargingRateUnit } from '../enums';
-import { OcppRequest } from '../../../..';
+import { GetCompositeScheduleRequestChargingRateUnit } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface GetCompositeScheduleRequest extends OcppRequest {
   connectorId: number;

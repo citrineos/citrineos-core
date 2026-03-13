@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_0_1 } from '@citrineos/base';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 
 export const aClearMonitoringResult = (
   updateFunction?: UpdateFunction<OCPP2_0_1.ClearMonitoringResultType>,

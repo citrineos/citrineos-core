@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig';
+import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig.js';
 
 // Bootstrap schema contains what's needed to start the application
 export const bootstrapConfigSchema = z.object({
@@ -34,7 +34,7 @@ export const bootstrapConfigSchema = z.object({
   // File access configuration
   fileAccess: z
     .object({
-      type: z.enum(['local', 's3', 'directus']),
+      type: z.enum(['local', 's3', 'gcp']),
       local: z
         .object({
           defaultFilePath: z.string().default('data'),
@@ -50,14 +50,10 @@ export const bootstrapConfigSchema = z.object({
           secretAccessKey: z.string().optional(),
         })
         .optional(),
-      directus: z
+      gcp: z
         .object({
-          host: z.string().default('localhost'),
-          port: z.number().int().positive().default(8055),
-          token: z.string().optional(),
-          username: z.string().optional(),
-          password: z.string().optional(),
-          generateFlows: z.boolean().default(false),
+          projectId: z.string(),
+          credentials: z.object().optional(),
         })
         .optional(),
     })
@@ -69,8 +65,8 @@ export const bootstrapConfigSchema = z.object({
             return !!obj.local;
           case 's3':
             return !!obj.s3;
-          case 'directus':
-            return !!obj.directus;
+          case 'gcp':
+            return !!obj.gcp;
           default:
             return false;
         }
@@ -160,15 +156,10 @@ export function loadBootstrapConfig(): BootstrapConfig {
         secretAccessKey: getEnvVarValue('file_access_s3_secret_access_key'),
       };
       break;
-    case 'directus':
-      config.fileAccess.directus = {
-        host: getEnvVarValue('file_access_directus_host'),
-        port:
-          getEnvVarValue('file_access_directus_port') &&
-          parseInt(getEnvVarValue('file_access_directus_port')!, 10),
-        token: getEnvVarValue('file_access_directus_token'),
-        username: getEnvVarValue('file_access_directus_username'),
-        password: getEnvVarValue('file_access_directus_password'),
+    case 'gcp':
+      config.fileAccess.gcp = {
+        projectId: getEnvVarValue('file_access_gcp_project_id'),
+        credentials: getEnvVarValue('file_access_gcp_credentials'),
       };
       break;
   }

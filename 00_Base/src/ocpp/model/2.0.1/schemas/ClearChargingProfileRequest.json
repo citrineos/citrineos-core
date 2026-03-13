@@ -43,14 +43,18 @@
         },
         "evseId": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nSpecifies the id of the EVSE for which to clear charging profiles. An evseId of zero (0) specifies the charging profile for the overall Charging Station. Absence of this parameter means the clearing applies to all charging profiles that match the other criteria in the request.\r\n\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "chargingProfilePurpose": {
           "$ref": "#/definitions/ChargingProfilePurposeEnumType"
         },
         "stackLevel": {
           "description": "Charging_ Profile. Stack_ Level. Counter\r\nurn:x-oca:ocpp:uid:1:569230\r\nSpecifies the stackLevel for which charging profiles will be cleared, if they meet the other criteria in the request.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       }
     }
@@ -63,7 +67,9 @@
     },
     "chargingProfileId": {
       "description": "The Id of the charging profile to clear.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "chargingProfileCriteria": {
       "$ref": "#/definitions/ClearChargingProfileType"

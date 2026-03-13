@@ -1,10 +1,29 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { QueryInterface } from 'sequelize';
+import { QueryInterface, QueryTypes } from 'sequelize';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250621120000-flatten-authorization';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     // 1. Drop any existing temp tables first, then create temp tables to preserve data from related tables
     await queryInterface.sequelize.query('DROP TABLE IF EXISTS "IdTokens_temp"');
     await queryInterface.sequelize.query('DROP TABLE IF EXISTS "IdTokenInfos_temp"');

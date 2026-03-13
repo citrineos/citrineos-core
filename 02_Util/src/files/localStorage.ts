@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
 import path from 'path';
-import { ConfigStore, SystemConfig } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { ConfigStore, SystemConfig } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class LocalStorage implements ConfigStore {
   protected readonly _logger: Logger<ILogObj>;
@@ -27,14 +28,11 @@ export class LocalStorage implements ConfigStore {
   }
 
   async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const absoluteFilePath = path.join(
-      process.cwd(),
-      filePath ? filePath : this.defaultFilePath,
-      fileName,
-    );
+    const relativePath = path.join(filePath ? filePath : this.defaultFilePath, fileName);
+    const absoluteFilePath = path.join(process.cwd(), relativePath);
     this._logger.debug(`Saving file to ${absoluteFilePath}`);
     fs.writeFileSync(absoluteFilePath, content, 'utf-8');
-    return absoluteFilePath;
+    return filePath ? relativePath : fileName;
   }
 
   async getFile(id: string, filePath?: string): Promise<string | undefined> {

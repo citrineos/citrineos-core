@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Tests
+
+on:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.4.1"
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Clean and install dependencies
+        run: |
+          npm run remove-dependencies
+          npm install
+          npm run build
+
+      - name: Run tests
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: npm test

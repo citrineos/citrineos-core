@@ -1,49 +1,56 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  AuthorizationDtoProps,
-  AuthorizationStatusType,
+import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
   BootstrapConfig,
   CallAction,
-  ChargingStationSequenceType,
-  EventGroup,
   HandlerProperties,
-  IAuthorizationDto,
   IAuthorizer,
   ICache,
   IMessage,
   IMessageContext,
   IMessageHandler,
   IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  AuthorizationStatusEnum,
+  ChargingLimitSourceEnum,
+  ChargingStationSequenceTypeEnum,
+  ErrorCode,
+  EventGroup,
   MessageOrigin,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
+  OcppError,
+  OCPPValidator,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
+import type {
   IAuthorizationRepository,
   IChargingProfileRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
+  ILocationRepository,
+  IOCPPMessageRepository,
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
+} from '@citrineos/data';
+import {
+  Authorization,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
   Tariff,
   VariableAttribute,
-  IOCPPMessageRepository,
-  ILocationRepository,
-  Authorization,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
@@ -51,9 +58,11 @@ import {
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
+  validateIdToken,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { LocalAuthListService } from './LocalAuthListService';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { LocalAuthListService } from './LocalAuthListService.js';
 
 /**
  * Component that handles provisioning related messages.
@@ -66,19 +75,9 @@ export class EVDriverModule extends AbstractModule {
   _requests: CallAction[] = [];
 
   _responses: CallAction[] = [];
-
-  protected _authorizeRepository: IAuthorizationRepository;
-  protected _localAuthListRepository: ILocalAuthListRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _tariffRepository: ITariffRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
-  protected _chargingProfileRepository: IChargingProfileRepository;
-  protected _reservationRepository: IReservationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _locationRepository: ILocationRepository;
-
   private _certificateAuthorityService: CertificateAuthorityService;
-  private _localAuthListService: LocalAuthListService;
   private _authorizers: IAuthorizer[];
   private _idGenerator: IdGenerator;
 
@@ -152,6 +151,7 @@ export class EVDriverModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     authorizeRepository?: IAuthorizationRepository,
     localAuthListRepository?: ILocalAuthListRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -173,6 +173,7 @@ export class EVDriverModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.EVDriver,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.evdriver.requests;
@@ -199,7 +200,7 @@ export class EVDriverModule extends AbstractModule {
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
 
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, logger);
+      certificateAuthorityService || new CertificateAuthorityService(config, cache, logger);
 
     this._localAuthListService = new LocalAuthListService(
       this._localAuthListRepository,
@@ -216,33 +217,49 @@ export class EVDriverModule extends AbstractModule {
       new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
   }
 
+  protected _authorizeRepository: IAuthorizationRepository;
+
   get authorizeRepository(): IAuthorizationRepository {
     return this._authorizeRepository;
   }
+
+  protected _localAuthListRepository: ILocalAuthListRepository;
 
   get localAuthListRepository(): ILocalAuthListRepository {
     return this._localAuthListRepository;
   }
 
+  protected _deviceModelRepository: IDeviceModelRepository;
+
   get deviceModelRepository(): IDeviceModelRepository {
     return this._deviceModelRepository;
   }
+
+  protected _transactionEventRepository: ITransactionEventRepository;
 
   get transactionEventRepository(): ITransactionEventRepository {
     return this._transactionEventRepository;
   }
 
+  protected _chargingProfileRepository: IChargingProfileRepository;
+
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
   }
+
+  protected _reservationRepository: IReservationRepository;
 
   get reservationRepository(): IReservationRepository {
     return this._reservationRepository;
   }
 
+  protected _ocppMessageRepository: IOCPPMessageRepository;
+
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
   }
+
+  private _localAuthListService: LocalAuthListService;
 
   get localAuthListService(): LocalAuthListService {
     return this._localAuthListService;
@@ -267,6 +284,26 @@ export class EVDriverModule extends AbstractModule {
       },
     };
 
+    // Validate ID token format after AJV schema validation, checking if the token conforms to expected type e.g if type is ISO14443, the token should be a hex string of even length
+    const tokenValidation = validateIdToken(request.idToken.type, request.idToken.idToken);
+    if (!tokenValidation.isValid) {
+      this._logger.warn(`Invalid ID token format`, {
+        type: request.idToken.type,
+        token: request.idToken.idToken,
+        error: tokenValidation.errorMessage,
+      });
+      const messageId = message.context.correlationId;
+      const error = new OcppError(
+        messageId,
+        ErrorCode.PropertyConstraintViolation,
+        tokenValidation.errorMessage || 'Invalid token value for specified type',
+      );
+      response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
+      this._logger.error('Token validation failed:', tokenValidation.errorMessage);
+      await this.sendCallErrorWithMessage(message, error);
+      return;
+    }
+
     if (message.payload.idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
       response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Accepted;
       await this.sendCallResultWithMessage(message, response);
@@ -290,6 +327,7 @@ export class EVDriverModule extends AbstractModule {
           await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
       }
       if (response.certificateStatus !== OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted) {
+        response.idTokenInfo.status = OCPP2_0_1.AuthorizationStatusEnumType.Invalid;
         const messageConfirmation = await this.sendCallResultWithMessage(message, response);
         this._logger.debug('Authorize response sent:', messageConfirmation);
         return;
@@ -300,7 +338,7 @@ export class EVDriverModule extends AbstractModule {
       context.tenantId,
       {
         idToken: request.idToken.idToken,
-        type: request.idToken.type,
+        type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(request.idToken.type),
       },
     );
 
@@ -322,8 +360,11 @@ export class EVDriverModule extends AbstractModule {
           // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
           // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
           // list of Part 2 - Appendices of OCPP 2.0.1
-          let evseIds: Set<number> | undefined;
-          if (authorization.allowedConnectorTypes) {
+          let evseIds: Set<number> | undefined = undefined;
+          if (
+            authorization.allowedConnectorTypes &&
+            authorization.allowedConnectorTypes.length > 0
+          ) {
             evseIds = new Set();
             const connectorTypes: VariableAttribute[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -346,7 +387,10 @@ export class EVDriverModule extends AbstractModule {
               // TODO determine how/if to set personalMessage
             };
           } else {
-            if (authorization.disallowedEvseIdPrefixes) {
+            if (
+              authorization.disallowedEvseIdPrefixes &&
+              authorization.disallowedEvseIdPrefixes.length > 0
+            ) {
               evseIds = evseIds ? evseIds : new Set();
               const evseIdAttributes: VariableAttribute[] =
                 await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -389,22 +433,26 @@ export class EVDriverModule extends AbstractModule {
           if (response.idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
             break;
           }
-          const result: AuthorizationStatusType = await authorizer.authorize(
+          const result: AuthorizationStatusEnumType = await authorizer.authorize(
             authorization,
             context,
           );
           response.idTokenInfo.status =
-            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(result);
+            OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(result);
         }
       } else {
         // Blocked, Expired, Invalid, NoCredit, Unknown
         response.idTokenInfo = idTokenInfo;
       }
     } else {
+      // Status is Unknown if no authorization found
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
         // TODO determine how/if to set personalMessage
       };
+      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+      this._logger.debug('Authorize response sent:', messageConfirmation);
+      return;
     }
 
     if (response.idTokenInfo.status === OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
@@ -539,7 +587,7 @@ export class EVDriverModule extends AbstractModule {
           requestId: await this._idGenerator.generateRequestId(
             message.context.tenantId,
             message.context.stationId,
-            ChargingStationSequenceType.getChargingProfiles,
+            ChargingStationSequenceTypeEnum.getChargingProfiles,
           ),
           chargingProfile: {
             chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
@@ -751,7 +799,6 @@ export class EVDriverModule extends AbstractModule {
         context.tenantId,
         {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         },
       );
       if (!authorizations || authorizations.length === 0) {
@@ -776,7 +823,7 @@ export class EVDriverModule extends AbstractModule {
 
       if (!authorization.status) {
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
-      } else if (authorization.status === AuthorizationStatusType.Accepted) {
+      } else if (authorization.status === AuthorizationStatusEnum.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
@@ -794,9 +841,9 @@ export class EVDriverModule extends AbstractModule {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
         } else {
           // Apply authorizers
-          let status: AuthorizationStatusType = authorization.status;
+          let status: AuthorizationStatusEnumType = authorization.status;
           for (const authorizer of this._authorizers) {
-            if (status !== AuthorizationStatusType.Accepted) {
+            if (status !== AuthorizationStatusEnum.Accepted) {
               break;
             }
             status = await authorizer.authorize(authorization, context);
@@ -822,14 +869,63 @@ export class EVDriverModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('RemoteStartTransactionResponse received:', message, props);
+
+    const tenantId = message.context.tenantId;
+    const stationId: string = message.context.stationId;
+
+    if (message.payload.status === OCPP1_6.RemoteStartTransactionResponseStatus.Accepted) {
+      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          tenantId: tenantId,
+          stationId: stationId,
+          correlationId: message.context.correlationId,
+          origin: MessageOrigin.ChargingStationManagementSystem,
+        },
+      });
+
+      if (originalMessage) {
+        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+
+        if (originalRequest.chargingProfile) {
+          const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(
+            originalRequest.chargingProfile,
+          );
+
+          await this._chargingProfileRepository.createOrUpdateChargingProfile(
+            tenantId,
+            mapped,
+            stationId,
+            originalRequest.connectorId ?? null,
+            ChargingLimitSourceEnum.CSO,
+            true,
+          );
+        }
+      } else {
+        this._logger.error(
+          `OCPP 1.6 RemoteStartTransaction accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
+        );
+      }
+    } else {
+      this._logger.error(
+        `OCPP 1.6 RemoteStartTransaction rejected: ${JSON.stringify(message.payload)}`,
+      );
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.ClearCache)
+  protected async _handleOcpp16ClearCache(
+    message: IMessage<OCPP1_6.ClearCacheResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
   private _updateAuthorizationFromDto(
     auth: Authorization,
-    dto: Partial<IAuthorizationDto>,
+    dto: Partial<AuthorizationDto>,
   ): Authorization {
-    for (const key of Object.values(AuthorizationDtoProps)) {
-      const value = dto[key as keyof IAuthorizationDto];
+    for (const key of Object.keys(dto) as (keyof AuthorizationDto)[]) {
+      const value = dto[key];
 
       if (value !== undefined && value !== null) {
         (auth as any)[key] = value;

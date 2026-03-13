@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Ajv, ErrorObject } from 'ajv';
+import type { ErrorObject } from 'ajv';
 
-import {
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   Call,
   CallAction,
   CallResult,
@@ -13,28 +15,21 @@ import {
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-  MessageState,
-  OCPP1_6_CALL_RESULT_SCHEMA_MAP,
-  OCPP1_6_CALL_SCHEMA_MAP,
-  OCPP2_0_1_CALL_RESULT_SCHEMA_MAP,
-  OCPP2_0_1_CALL_SCHEMA_MAP,
-  OcppError,
   OcppRequest,
   OcppResponse,
-  OCPPVersion,
   OCPPVersionType,
   SystemConfig,
-} from '../..';
-import { ILogObj, Logger } from 'tslog';
-import { IMessageRouter } from './Router';
+} from '../../index.js';
+import { ErrorCode, MessageOrigin, MessageState, OcppError, OCPPVersion } from '../../index.js';
+import { OCPPValidator } from '../modules/OCPPValidator.js';
+import type { IMessageRouter } from './Router.js';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
    * Fields
    */
 
-  protected _ajv: Ajv;
+  protected _ocppValidator: OCPPValidator;
   protected _cache: ICache;
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
@@ -45,7 +40,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
    * Constructor of abstract ocpp router.
    *
-   * @param {Ajv} ajv - The Ajv instance to use for schema validation.
+   * @param {OCPPValidator} ocppValidator - The OCPPValidator instance to use for message validation.
    */
   constructor(
     config: SystemConfig,
@@ -54,21 +49,14 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     sender: IMessageSender,
     networkHook: (identifier: string, message: string) => Promise<void>,
     logger?: Logger<ILogObj>,
-    ajv?: Ajv,
+    ocppValidator?: OCPPValidator,
   ) {
     this._config = config;
     this._cache = cache;
     this._handler = handler;
     this._sender = sender;
     this._networkHook = networkHook;
-    this._ajv =
-      ajv ||
-      new Ajv({
-        removeAdditional: 'all',
-        useDefaults: true,
-        coerceTypes: 'array',
-        strict: false,
-      });
+    this._ocppValidator = ocppValidator || new OCPPValidator(logger);
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -80,6 +68,10 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
    * Getters & Setters
    */
+
+  get ocppValidator(): OCPPValidator {
+    return this._ocppValidator;
+  }
 
   get cache(): ICache {
     return this._cache;
@@ -118,40 +110,92 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    */
 
   async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>): Promise<void> {
-    this._logger.debug('Received message:', message);
+    message.payload = this._ocppValidator.sanitizeOCPPPayload(message.payload);
+    switch (message.state) {
+      case MessageState.Request: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
 
-    if (message.state === MessageState.Response) {
-      if (message.payload instanceof OcppError) {
-        await this.sendCallError(
-          message.context.correlationId,
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+
+        await this.sendCall(
           message.context.stationId,
           message.context.tenantId,
           message.protocol,
           message.action,
           message.payload,
-          message.origin,
-        );
-      } else {
-        await this.sendCallResult(
           message.context.correlationId,
-          message.context.stationId,
-          message.context.tenantId,
-          message.protocol,
-          message.action,
-          message.payload,
           message.origin,
         );
+
+        break;
       }
-    } else if (message.state === MessageState.Request) {
-      await this.sendCall(
-        message.context.stationId,
-        message.context.tenantId,
-        message.protocol,
-        message.action,
-        message.payload,
-        message.context.correlationId,
-        message.origin,
-      );
+      case MessageState.Response: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
+
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+
+        if (message.payload && (message.payload as any)._errorCode) {
+          // Create OcppError from payload properties for sendCallError method
+          const errorPayload = message.payload as any;
+          const ocppError = new OcppError(
+            errorPayload._messageId,
+            errorPayload._errorCode,
+            errorPayload.message || '',
+            errorPayload._errorDetails || {},
+          );
+
+          await this.sendCallError(
+            message.context.correlationId,
+            message.context.stationId,
+            message.context.tenantId,
+            message.protocol,
+            message.action,
+            ocppError,
+            message.origin,
+          );
+        } else {
+          await this.sendCallResult(
+            message.context.correlationId,
+            message.context.stationId,
+            message.context.tenantId,
+            message.protocol,
+            message.action,
+            message.payload,
+            message.origin,
+          );
+        }
+
+        break;
+      }
+      default:
+        this._logger.error('Unknown message state', message);
+        throw new Error('Unknown message state: ' + message.state);
     }
   }
 
@@ -175,38 +219,20 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     const action = message[2];
     const payload = message[3];
 
-    let schema: any;
+    let protocolEnum: OCPPVersion | undefined;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
-        schema = OCPP1_6_CALL_SCHEMA_MAP.get(action);
+        protocolEnum = OCPPVersion.OCPP1_6;
         break;
       case OCPPVersion.OCPP2_0_1:
-        schema = OCPP2_0_1_CALL_SCHEMA_MAP.get(action);
+        protocolEnum = OCPPVersion.OCPP2_0_1;
         break;
       default:
         this._logger.error('Unknown subprotocol', protocol);
         return { isValid: false };
     }
 
-    if (schema) {
-      let validate = this._ajv.getSchema(schema['$id']);
-      if (!validate) {
-        schema['$id'] = `${protocol}-${schema['$id']}`;
-        this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
-        validate = this._ajv.compile(schema);
-      }
-      const result = validate(payload);
-      if (!result) {
-        const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
-        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
-        return { isValid: false, errors: validationErrorsDeepCopy };
-      } else {
-        return { isValid: true };
-      }
-    } else {
-      this._logger.error('No schema found for action', action, message);
-      return { isValid: false }; // TODO: Implement config for this behavior
-    }
+    return this._ocppValidator.validateOCPPRequest(action, payload, protocolEnum);
   }
 
   /**
@@ -226,37 +252,20 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
     const payload = message[2];
 
-    let schema: any;
+    let protocolEnum: OCPPVersion | undefined;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
-        schema = OCPP1_6_CALL_RESULT_SCHEMA_MAP.get(action);
+        protocolEnum = OCPPVersion.OCPP1_6;
         break;
       case OCPPVersion.OCPP2_0_1:
-        schema = OCPP2_0_1_CALL_RESULT_SCHEMA_MAP.get(action);
+        protocolEnum = OCPPVersion.OCPP2_0_1;
         break;
       default:
         this._logger.error('Unknown subprotocol', protocol);
         return { isValid: false };
     }
-    if (schema) {
-      let validate = this._ajv.getSchema(schema['$id']);
-      if (!validate) {
-        schema['$id'] = `${protocol}-${schema['$id']}`;
-        this._logger.debug(`Updated call result schema id: ${schema['$id']}`);
-        validate = this._ajv.compile(schema);
-      }
-      const result = validate(payload);
-      if (!result) {
-        const validationErrorsDeepCopy = JSON.parse(JSON.stringify(validate.errors));
-        this._logger.debug('Validate CallResult failed', validationErrorsDeepCopy);
-        return { isValid: false, errors: validationErrorsDeepCopy };
-      } else {
-        return { isValid: true };
-      }
-    } else {
-      this._logger.error('No schema found for call result with action', action, message);
-      return { isValid: false }; // TODO: Implement config for this behavior
-    }
+
+    return this._ocppValidator.validateOCPPResponse(action, payload, protocolEnum);
   }
 
   abstract onMessage(

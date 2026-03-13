@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ClearChargingProfileRequestChargingProfilePurpose } from '../enums';
-import { OcppRequest } from '../../../..';
+import { ClearChargingProfileRequestChargingProfilePurpose } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface ClearChargingProfileRequest extends OcppRequest {
   id?: number | null;

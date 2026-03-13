@@ -2,14 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import {
-  ApiAuthenticationResult,
-  ApiAuthorizationResult,
-  IApiAuthProvider,
-  UserInfo,
-} from '@citrineos/base';
+import type { FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
+import { ApiAuthenticationResult, ApiAuthorizationResult } from '@citrineos/base';
 
 /**
  * A local bypass authentication provider that doesn't perform actual authentication

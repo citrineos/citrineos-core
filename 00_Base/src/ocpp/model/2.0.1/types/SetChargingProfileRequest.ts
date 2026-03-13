@@ -14,8 +14,8 @@ import {
   ChargingRateUnitEnumType,
   CostKindEnumType,
   RecurrencyKindEnumType,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface SetChargingProfileRequest extends OcppRequest {
   customData?: CustomDataType | null;

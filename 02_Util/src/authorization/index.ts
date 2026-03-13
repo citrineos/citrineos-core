@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-export * from './ApiAuthPlugin';
-export { LocalBypassAuthProvider } from './provider/LocalByPassAuthProvider';
-export { OIDCAuthProvider } from './provider/OIDCAuthProvider';
-export { OidcTokenProvider } from './OidcTokenProvider';
+export * from './ApiAuthPlugin.js';
+export { LocalBypassAuthProvider } from './provider/LocalByPassAuthProvider.js';
+export { OIDCAuthProvider } from './provider/OIDCAuthProvider.js';
+export { OidcTokenProvider } from './OidcTokenProvider.js';

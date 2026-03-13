@@ -2,20 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsToMany, Column, DataType, Table } from 'sequelize-typescript';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization';
-import { LocalListAuthorization } from './LocalListAuthorization';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { LocalListAuthorization } from './LocalListAuthorization.js';
+import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 
 @Table
-export class SendLocalList extends BaseModelWithTenant implements OCPP2_0_1.SendLocalListRequest {
+export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListRequest {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.SendLocalListRequest;
 
-  @Column
+  @Column(DataType.STRING)
   declare stationId: string;
 
-  @Column
+  @Column(DataType.STRING)
   declare correlationId: string;
 
   @Column(DataType.INTEGER)
@@ -59,5 +70,32 @@ export class SendLocalList extends BaseModelWithTenant implements OCPP2_0_1.Send
           ? (localAuthList as [OCPP2_0_1.AuthorizationData, ...OCPP2_0_1.AuthorizationData[]])
           : null,
     };
+  }
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: SendLocalList) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
   }
 }

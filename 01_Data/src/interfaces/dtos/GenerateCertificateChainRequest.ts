@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CountryNameEnumType, SignatureAlgorithmEnumType } from '../../layers/sequelize';
+import { CountryNameEnumType, SignatureAlgorithmEnumType } from '../../layers/sequelize/index.js';
 
 export class GenerateCertificateChainRequest {
   // Fields for generating a certificate
@@ -16,7 +16,6 @@ export class GenerateCertificateChainRequest {
   signatureAlgorithm?: SignatureAlgorithmEnumType;
   pathLen?: number;
   // The file path to store the generated certificate.
-  // If we use directus files as storage, filePath is the folder id
   filePath?: string;
 
   constructor(

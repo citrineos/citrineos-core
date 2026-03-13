@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IFileAccess } from '@citrineos/base';
+import type { IFileAccess } from '@citrineos/base';
 
 export class FtpServer implements IFileAccess {
   getFileURL(): string {

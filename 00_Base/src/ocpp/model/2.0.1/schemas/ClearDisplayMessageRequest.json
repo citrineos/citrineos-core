@@ -23,7 +23,9 @@
     },
     "id": {
       "description": "Id of the message that SHALL be removed from the Charging Station.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     }
   },
   "required": ["id"]

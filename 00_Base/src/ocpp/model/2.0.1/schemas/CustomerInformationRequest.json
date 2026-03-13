@@ -142,7 +142,9 @@
     },
     "requestId": {
       "description": "The Id of the request.\r\n\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "report": {
       "description": "Flag indicating whether the Charging Station should return NotifyCustomerInformationRequest messages containing information about the customer referred to.\r\n",

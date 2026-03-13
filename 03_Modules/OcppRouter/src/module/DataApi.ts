@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type {
+  BootstrapConfig,
+  IMessageRouter,
+  INetworkConnection,
+  SystemConfig,
+  WebsocketServerConfig,
+} from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -13,43 +19,73 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
-  WebsocketServerConfig,
+  UnauthorizedError,
 } from '@citrineos/base';
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IAdminApi } from './interface';
-import { MessageRouterImpl } from './router';
-import {
-  ChargingStationKeyQuerySchema,
+import type {
   ChargingStationKeyQuerystring,
-  CreateSubscriptionSchema,
+  ConnectionDeleteQuerystring,
+  IServerNetworkProfileRepository,
+  ISubscriptionRepository,
   ModelKeyQuerystring,
-  ModelKeyQuerystringSchema,
-  Subscription,
   TenantQueryString,
-  TenantQuerySchema,
-  WebsocketGetQuerySchema,
+  WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
+  WebsocketMappingQuerystring,
 } from '@citrineos/data';
 import {
+  ChargingStationKeyQuerySchema,
+  ConnectionDeleteQuerySchema,
+  CreateSubscriptionSchema,
+  ModelKeyQuerystringSchema,
+  sequelize,
+  Subscription,
+  TenantQuerySchema,
   WebsocketDeleteQuerySchema,
-  WebsocketDeleteQuerystring,
+  WebsocketGetQuerySchema,
   WebsocketRequestSchema,
-} from '@citrineos/data/dist/interfaces/queries/Websocket';
+  WebsocketMappingQuerySchema,
+  WebsocketMappingRequestSchema,
+} from '@citrineos/data';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IAdminApi } from './interface.js';
 
 /**
  * Admin API for the OcppRouter.
  */
-export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IAdminApi {
+export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdminApi {
+  private _networkConnection: INetworkConnection;
+  private _subscriptionRepository: ISubscriptionRepository;
+  private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+
   /**
    * Constructs a new instance of the class.
    *
-   * @param {MessageRouterImpl} ocppRouter - The OcppRouter module.
+   * @param {IMessageRouter} ocppRouter - The OcppRouter module.
+   * @param {INetworkConnection} networkConnection - The network connection instance.
    * @param {FastifyInstance} server - The Fastify server instance.
+   * @param {BootstrapConfig & SystemConfig} config - The configuration instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
+   * @param {ISubscriptionRepository} [subscriptionRepository] - The subscription repository instance.
+   * @param {IServerNetworkProfileRepository} [serverNetworkProfileRepository] - The server network profile repository instance.
    */
-  constructor(ocppRouter: MessageRouterImpl, server: FastifyInstance, logger?: Logger<ILogObj>) {
+  constructor(
+    ocppRouter: IMessageRouter,
+    networkConnection: INetworkConnection,
+    server: FastifyInstance,
+    config: BootstrapConfig & SystemConfig,
+    logger?: Logger<ILogObj>,
+    subscriptionRepository?: ISubscriptionRepository,
+    serverNetworkProfileRepository?: IServerNetworkProfileRepository,
+  ) {
     super(ocppRouter, server, null, logger);
+    this._networkConnection = networkConnection;
+    this._subscriptionRepository =
+      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
+    this._serverNetworkProfileRepository =
+      serverNetworkProfileRepository ||
+      new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.
@@ -82,7 +118,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
         'Must specify at least one of onConnect, onClose, onMessage, sentMessage to true.',
       );
     }
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .create(tenantId, request.body as Subscription)
       .then((subscription) => subscription?.id);
   }
@@ -91,7 +127,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
   ): Promise<Subscription[]> {
-    return this._module.subscriptionRepository.readAllByStationId(
+    return this._subscriptionRepository.readAllByStationId(
       request.query.tenantId,
       request.query.stationId,
     );
@@ -102,7 +138,7 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     request: FastifyRequest<{ Querystring: ModelKeyQuerystring }>,
   ): Promise<boolean> {
     const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
-    return this._module.subscriptionRepository
+    return this._subscriptionRepository
       .deleteByKey(tenantId, request.query.id.toString())
       .then(() => true);
   }
@@ -148,6 +184,128 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
     }
   }
 
+  /**
+   * Adds or updates a mapping from a path segment to a tenant for a specific websocket server.
+   */
+  @AsDataEndpoint(
+    Namespace.WebsocketMapping,
+    HttpMethod.Put,
+    WebsocketMappingQuerySchema,
+    WebsocketMappingRequestSchema,
+  )
+  async putWebsocketMapping(
+    request: FastifyRequest<{
+      Body: { path: string; tenantId: number };
+      Querystring: WebsocketMappingQuerystring;
+    }>,
+  ): Promise<WebsocketServerConfig> {
+    this._validateSystemToken(request);
+
+    const serverId = request.query.id;
+    const { path, tenantId } = request.body;
+
+    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === serverId,
+    );
+
+    if (!websocketConfig) {
+      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    }
+
+    if (!websocketConfig.tenantPathMapping) {
+      websocketConfig.tenantPathMapping = {};
+    }
+
+    if (
+      websocketConfig.tenantPathMapping[path] !== undefined &&
+      websocketConfig.tenantPathMapping[path] !== tenantId
+    ) {
+      throw new BadRequestError(
+        `Path ${path} is already mapped to tenant ${websocketConfig.tenantPathMapping[path]}`,
+      );
+    }
+
+    websocketConfig.tenantPathMapping[path] = tenantId;
+    websocketConfig.dynamicTenantResolution = true;
+
+    await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+      websocketConfig,
+      this._module.config.maxCallLengthSeconds,
+    );
+
+    return websocketConfig;
+  }
+
+  /**
+   * Removes a mapping for a specific path OR all mappings for a specific tenant from a websocket server.
+   */
+  @AsDataEndpoint(Namespace.WebsocketMapping, HttpMethod.Delete, WebsocketMappingQuerySchema)
+  async deleteWebsocketMapping(
+    request: FastifyRequest<{
+      Querystring: WebsocketMappingQuerystring & { path?: string; tenantId?: number };
+    }>,
+  ): Promise<WebsocketServerConfig> {
+    this._validateSystemToken(request);
+
+    const serverId = request.query.id;
+    const path = (request.query as any).path;
+    const tenantId = (request.query as any).tenantId;
+
+    if (!path && !tenantId) {
+      throw new BadRequestError('Either path or tenantId is required to delete a mapping');
+    }
+
+    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+      (ws) => ws.id === serverId,
+    );
+
+    if (!websocketConfig) {
+      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    }
+
+    if (websocketConfig.tenantPathMapping) {
+      let changed = false;
+      if (path && websocketConfig.tenantPathMapping[path] !== undefined) {
+        delete websocketConfig.tenantPathMapping[path];
+        changed = true;
+      } else if (tenantId) {
+        const tenantIdNum = Number(tenantId);
+        for (const [key, value] of Object.entries(websocketConfig.tenantPathMapping)) {
+          if (value === tenantIdNum) {
+            delete websocketConfig.tenantPathMapping[key];
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+        await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+          websocketConfig,
+          this._module.config.maxCallLengthSeconds,
+        );
+      }
+    }
+
+    return websocketConfig;
+  }
+
+  /**
+   * Helper to validate internal system calls
+   */
+  private _validateSystemToken(request: FastifyRequest): void {
+    const systemToken = this._module.config.centralSystem.systemApiToken;
+    if (!systemToken) {
+      return;
+    }
+
+    const providedToken = request.headers['x-system-token'];
+    if (providedToken !== systemToken) {
+      throw new UnauthorizedError('Invalid or missing system API token');
+    }
+  }
+
   @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)
   async deleteWebsocketConfiguration(
     request: FastifyRequest<{ Querystring: WebsocketDeleteQuerystring }>,
@@ -161,6 +319,14 @@ export class AdminApi extends AbstractModuleApi<MessageRouterImpl> implements IA
       this._module.config.util.networkConnection.websocketServers.splice(existingConfigIndex, 1);
       await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
     }
+  }
+
+  // Forcibly disconnect a websocket connection by station id and tenant id and mark the station as offline
+  @AsDataEndpoint(Namespace.Connection, HttpMethod.Delete, ConnectionDeleteQuerySchema)
+  async deleteWebsocketConnection(
+    request: FastifyRequest<{ Querystring: ConnectionDeleteQuerystring }>,
+  ): Promise<void> {
+    await this._networkConnection.disconnect(request.query.tenantId, request.query.stationId);
   }
 
   /**

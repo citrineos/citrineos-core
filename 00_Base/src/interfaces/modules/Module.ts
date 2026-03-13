@@ -2,16 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ICache, OcppError, OcppRequest, OcppResponse, SystemConfig } from '../..';
-import { CallAction, OCPPVersionType } from '../../ocpp/rpc/message';
-import {
+import type { ICache, OcppRequest, OcppResponse, SystemConfig } from '../../index.js';
+import { OcppError } from '../../index.js';
+import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import type {
   HandlerProperties,
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
-  MessageOrigin,
-} from '../messages';
+} from '../messages/index.js';
+import { MessageOrigin } from '../messages/index.js';
+import type { OCPPValidator } from './OCPPValidator.js';
 
 /**
  * Base interface for all OCPP modules.
@@ -19,6 +21,7 @@ import {
  */
 export interface IModule {
   config: SystemConfig;
+  ocppValidator: OCPPValidator;
   cache: ICache;
   sender: IMessageSender;
   handler: IMessageHandler;

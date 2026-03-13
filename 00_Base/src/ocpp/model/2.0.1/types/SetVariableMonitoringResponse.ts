@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { MonitorEnumType, SetMonitoringStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { MonitorEnumType, SetMonitoringStatusEnumType } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface SetVariableMonitoringResponse extends OcppResponse {
   customData?: CustomDataType | null;

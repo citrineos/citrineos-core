@@ -2,23 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConnectorStatus, OCPP2_0_1 } from '@citrineos/base';
+import type { ConnectorStatusEnumType } from '@citrineos/base';
+import { ConnectorStatusEnum, OCPP2_0_1 } from '@citrineos/base';
 
 export class LocationMapper {
-  static mapConnectorStatus(status: OCPP2_0_1.ConnectorStatusEnumType): ConnectorStatus {
+  static mapConnectorStatus(status: OCPP2_0_1.ConnectorStatusEnumType): ConnectorStatusEnumType {
     switch (status) {
       case OCPP2_0_1.ConnectorStatusEnumType.Available:
-        return ConnectorStatus.Available;
+        return ConnectorStatusEnum.Available;
       case OCPP2_0_1.ConnectorStatusEnumType.Occupied:
-        return ConnectorStatus.Charging;
+        return ConnectorStatusEnum.Occupied;
       case OCPP2_0_1.ConnectorStatusEnumType.Reserved:
-        return ConnectorStatus.Reserved;
+        return ConnectorStatusEnum.Reserved;
       case OCPP2_0_1.ConnectorStatusEnumType.Unavailable:
-        return ConnectorStatus.Unavailable;
+        return ConnectorStatusEnum.Unavailable;
       case OCPP2_0_1.ConnectorStatusEnumType.Faulted:
-        return ConnectorStatus.Faulted;
+        return ConnectorStatusEnum.Faulted;
       default:
-        return ConnectorStatus.Unknown;
+        return ConnectorStatusEnum.Unknown;
     }
   }
 }

@@ -2,10 +2,29 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { DataTypes, QueryInterface } from 'sequelize';
+import { DataTypes, QueryInterface, QueryTypes } from 'sequelize';
 
-module.exports = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250714120500-create-tenant-partner-table';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     await queryInterface.createTable('TenantPartners', {
       id: {
         type: DataTypes.INTEGER,

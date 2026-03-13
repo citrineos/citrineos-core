@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/* eslint-disable @typescript-eslint/no-unsafe-function-type */
-
-import { CallAction, OCPPVersion } from '../../ocpp/rpc/message';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsHandler } from '.';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import { OCPPVersion } from '../../ocpp/rpc/message.js';
 
 /**
  * Interface for usage in {@link AsHandler} decorator.
@@ -14,6 +11,6 @@ import { AsHandler } from '.';
 export interface IHandlerDefinition {
   protocol: OCPPVersion;
   action: CallAction;
-  method: Function;
+  method: (...args: any[]) => any;
   methodName: string;
 }

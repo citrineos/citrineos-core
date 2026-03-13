@@ -1,16 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { IVariableCharacteristicsDto, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { Variable } from './Variable';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import type { VariableCharacteristicsDto, VariableDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { Variable } from './Variable.js';
 
 @Table
 export class VariableCharacteristics
-  extends BaseModelWithTenant
-  implements OCPP2_0_1.VariableCharacteristicsType, IVariableCharacteristicsDto
+  extends Model
+  implements OCPP2_0_1.VariableCharacteristicsType, VariableCharacteristicsDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableCharacteristicsType;
 
@@ -33,7 +42,7 @@ export class VariableCharacteristics
   @Column(DataType.STRING(4000))
   declare valuesList?: string | null;
 
-  @Column
+  @Column(DataType.BOOLEAN)
   declare supportsMonitoring: boolean;
 
   /**
@@ -41,7 +50,7 @@ export class VariableCharacteristics
    */
 
   @BelongsTo(() => Variable)
-  declare variable: Variable;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -51,4 +60,31 @@ export class VariableCharacteristics
   declare variableId?: number | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: VariableCharacteristics) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IVariableMonitoringRepository } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
+import type { IVariableMonitoringRepository } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { OCPP2_0_1, OCPP2_0_1_CallAction } from '@citrineos/base';
 
 export class MonitoringService {

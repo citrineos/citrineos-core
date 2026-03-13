@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export abstract class Scheduler {
   protected readonly _logger: Logger<ILogObj>;

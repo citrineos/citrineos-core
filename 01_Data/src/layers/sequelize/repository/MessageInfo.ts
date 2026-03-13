@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { MessageInfo } from '../model/MessageInfo';
-import { IMessageInfoRepository } from '../../../interfaces';
-import { OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import { MessageInfo } from '../model/index.js';
+import type { IMessageInfoRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>

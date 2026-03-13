@@ -18,8 +18,8 @@ import {
   MeasurandEnumType,
   PhaseEnumType,
   ReadingContextEnumType,
-} from '../enums';
-import { OcppRequest } from '../../../..';
+} from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface MeterValuesRequest extends OcppRequest {
   customData?: CustomDataType | null;

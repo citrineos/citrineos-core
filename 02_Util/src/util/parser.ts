@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OcppRequest } from '@citrineos/base';
+import type { OcppRequest } from '@citrineos/base';
 
 /**
  * Calculate the size of a request.
@@ -26,6 +26,9 @@ export function getBatches(
   array: object[] | string[] | boolean[] | number[],
   size: number,
 ): Map<number, object[] | string[] | boolean[] | number[]> {
+  if (!Number.isInteger(size) || size <= 0) {
+    size = array.length;
+  }
   const batchMap = new Map();
   let lastIndex = 0;
   while (array.length > 0) {

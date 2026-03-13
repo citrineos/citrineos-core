@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { StartTransactionResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { StartTransactionResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface StartTransactionResponse extends OcppResponse {
   idTagInfo: {

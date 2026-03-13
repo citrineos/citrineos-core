@@ -31,7 +31,9 @@
     },
     "reservationId": {
       "description": "The ID of the reservation.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "reservationUpdateStatus": {
       "$ref": "#/definitions/ReservationUpdateStatusEnumType"

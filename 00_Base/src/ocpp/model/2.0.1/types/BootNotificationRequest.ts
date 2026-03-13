@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { BootReasonEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { BootReasonEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface BootNotificationRequest extends OcppRequest {
   customData?: CustomDataType | null;
@@ -69,7 +69,7 @@ export interface ModemType {
   /**
    * Wireless_ Communication_ Module. ICCID. CI20_ Text
    * urn:x-oca:ocpp:uid:1:569327
-   * This contains the ICCID of the modem’s SIM card.
+   * This contains the ICCID of the modem's SIM card.
    *
    */
   iccid?: string | null;

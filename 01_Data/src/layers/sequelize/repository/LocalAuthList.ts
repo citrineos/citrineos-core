@@ -1,22 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { CrudRepository, deepDirectionalEqual, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { IAuthorizationRepository, ILocalAuthListRepository } from '../../../interfaces';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
+  IAuthorizationRepository,
+  ILocalAuthListRepository,
+} from '../../../interfaces/index.js';
+import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
   LocalListAuthorization,
   LocalListVersion,
+  LocalListVersionAuthorization,
   SendLocalList,
-} from '../model/Authorization';
-import { SequelizeRepository } from './Base';
-import { LocalListVersionAuthorization } from '../model/Authorization/LocalListVersionAuthorization';
-import { SendLocalListAuthorization } from '../model/Authorization/SendLocalListAuthorization';
-import { SequelizeAuthorizationRepository } from './Authorization';
-import { AuthorizationMapper } from '../mapper/2.0.1';
+  SendLocalListAuthorization,
+} from '../model/index.js';
+import { SequelizeAuthorizationRepository } from './Authorization.js';
+import { SequelizeRepository } from './Base.js';
 
 export class SequelizeLocalAuthListRepository
   extends SequelizeRepository<LocalListVersion>
@@ -78,7 +82,7 @@ export class SequelizeLocalAuthListRepository
       const auth = await Authorization.findOne({
         where: {
           idToken: authData.idToken.idToken,
-          idTokenType: authData.idToken.type,
+          idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
         },
       });
       if (!auth) {
@@ -86,42 +90,21 @@ export class SequelizeLocalAuthListRepository
           `Authorization not found for ${JSON.stringify(authData)}, invalid SendLocalListRequest (create necessary Authorizations first)`,
         );
       }
-      if (
-        authData.idToken.idToken !== auth.idToken ||
-        (auth.idTokenType &&
-          authData.idToken.type !== AuthorizationMapper.toIdTokenEnumType(auth.idTokenType))
-      ) {
-        throw new Error(
-          `Authorization idToken in SendLocalListRequest ${JSON.stringify(authData.idToken)} does not match idToken in database { idToken: ${auth.idToken}, idTokenType: ${auth.idTokenType} } (update the idToken first)`,
-        );
-      }
       // If groupAuthorizationId is present, compare its id to groupAuthorizationId
       if (authData.idTokenInfo?.groupIdToken) {
-        let groupAuthorizationAuthId: number | undefined;
-        // Only perform groupAuthorizationId check if groupIdToken is an object with idToken and type
-        if (
-          authData.idTokenInfo?.groupIdToken &&
-          typeof authData.idTokenInfo.groupIdToken === 'object' &&
-          'idToken' in authData.idTokenInfo.groupIdToken &&
-          'type' in authData.idTokenInfo.groupIdToken
-        ) {
-          const groupAuth = await Authorization.findOne({
-            where: {
-              idToken: authData.idTokenInfo.groupIdToken.idToken,
-              idTokenType: authData.idTokenInfo.groupIdToken.type,
-            },
-          });
-          const groupAuthorizationAuthId = groupAuth?.id;
-          if (
-            !auth.groupAuthorizationId ||
-            groupAuthorizationAuthId !== auth.groupAuthorizationId
-          ) {
-            throw new Error(
-              `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
-            );
-          }
-        } else if (typeof authData.idTokenInfo.groupIdToken === 'number') {
-          groupAuthorizationAuthId = authData.idTokenInfo.groupIdToken;
+        const groupAuth = await Authorization.findOne({
+          where: {
+            idToken: authData.idTokenInfo.groupIdToken.idToken,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(
+              authData.idTokenInfo.groupIdToken.type,
+            ),
+          },
+        });
+        const groupAuthorizationAuthId = groupAuth?.id;
+        if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
+          throw new Error(
+            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
+          );
         }
         if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
           throw new Error(

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { IApiAuthProvider } from './IApiAuthProvider';
-export { ApiAuthorizationResult } from './ApiAuthorizationResult';
-export { ApiAuthenticationResult } from './ApiAuthenticationResult';
-export { UserInfo } from './UserInfo';
+export type { IApiAuthProvider } from './IApiAuthProvider.js';
+export { ApiAuthorizationResult } from './ApiAuthorizationResult.js';
+export { ApiAuthenticationResult } from './ApiAuthenticationResult.js';
+export type { UserInfo } from './UserInfo.js';

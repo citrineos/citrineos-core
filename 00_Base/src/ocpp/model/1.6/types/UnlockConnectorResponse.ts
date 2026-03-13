@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { UnlockConnectorResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { UnlockConnectorResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface UnlockConnectorResponse extends OcppResponse {
   status: UnlockConnectorResponseStatus;

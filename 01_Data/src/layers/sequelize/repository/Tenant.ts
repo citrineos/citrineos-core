@@ -2,12 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base';
-import { ITenantRepository } from '../../../interfaces';
-import { BootstrapConfig } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import type { ITenantRepository } from '../../../interfaces/index.js';
+import type { BootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { Tenant } from '../model/Tenant';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { Tenant } from '../model/Tenant.js';
 
 export class SequelizeTenantRepository
   extends SequelizeRepository<Tenant>
@@ -15,5 +16,14 @@ export class SequelizeTenantRepository
 {
   constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Tenant.MODEL_NAME, logger, sequelizeInstance);
+  }
+
+  async createTenant(tenant: Tenant): Promise<Tenant> {
+    const newTenant = Tenant.build({
+      name: tenant.name,
+      isUserTenant: tenant.isUserTenant,
+      url: tenant.url,
+    } as any); // bypass TS for tenant creation attributes
+    return await newTenant.save();
   }
 }

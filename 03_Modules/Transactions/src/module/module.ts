@@ -1,16 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  AbstractModule,
-  AsHandler,
-  AuthorizationStatusType,
+import type {
   BootstrapConfig,
   CallAction,
-  CrudRepository,
-  ErrorCode,
-  EventGroup,
   HandlerProperties,
   IAuthorizer,
   ICache,
@@ -18,17 +11,25 @@ import {
   IMessage,
   IMessageHandler,
   IMessageSender,
+  MeterValueDto,
+  SystemConfig,
+} from '@citrineos/base';
+import {
+  AbstractModule,
+  AsHandler,
+  AuthorizationStatusEnum,
+  CrudRepository,
+  ErrorCode,
+  EventGroup,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OcppError,
+  OCPPValidator,
   OCPPVersion,
-  SystemConfig,
 } from '@citrineos/base';
-import {
-  Authorization,
-  Component,
+import type {
   IAuthorizationRepository,
   IDeviceModelRepository,
   ILocationRepository,
@@ -36,7 +37,11 @@ import {
   IReservationRepository,
   ITariffRepository,
   ITransactionEventRepository,
-  MeterValue,
+} from '@citrineos/data';
+import {
+  Authorization,
+  Component,
+  OCPP1_6_Mapper,
   sequelize,
   SequelizeOCPPMessageRepository,
   SequelizeRepository,
@@ -50,11 +55,12 @@ import {
   RealTimeAuthorizer,
   SignedMeterValuesUtil,
 } from '@citrineos/util';
-import { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './TransactionService';
-import { StatusNotificationService } from './StatusNotificationService';
-import { CostNotifier } from './CostNotifier';
-import { CostCalculator } from './CostCalculator';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { CostCalculator } from './CostCalculator.js';
+import { CostNotifier } from './CostNotifier.js';
+import { StatusNotificationService } from './StatusNotificationService.js';
+import { TransactionService } from './TransactionService.js';
 
 /**
  * Component that handles transaction related messages.
@@ -159,6 +165,7 @@ export class TransactionsModule extends AbstractModule {
     sender?: IMessageSender,
     handler?: IMessageHandler,
     logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
     authorizeRepository?: IAuthorizationRepository,
     deviceModelRepository?: IDeviceModelRepository,
@@ -177,6 +184,7 @@ export class TransactionsModule extends AbstractModule {
       sender || new RabbitMqSender(config, logger),
       EventGroup.Transactions,
       logger,
+      ocppValidator,
     );
 
     this._requests = config.modules.transactions.requests;
@@ -216,6 +224,7 @@ export class TransactionsModule extends AbstractModule {
     this._transactionService = new TransactionService(
       this._transactionEventRepository,
       this._authorizeRepository,
+      this._locationRepository,
       this._reservationRepository,
       this._ocppMessageRepository,
       this._realTimeAuthorizer,
@@ -280,7 +289,7 @@ export class TransactionsModule extends AbstractModule {
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let response: OCPP2_0_1.TransactionEventResponse | undefined = undefined;
-
+    let transaction: Transaction | undefined = undefined;
     if (transactionEvent.idToken) {
       response = await this._transactionService.authorizeOcpp201IdToken(
         tenantId,
@@ -288,14 +297,27 @@ export class TransactionsModule extends AbstractModule {
         message.context,
       );
     }
-
-    const transaction =
-      await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
-        tenantId,
-        message.payload,
-        stationId,
-      );
-
+    try {
+      transaction =
+        await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+          tenantId,
+          message.payload,
+          stationId,
+        );
+    } catch (error) {
+      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+        await this.sendCallErrorWithMessage(
+          message,
+          new OcppError(
+            message.context.correlationId,
+            ErrorCode.PropertyConstraintViolation,
+            'Referenced entity does not exist.',
+          ),
+        );
+        return;
+      }
+      throw error;
+    }
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -328,11 +350,15 @@ export class TransactionsModule extends AbstractModule {
 
       if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Updated) {
         // I02 - Show EV Driver Running Total Cost During Charging
-        if (transaction && transaction.isActive && this._sendCostUpdatedOnMeterValue) {
+        if (
+          transaction &&
+          transaction.isActive &&
+          transaction.totalKwh &&
+          this._sendCostUpdatedOnMeterValue
+        ) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
             tenantId,
             stationId,
-            transaction.id,
             transaction.totalKwh,
           );
         }
@@ -358,11 +384,13 @@ export class TransactionsModule extends AbstractModule {
         }
       }
 
-      if (message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended && transaction) {
+      if (
+        message.payload.eventType === OCPP2_0_1.TransactionEventEnumType.Ended &&
+        transaction.totalKwh
+      ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           tenantId,
           stationId,
-          transaction.id,
           transaction.totalKwh,
         );
       }
@@ -425,7 +453,7 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
-      await this._transactionService.createMeterValues(
+      const meterValuesCreated = await this._transactionService.createMeterValues(
         tenantId,
         meterValues,
         activeTransaction?.id,
@@ -434,6 +462,7 @@ export class TransactionsModule extends AbstractModule {
       );
 
       if (activeTransaction) {
+        await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
         await this._costNotifier.calculateCostAndNotify(
           activeTransaction,
           message.context.tenantId,
@@ -472,11 +501,15 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('StatusNotification received:', message, props);
 
-    await this._statusNotificationService.processStatusNotification(
-      message.context.tenantId,
-      message.context.stationId,
-      message.payload,
-    );
+    this._statusNotificationService
+      .processStatusNotification(
+        message.context.tenantId,
+        message.context.stationId,
+        message.payload,
+      )
+      .catch((error) => {
+        this._logger.error('Failed to process status notification', error);
+      });
 
     // Create response
     const response: OCPP2_0_1.StatusNotificationResponse = {};
@@ -552,16 +585,13 @@ export class TransactionsModule extends AbstractModule {
 
     if (connectorId !== 0 && transactionId && meterValues.length > 0) {
       try {
-        const meterValueEntities: MeterValue[] = [];
+        const meterValueEntities: MeterValueDto[] = [];
         for (const meterValue of meterValues) {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
-            meterValueEntities.push(
-              MeterValue.build({
-                tenantId,
-                ...meterValue,
-                connectorId,
-              }),
-            );
+            const meterValueEntity = OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
+            meterValueEntity.tenantId = tenantId;
+            meterValueEntity.connectorId = connectorId;
+            meterValueEntities.push(meterValueEntity);
           }
         }
         if (meterValueEntities.length > 0) {
@@ -594,6 +624,7 @@ export class TransactionsModule extends AbstractModule {
     const response = await this._transactionService.authorizeOcpp16IdToken(
       message.context,
       request.idTag,
+      request.connectorId,
     );
 
     // Send response to charger
@@ -610,7 +641,14 @@ export class TransactionsModule extends AbstractModule {
           );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
-        this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        const errorMessage = (error as Error).message || '';
+        if (errorMessage.includes('Charging station') && errorMessage.includes('does not exist')) {
+          this._logger.error(
+            `Charging station ${stationId} does not exist for idTag ${request.idTag}`,
+          );
+        } else {
+          this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
+        }
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         };
@@ -643,24 +681,23 @@ export class TransactionsModule extends AbstractModule {
     const authorization: Authorization | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
-          type: null, //explicitly ignore type
         })
       : undefined;
 
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
-      idTokenInfoStatus = AuthorizationStatusType.Invalid;
+      idTokenInfoStatus = 'Invalid';
     }
     switch (idTokenInfoStatus) {
-      case AuthorizationStatusType.Accepted:
-      case AuthorizationStatusType.Blocked:
-      case AuthorizationStatusType.Expired:
-      case AuthorizationStatusType.ConcurrentTx:
-      case AuthorizationStatusType.Invalid:
+      case AuthorizationStatusEnum.Accepted:
+      case AuthorizationStatusEnum.Blocked:
+      case AuthorizationStatusEnum.Expired:
+      case AuthorizationStatusEnum.ConcurrentTx:
+      case AuthorizationStatusEnum.Invalid:
         break;
       default: // Other OCPP 2.0.1 statuses default to Invalid for OCPP 1.6
-        idTokenInfoStatus = AuthorizationStatusType.Invalid;
+        idTokenInfoStatus = AuthorizationStatusEnum.Invalid;
     }
 
     let parentIdTag: string | undefined = undefined;
@@ -706,7 +743,11 @@ export class TransactionsModule extends AbstractModule {
       stationId,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) => MeterValue.build({ tenantId, ...data })) || [],
+      request.transactionData?.map((data) =>
+        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+        ),
+      ) || [],
       request.reason || (request.idTag ? 'Remote' : 'Local'),
       authorization?.id,
     );

@@ -1,19 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { OCPP2_0_1 } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Index, Table } from 'sequelize-typescript';
-import { ChargingStation } from './ChargingStation';
-import { ServerNetworkProfile } from './ServerNetworkProfile';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import {
+  DEFAULT_TENANT_ID,
+  type OCPPInterfaceEnumType,
+  type OCPPTransportEnumType,
+  type SetNetworkProfileDto,
+} from '@citrineos/base';
+import type { OCPPVersionEnumType, TenantDto } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Index,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { ChargingStation } from './ChargingStation.js';
+import { ServerNetworkProfile } from './ServerNetworkProfile.js';
 
 /**
  * The CallMessage model can be extended with new optional fields,
  * e.g. chargingProfileId, for other correlationId related lookups.
  */
 @Table
-export class SetNetworkProfile extends BaseModelWithTenant {
+export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
   @ForeignKey(() => ChargingStation)
@@ -38,10 +53,10 @@ export class SetNetworkProfile extends BaseModelWithTenant {
   declare configurationSlot: number;
 
   @Column(DataType.STRING)
-  declare ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
+  declare ocppVersion: OCPPVersionEnumType;
 
   @Column(DataType.STRING)
-  declare ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
+  declare ocppTransport: OCPPTransportEnumType;
 
   /**
    * Communication_ Function. OCPP_ Central_ System_ URL. URI
@@ -69,7 +84,7 @@ export class SetNetworkProfile extends BaseModelWithTenant {
   declare securityProfile: number;
 
   @Column(DataType.STRING)
-  declare ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
+  declare ocppInterface: OCPPInterfaceEnumType;
 
   /**
    * Stringified JSON of {@link OCPP2_0_1.APNType} for display purposes only
@@ -84,4 +99,31 @@ export class SetNetworkProfile extends BaseModelWithTenant {
    */
   @Column(DataType.STRING)
   declare vpn?: string;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: SetNetworkProfile) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { Authorization } from './Authorization';
-export { LocalListVersion } from './LocalListVersion';
-export { SendLocalList } from './SendLocalList';
-export { LocalListAuthorization } from './LocalListAuthorization';
-export { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
-export { SendLocalListAuthorization } from './SendLocalListAuthorization';
+export { Authorization } from './Authorization.js';
+export { LocalListVersion } from './LocalListVersion.js';
+export { SendLocalList } from './SendLocalList.js';
+export { LocalListAuthorization } from './LocalListAuthorization.js';
+export { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
+export { SendLocalListAuthorization } from './SendLocalListAuthorization.js';

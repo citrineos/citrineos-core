@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from '../interface';
-import { EVDriverModule } from '../module';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IEVDriverModuleApi } from '../interface.js';
+import { EVDriverModule } from '../module.js';
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPPVersion,
@@ -91,6 +91,26 @@ export class EVDriverOcpp16Api
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP1_6_CallAction.UnlockConnector,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(OCPP1_6_CallAction.ClearCache, OCPP1_6.ClearCacheRequestSchema)
+  async clearCache(
+    identifier: string[],
+    request: OCPP1_6.ClearCacheRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.ClearCache,
         request,
         callbackUrl,
       ),

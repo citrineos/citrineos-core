@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { ISmartCharging } from './SmartCharging';
-export { InternalSmartCharging } from './InternalSmartCharging';
+export type { ISmartCharging } from './SmartCharging.js';
+export { InternalSmartCharging } from './InternalSmartCharging.js';

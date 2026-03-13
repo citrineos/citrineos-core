@@ -42,13 +42,17 @@
       "type": "array",
       "additionalItems": false,
       "items": {
-        "type": "integer"
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
       },
       "minItems": 1
     },
     "requestId": {
       "description": "The Id of this request.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "priority": {
       "$ref": "#/definitions/MessagePriorityEnumType"

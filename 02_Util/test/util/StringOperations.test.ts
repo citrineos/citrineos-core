@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { splitOnce } from '../../src/util/StringOperations';
+import { splitOnce } from '../../src/util/StringOperations.js';
+import { describe, expect, it } from 'vitest';
 
 describe('splitOnce', () => {
   it.each([
@@ -75,8 +76,8 @@ describe('splitOnce', () => {
   );
 
   it.each([
-    ['', ':', ['', undefined]],
-    ['no-separator-here', '|', ['no-separator-here', undefined]],
+    ['', ':', ['']],
+    ['no-separator-here', '|', ['no-separator-here']],
   ] as Array<[string, string, string[]]>)(
     'should return one string when no separator is found',
     (value, separator, expected) => {

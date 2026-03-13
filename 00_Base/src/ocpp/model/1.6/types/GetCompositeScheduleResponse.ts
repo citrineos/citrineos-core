@@ -11,8 +11,8 @@
 import {
   GetCompositeScheduleResponseStatus,
   GetCompositeScheduleResponseChargingRateUnit,
-} from '../enums';
-import { OcppResponse } from '../../../..';
+} from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface GetCompositeScheduleResponse extends OcppResponse {
   status: GetCompositeScheduleResponseStatus;

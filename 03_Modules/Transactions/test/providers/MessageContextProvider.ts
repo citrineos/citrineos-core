@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, IMessageContext } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 
 export const aMessageContext = (
   updateFunction?: UpdateFunction<IMessageContext>,
