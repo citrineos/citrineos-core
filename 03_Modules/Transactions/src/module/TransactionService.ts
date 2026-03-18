@@ -1,30 +1,38 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  IAuthorizationRepository,
-  ITransactionEventRepository,
-  Transaction,
-  OCPP1_6_Mapper,
-  OCPP2_0_1_Mapper,
-  IReservationRepository,
-  IOCPPMessageRepository,
-} from '@citrineos/data';
-import {
-  AuthorizationStatusType,
-  IAuthorizationDto,
+import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  ConnectorDto,
+  EvseDto,
   IAuthorizer,
   IMessageContext,
+  MeterValueDto,
+} from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
   MessageOrigin,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
 } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type {
+  IAuthorizationRepository,
+  ILocationRepository,
+  IOCPPMessageRepository,
+  IReservationRepository,
+  ITransactionEventRepository,
+  MeterValue,
+} from '@citrineos/data';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizeRepository: IAuthorizationRepository;
+  private _locationRepository: ILocationRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -33,6 +41,7 @@ export class TransactionService {
   constructor(
     transactionEventRepository: ITransactionEventRepository,
     authorizeRepository: IAuthorizationRepository,
+    locationRepository: ILocationRepository,
     reservationRepository: IReservationRepository,
     ocppMessageRepository: IOCPPMessageRepository,
     realTimeAuthorizer: IAuthorizer,
@@ -41,6 +50,7 @@ export class TransactionService {
   ) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizeRepository = authorizeRepository;
+    this._locationRepository = locationRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
     this._logger = logger
@@ -49,23 +59,25 @@ export class TransactionService {
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 
-  async recalculateTotalKwh(tenantId: number, transactionDbId: number) {
-    const meterValues =
-      await this._transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-        tenantId,
-        transactionDbId,
-      );
-    const meterValueTypes = meterValues.map((meterValue) =>
-      OCPP2_0_1_Mapper.MeterValueMapper.toMeterValueType(meterValue),
+  async recalculateTotalKwh(
+    transaction: Transaction,
+    newMeterValues: MeterValueDto[],
+  ): Promise<number> {
+    let meterStart = transaction.meterStart;
+    if (meterStart === null || meterStart === undefined) {
+      meterStart = MeterValueUtils.getMeterStart(newMeterValues);
+      transaction.set('meterStart', meterStart);
+    }
+    const totalKwh = MeterValueUtils.getTotalKwh(
+      newMeterValues,
+      transaction.totalKwh ?? 0,
+      meterStart ?? undefined,
     );
-    const totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
 
-    await Transaction.update(
-      { totalKwh: totalKwh },
-      { where: { id: transactionDbId }, returning: false },
-    );
+    transaction.set('totalKwh', totalKwh);
+    await transaction.save();
 
-    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transactionDbId} transaction`);
+    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transaction.id} transaction`);
     return totalKwh;
   }
 
@@ -76,7 +88,8 @@ export class TransactionService {
   ): Promise<OCPP2_0_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
-      ...idToken,
+      idToken: idToken.idToken,
+      type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idToken.type),
     });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
@@ -90,15 +103,6 @@ export class TransactionService {
       return response;
     }
     const authorization = authorizations[0];
-
-    if (!authorization.status) {
-      // Assumed to always be valid without status
-      response.idTokenInfo = {
-        status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted,
-        // TODO determine how/if to set personalMessage
-      };
-      return response;
-    }
 
     // Extract DTO fields from sequelize Model<any, any> objects
     const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
@@ -131,7 +135,26 @@ export class TransactionService {
         }
       }
 
-      const result = await this._applyAuthorizers(authorization, messageContext);
+      let evse: EvseDto | undefined = undefined;
+      let connector: ConnectorDto | undefined = undefined;
+      if (transactionEvent.evse) {
+        if (transactionEvent.evse.connectorId) {
+          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse,
+          );
+        }
+        evse =
+          connector?.evse ??
+          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse.id,
+          ));
+      }
+
+      const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
       response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
     this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
@@ -144,14 +167,14 @@ export class TransactionService {
     transactionDbId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ) {
+  ): Promise<MeterValue[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
         const hasPeriodic: boolean = meterValue.sampledValue?.some(
           (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         );
         if (transactionDbId && hasPeriodic) {
-          await this._transactionEventRepository.createMeterValue(
+          return await this._transactionEventRepository.createMeterValue(
             tenantId,
             meterValue,
             transactionDbId,
@@ -159,7 +182,7 @@ export class TransactionService {
             tariffId,
           );
         } else {
-          await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
+          return await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
         }
       }),
     );
@@ -168,6 +191,7 @@ export class TransactionService {
   async authorizeOcpp16IdToken(
     context: IMessageContext,
     idToken: string,
+    connectorId: number,
   ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
       idTagInfo: {
@@ -220,9 +244,14 @@ export class TransactionService {
       }
 
       // Check authorizers
+      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+        tenantId,
+        context.stationId,
+        connectorId,
+      );
       response.idTagInfo.status =
         OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-          await this._applyAuthorizers(authorization, context),
+          await this._applyAuthorizers(authorization, context, connector?.evse, connector),
         );
       if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         return response;
@@ -311,16 +340,18 @@ export class TransactionService {
   }
 
   private async _applyAuthorizers(
-    authorization: IAuthorizationDto,
+    authorization: AuthorizationDto,
     messageContext: IMessageContext,
-  ): Promise<AuthorizationStatusType> {
+    evse?: EvseDto,
+    connector?: ConnectorDto,
+  ): Promise<AuthorizationStatusEnumType> {
     let result = authorization.status;
     for (const authorizer of this._authorizers) {
-      if (result !== AuthorizationStatusType.Accepted) {
+      if (result !== AuthorizationStatusEnum.Accepted) {
         break;
       }
 
-      result = await authorizer.authorize(authorization, messageContext);
+      result = await authorizer.authorize(authorization, messageContext, evse, connector);
     }
     return result;
   }
@@ -339,11 +370,11 @@ export class TransactionService {
   }
 
   private _mapAuthorizationDtoToIdTokenInfo(
-    dto: IAuthorizationDto,
-    status: AuthorizationStatusType,
+    dto: AuthorizationDto,
+    status: AuthorizationStatusEnumType,
   ): OCPP2_0_1.IdTokenInfoType {
     return {
-      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusType(status),
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
       cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
       chargingPriority: dto.chargingPriority ?? null,
       language1: dto.language1 ?? null,

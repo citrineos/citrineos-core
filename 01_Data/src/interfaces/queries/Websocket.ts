@@ -84,4 +84,52 @@ export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
     key: 'rootCACertificateFilePath',
     type: 'string',
   },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+  },
+  {
+    key: 'tenantPathMapping',
+    type: 'object',
+  },
+  {
+    key: 'dynamicTenantResolution',
+    type: 'boolean',
+  },
+]);
+
+export interface WebsocketMappingQuerystring {
+  id: string;
+  path?: string;
+  tenantId?: number;
+}
+
+export const WebsocketMappingQuerySchema = QuerySchema('WebsocketMappingQuerySchema', [
+  {
+    key: 'id',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'path',
+    type: 'string',
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+  },
+]);
+
+export const WebsocketMappingRequestSchema = QuerySchema('WebsocketMappingRequestSchema', [
+  {
+    key: 'path',
+    type: 'string',
+    required: true,
+  },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+  },
 ]);

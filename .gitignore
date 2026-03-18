@@ -202,11 +202,9 @@ lib/
 
 # RabbitMQ
 /Server/data/rabbitmq
-/Swarm/data/rabbitmq
 
 # PostgreSQL
 /Server/data/postgresql
-/Swarm/data/postgresql
 
 # Created by https://www.toptal.com/developers/gitignore/api/intellij+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij+all

@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { IFileStorage } from './fileStorage';
-export { IFileAccess } from './fileAccess';
+export type { IFileStorage } from './fileStorage.js';
+export type { IFileAccess } from './fileAccess.js';

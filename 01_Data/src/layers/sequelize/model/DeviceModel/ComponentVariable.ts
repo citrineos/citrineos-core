@@ -2,13 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { Component } from './Component';
-import { Variable } from './Variable';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Tenant } from '../Tenant.js';
+import { Component } from './Component.js';
+import { Variable } from './Variable.js';
 
 @Table
-export class ComponentVariable extends BaseModelWithTenant {
+export class ComponentVariable extends Model {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ComponentVariable';
 
@@ -19,4 +30,31 @@ export class ComponentVariable extends BaseModelWithTenant {
   @ForeignKey(() => Variable)
   @Column(DataType.INTEGER)
   declare variableId: number;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ComponentVariable) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

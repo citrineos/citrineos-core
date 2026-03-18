@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OcppRequest, OcppResponse } from '../..';
+import { Expose } from 'class-transformer';
+import type { OcppRequest, OcppResponse } from '../../index.js';
 
 /**
  * Definition of Call Message (4.2.1 CALL)
@@ -56,6 +57,9 @@ export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1';
  * The different OCPP action types.
  *
  */
+
+// NoAction is used when the action is not known, for example when a message is invalid json or otherwise violates the OCPP protocol to the extent that the action cannot be determined. This allows us to still store and process these messages, while marking them as having an unknown action.
+export const NO_ACTION = 'NoAction';
 
 export type CallAction = OCPP1_6_CallAction | OCPP2_0_1_CallAction;
 
@@ -223,6 +227,11 @@ export class OcppError extends Error {
   private _messageId: string;
   private _errorCode: ErrorCode;
   private _errorDetails: object;
+
+  @Expose()
+  get message(): string {
+    return super.message;
+  }
 
   constructor(
     messageId: string,

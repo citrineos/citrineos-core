@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { type SystemConfig, SystemConfigInput, systemConfigSchema } from './types';
+import type { SystemConfig, SystemConfigInput } from './types.js';
+import { systemConfigSchema } from './types.js';
 
 const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
 
@@ -32,17 +33,13 @@ function findCaseInsensitiveMatch<T>(
   return Object.keys(obj).find((key) => key.toLowerCase() === lowerTargetKey);
 }
 
-const getZodSchemaKeyMap = (schema: z.ZodType): Record<string, any> => {
-  if (schema instanceof z.ZodEffects) {
-    return getZodSchemaKeyMap(schema._def?.schema);
-  }
-
+const getZodSchemaKeyMap = (schema: z.ZodTypeAny): Record<string, any> => {
   if (schema instanceof z.ZodNullable || schema instanceof z.ZodOptional) {
-    return getZodSchemaKeyMap(schema.unwrap());
+    return getZodSchemaKeyMap((schema as z.ZodNullable<any> | z.ZodOptional<any>).unwrap());
   }
 
   if (schema instanceof z.ZodArray) {
-    return getZodSchemaKeyMap(schema.element);
+    return getZodSchemaKeyMap(schema.element as z.ZodTypeAny);
   }
 
   if (schema instanceof z.ZodObject) {

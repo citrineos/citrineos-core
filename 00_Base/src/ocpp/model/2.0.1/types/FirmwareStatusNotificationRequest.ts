@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { FirmwareStatusEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { FirmwareStatusEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface FirmwareStatusNotificationRequest extends OcppRequest {
   customData?: CustomDataType | null;

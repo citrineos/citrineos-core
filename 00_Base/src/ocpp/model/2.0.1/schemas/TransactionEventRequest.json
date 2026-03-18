@@ -273,7 +273,8 @@
         "additionalIdToken": {
           "description": "This field specifies the additional IdToken.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "type": {
           "description": "This defines the type of the additionalIdToken. This is a custom type, so the implementation needs to be agreed upon by all involved parties.\r\n",
@@ -294,11 +295,15 @@
         },
         "id": {
           "description": "Identified_ Object. MRID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:569198\r\nEVSE Identifier. This contains a number (&gt; 0) designating an EVSE of the Charging Station.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
         },
         "connectorId": {
           "description": "An id to designate a specific connector (on an EVSE) by connector index number.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "required": ["id"]
@@ -323,7 +328,8 @@
         "idToken": {
           "description": "IdToken is case insensitive. Might hold the hidden id of an RFID tag, but can for example also contain a UUID.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "type": {
           "$ref": "#/definitions/IdTokenEnumType"
@@ -351,7 +357,8 @@
         "timestamp": {
           "description": "Meter_ Value. Timestamp. Date_ Time\r\nurn:x-oca:ocpp:uid:1:569259\r\nTimestamp for measured value(s).\r\n",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
         }
       },
       "required": ["timestamp", "sampledValue"]
@@ -434,21 +441,26 @@
         "transactionId": {
           "description": "This contains the Id of the transaction.\r\n",
           "type": "string",
-          "maxLength": 36
+          "maxLength": 36,
+          "pattern": "^[a-zA-Z0-9*\\-_=:+|@.]*$"
         },
         "chargingState": {
           "$ref": "#/definitions/ChargingStateEnumType"
         },
         "timeSpentCharging": {
           "description": "Transaction. Time_ Spent_ Charging. Elapsed_ Time\r\nurn:x-oca:ocpp:uid:1:569415\r\nContains the total time that energy flowed from EVSE to EV during the transaction (in seconds). Note that timeSpentCharging is smaller or equal to the duration of the transaction.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "stoppedReason": {
           "$ref": "#/definitions/ReasonEnumType"
         },
         "remoteStartId": {
           "description": "The ID given to remote start request (&lt;&lt;requeststarttransactionrequest, RequestStartTransactionRequest&gt;&gt;. This enables to CSMS to match the started transaction to the given start request.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "required": ["transactionId"]
@@ -471,7 +483,9 @@
         "multiplier": {
           "description": "Multiplier, this value represents the exponent to base 10. I.e. multiplier 3 means 10 raised to the 3rd power. Default is 0.\r\n",
           "type": "integer",
-          "default": 0
+          "default": 0,
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       }
     }
@@ -496,14 +510,17 @@
     "timestamp": {
       "description": "The date and time at which this transaction event occurred.\r\n",
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+\\-]\\d{2}:\\d{2})$"
     },
     "triggerReason": {
       "$ref": "#/definitions/TriggerReasonEnumType"
     },
     "seqNo": {
       "description": "Incremental sequence number, helps with determining if all messages of a transaction have been received.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "offline": {
       "description": "Indication that this transaction event happened when the Charging Station was offline. Default = false, meaning: the event occurred when the Charging Station was online.\r\n",
@@ -512,15 +529,21 @@
     },
     "numberOfPhasesUsed": {
       "description": "If the Charging Station is able to report the number of phases used, then it SHALL provide it. When omitted the CSMS may be able to determine the number of phases used via device management.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "cableMaxCurrent": {
       "description": "The maximum current of the connected cable in Ampere (A).\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "reservationId": {
       "description": "This contains the Id of the reservation that terminates as a result of this transaction.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "transactionInfo": {
       "$ref": "#/definitions/TransactionType"

@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { jest } from '@jest/globals';
 import { IDeviceModelRepository, VariableAttribute } from '@citrineos/data';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider';
-import { BasicAuthenticationFilter } from '../../../src/networkconnection/authenticator/BasicAuthenticationFilter';
-import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider';
-import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider';
+import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider.js';
+import { BasicAuthenticationFilter } from '../../../src';
+import { aRequestWithAuthorization, basicAuth } from '../../providers/IncomingMessageProvider.js';
+import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 type PasswordPair = {
   plaintext: string;
@@ -26,13 +26,13 @@ describe('BasicAuthenticationFilter', () => {
     hash: 'PBKDF2:1000:64:sha512:salt:7f87adf79f3050b0639c079c30c6696efaa1a84b437907de7f6545aac15322ee29a2d9cd66d459d41de9af56b2834c2a7cd3c3f7fa897db3d8f94a3a1c147ca2',
   };
 
-  let deviceModelRepository: jest.Mocked<IDeviceModelRepository>;
+  let deviceModelRepository: Mocked<IDeviceModelRepository>;
   let filter: BasicAuthenticationFilter;
 
   beforeEach(() => {
     deviceModelRepository = {
-      readAllByQuerystring: jest.fn(),
-    } as unknown as jest.Mocked<IDeviceModelRepository>;
+      readAllByQuerystring: vi.fn(),
+    } as unknown as Mocked<IDeviceModelRepository>;
 
     filter = new BasicAuthenticationFilter(deviceModelRepository);
   });

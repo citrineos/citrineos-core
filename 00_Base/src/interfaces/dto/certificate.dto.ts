@@ -1,59 +1,47 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IBaseDto } from '../..';
 
-export interface ICertificateDto extends IBaseDto {
-  id?: number;
-  serialNumber: number;
-  issuerName: string;
-  organizationName: string;
-  commonName: string;
-  keyLength?: number | null;
-  validBefore?: string | null;
-  signatureAlgorithm?: any;
-  countryName?: any;
-  isCA?: boolean;
-  pathLen?: number | null;
-  certificateFileId?: string | null;
-  privateKeyFileId?: string | null;
-  signedBy?: string | null;
-}
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
 
-export interface INewCertificateRequestDto {
-  keyLength?: number;
-  organizationName: string;
-  commonName: string;
-  filePath?: string;
-  selfSigned: boolean;
-  countryName?: any;
-  signatureAlgorithm?: any;
-  pathLen?: number;
-  validBefore: any;
-}
+export const SignatureAlgorithmSchema = z.enum(['SHA256withRSA', 'SHA256withECDSA']);
+export const CountryNameSchema = z.enum(['US']);
 
-export enum SignatureAlgorithmEnumType {
-  RSA = 'SHA256withRSA',
-  ECDSA = 'SHA256withECDSA',
-}
+export type SignatureAlgorithm = z.infer<typeof SignatureAlgorithmSchema>;
+export type CountryName = z.infer<typeof CountryNameSchema>;
 
-export enum CountryNameEnumType {
-  US = 'US',
-}
+export const CertificateSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  serialNumber: z.number().int(), // BIGINT in DB
+  issuerName: z.string(),
+  organizationName: z.string(),
+  commonName: z.string(),
+  keyLength: z.number().int().nullable().optional(),
+  validBefore: z.iso.datetime().nullable().optional(),
+  signatureAlgorithm: SignatureAlgorithmSchema.nullable().optional(),
+  countryName: CountryNameSchema.nullable().optional(),
+  isCA: z.boolean().optional(),
+  pathLen: z.number().int().nullable().optional(),
+  certificateFileId: z.string().nullable().optional(),
+  privateKeyFileId: z.string().nullable().optional(),
+  signedBy: z.string().nullable().optional(),
+});
 
-export enum CertificateDtoProps {
-  id = 'id',
-  serialNumber = 'serialNumber',
-  issuerName = 'issuerName',
-  organizationName = 'organizationName',
-  commonName = 'commonName',
-  keyLength = 'keyLength',
-  validBefore = 'validBefore',
-  signatureAlgorithm = 'signatureAlgorithm',
-  countryName = 'countryName',
-  isCA = 'isCA',
-  pathLen = 'pathLen',
-  certificateFileId = 'certificateFileId',
-  privateKeyFileId = 'privateKeyFileId',
-  signedBy = 'signedBy',
-}
+export const CertificateProps = CertificateSchema.keyof().enum;
+
+export type CertificateDto = z.infer<typeof CertificateSchema>;
+
+export const CertificateCreateSchema = CertificateSchema.omit({
+  id: true,
+  tenant: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type CertificateCreate = z.infer<typeof CertificateCreateSchema>;
+
+export const certificateSchemas = {
+  Certificate: CertificateSchema,
+  CertificateCreate: CertificateCreateSchema,
+};

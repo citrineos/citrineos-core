@@ -2,21 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository, OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
-import { SequelizeRepository } from './Base';
-import { IChargingProfileRepository } from '../../../interfaces';
-import { EvseType } from '../model/DeviceModel';
-import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import type {
+  BootstrapConfig,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+} from '@citrineos/base';
+import { ChargingLimitSourceEnum, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { SequelizeRepository } from './Base.js';
+import type { IChargingProfileRepository } from '../../../interfaces/index.js';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../mapper/2.0.1/ChargingProfileMapper.js';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   CompositeSchedule,
+  Evse,
+  EvseType,
   SalesTariff,
-} from '../model/ChargingProfile';
-import { Transaction } from '../model/TransactionEvent';
-import { Evse } from '../model';
+  Transaction,
+} from '../model/index.js';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
@@ -88,10 +98,10 @@ export class SequelizeChargingProfileRepository
 
   async createOrUpdateChargingProfile(
     tenantId: number,
-    chargingProfile: OCPP2_0_1.ChargingProfileType,
+    chargingProfile: ChargingProfileInput,
     stationId: string,
     evseId?: number | null,
-    chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType,
+    chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
   ): Promise<ChargingProfile> {
     let transactionDBId;
@@ -113,9 +123,10 @@ export class SequelizeChargingProfileRepository
       },
       defaults: {
         ...chargingProfile,
+        stationId: stationId,
         evseId: evseId,
         transactionDatabaseId: transactionDBId,
-        chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+        chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnum.CSO,
         isActive: isActive === undefined ? false : isActive,
       },
     });
@@ -131,7 +142,7 @@ export class SequelizeChargingProfileRepository
           stationId: stationId,
           transactionDatabaseId: transactionDBId,
           evseId: evseId,
-          chargingLimitSource: chargingLimitSource ?? OCPP2_0_1.ChargingLimitSourceEnumType.CSO,
+          chargingLimitSource: chargingLimitSource ?? ChargingLimitSourceEnum.CSO,
           isActive: isActive === undefined ? false : isActive,
         },
         savedChargingProfile.databaseId.toString(),
@@ -213,7 +224,7 @@ export class SequelizeChargingProfileRepository
   ): Promise<ChargingNeeds | undefined> {
     const chargingNeedsArray = await this.chargingNeeds.readAllByQuery(tenantId, {
       where: {
-        evseDatabaseId: evseDBId,
+        evseId: evseDBId,
         transactionDatabaseId: transactionDataBaseId,
       },
       order: [['createdAt', 'DESC']],
@@ -224,7 +235,7 @@ export class SequelizeChargingProfileRepository
 
   async createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: OCPP2_0_1.CompositeScheduleType,
+    compositeSchedule: CompositeScheduleInput,
     stationId: string,
   ): Promise<CompositeSchedule> {
     return await this.compositeSchedule.create(
@@ -249,7 +260,7 @@ export class SequelizeChargingProfileRepository
     tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
-    profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
+    profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number> {
     return await this.readNextValue(
       tenantId,

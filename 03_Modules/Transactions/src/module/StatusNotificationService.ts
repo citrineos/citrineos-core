@@ -1,19 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { CrudRepository, OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import {
   Component,
-  EvseType,
-  IDeviceModelRepository,
-  ILocationRepository,
-  Variable,
   Connector,
-  StatusNotification,
+  EvseType,
+  type IDeviceModelRepository,
+  type ILocationRepository,
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
+  StatusNotification,
+  Variable,
 } from '@citrineos/data';
-import { ILogObj, Logger } from 'tslog';
-import { CrudRepository, OCPP2_0_1, OCPP1_6 } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
@@ -75,7 +76,7 @@ export class StatusNotificationService {
       } as Connector;
       await this._locationRepository.createOrUpdateConnector(tenantId, connector);
 
-      const component = await this._componentRepository.readOnlyOneByQuery(tenantId, {
+      let components = await this._componentRepository.readAllByQuery(tenantId, {
         where: {
           tenantId,
           name: 'Connector',
@@ -96,15 +97,19 @@ export class StatusNotificationService {
           },
         ],
       });
-      const variable = component?.variables?.[0];
-      if (!component || !variable) {
+      components = components.filter(
+        (component) => component.variables?.length && component.variables.length > 0,
+      );
+      if (components.length === 0) {
         this._logger.warn(
           'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
         );
-      } else {
+      }
+      for (const component of components) {
+        const variable = component.variables?.[0];
         const reportDataType: OCPP2_0_1.ReportDataType = {
           component: component,
-          variable: variable,
+          variable: variable!,
           variableAttribute: [
             {
               value: statusNotificationRequest.connectorStatus,
@@ -135,12 +140,21 @@ export class StatusNotificationService {
       stationId,
     );
     if (chargingStation) {
-      const statusNotification = StatusNotification.build({
+      const matchingEvse = chargingStation.evses?.find((evse) =>
+        evse.connectors?.find(
+          (connector) => connector.connectorId === statusNotificationRequest.connectorId,
+        ),
+      );
+      const statusNotificationInput: Partial<StatusNotification> = {
         tenantId,
         ...statusNotificationRequest,
         stationId,
         connectorStatus: statusNotificationRequest.status,
-      });
+      };
+      if (matchingEvse) {
+        statusNotificationInput.evseId = matchingEvse.evseTypeId;
+      }
+      const statusNotification = StatusNotification.build(statusNotificationInput);
       await this._locationRepository.addStatusNotificationToChargingStation(
         tenantId,
         stationId,
@@ -166,7 +180,24 @@ export class StatusNotificationService {
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as Connector;
 
-      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
+        // update all connectors
+        await this._locationRepository.updateAllConnectorsByQuery(
+          tenantId,
+          {
+            ...connector,
+            connectorId: undefined,
+          },
+          {
+            where: {
+              stationId,
+              tenantId,
+            },
+          },
+        );
+      } else {
+        await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      }
     } else {
       this._logger.warn(
         `Charging station ${stationId} not found. Status notification cannot be associated with a charging station.`,

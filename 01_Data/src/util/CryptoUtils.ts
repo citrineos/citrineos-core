@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Pbkdf2 } from './Pbkdf2';
+import { Pbkdf2 } from './Pbkdf2.js';
 
 export class CryptoUtils {
   static passwordHashAlgorithm = new Pbkdf2();

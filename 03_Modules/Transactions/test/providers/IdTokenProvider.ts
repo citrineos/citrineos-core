@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil';
+import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 
 export function anIdToken(
   updateFunction?: UpdateFunction<OCPP2_0_1.IdTokenType>,

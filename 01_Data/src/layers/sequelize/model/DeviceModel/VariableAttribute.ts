@@ -1,31 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import {
-  IComponentDto,
-  IVariableAttributeDto,
-  IVariableDto,
-  OCPP2_0_1,
-  OCPP2_0_1_Namespace,
+import type {
+  BootDto,
+  ComponentDto,
+  VariableAttributeDto,
+  VariableDto,
+  TenantDto,
 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
   ForeignKey,
   HasMany,
   Index,
+  Model,
   Table,
 } from 'sequelize-typescript';
-import { Variable } from './Variable';
-import { Component } from './Component';
-import { Boot } from '../Boot';
-import { VariableStatus } from './VariableStatus';
-import { ChargingStation, Evse } from '../Location';
-import { CryptoUtils } from '../../../../util/CryptoUtils';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { EvseType } from './EvseType';
+import { CryptoUtils } from '../../../../util/CryptoUtils.js';
+import { Boot } from '../Boot.js';
+import { ChargingStation } from '../Location/index.js';
+import { Tenant } from '../Tenant.js';
+import { Component } from './Component.js';
+import { EvseType } from './EvseType.js';
+import { Variable } from './Variable.js';
+import { VariableStatus } from './VariableStatus.js';
 
 @Table({
   indexes: [
@@ -86,8 +89,8 @@ import { EvseType } from './EvseType';
   ],
 })
 export class VariableAttribute
-  extends BaseModelWithTenant
-  implements OCPP2_0_1.VariableAttributeType, IVariableAttributeDto
+  extends Model
+  implements OCPP2_0_1.VariableAttributeType, VariableAttributeDto
 {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.VariableAttributeType;
 
@@ -97,6 +100,7 @@ export class VariableAttribute
 
   @Index
   @Column({
+    type: DataType.STRING,
     unique: 'stationId_type_variableId_componentId',
     allowNull: false,
   })
@@ -171,7 +175,7 @@ export class VariableAttribute
    */
 
   @BelongsTo(() => Variable)
-  declare variable: IVariableDto;
+  declare variable: VariableDto;
 
   @ForeignKey(() => Variable)
   @Column({
@@ -181,7 +185,7 @@ export class VariableAttribute
   declare variableId?: number | null;
 
   @BelongsTo(() => Component)
-  declare component: IComponentDto;
+  declare component: ComponentDto;
 
   @ForeignKey(() => Component)
   @Column({
@@ -205,10 +209,37 @@ export class VariableAttribute
   // Below used to associate attributes with boot process
 
   @BelongsTo(() => Boot)
-  declare bootConfig?: Boot;
+  declare bootConfig?: BootDto;
 
   @ForeignKey(() => Boot)
   declare bootConfigId?: string | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: VariableAttribute) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

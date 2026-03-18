@@ -4,12 +4,31 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { DataTypes, QueryInterface } from 'sequelize';
+import { DataTypes, QueryInterface, QueryTypes } from 'sequelize';
 
 const TABLE_NAME = 'AsyncJobStatuses';
 
-export = {
+export default {
   up: async (queryInterface: QueryInterface) => {
+    const migrationName = '20250715000000-create-async-job-status';
+
+    const [results] = await queryInterface.sequelize.query(
+      `SELECT EXISTS (
+      SELECT 1 
+      FROM "SequelizeMeta" 
+      WHERE name LIKE :pattern
+    ) AS migration_exists`,
+      {
+        replacements: { pattern: `${migrationName}%` },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if ((results as any).migration_exists) {
+      console.log('Migration already run, skipping...');
+      return;
+    }
+
     await queryInterface.createTable(TABLE_NAME, {
       jobId: {
         type: DataTypes.STRING,

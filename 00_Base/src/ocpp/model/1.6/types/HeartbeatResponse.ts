@@ -8,7 +8,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { OcppResponse } from '../../../..';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface HeartbeatResponse extends OcppResponse {
   currentTime: string;

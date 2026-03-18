@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { CustomerInformationStatusEnumType } from '../enums';
-import { OcppResponse } from '../../../..';
+import { CustomerInformationStatusEnumType } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface CustomerInformationResponse extends OcppResponse {
   customData?: CustomDataType | null;

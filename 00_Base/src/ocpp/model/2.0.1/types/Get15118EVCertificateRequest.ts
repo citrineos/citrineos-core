@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { CertificateActionEnumType } from '../enums';
-import { OcppRequest } from '../../../..';
+import { CertificateActionEnumType } from '../enums/index.js';
+import type { OcppRequest } from '../../../../index.js';
 
 export interface Get15118EVCertificateRequest extends OcppRequest {
   customData?: CustomDataType | null;

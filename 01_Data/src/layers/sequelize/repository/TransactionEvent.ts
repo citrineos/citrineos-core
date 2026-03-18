@@ -1,43 +1,46 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
+import type { BootstrapConfig, MeterValueDto } from '@citrineos/base';
 import {
-  ChargingStationSequenceType,
+  ChargingStationSequenceTypeEnum,
   CrudRepository,
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  BootstrapConfig,
 } from '@citrineos/base';
-import {
+import type { WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type {
   IChargingStationSequenceRepository,
-  type ITransactionEventRepository,
-} from '../../../interfaces';
+  ITransactionEventRepository,
+} from '../../../interfaces/index.js';
+import { OCPP2_0_1_Mapper } from '../index.js';
+import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
 import {
+  Authorization,
+  ChargingStation,
+  Connector,
+  Evse,
+  EvseType,
   MeterValue,
   StartTransaction,
   StopTransaction,
+  Tariff,
   Transaction,
   TransactionEvent,
-} from '../model/TransactionEvent';
-import { SequelizeRepository } from './Base';
-import { EvseType } from '../model/DeviceModel';
-import { Op, WhereOptions } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { MeterValueMapper } from '../mapper/2.0.1';
-import { ChargingStation, Connector, Evse } from '../model/Location';
-import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence';
-import { Authorization } from '../model/Authorization';
-import { Tariff } from '../model';
+} from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
+import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
   implements ITransactionEventRepository
 {
   transaction: CrudRepository<Transaction>;
-  authorization: CrudRepository<Authorization>;
   evse: CrudRepository<Evse>;
   station: CrudRepository<ChargingStation>;
   meterValue: CrudRepository<MeterValue>;
@@ -52,7 +55,6 @@ export class SequelizeTransactionEventRepository
     namespace = TransactionEvent.MODEL_NAME,
     sequelizeInstance?: Sequelize,
     transaction?: CrudRepository<Transaction>,
-    authorization?: CrudRepository<Authorization>,
     station?: CrudRepository<ChargingStation>,
     evse?: CrudRepository<Evse>,
     meterValue?: CrudRepository<MeterValue>,
@@ -67,14 +69,6 @@ export class SequelizeTransactionEventRepository
       : new SequelizeRepository<Transaction>(
           config,
           Transaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.authorization = authorization
-      ? authorization
-      : new SequelizeRepository<Authorization>(
-          config,
-          Authorization.MODEL_NAME,
           logger,
           sequelizeInstance,
         );
@@ -182,10 +176,13 @@ export class SequelizeTransactionEventRepository
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
+              tenantId,
               idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
@@ -234,7 +231,7 @@ export class SequelizeTransactionEventRepository
               evseTypeId: value.evse.id,
             },
           });
-          newTransaction.evseId = evse.id;
+          newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
             const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
               where: {
@@ -245,22 +242,25 @@ export class SequelizeTransactionEventRepository
               },
               include: [Tariff],
             });
-            newTransaction.connectorId = connector.id;
-            newTransaction.tariffId = connector.tariffs?.[0]?.id;
+            newTransaction.set('connectorId', connector.id);
+            newTransaction.set('tariffId', connector.tariffs?.[0]?.id);
           }
         }
 
         if (value.idToken) {
           // Find Authorization by IdToken
-          const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+          const authorization = await Authorization.findOne({
             where: {
+              tenantId,
               idToken: value.idToken.idToken,
-              idTokenType: value.idToken.type,
+              idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
+                value.idToken.type,
+              ),
             },
             transaction: sequelizeTransaction,
           });
           if (authorization) {
-            newTransaction.authorizationId = authorization.id;
+            newTransaction.set('authorizationId', authorization.id);
           } else {
             this.logger.warn(
               `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${newTransaction.transactionId} will not be associated with an authorization.`,
@@ -273,7 +273,7 @@ export class SequelizeTransactionEventRepository
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
         } else {
           if (chargingStation.locationId) {
-            newTransaction.locationId = chargingStation.locationId;
+            newTransaction.set('locationId', chargingStation.locationId);
           } else {
             this.logger.warn(
               `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
@@ -297,8 +297,9 @@ export class SequelizeTransactionEventRepository
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         const authorization = await Authorization.findOne({
           where: {
+            tenantId,
             idToken: value.idToken.idToken,
-            idTokenType: value.idToken.type,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
           transaction: sequelizeTransaction,
         });
@@ -315,8 +316,11 @@ export class SequelizeTransactionEventRepository
       event = await event.save({ transaction: sequelizeTransaction });
 
       if (value.meterValue && value.meterValue.length > 0) {
-        await Promise.all(
-          value.meterValue.map(async (meterValue) => {
+        const meterValueTypes = value.meterValue.map((meterValue) =>
+          OCPP2_0_1_Mapper.MeterValueMapper.fromMeterValueType(meterValue),
+        );
+        const newMeterValues = await Promise.all(
+          meterValueTypes.map(async (meterValueType) => {
             const savedMeterValue = await MeterValue.create(
               {
                 tenantId,
@@ -324,106 +328,45 @@ export class SequelizeTransactionEventRepository
                 transactionDatabaseId: transactionDatabaseId,
                 transactionId: finalTransaction.transactionId,
                 tariffId: finalTransaction.tariffId,
-                ...meterValue,
+                ...meterValueType,
               },
               { transaction: sequelizeTransaction },
             );
             this.meterValue.emit('created', [savedMeterValue]);
+            return savedMeterValue;
           }),
         );
+        if (finalTransaction.meterStart === null || finalTransaction.meterStart === undefined) {
+          const meterStart = MeterValueUtils.getMeterStart(meterValueTypes);
+          await finalTransaction.update(
+            {
+              totalKwh: MeterValueUtils.getTotalKwh(
+                meterValueTypes,
+                finalTransaction.totalKwh ?? 0,
+                meterStart ?? undefined,
+              ),
+              meterStart: meterStart,
+            },
+            { transaction: sequelizeTransaction },
+          );
+        } else {
+          await finalTransaction.update(
+            {
+              totalKwh: MeterValueUtils.getTotalKwh(
+                meterValueTypes,
+                finalTransaction.totalKwh ?? 0,
+                finalTransaction.meterStart ?? undefined,
+              ),
+            },
+            { transaction: sequelizeTransaction },
+          );
+        }
+        // Included for ease of access after creation
+        finalTransaction.meterValues = newMeterValues;
       }
       // Optimize: Skip eager loading of all MeterValues to reduce memory usage during long charging sessions
       // For register-based calculations (most common), we only need first and last meter values
       this.emit('created', [event]);
-
-      // Optimize memory: Fetch only first and last meter values ordered by timestamp
-      // This dramatically reduces memory usage for long charging sessions (hundreds of meter values)
-      const [firstMeterValue, lastMeterValue] = await Promise.all([
-        this.meterValue.readAllByQuery(tenantId, {
-          where: {
-            transactionDatabaseId,
-          },
-          order: [['timestamp', 'ASC']],
-          limit: 1,
-          transaction: sequelizeTransaction,
-        }),
-        this.meterValue.readAllByQuery(tenantId, {
-          where: {
-            transactionDatabaseId,
-          },
-          order: [['timestamp', 'DESC']],
-          limit: 1,
-          transaction: sequelizeTransaction,
-        }),
-      ]);
-
-      // Combine first and last (remove duplicates if same record)
-      const meterValuesForCalculation: MeterValue[] =
-        firstMeterValue.length > 0 && lastMeterValue.length > 0
-          ? firstMeterValue[0].id === lastMeterValue[0].id
-            ? firstMeterValue
-            : [...firstMeterValue, ...lastMeterValue]
-          : firstMeterValue.length > 0
-            ? firstMeterValue
-            : lastMeterValue;
-
-      // Convert to MeterValueType and calculate total kWh
-      // For register-based calculations (most common), this works perfectly as it only needs first/last
-      const meterValueTypes = meterValuesForCalculation.map((meterValue) =>
-        MeterValueMapper.toMeterValueType(meterValue),
-      );
-      let totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
-
-      // Clear intermediate arrays to help GC
-      meterValuesForCalculation.length = 0;
-
-      // Check if we need all meter values (e.g., interval-based calculations)
-      // Only if first/last gives 0 and we have multiple meter values
-      if (totalKwh === 0 && (firstMeterValue.length > 0 || lastMeterValue.length > 0)) {
-        const meterValueCount = await this.meterValue.existByQuery(tenantId, {
-          where: {
-            transactionDatabaseId,
-          },
-          transaction: sequelizeTransaction,
-        });
-
-        // If we have multiple meter values but got 0, might be interval-based - fetch all
-        // This is a fallback for non-register-based calculations
-        if (meterValueCount > 2) {
-          const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
-            where: {
-              transactionDatabaseId,
-            },
-            transaction: sequelizeTransaction,
-          });
-          const allMeterValueTypes = allMeterValues.map((meterValue) =>
-            MeterValueMapper.toMeterValueType(meterValue),
-          );
-          totalKwh = MeterValueUtils.getTotalKwh(allMeterValueTypes);
-          // Clear references to help GC - critical for long charging sessions
-          allMeterValues.length = 0;
-          allMeterValueTypes.length = 0;
-        }
-      }
-
-      // Clear references to first/last arrays to help GC
-      firstMeterValue.length = 0;
-      lastMeterValue.length = 0;
-
-      await finalTransaction.update({ totalKwh }, { transaction: sequelizeTransaction });
-      // Optimize memory: Skip eager loading of all MeterValues
-      // Only reload TransactionEvent relations if needed, but not all MeterValues
-      await finalTransaction.reload({
-        include: [
-          {
-            model: TransactionEvent,
-            as: Transaction.TRANSACTION_EVENTS_ALIAS,
-            include: [EvseType],
-          },
-          // Removed MeterValue eager loading to avoid loading hundreds/thousands of records
-        ],
-        transaction: sequelizeTransaction,
-      });
 
       this.transaction.emit(created ? 'created' : 'updated', [finalTransaction]);
 
@@ -644,20 +587,17 @@ export class SequelizeTransactionEventRepository
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<void> {
-    await this.s.transaction(async (sequelizeTransaction) => {
-      const savedMeterValue = await MeterValue.create(
-        {
-          tenantId,
-          transactionDatabaseId: transactionDatabaseId,
-          transactionId,
-          tariffId,
-          ...meterValue,
-        },
-        { transaction: sequelizeTransaction },
-      );
-      this.meterValue.emit('created', [savedMeterValue]);
+  ): Promise<MeterValue> {
+    const meterValueType = OCPP2_0_1_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
+    const savedMeterValue = await MeterValue.create({
+      tenantId,
+      transactionDatabaseId: transactionDatabaseId,
+      transactionId,
+      tariffId,
+      ...meterValueType,
     });
+    this.meterValue.emit('created', [savedMeterValue]);
+    return savedMeterValue;
   }
 
   async updateTransactionTotalCostById(
@@ -670,7 +610,7 @@ export class SequelizeTransactionEventRepository
 
   async updateTransactionByMeterValues(
     tenantId: number,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     stationId: string,
     transactionId: number,
   ): Promise<void> {
@@ -691,78 +631,30 @@ export class SequelizeTransactionEventRepository
         meterValue.transactionDatabaseId = transaction.id;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
-        await meterValue.save();
-        this.meterValue.emit('created', [meterValue]);
+        const createdMeterValue = await MeterValue.create(meterValue);
+        this.meterValue.emit('created', [createdMeterValue]);
       }),
     );
 
-    // Optimize memory: Fetch only first and last meter values for register-based calculations
-    // This avoids loading hundreds/thousands of meter values during long charging sessions
-    const [firstMeterValue, lastMeterValue] = await Promise.all([
-      this.meterValue.readAllByQuery(tenantId, {
-        where: {
-          transactionDatabaseId: transaction.id,
-        },
-        order: [['timestamp', 'ASC']],
-        limit: 1,
-      }),
-      this.meterValue.readAllByQuery(tenantId, {
-        where: {
-          transactionDatabaseId: transaction.id,
-        },
-        order: [['timestamp', 'DESC']],
-        limit: 1,
-      }),
-    ]);
-
-    // Combine first and last (remove duplicates if same record)
-    const meterValuesForCalculation: MeterValue[] =
-      firstMeterValue.length > 0 && lastMeterValue.length > 0
-        ? firstMeterValue[0].id === lastMeterValue[0].id
-          ? firstMeterValue
-          : [...firstMeterValue, ...lastMeterValue]
-        : firstMeterValue.length > 0
-          ? firstMeterValue
-          : lastMeterValue;
-
-    const meterValueTypes = meterValuesForCalculation.map((meterValue) =>
-      MeterValueMapper.toMeterValueType(meterValue),
-    );
-    let totalKwh = MeterValueUtils.getTotalKwh(meterValueTypes);
-
-    // Clear intermediate arrays to help GC
-    meterValuesForCalculation.length = 0;
-    meterValueTypes.length = 0;
-
-    // Fallback: If we got 0 and have multiple meter values, might need all for interval-based
-    if (totalKwh === 0 && (firstMeterValue.length > 0 || lastMeterValue.length > 0)) {
-      const meterValueCount = await this.meterValue.existByQuery(tenantId, {
-        where: {
-          transactionDatabaseId: transaction.id,
-        },
+    if (transaction.meterStart === null || transaction.meterStart === undefined) {
+      const meterStart = MeterValueUtils.getMeterStart(meterValues);
+      await transaction.update({
+        totalKwh: MeterValueUtils.getTotalKwh(
+          meterValues,
+          transaction.totalKwh ?? 0,
+          meterStart ?? undefined,
+        ),
+        meterStart: meterStart,
       });
-
-      if (meterValueCount > 2) {
-        const allMeterValues = await this.meterValue.readAllByQuery(tenantId, {
-          where: {
-            transactionDatabaseId: transaction.id,
-          },
-        });
-        const allMeterValueTypes = allMeterValues.map((meterValue) =>
-          MeterValueMapper.toMeterValueType(meterValue),
-        );
-        totalKwh = MeterValueUtils.getTotalKwh(allMeterValueTypes);
-        // Clear references to help GC - critical for long charging sessions
-        allMeterValues.length = 0;
-        allMeterValueTypes.length = 0;
-      }
+    } else {
+      await transaction.update({
+        totalKwh: MeterValueUtils.getTotalKwh(
+          meterValues,
+          transaction.totalKwh ?? 0,
+          transaction.meterStart ?? undefined,
+        ),
+      });
     }
-
-    // Clear references to first/last arrays to help GC
-    firstMeterValue.length = 0;
-    lastMeterValue.length = 0;
-
-    await transaction.update({ totalKwh });
   }
 
   async createTransactionByStartTransaction(
@@ -794,8 +686,9 @@ export class SequelizeTransactionEventRepository
       event.connectorDatabaseId = connector.id;
 
       // Find Authorization by IdToken
-      const authorization = await this.authorization.readOnlyOneByQuery(tenantId, {
+      const authorization = await Authorization.findOne({
         where: {
+          tenantId,
           idToken: request.idTag,
         },
         transaction: sequelizeTransaction,
@@ -808,7 +701,7 @@ export class SequelizeTransactionEventRepository
       const transactionId = await this.chargingStationSequence.getNextSequenceValue(
         tenantId,
         stationId,
-        ChargingStationSequenceType.transactionId,
+        ChargingStationSequenceTypeEnum.transactionId,
       );
       // Store transaction in db
       let newTransaction = Transaction.build({
@@ -820,15 +713,14 @@ export class SequelizeTransactionEventRepository
         isActive: true,
         transactionId: transactionId.toString(),
         authorizationId: authorization ? authorization.id : null,
+        meterStart: request.meterStart,
         startTime: request.timestamp,
       });
 
       const chargingStation = await this.station.readByKey(tenantId, stationId);
-      if (!chargingStation) {
-        this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
-      } else {
+      if (chargingStation) {
         if (chargingStation.locationId) {
-          newTransaction.locationId = chargingStation.locationId;
+          newTransaction.set('locationId', chargingStation.locationId);
         } else {
           this.logger.warn(
             `Charging station with stationId ${stationId} does not have a locationId. Transaction ${newTransaction.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
@@ -859,7 +751,7 @@ export class SequelizeTransactionEventRepository
     stationId: string,
     meterStop: number,
     timestamp: Date,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     reason?: string,
   ): Promise<StopTransaction> {
     const transaction = await this.transaction.readOnlyOneByQuery(tenantId, {
@@ -879,7 +771,6 @@ export class SequelizeTransactionEventRepository
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
-      meterValues,
     });
     this.stopTransaction.emit('created', [stopTransaction]);
 
@@ -892,9 +783,10 @@ export class SequelizeTransactionEventRepository
       await Promise.all(
         meterValues.map(async (meterValue) => {
           meterValue.transactionDatabaseId = transactionDatabaseId;
-          meterValue.stopTransactionDatabaseId = stopTransaction.id;
-          await meterValue.save();
-          this.meterValue.emit('created', [meterValue]);
+          const createdMeterValue = MeterValue.build(meterValue);
+          createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
+          await createdMeterValue.save();
+          this.meterValue.emit('created', [createdMeterValue]);
         }),
       );
     }

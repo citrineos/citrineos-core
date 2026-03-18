@@ -2,21 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IEVDriverModuleApi } from '../interface';
-import { EVDriverModule } from '../module';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IEVDriverModuleApi } from '../interface.js';
+import { EVDriverModule } from '../module.js';
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   OCPP2_0_1,
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
 import { validateChargingProfileType } from '@citrineos/util';
+import { OCPP2_0_1_Mapper } from '@citrineos/data';
 import { v4 as uuidv4 } from 'uuid';
 
 export class EVDriverOcpp201Api
@@ -100,7 +101,7 @@ export class EVDriverOcpp201Api
           } else {
             await this._module.chargingProfileRepository.createOrUpdateChargingProfile(
               tenantId,
-              chargingProfile,
+              OCPP2_0_1_Mapper.ChargingProfileMapper.fromChargingProfileType(chargingProfile),
               i,
               request.evseId,
             );

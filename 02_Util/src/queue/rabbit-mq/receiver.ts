@@ -2,25 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import * as amqplib from 'amqplib';
-import { ILogObj, Logger } from 'tslog';
-import { MemoryCache } from '../..';
+import type {
+  CallAction,
+  CircuitBreakerState,
+  ICache,
+  IModule,
+  SystemConfig,
+} from '@citrineos/base';
 import {
   AbstractMessageHandler,
   CacheNamespace,
-  CallAction,
-  ICache,
-  IModule,
-  Message,
-  OcppError,
-  OcppRequest,
-  OcppResponse,
-  RetryMessageError,
-  SystemConfig,
-  CircuitBreakerState,
   CircuitBreaker,
+  Message,
+  RetryMessageError,
 } from '@citrineos/base';
-import { plainToInstance } from 'class-transformer';
+import * as amqplib from 'amqplib';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { MemoryCache } from '../../index.js';
 
 /**
  * Subscription metadata stored in cache for re-subscription after reconnect.
@@ -107,7 +106,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
-    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}_${Date.now()}`;
+    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
 
     // Ensure that filter includes the x-match header set to all
     filter = filter
@@ -137,10 +136,16 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           `Bind ${queueName} on ${exchange} for ${action} with filter ${JSON.stringify(filter)}.`,
         );
         await channel.bindQueue(queueName, exchange, '', { action, ...filter });
+        this._logger.info(
+          `Queue ${queueName} bound to exchange ${exchange} for action ${action} with filter ${JSON.stringify(filter)}.`,
+        );
       }
     } else {
       this._logger.debug(`Bind ${queueName} on ${exchange} with filter ${JSON.stringify(filter)}.`);
       await channel.bindQueue(queueName, exchange, '', filter);
+      this._logger.info(
+        `Queue ${queueName} bound to exchange ${exchange} with filter ${JSON.stringify(filter)}.`,
+      );
     }
 
     // Start consuming messages
@@ -335,7 +340,11 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           reason,
         );
         void this.shutdown();
-        this._startReconnectInterval();
+        if (this._reconnectInterval) {
+          this._logger.info('Clearing reconnect interval as circuit breaker is now CLOSED.');
+          clearInterval(this._reconnectInterval);
+          this._reconnectInterval = undefined;
+        }
         break;
       }
       case 'OPEN': {
@@ -363,6 +372,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           'Circuit breaker is FAILING. RabbitMQ receiver will not receive messages until recovery. Reason:',
           reason,
         );
+        this._logger.info('Attempting to start reconnect interval after circuit breaker FAILING.');
+        this._startReconnectInterval();
         break;
       }
       default:
@@ -592,9 +603,17 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           message.properties,
           message.content.toString(),
         );
-        const parsed = plainToInstance(
-          Message<OcppRequest | OcppResponse | OcppError>,
-          <Message<OcppRequest | OcppResponse | OcppError>>JSON.parse(message.content.toString()),
+        const messageData = JSON.parse(message.content.toString());
+
+        // Create Message instance with generic payload (no type transformation needed)
+        const parsed = new Message(
+          messageData.origin || messageData._origin,
+          messageData.eventGroup || messageData._eventGroup,
+          messageData.action || messageData._action,
+          messageData.state || messageData._state,
+          messageData.context || messageData._context,
+          messageData.payload || messageData._payload, // Keep payload as generic object
+          messageData.protocol || messageData._protocol,
         );
         await this.handle(parsed, message.properties);
       } catch (error) {

@@ -1,28 +1,33 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  IBaseDto,
-  IComponentDto,
-  IVariableAttributeDto,
-  IVariableCharacteristicsDto,
-  OCPP2_0_1,
-} from '../..';
 
-export interface IVariableDto extends IBaseDto, OCPP2_0_1.VariableType {
-  id?: number;
-  name: string;
-  instance?: string | null;
-  components?: IComponentDto[];
-  variableAttributes?: IVariableAttributeDto[];
-  variableCharacteristics?: IVariableCharacteristicsDto;
-}
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
 
-export enum VariableDtoProps {
-  id = 'id',
-  name = 'name',
-  instance = 'instance',
-  components = 'components',
-  variableAttributes = 'variableAttributes',
-  variableCharacteristics = 'variableCharacteristics',
-}
+export const VariableSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  name: z.string(),
+  instance: z.string().nullable().optional(),
+});
+
+export const VariableProps = VariableSchema.keyof().enum;
+
+export type VariableDto = z.infer<typeof VariableSchema>;
+
+export const VariableCreateSchema = VariableSchema.omit({
+  id: true,
+  tenant: true,
+  components: true,
+  variableAttributes: true,
+  variableCharacteristics: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type VariableCreate = z.infer<typeof VariableCreateSchema>;
+
+export const variableSchemas = {
+  Variable: VariableSchema,
+  VariableCreate: VariableCreateSchema,
+};

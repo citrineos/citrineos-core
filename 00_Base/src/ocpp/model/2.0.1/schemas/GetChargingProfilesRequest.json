@@ -53,14 +53,18 @@
         },
         "stackLevel": {
           "description": "Charging_ Profile. Stack_ Level. Counter\r\nurn:x-oca:ocpp:uid:1:569230\r\nValue determining level in hierarchy stack of profiles. Higher values have precedence over lower values. Lowest level is 0.\r\n",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "chargingProfileId": {
           "description": "List of all the chargingProfileIds requested. Any ChargingProfile that matches one of these profiles will be reported. If omitted, the Charging Station SHALL not filter on chargingProfileId. This field SHALL NOT contain more ids than set in &lt;&lt;configkey-charging-profile-entries,ChargingProfileEntries.maxLimit&gt;&gt;\r\n\r\n",
           "type": "array",
           "additionalItems": false,
           "items": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "minItems": 1
         },
@@ -85,11 +89,15 @@
     },
     "requestId": {
       "description": "Reference identification that is to be used by the Charging Station in the &lt;&lt;reportchargingprofilesrequest, ReportChargingProfilesRequest&gt;&gt; when provided.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "evseId": {
       "description": "For which EVSE installed charging profiles SHALL be reported. If 0, only charging profiles installed on the Charging Station itself (the grid connection) SHALL be reported. If omitted, all installed charging profiles SHALL be reported.\r\n",
-      "type": "integer"
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
     },
     "chargingProfile": {
       "$ref": "#/definitions/ChargingProfileCriterionType"

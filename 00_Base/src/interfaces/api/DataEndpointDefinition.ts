@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { HttpMethod } from '.';
-import { Namespace, OCPP1_6_Namespace, OCPP2_0_1_Namespace } from '../..';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AsDataEndpoint } from './AsDataEndpoint';
+import { HttpMethod } from './index.js';
+import { Namespace, OCPP1_6_Namespace, OCPP2_0_1_Namespace } from '../../index.js';
 
 /**
  * Interface for usage in {@link AsDataEndpoint} decorator.

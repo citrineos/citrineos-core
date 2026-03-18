@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '../../config/defineConfig';
+import { DEFAULT_TENANT_ID } from '../../config/defineConfig.js';
 
 /**
  * Cache namespace, used for grouping cache entries

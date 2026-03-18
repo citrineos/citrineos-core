@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IModule } from '../..';
+import type { IModule } from '../../index.js';
 
 /**
  * Interface for the ocpp router
@@ -20,6 +20,15 @@ export interface IMessageRouter extends IModule {
    */
   registerConnection(tenantId: number, stationId: string, protocol: string): Promise<boolean>;
   deregisterConnection(tenantId: number, stationId: string): Promise<boolean>;
+
+  /**
+   * Check if a charging station exists for a given tenant.
+   *
+   * @param tenantId The tenant ID.
+   * @param stationId The station ID.
+   * @returns true if the station exists for this tenant, false otherwise
+   */
+  doesChargingStationExistByStationId?(tenantId: number, stationId: string): Promise<boolean>;
 
   /**
    * Receive a message from the Network Connection.

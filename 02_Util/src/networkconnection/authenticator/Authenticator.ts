@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IAuthenticator, AuthenticationOptions } from '@citrineos/base';
-import { ILogObj, Logger } from 'tslog';
+import type { AuthenticationOptions, IAuthenticator } from '@citrineos/base';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { IncomingMessage } from 'http';
-import { UnknownStationFilter } from './UnknownStationFilter';
-import { BasicAuthenticationFilter } from './BasicAuthenticationFilter';
-import { ConnectedStationFilter } from './ConnectedStationFilter';
-import { NetworkProfileFilter } from './NetworkProfileFilter';
+import { UnknownStationFilter } from './UnknownStationFilter.js';
+import { BasicAuthenticationFilter } from './BasicAuthenticationFilter.js';
+import { ConnectedStationFilter } from './ConnectedStationFilter.js';
+import { NetworkProfileFilter } from './NetworkProfileFilter.js';
 
 export class Authenticator implements IAuthenticator {
   protected _logger: Logger<ILogObj>;

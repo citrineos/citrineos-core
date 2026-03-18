@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { ILogObj, Logger } from 'tslog';
-import { IMessage, IMessageHandler, OcppError, OcppRequest, OcppResponse } from '../..';
-import { SystemConfig } from '../../config/types';
-import { CallAction } from '../../ocpp/rpc/message';
-import { IModule } from '../modules';
-import { HandlerProperties } from '.';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IMessage, IMessageHandler, OcppRequest, OcppResponse } from '../../index.js';
+import { OcppError } from '../../index.js';
+import type { SystemConfig } from '../../config/types.js';
+import type { CallAction } from '../../ocpp/rpc/message.js';
+import type { IModule } from '../modules/index.js';
+import type { HandlerProperties } from './index.js';
 
 /**
  * Abstract class implementing {@link IMessageHandler}.

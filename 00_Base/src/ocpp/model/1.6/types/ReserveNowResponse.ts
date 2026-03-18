@@ -8,8 +8,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { ReserveNowResponseStatus } from '../enums';
-import { OcppResponse } from '../../../..';
+import { ReserveNowResponseStatus } from '../enums/index.js';
+import type { OcppResponse } from '../../../../index.js';
 
 export interface ReserveNowResponse extends OcppResponse {
   status: ReserveNowResponseStatus;

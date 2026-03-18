@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ILogObj, Logger } from 'tslog';
-import { SystemConfig } from '../../config/types';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { SystemConfig } from '../../config/types.js';
 
 export abstract class AbstractMessageSender {
   /**

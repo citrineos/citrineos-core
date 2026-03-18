@@ -2,20 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/base';
 import {
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   BelongsToMany,
   Column,
   DataType,
   ForeignKey,
+  Model,
   Table,
 } from 'sequelize-typescript';
-import { type AuthorizationRestrictions } from '../../../../interfaces';
-import { Authorization, SendLocalList, LocalListVersion } from '.';
-import { SendLocalListAuthorization } from './SendLocalListAuthorization';
-import { LocalListVersionAuthorization } from './LocalListVersionAuthorization';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
+import { type AuthorizationRestrictions } from '../../../../interfaces/index.js';
+import { Tenant } from '../Tenant.js';
+import { Authorization, LocalListVersion, SendLocalList } from './index.js';
+import { LocalListVersionAuthorization } from './LocalListVersionAuthorization.js';
+import { SendLocalListAuthorization } from './SendLocalListAuthorization.js';
 
 /**
  *
@@ -28,10 +32,7 @@ import { BaseModelWithTenant } from '../BaseModelWithTenant';
  *
  **/
 @Table // implements the same as Authorization, not OCPP2_0_1.AuthorizationData
-export class LocalListAuthorization
-  extends BaseModelWithTenant
-  implements AuthorizationRestrictions
-{
+export class LocalListAuthorization extends Model implements AuthorizationRestrictions {
   static readonly MODEL_NAME: string = 'LocalListAuthorization';
 
   @Column(DataType.ARRAY(DataType.STRING))
@@ -88,4 +89,31 @@ export class LocalListAuthorization
   declare localListVersions?: LocalListVersion[];
 
   declare customData?: any | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: LocalListAuthorization) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
 }

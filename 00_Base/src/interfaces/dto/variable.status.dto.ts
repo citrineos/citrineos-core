@@ -2,25 +2,35 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { IBaseDto } from './base.dto';
-import { IVariableAttributeDto } from './variable.attribute.dto';
-import { OCPP2_0_1 } from '../..';
+import { z } from 'zod';
+import { BaseSchema } from './types/base.dto.js';
+import { StatusInfoSchema } from './types/location.js';
+import { VariableAttributeSchema } from './variable.attribute.dto.js';
 
-export interface IVariableStatusDto extends IBaseDto {
-  id?: number;
-  value: string;
-  status: string;
-  statusInfo?: OCPP2_0_1.StatusInfoType | null;
-  variable: IVariableAttributeDto;
-  variableAttributeId?: number | null;
-  //   customData?: OCPP2_0_1.CustomDataType | null;
-}
+export const VariableStatusSchema = BaseSchema.extend({
+  id: z.number().int().optional(),
+  value: z.string().max(4000),
+  status: z.string(),
+  statusInfo: StatusInfoSchema.nullable().optional(),
+  variable: VariableAttributeSchema,
+  variableAttributeId: z.number().int().nullable().optional(),
+});
 
-export enum VariableStatusDtoProps {
-  value = 'value',
-  status = 'status',
-  statusInfo = 'statusInfo',
-  variable = 'variable',
-  variableAttributeId = 'variableAttributeId',
-  customData = 'customData',
-}
+export const VariableStatusProps = VariableStatusSchema.keyof().enum;
+
+export type VariableStatusDto = z.infer<typeof VariableStatusSchema>;
+
+export const VariableStatusCreateSchema = VariableStatusSchema.omit({
+  id: true,
+  tenant: true,
+  variable: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+export type VariableStatusCreate = z.infer<typeof VariableStatusCreateSchema>;
+
+export const variableStatusSchemas = {
+  VariableStatus: VariableStatusSchema,
+  VariableStatusCreate: VariableStatusCreateSchema,
+};

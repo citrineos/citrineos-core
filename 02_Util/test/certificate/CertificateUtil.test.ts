@@ -5,15 +5,17 @@ import {
   createPemBlock,
   createSignedCertificateFromCSR,
   extractCertificateArrayFromEncodedString,
+  extractCertificateDetails,
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
 } from '../../src';
 import jsrsasign from 'jsrsasign';
+import { faker } from '@faker-js/faker';
+import { readFile } from '../utils/FileUtil.js';
+import { describe, expect, it, Mock, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import { faker } from '@faker-js/faker';
-import { readFile } from '../utils/FileUtil';
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
@@ -54,9 +56,8 @@ describe('CertificateUtil', () => {
   describe('createPemBlock', () => {
     it('successes', async () => {
       const givenContent = 'PemString';
-      const givenType = 'CERTIFICATE';
 
-      const actualResult = createPemBlock(givenType, givenContent);
+      const actualResult = createPemBlock(givenContent);
 
       expect(actualResult).toBe(
         `-----BEGIN CERTIFICATE-----\nPemString\n-----END CERTIFICATE-----\n`,
@@ -77,7 +78,7 @@ describe('CertificateUtil', () => {
   });
 
   describe('sendOCSPRequest', () => {
-    global.fetch = jest.fn();
+    global.fetch = vi.fn();
 
     const issuerCertPem = readFile('SubCACertificateSample.pem');
     const subjectCertPem = readFile('LeafCertificateSample.pem');
@@ -93,7 +94,7 @@ describe('CertificateUtil', () => {
 
     it('success', async () => {
       const mockResult = faker.lorem.word();
-      (fetch as jest.Mock).mockReturnValueOnce(
+      (fetch as Mock).mockReturnValueOnce(
         Promise.resolve({
           ok: true,
           text: () => mockResult,
@@ -115,7 +116,7 @@ describe('CertificateUtil', () => {
     });
 
     it('fails due to internal server error', async () => {
-      (fetch as jest.Mock).mockReturnValueOnce(
+      (fetch as Mock).mockReturnValueOnce(
         Promise.resolve({
           ok: false,
           status: 500,
@@ -136,6 +137,28 @@ describe('CertificateUtil', () => {
       const actualResult = extractCertificateArrayFromEncodedString(givenEncodedString);
 
       expect(actualResult?.length).toBe(3);
+    });
+  });
+
+  describe('extractCertificateDetails', () => {
+    it('successes', async () => {
+      const givenEncodedString = readFile('LeafCertificateSample.pem');
+      const {
+        serialNumber,
+        issuerName,
+        organizationName,
+        commonName,
+        countryName,
+        validBefore,
+        signatureAlgorithm,
+      } = extractCertificateDetails(givenEncodedString);
+      expect(serialNumber).toEqual(1916);
+      expect(issuerName).toEqual('/CN=localhost SubCA/O=s44/C=US');
+      expect(organizationName).toEqual('s44');
+      expect(commonName).toEqual('localhost');
+      expect(countryName).toEqual('US');
+      expect(validBefore).toEqual(new Date('2034-08-19T00:00:00.000Z'));
+      expect(signatureAlgorithm).toEqual('SHA256withECDSA');
     });
   });
 });

@@ -2,39 +2,55 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  type BootConfig,
-  type CallAction,
-  ChargingStationSequenceType,
-  type CrudRepository,
+import type {
+  BootConfig,
+  CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingStationSequenceTypeEnumType,
+  CrudRepository,
+  MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
+  OCPPMessageDto,
   OCPPVersion,
 } from '@citrineos/base';
-import { type AuthorizationQuerystring } from './queries/Authorization';
+import type {
+  ChargingProfileInput,
+  CompositeScheduleInput,
+} from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
+import type {
+  Authorization,
+  Boot,
+  Certificate,
+  ChargingStation,
+  Component,
+  EventData,
+  Evse,
+  Location,
+  SecurityEvent,
+  Transaction,
+  Variable,
+  VariableAttribute,
+  VariableMonitoring,
+} from '../layers/sequelize/index.js';
 import {
-  type Authorization,
-  type Boot,
-  type Certificate,
   ChangeConfiguration,
   ChargingNeeds,
   ChargingProfile,
-  type ChargingStation,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
-  type Component,
   CompositeSchedule,
   Connector,
-  type EventData,
+  DeleteCertificateAttempt,
   EvseType,
+  InstallCertificateAttempt,
   InstalledCertificate,
   LocalListVersion,
-  type Location,
   MessageInfo,
   MeterValue,
   OCPPMessage,
   Reservation,
-  type SecurityEvent,
   SendLocalList,
   ServerNetworkProfile,
   StatusNotification,
@@ -42,15 +58,12 @@ import {
   Subscription,
   Tariff,
   Tenant,
-  type Transaction,
   TransactionEvent,
-  type Variable,
-  type VariableAttribute,
   VariableCharacteristics,
-  type VariableMonitoring,
-} from '../layers/sequelize';
-import { type VariableAttributeQuerystring } from '.';
-import { TariffQueryString } from './queries/Tariff';
+} from '../layers/sequelize/index.js';
+import type { VariableAttributeQuerystring } from './index.js';
+import type { AuthorizationQuerystring } from './queries/Authorization.js';
+import type { TariffQueryString } from './queries/Tariff.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (
@@ -208,6 +221,21 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     stationId: string,
   ) => Promise<ChargingStation | undefined>;
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+  ) => Promise<Connector | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     stationId: string,
@@ -225,6 +253,16 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]>;
+  updateChargingStationTimestamp(
+    tenantId: number,
+    stationId: string,
+    timestamp: string,
+  ): Promise<void>;
 }
 
 export interface ISecurityEventRepository extends CrudRepository<SecurityEvent> {
@@ -260,7 +298,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<void>;
+  ): Promise<MeterValue>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
@@ -268,7 +306,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction>;
   updateTransactionByMeterValues(
     tenantId: number,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     stationId: string,
     transactionId: number,
   ): Promise<void>;
@@ -308,7 +346,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     stationId: string,
     meterStop: number,
     timestamp: Date,
-    meterValues: MeterValue[],
+    meterValues: MeterValueDto[],
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransaction>;
@@ -320,8 +358,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
   ): Promise<Transaction | undefined>;
 }
 
-export interface IVariableMonitoringRepository
-  extends CrudRepository<OCPP2_0_1.VariableMonitoringType> {
+export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
   createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_0_1.MonitoringDataType,
@@ -361,7 +398,7 @@ export interface IVariableMonitoringRepository
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<OCPP2_0_1.MessageInfoType> {
+export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
   deactivateAllByStationId(tenantId: number, stationId: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
@@ -383,14 +420,18 @@ export interface ICertificateRepository extends CrudRepository<Certificate> {
 }
 
 export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
+export interface IInstallCertificateAttemptRepository
+  extends CrudRepository<InstallCertificateAttempt> {}
+export interface IDeleteCertificateAttemptRepository
+  extends CrudRepository<DeleteCertificateAttempt> {}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
     tenantId: number,
-    chargingProfile: OCPP2_0_1.ChargingProfileType,
+    chargingProfile: ChargingProfileInput,
     stationId: string,
     evseId?: number | null,
-    chargingLimitSource?: OCPP2_0_1.ChargingLimitSourceEnumType,
+    chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
   ): Promise<ChargingProfile>;
   createChargingNeeds(
@@ -405,7 +446,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: OCPP2_0_1.CompositeScheduleType,
+    compositeSchedule: CompositeScheduleInput,
     stationId: string,
   ): Promise<CompositeSchedule>;
   getNextChargingProfileId(tenantId: number, stationId: string): Promise<number>;
@@ -414,7 +455,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     tenantId: number,
     stationId: string,
     transactionDatabaseId: number | null,
-    profilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType,
+    profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number>;
 }
 
@@ -427,7 +468,13 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {}
+export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
+  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage>;
+  getRequestByCorrelationId(
+    tenantId: number,
+    correlationId: string,
+  ): Promise<OCPPMessage | undefined>;
+}
 
 export interface IChargingStationSecurityInfoRepository
   extends CrudRepository<ChargingStationSecurityInfo> {
@@ -444,11 +491,16 @@ export interface IChargingStationSequenceRepository
   getNextSequenceValue(
     tenantId: number,
     stationId: string,
-    type: ChargingStationSequenceType,
+    type: ChargingStationSequenceTypeEnumType,
   ): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {}
+export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+  upsertServerNetworkProfile(
+    websocketServerConfig: any,
+    maxCallLengthSeconds: number,
+  ): Promise<ServerNetworkProfile>;
+}
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
   createOrUpdateChangeConfiguration(
@@ -457,4 +509,6 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
   ): Promise<ChangeConfiguration | undefined>;
 }
 
-export interface ITenantRepository extends CrudRepository<Tenant> {}
+export interface ITenantRepository extends CrudRepository<Tenant> {
+  createTenant(tenant: Tenant): Promise<Tenant>;
+}

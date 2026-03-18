@@ -1,14 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-
-import { OCPP2_0_1, BootstrapConfig } from '@citrineos/base';
-import { SecurityEvent } from '../model/SecurityEvent';
-import { SequelizeRepository } from './Base';
+import type { BootstrapConfig } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/base';
+import { SecurityEvent } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
 import { Op } from 'sequelize';
-import { type ISecurityEventRepository } from '../../../interfaces/repositories';
+import type { ISecurityEventRepository } from '../../../interfaces/index.js';
 import { Sequelize } from 'sequelize-typescript';
-import { Logger, ILogObj } from 'tslog';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export class SequelizeSecurityEventRepository
   extends SequelizeRepository<SecurityEvent>

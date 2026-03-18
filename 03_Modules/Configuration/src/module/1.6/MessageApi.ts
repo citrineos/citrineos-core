@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FastifyInstance } from 'fastify';
-import { ILogObj, Logger } from 'tslog';
-import { IConfigurationModuleApi } from '../interface';
-import { ConfigurationModule } from '../module';
+import type { FastifyInstance } from 'fastify';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IConfigurationModuleApi } from '../interface.js';
+import { ConfigurationModule } from '../module.js';
+import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  CallAction,
   DEFAULT_TENANT_ID,
-  IMessageConfirmation,
   OCPP1_6,
   OCPP1_6_CallAction,
   OCPP2_0_1_CallAction,
@@ -251,6 +251,26 @@ export class ConfigurationOcpp16Api
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP1_6_CallAction.UpdateFirmware,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferRequestSchema)
+  dataTransfer(
+    identifier: string[],
+    request: OCPP1_6.DataTransferRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.DataTransfer,
         request,
         callbackUrl,
       ),

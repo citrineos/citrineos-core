@@ -2,72 +2,73 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConnectorErrorCode, ConnectorStatus, OCPP1_6 } from '@citrineos/base';
+import type { ConnectorErrorCodeEnumType, ConnectorStatusEnumType } from '@citrineos/base';
+import { ConnectorErrorCodeEnum, ConnectorStatusEnum, OCPP1_6 } from '@citrineos/base';
 
 export class LocationMapper {
   static mapStatusNotificationRequestStatusToConnectorStatus(
     status: OCPP1_6.StatusNotificationRequestStatus,
-  ): ConnectorStatus {
+  ): ConnectorStatusEnumType {
     switch (status) {
       case OCPP1_6.StatusNotificationRequestStatus.Available:
-        return ConnectorStatus.Available;
+        return ConnectorStatusEnum.Available;
       case OCPP1_6.StatusNotificationRequestStatus.Preparing:
-        return ConnectorStatus.Preparing;
+        return ConnectorStatusEnum.Preparing;
       case OCPP1_6.StatusNotificationRequestStatus.Charging:
-        return ConnectorStatus.Charging;
+        return ConnectorStatusEnum.Charging;
       case OCPP1_6.StatusNotificationRequestStatus.SuspendedEVSE:
-        return ConnectorStatus.SuspendedEVSE;
+        return ConnectorStatusEnum.SuspendedEVSE;
       case OCPP1_6.StatusNotificationRequestStatus.SuspendedEV:
-        return ConnectorStatus.SuspendedEV;
+        return ConnectorStatusEnum.SuspendedEV;
       case OCPP1_6.StatusNotificationRequestStatus.Finishing:
-        return ConnectorStatus.Finishing;
+        return ConnectorStatusEnum.Finishing;
       case OCPP1_6.StatusNotificationRequestStatus.Reserved:
-        return ConnectorStatus.Reserved;
+        return ConnectorStatusEnum.Reserved;
       case OCPP1_6.StatusNotificationRequestStatus.Unavailable:
-        return ConnectorStatus.Unavailable;
+        return ConnectorStatusEnum.Unavailable;
       case OCPP1_6.StatusNotificationRequestStatus.Faulted:
-        return ConnectorStatus.Faulted;
+        return ConnectorStatusEnum.Faulted;
       default:
-        return ConnectorStatus.Unknown;
+        return ConnectorStatusEnum.Unknown;
     }
   }
 
   static mapStatusNotificationRequestErrorCodeToConnectorErrorCode(
     errorCode: OCPP1_6.StatusNotificationRequestErrorCode,
-  ): ConnectorErrorCode {
+  ): ConnectorErrorCodeEnumType {
     switch (errorCode) {
       case OCPP1_6.StatusNotificationRequestErrorCode.ConnectorLockFailure:
-        return ConnectorErrorCode.ConnectorLockFailure;
+        return ConnectorErrorCodeEnum.ConnectorLockFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.EVCommunicationError:
-        return ConnectorErrorCode.EVCommunicationError;
+        return ConnectorErrorCodeEnum.EVCommunicationError;
       case OCPP1_6.StatusNotificationRequestErrorCode.GroundFailure:
-        return ConnectorErrorCode.GroundFailure;
+        return ConnectorErrorCodeEnum.GroundFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.HighTemperature:
-        return ConnectorErrorCode.HighTemperature;
+        return ConnectorErrorCodeEnum.HighTemperature;
       case OCPP1_6.StatusNotificationRequestErrorCode.InternalError:
-        return ConnectorErrorCode.InternalError;
+        return ConnectorErrorCodeEnum.InternalError;
       case OCPP1_6.StatusNotificationRequestErrorCode.LocalListConflict:
-        return ConnectorErrorCode.LocalListConflict;
+        return ConnectorErrorCodeEnum.LocalListConflict;
       case OCPP1_6.StatusNotificationRequestErrorCode.NoError:
-        return ConnectorErrorCode.NoError;
+        return ConnectorErrorCodeEnum.NoError;
       case OCPP1_6.StatusNotificationRequestErrorCode.OtherError:
-        return ConnectorErrorCode.OtherError;
+        return ConnectorErrorCodeEnum.OtherError;
       case OCPP1_6.StatusNotificationRequestErrorCode.OverCurrentFailure:
-        return ConnectorErrorCode.OverCurrentFailure;
+        return ConnectorErrorCodeEnum.OverCurrentFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.PowerMeterFailure:
-        return ConnectorErrorCode.PowerMeterFailure;
+        return ConnectorErrorCodeEnum.PowerMeterFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.PowerSwitchFailure:
-        return ConnectorErrorCode.PowerSwitchFailure;
+        return ConnectorErrorCodeEnum.PowerSwitchFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.ReaderFailure:
-        return ConnectorErrorCode.ReaderFailure;
+        return ConnectorErrorCodeEnum.ReaderFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.ResetFailure:
-        return ConnectorErrorCode.ResetFailure;
+        return ConnectorErrorCodeEnum.ResetFailure;
       case OCPP1_6.StatusNotificationRequestErrorCode.UnderVoltage:
-        return ConnectorErrorCode.UnderVoltage;
+        return ConnectorErrorCodeEnum.UnderVoltage;
       case OCPP1_6.StatusNotificationRequestErrorCode.OverVoltage:
-        return ConnectorErrorCode.OverVoltage;
+        return ConnectorErrorCodeEnum.OverVoltage;
       case OCPP1_6.StatusNotificationRequestErrorCode.WeakSignal:
-        return ConnectorErrorCode.WeakSignal;
+        return ConnectorErrorCodeEnum.WeakSignal;
       default:
         throw new Error(`Unknown StatusNotificationRequestErrorCode: ${errorCode}`);
     }

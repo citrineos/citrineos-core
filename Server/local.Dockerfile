@@ -2,7 +2,7 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 
-FROM node:22 AS build
+FROM node:24.4.1 AS build
 
 WORKDIR /usr/local/apps/citrineos
 
@@ -11,7 +11,7 @@ RUN npm run install-all && npm run build
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
-FROM node:22-slim
+FROM node:24.4.1-slim
 COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos

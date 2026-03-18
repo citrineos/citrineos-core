@@ -2,13 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository, OCPPVersion, BootstrapConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { ChargingStation, Connector, Location, SequelizeRepository, StatusNotification } from '..';
-import { type ILocationRepository } from '../../..';
+import type { BootstrapConfig, OCPP2_0_1 } from '@citrineos/base';
+import { CrudRepository, OCPPVersion } from '@citrineos/base';
 import { Op } from 'sequelize';
-import { LatestStatusNotification } from '../model/Location/LatestStatusNotification';
+import { Sequelize } from 'sequelize-typescript';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { type ILocationRepository } from '../../../index.js';
+import {
+  ChargingStation,
+  Connector,
+  Location,
+  SequelizeRepository,
+  StatusNotification,
+} from '../index.js';
+import { Evse, LatestStatusNotification } from '../model/index.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -69,7 +77,15 @@ export class SequelizeLocationRepository
     tenantId: number,
     stationId: string,
   ): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.readByKey(tenantId, stationId);
+    return (
+      (await ChargingStation.findOne({
+        where: {
+          id: stationId,
+          tenantId,
+        },
+        include: [{ model: Evse, include: [Connector] }],
+      })) ?? undefined
+    );
   }
 
   async setChargingStationIsOnlineAndOCPPVersion(
@@ -78,11 +94,20 @@ export class SequelizeLocationRepository
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ): Promise<ChargingStation | undefined> {
-    return await this.chargingStation.updateByKey(
+    const result = await this.chargingStation.updateByKey(
       tenantId,
-      { isOnline: isOnline, protocol: ocppVersion },
+      { isOnline, protocol: ocppVersion },
       stationId,
     );
+
+    if (!result) {
+      this.logger.error(
+        `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with stationId ${stationId}. Update skipped to prevent modifying a station from a different tenant.`,
+      );
+      return undefined;
+    }
+
+    return result;
   }
 
   async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
@@ -303,5 +328,76 @@ export class SequelizeLocationRepository
       }
     });
     return result;
+  }
+
+  async updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]> {
+    return await this.connector.updateAllByQuery(tenantId, value, query);
+  }
+
+  async updateChargingStationTimestamp(
+    tenantId: number,
+    stationId: string,
+    timestamp: string,
+  ): Promise<void> {
+    await this.chargingStation.updateAllByQuery(
+      tenantId,
+      { latestOcppMessageTimestamp: timestamp },
+      { where: { id: stationId } },
+    );
+  }
+
+  async readConnectorByStationIdAndOcpp16ConnectorId(
+    tenantId: number,
+    stationId: string,
+    ocpp16ConnectorId: number,
+  ): Promise<Connector | undefined> {
+    return (
+      (await Connector.findOne({
+        where: {
+          tenantId,
+          stationId,
+          connectorId: ocpp16ConnectorId,
+        },
+        include: [Evse],
+      })) ?? undefined
+    );
+  }
+
+  async readEvseByStationIdAndOcpp201EvseId(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseId: number,
+  ): Promise<Evse | undefined> {
+    return (
+      (await Evse.findOne({
+        where: {
+          stationId,
+          evseTypeId: ocpp201EvseId,
+          tenantId,
+        },
+        include: [Connector],
+      })) ?? undefined
+    );
+  }
+
+  async readConnectorByStationIdAndOcpp201EvseType(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+  ): Promise<Connector | undefined> {
+    return (
+      (await Connector.findOne({
+        where: {
+          tenantId,
+          stationId,
+          evseTypeConnectorId: ocpp201EvseType.connectorId,
+        },
+        include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
+      })) ?? undefined
+    );
   }
 }

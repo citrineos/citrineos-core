@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { UserInfo } from './UserInfo';
-import { FastifyRequest } from 'fastify';
-import { ApiAuthorizationResult } from './ApiAuthorizationResult';
-import { ApiAuthenticationResult } from './ApiAuthenticationResult';
+import type { UserInfo } from './UserInfo.js';
+import type { FastifyRequest } from 'fastify';
+import { ApiAuthorizationResult } from './ApiAuthorizationResult.js';
+import { ApiAuthenticationResult } from './ApiAuthenticationResult.js';
 
 /**
  * Interface for authentication providers

@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { expect, jest } from '@jest/globals';
 import { ITransactionEventRepository, Transaction } from '@citrineos/data';
 import {
   AbstractModule,
@@ -9,33 +8,34 @@ import {
   OCPP2_0_1_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { CostCalculator } from '../../src/module/CostCalculator';
-import { CostNotifier } from '../../src/module/CostNotifier';
-import { aTransaction } from '../providers/TransactionProvider';
+import { CostCalculator } from '../../src/module/CostCalculator.js';
+import { CostNotifier } from '../../src/module/CostNotifier.js';
+import { aTransaction } from '../providers/TransactionProvider.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('CostNotifier', () => {
   const anyTenantId = DEFAULT_TENANT_ID;
 
-  let transactionEventRepository: jest.Mocked<ITransactionEventRepository>;
-  let module: jest.Mocked<AbstractModule>;
-  let costCalculator: jest.Mocked<CostCalculator>;
+  let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let module: Mocked<AbstractModule>;
+  let costCalculator: Mocked<CostCalculator>;
   let costNotifier: CostNotifier;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     transactionEventRepository = {
-      readTransactionByStationIdAndTransactionId: jest.fn(),
-      updateTransactionTotalCostById: jest.fn(),
-    } as unknown as jest.Mocked<ITransactionEventRepository>;
+      readTransactionByStationIdAndTransactionId: vi.fn(),
+      updateTransactionTotalCostById: vi.fn(),
+    } as unknown as Mocked<ITransactionEventRepository>;
 
     module = {
-      sendCall: jest.fn(),
-    } as unknown as jest.Mocked<AbstractModule>;
+      sendCall: vi.fn(),
+    } as unknown as Mocked<AbstractModule>;
 
     costCalculator = {
-      calculateTotalCost: jest.fn(),
-    } as unknown as jest.Mocked<CostCalculator>;
+      calculateTotalCost: vi.fn(),
+    } as unknown as Mocked<CostCalculator>;
 
     costNotifier = new CostNotifier(module, transactionEventRepository, costCalculator);
   });
@@ -44,7 +44,7 @@ describe('CostNotifier', () => {
     transactionEventRepository.readTransactionByStationIdAndTransactionId.mockReset();
     module.sendCall.mockReset();
     costCalculator.calculateTotalCost.mockReset();
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   describe('notifyWhileActive', () => {
@@ -68,17 +68,17 @@ describe('CostNotifier', () => {
       expect(module.sendCall).toHaveBeenCalledTimes(0);
 
       const firstTotalCost = givenTotalCost(3.41);
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(1);
       assertLastCostUpdatedCall(transaction, anyTenantId, firstTotalCost);
 
       const secondTotalCost = givenTotalCost(6.84);
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(2);
       assertLastCostUpdatedCall(transaction, anyTenantId, secondTotalCost);
 
       const thirdTotalCost = givenTotalCost(11.14);
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(3);
       assertLastCostUpdatedCall(transaction, anyTenantId, thirdTotalCost);
     });
@@ -96,14 +96,14 @@ describe('CostNotifier', () => {
 
       expect(module.sendCall).toHaveBeenCalledTimes(0);
 
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(1);
 
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(2);
 
       givenTransaction({ ...transaction, isActive: false } as Transaction);
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(2);
     });
 
@@ -125,7 +125,7 @@ describe('CostNotifier', () => {
         intervalSeconds,
       );
 
-      await jest.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(module.sendCall).toHaveBeenCalledTimes(1);
     });
   });

@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ConnectorStatus, OCPP2_0_1 } from '@citrineos/base';
+import { ConnectorStatusEnum, OCPP2_0_1 } from '@citrineos/base';
+import { describe, expect, it } from 'vitest';
 import { LocationMapper } from '../../../../../src/layers/sequelize/mapper/2.0.1';
 
 describe('LocationMapper', () => {
@@ -10,23 +11,23 @@ describe('LocationMapper', () => {
       const testCases = [
         {
           input: OCPP2_0_1.ConnectorStatusEnumType.Available,
-          expected: ConnectorStatus.Available,
+          expected: ConnectorStatusEnum.Available,
         },
         {
           input: OCPP2_0_1.ConnectorStatusEnumType.Occupied,
-          expected: ConnectorStatus.Charging,
+          expected: ConnectorStatusEnum.Occupied,
         },
         {
           input: OCPP2_0_1.ConnectorStatusEnumType.Reserved,
-          expected: ConnectorStatus.Reserved,
+          expected: ConnectorStatusEnum.Reserved,
         },
         {
           input: OCPP2_0_1.ConnectorStatusEnumType.Unavailable,
-          expected: ConnectorStatus.Unavailable,
+          expected: ConnectorStatusEnum.Unavailable,
         },
         {
           input: OCPP2_0_1.ConnectorStatusEnumType.Faulted,
-          expected: ConnectorStatus.Faulted,
+          expected: ConnectorStatusEnum.Faulted,
         },
       ];
 
@@ -40,7 +41,7 @@ describe('LocationMapper', () => {
       const result = LocationMapper.mapConnectorStatus(
         'InvalidStatus' as OCPP2_0_1.ConnectorStatusEnumType,
       );
-      expect(result).toBe(ConnectorStatus.Unknown);
+      expect(result).toBe(ConnectorStatusEnum.Unknown);
     });
   });
 });

@@ -2,14 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ITariffDto, OCPP2_0_1_Namespace } from '@citrineos/base';
-import { BelongsTo, Column, DataType, ForeignKey, Table } from 'sequelize-typescript';
-import { BaseModelWithTenant } from '../BaseModelWithTenant';
-import { CreationOptional } from 'sequelize';
-import { Connector } from '../Location';
+import type { TariffDto, TenantDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace } from '@citrineos/base';
+import type { CreationOptional } from 'sequelize';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Connector } from '../Location/index.js';
+import { Tenant } from '../Tenant.js';
 
 @Table
-export class Tariff extends BaseModelWithTenant implements ITariffDto {
+export class Tariff extends Model implements TariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Tariff;
 
   @Column({
@@ -119,6 +129,33 @@ export class Tariff extends BaseModelWithTenant implements ITariffDto {
 
   public static newInstance(data: TariffData): Tariff {
     return Tariff.build({ ...data });
+  }
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant)
+  declare tenant?: TenantDto;
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: Tariff) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
   }
 }
 
