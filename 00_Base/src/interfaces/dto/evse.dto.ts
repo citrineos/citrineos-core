@@ -5,6 +5,19 @@
 import { z } from 'zod';
 import { ConnectorSchemaWithoutParent } from './connector.dto.js';
 import { BaseSchema } from './types/base.dto.js';
+import { DisplayTextSchema } from './location.dto.js';
+import { ImageSchema } from './location.dto.js';
+import { PointSchema } from './types/location.js';
+import {
+  ChargingStationCapabilitySchema,
+  ChargingStationParkingRestrictionSchema,
+} from './types/enums.js';
+
+const EvseStatusScheduleSchema = z.object({
+  period_begin: z.coerce.date(),
+  period_end: z.coerce.date().nullable().optional(),
+  status: z.string(),
+});
 
 export const EvseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -13,7 +26,15 @@ export const EvseSchema = BaseSchema.extend({
   evseId: z.string(), // eMI3 compliant EVSE ID
   physicalReference: z.string().nullable().optional(),
   removed: z.boolean().optional(),
+  images: z.array(ImageSchema).nullable().optional(),
+  directions: z.array(DisplayTextSchema).nullable().optional(),
   connectors: z.array(ConnectorSchemaWithoutParent).nullable().optional(),
+  capabilities: z.array(ChargingStationCapabilitySchema).nullable().optional(),
+  floorLevel: z.string().nullable().optional(),
+  coordinates: PointSchema.nullable().optional(),
+  parkingRestrictions: z.array(ChargingStationParkingRestrictionSchema).nullable().optional(),
+  statusSchedule: z.array(EvseStatusScheduleSchema).nullable().optional(),
+  ocpiUid: z.string().nullable().optional(),
 });
 
 export const EvseProps = EvseSchema.keyof().enum;

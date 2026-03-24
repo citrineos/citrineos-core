@@ -7,6 +7,12 @@ import type {
   LocationParkingEnumType,
   Point,
   TenantDto,
+  PublishTokenType,
+  EnergyMix,
+  Image,
+  BusinessDetails,
+  DisplayText,
+  AdditionalGeoLocation,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, LocationHours, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
@@ -22,6 +28,7 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
+import { TenantPartner } from '../TenantPartner.js';
 
 /**
  * Represents a location.
@@ -54,6 +61,36 @@ export class Location extends Model implements LocationDto {
     defaultValue: true,
   })
   declare publishUpstream: boolean;
+
+  @Column(DataType.JSONB)
+  declare publishAllowedTo?: PublishTokenType[] | null;
+
+  @Column(DataType.JSONB)
+  declare energyMix?: EnergyMix | null;
+
+  @Column(DataType.JSONB)
+  declare images?: Image[] | null;
+
+  @Column(DataType.JSONB)
+  declare directions?: DisplayText[] | null;
+
+  @Column(DataType.JSONB)
+  declare operator?: BusinessDetails | null;
+
+  @Column(DataType.JSONB)
+  declare suboperator?: BusinessDetails | null;
+
+  @Column(DataType.JSONB)
+  declare owner?: BusinessDetails | null;
+
+  @Column(DataType.BOOLEAN)
+  declare chargingWhenClosed?: boolean | null;
+
+  @Column(DataType.JSONB)
+  declare relatedLocations?: AdditionalGeoLocation[] | null;
+
+  @Column(DataType.STRING(36))
+  declare ocpiId?: string | null;
 
   @Column({
     type: DataType.STRING,
@@ -108,6 +145,18 @@ export class Location extends Model implements LocationDto {
       instance.tenantId = DEFAULT_TENANT_ID;
     }
   }
+
+  @ForeignKey(() => TenantPartner)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+  })
+  declare ownerTenantPartnerId?: number | null;
+
+  @BelongsTo(() => TenantPartner)
+  declare ownerTenantPartner?: TenantPartner;
 
   constructor(...args: any[]) {
     super(...args);

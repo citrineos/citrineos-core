@@ -202,9 +202,13 @@ lib/
 
 # RabbitMQ
 /Server/data/rabbitmq
+/Server/data-a/rabbitmq
+/Server/data-b/rabbitmq
 
 # PostgreSQL
 /Server/data/postgresql
+/Server/data-a/postgresql
+/Server/data-b/postgresql
 
 # Created by https://www.toptal.com/developers/gitignore/api/intellij+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij+all
@@ -300,6 +304,12 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all
 
 data
+Server/data-a/
+Server/data-b/
 
+Server/docker-compose-a.yml/
+Server/docker-compose-b.yml/
+Server/hasura-metadata-a/
+Server/hasura-metadata-b/
 # Generated certificate backup files
 **/certificates/*.pem.backup

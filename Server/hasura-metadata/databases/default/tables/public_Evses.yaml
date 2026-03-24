@@ -46,6 +46,9 @@ select_permissions:
         - tenantId
         - createdAt
         - updatedAt
+        - images
+        - directions
+        - capabilities
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

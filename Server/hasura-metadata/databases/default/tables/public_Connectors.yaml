@@ -52,6 +52,7 @@ select_permissions:
         - updatedAt
         - errorCode
         - status
+        - ocpiId
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
