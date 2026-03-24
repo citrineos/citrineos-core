@@ -239,14 +239,11 @@ export class ReportingModule extends AbstractModule {
     }
 
     // Create response
-    const response: OCPP2_1.NotifyMonitoringReportResponse = {};
+    const response: OCPP2_0_1.NotifyMonitoringReportResponse = {};
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifyMonitoringReport response sent: ', messageConfirmation);
   }
-
-  //TODO: Need to create a separate handler for OCPP 2.1 for handleSetVariableMonitoring
-  //      2.1's NotifyMonitoringReportRequest has an additional required enum compared to 2.0.1
 
   @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
   protected async _handleNotifyReport(
@@ -447,5 +444,39 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): void {
     this._logger.debug('GetDiagnostics response received:', message, props);
+  }
+
+  /**
+   * OCPP 2.1 Handlers
+   */
+  @AsHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifyMonitoringReport)
+  protected async _handleOcpp21NotifyMonitoringReport(
+    message: IMessage<OCPP2_1.NotifyMonitoringReportRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP2.1 NotifyMonitoringReport request received:', message, props);
+
+    for (const monitorType of message.payload.monitor ? message.payload.monitor : []) {
+      const stationId: string = message.context.stationId;
+      const [component, variable] =
+        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+          message.context.tenantId,
+          monitorType.component,
+          monitorType.variable,
+        );
+      await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(
+        message.context.tenantId,
+        monitorType,
+        component ? component.id : null,
+        variable ? variable.id : null,
+        stationId,
+      );
+    }
+
+    // Create response
+    const response: OCPP2_1.NotifyMonitoringReportResponse = {};
+
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifyMonitoringReport response sent: ', messageConfirmation);
   }
 }

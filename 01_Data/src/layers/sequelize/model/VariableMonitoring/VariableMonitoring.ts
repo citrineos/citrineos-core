@@ -7,6 +7,7 @@ import type {
   VariableMonitoringDto,
   TenantDto,
   MonitorEnumType,
+  EventNotificationEnumType,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace } from '@citrineos/base';
 import {
@@ -62,6 +63,10 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
 
   @Column(DataType.INTEGER)
   declare severity: number;
+
+  // OCPP 2.1 field
+  @Column(DataType.STRING)
+  declare eventNotificationType?: EventNotificationEnumType | null;
 
   /**
    * Relations

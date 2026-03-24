@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { ComponentSchema } from './component.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import { VariableSchema } from './variable.dto.js';
-import { MonitorEnumSchema } from './types/enums.js';
+import { EventNotificationEnumSchema, MonitorEnumSchema } from './types/enums.js';
 
 export const VariableMonitoringSchema = BaseSchema.extend({
   databaseId: z.number().int(),
@@ -20,6 +20,7 @@ export const VariableMonitoringSchema = BaseSchema.extend({
   variableId: z.number().int().nullable().optional(),
   component: ComponentSchema,
   componentId: z.number().int().nullable().optional(),
+  eventNotificationType: EventNotificationEnumSchema.nullable().optional(),
 });
 
 export const VariableMonitoringProps = VariableMonitoringSchema.keyof().enum;
