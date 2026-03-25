@@ -31,6 +31,7 @@
 - "!include public_Reservations.yaml"
 - "!include public_SalesTariffs.yaml"
 - "!include public_SecurityEvents.yaml"
+- "!include public_Sessions.yaml"
 - "!include public_SendLocalListAuthorizations.yaml"
 - "!include public_SendLocalLists.yaml"
 - "!include public_ServerNetworkProfiles.yaml"
