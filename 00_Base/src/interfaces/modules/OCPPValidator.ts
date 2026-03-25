@@ -11,6 +11,7 @@ import {
   OCPP2_0_1_CALL_RESULT_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
   OCPP2_1_CALL_RESULT_SCHEMA_RECORD,
+  OCPP2_1_CALL_SCHEMA_RECORD,
   type OcppRequest,
   type OcppResponse,
 } from '../../index.js';
@@ -141,7 +142,7 @@ export class OCPPValidator {
         schema = OCPP2_0_1_CALL_SCHEMA_RECORD[action];
         break;
       case OCPPVersion.OCPP2_1:
-        schema = OCPP2_1_CALL_RESULT_SCHEMA_RECORD[action];
+        schema = OCPP2_1_CALL_SCHEMA_RECORD[action];
         break;
       default:
         this._logger.error('Unknown subprotocol', protocol);
