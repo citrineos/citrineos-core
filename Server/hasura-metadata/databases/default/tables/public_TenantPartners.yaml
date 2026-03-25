@@ -23,3 +23,17 @@ array_relationships:
         table:
           name: Authorizations
           schema: public
+  - name: Sessions
+    using:
+      foreign_key_constraint_on:
+        column: tenantPartnerId
+        table:
+          name: Sessions
+          schema: public
+  - name: Tariffs
+    using:
+      foreign_key_constraint_on:
+        column: tenantPartnerId
+        table:
+          name: Tariffs
+          schema: public
