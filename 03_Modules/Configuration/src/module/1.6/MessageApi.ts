@@ -258,6 +258,26 @@ export class ConfigurationOcpp16Api
     return Promise.all(results);
   }
 
+  @AsMessageEndpoint(OCPP1_6_CallAction.SignedUpdateFirmware, OCPP1_6.SignedUpdateFirmwareRequestSchema)
+  signedUpdateFirmware(
+    identifier: string[],
+    request: OCPP1_6.SignedUpdateFirmwareRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.SignedUpdateFirmware,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
   @AsMessageEndpoint(OCPP1_6_CallAction.DataTransfer, OCPP1_6.DataTransferRequestSchema)
   dataTransfer(
     identifier: string[],

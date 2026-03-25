@@ -161,6 +161,7 @@ export const OCPP1_6_CALL_SCHEMA_MAP: Map<CallAction, object> = new Map<OCPP1_6_
     [OCPP1_6_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema],
     [OCPP1_6_CallAction.UnlockConnector, OCPP1_6.UnlockConnectorRequestSchema],
     [OCPP1_6_CallAction.UpdateFirmware, OCPP1_6.UpdateFirmwareRequestSchema],
+    [OCPP1_6_CallAction.SignedUpdateFirmware, OCPP1_6.SignedUpdateFirmwareRequestSchema],
   ],
 );
 

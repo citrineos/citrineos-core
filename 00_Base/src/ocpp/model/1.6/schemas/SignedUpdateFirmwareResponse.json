@@ -1,0 +1,19 @@
+{
+  "title": "SignedUpdateFirmwareResponse",
+  "type": "object",
+  "properties": {
+  "status": {
+      "$ref": "#/definitions/UpdateFirmwareStatusEnumType"
+    } 
+  },
+  "additionalProperties": false,
+  "$id": "SignedUpdateFirmwareResponse",
+  "definitions": {
+    "UpdateFirmwareStatusEnumType": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected", "AcceptedCanceled", "InvalidCertificate", "RevokedCertificate"],
+      "tsEnumNames": ["Accepted", "Rejected", "AcceptedCanceled", "InvalidCertificate", "RevokedCertificate"]
+    } 
+  }
+}

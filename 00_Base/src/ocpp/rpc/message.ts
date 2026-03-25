@@ -92,6 +92,7 @@ export enum OCPP1_6_CallAction {
   TriggerMessage = 'TriggerMessage',
   UnlockConnector = 'UnlockConnector',
   UpdateFirmware = 'UpdateFirmware',
+  SignedUpdateFirmware = 'SignedUpdateFirmware',
 }
 
 export enum OCPP2_0_1_CallAction {

@@ -115,3 +115,7 @@ export type { UpdateFirmwareRequest } from './types/UpdateFirmwareRequest.js';
 export { default as UpdateFirmwareRequestSchema } from './schemas/UpdateFirmwareRequest.json' with { type: 'json' };
 export type { UpdateFirmwareResponse } from './types/UpdateFirmwareResponse.js';
 export { default as UpdateFirmwareResponseSchema } from './schemas/UpdateFirmwareResponse.json' with { type: 'json' };
+export type { SignedUpdateFirmwareRequest } from './types/SignedUpdateFirmwareRequest.js';
+export { default as SignedUpdateFirmwareRequestSchema } from './schemas/SignedUpdateFirmwareRequest.json' with { type: 'json' };
+export type { SignedUpdateFirmwareResponse } from './types/SignedUpdateFirmwareResponse.js';
+export { default as SignedUpdateFirmwareResponseSchema } from './schemas/SignedUpdateFirmwareResponse.json' with { type: 'json' };
