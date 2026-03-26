@@ -36,6 +36,7 @@ select_permissions:
         - currency
         - stationId
         - id
+        - ocpiTariffId
         - tenantId
         - tenantPartnerId
         - authorizationAmount
@@ -44,6 +45,7 @@ select_permissions:
         - pricePerMin
         - pricePerSession
         - taxRate
+        - tariffAltText
         - createdAt
         - updatedAt
       filter:

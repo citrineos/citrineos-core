@@ -23,6 +23,12 @@ export class Tariff extends Model implements TariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Tariff;
 
   @Column({
+    type: DataType.STRING(36),
+    allowNull: true,
+  })
+  declare ocpiTariffId?: string | null;
+
+  @Column({
     type: DataType.STRING,
     unique: true,
   })
