@@ -19,7 +19,7 @@
     "start-docker-cloud": "npm run start-docker-cloud --prefix ./Server",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
-    "madge-circular-deps": "madge --circular --extensions ts ./",
+    "madge-circular-deps": "npx madge --circular --extensions ts ./",
     "prettier": "prettier --write .",
     "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
