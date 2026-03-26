@@ -5,6 +5,10 @@
     "id": {
       "type": "number"
     },
+    "ocpiTariffId": {
+      "type": "string",
+      "maxLength": 36
+    },
     "currency": {
       "type": "string",
       "minLength": 3,
