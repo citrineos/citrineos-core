@@ -31,7 +31,10 @@
     "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully"
   },
   "lint-staged": {
-    "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
+    "**/*.{js,ts,jsx,tsx,json,md}": [
+      "prettier --write",
+     "npx madge --circular --extensions ts ./"
+    ]
   },
   "workspaces": [
     "00_Base",
