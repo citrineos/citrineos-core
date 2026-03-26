@@ -6,7 +6,7 @@
   "scripts": {
     "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
-    "build": "tsc --build --verbose",
+    "build": "npm run madge-circular-deps && tsc --build --verbose",
     "postbuild": "npm run copy-assets",
     "clear-cache": "npm cache clean --force",
     "remove-dependencies": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules",
@@ -19,6 +19,7 @@
     "start-docker-cloud": "npm run start-docker-cloud --prefix ./Server",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
+    "madge-circular-deps": "madge --circular --extensions ts ./",
     "prettier": "prettier --write .",
     "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
