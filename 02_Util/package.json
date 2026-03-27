@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/amqplib": "0.10.2",
     "@types/json-schema-faker": "0.5.4",
-    "@types/jsrsasign": "10.5.14"
+    "@types/jsrsasign": "10.5.15"
   },
   "dependencies": {
     "@citrineos/base": "1.8.3",
