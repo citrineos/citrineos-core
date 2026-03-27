@@ -19,7 +19,7 @@
   "author": "S44",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/uuid": "9.0.1",
+    "@types/uuid": "9.0.8",
     "eslint": "8.48.0",
     "typescript": "^5.8.2"
   },
