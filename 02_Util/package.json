@@ -36,7 +36,7 @@
     "class-transformer": "0.5.1",
     "json-schema-faker": "^0.5.8",
     "jsonwebtoken": "^9.0.2",
-    "jsrsasign": "11.0.0",
+    "jsrsasign": "11.1.1",
     "jwks-rsa": "^3.2.0",
     "kafkajs": "2.2.4",
     "mqtt": "5.1.2",
