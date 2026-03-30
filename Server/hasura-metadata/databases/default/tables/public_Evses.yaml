@@ -43,6 +43,8 @@ select_permissions:
         - evseId
         - physicalReference
         - removed
+        - ocpiStatus
+        - ocpiUid
         - tenantId
         - createdAt
         - updatedAt

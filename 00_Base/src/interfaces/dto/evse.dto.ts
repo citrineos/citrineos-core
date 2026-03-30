@@ -5,13 +5,14 @@
 import { z } from 'zod';
 import { ConnectorSchemaWithoutParent } from './connector.dto.js';
 import { BaseSchema } from './types/base.dto.js';
-import { DisplayTextSchema } from './location.dto.js';
-import { ImageSchema } from './location.dto.js';
+import { DisplayTextSchema } from './types/display.dto.js';
+import { ImageSchema } from './types/ocpi.registration.js';
 import { PointSchema } from './types/location.js';
 import {
   ChargingStationCapabilitySchema,
   ChargingStationParkingRestrictionSchema,
 } from './types/enums.js';
+import { OcpiEvseStatusEnum } from './types/ocpi.evse.status.dto.js';
 
 const EvseStatusScheduleSchema = z.object({
   period_begin: z.coerce.date(),
@@ -35,6 +36,7 @@ export const EvseSchema = BaseSchema.extend({
   parkingRestrictions: z.array(ChargingStationParkingRestrictionSchema).nullable().optional(),
   statusSchedule: z.array(EvseStatusScheduleSchema).nullable().optional(),
   ocpiUid: z.string().nullable().optional(),
+  ocpiStatus: z.nativeEnum(OcpiEvseStatusEnum).nullable().optional(),
 });
 
 export const EvseProps = EvseSchema.keyof().enum;

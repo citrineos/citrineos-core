@@ -7,8 +7,16 @@ import { ChargingStationSchema } from './charging.station.dto.js';
 import { BaseSchema } from './types/base.dto.js';
 import { LocationFacilityEnumSchema, LocationParkingEnumSchema } from './types/enums.js';
 import { LocationHoursSchema, PointSchema } from './types/location.js';
+export {
+  ImageSchema,
+  type Image,
+  BusinessDetailsSchema,
+  type BusinessDetails,
+} from './types/ocpi.registration.js';
+import { ImageSchema, BusinessDetailsSchema } from './types/ocpi.registration.js';
 
-// --- PublishTokenType ---
+import { DisplayTextSchema } from './types/display.dto.js';
+export { DisplayTextSchema, type DisplayText } from './types/display.dto.js';
 
 export enum TokenType {
   AD_HOC_USER = 'AD_HOC_USER',
@@ -26,61 +34,6 @@ export const PublishTokenTypeSchema = z.object({
 });
 
 export type PublishTokenType = z.infer<typeof PublishTokenTypeSchema>;
-
-// --- Image ---
-
-export enum ImageCategory {
-  CHARGER = 'CHARGER',
-  ENTRANCE = 'ENTRANCE',
-  LOCATION = 'LOCATION',
-  NETWORK = 'NETWORK',
-  OPERATOR = 'OPERATOR',
-  OTHER = 'OTHER',
-  OWNER = 'OWNER',
-}
-
-export enum ImageType {
-  PNG = 'PNG',
-  JPEG = 'JPEG',
-  GIF = 'GIF',
-  BMP = 'BMP',
-  TIFF = 'TIFF',
-  WEBP = 'WEBP',
-  SVG = 'SVG',
-  ICO = 'ICO',
-}
-
-export const ImageSchema = z.object({
-  url: z.string().url(),
-  thumbnail: z.string().url().nullable().optional(),
-  category: z.nativeEnum(ImageCategory),
-  type: z.nativeEnum(ImageType),
-  width: z.number().int().max(99999).nullable().optional(),
-  height: z.number().int().max(99999).nullable().optional(),
-});
-
-export type Image = z.infer<typeof ImageSchema>;
-
-// --- BusinessDetails ---
-
-export const BusinessDetailsSchema = z.object({
-  name: z.string().max(100),
-  website: z.string().url().nullable().optional(),
-  logo: ImageSchema.nullable().optional(),
-});
-
-export type BusinessDetails = z.infer<typeof BusinessDetailsSchema>;
-
-// --- DisplayText ---
-
-export const DisplayTextSchema = z.object({
-  language: z.string().length(2), // ISO 639-1
-  text: z.string().max(512),
-});
-
-export type DisplayText = z.infer<typeof DisplayTextSchema>;
-
-// --- EnergyMix ---
 
 export enum EnergySourceCategory {
   NUCLEAR = 'NUCLEAR',
@@ -118,8 +71,6 @@ export const EnergyMixSchema = z.object({
 
 export type EnergyMix = z.infer<typeof EnergyMixSchema>;
 
-// --- RelatedLocation ---
-
 export const AdditionalGeoLocationSchema = z.object({
   latitude: z.string().regex(/^-?[0-9]{1,2}\.[0-9]{5,7}$/),
   longitude: z.string().regex(/^-?[0-9]{1,3}\.[0-9]{5,7}$/),
@@ -127,8 +78,6 @@ export const AdditionalGeoLocationSchema = z.object({
 });
 
 export type AdditionalGeoLocation = z.infer<typeof AdditionalGeoLocationSchema>;
-
-// --- Location ---
 
 export const LocationSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -154,6 +103,7 @@ export const LocationSchema = BaseSchema.extend({
   images: z.array(ImageSchema).nullable().optional(),
   chargingPool: z.array(ChargingStationSchema).nullable().optional(),
   ownerTenantPartnerId: z.number().int().nullable().optional(),
+  relatedLocations: z.array(AdditionalGeoLocationSchema).nullable().optional(),
   ocpiId: z.string().max(36).nullable().optional(),
 });
 

@@ -9,9 +9,10 @@ import { DataTypes, QueryInterface } from 'sequelize';
 export default {
   up: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable('Evses');
-    if (!tableDescription.capabilities) {
-      await queryInterface.addColumn('Evses', 'capabilities', {
-        type: DataTypes.JSONB,
+
+    if (!tableDescription.ocpiStatus) {
+      await queryInterface.addColumn('Evses', 'ocpiStatus', {
+        type: DataTypes.STRING(20),
         allowNull: true,
       });
     }
@@ -19,8 +20,9 @@ export default {
 
   down: async (queryInterface: QueryInterface) => {
     const tableDescription = await queryInterface.describeTable('Evses');
-    if (tableDescription.capabilities) {
-      await queryInterface.removeColumn('Evses', 'capabilities');
+
+    if (tableDescription.ocpiStatus) {
+      await queryInterface.removeColumn('Evses', 'ocpiStatus');
     }
   },
 };

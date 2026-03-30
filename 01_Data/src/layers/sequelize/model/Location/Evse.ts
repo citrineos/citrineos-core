@@ -10,6 +10,7 @@ import type {
   ChargingStationParkingRestrictionEnumType,
   Point,
   Image,
+  OcpiEvseStatusEnum,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
@@ -75,6 +76,9 @@ export class Evse extends Model implements EvseDto {
 
   @Column(DataType.JSONB)
   declare capabilities?: ChargingStationCapabilityEnumType[] | null;
+
+  @Column(DataType.STRING)
+  declare ocpiStatus?: OcpiEvseStatusEnum | null;
 
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStationDto;

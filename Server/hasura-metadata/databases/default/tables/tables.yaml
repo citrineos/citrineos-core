@@ -52,3 +52,4 @@
 - "!include public_VariableStatuses.yaml"
 - "!include public_Variables.yaml"
 - "!include public_AsyncJobStatuses.yaml"
+- "!include public_ConnectorTariffs.yaml"
