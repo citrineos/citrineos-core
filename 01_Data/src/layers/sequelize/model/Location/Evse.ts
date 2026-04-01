@@ -1,7 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingStationDto, ConnectorDto, EvseDto, TenantDto } from '@citrineos/base';
+import type {
+  ChargingStationDto,
+  ConnectorDto,
+  EvseDto,
+  TenantDto,
+  ChargingStationCapabilityEnumType,
+  ChargingStationParkingRestrictionEnumType,
+  Point,
+  Image,
+  OcpiEvseStatusEnum,
+} from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -43,6 +53,32 @@ export class Evse extends Model implements EvseDto {
 
   @Column(DataType.BOOLEAN)
   declare removed?: boolean;
+
+  @Column(DataType.JSONB)
+  declare images?: Image[] | null;
+
+  @Column(DataType.STRING(4))
+  declare floorLevel?: string | null;
+
+  @Column(DataType.GEOMETRY('POINT'))
+  declare coordinates?: Point | null;
+
+  @Column(DataType.JSONB)
+  declare parkingRestrictions?: ChargingStationParkingRestrictionEnumType[] | null;
+
+  @Column(DataType.JSONB)
+  declare statusSchedule?:
+    | { period_begin: Date; period_end?: Date | null; status: string }[]
+    | null;
+
+  @Column(DataType.STRING(36))
+  declare ocpiUid?: string | null;
+
+  @Column(DataType.JSONB)
+  declare capabilities?: ChargingStationCapabilityEnumType[] | null;
+
+  @Column(DataType.STRING)
+  declare ocpiStatus?: OcpiEvseStatusEnum | null;
 
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStationDto;

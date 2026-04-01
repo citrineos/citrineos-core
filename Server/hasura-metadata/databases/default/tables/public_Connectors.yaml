@@ -36,6 +36,13 @@ array_relationships:
         table:
           name: Transactions
           schema: public
+  - name: ConnectorTariffsOcpiPartner
+    using:
+      foreign_key_constraint_on:
+        column: connectorId
+        table:
+          name: ConnectorTariffs
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -52,6 +59,7 @@ select_permissions:
         - updatedAt
         - errorCode
         - status
+        - ocpiId
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

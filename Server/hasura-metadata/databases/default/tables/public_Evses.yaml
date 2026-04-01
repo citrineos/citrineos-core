@@ -43,9 +43,14 @@ select_permissions:
         - evseId
         - physicalReference
         - removed
+        - ocpiStatus
+        - ocpiUid
         - tenantId
         - createdAt
         - updatedAt
+        - images
+        - directions
+        - capabilities
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

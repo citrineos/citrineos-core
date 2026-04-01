@@ -422,6 +422,7 @@ export * from './interfaces/dto/types/enums.js';
 export * from './interfaces/dto/types/hours.js';
 export * from './interfaces/dto/types/location.js';
 export * from './interfaces/dto/types/message.info.js';
+export * from './interfaces/dto/types/ocpi.evse.status.dto.js';
 export * from './interfaces/dto/types/ocpi.registration.js';
 export * from './interfaces/dto/types/sales.tariff.js';
 export * from './interfaces/dto/types/sampled.value.dto.js';

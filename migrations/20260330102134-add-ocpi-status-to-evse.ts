@@ -1,0 +1,28 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+import { DataTypes, QueryInterface } from 'sequelize';
+
+export default {
+  up: async (queryInterface: QueryInterface) => {
+    const tableDescription = await queryInterface.describeTable('Evses');
+
+    if (!tableDescription.ocpiStatus) {
+      await queryInterface.addColumn('Evses', 'ocpiStatus', {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      });
+    }
+  },
+
+  down: async (queryInterface: QueryInterface) => {
+    const tableDescription = await queryInterface.describeTable('Evses');
+
+    if (tableDescription.ocpiStatus) {
+      await queryInterface.removeColumn('Evses', 'ocpiStatus');
+    }
+  },
+};

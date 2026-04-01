@@ -8,6 +8,9 @@ object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+  - name: OwnerTenantPartner
+    using:
+      foreign_key_constraint_on: ownerTenantPartnerId
 array_relationships:
   - name: ChargingStations
     using:
@@ -35,9 +38,20 @@ select_permissions:
         - state
         - id
         - tenantId
+        - ownerTenantPartnerId
         - createdAt
         - updatedAt
         - coordinates
+        - publishAllowedTo
+        - energyMix
+        - images
+        - directions
+        - operator
+        - suboperator
+        - owner
+        - chargingWhenClosed
+        - relatedLocations
+        - ocpiId
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

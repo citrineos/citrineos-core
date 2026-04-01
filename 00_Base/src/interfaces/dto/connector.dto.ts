@@ -15,6 +15,7 @@ import {
 
 export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   id: z.number().int().optional(),
+  ocpiId: z.string().nullable().optional(),
   stationId: z.string(),
   evseId: z.number().int(),
   connectorId: z.number().int(),
