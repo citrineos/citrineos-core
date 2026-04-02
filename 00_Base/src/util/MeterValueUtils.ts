@@ -12,6 +12,10 @@ import {
 import type { SampledValue } from '../interfaces/dto/types/sampled.value.dto.js';
 
 export class MeterValueUtils {
+  private static isOverallPhase(phase: string | undefined | null): boolean {
+    return !phase || phase === PhaseEnum.N;
+  }
+
   private static readonly validContexts = new Set<ReadingContextEnumType>([
     ReadingContextEnum['Transaction.Begin'],
     ReadingContextEnum['Sample.Periodic'],
@@ -172,7 +176,7 @@ export class MeterValueUtils {
         (sv.measurand === measurand ||
           (!sv.measurand && // Default to Energy.Active.Import.Register if measurand is missing
             measurand === MeasurandEnum['Energy.Active.Import.Register'])) &&
-        !phased === !sv.phase,
+        phased ? !this.isOverallPhase(sv.phase) : this.isOverallPhase(sv.phase),
     );
     return value ? this.normalizeToKwh(value) : null;
   }

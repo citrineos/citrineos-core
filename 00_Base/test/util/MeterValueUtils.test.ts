@@ -332,6 +332,80 @@ describe('MeterValueUtils', () => {
       expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(60);
     });
 
+    it('treats phase N as an overall (non-phased) value', () => {
+      const meterValues: MeterValueDto[] = [
+        {
+          timestamp: '2025-05-29T12:01:00Z',
+          sampledValue: [
+            {
+              measurand: 'Energy.Active.Import.Register',
+              phase: 'N',
+              value: 100,
+              unitOfMeasure: { unit: 'kWh', multiplier: 0 },
+            },
+          ],
+        },
+        {
+          timestamp: '2025-05-29T12:02:00Z',
+          sampledValue: [
+            {
+              measurand: 'Energy.Active.Import.Register',
+              phase: 'N',
+              value: 200,
+              unitOfMeasure: { unit: 'kWh', multiplier: 0 },
+            },
+          ],
+        },
+      ];
+      expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(100); // 200 - 100
+    });
+
+    it('treats phase N as overall value with meterStart', () => {
+      const meterValues: MeterValueDto[] = [
+        {
+          timestamp: '2025-05-29T12:01:00Z',
+          sampledValue: [
+            {
+              measurand: 'Energy.Active.Import.Register',
+              phase: 'N',
+              value: 5000,
+              unitOfMeasure: { unit: 'Wh', multiplier: 0 },
+            },
+          ],
+        },
+        {
+          timestamp: '2025-05-29T12:02:00Z',
+          sampledValue: [
+            {
+              measurand: 'Energy.Active.Import.Register',
+              phase: 'N',
+              value: 10000,
+              unitOfMeasure: { unit: 'Wh', multiplier: 0 },
+            },
+          ],
+        },
+      ];
+      // meterStart is 2 kWh, latest is 10000 Wh = 10 kWh
+      expect(MeterValueUtils.getTotalKwh(meterValues, 0, 2)).toBe(8);
+    });
+
+    it('getMeterStart works with phase N', () => {
+      const meterValues: MeterValueDto[] = [
+        {
+          timestamp: '2025-05-29T12:01:00Z',
+          sampledValue: [
+            {
+              measurand: 'Energy.Active.Import.Register',
+              phase: 'N',
+              value: 5000,
+              unitOfMeasure: { unit: 'Wh', multiplier: 0 },
+            },
+          ],
+        },
+      ];
+      expect(MeterValueUtils.getMeterStart(meterValues)).toBe(5); // 5000 Wh = 5 kWh
+    });
+
     it('falls back to L1-N, L2-N, L3-N phased values', () => {
       const meterValues: MeterValueDto[] = [
         {
