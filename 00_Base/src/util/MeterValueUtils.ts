@@ -176,7 +176,7 @@ export class MeterValueUtils {
         (sv.measurand === measurand ||
           (!sv.measurand && // Default to Energy.Active.Import.Register if measurand is missing
             measurand === MeasurandEnum['Energy.Active.Import.Register'])) &&
-        phased ? !this.isOverallPhase(sv.phase) : this.isOverallPhase(sv.phase),
+        (phased ? !this.isOverallPhase(sv.phase) : this.isOverallPhase(sv.phase)),
     );
     return value ? this.normalizeToKwh(value) : null;
   }
