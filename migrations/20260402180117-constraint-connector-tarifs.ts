@@ -8,10 +8,8 @@ import { QueryInterface } from 'sequelize';
 
 export default {
   up: async (queryInterface: QueryInterface) => {
-    // Remove the incorrect unique constraint based on ocpiIds
     await queryInterface.removeConstraint('ConnectorTariffs', 'connector_tariffs_unique');
 
-    // Replace with correct constraint scoped to DB surrogate keys
     await queryInterface.addConstraint('ConnectorTariffs', {
       fields: ['connectorId', 'tariffId', 'tenantPartnerId'],
       type: 'unique',
