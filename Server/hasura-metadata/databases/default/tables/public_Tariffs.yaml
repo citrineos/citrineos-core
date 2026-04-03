@@ -36,6 +36,13 @@ array_relationships:
         table:
           name: ConnectorTariffs
           schema: public
+  - name: TariffElements
+    using:
+      foreign_key_constraint_on:
+        column: tariffId
+        table:
+          name: TariffElements
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -53,10 +60,44 @@ select_permissions:
         - pricePerSession
         - taxRate
         - tariffAltText
+        - tariffType
+        - tariffAltUrl
+        - minPrice
+        - maxPrice
+        - energyMix
+        - startDateTime
+        - endDateTime
         - createdAt
         - updatedAt
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+insert_permissions:
+  - role: user
+    permission:
+      columns:
+        - currency
+        - stationId
+        - ocpiTariffId
+        - tenantId
+        - tenantPartnerId
+        - authorizationAmount
+        - paymentFee
+        - pricePerKwh
+        - pricePerMin
+        - pricePerSession
+        - taxRate
+        - tariffAltText
+        - tariffType
+        - tariffAltUrl
+        - minPrice
+        - maxPrice
+        - energyMix
+        - startDateTime
+        - endDateTime
+        - createdAt
+        - updatedAt
+      check:
+        tenantId:
+          _eq: x-hasura-tenant-id

@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: TariffElements
+  schema: public
+object_relationships:
+  - name: Tariff
+    using:
+      foreign_key_constraint_on: tariffId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - tariffId
+        - priceComponents
+        - restrictions
+        - createdAt
+        - updatedAt
+      filter:
+        Tariff:
+          tenantId:
+            _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
+insert_permissions:
+  - role: user
+    permission:
+      columns:
+        - tariffId
+        - priceComponents
+        - restrictions
+        - createdAt
+        - updatedAt
+      check:
+        Tariff:
+          tenantId:
+            _eq: x-hasura-tenant-id
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        Tariff:
+          tenantId:
+            _eq: x-hasura-tenant-id
+    comment: ""

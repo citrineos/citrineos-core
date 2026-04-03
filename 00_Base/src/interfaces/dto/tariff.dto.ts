@@ -18,6 +18,13 @@ export const TariffSchema = BaseSchema.extend({
   paymentFee: z.number().min(0).nullable().optional(), // DECIMAL
   taxRate: z.number().min(0).nullable().optional(), // DECIMAL
   tariffAltText: z.record(z.string(), z.any()).nullable().optional(), // JSONB
+  tariffType: z.string().max(36).nullable().optional(),
+  tariffAltUrl: z.string().nullable().optional(),
+  minPrice: z.record(z.string(), z.any()).nullable().optional(),
+  maxPrice: z.record(z.string(), z.any()).nullable().optional(),
+  energyMix: z.record(z.string(), z.any()).nullable().optional(),
+  startDateTime: z.coerce.date().nullable().optional(),
+  endDateTime: z.coerce.date().nullable().optional(),
 });
 
 export const TariffProps = TariffSchema.keyof().enum;
