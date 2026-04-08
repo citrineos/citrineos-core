@@ -20,6 +20,7 @@ Server/src/assets/logo.png
 .github/workflows/tests/CI/collection.json
 .github/workflows/tests/CI/environment.json
 .github/workflows/push-to-ecr.yml
+.github/workflows/push-hasura-to-ecr.yml
 .github/workflows/renew-certs/openssl.config
 .husky/pre-commit
 
