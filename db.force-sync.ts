@@ -5,8 +5,8 @@
 
 process.env.APP_ENV = 'local';
 
+import { DEFAULT_TENANT_ID, loadBootstrapConfig } from '@citrineos/base';
 import { DefaultSequelizeInstance } from '@citrineos/data';
-import { loadBootstrapConfig } from '@citrineos/base';
 
 async function initializeDatabase() {
   const bootstrapConfig = loadBootstrapConfig();
@@ -16,12 +16,28 @@ async function initializeDatabase() {
 export const sequelize = initializeDatabase();
 
 const syncDatabase = async () => {
-  await (await sequelize).sync({ force: true }); // Use { force: true } for dropping and recreating tables
+  const db = await sequelize;
+  await db.sync({ force: true });
   console.log('Database synchronized successfully');
+
+  // Seed required data that migrations would normally insert.
+  const [[existingTenant]] = await db.query(
+    `SELECT 1 FROM "Tenants" WHERE id = ${DEFAULT_TENANT_ID} LIMIT 1`,
+  );
+  if (!existingTenant) {
+    await db.query(
+      `INSERT INTO "Tenants" (id, name, "createdAt", "updatedAt")
+       VALUES (${DEFAULT_TENANT_ID}, 'Default Tenant', NOW(), NOW())`,
+    );
+    console.log('Default tenant seeded successfully');
+  }
 };
 
 syncDatabase()
-  .then()
+  .then(() => {
+    process.exit(0);
+  })
   .catch((error) => {
     console.error('Error synchronizing database:', error);
+    process.exit(1);
   });
