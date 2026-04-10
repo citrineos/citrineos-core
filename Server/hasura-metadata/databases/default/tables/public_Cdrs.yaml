@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: Cdrs
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: TenantPartner
+    using:
+      foreign_key_constraint_on: tenantPartnerId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - ocpiCdrId
+        - countryCode
+        - partyId
+        - startDateTime
+        - endDateTime
+        - sessionId
+        - cdrToken
+        - authMethod
+        - authorizationReference
+        - cdrLocation
+        - meterId
+        - currency
+        - tariffs
+        - chargingPeriods
+        - signedData
+        - totalCost
+        - totalFixedCost
+        - totalEnergy
+        - totalEnergyCost
+        - totalTime
+        - totalTimeCost
+        - totalParkingTime
+        - totalParkingCost
+        - totalReservationCost
+        - remark
+        - invoiceReferenceId
+        - credit
+        - creditReferenceId
+        - homeChargingCompensation
+        - lastUpdated
+        - tenantId
+        - tenantPartnerId
+        - createdAt
+        - updatedAt
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
