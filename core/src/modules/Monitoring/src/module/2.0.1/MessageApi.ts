@@ -260,15 +260,6 @@ export class MonitoringOcpp201Api
     for (const id of identifier) {
       try {
         const setVariableData = request.setVariableData as OCPP2_0_1.SetVariableDataType[];
-
-        // Store variable data in local DB so that the response can find them
-        await this._module.deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
-          tenantId,
-          setVariableData,
-          id,
-          new Date().toISOString(),
-        );
-
         // Determine how many items to send per message
         const itemsPerMessage =
           (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(

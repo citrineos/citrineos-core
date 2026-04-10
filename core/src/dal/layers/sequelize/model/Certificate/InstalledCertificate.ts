@@ -11,10 +11,17 @@ import { DEFAULT_TENANT_ID, OCPP2_0_1_Namespace, type ChargingStationDto } from 
 import { BeforeCreate, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
 
 import { Certificate } from './Certificate.js';
+import { ChargingStation } from '../Location/ChargingStation.js';
 
 @Table
 export class InstalledCertificate extends Model implements InstalledCertificateDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.InstalledCertificate;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
+  declare stationPkId?: number;
 
   @Column({
     type: DataType.STRING(36),
@@ -68,6 +75,19 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
   declare tenantId: number;
 
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: InstalledCertificate): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

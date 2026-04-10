@@ -23,23 +23,38 @@ array_relationships:
         table:
           name: Transactions
           schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      columns: '*'
+    comment: ""
 select_permissions:
   - role: user
     permission:
-      columns:
-        - address
-        - city
-        - country
-        - name
-        - postalCode
-        - state
-        - id
-        - tenantId
-        - createdAt
-        - updatedAt
-        - coordinates
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns: '*'
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      check:
+        tenantId:
+          _eq: x-hasura-tenant-id
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
     comment: ""

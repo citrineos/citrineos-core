@@ -55,23 +55,27 @@ export class ConfigurationOcpp201Api
     identifier: string[],
     request: OCPP2_0_1.SetNetworkProfileRequest,
     callbackUrl?: string,
-    extraQueries?: Record<string, any>,
     tenantId: number = DEFAULT_TENANT_ID,
+    extraQueries?: Record<string, any>,
   ): Promise<IMessageConfirmation[]> {
     const correlationId = uuidv4();
     if (extraQueries) {
       const websocketServerConfigId =
         extraQueries[SetNetworkProfileExtraQuerystrings.websocketServerConfigId];
-      await SetNetworkProfile.build({
-        stationId: identifier,
-        tenantId,
-        correlationId,
-        configurationSlot: request.configurationSlot,
-        websocketServerConfigId,
-        apn: JSON.stringify(request.connectionData.apn),
-        vpn: JSON.stringify(request.connectionData.vpn),
-        ...request.connectionData,
-      }).save();
+      await Promise.all(
+        identifier.map((id) =>
+          SetNetworkProfile.build({
+            stationId: id,
+            tenantId,
+            correlationId,
+            configurationSlot: request.configurationSlot,
+            websocketServerConfigId,
+            apn: JSON.stringify(request.connectionData.apn),
+            vpn: JSON.stringify(request.connectionData.vpn),
+            ...request.connectionData,
+          }).save(),
+        ),
+      );
     }
 
     const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>

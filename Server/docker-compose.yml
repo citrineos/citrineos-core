@@ -8,8 +8,8 @@ services:
       - 15672:15672
       - 5672:5672
     environment:
-      RABBITMQ_DEFAULT_USER: 'guest'
-      RABBITMQ_DEFAULT_PASS: 'guest'
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
@@ -28,9 +28,9 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: 'citrine'
+      POSTGRES_PASSWORD: "citrine"
     healthcheck:
-      test: 'pg_isready --username=citrine'
+      test: "pg_isready --username=citrine"
       interval: 5s
       timeout: 10s
       retries: 5
@@ -56,21 +56,23 @@ services:
       - /usr/local/apps/citrineos/base/dist/
       - /usr/local/apps/citrineos/core/dist/
     environment:
-      APP_NAME: 'all'
-      APP_ENV: 'docker'
+      APP_NAME: "all"
+      APP_ENV: "docker"
       # Add AWS region (required by the SDK)
       AWS_REGION: us-east-1
       # Skip authentication completely - use public access
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       # Database Strategy
-      DB_STRATEGY: 'migrate'
+      DB_STRATEGY: "migrate"
       # Bootstrap Configuration Environment Variables
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
       # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -88,7 +90,11 @@ services:
       - 8092:8092
       - 10000-10500:10000-10500 # for dynamic websocket servers
     healthcheck:
-      test: ['CMD-SHELL', 'node -e "const net = require(\"net\"); const client = net.createConnection(8080, \"127.0.0.1\", () => { client.end(); process.exit(0); }); client.on(\"error\", () => process.exit(1)); client.setTimeout(5000, () => { client.destroy(); process.exit(1); });"']
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "const net = require(\"net\"); const client = net.createConnection(8080, \"127.0.0.1\", () => { client.end(); process.exit(0); }); client.on(\"error\", () => process.exit(1)); client.setTimeout(5000, () => { client.destroy(); process.exit(1); });"',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -98,8 +104,8 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - "9000:9000"
+      - "9001:9001"
     environment:
       # Use default credentials for simplicity
       MINIO_ROOT_USER: minioadmin
@@ -111,7 +117,7 @@ services:
       - ./data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -150,18 +156,18 @@ services:
       ## postgres database to store Hasura metadata
       HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
       ## enable the console served by server
-      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       ## enable debugging mode. It is recommended to disable this in production
-      HASURA_GRAPHQL_DEV_MODE: 'true'
+      HASURA_GRAPHQL_DEV_MODE: "true"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
       ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
       ## uncomment next line to set an admin secret - warning, without configuration this will cause upstream services to fail
       # HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
       HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
+      test: ["CMD", "curl", "-f", "http://graphql-engine:8080/healthz"]
       interval: 5s
       timeout: 10s
       retries: 20

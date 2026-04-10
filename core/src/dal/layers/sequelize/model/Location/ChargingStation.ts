@@ -11,20 +11,21 @@ import type {
   Point,
   TenantDto,
   TransactionDto,
+  StatusNotificationDto,
+  InstalledCertificateDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
 import {
+  AutoIncrement,
   BeforeCreate,
   BeforeUpdate,
   Column,
   DataType,
+  Index,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-
-import { StatusNotification } from './StatusNotification.js';
-import { InstalledCertificate } from '../Certificate/InstalledCertificate.js';
 
 /**
  * Represents a charging station.
@@ -34,8 +35,21 @@ import { InstalledCertificate } from '../Certificate/InstalledCertificate.js';
 export class ChargingStation extends Model implements ChargingStationDto {
   static readonly MODEL_NAME: string = Namespace.ChargingStation;
 
+  @AutoIncrement
   @PrimaryKey
-  @Column(DataType.STRING(36))
+  @Column(DataType.INTEGER)
+  declare pkId: number;
+
+  /**
+   * The tenant-scoped charging station identifier — used in WebSocket routing
+   * (the charger appends this to the end of the WebSocket URL on connect).
+   * Unique per tenant, but two different tenants may share the same value.
+   */
+  @Index
+  @Column({
+    type: DataType.STRING(36),
+    unique: 'ChargingStations_id_tenantId_key',
+  })
   declare id: string;
 
   @Column(DataType.BOOLEAN)
@@ -105,9 +119,9 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @Column(DataType.INTEGER)
   declare locationId?: number | null;
 
-  declare statusNotifications?: StatusNotification[] | null;
+  declare statusNotifications?: StatusNotificationDto[] | null;
 
-  declare installedCertificates?: InstalledCertificate[];
+  declare installedCertificates?: InstalledCertificateDto[];
 
   declare transactions?: TransactionDto[] | null;
 
@@ -127,6 +141,7 @@ export class ChargingStation extends Model implements ChargingStationDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
+    unique: 'ChargingStations_id_tenantId_key',
   })
   declare tenantId: number;
 

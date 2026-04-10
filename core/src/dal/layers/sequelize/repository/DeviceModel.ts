@@ -367,54 +367,57 @@ export class SequelizeDeviceModelRepository
     result: OCPP2_0_1.SetVariableResultType,
     stationId: string,
     isoTimestamp: string,
+    existingVariableAttribute?: VariableAttribute,
   ): Promise<VariableAttribute | undefined> {
-    const savedVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
-      where: { stationId, type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual },
-      include: [
-        {
-          model: Component,
-          where: {
-            name: result.component.name,
-            instance: result.component.instance ? result.component.instance : null,
+    if (!existingVariableAttribute) {
+      existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
+        where: { stationId, type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual },
+        include: [
+          {
+            model: Component,
+            where: {
+              name: result.component.name,
+              instance: result.component.instance ? result.component.instance : null,
+            },
           },
-        },
-        {
-          model: Variable,
-          where: {
-            name: result.variable.name,
-            instance: result.variable.instance ? result.variable.instance : null,
+          {
+            model: Variable,
+            where: {
+              name: result.variable.name,
+              instance: result.variable.instance ? result.variable.instance : null,
+            },
           },
-        },
-      ],
-    });
-    if (savedVariableAttribute) {
+        ],
+      });
+    }
+    if (existingVariableAttribute) {
       await this.variableStatus.create(
         tenantId,
         VariableStatus.build({
           tenantId,
-          value: savedVariableAttribute.value,
+          value: existingVariableAttribute.value,
           status: result.attributeStatus,
           statusInfo: result.attributeStatusInfo,
-          variableAttributeId: savedVariableAttribute.get('id'),
+          variableAttributeId: existingVariableAttribute.get('id'),
         }),
       );
       if (result.attributeStatus !== OCPP2_0_1.SetVariableStatusEnumType.Accepted) {
         const mostRecentAcceptedStatus = (
           await this.variableStatus.readAllByQuery(tenantId, {
             where: {
-              variableAttributeId: savedVariableAttribute.get('id'),
+              variableAttributeId: existingVariableAttribute.get('id'),
               status: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
             },
             limit: 1,
             order: [['createdAt', 'DESC']],
           })
         )[0];
-        savedVariableAttribute.setDataValue('value', mostRecentAcceptedStatus?.value);
+        existingVariableAttribute.setDataValue('value', mostRecentAcceptedStatus?.value);
       }
-      savedVariableAttribute.set('generatedAt', isoTimestamp);
-      await savedVariableAttribute.save();
+      existingVariableAttribute.set('generatedAt', isoTimestamp);
+      await existingVariableAttribute.save();
       // Reload in order to include the statuses
-      return await savedVariableAttribute.reload({
+      return await existingVariableAttribute.reload({
         include: [VariableStatus],
       });
     } else {

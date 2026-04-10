@@ -33,7 +33,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
 
   protected async filter(
     tenantId: number,
-    identifier: string,
+    stationId: string,
     request: IncomingMessage,
   ): Promise<void> {
     const { username, password } = extractBasicCredentials(request);
@@ -41,8 +41,8 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
       throw new UpgradeAuthenticationError('Auth header missing or incorrectly formatted');
     }
 
-    if (username !== identifier || !(await this._isPasswordValid(tenantId, username, password))) {
-      throw new UpgradeAuthenticationError(`Unauthorized ${identifier}`);
+    if (username !== stationId || !(await this._isPasswordValid(tenantId, username, password))) {
+      throw new UpgradeAuthenticationError(`Unauthorized ${stationId}`);
     }
   }
 

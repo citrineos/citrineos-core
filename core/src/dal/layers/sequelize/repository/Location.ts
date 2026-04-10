@@ -93,24 +93,27 @@ export class SequelizeLocationRepository
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
   ): Promise<ChargingStation | undefined> {
-    const result = await this.chargingStation.updateByKey(
-      tenantId,
-      { isOnline, protocol: ocppVersion },
-      stationId,
-    );
+    const station = await ChargingStation.findOne({
+      where: { id: stationId, tenantId },
+    });
 
-    if (!result) {
+    if (!station) {
       this.logger.error(
         `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with stationId ${stationId}. Update skipped to prevent modifying a station from a different tenant.`,
       );
       return undefined;
     }
 
-    return result;
+    await station.update({ isOnline, protocol: ocppVersion });
+    return station;
   }
 
   async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
-    return await this.chargingStation.existsByKey(tenantId, stationId);
+    return (
+      (await this.chargingStation.existByQuery(tenantId, {
+        where: { id: stationId, tenantId },
+      })) > 0
+    );
   }
 
   async addStatusNotificationToChargingStation(
@@ -267,22 +270,18 @@ export class SequelizeLocationRepository
           },
         });
       if (!chargingStationCreated) {
-        await this.chargingStation.updateByKey(
-          tenantId,
-          {
-            locationId: chargingStation.locationId,
-            chargePointVendor: chargingStation.chargePointVendor,
-            chargePointModel: chargingStation.chargePointModel,
-            chargePointSerialNumber: chargingStation.chargePointSerialNumber,
-            chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
-            firmwareVersion: chargingStation.firmwareVersion,
-            iccid: chargingStation.iccid,
-            imsi: chargingStation.imsi,
-            meterType: chargingStation.meterType,
-            meterSerialNumber: chargingStation.meterSerialNumber,
-          },
-          savedChargingStation.id,
-        );
+        await savedChargingStation.update({
+          locationId: chargingStation.locationId,
+          chargePointVendor: chargingStation.chargePointVendor,
+          chargePointModel: chargingStation.chargePointModel,
+          chargePointSerialNumber: chargingStation.chargePointSerialNumber,
+          chargeBoxSerialNumber: chargingStation.chargeBoxSerialNumber,
+          firmwareVersion: chargingStation.firmwareVersion,
+          iccid: chargingStation.iccid,
+          imsi: chargingStation.imsi,
+          meterType: chargingStation.meterType,
+          meterSerialNumber: chargingStation.meterSerialNumber,
+        });
       }
 
       return savedChargingStation;

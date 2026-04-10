@@ -14,6 +14,7 @@ import type {
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import { BeforeCreate, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
 import { Evse } from './Evse.js';
 
 @Table
@@ -21,7 +22,13 @@ export class Connector extends Model implements ConnectorDto {
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.Connector;
 
   @Column({
-    unique: 'stationId_connectorId',
+    unique: 'stationPkId_connectorId',
+    allowNull: true,
+    type: DataType.INTEGER,
+  })
+  declare stationPkId?: number;
+
+  @Column({
     allowNull: false,
     type: DataType.STRING,
   })
@@ -29,18 +36,21 @@ export class Connector extends Model implements ConnectorDto {
 
   @Column({
     unique: 'evseId_evseTypeConnectorId',
+    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseId: number;
 
   @Column({
-    unique: 'stationId_connectorId',
+    unique: 'stationPkId_connectorId',
+    allowNull: false,
     type: DataType.INTEGER,
   })
   declare connectorId: number; // This is the serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station.
 
   @Column({
     unique: 'evseId_evseTypeConnectorId',
+    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
@@ -110,6 +120,19 @@ export class Connector extends Model implements ConnectorDto {
   declare tenantId: number;
 
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: Connector): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

@@ -7,21 +7,14 @@ table:
 object_relationships:
   - name: ChargingStation
     using:
-      foreign_key_constraint_on: stationId
+      foreign_key_constraint_on: stationPkId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
 select_permissions:
   - role: user
     permission:
-      columns:
-        - value
-        - stationId
-        - type
-        - id
-        - tenantId
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

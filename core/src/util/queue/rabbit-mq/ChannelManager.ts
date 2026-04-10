@@ -28,7 +28,9 @@ export class RabbitMQChannelManager {
 
     connectionManager.on('disconnected', () => {
       this._logger.info('Connection lost, clearing channels');
-      this.channelMap.clear();
+      for (const [id] of this.channelMap) {
+        this.channelMap.set(id, null);
+      }
     });
   }
 

@@ -14,14 +14,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - status
-        - id
-        - tenantId
-        - variableMonitoringId
-        - statusInfo
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

@@ -9,7 +9,15 @@ import type {
   TransactionEventDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
-import { BeforeCreate, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+} from 'sequelize-typescript';
 import { Authorization } from '../Authorization/Authorization.js';
 import { Tariff } from '../Tariff/Tariffs.js';
 import { type ChargingStation as ChargingStationType } from '../Location/ChargingStation.js';
@@ -17,6 +25,7 @@ import { type ChargingStation as ChargingStationType } from '../Location/Chargin
 import { Connector } from '../Location/Connector.js';
 import { Evse } from '../Location/Evse.js';
 import { type Location as LocationType } from '../Location/Location.js';
+import { ChargingStation } from '../Location/index.js';
 
 import { MeterValue } from './MeterValue.js';
 
@@ -31,9 +40,16 @@ export class Transaction extends Model implements TransactionDto {
 
   location?: LocationType;
 
+  @ForeignKey(() => ChargingStation)
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'stationPkId_transactionId',
+    allowNull: true,
+  })
+  declare stationPkId?: number;
+
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_transactionId',
   })
   stationId!: string;
 
@@ -61,7 +77,7 @@ export class Transaction extends Model implements TransactionDto {
 
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_transactionId',
+    unique: 'stationPkId_transactionId',
   })
   declare transactionId: string;
 
@@ -128,6 +144,19 @@ export class Transaction extends Model implements TransactionDto {
   declare tenantId: number;
 
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: Transaction): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

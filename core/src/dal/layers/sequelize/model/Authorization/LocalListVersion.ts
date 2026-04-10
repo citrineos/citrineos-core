@@ -12,7 +12,7 @@ export class LocalListVersion extends Model {
 
   @Column({
     type: DataType.STRING,
-    unique: true,
+    unique: 'stationId_tenantId',
   })
   declare stationId: string;
 
@@ -30,6 +30,7 @@ export class LocalListVersion extends Model {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
+    unique: 'stationId_tenantId',
   })
   declare tenantId: number;
 

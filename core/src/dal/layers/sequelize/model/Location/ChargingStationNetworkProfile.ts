@@ -5,6 +5,7 @@
 import type { ChargingStationNetworkProfileDto, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { BeforeCreate, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { ChargingStation } from './ChargingStation.js';
 import { ServerNetworkProfile } from './ServerNetworkProfile.js';
 import { SetNetworkProfile } from './SetNetworkProfile.js';
 
@@ -17,8 +18,13 @@ export class ChargingStationNetworkProfile
   static readonly MODEL_NAME: string = 'ChargingStationNetworkProfile';
 
   @Column({
+    type: DataType.INTEGER,
+    unique: 'stationPkId_configurationSlot',
+  })
+  declare stationPkId?: number;
+
+  @Column({
     type: DataType.STRING,
-    unique: 'stationId_configurationSlot',
   })
   declare stationId: string;
 
@@ -28,7 +34,7 @@ export class ChargingStationNetworkProfile
    */
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_configurationSlot',
+    unique: 'stationPkId_configurationSlot',
   })
   declare configurationSlot: number;
 
@@ -57,6 +63,19 @@ export class ChargingStationNetworkProfile
   declare tenantId: number;
 
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: ChargingStationNetworkProfile): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

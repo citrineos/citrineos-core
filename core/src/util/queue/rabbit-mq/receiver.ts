@@ -170,7 +170,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     if (message) {
       try {
         this._logger.debug(
-          '_onMessage:Received message:',
+          '_onMessage:Message from broker:',
           message.properties,
           message.content.toString(),
         );

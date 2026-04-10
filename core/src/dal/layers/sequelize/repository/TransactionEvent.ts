@@ -262,7 +262,9 @@ export class SequelizeTransactionEventRepository
           }
         }
 
-        const chargingStation = await this.station.readByKey(tenantId, stationId);
+        const [chargingStation] = await this.station.readAllByQuery(tenantId, {
+          where: { id: stationId, tenantId },
+        });
         if (!chargingStation) {
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
         } else {
@@ -704,7 +706,9 @@ export class SequelizeTransactionEventRepository
         startTime: request.timestamp,
       });
 
-      const chargingStation = await this.station.readByKey(tenantId, stationId);
+      const [chargingStation] = await this.station.readAllByQuery(tenantId, {
+        where: { id: stationId, tenantId },
+      });
       if (chargingStation) {
         if (chargingStation.locationId) {
           newTransaction.set('locationId', chargingStation.locationId);
@@ -795,5 +799,32 @@ export class SequelizeTransactionEventRepository
       },
     });
     return transactions.length > 0 ? transactions[0] : undefined;
+  }
+
+  async deactivateActiveTransactionsByStationIdAndEvseId(
+    tenantId: number,
+    stationId: string,
+    evseId: number,
+    excludeTransactionId: string,
+  ): Promise<Transaction[]> {
+    const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
+      where: {
+        stationId,
+        isActive: true,
+        transactionId: { [Op.ne]: excludeTransactionId },
+      },
+      include: [{ model: Evse, where: { evseTypeId: evseId }, required: true }],
+    });
+
+    if (activeTransactions.length === 0) {
+      return [];
+    }
+
+    const ids = activeTransactions.map((t) => t.id);
+    return await this.transaction.updateAllByQuery(
+      tenantId,
+      { isActive: false },
+      { where: { id: { [Op.in]: ids } } },
+    );
   }
 }

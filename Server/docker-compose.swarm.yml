@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
-version: '3'
+version: "3"
 services:
   amqp-broker:
     image: rabbitmq:3-management
@@ -9,8 +9,8 @@ services:
       - 15672:15672
       - 5672:5672
     environment:
-      RABBITMQ_DEFAULT_USER: 'guest'
-      RABBITMQ_DEFAULT_PASS: 'guest'
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
@@ -27,15 +27,15 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: 'citrine'
+      POSTGRES_PASSWORD: "citrine"
   redis:
     build:
       context: ..
       dockerfile: .redis.Dockerfile
     ports:
-      - '6379:6379'
+      - "6379:6379"
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -57,12 +57,14 @@ services:
     expose:
       - 8080-8082
     environment:
-      APP_NAME: 'general'
-      APP_ENV: 'docker'
+      APP_NAME: "general"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   certificates:
     build:
@@ -80,12 +82,14 @@ services:
     expose:
       - 8083
     environment:
-      APP_NAME: 'certificates'
-      APP_ENV: 'docker'
+      APP_NAME: "certificates"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   configuration:
     build:
@@ -106,12 +110,14 @@ services:
       - ./:/usr/configuration
       - /usr/configuration/node_modules
     environment:
-      APP_NAME: 'configuration'
-      APP_ENV: 'docker'
+      APP_NAME: "configuration"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   evdriver:
     build:
@@ -132,12 +138,12 @@ services:
       - ./:/usr/evdriver
       - /usr/evdriver/node_modules
     environment:
-      APP_NAME: 'evdriver'
-      APP_ENV: 'docker'
+      APP_NAME: "evdriver"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
 
   monitoring:
     build:
@@ -158,12 +164,14 @@ services:
       - ./:/usr/monitoring
       - /usr/monitoring/node_modules
     environment:
-      APP_NAME: 'monitoring'
-      APP_ENV: 'docker'
+      APP_NAME: "monitoring"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   reporting:
     build:
@@ -184,12 +192,14 @@ services:
       - ./:/usr/reporting
       - /usr/reporting/node_modules
     environment:
-      APP_NAME: 'reporting'
-      APP_ENV: 'docker'
+      APP_NAME: "reporting"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   smartcharging:
     build:
@@ -210,12 +220,14 @@ services:
       - ./:/usr/smartcharging
       - /usr/smartcharging/node_modules
     environment:
-      APP_NAME: 'smartcharging'
-      APP_ENV: 'docker'
+      APP_NAME: "smartcharging"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   tenant:
     build:
@@ -236,12 +248,14 @@ services:
       - ./:/usr/tenant
       - /usr/tenant/node_modules
     environment:
-      APP_NAME: 'tenant'
-      APP_ENV: 'docker'
+      APP_NAME: "tenant"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
 
   transactions:
     build:
@@ -262,10 +276,11 @@ services:
       - ./:/usr/transactions
       - /usr/transactions/node_modules
     environment:
-      APP_NAME: 'transactions'
-      APP_ENV: 'docker'
+      APP_NAME: "transactions"
+      APP_ENV: "docker"
       # Bootstrap Configuration
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: 'local'
-
+      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
+      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
+      BOOTSTRAP_CITRINEOSFILE_FILE_ACCESS_TYPE: "local"
+      # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"

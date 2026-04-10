@@ -312,6 +312,12 @@ export class TransactionsModule extends AbstractModule {
         stationId,
       );
     }
+    await this.deactivateOtherActiveTransactionsAtEvse201(
+      tenantId,
+      transactionId,
+      stationId,
+      transactionEvent,
+    );
 
     if (response) {
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
@@ -642,8 +648,21 @@ export class TransactionsModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, response);
     }
 
-    // Deactivate reservation
-    if (request.reservationId) {
+    await this.deactivateOtherActiveTransactionsAtEvse16(
+      tenantId,
+      response.transactionId.toString(),
+      stationId,
+      request,
+    );
+
+    // Deactivate reservation only if the transaction was accepted.
+    // A rejected StartTransaction (auth failure or DB error) should not
+    // consume the reservation — the charger may retry or another idTag
+    // may use it.
+    if (
+      request.reservationId &&
+      response.idTagInfo.status === OCPP1_6.StartTransactionResponseStatus.Accepted
+    ) {
       await this._transactionService.deactivateReservation(
         tenantId,
         response.transactionId.toString(),
@@ -756,5 +775,52 @@ export class TransactionsModule extends AbstractModule {
     transaction.stoppedReason = request.reason;
     transaction.endTime = request.timestamp;
     await transaction.save();
+  }
+
+  protected async deactivateOtherActiveTransactionsAtEvse201(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    request: OCPP2_0_1.TransactionEventRequest,
+  ) {
+    const eventType = request.eventType;
+    const evse = request.evse;
+    const evseIsDefined = evse !== null && evse !== undefined;
+    if (evseIsDefined) {
+      if (
+        eventType === OCPP2_0_1.TransactionEventEnumType.Started ||
+        eventType === OCPP2_0_1.TransactionEventEnumType.Updated
+      ) {
+        await this._transactionService.deactivateOtherActiveTransactionsAtEvse(
+          tenantId,
+          transactionId,
+          stationId,
+          evse,
+        );
+      }
+    }
+  }
+
+  protected async deactivateOtherActiveTransactionsAtEvse16(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    request: OCPP1_6.StartTransactionRequest,
+  ) {
+    const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+      tenantId,
+      stationId,
+      request.connectorId,
+    );
+    if (!connector) {
+      this._logger.error(`Unable to find connector ${request.connectorId}.`);
+      throw new Error(`Unable to find connector ${request.connectorId}.`);
+    }
+    await this._transactionService.deactivateOtherActiveTransactionsAtEvse(
+      tenantId,
+      transactionId,
+      stationId,
+      request.connectorId,
+    );
   }
 }

@@ -52,7 +52,10 @@ export async function loadSystemConfig(
     ConfigStoreFactory.setConfigStore(configStore);
     console.log('Config store initialized');
 
-    let config: SystemConfig | null = await configStore.fetchConfig();
+    let config: SystemConfig | null =
+      process.env.CONFIG_CITRINEOS_WIPE_FILE_ON_START?.toLowerCase() === 'true'
+        ? null
+        : await configStore.fetchConfig();
 
     if (!config) {
       if (!defaultConfig) {

@@ -254,10 +254,6 @@ export function defineAssociations() {
   InstalledCertificate.belongsTo(Certificate, { foreignKey: 'certificateId' });
   Certificate.hasMany(InstalledCertificate, { foreignKey: 'certificateId' });
 
-  // Certificate self-referencing association
-  Certificate.belongsTo(Certificate, { foreignKey: 'signedBy', as: 'signingCertificate' });
-  Certificate.hasMany(Certificate, { foreignKey: 'signedBy', as: 'signedCertificates' });
-
   // ChargingProfile associations
   ChargingProfile.hasMany(ChargingSchedule, { foreignKey: 'chargingProfileDatabaseId' });
   ChargingSchedule.belongsTo(ChargingProfile, { foreignKey: 'chargingProfileDatabaseId' });
@@ -277,73 +273,73 @@ export function defineAssociations() {
   ChargingNeeds.belongsTo(Transaction, { foreignKey: 'transactionDatabaseId' });
   Transaction.hasMany(ChargingNeeds, { foreignKey: 'transactionDatabaseId' });
 
-  ChargingStation.hasMany(ChargingStationSecurityInfo, { foreignKey: 'stationId' });
-  ChargingStationSecurityInfo.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(ChargingStationSecurityInfo, { foreignKey: 'stationPkId' });
+  ChargingStationSecurityInfo.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
   // CompositeSchedule associations
-  CompositeSchedule.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  CompositeSchedule.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   CompositeSchedule.belongsTo(Evse, { foreignKey: 'evseId' });
-  ChargingStation.hasMany(CompositeSchedule, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(CompositeSchedule, { foreignKey: 'stationPkId' });
   Evse.hasMany(CompositeSchedule, { foreignKey: 'evseId' });
 
   // ChargingStation associations
-  ChargingStation.hasMany(ChangeConfiguration, { foreignKey: 'stationId' });
-  ChangeConfiguration.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(ChangeConfiguration, { foreignKey: 'stationPkId' });
+  ChangeConfiguration.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(SendLocalList, { foreignKey: 'stationId' });
-  SendLocalList.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(SendLocalList, { foreignKey: 'stationPkId' });
+  SendLocalList.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(SecurityEvent, { foreignKey: 'stationId' });
-  SecurityEvent.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(SecurityEvent, { foreignKey: 'stationPkId' });
+  SecurityEvent.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(Subscription, { foreignKey: 'stationId' });
-  Subscription.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(Subscription, { foreignKey: 'stationPkId' });
+  Subscription.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(MessageInfo, { foreignKey: 'stationId' });
-  MessageInfo.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(MessageInfo, { foreignKey: 'stationPkId' });
+  MessageInfo.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(OCPPMessage, { foreignKey: 'stationId' });
-  OCPPMessage.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(OCPPMessage, { foreignKey: 'stationPkId' });
+  OCPPMessage.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(LocalListVersion, { foreignKey: 'stationId' });
-  LocalListVersion.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(LocalListVersion, { foreignKey: 'stationPkId' });
+  LocalListVersion.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(ChargingProfile, { foreignKey: 'stationId' });
-  ChargingProfile.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(ChargingProfile, { foreignKey: 'stationPkId' });
+  ChargingProfile.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(ChargingSchedule, { foreignKey: 'stationId' });
-  ChargingSchedule.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(ChargingSchedule, { foreignKey: 'stationPkId' });
+  ChargingSchedule.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(CompositeSchedule, { foreignKey: 'stationId' });
-  CompositeSchedule.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(CompositeSchedule, { foreignKey: 'stationPkId' });
+  CompositeSchedule.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(Tariff, { foreignKey: 'stationId' });
-  Tariff.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(Tariff, { foreignKey: 'stationPkId' });
+  Tariff.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(VariableMonitoring, { foreignKey: 'stationId' });
-  VariableMonitoring.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(VariableMonitoring, { foreignKey: 'stationPkId' });
+  VariableMonitoring.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(EventData, { foreignKey: 'stationId' });
-  EventData.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(EventData, { foreignKey: 'stationPkId' });
+  EventData.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(StartTransaction, { foreignKey: 'stationId' });
-  StartTransaction.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(StartTransaction, { foreignKey: 'stationPkId' });
+  StartTransaction.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(StopTransaction, { foreignKey: 'stationId' });
-  StopTransaction.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(StopTransaction, { foreignKey: 'stationPkId' });
+  StopTransaction.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(TransactionEvent, { foreignKey: 'stationId' });
-  TransactionEvent.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(TransactionEvent, { foreignKey: 'stationPkId' });
+  TransactionEvent.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
   // Location associations
   Location.hasMany(ChargingStation, { foreignKey: 'locationId' });
   ChargingStation.belongsTo(Location, { foreignKey: 'locationId' });
 
-  ChargingStation.hasMany(Connector, { foreignKey: 'stationId' });
-  Connector.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(Connector, { foreignKey: 'stationPkId' });
+  Connector.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
-  ChargingStation.hasMany(Evse, { foreignKey: 'stationId' });
-  Evse.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(Evse, { foreignKey: 'stationPkId' });
+  Evse.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
 
   Evse.hasMany(Connector, { foreignKey: 'evseId' });
   Connector.belongsTo(Evse, { foreignKey: 'evseId' });
@@ -360,25 +356,25 @@ export function defineAssociations() {
   Tariff.belongsTo(Connector, { foreignKey: 'connectorId' });
 
   // ChargingStationNetworkProfile associations
-  ChargingStationNetworkProfile.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  ChargingStationNetworkProfile.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   ChargingStationNetworkProfile.belongsTo(SetNetworkProfile, { foreignKey: 'setNetworkProfileId' });
   ChargingStationNetworkProfile.belongsTo(ServerNetworkProfile, {
     foreignKey: 'websocketServerConfigId',
   });
 
-  SetNetworkProfile.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  SetNetworkProfile.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   SetNetworkProfile.belongsTo(ServerNetworkProfile, { foreignKey: 'websocketServerConfigId' });
 
   ServerNetworkProfile.belongsToMany(ChargingStation, { through: ChargingStationNetworkProfile });
   ChargingStation.belongsToMany(ServerNetworkProfile, { through: ChargingStationNetworkProfile });
 
   // StatusNotification associations
-  StatusNotification.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  StatusNotification.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   StatusNotification.belongsTo(Connector, { foreignKey: 'connectorId' });
-  LatestStatusNotification.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  LatestStatusNotification.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   LatestStatusNotification.belongsTo(StatusNotification, { foreignKey: 'statusNotificationId' });
 
-  ChargingStation.hasMany(StatusNotification, { foreignKey: 'stationId' });
+  ChargingStation.hasMany(StatusNotification, { foreignKey: 'stationPkId' });
   Connector.hasMany(StatusNotification, { foreignKey: 'connectorId' });
 
   // DeviceModel associations
@@ -398,8 +394,8 @@ export function defineAssociations() {
   VariableAttribute.belongsTo(EvseType, { foreignKey: 'evseDatabaseId' });
   EvseType.hasMany(VariableAttribute, { foreignKey: 'evseDatabaseId' });
 
-  VariableAttribute.belongsTo(ChargingStation, { foreignKey: 'stationId' });
-  ChargingStation.hasMany(VariableAttribute, { foreignKey: 'stationId' });
+  VariableAttribute.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
+  ChargingStation.hasMany(VariableAttribute, { foreignKey: 'stationPkId' });
 
   VariableAttribute.hasMany(VariableStatus, { foreignKey: 'variableAttributeId' });
   VariableStatus.belongsTo(VariableAttribute, { foreignKey: 'variableAttributeId' });
@@ -466,8 +462,8 @@ export function defineAssociations() {
   Transaction.belongsTo(Location, { foreignKey: 'locationId' });
   Location.hasMany(Transaction, { foreignKey: 'locationId' });
 
-  Transaction.belongsTo(ChargingStation, { foreignKey: 'stationId' });
-  ChargingStation.hasMany(Transaction, { foreignKey: 'stationId' });
+  Transaction.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
+  ChargingStation.hasMany(Transaction, { foreignKey: 'stationPkId' });
 
   Transaction.belongsTo(Connector, { foreignKey: 'connectorId' });
   Connector.hasMany(Transaction, { foreignKey: 'connectorId' });
@@ -494,16 +490,16 @@ export function defineAssociations() {
   TenantPartner.hasMany(AsyncJobStatus, { foreignKey: 'tenantPartnerId' });
 
   // Certificate associations
-  DeleteCertificateAttempt.belongsTo(ChargingStation, { foreignKey: 'stationId' });
-  ChargingStation.hasMany(DeleteCertificateAttempt, { foreignKey: 'stationId' });
+  DeleteCertificateAttempt.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
+  ChargingStation.hasMany(DeleteCertificateAttempt, { foreignKey: 'stationPkId' });
 
-  InstallCertificateAttempt.belongsTo(ChargingStation, { foreignKey: 'stationId' });
+  InstallCertificateAttempt.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
   InstallCertificateAttempt.belongsTo(Certificate, { foreignKey: 'certificateId' });
 
-  InstalledCertificate.belongsTo(ChargingStation, { foreignKey: 'stationId' });
-  ChargingStation.hasMany(InstalledCertificate, { foreignKey: 'stationId' });
+  InstalledCertificate.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
+  ChargingStation.hasMany(InstalledCertificate, { foreignKey: 'stationPkId' });
 
   // ChargingStationSequence associations
-  ChargingStationSequence.belongsTo(ChargingStation, { foreignKey: 'stationId' });
-  ChargingStation.hasMany(ChargingStationSequence, { foreignKey: 'stationId' });
+  ChargingStationSequence.belongsTo(ChargingStation, { foreignKey: 'stationPkId' });
+  ChargingStation.hasMany(ChargingStationSequence, { foreignKey: 'stationPkId' });
 }

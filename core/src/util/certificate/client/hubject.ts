@@ -6,7 +6,6 @@ import type { IV2GCertificateAuthorityClient } from './interface.js';
 import {
   HttpMethod,
   HttpStatus,
-  HUBJECT_DEFAULT_AUTH_TOKEN,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
@@ -150,6 +149,20 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     return certificates;
   }
 
+  private async _getDefaultToken(tokenUrl: string): Promise<string> {
+    const response = await fetch(tokenUrl, { method: 'GET' });
+    if (!response.ok && response.status !== 304) {
+      throw new Error(
+        `Get token response is unexpected: ${response.status}: ${await response.text()}`,
+      );
+    }
+
+    const token = (await response.json()).data;
+    let tokenValue: string = token.split('Bearer ')[1];
+    tokenValue = tokenValue.split('\n')[0];
+    return 'Bearer ' + tokenValue;
+  }
+
   private async _getAuthorizationToken(retryCount = 0): Promise<string> {
     if (
       this._baseUrl === HUBJECT_DEFAULT_BASEURL &&
@@ -160,7 +173,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
       this._logger.warn(
         'Using default Hubject credentials. Please set them in the configuration if needed.',
       );
-      return `Bearer ${HUBJECT_DEFAULT_AUTH_TOKEN}`;
+      return await this._getDefaultToken(this._tokenUrl);
     }
 
     const MAX_RETRIES = 10;

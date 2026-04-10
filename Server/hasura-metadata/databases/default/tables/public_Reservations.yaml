@@ -14,21 +14,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - isActive
-        - connectorType
-        - reserveStatus
-        - stationId
-        - terminatedByTransaction
-        - databaseId
-        - evseId
-        - id
-        - tenantId
-        - groupIdToken
-        - idToken
-        - createdAt
-        - expiryDateTime
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

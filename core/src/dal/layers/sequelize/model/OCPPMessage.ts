@@ -12,11 +12,17 @@ import {
   Index,
   Model,
   Table,
+  ForeignKey,
 } from 'sequelize-typescript';
+import { ChargingStation } from './Location/index.js';
 
 @Table
 export class OCPPMessage extends Model implements OCPPMessageDto {
   static readonly MODEL_NAME: string = Namespace.OCPPMessage;
+
+  @ForeignKey(() => ChargingStation)
+  @Column(DataType.INTEGER)
+  declare stationPkId?: number;
 
   @Index
   @Column(DataType.STRING)
@@ -66,6 +72,19 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   declare requestMessage?: OCPPMessage;
 
   declare responseMessages?: OCPPMessage[];
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: OCPPMessage): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

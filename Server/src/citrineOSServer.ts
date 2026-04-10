@@ -325,7 +325,7 @@ export class CitrineOSServer {
                 port: this._config.util.cache.redis.port,
               },
             };
-      return new RedisCache(redisClientOptions);
+      return new RedisCache(redisClientOptions, this._logger);
     }
     return new MemoryCache();
   }
@@ -575,6 +575,7 @@ export class CitrineOSServer {
       this._ocppValidator,
       this._repositoryStore.deviceModelRepository,
       this._repositoryStore.variableMonitoringRepository,
+      this._repositoryStore.ocppMessageRepository,
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);

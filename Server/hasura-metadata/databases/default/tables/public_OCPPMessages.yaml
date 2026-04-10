@@ -5,24 +5,27 @@ table:
   name: OCPPMessages
   schema: public
 object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationPkId
+  - name: OCPPMessage
+    using:
+      foreign_key_constraint_on: requestMessageId
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: OCPPMessages
+    using:
+      foreign_key_constraint_on:
+        column: requestMessageId
+        table:
+          name: OCPPMessages
+          schema: public
 select_permissions:
   - role: user
     permission:
-      columns:
-        - action
-        - correlationId
-        - origin
-        - protocol
-        - stationId
-        - id
-        - tenantId
-        - message
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

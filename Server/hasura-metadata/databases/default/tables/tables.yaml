@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
+- "!include public_AsyncJobStatuses.yaml"
 - "!include public_Authorizations.yaml"
 - "!include public_Boots.yaml"
 - "!include public_Certificates.yaml"
@@ -16,9 +17,11 @@
 - "!include public_Components.yaml"
 - "!include public_CompositeSchedules.yaml"
 - "!include public_Connectors.yaml"
+- "!include public_DeleteCertificateAttempts.yaml"
 - "!include public_EventData.yaml"
 - "!include public_EvseTypes.yaml"
 - "!include public_Evses.yaml"
+- "!include public_InstallCertificateAttempts.yaml"
 - "!include public_InstalledCertificates.yaml"
 - "!include public_LatestStatusNotifications.yaml"
 - "!include public_LocalListAuthorizations.yaml"
@@ -50,4 +53,3 @@
 - "!include public_VariableMonitorings.yaml"
 - "!include public_VariableStatuses.yaml"
 - "!include public_Variables.yaml"
-- "!include public_AsyncJobStatuses.yaml"

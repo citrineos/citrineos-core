@@ -13,31 +13,39 @@ import type {
   RedisScripts,
 } from 'redis';
 import { createClient } from 'redis';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Implementation of cache interface with redis storage
  */
 export class RedisCache implements ICache {
   private _client: RedisClientType<RedisModules, RedisFunctions, RedisScripts>;
+  private _logger: Logger<ILogObj>;
 
-  constructor(clientOptions?: RedisClientOptions) {
+  constructor(clientOptions?: RedisClientOptions, logger?: Logger<ILogObj>) {
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
     this._client = clientOptions ? createClient(clientOptions) : createClient();
-    this._client.on('connect', () => console.log('Redis client connected'));
-    this._client.on('ready', () => console.log('Redis client ready to use'));
-    this._client.on('error', (err) => console.error('Redis error', err));
-    this._client.on('end', () => console.log('Redis client disconnected'));
-    this._client
-      .connect()
-      .then()
-      .catch((error) => {
-        console.log('Error connecting to Redis', error);
-      });
+    this._client.on('connect', () => this._logger.info('Redis client connected'));
+    this._client.on('ready', () => this._logger.info('Redis client ready to use'));
+    this._client.on('error', (err) => this._logger.error('Redis error', err));
+    this._client.on('end', () => this._logger.info('Redis client disconnected'));
+    this._client.connect().catch((error) => {
+      this._logger.error('Error connecting to Redis', error);
+    });
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     return this._client.exists(key).then((result) => result === 1);
+  }
+
+  async existsAnyInNamespace(namespace: string): Promise<boolean> {
+    const keys = await this._client.keys(`${namespace}:*`);
+    return keys.length > 0;
   }
 
   remove(key: string, namespace?: string | undefined): Promise<boolean> {
@@ -70,7 +78,7 @@ export class RedisCache implements ICache {
                 .catch((error) => {
                   // Ignore error if client is already closed
                   if (!error.message?.includes('The client is closed')) {
-                    console.log('Error quitting subscriber', error);
+                    this._logger.error('Error quitting subscriber', error);
                   }
                 });
               break;
@@ -83,7 +91,7 @@ export class RedisCache implements ICache {
                 .catch((error) => {
                   // Ignore error if client is already closed
                   if (!error.message?.includes('The client is closed')) {
-                    console.log('Error quitting subscriber', error);
+                    this._logger.error('Error quitting subscriber', error);
                   }
                 });
               break;
@@ -94,7 +102,7 @@ export class RedisCache implements ICache {
         })
         .then()
         .catch((error) => {
-          console.log('Error creating Redis subscriber', error);
+          this._logger.error('Error creating Redis subscriber', error);
         });
       setTimeout(() => {
         resolve(this.get(key, namespace, classConstructor));
@@ -104,7 +112,7 @@ export class RedisCache implements ICache {
           .catch((error) => {
             // Ignore error if client is already closed
             if (!error.message?.includes('The client is closed')) {
-              console.log('Error quitting subscriber', error);
+              this._logger.error('Error closing Redis subscriber', error);
             }
           });
       }, waitSeconds * 1000);
@@ -157,5 +165,11 @@ export class RedisCache implements ICache {
         }
         return false;
       });
+  }
+
+  updateExpiration(key: string, expireSeconds: number, namespace?: string): Promise<boolean> {
+    namespace = namespace || 'default';
+    key = `${namespace}:${key}`;
+    return this._client.expire(key, expireSeconds);
   }
 }

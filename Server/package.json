@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/server",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "type": "module",
   "main": "dist/index.js",
@@ -35,8 +35,8 @@
     "ts-node": "10.9.1"
   },
   "dependencies": {
-    "@citrineos/base": "1.8.3",
-    "@citrineos/core": "1.8.3",
+    "@citrineos/base": "1.8.4",
+    "@citrineos/core": "1.8.4",
     "@fastify/cors": "10.0.1",
     "cross-env": "7.0.3",
     "sqlite3": "5.1.6",

@@ -272,16 +272,9 @@ export class ConfigurationModule extends AbstractModule {
     const bootNotificationResponseMessageConfirmation: IMessageConfirmation =
       await this.sendCallResultWithMessage(message, bootNotificationResponse);
 
-    // Update device model and charging station
-    this._deviceModelService
-      .updateDeviceModel(chargingStation, tenantId, stationId, timestamp)
-      .then()
-      .catch((error) => {
-        this._logger.error(
-          `Error updating device model for station ${stationId} with boot info:`,
-          error,
-        );
-      });
+    // Update charging station first, then device model.
+    // Order matters: updateDeviceModel creates VariableAttributes with a FK
+    // reference to the ChargingStation record, so the station must exist first.
     this._locationRepository
       .createOrUpdateChargingStation(
         tenantId,
@@ -296,9 +289,14 @@ export class ConfigurationModule extends AbstractModule {
           imsi: chargingStation.modem?.imsi,
         }),
       )
-      .then()
+      .then(() =>
+        this._deviceModelService.updateDeviceModel(chargingStation, tenantId, stationId, timestamp),
+      )
       .catch((error) => {
-        this._logger.error(`Error updating station ${stationId} with boot info:`, error);
+        this._logger.error(
+          `Error updating station ${stationId} or device model with boot info:`,
+          error,
+        );
       });
 
     if (!bootNotificationResponseMessageConfirmation.success) {

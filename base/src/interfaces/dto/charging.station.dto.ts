@@ -14,6 +14,7 @@ import { PointSchema } from './types/location.js';
 import { OCPPVersionSchema } from './types/ocpp.message.js';
 
 export const ChargingStationSchema = BaseSchema.extend({
+  pkId: z.number().int().optional(),
   id: z.string().max(36),
   isOnline: z.boolean(),
   protocol: OCPPVersionSchema.nullable().optional(),

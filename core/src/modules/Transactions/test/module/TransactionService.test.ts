@@ -290,4 +290,140 @@ describe('TransactionService', () => {
       expect(response.idTagInfo.expiryDate).toBeUndefined();
     });
   });
+
+  describe('TransactionService.deactivateOtherActiveTransactionsAtEvse', () => {
+    let transactionService: TransactionService;
+    let transactionEventRepository: Mocked<ITransactionEventRepository>;
+    let locationRepository: Mocked<ILocationRepository>;
+    let realTimeAuthorizer: Mocked<IAuthorizer>;
+
+    const STATION_ID = 'station-001';
+    const TRANSACTION_ID = 'txn-new-001';
+
+    beforeEach(() => {
+      transactionEventRepository = {
+        readAllActiveTransactionsByAuthorizationId: vi.fn(),
+        deactivateActiveTransactionsByStationIdAndEvseId: vi
+          .fn()
+          .mockResolvedValue([{ id: 1, transactionId: 'txn-old', isActive: false }]),
+      } as unknown as Mocked<ITransactionEventRepository>;
+
+      locationRepository = {
+        readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
+        readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
+      } as unknown as Mocked<ILocationRepository>;
+
+      realTimeAuthorizer = {
+        authorize: vi.fn(),
+      } as Mocked<IAuthorizer>;
+
+      transactionService = new TransactionService(
+        transactionEventRepository,
+        {} as unknown as IAuthorizationRepository,
+        locationRepository,
+        {} as unknown as IReservationRepository,
+        {} as unknown as IOCPPMessageRepository,
+        realTimeAuthorizer,
+      );
+    });
+
+    describe('OCPP 2.0.1 — EVSEType identifier', () => {
+      it('calls deactivateActiveTransactionsByStationIdAndEvseId with evse.id directly', async () => {
+        const evseId = faker.number.int({ min: 1, max: 10 });
+        const evseIdentifier: OCPP2_0_1.EVSEType = { id: evseId };
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          evseIdentifier,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledOnce();
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, evseId, TRANSACTION_ID);
+      });
+
+      it('skips deactivation and does not call the repository when evse.id is undefined', async () => {
+        const evseIdentifier = { id: undefined } as unknown as OCPP2_0_1.EVSEType;
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          evseIdentifier,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('OCPP 1.6 — numeric connector ID', () => {
+      it('resolves evseTypeId via connector lookup and calls deactivateActiveTransactionsByStationIdAndEvseId', async () => {
+        const connectorId = 2;
+        const evseTypeId = 5;
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue({
+          id: 10,
+          evse: { evseTypeId },
+        } as any);
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          connectorId,
+        );
+
+        expect(
+          locationRepository.readConnectorByStationIdAndOcpp16ConnectorId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, connectorId);
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledOnce();
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, evseTypeId, TRANSACTION_ID);
+      });
+
+      it('logs a warning and skips deactivation when connector is not found', async () => {
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue(
+          undefined,
+        );
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          3, // connectorId
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
+
+      it('logs a warning and skips deactivation when connector has no evse.evseTypeId', async () => {
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue({
+          id: 10,
+          evse: undefined,
+        } as any);
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          4,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
+    });
+  });
 });

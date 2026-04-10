@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions, ICache } from '@citrineos/base';
-import { CacheNamespace, notNull } from '@citrineos/base';
+import { CacheNamespace, createIdentifier, notNull } from '@citrineos/base';
+import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 
@@ -26,9 +26,10 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
 
   protected async filter(
     tenantId: number,
-    identifier: string,
+    stationId: string,
     _request: IncomingMessage,
   ): Promise<void> {
+    const identifier = createIdentifier(tenantId, stationId);
     const isAlreadyConnected = notNull(
       await this._cache.get(identifier, CacheNamespace.Connections),
     );

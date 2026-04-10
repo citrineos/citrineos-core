@@ -110,6 +110,13 @@ array_relationships:
         table:
           name: Connectors
           schema: public
+  - name: DeleteCertificateAttempts
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: DeleteCertificateAttempts
+          schema: public
   - name: EventData
     using:
       foreign_key_constraint_on:
@@ -130,6 +137,13 @@ array_relationships:
         column: tenantId
         table:
           name: Evses
+          schema: public
+  - name: InstallCertificateAttempts
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: InstallCertificateAttempts
           schema: public
   - name: InstalledCertificates
     using:
@@ -344,10 +358,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - id
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         id:
           _eq: x-hasura-tenant-id

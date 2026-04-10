@@ -25,25 +25,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - offline
-        - eventType
-        - stationId
-        - triggerReason
-        - evseId
-        - id
-        - idTokenValue
-        - idTokenType
-        - numberOfPhasesUsed
-        - reservationId
-        - seqNo
-        - tenantId
-        - transactionDatabaseId
-        - transactionInfo
-        - cableMaxCurrent
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

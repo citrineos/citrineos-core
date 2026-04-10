@@ -4,23 +4,29 @@
 import type { ChargingStationSequenceTypeEnumType, TenantDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { BeforeCreate, BeforeUpdate, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { ChargingStation } from '../Location/index.js';
 import { type ChargingStation as ChargingStationType } from '../Location/index.js';
-
 @Table
 export class ChargingStationSequence extends Model {
   static readonly MODEL_NAME: string = 'ChargingStationSequence';
 
   @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    unique: 'stationPkId_type',
+  })
+  declare stationPkId?: number;
+
+  @Column({
     type: DataType.STRING(36),
     allowNull: false,
-    unique: 'stationId_type',
   })
   declare stationId: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: 'stationId_type',
+    unique: 'stationPkId_type',
   })
   type!: ChargingStationSequenceTypeEnumType;
 
@@ -42,6 +48,19 @@ export class ChargingStationSequence extends Model {
   declare tenantId: number;
 
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveStationPkId(instance: ChargingStationSequence): Promise<void> {
+    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
+      const station = await ChargingStation.findOne({
+        where: { id: instance.stationId, tenantId: instance.tenantId },
+        attributes: ['pkId'],
+      });
+      if (station) {
+        instance.stationPkId = station.pkId;
+      }
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

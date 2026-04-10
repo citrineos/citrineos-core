@@ -80,6 +80,7 @@ export class DefaultSequelizeInstance {
         : new Logger<ILogObj>({ name: this.name });
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
+      defineAssociations();
     }
     return DefaultSequelizeInstance.instance;
   }
@@ -92,9 +93,6 @@ export class DefaultSequelizeInstance {
       try {
         await this.instance!.authenticate();
         this.logger.info('Database connection has been established successfully');
-
-        // Define associations AFTER connection but BEFORE sync
-        defineAssociations();
 
         await this.syncDb();
 

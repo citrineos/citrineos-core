@@ -40,13 +40,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - id
-        - databaseId
-        - connectorId
-        - tenantId
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
