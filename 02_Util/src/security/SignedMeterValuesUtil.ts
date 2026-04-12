@@ -122,6 +122,10 @@ export class SignedMeterValuesUtil {
     const incomingPublicKeyString = signedMeterValue.publicKey;
     const signingMethod = signedMeterValue.signingMethod;
 
+    if (signingMethod === 'Unsupported') {
+      return true;
+    }
+
     if (!this._signedMeterValuesConfiguration?.publicKeyFileId) {
       this._logger.warn('Invalid signature because public key is missing from system config.');
       return false;
