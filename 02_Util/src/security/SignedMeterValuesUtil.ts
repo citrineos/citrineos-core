@@ -122,7 +122,7 @@ export class SignedMeterValuesUtil {
     const incomingPublicKeyString = signedMeterValue.publicKey;
     const signingMethod = signedMeterValue.signingMethod;
 
-    if (signingMethod === 'Unsupported') {
+    if (this._signedMeterValuesConfiguration?.signingMethod === 'Unsupported') {
       return true;
     }
 
