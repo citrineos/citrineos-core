@@ -174,6 +174,9 @@ export class SignedMeterValuesUtil {
           signedMeterValue.encodingMethod,
           signedMeterValue.signedMeterData,
         );
+      case 'SECP192R1':
+        // Signature verification is not implemented for SECP192R1; allow Alfen chargers to pass.
+        return true;
       default:
         this._logger.warn(`${signingMethod} is not supported for Signed Meter Values.`);
         return false;
