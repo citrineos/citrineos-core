@@ -8,9 +8,6 @@ object_relationships:
   - name: GroupAuthorization
     using:
       foreign_key_constraint_on: groupAuthorizationId
-  - name: Tenant
-    using:
-      foreign_key_constraint_on: tenantId
   - name: TenantPartner
     using:
       foreign_key_constraint_on: tenantPartnerId
@@ -43,6 +40,13 @@ array_relationships:
         table:
           name: LocalListAuthorizations
           schema: public
+  - name: tenants
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: AuthorizationTenants
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -61,12 +65,12 @@ select_permissions:
         - personalMessage
         - groupAuthorizationId
         - concurrentTransaction
-        - tenantId
         - createdAt
         - updatedAt
-        - concurrentTransaction
       filter:
-        tenantId:
-          _eq: x-hasura-tenant-id
+        tenants:
+          tenant:
+            id:
+              _eq: x-hasura-tenant-id
       allow_aggregations: true
     comment: ""

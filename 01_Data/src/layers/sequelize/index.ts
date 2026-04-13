@@ -20,6 +20,7 @@ export {
   LocalListVersionAuthorization,
   SendLocalListAuthorization,
 } from './model/Authorization/index.js';
+export { AuthorizationTenant } from './model/AuthorizationTenant.js';
 export {
   StartTransaction,
   StopTransaction,

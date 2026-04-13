@@ -11,18 +11,19 @@ import type {
   RealTimeAuthLastAttempt,
   TenantDto,
 } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import { Namespace } from '@citrineos/base';
 import {
-  BeforeCreate,
-  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
   Default,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
+import { AuthorizationTenant } from '../AuthorizationTenant.js';
+
 import { Tenant } from '../Tenant.js';
 import { TenantPartner } from '../TenantPartner.js';
 
@@ -86,6 +87,9 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column(DataType.STRING)
   declare realTimeAuthUrl?: string;
 
+  @HasMany(() => AuthorizationTenant, { foreignKey: 'authorizationId', as: 'tenants' })
+  declare tenants?: AuthorizationTenant[] | null;
+
   // Reference to another Authorization for groupAuthorization
   @ForeignKey(() => Authorization)
   @Column(DataType.INTEGER)
@@ -107,31 +111,4 @@ export class Authorization extends Model implements AuthorizationDto {
 
   @BelongsTo(() => TenantPartner)
   declare tenantPartner?: TenantPartner | null;
-
-  @ForeignKey(() => Tenant)
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-    onUpdate: 'CASCADE',
-    onDelete: 'RESTRICT',
-  })
-  declare tenantId: number;
-
-  @BelongsTo(() => Tenant)
-  declare tenant?: TenantDto;
-
-  @BeforeUpdate
-  @BeforeCreate
-  static setDefaultTenant(instance: Authorization) {
-    if (instance.tenantId == null) {
-      instance.tenantId = DEFAULT_TENANT_ID;
-    }
-  }
-
-  constructor(...args: any[]) {
-    super(...args);
-    if (this.tenantId == null) {
-      this.tenantId = DEFAULT_TENANT_ID;
-    }
-  }
 }

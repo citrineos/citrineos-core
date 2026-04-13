@@ -5,12 +5,12 @@ table:
   name: Tenants
   schema: public
 array_relationships:
-  - name: Authorizations
+  - name: authorizations
     using:
       foreign_key_constraint_on:
         column: tenantId
         table:
-          name: Authorizations
+          name: AuthorizationTenants
           schema: public
   - name: Boots
     using:
@@ -347,6 +347,13 @@ array_relationships:
         column: tenantId
         table:
           name: Variables
+          schema: public
+  - name: Cdrs
+    using:
+      foreign_key_constraint_on:
+        column: tenantId
+        table:
+          name: Cdrs
           schema: public
 select_permissions:
   - role: user

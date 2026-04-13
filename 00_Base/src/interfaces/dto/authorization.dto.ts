@@ -35,11 +35,13 @@ const authorizationFields = {
   groupAuthorizationId: z.number().int().nullable().optional(),
 };
 
-export const GroupAuthorizationSchema = BaseSchema.extend(authorizationFields);
+export const GroupAuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend(
+  authorizationFields,
+);
 
 export type GroupAuthorizationDto = z.infer<typeof GroupAuthorizationSchema>;
 
-export const AuthorizationSchema = BaseSchema.extend({
+export const AuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend({
   ...authorizationFields,
   groupAuthorizationId: z.number().int().nullable().optional(),
   groupAuthorization: z.lazy(() => GroupAuthorizationSchema).optional(),
@@ -51,7 +53,6 @@ export type AuthorizationDto = z.infer<typeof AuthorizationSchema>;
 
 export const AuthorizationCreateSchema = AuthorizationSchema.omit({
   id: true,
-  tenant: true,
   updatedAt: true,
   createdAt: true,
   groupAuthorization: true,
@@ -62,13 +63,12 @@ export type AuthorizationCreate = z.infer<typeof AuthorizationCreateSchema>;
 
 export const AuthorizationUpdateSchema = AuthorizationSchema.partial()
   .omit({
-    tenant: true,
     updatedAt: true,
     createdAt: true,
     groupAuthorization: true,
     tenantPartner: true,
   })
-  .required({ id: true, tenantId: true });
+  .required({ id: true });
 
 export type AuthorizationUpdate = z.infer<typeof AuthorizationUpdateSchema>;
 

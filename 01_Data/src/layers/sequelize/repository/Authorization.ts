@@ -12,6 +12,7 @@ import {
 } from '../../../interfaces/index.js';
 import { Authorization } from '../model/index.js';
 import { SequelizeRepository } from './Base.js';
+import { AuthorizationTenant } from '../model/AuthorizationTenant.js';
 
 export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>
@@ -25,21 +26,21 @@ export class SequelizeAuthorizationRepository
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<Authorization[]> {
-    return await super.readAllByQuery(tenantId, this._constructQuery(query));
+    return await super.readAllByQuery(tenantId, this._constructQuery(query, tenantId));
   }
 
   async readOnlyOneByQuerystring(
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<Authorization | undefined> {
-    return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query));
+    return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query, tenantId));
   }
 
   /**
    * Private Methods
    */
 
-  private _constructQuery(queryParams: AuthorizationQuerystring): object {
+  private _constructQuery(queryParams: AuthorizationQuerystring, tenantId: number): object {
     const where: any = {};
     if (queryParams.idToken) {
       where.idToken = queryParams.idToken;
@@ -51,6 +52,15 @@ export class SequelizeAuthorizationRepository
 
     return {
       where,
+      include: [
+        {
+          model: AuthorizationTenant,
+          as: 'tenants',
+          required: true,
+          where: { tenantId },
+          attributes: [],
+        },
+      ],
     };
   }
 }
