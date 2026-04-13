@@ -385,6 +385,29 @@ export const TriggerReasonEnumSchema = z.enum([
   'ResetCommand',
 ]);
 
+// Add with the other schemas:
+export const AuthMethodSchema = z.enum(['AUTH_REQUEST', 'COMMAND', 'WHITELIST']);
+
+export const CdrDimensionTypeSchema = z.enum([
+  'CURRENT',
+  'ENERGY',
+  'ENERGY_EXPORT',
+  'ENERGY_IMPORT',
+  'MAX_CURRENT',
+  'MIN_CURRENT',
+  'MAX_POWER',
+  'MIN_POWER',
+  'PARKING_TIME',
+  'POWER',
+  'RESERVATION_TIME',
+  'STATE_OF_CHARGE',
+  'TIME',
+]);
+
+export const TariffDimensionTypeSchema = z.enum(['ENERGY', 'FLAT', 'PARKING_TIME', 'TIME']);
+
+export const TokenTypeSchema = z.enum(['AD_HOC_USER', 'APP_USER', 'OTHER', 'RFID']);
+
 // ============================================================================
 // Enum Exports
 // ============================================================================
@@ -431,6 +454,10 @@ export const RecurrencyKindEnum = RecurrencyKindEnumSchema.enum;
 export const ReasonEnum = ReasonEnumSchema.enum;
 export const TransactionEventEnum = TransactionEventEnumSchema.enum;
 export const TriggerReasonEnum = TriggerReasonEnumSchema.enum;
+export const AuthMethodEnum = AuthMethodSchema.enum;
+export const CdrDimensionTypeEnum = CdrDimensionTypeSchema.enum;
+export const TariffDimensionTypeEnum = TariffDimensionTypeSchema.enum;
+export const TokenTypeEnum = TokenTypeSchema.enum;
 
 // ============================================================================
 // Type Exports
@@ -480,3 +507,7 @@ export type ReasonEnumType = z.infer<typeof ReasonEnumSchema>;
 export type RecurrencyKindEnumType = z.infer<typeof RecurrencyKindEnumSchema>;
 export type TransactionEventEnumType = z.infer<typeof TransactionEventEnumSchema>;
 export type TriggerReasonEnumType = z.infer<typeof TriggerReasonEnumSchema>;
+export type AuthMethodEnumType = z.infer<typeof AuthMethodSchema>;
+export type CdrDimensionTypeEnumType = z.infer<typeof CdrDimensionTypeSchema>;
+export type TariffDimensionTypeEnumType = z.infer<typeof TariffDimensionTypeSchema>;
+export type TokenTypeEnumType = z.infer<typeof TokenTypeSchema>;
