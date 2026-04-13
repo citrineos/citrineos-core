@@ -17,7 +17,20 @@ import {
 import { Tenant } from '../Tenant.js';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from './index.js';
 
-@Table
+@Table({
+  indexes: [
+    {
+      unique: true,
+      fields: ['tenantId', 'serialNumber', 'issuerName'],
+      name: 'tenantId_serialNumber_issuerName',
+    },
+    {
+      unique: true,
+      fields: ['tenantId', 'certificateFileHash'],
+      name: 'tenantId_certificateFileHash',
+    },
+  ],
+})
 export class Certificate extends Model implements CertificateDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Certificate;
 
@@ -25,16 +38,10 @@ export class Certificate extends Model implements CertificateDto {
    * Fields
    */
   // use serialNumber and issuerName as unique constraint based on 4.1.2.2 in https://www.rfc-editor.org/rfc/rfc5280
-  @Column({
-    type: DataType.BIGINT,
-    unique: 'serialNumber_issuerName',
-  })
+  @Column(DataType.BIGINT)
   declare serialNumber: number;
 
-  @Column({
-    type: DataType.STRING,
-    unique: 'serialNumber_issuerName',
-  })
+  @Column(DataType.STRING)
   declare issuerName: string;
 
   @Column(DataType.STRING)
@@ -74,10 +81,7 @@ export class Certificate extends Model implements CertificateDto {
   @Column(DataType.STRING)
   declare certificateFileId?: string | null;
 
-  @Column({
-    type: DataType.STRING,
-    unique: true,
-  })
+  @Column(DataType.STRING)
   declare certificateFileHash?: string | null;
 
   @Column(DataType.STRING)

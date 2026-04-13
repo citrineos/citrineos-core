@@ -32,7 +32,10 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   static readonly MODEL_NAME: string = 'SetNetworkProfile';
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'stationPkId_correlationId',
+  })
   declare stationPkId?: number;
 
   @Column(DataType.STRING)
@@ -41,7 +44,7 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   @Index
   @Column({
     type: DataType.STRING,
-    unique: true,
+    unique: 'stationPkId_correlationId',
   })
   declare correlationId: string;
 
