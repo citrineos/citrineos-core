@@ -112,6 +112,7 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
+    unique: 'idToken_type',
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
   })
