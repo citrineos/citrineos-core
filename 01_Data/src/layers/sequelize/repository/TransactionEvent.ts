@@ -22,6 +22,7 @@ import { OCPP2_0_1_Mapper } from '../index.js';
 import { AuthorizationMapper } from '../mapper/2.0.1/index.js';
 import {
   Authorization,
+  AuthorizationTenant,
   ChargingStation,
   Connector,
   Evse,
@@ -178,13 +179,21 @@ export class SequelizeTransactionEventRepository
           // Find Authorization by IdToken
           const authorization = await Authorization.findOne({
             where: {
-              tenantId,
               idToken: value.idToken.idToken,
               idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
                 value.idToken.type,
               ),
             },
             transaction: sequelizeTransaction,
+            include: [
+              {
+                model: AuthorizationTenant,
+                as: 'tenants',
+                required: true,
+                where: { tenantId },
+                attributes: [],
+              },
+            ],
           });
           if (authorization) {
             authorizationId = authorization.id;
@@ -251,13 +260,21 @@ export class SequelizeTransactionEventRepository
           // Find Authorization by IdToken
           const authorization = await Authorization.findOne({
             where: {
-              tenantId,
               idToken: value.idToken.idToken,
               idTokenType: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(
                 value.idToken.type,
               ),
             },
             transaction: sequelizeTransaction,
+            include: [
+              {
+                model: AuthorizationTenant,
+                as: 'tenants',
+                required: true,
+                where: { tenantId },
+                attributes: [],
+              },
+            ],
           });
           if (authorization) {
             newTransaction.set('authorizationId', authorization.id);
@@ -297,11 +314,19 @@ export class SequelizeTransactionEventRepository
       if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
         const authorization = await Authorization.findOne({
           where: {
-            tenantId,
             idToken: value.idToken.idToken,
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(value.idToken.type),
           },
           transaction: sequelizeTransaction,
+          include: [
+            {
+              model: AuthorizationTenant,
+              as: 'tenants',
+              required: true,
+              where: { tenantId },
+              attributes: [],
+            },
+          ],
         });
         if (!authorization) {
           this.logger.warn(
@@ -688,10 +713,18 @@ export class SequelizeTransactionEventRepository
       // Find Authorization by IdToken
       const authorization = await Authorization.findOne({
         where: {
-          tenantId,
           idToken: request.idTag,
         },
         transaction: sequelizeTransaction,
+        include: [
+          {
+            model: AuthorizationTenant,
+            as: 'tenants',
+            required: true,
+            where: { tenantId },
+            attributes: [],
+          },
+        ],
       });
       if (!authorization) {
         this.logger.warn(`Authorization with idToken ${request.idTag} does not exist.`);
