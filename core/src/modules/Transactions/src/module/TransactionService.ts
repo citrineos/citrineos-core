@@ -95,7 +95,7 @@ export class TransactionService {
     const idToken = transactionEvent.idToken!;
     const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
-      type: idToken as unknown as IdTokenEnumType,
+      type: idToken.type,
     });
 
     const response: OCPP2_0_1.TransactionEventResponse = {
