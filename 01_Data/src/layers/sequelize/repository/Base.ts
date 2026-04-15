@@ -48,8 +48,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<T[]> {
+    const { where, ...rest } = query as FindOptions<any>;
     return await this.s.models[namespace]
-      .findAll({ ...query, tenantId } as FindOptions<any>)
+      .findAll({ where: { ...where, tenantId }, ...rest })
       .then((row) => row as T[]);
   }
 
@@ -93,7 +94,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<number> {
-    return await this.s.models[namespace].findAll(query).then((row) => row.length);
+    const { where, ...rest } = query as FindOptions<any>;
+    return await this.s.models[namespace]
+      .findAll({ where: { ...where, tenantId }, ...rest })
+      .then((row) => row.length);
   }
 
   async findAndCount(
@@ -136,8 +140,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<[T, boolean]> {
+    const { where, ...rest } = query as FindOptions<any>;
     return await this.s.models[namespace]
-      .findOrCreate(query as FindOptions<any>)
+      .findOrCreate({ where: { ...where, tenantId }, ...rest })
       .then((result) => [result[0] as T, result[1]]);
   }
 
