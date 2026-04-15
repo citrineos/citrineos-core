@@ -193,7 +193,9 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       }
     }
     const candidateKey = JSON.stringify({ actions, filter });
-    const alreadyPresent = metadataList.some((m) => JSON.stringify({ actions: m.actions, filter: m.filter }) === candidateKey);
+    const alreadyPresent = metadataList.some(
+      (m) => JSON.stringify({ actions: m.actions, filter: m.filter }) === candidateKey,
+    );
     if (!alreadyPresent) {
       metadataList.push(subscriptionMetadata);
     }
