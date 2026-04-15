@@ -358,7 +358,15 @@ When `CITRINEOS_FILE_ACCESS_TYPE=gcp`:
 
 ## Generating OCPP Interfaces
 
-All CitrineOS interfaces for OCPP 1.6, 2.0.1, and 2.1-defined schemas were procedurally generated using a processing script. Schemas are sourced from official OCPP JSON files.
+All CitrineOS interfaces for OCPP 2.0.1-defined schemas were procedurally generated using the script in
+00_Base/json-schema-processor.js.
+It can be rerun:
+
+```shell
+npm run generate-interfaces -- ../../Path/To/OCPP-2.0.1_part3_JSON_schemas
+```
+
+This will replace all the files in `00_Base/src/ocpp/model/`.
 As of release 1.8.0, the schema files used by CitrineOS are not the raw output of this function; we have added field-level validation that the official schemas lack.
 
 ## Data Transfer Messages

@@ -6,7 +6,7 @@
   "scripts": {
     "install-all": "npm i --verbose",
     "copy-assets": "npm run copy-assets --prefix ./Server",
-    "build": "tsc --build --verbose && tsc-alias -p core/tsconfig.json && tsc-alias -p base/tsconfig.json",
+    "build": "tsc --build --verbose",
     "postbuild": "npm run copy-assets",
     "clear-cache": "npm cache clean --force",
     "remove-dependencies": "rm -rf package-lock.json **/package-lock.json **/**/package-lock.json node_modules **/node_modules **/**/node_modules",
@@ -23,6 +23,7 @@
     "fi": "npm run fresh && npm run install-all",
     "sync-db": "ts-node ./db.sync.ts",
     "force-sync-db": "ts-node ./db.force-sync.ts",
+    "start-everest": "npm run start-everest --prefix ./Server",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prepare": "husky",
@@ -32,41 +33,27 @@
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"
   },
   "workspaces": [
-    "base",
-    "core",
+    "00_Base",
+    "01_Data",
+    "02_Util",
+    "03_Modules/Certificates",
+    "03_Modules/Configuration",
+    "03_Modules/EVDriver",
+    "03_Modules/Monitoring",
+    "03_Modules/OcppRouter",
+    "03_Modules/Reporting",
+    "03_Modules/SmartCharging",
+    "03_Modules/Tenant",
+    "03_Modules/Transactions",
     "Server"
   ],
   "engines": {
     "node": ">=24.4.1"
   },
   "devDependencies": {
-    "@types/jsrsasign": "^10.5.15",
-    "@types/node": "^25.3.3",
-    "madge": "^8.0.0",
-    "openapi-types": "^12.1.3",
     "@types/pg": "8.20.0",
-    "tsc-alias": "^1.8.16",
+    "sequelize-cli": "^6.6.2",
     "testcontainers": "11.13.0",
     "typescript": "^5.8.2"
-  },
-  "dependencies": {
-    "@fastify/swagger": "^9.7.0",
-    "@fastify/swagger-ui": "^5.2.5",
-    "@google-cloud/storage": "^7.19.0",
-    "@peculiar/webcrypto": "^1.5.0",
-    "acme-client": "^5.4.0",
-    "ajv": "^8.18.0",
-    "ajv-formats": "^3.0.1",
-    "asn1js": "^3.0.7",
-    "bufferutil": "^4.1.0",
-    "jsrsasign": "^11.1.1",
-    "jwks-rsa": "^4.0.1",
-    "pkijs": "^3.3.3",
-    "pvutils": "^1.1.5",
-    "redis": "^4.7.1",
-    "sequelize-cli": "^6.6.2",
-    "sequelize-typescript": "^2.1.6",
-    "tsconfig-paths": "^4.2.0",
-    "utf-8-validate": "^6.0.6"
   }
 }

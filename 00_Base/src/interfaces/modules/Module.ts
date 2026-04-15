@@ -1,0 +1,58 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import type { ICache, OcppRequest, OcppResponse, SystemConfig } from '../../index.js';
+import { OcppError } from '../../index.js';
+import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
+import type {
+  HandlerProperties,
+  IMessage,
+  IMessageConfirmation,
+  IMessageHandler,
+  IMessageSender,
+} from '../messages/index.js';
+import { MessageOrigin } from '../messages/index.js';
+import type { OCPPValidator } from './OCPPValidator.js';
+
+/**
+ * Base interface for all OCPP modules.
+ *
+ */
+export interface IModule {
+  config: SystemConfig;
+  ocppValidator: OCPPValidator;
+  cache: ICache;
+  sender: IMessageSender;
+  handler: IMessageHandler;
+  sendCall(
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    payload: OcppRequest,
+    correlationId?: string,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  sendCallResult(
+    correlationId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    payload: OcppResponse,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  sendCallError(
+    correlationId: string,
+    stationId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    error: OcppError,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+
+  handle(message: IMessage<OcppRequest | OcppResponse>, props?: HandlerProperties): Promise<void>;
+  shutdown(): Promise<void>;
+}

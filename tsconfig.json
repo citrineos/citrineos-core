@@ -2,27 +2,10 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@dal/*": ["./core/src/dal/*"],
-      "@modules/*": ["./core/src/modules/*"],
-      "@util/*": ["./core/src/util/*"],
-      "@ocpp/*": ["./base/src/ocpp/*"],
-      "@config/*": ["./base/src/config/*"],
-      "@interfaces/*": ["./base/src/interfaces/*"],
-      "@base-util/*": ["./base/src/util/*"]
-    }
+    "outDir": "./dist"
   },
   "exclude": ["./dist/**/*", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
   "references": [
-    {
-      "path": "./base"
-    },
-    {
-      "path": "./core"
-    },
     {
       "path": "./Server"
     }

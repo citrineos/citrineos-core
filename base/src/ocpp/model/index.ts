@@ -1,7 +1,0 @@
-// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
-//
-// SPDX-License-Identifier: Apache-2.0
-
-export * as OCPP1_6 from './1.6/index.js';
-export * as OCPP2_0_1 from './2.0.1/index.js';
-export * as OCPP2_1 from './2.1/index.js';

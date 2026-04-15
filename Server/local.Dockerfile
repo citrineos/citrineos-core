@@ -16,8 +16,6 @@ COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos
 
-RUN npm install --save-dev tsconfig-paths
-
 EXPOSE ${PORT}
 
 CMD ["npm", "run", "start-docker"]

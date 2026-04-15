@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
 import { ConfigStoreFactory, defineConfig } from '@citrineos/base';
-import { GcpCloudStorage, LocalStorage, S3Storage } from '@citrineos/core';
+import { GcpCloudStorage, LocalStorage, S3Storage } from '@citrineos/util';
 
 /**
  * Helper function to create the appropriate ConfigStore based on bootstrap config

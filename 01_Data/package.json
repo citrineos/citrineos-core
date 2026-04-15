@@ -1,0 +1,34 @@
+{
+  "name": "@citrineos/data",
+  "version": "1.8.4",
+  "description": "The OCPP data module which includes all persistence layer implementation.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepublish": "npx eslint",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/uuid": "9.0.1",
+    "eslint": "8.48.0",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@citrineos/base": "1.8.4",
+    "@types/sequelize": "4.28.20",
+    "pg": "8.11.3",
+    "pg-hstore": "2.3.4",
+    "sequelize-typescript": "2.1.6",
+    "uuid": "^9.0.1"
+  }
+}

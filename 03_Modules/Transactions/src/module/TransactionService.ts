@@ -1,0 +1,446 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  ConnectorDto,
+  EvseDto,
+  IAuthorizer,
+  IMessageContext,
+  MeterValueDto,
+} from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  MessageOrigin,
+  MeterValueUtils,
+  OCPP1_6,
+  OCPP2_0_1,
+} from '@citrineos/base';
+import type {
+  IAuthorizationRepository,
+  ILocationRepository,
+  IOCPPMessageRepository,
+  IReservationRepository,
+  ITransactionEventRepository,
+  MeterValue,
+} from '@citrineos/data';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, Transaction } from '@citrineos/data';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+
+export class TransactionService {
+  private _transactionEventRepository: ITransactionEventRepository;
+  private _authorizeRepository: IAuthorizationRepository;
+  private _locationRepository: ILocationRepository;
+  private _reservationRepository: IReservationRepository;
+  private _ocppMessageRepository: IOCPPMessageRepository;
+  private _logger: Logger<ILogObj>;
+  private _authorizers: IAuthorizer[];
+
+  constructor(
+    transactionEventRepository: ITransactionEventRepository,
+    authorizeRepository: IAuthorizationRepository,
+    locationRepository: ILocationRepository,
+    reservationRepository: IReservationRepository,
+    ocppMessageRepository: IOCPPMessageRepository,
+    realTimeAuthorizer: IAuthorizer,
+    authorizers?: IAuthorizer[],
+    logger?: Logger<ILogObj>,
+  ) {
+    this._transactionEventRepository = transactionEventRepository;
+    this._authorizeRepository = authorizeRepository;
+    this._locationRepository = locationRepository;
+    this._reservationRepository = reservationRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
+  }
+
+  async recalculateTotalKwh(
+    transaction: Transaction,
+    newMeterValues: MeterValueDto[],
+  ): Promise<number> {
+    let meterStart = transaction.meterStart;
+    if (meterStart === null || meterStart === undefined) {
+      meterStart = MeterValueUtils.getMeterStart(newMeterValues);
+      transaction.set('meterStart', meterStart);
+    }
+    const totalKwh = MeterValueUtils.getTotalKwh(
+      newMeterValues,
+      transaction.totalKwh ?? 0,
+      meterStart ?? undefined,
+    );
+
+    transaction.set('totalKwh', totalKwh);
+    await transaction.save();
+
+    this._logger.debug(`Recalculated ${totalKwh} kWh for ${transaction.id} transaction`);
+    return totalKwh;
+  }
+
+  async authorizeOcpp201IdToken(
+    tenantId: number,
+    transactionEvent: OCPP2_0_1.TransactionEventRequest,
+    messageContext: IMessageContext,
+  ): Promise<OCPP2_0_1.TransactionEventResponse> {
+    const idToken = transactionEvent.idToken!;
+    const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+      idToken: idToken.idToken,
+      type: OCPP2_0_1_Mapper.AuthorizationMapper.fromIdTokenEnumType(idToken.type),
+    });
+
+    const response: OCPP2_0_1.TransactionEventResponse = {
+      idTokenInfo: {
+        status: OCPP2_0_1.AuthorizationStatusEnumType.Unknown,
+        // TODO determine how/if to set personalMessage
+      },
+    };
+
+    if (authorizations.length !== 1) {
+      return response;
+    }
+    const authorization = authorizations[0];
+
+    // Extract DTO fields from sequelize Model<any, any> objects
+    const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+
+    if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+      // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
+      // N.B. Other non-Accepted statuses should not be allowed to be stored.
+      response.idTokenInfo = idTokenInfo;
+      return response;
+    }
+
+    if (idTokenInfo.cacheExpiryDateTime && new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
+      response.idTokenInfo = {
+        status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
+        groupIdToken: idTokenInfo.groupIdToken,
+        // TODO determine how/if to set personalMessage
+      };
+      return response;
+    } else {
+      if (
+        authorization.concurrentTransaction !== true &&
+        transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
+      ) {
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        if (hasConcurrent) {
+          response.idTokenInfo = {
+            status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
+          };
+          return response;
+        }
+      }
+
+      let evse: EvseDto | undefined = undefined;
+      let connector: ConnectorDto | undefined = undefined;
+      if (transactionEvent.evse) {
+        if (transactionEvent.evse.connectorId) {
+          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse,
+          );
+        }
+        evse =
+          connector?.evse ??
+          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+            tenantId,
+            messageContext.stationId,
+            transactionEvent.evse.id,
+          ));
+      }
+
+      const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
+      response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
+    }
+    this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
+    return response;
+  }
+
+  async createMeterValues(
+    tenantId: number,
+    meterValues: [OCPP2_0_1.MeterValueType, ...OCPP2_0_1.MeterValueType[]],
+    transactionDbId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
+  ): Promise<MeterValue[]> {
+    return Promise.all(
+      meterValues.map(async (meterValue) => {
+        const hasPeriodic: boolean = meterValue.sampledValue?.some(
+          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+        );
+        if (transactionDbId && hasPeriodic) {
+          return await this._transactionEventRepository.createMeterValue(
+            tenantId,
+            meterValue,
+            transactionDbId,
+            transactionId,
+            tariffId,
+          );
+        } else {
+          return await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
+        }
+      }),
+    );
+  }
+
+  async authorizeOcpp16IdToken(
+    context: IMessageContext,
+    idToken: string,
+    connectorId: number,
+  ): Promise<OCPP1_6.StartTransactionResponse> {
+    const response: OCPP1_6.StartTransactionResponse = {
+      idTagInfo: {
+        status: OCPP1_6.StartTransactionResponseStatus.Invalid,
+      },
+      transactionId: 0, // default zero for rejected transaction
+    };
+
+    try {
+      // Find authorization
+      const tenantId = context.tenantId;
+      const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+        idToken: idToken,
+      });
+      if (authorizations.length !== 1) {
+        this._logger.error(
+          `Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`,
+        );
+        return response;
+      }
+      const authorization = authorizations[0];
+
+      // Check expiration and status
+      if (!authorization.status) {
+        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
+        return response;
+      }
+
+      const idTokenInfoStatus = OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+        authorization.status,
+      );
+      if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+        response.idTagInfo.status = idTokenInfoStatus;
+        return response;
+      }
+
+      if (
+        authorization.cacheExpiryDateTime &&
+        new Date() > new Date(authorization.cacheExpiryDateTime)
+      ) {
+        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Expired;
+        return response;
+      }
+
+      // Check concurrent transactions
+      if (authorization.concurrentTransaction !== true) {
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        if (hasConcurrent) {
+          response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
+          return response;
+        }
+      }
+
+      // Check authorizers
+      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+        tenantId,
+        context.stationId,
+        connectorId,
+      );
+      response.idTagInfo.status =
+        OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+          await this._applyAuthorizers(authorization, context, connector?.evse, connector),
+        );
+      if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+        return response;
+      }
+
+      // Accept the idToken
+      response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
+      response.idTagInfo.expiryDate = authorization.cacheExpiryDateTime;
+      if (authorization.groupAuthorizationId) {
+        // Look up the referenced Authorization for parentIdTag
+        const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
+          where: { id: authorization.groupAuthorizationId },
+        });
+        if (parentAuth) {
+          response.idTagInfo.parentIdTag = parentAuth.idToken;
+        }
+      }
+      return response;
+    } catch (e) {
+      this._logger.error(`Authorization for idToken ${idToken} failed.`, e);
+      response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Invalid;
+      return response;
+    }
+  }
+
+  async deactivateReservation(
+    tenantId: number,
+    transactionId: string,
+    reservationId: number,
+    stationId: string,
+  ): Promise<void> {
+    await this._reservationRepository.updateAllByQuery(
+      tenantId,
+      {
+        terminatedByTransaction: transactionId,
+        isActive: false,
+      },
+      {
+        where: {
+          tenantId,
+          id: reservationId,
+          stationId: stationId,
+        },
+      },
+    );
+  }
+
+  async deactivateOtherActiveTransactionsAtEvse(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    evseIdentifier: OCPP2_0_1.EVSEType | number,
+  ): Promise<void> {
+    let evseTypeId: number | undefined;
+
+    if (typeof evseIdentifier === 'number') {
+      // OCPP 1.6: evseIdentifier is a connector ID — resolve to EVSE type ID
+      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+        tenantId,
+        stationId,
+        evseIdentifier,
+      );
+      evseTypeId = connector?.evse?.evseTypeId;
+    } else {
+      // OCPP 2.0.1: evseIdentifier is an EVSEType — use evse.id directly
+      evseTypeId = evseIdentifier.id;
+    }
+
+    if (evseTypeId === undefined) {
+      this._logger.warn(
+        `Could not resolve EVSE for station ${stationId} with identifier ${JSON.stringify(evseIdentifier)}, skipping deactivation of concurrent transactions`,
+      );
+      return;
+    }
+
+    const deactivated =
+      await this._transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId(
+        tenantId,
+        stationId,
+        evseTypeId,
+        transactionId,
+      );
+
+    if (deactivated.length > 0) {
+      this._logger.info(
+        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${stationId} EVSE ${evseTypeId}`,
+      );
+    }
+  }
+
+  async updateTransactionStatus(
+    tenantId: number,
+    stationId: string,
+    correlationId: string,
+    ongoingIndicator: boolean,
+  ) {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        tenantId,
+        stationId,
+        correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    if (!request) {
+      this._logger.error(
+        `No valid GetTransactionStatusRequest found for correlationId ${correlationId}`,
+      );
+      return;
+    }
+
+    const transactionId = request.message[3].transactionId;
+    if (!transactionId) {
+      this._logger.error(`No valid transactionId found from the message ${request.message[3]}`);
+      return;
+    }
+
+    const updatedTransaction =
+      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
+        { isActive: ongoingIndicator },
+        transactionId,
+        stationId,
+      );
+    if (!updatedTransaction) {
+      this._logger.error(`Update transaction ${transactionId} failed.`);
+    }
+    this._logger.info(`Updated transaction ${transactionId} isActive to ${ongoingIndicator}`);
+  }
+
+  private async _applyAuthorizers(
+    authorization: AuthorizationDto,
+    messageContext: IMessageContext,
+    evse?: EvseDto,
+    connector?: ConnectorDto,
+  ): Promise<AuthorizationStatusEnumType> {
+    let result = authorization.status;
+    for (const authorizer of this._authorizers) {
+      if (result !== AuthorizationStatusEnum.Accepted) {
+        break;
+      }
+
+      result = await authorizer.authorize(authorization, messageContext, evse, connector);
+    }
+    return result;
+  }
+
+  private async _hasConcurrentTransactions(
+    tenantId: number,
+    authorizationId: number,
+  ): Promise<boolean> {
+    const activeTransactions =
+      await this._transactionEventRepository.readAllActiveTransactionsByAuthorizationId(
+        tenantId,
+        authorizationId,
+      );
+
+    return activeTransactions.length > 0;
+  }
+
+  private _mapAuthorizationDtoToIdTokenInfo(
+    dto: AuthorizationDto,
+    status: AuthorizationStatusEnumType,
+  ): OCPP2_0_1.IdTokenInfoType {
+    return {
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
+      cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
+      chargingPriority: dto.chargingPriority ?? null,
+      language1: dto.language1 ?? null,
+      language2: dto.language2 ?? null,
+      groupIdToken: dto.groupAuthorization
+        ? ({
+            idToken: dto.groupAuthorization?.idToken ?? '',
+            type: dto.groupAuthorization?.idTokenType
+              ? OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+                  dto.groupAuthorization?.idTokenType,
+                )
+              : '',
+          } as OCPP2_0_1.IdTokenType)
+        : null,
+      personalMessage: dto.personalMessage
+        ? ({
+            content: dto.personalMessage.content ?? '',
+            language: dto.personalMessage.language ?? '',
+            format: dto.personalMessage.format ?? OCPP2_0_1.MessageFormatEnumType.ASCII,
+          } as OCPP2_0_1.MessageContentType)
+        : null,
+    };
+  }
+}
