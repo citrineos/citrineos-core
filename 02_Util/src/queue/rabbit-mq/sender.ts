@@ -122,7 +122,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
     if (!this._channel) {
-      throw new Error('RabbitMQ is down: cannot unsubscribe.');
+      throw new Error('RabbitMQ is down: cannot publish.');
     }
     const channel = this._channel;
 
@@ -186,9 +186,14 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
         const connection = await amqplib.connect(url);
         this._connection = connection;
         const channel = await connection.createChannel();
+        const exchange = this._config.util.messageBroker.amqp?.exchange as string;
+        if (exchange) {
+          await channel.assertExchange(exchange, 'headers', { durable: false });
+        }
         channel.on('error', (err) => {
           this._logger.error('AMQP channel error', err);
         });
+        channel.on('close', () => this._handleDisconnect());
         this._setupConnectionListeners();
         this._circuitBreaker.triggerSuccess();
         return channel;

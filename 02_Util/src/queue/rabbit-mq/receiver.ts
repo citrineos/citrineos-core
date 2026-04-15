@@ -30,6 +30,8 @@ interface SubscriptionMetadata {
   filter?: { [k: string]: string };
 }
 
+type SubscriptionMetadataList = SubscriptionMetadata[];
+
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
  */
@@ -160,7 +162,9 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       .get<Array<string>>(cacheKey, CacheNamespace.Other, () => Array<string>)
       .then((value) => {
         if (value) {
-          value.push(queueName);
+          if (!value.includes(queueName)) {
+            value.push(queueName);
+          }
           return value;
         }
         return new Array<string>(queueName);
@@ -175,7 +179,25 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       actions,
       filter,
     };
-    await this._cache.set(metadataKey, JSON.stringify(subscriptionMetadata), CacheNamespace.Other);
+    // Multiple subscriptions can exist for the same identifier (e.g., OcppRouter registers request + response
+    // bindings using the same connectionIdentifier). Persist them as a list so reconnect can restore all.
+    const existingMetadataJson = await this._cache.get<string>(metadataKey, CacheNamespace.Other);
+    let metadataList: SubscriptionMetadataList = [];
+    if (existingMetadataJson) {
+      try {
+        const parsed = JSON.parse(existingMetadataJson);
+        metadataList = Array.isArray(parsed) ? (parsed as SubscriptionMetadataList) : [parsed];
+      } catch {
+        // Ignore corrupt metadata and overwrite with fresh list.
+        metadataList = [];
+      }
+    }
+    const candidateKey = JSON.stringify({ actions, filter });
+    const alreadyPresent = metadataList.some((m) => JSON.stringify({ actions: m.actions, filter: m.filter }) === candidateKey);
+    if (!alreadyPresent) {
+      metadataList.push(subscriptionMetadata);
+    }
+    await this._cache.set(metadataKey, JSON.stringify(metadataList), CacheNamespace.Other);
 
     // Add identifier to registry (list of all active subscriptions)
     const registry = await this._cache
@@ -287,6 +309,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         const connection = await amqplib.connect(url, { heartbeat: 10 });
         this._connection = connection;
         const channel = await connection.createChannel();
+        // Assign channel immediately so post-reconnect resubscription can use it.
+        this._channel = channel;
         const exchange = this._config.util.messageBroker.amqp?.exchange as string;
         if (exchange) {
           await channel.assertExchange(exchange, 'headers', { durable: false });
@@ -463,23 +487,26 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         }
 
         try {
-          // Parse the JSON metadata to ensure proper deserialization
-          const metadata: SubscriptionMetadata = JSON.parse(metadataJson);
+          const parsed = JSON.parse(metadataJson);
+          const metadataList: SubscriptionMetadataList = Array.isArray(parsed)
+            ? (parsed as SubscriptionMetadataList)
+            : [parsed as SubscriptionMetadata];
 
-          // Validate metadata structure
-          if (!metadata.identifier || metadata.identifier !== identifier) {
+          const validMetadata = metadataList.filter((m) => m?.identifier === identifier);
+          if (validMetadata.length === 0) {
             this._logger.warn(
-              `Subscription metadata identifier mismatch for ${identifier}, skipping re-subscription.`,
+              `No valid subscription metadata entries found for ${identifier}, skipping re-subscription.`,
             );
             continue;
           }
 
           this._logger.debug(
-            `Re-subscribing identifier: ${identifier} with actions: ${JSON.stringify(metadata.actions)} and filter: ${JSON.stringify(metadata.filter)}`,
+            `Re-subscribing identifier: ${identifier} with ${validMetadata.length} binding(s).`,
           );
 
+          // Recreate queue + consumer once, then apply all bindings.
           resubscribePromises.push(
-            this._resubscribe(identifier, metadata.actions, metadata.filter).catch((error) => {
+            this._resubscribeBindings(identifier, validMetadata).catch((error) => {
               this._logger.error(`Failed to re-subscribe ${identifier}:`, error);
               return false;
             }),
@@ -527,7 +554,8 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     }
 
     const exchange = this._config.util.messageBroker.amqp?.exchange as string;
-    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}_${Date.now()}`;
+    // Recreate the exact same queue name so bindings and cache remain stable.
+    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
 
     // Ensure that filter includes the x-match header set to all
     filter = filter
@@ -570,19 +598,64 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
 
     // Update cache with new queue name
     const cacheKey = `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`;
-    const cachedQueues = await this._cache
-      .get<Array<string>>(cacheKey, CacheNamespace.Other, () => Array<string>)
-      .then((value) => {
-        if (value) {
-          value.push(queueName);
-          return value;
-        }
-        return new Array<string>(queueName);
-      });
-
-    await this._cache.set(cacheKey, JSON.stringify(cachedQueues), CacheNamespace.Other);
+    // After reconnect, old auto-delete queues are gone; replace with the recreated queue.
+    await this._cache.set(cacheKey, JSON.stringify([queueName]), CacheNamespace.Other);
 
     this._logger.debug(`Successfully re-subscribed ${identifier} with queue ${queueName}`);
+    return true;
+  }
+
+  private async _resubscribeBindings(
+    identifier: string,
+    metadataList: SubscriptionMetadataList,
+  ): Promise<boolean> {
+    const exchange = this._config.util.messageBroker.amqp?.exchange as string;
+    const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
+
+    if (!this._channel) {
+      throw new Error('RabbitMQ is down: cannot re-subscribe.');
+    }
+    const channel = this._channel;
+
+    await channel.assertExchange(exchange, 'headers', { durable: false });
+    await channel.assertQueue(queueName, {
+      durable: false,
+      autoDelete: true,
+      exclusive: false,
+    });
+
+    for (const meta of metadataList) {
+      // If actions are a defined but empty list, skip (modules with no actions shouldn't have queues)
+      if (meta.actions && meta.actions.length === 0) {
+        this._logger.debug(`Skipping re-subscription for ${identifier}: actions array is empty.`);
+        continue;
+      }
+
+      let filter = meta.filter;
+      filter = filter
+        ? {
+            'x-match': 'all',
+            ...filter,
+          }
+        : { 'x-match': 'all' };
+
+      if (meta.actions && meta.actions.length > 0) {
+        for (const action of meta.actions) {
+          await channel.bindQueue(queueName, exchange, '', { action, ...filter });
+        }
+      } else {
+        await channel.bindQueue(queueName, exchange, '', filter);
+      }
+    }
+
+    await channel.consume(queueName, (msg) => this._onMessage(msg, channel));
+
+    const cacheKey = `${RabbitMqReceiver.CACHE_PREFIX}${identifier}`;
+    await this._cache.set(cacheKey, JSON.stringify([queueName]), CacheNamespace.Other);
+
+    this._logger.debug(
+      `Successfully re-subscribed ${identifier} with queue ${queueName} and ${metadataList.length} binding(s)`,
+    );
     return true;
   }
 
