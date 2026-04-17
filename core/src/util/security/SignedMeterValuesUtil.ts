@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { IChargingStationSecurityInfoRepository } from '@dal/interfaces/repositories.js';
-import { sequelize } from '@dal/index.js';
 import type {
   BootstrapConfig,
   IFileStorage,
   OCPP2_common_types,
   SystemConfig,
 } from '@citrineos/base';
-import { OCPP2_0_1, SignedMeterValuesConfig } from '@citrineos/base';
+import { SignedMeterValuesConfig } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
+import { SequelizeChargingStationSecurityInfoRepository } from '@dal/layers/sequelize/repository/ChargingStationSecurityInfo.js';
 
 /**
  * Util to process and validate signed meter values.
@@ -41,7 +41,7 @@ export class SignedMeterValuesUtil {
     this._fileStorage = fileStorage;
     this._logger = logger;
     this._chargingStationSecurityInfoRepository =
-      new sequelize.SequelizeChargingStationSecurityInfoRepository(config, logger);
+      new SequelizeChargingStationSecurityInfoRepository(config, logger);
 
     this._signedMeterValuesConfiguration =
       config.modules.transactions.signedMeterValuesConfiguration;

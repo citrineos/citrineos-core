@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ILocationRepository } from '@citrineos/core';
+import { UnknownStationFilter } from '../../../networkconnection';
 import { faker } from '@faker-js/faker';
-import { UnknownStationFilter } from '../../../index.js';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { ILocationRepository } from '../../../../dal/interfaces';
 
 describe('UnknownStationFilter', () => {
   let locationRepository: Mocked<ILocationRepository>;

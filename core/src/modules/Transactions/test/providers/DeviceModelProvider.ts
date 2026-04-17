@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { ChargingStation, Component, Connector, Evse, EvseType, Variable } from '@citrineos/core';
+import {
+  ChargingStation,
+  Component,
+  Connector,
+  Evse,
+  EvseType,
+  Variable,
+} from 'citrineos-core/core/src/index';
 
 export const MOCK_STATION_ID = 'Station01';
 export const MOCK_EVSE_ID = 1;

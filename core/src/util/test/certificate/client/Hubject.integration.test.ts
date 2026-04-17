@@ -6,7 +6,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { Hubject } from '../../../certificate/client/hubject.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MemoryCache } from '../../../index.js';
+import { MemoryCache } from '../../../cache/memory';
 
 describe.skip('Integration Tests (requires real credentials)', () => {
   let systemConfig: SystemConfig;

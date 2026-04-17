@@ -24,43 +24,36 @@ import {
   OCPPValidator,
   OCPPVersion,
 } from '@citrineos/base';
-import { CertificatesDataApi, CertificatesModule, CertificatesOcpp2Api } from '@citrineos/core';
-import {
-  ConfigurationDataApi,
-  ConfigurationModule,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp2Api,
-} from '@citrineos/core';
-import { RepositoryStore, sequelize, Sequelize } from '@citrineos/core';
-import {
-  EVDriverDataApi,
-  EVDriverModule,
-  EVDriverOcpp16Api,
-  EVDriverOcpp2Api,
-} from '@citrineos/core';
-import { MonitoringDataApi, MonitoringModule, MonitoringOcpp2Api } from '@citrineos/core';
-import { AdminApi, MessageRouterImpl, WebhookDispatcher } from '@citrineos/core';
-import { ReportingModule, ReportingOcpp16Api, ReportingOcpp2Api } from '@citrineos/core';
 import type { ISmartCharging } from '@citrineos/core';
 import {
-  InternalSmartCharging,
-  SmartChargingModule,
-  SmartChargingOcpp16Api,
-  SmartChargingOcpp2Api,
-} from '@citrineos/core';
-import { TenantDataApi, TenantModule } from '@citrineos/core';
-import { TransactionsDataApi, TransactionsModule, TransactionsOcpp2Api } from '@citrineos/core';
-import {
+  AdminApi,
   apiAuthPluginFp,
   Authenticator,
   BasicAuthenticationFilter,
   BrokerAwareMessageSender,
   CertificateAuthorityService,
+  CertificatesDataApi,
+  CertificatesModule,
+  CertificatesOcpp2Api,
+  ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp2Api,
   ConnectedStationFilter,
+  DefaultSequelizeInstance,
+  EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp2Api,
   IdGenerator,
   initSwagger,
+  InternalSmartCharging,
   LocalBypassAuthProvider,
   MemoryCache,
+  MessageRouterImpl,
+  MonitoringDataApi,
+  MonitoringModule,
+  MonitoringOcpp2Api,
   NetworkProfileFilter,
   OIDCAuthProvider,
   RabbitMQChannelManager,
@@ -69,7 +62,23 @@ import {
   RabbitMqSender,
   RealTimeAuthorizer,
   RedisCache,
+  ReportingModule,
+  ReportingOcpp16Api,
+  ReportingOcpp2Api,
+  RepositoryStore,
+  Sequelize,
+  SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
+  SmartChargingModule,
+  SmartChargingOcpp16Api,
+  SmartChargingOcpp2Api,
+  TenantDataApi,
+  TenantModule,
+  TransactionsDataApi,
+  TransactionsModule,
+  TransactionsOcpp2Api,
   UnknownStationFilter,
+  WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
 import cors from '@fastify/cors';
@@ -311,7 +320,7 @@ export class CitrineOSServer {
   }
 
   protected async initDb() {
-    await sequelize.DefaultSequelizeInstance.initializeSequelize();
+    await DefaultSequelizeInstance.initializeSequelize();
   }
 
   protected initCache(cache?: ICache): ICache {
@@ -363,16 +372,16 @@ export class CitrineOSServer {
   protected initNetworkConnection() {
     this._authenticator = new Authenticator(
       new UnknownStationFilter(
-        new sequelize.SequelizeLocationRepository(this._config, this._logger),
+        new SequelizeLocationRepository(this._config, this._logger),
         this._logger,
       ),
       new ConnectedStationFilter(this._cache, this._logger),
       new NetworkProfileFilter(
-        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
+        new SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       new BasicAuthenticationFilter(
-        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
+        new SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       this._logger,
@@ -730,10 +739,7 @@ export class CitrineOSServer {
   }
 
   protected initRepositoryStore() {
-    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
-      this._config,
-      this._logger,
-    );
+    this._sequelizeInstance = DefaultSequelizeInstance.getInstance(this._config, this._logger);
     this._repositoryStore = new RepositoryStore(
       this._config,
       this._logger,

@@ -4,7 +4,7 @@
 
 import { OCPP2_0_1 } from '@citrineos/base';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
-import { VariableAttribute } from '@dal/layers/sequelize/index.js';
+import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;

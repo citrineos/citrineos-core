@@ -29,7 +29,8 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
-import { MeterValue, Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
+import { MeterValue } from '@dal/layers/sequelize/model/TransactionEvent/MeterValue.js';
+import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/Transaction.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

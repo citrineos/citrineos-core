@@ -10,12 +10,10 @@ import type {
   CreateOrUpdateVariableAttributeQuerystring,
   VariableAttributeQuerystring,
 } from '@dal/interfaces/queries/VariableAttribute.js';
-import { Component, Variable } from '@dal/layers/sequelize/index.js';
 import {
   CreateOrUpdateVariableAttributeQuerySchema,
   VariableAttributeQuerySchema,
 } from '@dal/interfaces/queries/VariableAttribute.js';
-import { sequelize } from '@dal/index.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -28,6 +26,9 @@ import {
   ReportDataTypeSchema,
 } from '@citrineos/base';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
+import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
+import type { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 
 /**
  * Server API for the Monitoring module.
@@ -62,7 +63,7 @@ export class MonitoringDataApi
       Body: OCPP2_0_1.ReportDataType;
       Querystring: CreateOrUpdateVariableAttributeQuerystring;
     }>,
-  ): Promise<sequelize.VariableAttribute[]> {
+  ): Promise<VariableAttribute[]> {
     const tenantId = request.query.tenantId ?? DEFAULT_TENANT_ID;
 
     // fill in default values where omitted
@@ -110,7 +111,7 @@ export class MonitoringDataApi
   )
   getDeviceModelVariables(
     request: FastifyRequest<{ Querystring: VariableAttributeQuerystring }>,
-  ): Promise<sequelize.VariableAttribute[] | undefined> {
+  ): Promise<VariableAttribute[] | undefined> {
     return this._module.deviceModelRepository.readAllByQuerystring(
       request.query.tenantId,
       request.query,
@@ -130,8 +131,8 @@ export class MonitoringDataApi
     return this._module.deviceModelRepository
       .deleteAllByQuerystring(tenantId, request.query)
       .then(
-        (deletedCount) =>
-          deletedCount.toString() +
+        (deletedCount: VariableAttribute[]) =>
+          deletedCount.length.toString() +
           ' rows successfully deleted from ' +
           OCPP2_Namespace.VariableAttributeType,
       );

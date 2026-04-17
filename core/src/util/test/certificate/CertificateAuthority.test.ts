@@ -6,7 +6,6 @@ import {
   IV2GCertificateAuthorityClient,
 } from '../../certificate/client/interface.js';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
-import { CertificateAuthorityService, MemoryCache } from '../../index.js';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
@@ -16,6 +15,8 @@ import * as CertificateUtil from '../../certificate/CertificateUtil.js';
 import { readFile } from '../utils/FileUtil.js';
 import { KJUR } from 'jsrsasign';
 import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import { CertificateAuthorityService } from '../../certificate';
+import { MemoryCache } from '../../cache/memory';
 
 vi.mock('../../certificate/CertificateUtil');
 vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {

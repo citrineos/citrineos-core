@@ -12,14 +12,14 @@ import {
   Table,
 } from 'sequelize-typescript';
 import {
+  type ChargingStationDto,
   DEFAULT_TENANT_ID,
-  OCPP2_Namespace,
   type DeleteCertificateStatusEnumType,
   type HashAlgorithmEnumType,
+  OCPP2_Namespace,
   type TenantDto,
-  type ChargingStationDto,
 } from '@citrineos/base';
-import { ChargingStation } from '../Location/index.js';
+import { ChargingStation } from '../Location/ChargingStation.js';
 import { Tenant } from '../Tenant.js';
 
 @Table

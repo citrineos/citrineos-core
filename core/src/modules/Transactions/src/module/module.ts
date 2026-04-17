@@ -32,7 +32,6 @@ import {
   OCPPVersion,
   TransactionEventEnum,
 } from '@citrineos/base';
-import { sequelize } from '@dal/index.js';
 import type {
   IAuthorizationRepository,
   IDeviceModelRepository,
@@ -42,14 +41,12 @@ import type {
   ITariffRepository,
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
-import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/index.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
-import { Authorization } from '@dal/layers/sequelize/model/Authorization/index.js';
-import { Component, VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/index.js';
-import {
-  StartTransaction,
-  Transaction,
-} from '@dal/layers/sequelize/model/TransactionEvent/index.js';
+import { Authorization } from '@dal/layers/sequelize/model/Authorization/Authorization.js';
+import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
+import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
+import { StartTransaction } from '@dal/layers/sequelize/model/TransactionEvent/StartTransaction.js';
+import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/Transaction.js';
 import { SequelizeRepository } from '@dal/layers/sequelize/repository/Base.js';
 import { RealTimeAuthorizer } from '@util/authorizer/RealTimeAuthorizer.js';
 import { SignedMeterValuesUtil } from '@util/security/SignedMeterValuesUtil.js';
@@ -59,6 +56,13 @@ import { CostCalculator } from './CostCalculator.js';
 import { CostNotifier } from './CostNotifier.js';
 import { StatusNotificationService } from './StatusNotificationService.js';
 import { TransactionService } from './TransactionService.js';
+import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/repository/OCPPMessage.js';
+import { SequelizeTransactionEventRepository } from '@dal/layers/sequelize/repository/TransactionEvent.js';
+import { SequelizeAuthorizationRepository } from '@dal/layers/sequelize/repository/Authorization.js';
+import { SequelizeDeviceModelRepository } from '@dal/layers/sequelize/repository/DeviceModel.js';
+import { SequelizeLocationRepository } from '@dal/layers/sequelize/repository/Location.js';
+import { SequelizeTariffRepository } from '@dal/layers/sequelize/repository/Tariff.js';
+import { SequelizeReservationRepository } from '@dal/layers/sequelize/repository/Reservation.js';
 
 /**
  * Component that handles transaction related messages.
@@ -183,21 +187,19 @@ export class TransactionsModule extends AbstractModule {
     this._fileStorage = fileStorage;
 
     this._transactionEventRepository =
-      transactionEventRepository ||
-      new sequelize.SequelizeTransactionEventRepository(config, logger);
+      transactionEventRepository || new SequelizeTransactionEventRepository(config, logger);
     this._authorizeRepository =
-      authorizeRepository || new sequelize.SequelizeAuthorizationRepository(config, logger);
+      authorizeRepository || new SequelizeAuthorizationRepository(config, logger);
     this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
+      deviceModelRepository || new SequelizeDeviceModelRepository(config, logger);
     this._componentRepository =
       componentRepository ||
       new SequelizeRepository<Component>(config, Component.MODEL_NAME, logger);
     this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-    this._tariffRepository =
-      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
+      locationRepository || new SequelizeLocationRepository(config, logger);
+    this._tariffRepository = tariffRepository || new SequelizeTariffRepository(config, logger);
     this._reservationRepository =
-      reservationRepository || new sequelize.SequelizeReservationRepository(config, logger);
+      reservationRepository || new SequelizeReservationRepository(config, logger);
     this._ocppMessageRepository =
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 

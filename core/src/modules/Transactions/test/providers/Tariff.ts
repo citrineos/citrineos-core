@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Tariff } from '@citrineos/core';
+import { Tariff } from 'citrineos-core/core/src/index';
 import { faker } from '@faker-js/faker';
 
 export function aTariff(override?: Partial<Tariff>): Tariff {

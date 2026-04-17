@@ -6,13 +6,11 @@ import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
 } from '@dal/interfaces/repositories.js';
-import {
-  SendLocalList,
-  VariableAttribute,
-  VariableCharacteristics,
-  LocalListVersion,
-  LocalListAuthorization,
-} from '@dal/layers/sequelize/index.js';
+import { SendLocalList } from '@dal/layers/sequelize/model/Authorization/SendLocalList.js';
+import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
+import { VariableCharacteristics } from '@dal/layers/sequelize/model/DeviceModel/VariableCharacteristics.js';
+import { LocalListVersion } from '@dal/layers/sequelize/model/Authorization/LocalListVersion.js';
+import { LocalListAuthorization } from '@dal/layers/sequelize/model/Authorization/LocalListAuthorization.js';
 
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;

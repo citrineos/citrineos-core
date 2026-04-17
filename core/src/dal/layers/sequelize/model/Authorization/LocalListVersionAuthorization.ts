@@ -15,7 +15,8 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
-import { LocalListAuthorization, LocalListVersion } from './index.js';
+import { LocalListAuthorization } from '@dal/layers/sequelize/model/Authorization/LocalListAuthorization.js';
+import { LocalListVersion } from '@dal/layers/sequelize/model/Authorization/LocalListVersion.js';
 
 @Table
 export class LocalListVersionAuthorization extends Model {

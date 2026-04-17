@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_0_1 } from '@citrineos/base';
-import { UploadExistingCertificate } from '@citrineos/core';
+import { UploadExistingCertificate } from 'citrineos-core/core/src/index';
 import { MOCK_CERTIFICATE } from './InstallCertificateRequestProvider';
 
 export function aUploadExistingCertificate(

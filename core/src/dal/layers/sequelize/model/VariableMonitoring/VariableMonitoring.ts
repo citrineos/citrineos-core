@@ -28,7 +28,7 @@ import {
 } from 'sequelize-typescript';
 import { Component } from '../DeviceModel/Component.js';
 import { Variable } from '../DeviceModel/Variable.js';
-import { ChargingStation } from '../Location/index.js';
+import { ChargingStation } from '../Location/ChargingStation.js';
 import { Tenant } from '../Tenant.js';
 import { VariableMonitoringStatus } from './VariableMonitoringStatus.js';
 
@@ -125,7 +125,7 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
   static async resolveStationPkId(instance: VariableMonitoring): Promise<void> {
     if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
       // Lazy load ChargingStation to avoid circular dependency
-      const { ChargingStation } = await import('../Location/index.js');
+      const { ChargingStation } = await import('../Location/ChargingStation.js');
       const station = await ChargingStation.findOne({
         where: { id: instance.stationId, tenantId: instance.tenantId },
         attributes: ['pkId'],

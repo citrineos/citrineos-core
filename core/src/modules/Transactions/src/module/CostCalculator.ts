@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Money } from '@citrineos/base';
 import type { ITariffRepository } from '@dal/interfaces/repositories.js';
-import { Tariff } from '@dal/layers/sequelize/model/Tariff/index.js';
+import { Tariff } from '@dal/layers/sequelize/model/Tariff/Tariffs.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { TransactionService } from './TransactionService.js';

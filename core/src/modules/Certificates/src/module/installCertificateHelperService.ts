@@ -16,22 +16,22 @@ import type {
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
-import {
-  Certificate,
-  CountryNameEnumType,
-  InstallCertificateAttempt,
-  InstalledCertificate,
-  SignatureAlgorithmEnumType,
-} from '@dal/layers/sequelize/index.js';
-import {
-  type CertificateAuthorityService,
-  extractCertificateDetails,
-  generateCSR,
-  WebsocketNetworkConnection,
-} from '@util/index.js';
+import { Certificate } from '@dal/layers/sequelize/model/Certificate/Certificate.js';
+import { InstallCertificateAttempt } from '@dal/layers/sequelize/model/Certificate/InstallCertificateAttempt.js';
+import { InstalledCertificate } from '@dal/layers/sequelize/model/Certificate/InstalledCertificate.js';
 import fs from 'fs';
 import jsrsasign from 'jsrsasign';
 import { type ILogObj, Logger } from 'tslog';
+import {
+  CountryNameEnumType,
+  SignatureAlgorithmEnumType,
+} from '@dal/layers/sequelize/model/Certificate/CertificateTypes.js';
+import {
+  CertificateAuthorityService,
+  extractCertificateDetails,
+  generateCSR,
+} from '@util/certificate/index.js';
+import { WebsocketNetworkConnection } from '@util/networkconnection/index.js';
 
 export const enum PemType {
   Root = 'Root',

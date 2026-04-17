@@ -17,7 +17,7 @@ import {
 } from '@citrineos/base';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/queries/ChargingStation.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/queries/ChargingStation.js';
-import { LocalListVersion } from '@dal/index.js';
+import { LocalListVersion } from '@dal/layers/sequelize/model/Authorization/LocalListVersion.js';
 
 export class EVDriverDataApi
   extends AbstractModuleApi<EVDriverModule>

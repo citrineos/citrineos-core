@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
-//
-// SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import type {
   ChargingStationDto,
   ChargingStationSecurityInfoDto,
   TenantDto,
 } from '@citrineos/base';
+//
+// SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -17,7 +17,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from './Location/index.js';
+import { ChargingStation } from './Location/ChargingStation.js';
 import { Tenant } from './Tenant.js';
 
 /**

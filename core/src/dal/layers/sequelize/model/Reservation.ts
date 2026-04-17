@@ -15,7 +15,7 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { EvseType } from './DeviceModel/index.js';
+import { EvseType } from './DeviceModel/EvseType.js';
 import { Tenant } from './Tenant.js';
 
 @Table

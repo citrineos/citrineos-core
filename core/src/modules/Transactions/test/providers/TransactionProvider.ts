@@ -5,7 +5,7 @@ import { OCPP2_0_1 } from '@citrineos/base';
 
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { Transaction } from '@citrineos/core';
+import { Transaction } from 'citrineos-core/core/src/index';
 
 export function aTransaction(updateFunction?: UpdateFunction<Transaction>): Transaction {
   const item: Transaction = {

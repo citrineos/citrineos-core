@@ -11,9 +11,9 @@ import type {
 } from '@citrineos/base';
 import { AbstractModule, EventGroup, OCPPValidator } from '@citrineos/base';
 import type { ITenantRepository } from '@dal/interfaces/repositories.js';
-import { SequelizeTenantRepository } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { SequelizeTenantRepository } from '@dal/layers/sequelize/repository/Tenant.js';
 
 export class TenantModule extends AbstractModule {
   /**

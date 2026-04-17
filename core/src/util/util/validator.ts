@@ -8,7 +8,7 @@ import type {
   IDeviceModelRepository,
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
-import { VariableAttribute } from '@dal/layers/sequelize/index.js';
+import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaidCheckDigitCalculator.js';

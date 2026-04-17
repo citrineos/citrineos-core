@@ -5,19 +5,19 @@
 import type {
   BootConfig,
   CallAction,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingStateEnumType,
   ChargingStationSequenceTypeEnumType,
   CrudRepository,
   MeterValueDto,
   OCPP1_6,
-  OCPPVersion,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPPMessageDto,
+  OCPPVersion,
   RegistrationStatusEnumType,
   UpdateEnumType,
-  ChargingStateEnumType,
 } from '@citrineos/base';
 import type {
   ChargingProfileInput,
@@ -29,37 +29,19 @@ import type { Certificate } from '../layers/sequelize/model/Certificate/Certific
 import type { ChargingStation } from '../layers/sequelize/model/Location/ChargingStation.js';
 import type { Component } from '../layers/sequelize/model/DeviceModel/Component.js';
 import type { Variable } from '../layers/sequelize/model/DeviceModel/Variable.js';
-import type {
-  EventData,
-  VariableMonitoring,
-} from '../layers/sequelize/model/VariableMonitoring/index.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
 import type { SecurityEvent } from '../layers/sequelize/model/SecurityEvent.js';
-import type { Transaction } from '../layers/sequelize/model/TransactionEvent/index.js';
+import type { Transaction } from '../layers/sequelize/model/TransactionEvent/Transaction.js';
 import type { VariableAttribute } from '../layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { ChangeConfiguration } from '../layers/sequelize/model/ChangeConfiguration.js';
-import type {
-  ChargingNeeds,
-  ChargingProfile,
-  CompositeSchedule,
-} from '../layers/sequelize/model/ChargingProfile/index.js';
 import type { ChargingStationSecurityInfo } from '../layers/sequelize/model/ChargingStationSecurityInfo.js';
 import type { ChargingStationSequence } from '../layers/sequelize/model/ChargingStationSequence/ChargingStationSequence.js';
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
 import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
-import type {
-  DeleteCertificateAttempt,
-  InstallCertificateAttempt,
-  InstalledCertificate,
-} from '../layers/sequelize/model/Certificate/index.js';
 import type { EvseType } from '../layers/sequelize/model/DeviceModel/EvseType.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
-import type {
-  MeterValue,
-  StopTransaction,
-} from '../layers/sequelize/model/TransactionEvent/index.js';
 import type { OCPPMessage } from '../layers/sequelize/model/OCPPMessage.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
 import type { ServerNetworkProfile } from '../layers/sequelize/model/Location/ServerNetworkProfile.js';
@@ -72,6 +54,16 @@ import type { VariableCharacteristics } from '../layers/sequelize/model/DeviceMo
 import type { VariableAttributeQuerystring } from './queries/VariableAttribute.js';
 import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
+import type { MeterValue } from '@dal/layers/sequelize/model/TransactionEvent/MeterValue.js';
+import type { DeleteCertificateAttempt } from '../layers/sequelize/model/Certificate/DeleteCertificateAttempt.js';
+import type { InstallCertificateAttempt } from '../layers/sequelize/model/Certificate/InstallCertificateAttempt.js';
+import type { InstalledCertificate } from '@dal/layers/sequelize/model/Certificate/InstalledCertificate.js';
+import type { StopTransaction } from '@dal/layers/sequelize/model/TransactionEvent/StopTransaction.js';
+import type { EventData } from '../layers/sequelize/model/VariableMonitoring/EventData.js';
+import type { VariableMonitoring } from '@dal/layers/sequelize/model/VariableMonitoring/VariableMonitoring.js';
+import type { ChargingNeeds } from '@dal/layers/sequelize/model/ChargingProfile/ChargingNeeds.js';
+import type { ChargingProfile } from '@dal/layers/sequelize/model/ChargingProfile/ChargingProfile.js';
+import type { CompositeSchedule } from '@dal/layers/sequelize/model/ChargingProfile/CompositeSchedule.js';
 
 export interface IAuthorizationRepository extends CrudRepository<Authorization> {
   readAllByQuerystring: (

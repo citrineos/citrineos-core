@@ -4,7 +4,7 @@
 import { OCPP1_6, OCPP2_0_1 } from '@citrineos/base';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModelProvider.js';
-import { StatusNotification } from '@citrineos/core';
+import { StatusNotification } from 'citrineos-core/core/src/index';
 
 export function aStatusNotificationRequest(
   updateFunction?: UpdateFunction<OCPP2_0_1.StatusNotificationRequest>,

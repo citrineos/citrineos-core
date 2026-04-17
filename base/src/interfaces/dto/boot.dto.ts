@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
 import { VariableAttributeSchema } from './variable.attribute.dto.js';
 
-export const BootSchema = BaseSchema.extend({
+export const BootTableSchema = BaseSchema.extend({
   id: z.string(),
   lastBootTime: z.iso.datetime().nullable().optional(),
   heartbeatInterval: z.number().int().nullable().optional(),
@@ -19,6 +19,13 @@ export const BootSchema = BaseSchema.extend({
   bootWithRejectedVariables: z.boolean().nullable().optional(),
   changeConfigurationsOnPending: z.boolean().nullable().optional(),
   getConfigurationsOnPending: z.boolean().nullable().optional(),
+});
+
+export const BootTableProps = BootTableSchema.keyof().enum;
+export type BootTableDto = z.infer<typeof BootTableSchema>;
+
+export const BootSchema = BootTableSchema.extend({
+  pendingBootSetVariables: z.array(VariableAttributeSchema).optional(),
 });
 
 export const BootProps = BootSchema.keyof().enum;

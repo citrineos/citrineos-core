@@ -5,14 +5,14 @@
 import {
   IDeviceModelRepository,
   ILocalAuthListRepository,
-  LocalListVersion,
-  SendLocalList,
-  VariableAttribute,
-  VariableCharacteristics,
-} from '@citrineos/core';
+} from '../../../../dal/interfaces/repositories';
 import { LocalAuthListService } from '../../src/module/LocalAuthListService.js';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { LocalListVersion } from '../../../../dal/layers/sequelize/model/Authorization/LocalListVersion';
+import { SendLocalList } from '../../../../dal/layers/sequelize/model/Authorization/SendLocalList';
+import { VariableAttribute } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableAttribute';
+import { VariableCharacteristics } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableCharacteristics';
 
 describe('LocalAuthListService', () => {
   let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;

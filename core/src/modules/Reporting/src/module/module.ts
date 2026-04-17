@@ -31,17 +31,21 @@ import {
   OCPPVersion,
   SetVariableStatusEnum,
 } from '@citrineos/base';
-import { sequelize } from '@dal/index.js';
 import type {
   IDeviceModelRepository,
   IOCPPMessageRepository,
   ISecurityEventRepository,
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
-import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { DeviceModelService } from './services.js';
+import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
+import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
+import { SequelizeDeviceModelRepository } from '@dal/layers/sequelize/repository/DeviceModel.js';
+import { SequelizeSecurityEventRepository } from '@dal/layers/sequelize/repository/SecurityEvent.js';
+import { SequelizeVariableMonitoringRepository } from '@dal/layers/sequelize/repository/VariableMonitoring.js';
+import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/repository/OCPPMessage.js';
 
 /**
  * Component that handles provisioning related messages.
@@ -110,15 +114,14 @@ export class ReportingModule extends AbstractModule {
     this._responses = config.modules.reporting.responses;
 
     this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
     this._securityEventRepository =
-      securityEventRepository ||
-      new sequelize.SequelizeSecurityEventRepository(config, this._logger);
+      securityEventRepository || new SequelizeSecurityEventRepository(config, this._logger);
     this._variableMonitoringRepository =
       variableMonitoringRepository ||
-      new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
+      new SequelizeVariableMonitoringRepository(config, this._logger);
     this._ocppMessageRepository =
-      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
+      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
   }
 

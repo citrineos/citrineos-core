@@ -4,35 +4,35 @@
 import {
   AbstractModule,
   AsHandler,
+  AttributeEnum,
   type BootstrapConfig,
   type CallAction,
+  CertificateSigningUseEnum,
+  type CertificateSigningUseEnumType,
+  type CertificateUseEnumType,
+  DeleteCertificateStatusEnum,
   ErrorCode,
   EventGroup,
+  GenericStatusEnum,
+  GetCertificateStatusEnum,
+  GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type ICache,
   type IFileStorage,
   type IMessage,
   type IMessageHandler,
   type IMessageSender,
+  type InstallCertificateStatusEnumType,
+  Iso15118EVCertificateStatusEnum,
   MessageOrigin,
-  OCPP_CallAction,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
   OCPP_2_VER_LIST,
+  OCPP_CallAction,
   OcppError,
   OCPPValidator,
   type SystemConfig,
-  OCPP2_response_types,
-  OCPP2_request_types,
-  OCPP2_common_types,
-  type CertificateUseEnumType,
-  type CertificateSigningUseEnumType,
-  type InstallCertificateStatusEnumType,
-  Iso15118EVCertificateStatusEnum,
-  GetCertificateStatusEnum,
-  GenericStatusEnum,
-  GetInstalledCertificateStatusEnum,
-  DeleteCertificateStatusEnum,
-  CertificateSigningUseEnum,
-  AttributeEnum,
 } from '@citrineos/base';
 import type {
   ICertificateRepository,
@@ -42,18 +42,6 @@ import type {
   IInstalledCertificateRepository,
   IOCPPMessageRepository,
 } from '@dal/interfaces/repositories.js';
-import {
-  InstalledCertificate,
-  SequelizeOCPPMessageRepository,
-} from '@dal/layers/sequelize/index.js';
-import { sequelize } from '@dal/index.js';
-import {
-  parseCSRForVerification,
-  sendOCSPRequest,
-  validatePEMEncodedCSR,
-  WebsocketNetworkConnection,
-  CertificateAuthorityService,
-} from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
@@ -61,6 +49,20 @@ import { CertificationRequest } from 'pkijs';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { InstallCertificateHelperService } from './installCertificateHelperService.js';
+import { InstalledCertificate } from '@dal/layers/sequelize/model/Certificate/InstalledCertificate.js';
+import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/repository/OCPPMessage.js';
+import {
+  CertificateAuthorityService,
+  parseCSRForVerification,
+  sendOCSPRequest,
+} from '@util/certificate/index.js';
+import { validatePEMEncodedCSR } from '@util/util/validator.js';
+import { WebsocketNetworkConnection } from '@util/networkconnection/index.js';
+import { SequelizeDeviceModelRepository } from '@dal/layers/sequelize/repository/DeviceModel.js';
+import { SequelizeCertificateRepository } from '@dal/layers/sequelize/repository/Certificate.js';
+import { SequelizeInstalledCertificateRepository } from '@dal/layers/sequelize/repository/InstalledCertificate.js';
+import { SequelizeInstallCertificateAttemptRepository } from '@dal/layers/sequelize/repository/InstallCertificateAttempt.js';
+import { SequelizeDeleteCertificateAttemptRepository } from '@dal/layers/sequelize/repository/DeleteCertificateAttempt.js';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -163,18 +165,17 @@ export class CertificatesModule extends AbstractModule {
     this._fileStorage = fileStorage;
 
     this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
+      deviceModelRepository || new SequelizeDeviceModelRepository(config, logger);
     this._certificateRepository =
-      certificateRepository || new sequelize.SequelizeCertificateRepository(config, logger);
+      certificateRepository || new SequelizeCertificateRepository(config, logger);
     this._installedCertificateRepository =
-      installedCertificateRepository ||
-      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
+      installedCertificateRepository || new SequelizeInstalledCertificateRepository(config, logger);
     this._installCertificateAttemptRepository =
       installCertificateAttemptRepository ||
-      new sequelize.SequelizeInstallCertificateAttemptRepository(config, logger);
+      new SequelizeInstallCertificateAttemptRepository(config, logger);
     this._deleteCertificateAttemptRepository =
       deleteCertificateAttemptRepository ||
-      new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
+      new SequelizeDeleteCertificateAttemptRepository(config, logger);
     this._ocppMessageRepository =
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._certificateAuthorityService =

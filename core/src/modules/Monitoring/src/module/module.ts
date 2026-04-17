@@ -1,24 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type {
+  AttributeEnumType,
+  BootstrapConfig,
+  CallAction,
+  GenericDeviceModelStatusEnumType,
+  GenericStatusEnumType,
+  HandlerProperties,
+  ICache,
+  IMessage,
+  IMessageHandler,
+  IMessageSender,
+  SystemConfig,
+} from '@citrineos/base';
 import {
   AbstractModule,
   AsHandler,
   AttributeEnum,
-  type AttributeEnumType,
-  type BootstrapConfig,
-  type CallAction,
   ChargingStationSequenceTypeEnum,
   EventGroup,
   GenericDeviceModelStatusEnum,
-  type GenericDeviceModelStatusEnumType,
   GenericStatusEnum,
-  type GenericStatusEnumType,
-  type HandlerProperties,
-  type ICache,
-  type IMessage,
-  type IMessageHandler,
-  type IMessageSender,
   MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
@@ -26,27 +29,25 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPValidator,
-  OCPPVersion,
   SetVariableStatusEnum,
-  type SystemConfig,
 } from '@citrineos/base';
-import {
-  Component,
-  type IDeviceModelRepository,
-  type IOCPPMessageRepository,
-  type IVariableMonitoringRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeDeviceModelRepository,
-  SequelizeOCPPMessageRepository,
-  SequelizeVariableMonitoringRepository,
-  Variable,
-  type VariableAttribute,
-} from '@dal/index.js';
-import { IdGenerator } from '@util/index.js';
+import type {
+  IDeviceModelRepository,
+  IOCPPMessageRepository,
+  IVariableMonitoringRepository,
+} from '@dal/interfaces/repositories.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { MonitoringService } from './MonitoringService.js';
 import { DeviceModelService } from './services.js';
+import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
+import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/repository/ChargingStationSequence.js';
+import { SequelizeDeviceModelRepository } from '@/dal/layers/sequelize/repository/DeviceModel.js';
+import { SequelizeOCPPMessageRepository } from '@/dal/layers/sequelize/repository/OCPPMessage.js';
+import { SequelizeVariableMonitoringRepository } from '@/dal/layers/sequelize/repository/VariableMonitoring.js';
+import { Variable } from '@/dal/layers/sequelize/model/DeviceModel/Variable.js';
+import { IdGenerator } from '@/util/util/idGenerator.js';
+import { VariableAttribute } from '@/dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 
 type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataType };
 

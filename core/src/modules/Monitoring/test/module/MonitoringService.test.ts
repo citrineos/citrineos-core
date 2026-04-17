@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IVariableMonitoringRepository } from '@citrineos/core';
 import { MonitoringService } from '../../src/module/MonitoringService.js';
 import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import { aClearMonitoringResult } from '../providers/Monitoring.js';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { IVariableMonitoringRepository } from '../../../../dal/interfaces';
 
 describe('MonitoringService', () => {
   let mockVariableMonitoringRepository: Mocked<IVariableMonitoringRepository>;

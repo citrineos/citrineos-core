@@ -5,22 +5,23 @@
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
+  type CallAction,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+  type IMessageConfirmation,
+  type MonitoringCriterionEnumType,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP_CallAction,
   OCPPVersion,
-  type CallAction,
-  type IMessageConfirmation,
-  type MonitoringCriterionEnumType,
 } from '@citrineos/base';
-import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IReportingModuleApi } from '../interface.js';
 import { ReportingModule } from '../module.js';
+import { getBatches, getSizeOfRequest } from '@util/util/parser.js';
+import { packageGroupCall } from '@util/util/sendCall.js';
 
 const DEFAULT_VERSION = OCPPVersion.OCPP2_0_1;
 

@@ -5,7 +5,7 @@
 import {
   CountryNameEnumType,
   SignatureAlgorithmEnumType,
-} from '../../layers/sequelize/model/Certificate/index.js';
+} from '@dal/layers/sequelize/model/Certificate/CertificateTypes.js';
 
 export class GenerateCertificateChainRequest {
   // Fields for generating a certificate

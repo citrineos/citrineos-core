@@ -5,18 +5,21 @@ import {
   CacheNamespace,
   createIdentifier,
   CrudRepository,
-  OCPP1_6,
-  OCPP2_0_1,
   type ICache,
   type IWebsocketConnection,
+  OCPP1_6,
+  OCPP2_0_1,
 } from '@citrineos/base';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
-import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
-import { Connector, StatusNotification } from '@dal/layers/sequelize/model/Location/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
+import { EvseType } from '@dal/layers/sequelize/model/DeviceModel/EvseType.js';
+import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
+import { Connector } from '@dal/layers/sequelize/model/Location/Connector.js';
+import { StatusNotification } from '@dal/layers/sequelize/model/Location/StatusNotification.js';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;

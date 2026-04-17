@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Component, IDeviceModelRepository, ILocationRepository } from '@citrineos/core';
+import { CrudRepository, DEFAULT_TENANT_ID, ICache, IWebsocketConnection } from '@citrineos/base';
+import {
+  IDeviceModelRepository,
+  ILocationRepository,
+} from '../../../../dal/interfaces/repositories';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { StatusNotification } from '../../../../dal/layers/sequelize/index.js';
+
 import { StatusNotificationService } from '../../src/module/StatusNotificationService.js';
 import {
   aChargingStation,
@@ -20,13 +23,15 @@ import {
   aOcpp16StatusNotificationRequest,
   aStatusNotification,
   aStatusNotificationRequest,
-} from '../providers/StatusNotification.js';
+} from '../providers/StatusNotification.js'; // Mock StatusNotification model
+import { Component } from '../../../../dal/layers/sequelize/model/DeviceModel/Component.js';
+import { StatusNotification } from '../../../../dal/layers/sequelize/model/Location/StatusNotification';
 
 // Mock StatusNotification model
-vi.mock('../../../../dal/layers/sequelize/model/Location/index.js', async (importOriginal) => {
+vi.mock('@dal/layers/sequelize/model/Location/StatusNotification.js', async (importOriginal) => {
   const actual =
     await importOriginal<
-      typeof import('../../../../dal/layers/sequelize/model/Location/index.js')
+      typeof import('@dal/layers/sequelize/model/Location/StatusNotification.js')
     >();
 
   class MockStatusNotification {

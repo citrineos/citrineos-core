@@ -6,13 +6,16 @@ import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
-import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@dal/layers/sequelize/index.js';
-import { Certificate } from '@dal/layers/sequelize/index.js';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import {
+  CountryNameEnumType,
+  SignatureAlgorithmEnumType,
+} from '@dal/layers/sequelize/model/Certificate/CertificateTypes.js';
+import { Certificate } from '@dal/layers/sequelize/model/Certificate/Certificate.js';
 import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import Request = jsrsasign.KJUR.asn1.ocsp.Request;

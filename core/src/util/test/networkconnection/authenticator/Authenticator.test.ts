@@ -4,7 +4,7 @@
 import type { SystemConfig } from '@citrineos/base';
 import { Storage } from '@google-cloud/storage';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GcpCloudStorage } from '../../../index';
+import { GcpCloudStorage } from '../../../files/gcpCloudStorage';
 
 vi.mock('@google-cloud/storage', () => {
   const mockFile = {

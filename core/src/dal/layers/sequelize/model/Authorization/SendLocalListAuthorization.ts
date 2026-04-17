@@ -15,7 +15,8 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
-import { LocalListAuthorization, SendLocalList } from './index.js';
+import { LocalListAuthorization } from '@dal/layers/sequelize/model/Authorization/LocalListAuthorization.js';
+import { SendLocalList } from '@dal/layers/sequelize/model/Authorization/SendLocalList.js';
 
 @Table
 export class SendLocalListAuthorization extends Model {

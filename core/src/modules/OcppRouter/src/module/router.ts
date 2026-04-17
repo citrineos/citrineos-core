@@ -32,6 +32,7 @@ import {
   MessageOrigin,
   MessageState,
   MessageTypeId,
+  NO_ACTION,
   OCPP2_1,
   OCPP_CallAction,
   OcppError,
@@ -41,13 +42,12 @@ import {
   RetryMessageError,
 } from '@citrineos/base';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
-import { sequelize } from '@dal/index.js';
 import { OidcTokenProvider } from '@util/authorization/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { WebhookDispatcher } from './webhook.dispatcher.js';
-import { NO_ACTION } from '@citrineos/base';
+import { SequelizeLocationRepository } from '@dal/layers/sequelize/repository/Location.js';
 
 /**
  * Implementation of the ocpp router
@@ -99,7 +99,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._webhookDispatcher = dispatcher;
     this._networkHook = networkHook;
     this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
+      locationRepository || new SequelizeLocationRepository(config, logger);
     if (this._config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
     }

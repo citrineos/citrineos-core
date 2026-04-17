@@ -13,7 +13,7 @@ import type {
   IOCPPMessageRepository,
   ISubscriptionRepository,
 } from '@dal/interfaces/repositories.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
+import { Subscription } from '@dal/layers/sequelize/model/Subscription/Subscription.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';

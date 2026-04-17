@@ -18,12 +18,13 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IMonitoringModuleApi } from '../interface.js';
 import { MonitoringModule } from '../module.js';
+import { getBatches, getSizeOfRequest } from '@util/util/parser.js';
+import { packageGroupCall } from '@util/util/sendCall.js';
 
 const DEFAULT_VERSION = OCPPVersion.OCPP2_0_1;
 

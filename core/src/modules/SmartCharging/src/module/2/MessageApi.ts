@@ -20,13 +20,15 @@ import {
   OCPPVersion,
 } from '@citrineos/base';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
-import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/index.js';
-import { packageGroupCall, stringToSet, validateChargingProfileType } from '@util/index.js';
+import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ISmartChargingModuleApi } from '../interface.js';
 import { SmartChargingModule } from '../module.js';
+import { packageGroupCall } from '@util/util/sendCall.js';
+import { stringToSet } from '@util/util/parser.js';
+import { validateChargingProfileType } from '@util/util/validator.js';
 
 const DEFAULT_VERSION = OCPPVersion.OCPP2_0_1;
 

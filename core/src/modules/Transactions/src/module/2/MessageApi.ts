@@ -11,12 +11,12 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ITransactionsModuleApi } from '../interface.js';
 import { TransactionsModule } from '../module.js';
+import { packageGroupCall } from '@util/util/sendCall.js';
 
 const DEFAULT_VERSION = OCPPVersion.OCPP2_0_1;
 

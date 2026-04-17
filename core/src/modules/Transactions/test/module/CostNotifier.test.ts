@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ITransactionEventRepository, Transaction } from '@citrineos/core';
+import { ITransactionEventRepository } from '../../../../dal/interfaces';
 import { AbstractModule, DEFAULT_TENANT_ID, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
 import { CostCalculator } from '../../src/module/CostCalculator.js';
 import { CostNotifier } from '../../src/module/CostNotifier.js';
 import { aTransaction } from '../providers/TransactionProvider.js';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { Transaction } from '../../../../dal/layers/sequelize/model/TransactionEvent/Transaction';
 
 describe('CostNotifier', () => {
   const anyTenantId = DEFAULT_TENANT_ID;

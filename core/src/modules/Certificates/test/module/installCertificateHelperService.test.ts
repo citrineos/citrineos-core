@@ -9,15 +9,16 @@ import {
   mockLogger,
 } from '../../vitest.setup';
 import {
-  type ICertificateRepository,
-  type IDeleteCertificateAttemptRepository,
-  type IInstallCertificateAttemptRepository,
-  type IInstalledCertificateRepository,
-} from '@citrineos/core';
-import { Certificate } from '../../../../dal/layers/sequelize/index.js';
-import { type CertificateAuthorityService, WebsocketNetworkConnection } from '@citrineos/core';
+  ICertificateRepository,
+  IDeleteCertificateAttemptRepository,
+  IInstallCertificateAttemptRepository,
+  IInstalledCertificateRepository,
+} from '../../../../dal/interfaces/repositories.js';
 import { InstallCertificateHelperService } from '../../src/module/installCertificateHelperService';
-import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
+import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider'; // Define constants BEFORE mocks to avoid hoisting issues
+import type { CertificateAuthorityService } from '../../../../util/certificate';
+import { WebsocketNetworkConnection } from '../../../../util/networkconnection';
+import { Certificate } from '../../../../dal/layers/sequelize/model/Certificate/Certificate';
 
 // Define constants BEFORE mocks to avoid hoisting issues
 const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.hoisted(() => ({
@@ -32,16 +33,8 @@ let createdCertificateInstances: any[] = [];
 let createdInstallCertificateAttemptInstances: any[] = [];
 let createdInstalledCertificateInstances: any[] = [];
 
-vi.mock('../../../../util/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../util/index.js')>();
-  return {
-    ...actual,
-    extractCertificateDetails: mockExtractCertificateDetails,
-  };
-});
-
-vi.mock('../../../../dal/layers/sequelize/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../dal/layers/sequelize/index.js')>();
+vi.mock('@dal/layers/sequelize/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@dal/layers/sequelize/index.js')>();
 
   class MockCertificate {
     id?: number;
