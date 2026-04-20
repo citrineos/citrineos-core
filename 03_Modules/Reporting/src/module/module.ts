@@ -32,7 +32,6 @@ import type {
   IVariableMonitoringRepository,
 } from '@citrineos/data';
 import { Component, sequelize, Variable } from '@citrineos/data';
-import { RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { DeviceModelService } from './services.js';
@@ -89,8 +88,8 @@ export class ReportingModule extends AbstractModule {
   constructor(
     config: BootstrapConfig & SystemConfig,
     cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
+    sender: IMessageSender,
+    handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     deviceModelRepository?: IDeviceModelRepository,
@@ -98,15 +97,7 @@ export class ReportingModule extends AbstractModule {
     variableMonitoringRepository?: IVariableMonitoringRepository,
     ocppMessageRepository?: IOCPPMessageRepository,
   ) {
-    super(
-      config,
-      cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
-      EventGroup.Reporting,
-      logger,
-      ocppValidator,
-    );
+    super(config, cache, handler, sender, EventGroup.Reporting, logger, ocppValidator);
 
     this._requests = config.modules.reporting.requests;
     this._responses = config.modules.reporting.responses;

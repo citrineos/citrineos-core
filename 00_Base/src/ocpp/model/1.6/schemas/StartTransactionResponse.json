@@ -17,20 +17,20 @@
           "$ref": "#/definitions/StartTransactionResponseStatus"
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["status"]
     },
     "transactionId": {
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["idTagInfo", "transactionId"],
   "$id": "StartTransactionResponse",
   "definitions": {
     "StartTransactionResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
       "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
     }

@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "Specifies the event notification type of the message.\r\n\r\n",
       "javaType": "EventNotificationEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "HardWiredNotification",
         "HardWiredMonitor",
@@ -36,7 +36,7 @@
       "description": "Type of monitor that triggered this event, e.g. exceeding a threshold value.\r\n\r\n",
       "javaType": "EventTriggerEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Alerting", "Delta", "Periodic"],
       "tsEnumNames": ["Alerting", "Delta", "Periodic"]
     },
@@ -44,7 +44,7 @@
       "description": "A physical or logical component\r\n",
       "javaType": "Component",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -71,7 +71,7 @@
       "description": "Class to report an event notification for a component-variable.\r\n",
       "javaType": "EventData",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -152,7 +152,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -176,7 +176,7 @@
       "description": "Reference key to a component-variable.\r\n",
       "javaType": "Variable",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -198,7 +198,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

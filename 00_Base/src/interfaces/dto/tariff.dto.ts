@@ -7,8 +7,6 @@ import { BaseSchema } from './types/base.dto.js';
 
 export const TariffSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  stationId: z.string(),
-  connectorId: z.number().int().nullable().optional(),
   currency: z.string().length(3), // CHAR(3)
   pricePerKwh: z.number().min(0), // DECIMAL
   pricePerMin: z.number().min(0).nullable().optional(), // DECIMAL
@@ -26,7 +24,6 @@ export type TariffDto = z.infer<typeof TariffSchema>;
 export const TariffCreateSchema = TariffSchema.omit({
   id: true,
   tenant: true,
-  connector: true,
   updatedAt: true,
   createdAt: true,
 });

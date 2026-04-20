@@ -6,13 +6,13 @@
       "$ref": "#/definitions/TriggerMessageResponseStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "TriggerMessageResponse",
   "definitions": {
     "TriggerMessageResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected", "NotImplemented"],
       "tsEnumNames": ["Accepted", "Rejected", "NotImplemented"]
     }

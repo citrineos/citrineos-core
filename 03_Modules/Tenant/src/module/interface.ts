@@ -5,6 +5,4 @@
 /**
  * Interface for the tenant module.
  */
-export interface ITenantModuleApi {
-  deleteTenant(request: any): Promise<any>;
-}
+export interface ITenantModuleApi {}

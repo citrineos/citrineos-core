@@ -4,24 +4,20 @@
 
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { SystemConfig } from '../../config/types.js';
 
 export abstract class AbstractMessageSender {
   /**
    * Fields
    */
 
-  protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
 
   /**
    * Constructor
    *
-   * @param config The system configuration.
    * @param logger [Optional] The logger to use.
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>) {
-    this._config = config;
+  constructor(logger?: Logger<ILogObj>) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

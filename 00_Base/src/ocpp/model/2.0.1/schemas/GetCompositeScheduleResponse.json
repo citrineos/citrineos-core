@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "The unit of measure Limit is\r\nexpressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["W", "A"],
       "tsEnumNames": ["W", "A"]
     },
@@ -26,7 +26,7 @@
       "description": "The Charging Station will indicate if it was\r\nable to process the request\r\n",
       "javaType": "GenericStatusEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected"],
       "tsEnumNames": ["Accepted", "Rejected"]
     },
@@ -34,7 +34,7 @@
       "description": "Charging_ Schedule_ Period\r\nurn:x-oca:ocpp:uid:2:233257\r\nCharging schedule period structure defines a time period in a charging schedule.\r\n",
       "javaType": "ChargingSchedulePeriod",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -69,7 +69,7 @@
       "description": "Composite_ Schedule\r\nurn:x-oca:ocpp:uid:2:233362\r\n",
       "javaType": "CompositeSchedule",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -115,7 +115,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -135,7 +135,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

@@ -9,13 +9,13 @@
       "$ref": "#/definitions/ChangeAvailabilityRequestType"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["connectorId", "type"],
   "$id": "ChangeAvailabilityRequest",
   "definitions": {
     "ChangeAvailabilityRequestType": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Inoperative", "Operative"],
       "tsEnumNames": ["Inoperative", "Operative"]
     }

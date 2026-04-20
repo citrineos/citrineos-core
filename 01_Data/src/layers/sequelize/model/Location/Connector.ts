@@ -19,7 +19,6 @@ import {
   Column,
   DataType,
   ForeignKey,
-  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
@@ -115,8 +114,17 @@ export class Connector extends Model implements ConnectorDto {
   @BelongsTo(() => Evse)
   declare evse?: Evse;
 
-  @HasMany(() => Tariff)
-  declare tariffs?: Tariff[];
+  @ForeignKey(() => Tariff)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+  })
+  declare tariffId?: number | null;
+
+  @BelongsTo(() => Tariff)
+  declare tariff?: Tariff | null;
 
   @ForeignKey(() => Tenant)
   @Column({

@@ -6,7 +6,7 @@
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["transactionId"],
   "$id": "RemoteStopTransactionRequest",
   "definitions": {}

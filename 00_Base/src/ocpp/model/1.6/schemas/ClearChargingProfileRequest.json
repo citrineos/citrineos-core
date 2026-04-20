@@ -15,12 +15,12 @@
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "$id": "ClearChargingProfileRequest",
   "definitions": {
     "ClearChargingProfileRequestChargingProfilePurpose": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"],
       "tsEnumNames": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"]
     }

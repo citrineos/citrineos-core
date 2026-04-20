@@ -125,6 +125,12 @@
     "/ocpp/1.6/evdriver/remoteStopTransaction": {
       "POST": ["user", "admin"]
     },
+    "/ocpp/1.6/evdriver/unlockConnector": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/evdriver/clearCache": {
+      "POST": ["user", "admin"]
+    },
     "/data/evdriver/authorization": {
       "GET": ["user", "admin"],
       "PUT": ["user", "admin"],
@@ -182,6 +188,9 @@
     "/ocpp/2.0.1/reporting/customerInformation": {
       "POST": ["user", "admin"]
     },
+    "/ocpp/1.6/reporting/getDiagnostics": {
+      "POST": ["user", "admin"]
+    },
     "/ocpp/2.0.1/smartcharging/clearChargingProfile": {
       "POST": ["user", "admin"]
     },
@@ -195,6 +204,15 @@
       "POST": ["user", "admin"]
     },
     "/ocpp/2.0.1/smartcharging/getCompositeSchedule": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/smartcharging/setChargingProfile": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/smartcharging/clearChargingProfile": {
+      "POST": ["user", "admin"]
+    },
+    "/ocpp/1.6/smartcharging/getCompositeSchedule": {
       "POST": ["user", "admin"]
     },
     "/ocpp/2.0.1/transactions/costUpdated": {

@@ -14,7 +14,7 @@
       "type": "string"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["vendorId"],
   "$id": "DataTransferRequest",
   "definitions": {}

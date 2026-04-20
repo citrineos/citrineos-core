@@ -32,7 +32,8 @@ export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   vendorId: z.string().nullable().optional(),
   vendorErrorCode: z.string().nullable().optional(),
   termsAndConditionsUrl: z.string().nullable().optional(),
-  tariffs: z.array(TariffSchema).nullable().optional(),
+  tariffId: z.number().int().nullable().optional(),
+  tariff: TariffSchema.nullable().optional(),
 });
 
 export const ConnectorSchema = ConnectorSchemaWithoutParent.extend({
@@ -50,7 +51,7 @@ export const ConnectorCreateSchema = ConnectorSchema.omit({
   tenant: true,
   evse: true,
   chargingStation: true,
-  tariffs: true,
+  tariff: true,
   updatedAt: true,
   createdAt: true,
 });

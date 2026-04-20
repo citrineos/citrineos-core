@@ -35,9 +35,19 @@ export function createPemBlock(content: string) {
  */
 export function parseCertificateChainPem(pem: string): string[] {
   const certs: string[] = [];
-  pem
-    .match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g)
-    ?.forEach((certPem) => certs.push(certPem));
+  const beginMarker = '-----BEGIN CERTIFICATE-----';
+  const endMarker = '-----END CERTIFICATE-----';
+
+  let startIndex = pem.indexOf(beginMarker);
+  while (startIndex !== -1) {
+    const endIndex = pem.indexOf(endMarker, startIndex + beginMarker.length);
+    if (endIndex === -1) {
+      break;
+    }
+    certs.push(pem.substring(startIndex, endIndex + endMarker.length));
+    startIndex = pem.indexOf(beginMarker, endIndex + endMarker.length);
+  }
+
   return certs;
 }
 
@@ -72,7 +82,7 @@ export function extractEncodedContentFromCSR(csrPem: string): string {
   return csrPem
     .replace(/-----BEGIN CERTIFICATE REQUEST-----/, '')
     .replace(/-----END CERTIFICATE REQUEST-----/, '')
-    .replace(/\n/g, '');
+    .replace(/[\r\n]/g, '');
 }
 
 /**
@@ -263,6 +273,9 @@ export async function sendOCSPRequest(
 export function parseCSRForVerification(csrPem: string): CertificationRequest {
   const certificateBuffer = stringToArrayBuffer(fromBase64(extractEncodedContentFromCSR(csrPem)));
   const asn1 = fromBER(certificateBuffer);
+  if (asn1.offset === -1) {
+    throw new Error('Failed to parse CSR: invalid ASN.1 BER encoding');
+  }
   return new CertificationRequest({ schema: asn1.result });
 }
 

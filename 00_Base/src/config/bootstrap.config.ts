@@ -22,6 +22,8 @@ export const bootstrapConfigSchema = z.object({
       .object({
         max: z.number().int().positive().optional(),
         min: z.number().int().nonnegative().optional(),
+        acquire: z.number().int().positive().optional(),
+        idle: z.number().int().positive().optional(),
       })
       .optional(),
     sync: z.boolean().default(false),
@@ -29,6 +31,13 @@ export const bootstrapConfigSchema = z.object({
     force: z.boolean().default(false),
     maxRetries: z.number().int().positive().default(3),
     retryDelay: z.number().int().positive().default(1000),
+    ssl: z
+      .object({
+        require: z.boolean().optional(),
+        rejectUnauthorized: z.boolean().optional(),
+        ca: z.string().optional(),
+      })
+      .optional(),
   }),
 
   // File access configuration
@@ -132,9 +141,25 @@ export function loadBootstrapConfig(): BootstrapConfig {
   const pool = {
     max: getEnvVarValue('database_pool_max') && parseInt(getEnvVarValue('database_pool_max')!, 10),
     min: getEnvVarValue('database_pool_min') && parseInt(getEnvVarValue('database_pool_min')!, 10),
+    acquire:
+      getEnvVarValue('database_pool_acquire') &&
+      parseInt(getEnvVarValue('database_pool_acquire')!, 10),
+    idle:
+      getEnvVarValue('database_pool_idle') && parseInt(getEnvVarValue('database_pool_idle')!, 10),
   };
   if (Object.keys(pool).length > 0) {
     config.database.pool = pool;
+  }
+  const sslRequire = getEnvVarValue('database_ssl_require');
+  if (sslRequire !== undefined) {
+    config.database.ssl = {
+      require: parseEnvValue(sslRequire),
+      rejectUnauthorized:
+        getEnvVarValue('database_ssl_reject_unauthorized') !== undefined
+          ? parseEnvValue(getEnvVarValue('database_ssl_reject_unauthorized')!)
+          : undefined,
+      ca: getEnvVarValue('database_ssl_ca'),
+    };
   }
 
   // File access configuration

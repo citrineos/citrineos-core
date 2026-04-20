@@ -41,7 +41,7 @@
                 "type": "integer"
               }
             },
-            "additionalProperties": false,
+            "additionalProperties": true,
             "required": ["startPeriod", "limit"]
           }
         },
@@ -50,23 +50,23 @@
           "multipleOf": 0.1
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["chargingRateUnit", "chargingSchedulePeriod"]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "GetCompositeScheduleResponse",
   "definitions": {
     "GetCompositeScheduleResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected"],
       "tsEnumNames": ["Accepted", "Rejected"]
     },
     "GetCompositeScheduleResponseChargingRateUnit": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["A", "W"],
       "tsEnumNames": ["A", "W"]
     }

@@ -6,7 +6,6 @@ import { type BootstrapConfig } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
-import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
 import {
   Authorization,
   Boot,
@@ -59,6 +58,7 @@ import {
   VariableMonitoringStatus,
   VariableStatus,
 } from './index.js';
+import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
 
 export class DefaultSequelizeInstance {
   /**
@@ -194,6 +194,11 @@ export class DefaultSequelizeInstance {
         TenantPartner,
       ],
       pool: this.config.database.pool,
+      ...(this.config.database.ssl && {
+        dialectOptions: {
+          ssl: this.config.database.ssl,
+        },
+      }),
       logging: (_sql: string, _timing?: number) => {},
     });
   }

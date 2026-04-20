@@ -123,7 +123,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        !authorization.concurrentTransaction &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
@@ -236,8 +236,8 @@ export class TransactionService {
         return response;
       }
 
-      // Check concurrent transactions (only reject if not allowed)
-      if (!authorization.concurrentTransaction) {
+      // Check concurrent transactions
+      if (authorization.concurrentTransaction !== true) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
         if (hasConcurrent) {
           response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
@@ -299,6 +299,49 @@ export class TransactionService {
         },
       },
     );
+  }
+
+  async deactivateOtherActiveTransactionsAtEvse(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    evseIdentifier: OCPP2_0_1.EVSEType | number,
+  ): Promise<void> {
+    let evseTypeId: number | undefined;
+
+    if (typeof evseIdentifier === 'number') {
+      // OCPP 1.6: evseIdentifier is a connector ID — resolve to EVSE type ID
+      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+        tenantId,
+        stationId,
+        evseIdentifier,
+      );
+      evseTypeId = connector?.evse?.evseTypeId;
+    } else {
+      // OCPP 2.0.1: evseIdentifier is an EVSEType — use evse.id directly
+      evseTypeId = evseIdentifier.id;
+    }
+
+    if (evseTypeId === undefined) {
+      this._logger.warn(
+        `Could not resolve EVSE for station ${stationId} with identifier ${JSON.stringify(evseIdentifier)}, skipping deactivation of concurrent transactions`,
+      );
+      return;
+    }
+
+    const deactivated =
+      await this._transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId(
+        tenantId,
+        stationId,
+        evseTypeId,
+        transactionId,
+      );
+
+    if (deactivated.length > 0) {
+      this._logger.info(
+        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${stationId} EVSE ${evseTypeId}`,
+      );
+    }
   }
 
   async updateTransactionStatus(

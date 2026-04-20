@@ -171,7 +171,7 @@ export class SequelizeTransactionEventRepository
             include: [Tariff],
           });
           connectorId = connector.id;
-          tariffId = connector.tariffs?.[0]?.id;
+          tariffId = connector.tariff?.id;
         }
         let authorizationId = existingTransaction.authorizationId;
         if (!authorizationId && value.idToken) {
@@ -243,7 +243,7 @@ export class SequelizeTransactionEventRepository
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
-            newTransaction.set('tariffId', connector.tariffs?.[0]?.id);
+            newTransaction.set('tariffId', connector.tariff?.id);
           }
         }
 
@@ -705,11 +705,11 @@ export class SequelizeTransactionEventRepository
         stationId,
         evseId: connector.evseId,
         connectorId: connector.id,
-        tariffId: connector.tariffs?.[0]?.id,
+        tariffId: connector.tariff?.id,
         isActive: true,
         transactionId: transactionId.toString(),
         authorizationId: authorization ? authorization.id : null,
-        meterStart: request.meterStart,
+        meterStart: request.meterStart / 1000, // Convert Wh to kWh
         startTime: request.timestamp,
       });
 
@@ -804,5 +804,32 @@ export class SequelizeTransactionEventRepository
       },
     });
     return transactions.length > 0 ? transactions[0] : undefined;
+  }
+
+  async deactivateActiveTransactionsByStationIdAndEvseId(
+    tenantId: number,
+    stationId: string,
+    evseId: number,
+    excludeTransactionId: string,
+  ): Promise<Transaction[]> {
+    const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
+      where: {
+        stationId,
+        isActive: true,
+        transactionId: { [Op.ne]: excludeTransactionId },
+      },
+      include: [{ model: Evse, where: { evseTypeId: evseId }, required: true }],
+    });
+
+    if (activeTransactions.length === 0) {
+      return [];
+    }
+
+    const ids = activeTransactions.map((t) => t.id);
+    return await this.transaction.updateAllByQuery(
+      tenantId,
+      { isActive: false },
+      { where: { id: { [Op.in]: ids } } },
+    );
   }
 }

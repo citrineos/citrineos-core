@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ClearChargingProfileResponseStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "ClearChargingProfileResponse",
   "definitions": {
     "ClearChargingProfileResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Unknown"],
       "tsEnumNames": ["Accepted", "Unknown"]
     }

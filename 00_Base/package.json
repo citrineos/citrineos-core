@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,6 +23,8 @@
   "devDependencies": {
     "@eslint/js": "9.16.0",
     "@faker-js/faker": "8.4.1",
+    "@fastify/auth": "5.0.1",
+    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
     "@types/eslint__js": "8.42.3",
     "@types/uuid": "9.0.7",
     "@types/validator": "13.11.1",
@@ -31,6 +33,7 @@
     "eslint": "9.16.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.2.3",
+    "fastify": "5.8.3",
     "husky": "9.1.7",
     "json-schema-to-typescript": "12.0.0",
     "json-schema-to-zod": "1.1.1",
@@ -40,15 +43,17 @@
     "typescript-eslint": "8.17.0",
     "vitest": "3.2.4"
   },
+  "peerDependencies": {
+    "@fastify/auth": ">=5.0.0",
+    "@fastify/type-provider-json-schema-to-ts": ">=4.0.0",
+    "fastify": ">=5.0.0"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "3.750.0",
-    "@fastify/auth": "5.0.1",
-    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
     "@types/big.js": "6.2.1",
-    "ajv": "8.17.1",
+    "ajv": "8.18.0",
     "big.js": "6.2.1",
     "class-transformer": "0.5.1",
-    "fastify": "5.1.0",
     "reflect-metadata": "0.1.13",
     "tslog": "4.9.2",
     "uuid": "9.0.1",

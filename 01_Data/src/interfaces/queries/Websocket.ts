@@ -101,8 +101,8 @@ export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
 
 export interface WebsocketMappingQuerystring {
   id: string;
-  path?: string;
-  tenantId?: number;
+  path: string;
+  tenantId: number;
 }
 
 export const WebsocketMappingQuerySchema = QuerySchema('WebsocketMappingQuerySchema', [
@@ -111,17 +111,6 @@ export const WebsocketMappingQuerySchema = QuerySchema('WebsocketMappingQuerySch
     type: 'string',
     required: true,
   },
-  {
-    key: 'path',
-    type: 'string',
-  },
-  {
-    key: 'tenantId',
-    type: 'number',
-  },
-]);
-
-export const WebsocketMappingRequestSchema = QuerySchema('WebsocketMappingRequestSchema', [
   {
     key: 'path',
     type: 'string',

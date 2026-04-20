@@ -43,30 +43,38 @@ array_relationships:
         table:
           name: LocalListAuthorizations
           schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      columns: '*'
+    comment: ""
 select_permissions:
   - role: user
     permission:
-      columns:
-        - allowedConnectorTypes
-        - disallowedEvseIdPrefixes
-        - id
-        - idToken
-        - idTokenType
-        - additionalInfo
-        - status
-        - cacheExpiryDateTime
-        - chargingPriority
-        - language1
-        - language2
-        - personalMessage
-        - groupAuthorizationId
-        - concurrentTransaction
-        - tenantId
-        - createdAt
-        - updatedAt
-        - concurrentTransaction
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns: '*'
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      check:
+        tenantId:
+          _eq: x-hasura-tenant-id
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
     comment: ""

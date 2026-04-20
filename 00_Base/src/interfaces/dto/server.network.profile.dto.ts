@@ -11,7 +11,7 @@ export const ServerNetworkProfileSchema = BaseSchema.extend({
   host: z.string(),
   port: z.number().int(),
   pingInterval: z.number().int(),
-  protocol: z.string(), // OCPPVersionType
+  protocols: z.array(z.string()), // OCPPVersionType[]
   messageTimeout: z.number().int(),
   securityProfile: z.number().int(),
   allowUnknownChargingStations: z.boolean(),

@@ -29,11 +29,11 @@
                 "$ref": "#/definitions/SendLocalListRequestStatus"
               }
             },
-            "additionalProperties": false,
+            "additionalProperties": true,
             "required": ["status"]
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": ["idTag"]
       }
     },
@@ -41,19 +41,19 @@
       "$ref": "#/definitions/SendLocalListRequestUpdateType"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["listVersion", "updateType"],
   "$id": "SendLocalListRequest",
   "definitions": {
     "SendLocalListRequestStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
       "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
     },
     "SendLocalListRequestUpdateType": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Differential", "Full"],
       "tsEnumNames": ["Differential", "Full"]
     }

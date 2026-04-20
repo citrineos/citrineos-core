@@ -24,13 +24,13 @@ export type {
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
-  UploadExistingCertificateSchema,
   RegenerateInstalledCertificateSchema,
+  UploadExistingCertificateSchema,
 } from './queries/RootCertificate.js';
 export { CreateSubscriptionSchema } from './queries/Subscription.js';
 export { TariffQuerySchema } from './queries/Tariff.js';
 export type { TariffQueryString } from './queries/Tariff.js';
-export { TenantQuerySchema, CreateTenantQuerySchema } from './queries/Tenant.js';
+export { CreateTenantQuerySchema, TenantQuerySchema } from './queries/Tenant.js';
 export type { TenantQueryString } from './queries/Tenant.js';
 export { TlsCertificateSchema, UpdateTlsCertificateQuerySchema } from './queries/TlsCertificate.js';
 export type { UpdateTlsCertificateQueryString } from './queries/TlsCertificate.js';
@@ -49,9 +49,8 @@ export type {
 export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
-  WebsocketRequestSchema,
   WebsocketMappingQuerySchema,
-  WebsocketMappingRequestSchema,
+  WebsocketRequestSchema,
 } from './queries/Websocket.js';
 export type {
   WebsocketDeleteQuerystring,
@@ -67,6 +66,6 @@ export { default as TariffSchema } from './projections/schemas/TariffSchema.json
 // Date endpoints DTOs
 export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest.js';
 export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest.js';
+export { RegenerateExistingCertificate } from './dtos/RegenerateExistingCertificate.js';
 export { TlsCertificatesRequest } from './dtos/TlsCertificatesRequest.js';
 export { UploadExistingCertificate } from './dtos/UploadExistingCertificate.js';
-export { RegenerateExistingCertificate } from './dtos/RegenerateExistingCertificate.js';

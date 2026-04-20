@@ -7,8 +7,6 @@ import type {
   CallAction,
   CallError,
   CallResult,
-  CircuitBreakerOptions,
-  CircuitBreakerState,
   ICache,
   IMessage,
   IMessageConfirmation,
@@ -25,7 +23,6 @@ import {
   AbstractModule,
   BOOT_STATUS,
   CacheNamespace,
-  CircuitBreaker,
   createIdentifier,
   ErrorCode,
   EventGroup,
@@ -66,11 +63,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
-  protected _circuitBreaker: CircuitBreaker;
-  protected _reconnectInterval?: NodeJS.Timeout;
-  protected static readonly DEFAULT_MAX_RECONNECT_DELAY = 30; // seconds
-  protected _maxReconnectDelay: number;
-  protected _failingReconnectDelay: number = 1; // start with 1 second
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   /**
@@ -87,7 +79,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
-   * @param {CircuitBreakerOptions} [circuitBreakerOptions] - options to configure the circuit breaker
    */
   constructor(
     config: BootstrapConfig & SystemConfig,
@@ -99,7 +90,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     locationRepository?: ILocationRepository,
-    circuitBreakerOptions?: CircuitBreakerOptions,
   ) {
     super(config, cache, handler, sender, networkHook, logger, ocppValidator);
 
@@ -110,24 +100,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._networkHook = networkHook;
     this._locationRepository =
       locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-    this._handler.initConnection().catch((err) => {
-      this._logger.error('initConnection failed', err);
-    });
     if (this._config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
     }
-    if (circuitBreakerOptions) {
-      this._circuitBreaker = new CircuitBreaker({
-        ...circuitBreakerOptions,
-        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-      });
-    } else {
-      this._circuitBreaker = new CircuitBreaker({
-        onStateChange: this.handleCircuitBreakerStateChange.bind(this),
-      });
-    }
-    this._maxReconnectDelay =
-      config.maxReconnectDelay ?? MessageRouterImpl.DEFAULT_MAX_RECONNECT_DELAY;
   }
 
   async doesChargingStationExistByStationId(tenantId: number, stationId: string): Promise<boolean> {
@@ -350,19 +325,20 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     _origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
     const identifier = createIdentifier(tenantId, stationId);
+    const transactionNamespace = CacheNamespace.Transactions + identifier;
 
     const message: Call = [MessageTypeId.Call, correlationId, action, payload];
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
-      if (
-        await this._cache.setIfNotExist(
-          identifier,
-          `${action}:${correlationId}`,
-          CacheNamespace.Transactions,
+      if (!(await this._cache.existsAnyInNamespace(transactionNamespace))) {
+        const cacheTimestamp = new Date();
+        await this._cache.set(
+          correlationId,
+          `${action}@${cacheTimestamp.toISOString()}`,
+          transactionNamespace,
           this._config.maxCallLengthSeconds,
-        )
-      ) {
+        );
         const rawMessage = JSON.stringify(message);
-        const success = await this._sendMessage(
+        const successTimestamp = await this._sendMessage(
           identifier,
           protocol,
           action,
@@ -370,7 +346,23 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           rawMessage,
           message,
         );
-        return { success };
+        if (successTimestamp != undefined) {
+          this._logger.debug(
+            `Call sent successfully with ${
+              successTimestamp.getTime() - cacheTimestamp.getTime()
+            } ms of lag between cache and send ${correlationId}`,
+            identifier,
+            message,
+          );
+        } else {
+          const removed = await this._cache.remove(correlationId, transactionNamespace);
+          this._logger.warn(
+            `Failed to send call, removed from cache: ${removed}`,
+            identifier,
+            message,
+          );
+        }
+        return { success: !!successTimestamp };
       } else {
         this._logger.info(
           'Call already in progress, throwing retry exception',
@@ -409,11 +401,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
     const identifier = createIdentifier(tenantId, stationId);
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
+    const cachedActionTimestamp = await this._cache.get<string>(
+      correlationId,
+      CacheNamespace.Transactions + identifier,
     );
-    if (!cachedActionMessageId) {
+    if (!cachedActionTimestamp) {
       this._logger.error(
         'Failed to send callResult due to missing message id',
         identifier,
@@ -421,8 +413,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
       return { success: false };
     }
-    const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
-    if (cachedAction === action && cachedMessageId === correlationId) {
+    const [cachedAction, cachedTimestamp] = cachedActionTimestamp?.split(/@(.*)/) ?? []; // Returns all characters after first '@'
+    if (cachedAction === action) {
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
         this._sendMessage(
@@ -432,15 +424,17 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           MessageState.Response,
           rawMessage,
           message,
+          cachedTimestamp,
         ),
-        this._cache.remove(identifier, CacheNamespace.Transactions),
+        this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
       ]).then((successes) => successes.every(Boolean));
+      this._logger.debug(`CallResult sent successfully ${correlationId}`, identifier, message);
       return { success };
     } else {
       this._logger.error(
-        'Failed to send callResult due to mismatch in message id',
+        'Failed to send callResult due to mismatched action',
         identifier,
-        cachedActionMessageId,
+        cachedActionTimestamp,
         message,
       );
       return { success: false };
@@ -471,16 +465,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const message: CallError = error.asCallError();
     const identifier = createIdentifier(tenantId, stationId);
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
+    const cachedActionTimestamp = await this._cache.get<string>(
+      correlationId,
+      CacheNamespace.Transactions + identifier,
     );
-    if (!cachedActionMessageId) {
+    if (!cachedActionTimestamp) {
       this._logger.error('Failed to send callError due to missing message id', identifier, message);
       return { success: false };
     }
-    const [cachedAction, cachedMessageId] = cachedActionMessageId?.split(/:(.*)/) ?? []; // Returns all characters after first ':' in case ':' is used in messageId
-    if (cachedMessageId === correlationId && cachedAction === action) {
+    const [cachedAction, cachedTimestamp] = cachedActionTimestamp?.split(/@(.*)/) ?? []; // Returns all characters after first '@'
+    if (cachedAction === action) {
       const rawMessage = JSON.stringify(message);
       const success = await Promise.all([
         this._sendMessage(
@@ -490,15 +484,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           MessageState.Response,
           rawMessage,
           message,
+          cachedTimestamp,
         ),
-        this._cache.remove(identifier, CacheNamespace.Transactions),
+        this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
       ]).then((successes) => successes.every(Boolean));
       return { success };
     } else {
       this._logger.error(
-        'Failed to send callError due to mismatch in message id or action',
+        'Failed to send callError due to mismatched action',
         identifier,
-        cachedActionMessageId,
+        cachedActionTimestamp,
         cachedAction,
         message,
       );
@@ -535,6 +530,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const stationId = getStationIdFromIdentifier(identifier);
 
     let action = message[2];
+    this._logger.debug('_onCall:', identifier, message, timestamp.toISOString(), protocol);
 
     action = mapToCallAction(protocol, action);
     const isAllowed = await this._onCallIsAllowed(action, identifier);
@@ -550,37 +546,44 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       });
     }
 
-    // Ensure only one call is processed at a time
-    const callOngoing = this._cache.onChange(
-      identifier,
-      this.config.maxCallLengthSeconds,
-      CacheNamespace.Transactions,
-    );
-    let successfullySet = await this._cache.setIfNotExist(
-      identifier,
-      `${action}:${messageId}`,
-      CacheNamespace.Transactions,
-      this._config.maxCallLengthSeconds,
-    );
-
-    if (!successfullySet) {
-      this._logger.debug(
-        'Ongoing Call already in progress, waiting for ongoing call before handling',
-        identifier,
-        message,
-      );
-      await callOngoing; // Wait for ongoing call to finish
-      this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
-      successfullySet = await this._cache.setIfNotExist(
-        identifier,
-        `${action}:${messageId}`,
-        CacheNamespace.Transactions,
+    this._cache
+      .existsAnyInNamespace(CacheNamespace.Transactions + identifier)
+      .then((exists) => {
+        if (exists) {
+          this._logger.debug(
+            'Another call is already in progress, processing call anyways',
+            identifier,
+            message,
+          );
+        }
+      })
+      .catch((error) => {
+        this._logger.error(
+          'Failed to check if another call is in progress:',
+          identifier,
+          message,
+          error,
+        );
+      });
+    this._cache
+      .setIfNotExist(
+        messageId,
+        `${action}@${timestamp.toISOString()}`,
+        CacheNamespace.Transactions + identifier,
         this._config.maxCallLengthSeconds,
-      );
-      if (!successfullySet) {
-        throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
-      }
-    }
+      )
+      .then((success) => {
+        if (!success) {
+          this._logger.debug(
+            'Another call with same messageId is already in progress, processing call anyways',
+            identifier,
+            message,
+          );
+        }
+      })
+      .catch((error) => {
+        this._logger.error('Failed to set call in cache:', identifier, message, error);
+      });
 
     try {
       // Route call
@@ -604,7 +607,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           this._logger.error('sendCallError failed', err);
         })
         .finally(() => {
-          this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+          this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
             this._logger.error('cache remove failed', err);
           });
         });
@@ -626,20 +629,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
   ): Promise<void> {
     const messageId = message[1];
-    const payload = message[2];
 
-    this._logger.debug('Process CallResult', identifier, messageId, payload);
+    this._logger.debug('_onCallResult:', identifier, message, timestamp.toISOString(), protocol);
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
+    const cachedActionTimestamp = await this._cache.get<string>(
+      messageId,
+      CacheNamespace.Transactions + identifier,
     );
 
-    await this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+    await this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
       this._logger.error('_onCallResult cache remove failed', err);
     });
 
-    if (!cachedActionMessageId) {
+    if (!cachedActionTimestamp) {
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -648,12 +650,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
     }
 
-    const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-    if (messageId !== cachedMessageId) {
-      throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
-        expectedMessageId: cachedMessageId,
-      });
-    }
+    const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    this._logger.debug(
+      `Message received. Time taken since sent: ${
+        timestamp.getTime() - new Date(cachedTimestamp).getTime()
+      } ms`,
+      identifier,
+      message,
+    );
 
     // Run schema validation for incoming CallResult message
     const { isValid, errors } = this._validateCallResult(
@@ -701,19 +705,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   ): Promise<void> {
     const messageId = message[1];
 
-    this._logger.debug('Process CallError', identifier, message);
+    this._logger.debug('_onCallError:', identifier, message, timestamp.toISOString(), protocol);
 
-    const cachedActionMessageId = await this._cache.get<string>(
-      identifier,
-      CacheNamespace.Transactions,
+    const cachedActionTimestamp = await this._cache.get<string>(
+      messageId,
+      CacheNamespace.Transactions + identifier,
     );
 
     // Always remove pending call transaction
-    await this._cache.remove(identifier, CacheNamespace.Transactions).catch((err) => {
+    await this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
       this._logger.error('_onCallError cache remove failed', err);
     });
 
-    if (!cachedActionMessageId) {
+    if (!cachedActionTimestamp) {
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -722,12 +726,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
     }
 
-    const [action, cachedMessageId] = cachedActionMessageId.split(/:(.*)/); // Returns all characters after first ':' in case ':' is used in messageId
-    if (messageId !== cachedMessageId) {
-      throw new OcppError(messageId, ErrorCode.InternalError, "MessageId doesn't match", {
-        expectedMessageId: cachedMessageId,
-      });
-    }
+    const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    this._logger.debug(
+      `Message received. Time taken since sent: ${
+        timestamp.getTime() - new Date(cachedTimestamp).getTime()
+      } ms`,
+      identifier,
+      message,
+    );
 
     const confirmation = await this._routeCallError(
       identifier,
@@ -758,6 +764,17 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     return this._cache.exists(action, identifier).then((blacklisted) => !blacklisted);
   }
 
+  /**
+   *
+   * @param {string} identifier - The identifier of the client, e.g. "tenantId:stationId".
+   * @param {OCPPVersionType} protocol - The OCPP protocol version.
+   * @param {string} action - The OCPP CallAction to be sent. See {@link CallAction}.
+   * @param {MessageState} state - The state of the message. Used for dispatching in webhook.
+   * @param {string} rawMessage - The raw message string to be sent, i.e. the stringified version of the rpc message. Used for sending in webhook and logging.
+   * @param {any} rpcMessage - the rpc message json object, i.e. [MessageTypeId, messageId, action, payload] for Call or [MessageTypeId, messageId, payload] for CallResult. Used for logging and dispatching in webhook.
+   * @param {string} receivedIsoTimestamp - The ISO timestamp of when the Call was received, if this is a response to a Call. Used for logging the time taken for the message to be sent since it was received.
+   * @returns {Promise<Date | undefined>} A promise that resolves to the timestamp of when the message was sent or undefined if the message failed to send.
+   */
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
@@ -765,27 +782,39 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     state: MessageState,
     rawMessage: string,
     rpcMessage: any,
-  ): Promise<boolean> {
+    receivedIsoTimestamp?: string,
+  ): Promise<Date | undefined> {
     try {
       await this._networkHook(identifier, rawMessage); // Throws an error if the message is not sent, or returns void
     } catch (error) {
       this._logger.error('Failed to send message:', identifier, rawMessage, error);
       // Don't dispatch if the message was not sent
-      return false;
+      return undefined;
+    }
+    const sentTimestamp = new Date();
+    if (receivedIsoTimestamp) {
+      const receivedTimestamp = new Date(receivedIsoTimestamp);
+      this._logger.debug(
+        `Message sent successfully. Time taken since received: ${
+          sentTimestamp.getTime() - receivedTimestamp.getTime()
+        } ms`,
+        identifier,
+        rpcMessage,
+      );
     }
     this._webhookDispatcher
       .dispatchMessageSent(
         identifier,
         action,
         state,
-        new Date().toISOString(),
+        sentTimestamp.toISOString(),
         protocol,
         rpcMessage,
       )
       .catch((err) => {
         this._logger.error('dispatchMessageSent failed', err);
       });
-    return true;
+    return sentTimestamp;
   }
 
   private async _sendCallIsAllowed(
@@ -946,82 +975,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         body: JSON.stringify(message.payload),
       });
     }
-  }
-
-  protected handleCircuitBreakerStateChange(state: CircuitBreakerState, reason?: string) {
-    switch (state) {
-      case 'CLOSED':
-        this._logger.warn('Circuit breaker closed', reason);
-        this._failingReconnectDelay = 1; // reset backoff
-        this.onCircuitBreakerClosed(reason);
-        break;
-      case 'OPEN':
-        this._logger.info('Circuit breaker opened', reason);
-        this._failingReconnectDelay = 1; // reset backoff
-        this.onCircuitBreakerOpen();
-        break;
-      case 'FAILING':
-        this._logger.warn('Circuit breaker failing', reason);
-        this._attemptExponentialReconnect();
-        break;
-      default:
-        this._logger.error('Unknown circuit breaker state', state, reason);
-        return;
-    }
-  }
-
-  private _attemptExponentialReconnect() {
-    if (this._failingReconnectDelay > this._maxReconnectDelay) {
-      this._logger.warn('Max reconnect delay reached, moving to CLOSED state.');
-      this._circuitBreaker.close('Max reconnect delay reached');
-      return;
-    }
-    this._logger.info(
-      `Attempting reconnect in ${this._failingReconnectDelay} seconds (exponential backoff)...`,
-    );
-    setTimeout(() => {
-      this.onBrokerReconnect();
-      this._failingReconnectDelay = Math.min(
-        this._failingReconnectDelay * 2,
-        this._maxReconnectDelay,
-      );
-    }, this._failingReconnectDelay * 1000);
-  }
-
-  protected onCircuitBreakerClosed(reason?: string) {
-    this._logger.warn(
-      'Circuit breaker CLOSED. Will attempt to reconnect every',
-      this._maxReconnectDelay,
-      'seconds.',
-      reason,
-    );
-    if (this._reconnectInterval) {
-      this._logger.info(
-        'A reconnect interval was already running. Clearing it before starting a new one.',
-      );
-      clearInterval(this._reconnectInterval);
-    }
-    this._reconnectInterval = setInterval(() => {
-      this._logger.info('Attempting broker reconnection due to circuit breaker CLOSED...');
-      this.onBrokerReconnect();
-    }, this._maxReconnectDelay * 1000);
-  }
-
-  protected onCircuitBreakerOpen() {
-    this._logger.info('Circuit breaker OPEN. Stopping reconnection attempts.');
-    if (this._reconnectInterval) {
-      this._logger.info('Clearing reconnect interval as circuit breaker is now OPEN.');
-      clearInterval(this._reconnectInterval);
-      this._reconnectInterval = undefined;
-    }
-  }
-
-  protected onBrokerDisconnect(reason?: string) {
-    this._circuitBreaker?.triggerFailure(reason);
-  }
-
-  protected onBrokerReconnect() {
-    this._circuitBreaker?.triggerSuccess();
   }
 
   private getActionFromIncompletelyParsedRpcMessage(

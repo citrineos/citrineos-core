@@ -22,20 +22,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - connectorStatus
-        - errorCode
-        - info
-        - stationId
-        - vendorErrorCode
-        - vendorId
-        - connectorId
-        - evseId
-        - id
-        - tenantId
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

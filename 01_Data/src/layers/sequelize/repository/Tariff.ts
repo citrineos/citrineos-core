@@ -4,12 +4,11 @@
 
 import { SequelizeRepository } from './Base.js';
 import type { ITariffRepository, TariffQueryString } from '../../../interfaces/index.js';
-import { Tariff } from '../model/index.js';
+import { Connector, Tariff } from '../model/index.js';
 import { Sequelize } from 'sequelize-typescript';
 import type { BootstrapConfig } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Op } from 'sequelize';
 
 export class SequelizeTariffRepository
   extends SequelizeRepository<Tariff>
@@ -19,21 +18,15 @@ export class SequelizeTariffRepository
     super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
   }
 
-  async findByStationIds(tenantId: number, stationIds: string[]): Promise<Tariff[] | undefined> {
-    return super.readAllByQuery(tenantId, {
-      where: {
-        stationId: {
-          [Op.in]: stationIds,
-        },
-      },
-    });
-  }
-
-  async findByStationId(tenantId: number, stationId: string): Promise<Tariff | undefined> {
+  async findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined> {
     return super.readOnlyOneByQuery(tenantId, {
-      where: {
-        stationId: stationId,
-      },
+      include: [
+        {
+          model: Connector,
+          where: { id: connectorId },
+          required: true,
+        },
+      ],
     });
   }
 

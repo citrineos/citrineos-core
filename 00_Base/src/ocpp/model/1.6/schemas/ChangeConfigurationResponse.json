@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ChangeConfigurationResponseStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "ChangeConfigurationResponse",
   "definitions": {
     "ChangeConfigurationResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected", "RebootRequired", "NotSupported"],
       "tsEnumNames": ["Accepted", "Rejected", "RebootRequired", "NotSupported"]
     }

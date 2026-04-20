@@ -34,8 +34,6 @@ import { InstalledCertificate, sequelize, SequelizeOCPPMessageRepository } from 
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
-  RabbitMqReceiver,
-  RabbitMqSender,
   sendOCSPRequest,
   validatePEMEncodedCSR,
   WebsocketNetworkConnection,
@@ -44,9 +42,9 @@ import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import { InstallCertificateHelperService } from './installCertificateHelperService.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { InstallCertificateHelperService } from './installCertificateHelperService.js';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -142,15 +140,7 @@ export class CertificatesModule extends AbstractModule {
     certificateAuthorityService?: CertificateAuthorityService,
     installCertificateHelperService?: InstallCertificateHelperService,
   ) {
-    super(
-      config,
-      cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
-      EventGroup.Certificates,
-      logger,
-      ocppValidator,
-    );
+    super(config, cache, handler, sender, EventGroup.Certificates, logger, ocppValidator);
 
     this._requests = config.modules.certificates?.requests ?? [];
     this._responses = config.modules.certificates?.responses ?? [];

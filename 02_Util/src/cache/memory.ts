@@ -57,6 +57,16 @@ export class MemoryCache implements ICache {
     return Promise.resolve(this._cache.has(namespaceKey));
   }
 
+  existsAnyInNamespace(namespace: string): Promise<boolean> {
+    const prefix = `${namespace}:`;
+    for (const key of this._cache.keys()) {
+      if (key.startsWith(prefix)) {
+        return Promise.resolve(true);
+      }
+    }
+    return Promise.resolve(false);
+  }
+
   async remove(key: string, namespace?: string): Promise<boolean> {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
@@ -176,6 +186,24 @@ export class MemoryCache implements ICache {
       );
     }
     this.resolveOnChange(namespaceKey, value);
+    return true;
+  }
+
+  async updateExpiration(key: string, expireSeconds: number, namespace?: string): Promise<boolean> {
+    namespace = namespace || 'default';
+    const namespaceKey = `${namespace}:${key}`;
+    if (!this._cache.has(namespaceKey)) {
+      return false;
+    }
+    if (this._timeoutMap.has(namespaceKey)) {
+      clearTimeout(this._timeoutMap.get(namespaceKey));
+    }
+    this._timeoutMap.set(
+      namespaceKey,
+      setTimeout(() => {
+        this._cache.delete(namespaceKey);
+      }, expireSeconds * 1000),
+    );
     return true;
   }
 

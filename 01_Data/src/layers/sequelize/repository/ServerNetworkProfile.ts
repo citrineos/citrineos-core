@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootstrapConfig } from '@citrineos/base';
-import { SequelizeRepository } from './Base.js';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { ServerNetworkProfile } from '../model/index.js';
 import type { IServerNetworkProfileRepository } from '../../../interfaces/index.js';
+import { ServerNetworkProfile } from '../model/index.js';
+import { SequelizeRepository } from './Base.js';
 
 export class SequelizeServerNetworkProfileRepository
   extends SequelizeRepository<ServerNetworkProfile>
@@ -31,7 +31,7 @@ export class SequelizeServerNetworkProfileRepository
     serverNetworkProfile.host = websocketServerConfig.host;
     serverNetworkProfile.port = websocketServerConfig.port;
     serverNetworkProfile.pingInterval = websocketServerConfig.pingInterval;
-    serverNetworkProfile.protocol = websocketServerConfig.protocol;
+    serverNetworkProfile.protocols = websocketServerConfig.protocols;
     serverNetworkProfile.messageTimeout = maxCallLengthSeconds;
     serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
     serverNetworkProfile.allowUnknownChargingStations =

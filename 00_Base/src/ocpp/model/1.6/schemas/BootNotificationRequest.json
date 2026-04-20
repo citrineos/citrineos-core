@@ -39,7 +39,7 @@
       "maxLength": 25
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["chargePointVendor", "chargePointModel"],
   "$id": "BootNotificationRequest",
   "definitions": {}

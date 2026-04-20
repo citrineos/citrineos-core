@@ -131,11 +131,20 @@ export class RealTimeAuthorizer implements IAuthorizer {
         }
       }
 
+      // Build locationId safely — EVSE may not have an associated Location (#163)
+      const locationId = chargingStation?.locationId?.toString();
+      if (!locationId) {
+        this._logger.warn(
+          `Charging station '${context.stationId}' has no associated location. ` +
+            `Proceeding with Realtime Auth for authorization ${authorization.id} without locationId.`,
+        );
+      }
+
       const payload: RealTimeAuthorizationRequestBody = {
         tenantPartnerId: authorization.tenantPartnerId!, // Required if authorization has RealTimeAuth
         idToken: authorization.idToken,
         idTokenType: authorization.idTokenType!,
-        locationId: chargingStation!.locationId!.toString(),
+        locationId: locationId,
         stationId: context.stationId,
         evseId: evseId,
         connectorId: connectorId,
@@ -167,10 +176,25 @@ export class RealTimeAuthorizer implements IAuthorizer {
 
       const responseJson = await response.json();
 
-      const realTimeAuth: RealTimeAuthorizationResponse =
-        responseJson as RealTimeAuthorizationResponse;
-      this._logger.debug(`Real time auth response: ${realTimeAuth.data.allowed}`);
-      if (realTimeAuth) {
+      // Validate response structure before accessing nested properties (#164)
+      if (
+        !responseJson ||
+        typeof responseJson !== 'object' ||
+        !('data' in responseJson) ||
+        !responseJson.data ||
+        typeof responseJson.data !== 'object' ||
+        !('allowed' in responseJson.data)
+      ) {
+        this._logger.error(
+          `Malformed Realtime Auth response for authorization ${authorization.id}: ` +
+            `expected { data: { allowed: string } } but received: ${JSON.stringify(responseJson)}`,
+        );
+        if (authorization.realTimeAuth === 'AllowedOffline') {
+          result = AuthorizationStatusEnum.Accepted;
+        }
+      } else {
+        const realTimeAuth = responseJson as RealTimeAuthorizationResponse;
+        this._logger.debug(`Real time auth response: ${realTimeAuth.data.allowed}`);
         switch (realTimeAuth.data.allowed) {
           case 'ALLOWED':
             result = AuthorizationStatusEnum.Accepted;
@@ -190,8 +214,6 @@ export class RealTimeAuthorizer implements IAuthorizer {
           default:
             result = AuthorizationStatusEnum.Unknown;
         }
-      } else {
-        result = AuthorizationStatusEnum.Unknown;
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);

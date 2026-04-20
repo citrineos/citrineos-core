@@ -6,13 +6,13 @@
       "$ref": "#/definitions/UnlockConnectorResponseStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "UnlockConnectorResponse",
   "definitions": {
     "UnlockConnectorResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Unlocked", "UnlockFailed", "NotSupported"],
       "tsEnumNames": ["Unlocked", "UnlockFailed", "NotSupported"]
     }

@@ -17,7 +17,7 @@
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["location", "retrieveDate"],
   "$id": "UpdateFirmwareRequest",
   "definitions": {}

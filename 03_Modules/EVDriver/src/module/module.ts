@@ -49,14 +49,11 @@ import {
   OCPP2_0_1_Mapper,
   sequelize,
   SequelizeChargingStationSequenceRepository,
-  Tariff,
   VariableAttribute,
 } from '@citrineos/data';
 import {
   CertificateAuthorityService,
   IdGenerator,
-  RabbitMqReceiver,
-  RabbitMqSender,
   RealTimeAuthorizer,
   validateIdToken,
 } from '@citrineos/util';
@@ -148,8 +145,8 @@ export class EVDriverModule extends AbstractModule {
   constructor(
     config: BootstrapConfig & SystemConfig,
     cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
+    sender: IMessageSender,
+    handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     authorizeRepository?: IAuthorizationRepository,
@@ -166,15 +163,7 @@ export class EVDriverModule extends AbstractModule {
     authorizers?: IAuthorizer[],
     idGenerator?: IdGenerator,
   ) {
-    super(
-      config,
-      cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
-      EventGroup.EVDriver,
-      logger,
-      ocppValidator,
-    );
+    super(config, cache, handler, sender, EventGroup.EVDriver, logger, ocppValidator);
 
     this._requests = config.modules.evdriver.requests;
     this._responses = config.modules.evdriver.responses;
@@ -476,19 +465,7 @@ export class EVDriverModule extends AbstractModule {
         (tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
         (displayMessageAvailable.length > 0 && Boolean(displayMessageAvailable[0].value))
       ) {
-        // TODO: refactor the workaround below after tariff implementation is finalized.
-        const tariff: Tariff | undefined = await this._tariffRepository.findByStationId(
-          context.tenantId,
-          message.context.stationId,
-        );
-        if (tariff) {
-          if (!response.idTokenInfo.personalMessage) {
-            response.idTokenInfo.personalMessage = {
-              format: OCPP2_0_1.MessageFormatEnumType.ASCII,
-            } as OCPP2_0_1.MessageContentType;
-          }
-          response.idTokenInfo.personalMessage.content = `${tariff.pricePerKwh}/kWh`;
-        }
+        // TODO: The OCPP 2.0.1 Authorize request pricing message requires EV Driver specific pricing, which is not yet supported.
       }
     }
 

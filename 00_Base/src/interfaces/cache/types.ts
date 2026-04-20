@@ -10,11 +10,17 @@ import { DEFAULT_TENANT_ID } from '../../config/defineConfig.js';
 export enum CacheNamespace {
   CentralSystem = 'csms',
   ChargingStation = 'cs',
+  TenantPathMapping = 'tpm',
   Transactions = 'tx',
   Connections = 'conn',
   Protocol = 'prtcl',
   Other = 'other',
 }
+
+export const PATH_DELIMITER = ':';
+export const getCacheTenantPathMappingKey = (serverId: string, path: string): string => {
+  return serverId + PATH_DELIMITER + path;
+};
 
 /*
  * Helper methods to create a unique identifier used in the cache and queues.

@@ -23,17 +23,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - connectorId
-        - id
-        - stopTransactionDatabaseId
-        - tenantId
-        - transactionDatabaseId
-        - transactionEventId
-        - sampledValue
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

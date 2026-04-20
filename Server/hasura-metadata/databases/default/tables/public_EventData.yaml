@@ -17,25 +17,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - cleared
-        - actualValue
-        - eventNotificationType
-        - stationId
-        - techCode
-        - techInfo
-        - transactionId
-        - trigger
-        - cause
-        - componentId
-        - eventId
-        - id
-        - tenantId
-        - variableId
-        - variableMonitoringId
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

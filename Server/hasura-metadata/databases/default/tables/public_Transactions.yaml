@@ -72,21 +72,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - timeSpentCharging
-        - isActive
-        - chargingState
-        - stationId
-        - stoppedReason
-        - transactionId
-        - evseId
-        - id
-        - remoteStartId
-        - tenantId
-        - totalCost
-        - totalKwh
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

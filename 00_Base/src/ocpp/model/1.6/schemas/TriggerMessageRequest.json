@@ -9,13 +9,13 @@
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["requestedMessage"],
   "$id": "TriggerMessageRequest",
   "definitions": {
     "TriggerMessageRequestRequestedMessage": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "BootNotification",
         "DiagnosticsStatusNotification",
