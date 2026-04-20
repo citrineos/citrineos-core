@@ -640,14 +640,11 @@ export class SequelizeTransactionEventRepository
         meterStart: meterStart,
       });
     } else {
-      // OCPP 1.6 stores meterStart in Wh; getTotalKwh expects kWh
-      const meterStartKwh =
-        transaction.meterStart != null ? Number(transaction.meterStart) / 1000 : undefined;
       await transaction.update({
         totalKwh: MeterValueUtils.getTotalKwh(
           meterValues,
           transaction.totalKwh ?? 0,
-          meterStartKwh,
+          transaction.meterStart ?? undefined,
         ),
       });
     }
