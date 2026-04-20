@@ -261,7 +261,6 @@ export function createDockerConfig() {
               path.dirname(__filename),
               '../../assets/certificates/rootCertificate.pem',
             ),
-            tenantId: DEFAULT_TENANT_ID,
             dynamicTenantResolution: true,
           },
           {
@@ -272,7 +271,6 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8092,
             protocols: ['ocpp1.6'],
-            tenantId: DEFAULT_TENANT_ID,
             dynamicTenantResolution: true,
           },
         ],
