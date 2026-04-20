@@ -27,6 +27,10 @@ export const CreateTenantQuerySchema = QuerySchema('CreateTenantQuerySchema', [
     type: 'boolean',
   },
   {
+    key: 'maxChargingStations',
+    type: 'number',
+  },
+  {
     key: 'url',
     type: 'string',
   },

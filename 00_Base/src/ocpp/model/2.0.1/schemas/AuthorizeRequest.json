@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["SHA256", "SHA384", "SHA512"],
       "tsEnumNames": ["SHA256", "SHA384", "SHA512"]
     },
@@ -26,7 +26,7 @@
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Central",
         "eMAID",
@@ -52,7 +52,7 @@
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
       "javaType": "AdditionalInfo",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -75,7 +75,7 @@
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
       "javaType": "IdToken",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -103,7 +103,7 @@
     "OCSPRequestDataType": {
       "javaType": "OCSPRequestData",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -142,7 +142,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

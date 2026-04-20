@@ -6,13 +6,13 @@
       "$ref": "#/definitions/FirmwareStatusNotificationRequestStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "FirmwareStatusNotificationRequest",
   "definitions": {
     "FirmwareStatusNotificationRequestStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Downloaded",
         "DownloadFailed",

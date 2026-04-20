@@ -5,7 +5,6 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IMessage, IMessageHandler, OcppRequest, OcppResponse } from '../../index.js';
 import { OcppError } from '../../index.js';
-import type { SystemConfig } from '../../config/types.js';
 import type { CallAction } from '../../ocpp/rpc/message.js';
 import type { IModule } from '../modules/index.js';
 import type { HandlerProperties } from './index.js';
@@ -18,7 +17,6 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
    * Fields
    */
 
-  protected _config: SystemConfig;
   protected _module?: IModule;
   protected _logger: Logger<ILogObj>;
 
@@ -28,8 +26,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
    * @param config The system configuration.
    * @param logger [Optional] The logger to use.
    */
-  constructor(config: SystemConfig, logger?: Logger<ILogObj>, module?: IModule) {
-    this._config = config;
+  constructor(logger?: Logger<ILogObj>, module?: IModule) {
     this._module = module;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -69,5 +66,4 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
   ): Promise<boolean>;
   abstract unsubscribe(identifier: string): Promise<boolean>;
   abstract shutdown(): Promise<void>;
-  abstract initConnection(): Promise<void>;
 }

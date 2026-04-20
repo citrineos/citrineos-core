@@ -26,6 +26,8 @@ export class MeterValueUtils {
    * Calculate the total Kwh
    *
    * @param {array} meterValues - meterValues of a transaction.
+   * @param {number} currentTotal - the current total Kwh to add to interval values, if needed.
+   * @param {number} meterStart - the starting Kwh value at the beginning of the transaction, if available.
    * @return {number} total Kwh based on the best available energy measurement.
    */
   public static getTotalKwh(

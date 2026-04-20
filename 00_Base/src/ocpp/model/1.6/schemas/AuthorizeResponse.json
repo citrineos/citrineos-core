@@ -17,17 +17,17 @@
           "$ref": "#/definitions/AuthorizeResponseStatus"
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["status"]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["idTagInfo"],
   "$id": "AuthorizeResponse",
   "definitions": {
     "AuthorizeResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
       "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
     }

@@ -11,7 +11,6 @@ import type {
   IFileStorage,
   IMessageHandler,
   IMessageRouter,
-  IMessageSender,
   IModule,
   IModuleApi,
   SystemConfig,
@@ -62,6 +61,7 @@ import {
   apiAuthPluginFp,
   Authenticator,
   BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
   CertificateAuthorityService,
   ConnectedStationFilter,
   IdGenerator,
@@ -70,6 +70,8 @@ import {
   MemoryCache,
   NetworkProfileFilter,
   OIDCAuthProvider,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
@@ -116,6 +118,8 @@ export class CitrineOSServer {
   protected _realTimeAuthorizer!: IAuthorizer;
 
   protected readonly appName: string;
+  protected _connectionManager?: RabbitMQConnectionManager;
+  protected _channelManager?: RabbitMQChannelManager;
 
   /**
    * Constructor for the class.
@@ -137,7 +141,7 @@ export class CitrineOSServer {
     cache?: ICache,
     _fileStorage?: IFileStorage,
   ) {
-    // TODO: Create and export config schemas for each util module, such as amqp, redis, kafka, etc, to avoid passing them possibly invalid configuration
+    // TODO: Create and export config schemas for each util module, such as amqp, redis, etc, to avoid passing them possibly invalid configuration
     if (!systemConfig.util.messageBroker.amqp) {
       throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
@@ -193,6 +197,8 @@ export class CitrineOSServer {
   }
 
   async initialize(): Promise<void> {
+    await this.initMessageBrokerConnection();
+
     // Initialize module & API
     // Always initialize API after SwaggerUI
     await this.initSystem();
@@ -257,12 +263,41 @@ export class CitrineOSServer {
     }
   }
 
-  protected _createSender(): IMessageSender {
-    return new RabbitMqSender(this._config, this._logger);
+  async initMessageBrokerConnection(): Promise<any> {
+    const url = this._config.util.messageBroker.amqp?.url;
+    if (!url) {
+      throw new Error('RabbitMQ URL is not configured');
+    }
+    this._connectionManager = new RabbitMQConnectionManager(this._config.maxReconnectDelay, url);
+    this._channelManager = new RabbitMQChannelManager(this._connectionManager);
+    await this._connectionManager.connect();
+  }
+
+  protected _createSender(): BrokerAwareMessageSender {
+    const exchange = this._config.util.messageBroker.amqp?.exchange;
+    if (!exchange) {
+      throw new Error('RabbitMQ exchange is not configured');
+    }
+    if (!this._connectionManager || !this._channelManager) {
+      throw new Error('RabbitMQ connection or channel manager is not initialized');
+    }
+    return new BrokerAwareMessageSender(
+      new RabbitMqSender(exchange, this._connectionManager, this._channelManager, this._logger),
+      this._connectionManager,
+      this._config.maxCallLengthSeconds,
+      this._logger,
+    );
   }
 
   protected _createHandler(): IMessageHandler {
-    return new RabbitMqReceiver(this._config, this._logger);
+    const exchange = this._config.util.messageBroker.amqp?.exchange;
+    if (!exchange) {
+      throw new Error('RabbitMQ exchange is not configured');
+    }
+    if (!this._channelManager) {
+      throw new Error('RabbitMQ channel manager is not initialized');
+    }
+    return new RabbitMqReceiver(exchange, this._channelManager, this._logger);
   }
 
   protected initHealthCheck() {
@@ -298,7 +333,7 @@ export class CitrineOSServer {
                 port: this._config.util.cache.redis.port,
               },
             };
-      return new RedisCache(redisClientOptions);
+      return new RedisCache(redisClientOptions, this._logger);
     }
     return new MemoryCache();
   }
@@ -356,10 +391,12 @@ export class CitrineOSServer {
       this._logger,
     );
 
+    const routerSender = this._createSender();
+
     this._router = new MessageRouterImpl(
       this._config,
       this._cache,
-      this._createSender(),
+      routerSender,
       this._createHandler(),
       webhookDispatcher,
       async (_identifier: string, _message: string) => {},
@@ -377,7 +414,15 @@ export class CitrineOSServer {
       this._repositoryStore.locationRepository.doesChargingStationExistByStationId.bind(
         this._repositoryStore.locationRepository,
       ),
+      async (tenantId: number) => {
+        const tenant = await this._repositoryStore.tenantRepository.readByKey(tenantId, tenantId);
+        return tenant?.maxChargingStations ?? null;
+      },
+      this._connectionManager,
     );
+
+    routerSender.onCallTimeout = (stationId, tenantId) =>
+      this._networkConnection!.disconnect(tenantId, stationId).then(() => undefined);
 
     this._router.networkHook = this._networkConnection.bindNetworkHook();
 

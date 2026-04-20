@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "This indicates the success or failure of the data transfer.\r\n",
       "javaType": "DataTransferStatusEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
       "tsEnumNames": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"]
     },
@@ -26,7 +26,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -46,7 +46,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"
@@ -58,7 +58,15 @@
       "$ref": "#/definitions/StatusInfoType"
     },
     "data": {
-      "description": "Data without specified length or format, in response to request.\r\n"
+      "description": "Data without specified length or format, in response to request.\r\n",
+      "oneOf": [
+        { "type": "object", "additionalProperties": true },
+        { "type": "array" },
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
     }
   },
   "required": ["status"]

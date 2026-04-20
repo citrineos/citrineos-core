@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "type": "module",
   "private": false,
   "scripts": {
@@ -51,7 +51,9 @@
     "node": ">=24.4.1"
   },
   "devDependencies": {
+    "@types/pg": "8.20.0",
     "sequelize-cli": "^6.6.2",
+    "testcontainers": "11.13.0",
     "typescript": "^5.8.2"
   }
 }

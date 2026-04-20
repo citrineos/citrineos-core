@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "Charging_ Needs. Requested. Energy_ Transfer_ Mode_ Code\r\nurn:x-oca:ocpp:uid:1:569209\r\nMode of energy transfer requested by the EV.\r\n",
       "javaType": "EnergyTransferModeEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"],
       "tsEnumNames": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"]
     },
@@ -26,7 +26,7 @@
       "description": "AC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233250\r\nEV AC charging parameters.\r\n\r\n",
       "javaType": "ACChargingParameters",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -62,7 +62,7 @@
       "description": "Charging_ Needs\r\nurn:x-oca:ocpp:uid:2:233249\r\n",
       "javaType": "ChargingNeeds",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -88,7 +88,7 @@
       "description": "DC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233251\r\nEV DC charging parameters\r\n\r\n\r\n",
       "javaType": "DCChargingParameters",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -146,7 +146,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

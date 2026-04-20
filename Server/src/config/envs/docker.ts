@@ -45,6 +45,7 @@ export function createDockerConfig() {
         responses: [
           OCPP2_0_1_CallAction.ChangeAvailability,
           OCPP2_0_1_CallAction.ClearDisplayMessage,
+          OCPP2_0_1_CallAction.DataTransfer,
           OCPP2_0_1_CallAction.GetDisplayMessages,
           OCPP2_0_1_CallAction.PublishFirmware,
           OCPP2_0_1_CallAction.Reset,
@@ -198,9 +199,9 @@ export function createDockerConfig() {
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8081,
-            protocol: 'ocpp2.0.1',
+            protocols: ['ocpp2.0.1', 'ocpp1.6'],
             tenantId: DEFAULT_TENANT_ID,
-            dynamicTenantResolution: true,
+            dynamicTenantResolution: false,
           },
           {
             id: '1',
@@ -209,9 +210,9 @@ export function createDockerConfig() {
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8082,
-            protocol: 'ocpp2.0.1',
+            protocols: ['ocpp2.0.1', 'ocpp1.6'],
             tenantId: DEFAULT_TENANT_ID,
-            dynamicTenantResolution: true,
+            dynamicTenantResolution: false,
           },
           {
             id: '2',
@@ -220,7 +221,7 @@ export function createDockerConfig() {
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8443,
-            protocol: 'ocpp2.0.1',
+            protocols: ['ocpp2.0.1', 'ocpp1.6'],
             tlsKeyFilePath: path.resolve(
               path.dirname(__filename),
               '../../assets/certificates/leafKey.pem',
@@ -234,7 +235,7 @@ export function createDockerConfig() {
               '../../assets/certificates/rootCertificate.pem',
             ),
             tenantId: DEFAULT_TENANT_ID,
-            dynamicTenantResolution: true,
+            dynamicTenantResolution: false,
           },
           {
             id: '3',
@@ -243,7 +244,7 @@ export function createDockerConfig() {
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8444,
-            protocol: 'ocpp2.0.1',
+            protocols: ['ocpp2.0.1', 'ocpp1.6'],
             tlsKeyFilePath: path.resolve(
               path.dirname(__filename),
               '../../assets/certificates/leafKey.pem',
@@ -262,7 +263,6 @@ export function createDockerConfig() {
             ),
             tenantId: DEFAULT_TENANT_ID,
             dynamicTenantResolution: true,
-            maxConnectionsPerTenant: 100,
           },
           {
             id: '4',
@@ -271,10 +271,9 @@ export function createDockerConfig() {
             pingInterval: 60,
             host: '0.0.0.0',
             port: 8092,
-            protocol: 'ocpp1.6',
+            protocols: ['ocpp1.6'],
             tenantId: DEFAULT_TENANT_ID,
             dynamicTenantResolution: true,
-            maxConnectionsPerTenant: 100,
           },
         ],
       },

@@ -7,7 +7,7 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["currentTime"],
   "$id": "HeartbeatResponse",
   "definitions": {}

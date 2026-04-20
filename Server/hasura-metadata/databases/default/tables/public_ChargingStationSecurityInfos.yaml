@@ -11,13 +11,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - publicKeyFileId
-        - stationId
-        - id
-        - tenantId
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

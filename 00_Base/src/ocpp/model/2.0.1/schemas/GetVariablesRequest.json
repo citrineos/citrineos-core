@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -19,7 +19,7 @@
       "javaType": "AttributeEnum",
       "type": "string",
       "default": "Actual",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Actual", "Target", "MinSet", "MaxSet"],
       "tsEnumNames": ["Actual", "Target", "MinSet", "MaxSet"]
     },
@@ -27,7 +27,7 @@
       "description": "A physical or logical component\r\n",
       "javaType": "Component",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -52,7 +52,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -76,7 +76,7 @@
       "description": "Class to hold parameters for GetVariables request.\r\n",
       "javaType": "GetVariableData",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -97,7 +97,7 @@
       "description": "Reference key to a component-variable.\r\n",
       "javaType": "Variable",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -117,7 +117,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

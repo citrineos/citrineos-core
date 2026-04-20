@@ -26,22 +26,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - allowUnknownChargingStations
-        - host
-        - id
-        - mtlsCertificateAuthorityKeyFilePath
-        - protocol
-        - rootCACertificateFilePath
-        - tlsCertificateChainFilePath
-        - tlsKeyFilePath
-        - messageTimeout
-        - pingInterval
-        - port
-        - securityProfile
-        - tenantId
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

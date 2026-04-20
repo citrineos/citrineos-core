@@ -44,23 +44,23 @@
                   "$ref": "#/definitions/MeterValuesRequestUnit"
                 }
               },
-              "additionalProperties": false,
+              "additionalProperties": true,
               "required": ["value"]
             }
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": ["timestamp", "sampledValue"]
       }
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["connectorId", "meterValue"],
   "$id": "MeterValuesRequest",
   "definitions": {
     "MeterValuesRequestContext": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Interruption.Begin",
         "Interruption.End",
@@ -84,13 +84,13 @@
     },
     "MeterValuesRequestFormat": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Raw", "SignedData"],
       "tsEnumNames": ["Raw", "SignedData"]
     },
     "MeterValuesRequestMeasurand": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Energy.Active.Export.Register",
         "Energy.Active.Import.Register",
@@ -142,19 +142,19 @@
     },
     "MeterValuesRequestPhase": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["L1", "L2", "L3", "N", "L1-N", "L2-N", "L3-N", "L1-L2", "L2-L3", "L3-L1"],
       "tsEnumNames": ["L1", "L2", "L3", "N", "L1_N", "L2_N", "L3_N", "L1_L2", "L2_L3", "L3_L1"]
     },
     "MeterValuesRequestLocation": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"],
       "tsEnumNames": ["Cable", "EV", "Inlet", "Outlet", "Body"]
     },
     "MeterValuesRequestUnit": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Wh",
         "kWh",

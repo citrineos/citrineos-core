@@ -2,7 +2,7 @@
   "title": "FirmwareStatusNotificationResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": false,
+  "additionalProperties": true,
   "$id": "FirmwareStatusNotificationResponse",
   "definitions": {}
 }

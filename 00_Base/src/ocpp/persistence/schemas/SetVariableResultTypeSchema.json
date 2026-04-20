@@ -57,7 +57,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "reasonCode": {
           "description": "A predefined code for the reason why the status is returned in this response. The string is case-insensitive.\r\n",
@@ -76,7 +76,7 @@
       "description": "Result status of setting the variable.\r\n",
       "javaType": "SetVariableStatusEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Accepted",
         "Rejected",
@@ -97,7 +97,7 @@
   },
   "javaType": "SetVariableResult",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "attributeType": {
       "$ref": "#/definitions/AttributeEnumType"

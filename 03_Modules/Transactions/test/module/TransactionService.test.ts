@@ -133,7 +133,7 @@ describe('TransactionService', () => {
     expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Invalid);
   });
 
-  it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
+  it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is false', async () => {
     const authorization = anAuthorization((auth) => {
       auth.status = AuthorizationStatusEnum.Accepted;
     });
@@ -142,8 +142,6 @@ describe('TransactionService', () => {
       aTransaction(),
       aTransaction(),
     ]);
-    authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
-    realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
     const transactionEventRequest = aTransactionEventRequest((item) => {
       item.idToken = anIdToken();
@@ -156,10 +154,10 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx);
   });
 
-  it('should return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
+  it('should not return ConcurrentTx status when there are concurrent transactions and concurrentTx is true', async () => {
     const authorization = anAuthorization((auth) => {
       auth.concurrentTransaction = true;
       auth.status = AuthorizationStatusEnum.Accepted;
@@ -183,7 +181,7 @@ describe('TransactionService', () => {
       messageContext,
     );
 
-    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx);
+    expect(response.idTokenInfo?.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
   });
 
   it('should apply authorizers when status is Accepted and transaction is started', async () => {
@@ -270,7 +268,7 @@ describe('TransactionService', () => {
       expect(response.idTagInfo.expiryDate).toBeUndefined();
     });
 
-    it('should return ConcurrentTx status when an active transaction exists', async () => {
+    it('should return ConcurrentTx status when an active transaction exists and concurrentTx is not enabled', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
@@ -288,6 +286,164 @@ describe('TransactionService', () => {
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.ConcurrentTx);
       expect(response.idTagInfo.parentIdTag).toBeUndefined();
       expect(response.idTagInfo.expiryDate).toBeUndefined();
+    });
+
+    it('should allow concurrent transactions when concurrentTx is true', async () => {
+      const authorization = anAuthorization((auth) => {
+        auth.concurrentTransaction = true;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+        aTransaction(),
+      ]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const messageContext = aMessageContext();
+      const connectorId = 1;
+      const response = await transactionService.authorizeOcpp16IdToken(
+        messageContext,
+        authorization.idToken,
+        connectorId,
+      );
+
+      expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
+    });
+  });
+
+  describe('TransactionService.deactivateOtherActiveTransactionsAtEvse', () => {
+    let transactionService: TransactionService;
+    let transactionEventRepository: Mocked<ITransactionEventRepository>;
+    let locationRepository: Mocked<ILocationRepository>;
+    let realTimeAuthorizer: Mocked<IAuthorizer>;
+
+    const STATION_ID = 'station-001';
+    const TRANSACTION_ID = 'txn-new-001';
+
+    beforeEach(() => {
+      transactionEventRepository = {
+        readAllActiveTransactionsByAuthorizationId: vi.fn(),
+        deactivateActiveTransactionsByStationIdAndEvseId: vi
+          .fn()
+          .mockResolvedValue([{ id: 1, transactionId: 'txn-old', isActive: false }]),
+      } as unknown as Mocked<ITransactionEventRepository>;
+
+      locationRepository = {
+        readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
+        readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
+      } as unknown as Mocked<ILocationRepository>;
+
+      realTimeAuthorizer = {
+        authorize: vi.fn(),
+      } as Mocked<IAuthorizer>;
+
+      transactionService = new TransactionService(
+        transactionEventRepository,
+        {} as unknown as IAuthorizationRepository,
+        locationRepository,
+        {} as unknown as IReservationRepository,
+        {} as unknown as IOCPPMessageRepository,
+        realTimeAuthorizer,
+      );
+    });
+
+    describe('OCPP 2.0.1 — EVSEType identifier', () => {
+      it('calls deactivateActiveTransactionsByStationIdAndEvseId with evse.id directly', async () => {
+        const evseId = faker.number.int({ min: 1, max: 10 });
+        const evseIdentifier: OCPP2_0_1.EVSEType = { id: evseId };
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          evseIdentifier,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledOnce();
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, evseId, TRANSACTION_ID);
+      });
+
+      it('skips deactivation and does not call the repository when evse.id is undefined', async () => {
+        const evseIdentifier = { id: undefined } as unknown as OCPP2_0_1.EVSEType;
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          evseIdentifier,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('OCPP 1.6 — numeric connector ID', () => {
+      it('resolves evseTypeId via connector lookup and calls deactivateActiveTransactionsByStationIdAndEvseId', async () => {
+        const connectorId = 2;
+        const evseTypeId = 5;
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue({
+          id: 10,
+          evse: { evseTypeId },
+        } as any);
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          connectorId,
+        );
+
+        expect(
+          locationRepository.readConnectorByStationIdAndOcpp16ConnectorId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, connectorId);
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledOnce();
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, evseTypeId, TRANSACTION_ID);
+      });
+
+      it('logs a warning and skips deactivation when connector is not found', async () => {
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue(
+          undefined,
+        );
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          3, // connectorId
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
+
+      it('logs a warning and skips deactivation when connector has no evse.evseTypeId', async () => {
+        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId.mockResolvedValue({
+          id: 10,
+          evse: undefined,
+        } as any);
+
+        await transactionService.deactivateOtherActiveTransactionsAtEvse(
+          DEFAULT_TENANT_ID,
+          TRANSACTION_ID,
+          STATION_ID,
+          4,
+        );
+
+        expect(
+          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+        ).not.toHaveBeenCalled();
+      });
     });
   });
 });

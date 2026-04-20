@@ -11,18 +11,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - action
-        - correlationId
-        - origin
-        - protocol
-        - stationId
-        - id
-        - tenantId
-        - message
-        - createdAt
-        - timestamp
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

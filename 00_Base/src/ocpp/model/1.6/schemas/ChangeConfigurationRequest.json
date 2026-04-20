@@ -11,7 +11,7 @@
       "maxLength": 500
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["key", "value"],
   "$id": "ChangeConfigurationRequest",
   "definitions": {}

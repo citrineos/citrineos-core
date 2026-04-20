@@ -15,7 +15,7 @@
       "description": "ID_ Token. Status. Authorization_ Status\r\nurn:x-oca:ocpp:uid:1:569372\r\nCurrent status of the ID Token.\r\n",
       "javaType": "AuthorizationStatusEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Accepted",
         "Blocked",
@@ -45,7 +45,7 @@
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": [
         "Central",
         "eMAID",
@@ -92,7 +92,7 @@
       "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
       "javaType": "MessageFormatEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["ASCII", "HTML", "URI", "UTF8"],
       "tsEnumNames": ["ASCII", "HTML", "URI", "UTF8"]
     },

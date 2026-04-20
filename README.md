@@ -52,7 +52,7 @@ The system features:
   - `@AsMessageEndpoint` to expose functions allowing sending messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to entities defined in `01_Data`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported brokers are **RabbitMQ** and **Kafka**
+  - Currently supported broker is **RabbitMQ**
   - Currently supported caches are **In Memory** and **Redis**
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
@@ -81,8 +81,8 @@ Here’s a **flowchart-style overview** of CitrineOS architecture and message fl
 ┌─────────────┐       ┌─────────────┐
 │ Message     │       │ PostgreSQL  │
 │ Broker      │       │ Database    │
-│ (RabbitMQ / │       │ Persistence │
-│  Kafka)     │       │             │
+│ (RabbitMQ)  │       │ Persistence │
+│             │       │             │
 └─────────────┘       └─────────────┘
       │
       ▼
@@ -102,7 +102,7 @@ Here’s a **flowchart-style overview** of CitrineOS architecture and message fl
 
 1. **Charging Stations** send messages using **OCPP 1.6** or **OCPP 2.0.1**.
 2. **CitrineOS Server** receives and routes messages via **WebSocket** to the **OCPP Router**.
-3. The **Message Broker (RabbitMQ/Kafka)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
+3. The **Message Broker (RabbitMQ)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
 4. Operational and configuration data are persisted in **PostgreSQL**.
 5. Files and assets are stored in **Amazon S3** or **Google Cloud Storage (GCS)** in supported environments. **MinIO** is used for **local development**, providing **S3-compatible storage only**. Local development does **not** support a GCS-compatible storage backend.
 

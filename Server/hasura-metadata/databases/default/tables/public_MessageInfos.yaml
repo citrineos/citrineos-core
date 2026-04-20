@@ -14,21 +14,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - active
-        - priority
-        - state
-        - stationId
-        - transactionId
-        - databaseId
-        - displayComponentId
-        - id
-        - tenantId
-        - message
-        - createdAt
-        - endDateTime
-        - startDateTime
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

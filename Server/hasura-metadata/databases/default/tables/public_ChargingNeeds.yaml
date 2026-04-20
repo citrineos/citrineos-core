@@ -17,18 +17,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - requestedEnergyTransfer
-        - evseId
-        - id
-        - maxScheduleTuples
-        - tenantId
-        - transactionDatabaseId
-        - acChargingParameters
-        - dcChargingParameters
-        - createdAt
-        - departureTime
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

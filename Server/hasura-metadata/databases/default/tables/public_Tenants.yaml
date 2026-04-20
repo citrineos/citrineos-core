@@ -344,10 +344,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - id
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         id:
           _eq: x-hasura-tenant-id

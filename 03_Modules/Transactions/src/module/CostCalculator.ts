@@ -29,39 +29,35 @@ export class CostCalculator {
   /**
    * Calculates the total cost for a transaction.
    *
-   * Computes the cost based on `stationId` and `totalKwh`.
-   * If `totalKwh` is not provided, it is calculated for given transaction.
+   * Computes the cost based on `connectorId` and `totalKwh`.
    *
-   * @param stationId - The identifier of the station.
-   * @param transactionDbId - The identifier of the transaction.
-   * @param totalKwh - Optional. The total kilowatt-hours.
+   * @param connectorId - The database ID of the connector.
+   * @param totalKwh - The total kilowatt-hours.
    *
    * @returns A promise that resolves to the total cost.
    */
-  async calculateTotalCost(tenantId: number, stationId: string, totalKwh: number): Promise<number> {
-    return this._calculateTotalCost(tenantId, stationId, totalKwh);
-  }
-
-  private async _calculateTotalCost(
+  async calculateTotalCost(
     tenantId: number,
-    stationId: string,
+    connectorId: number | undefined,
     totalKwh: number,
   ): Promise<number> {
-    // TODO: This is a temp workaround. We need to refactor the calculation of totalCost when tariff
-    //  implementation is finalized
-    this._logger.debug(`Calculating total cost for ${stationId} station and ${totalKwh} kWh`);
-    const tariff: Tariff | undefined = await this._tariffRepository.findByStationId(
+    if (connectorId == null) {
+      this._logger.error('Cannot calculate cost: connectorId is not set on transaction');
+      return 0;
+    }
+    this._logger.debug(`Calculating total cost for connector ${connectorId} and ${totalKwh} kWh`);
+    const tariff: Tariff | undefined = await this._tariffRepository.findByConnectorId(
       tenantId,
-      stationId,
+      connectorId,
     );
     if (tariff) {
-      this._logger.debug(`Tariff ${tariff.id} found for ${stationId} station`);
+      this._logger.debug(`Tariff ${tariff.id} found for connector ${connectorId}`);
       return Money.of(tariff.pricePerKwh, tariff.currency)
         .multiply(totalKwh)
         .roundToCurrencyScale()
         .toNumber();
     } else {
-      this._logger.error(`Tariff not found for ${stationId} station`);
+      this._logger.error(`Tariff not found for connector ${connectorId}`);
       return 0;
     }
   }

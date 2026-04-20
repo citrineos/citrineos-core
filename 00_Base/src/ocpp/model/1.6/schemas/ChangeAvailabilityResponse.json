@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ChangeAvailabilityResponseStatus"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["status"],
   "$id": "ChangeAvailabilityResponse",
   "definitions": {
     "ChangeAvailabilityResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Rejected", "Scheduled"],
       "tsEnumNames": ["Accepted", "Rejected", "Scheduled"]
     }

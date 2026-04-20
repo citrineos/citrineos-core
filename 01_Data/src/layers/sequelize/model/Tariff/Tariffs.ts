@@ -12,6 +12,7 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
@@ -22,18 +23,8 @@ import { Tenant } from '../Tenant.js';
 export class Tariff extends Model implements TariffDto {
   static readonly MODEL_NAME: string = OCPP2_0_1_Namespace.Tariff;
 
-  @Column({
-    type: DataType.STRING,
-    unique: true,
-  })
-  declare stationId: string;
-
-  @ForeignKey(() => Connector)
-  @Column(DataType.INTEGER)
-  declare connectorId?: number | null;
-
-  @BelongsTo(() => Connector)
-  declare connector?: Connector | null;
+  @HasMany(() => Connector)
+  declare connectors?: Connector[];
 
   @Column({
     type: DataType.CHAR(3),

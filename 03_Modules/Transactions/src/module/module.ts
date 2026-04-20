@@ -49,12 +49,7 @@ import {
   Transaction,
   VariableAttribute,
 } from '@citrineos/data';
-import {
-  RabbitMqReceiver,
-  RabbitMqSender,
-  RealTimeAuthorizer,
-  SignedMeterValuesUtil,
-} from '@citrineos/util';
+import { RealTimeAuthorizer, SignedMeterValuesUtil } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
@@ -162,8 +157,8 @@ export class TransactionsModule extends AbstractModule {
     config: BootstrapConfig & SystemConfig,
     cache: ICache,
     fileStorage: IFileStorage,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
+    sender: IMessageSender,
+    handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
@@ -177,15 +172,7 @@ export class TransactionsModule extends AbstractModule {
     realTimeAuthorizer?: IAuthorizer,
     authorizers?: IAuthorizer[],
   ) {
-    super(
-      config,
-      cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
-      EventGroup.Transactions,
-      logger,
-      ocppValidator,
-    );
+    super(config, cache, handler, sender, EventGroup.Transactions, logger, ocppValidator);
 
     this._requests = config.modules.transactions.requests;
     this._responses = config.modules.transactions.responses;
@@ -326,6 +313,12 @@ export class TransactionsModule extends AbstractModule {
         stationId,
       );
     }
+    await this.deactivateOtherActiveTransactionsAtEvse201(
+      tenantId,
+      transactionId,
+      stationId,
+      transactionEvent,
+    );
 
     if (response) {
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
@@ -358,7 +351,7 @@ export class TransactionsModule extends AbstractModule {
         ) {
           response.totalCost = await this._costCalculator.calculateTotalCost(
             tenantId,
-            stationId,
+            transaction.connectorId,
             transaction.totalKwh,
           );
         }
@@ -390,7 +383,7 @@ export class TransactionsModule extends AbstractModule {
       ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(
           tenantId,
-          stationId,
+          transaction.connectorId,
           transaction.totalKwh,
         );
       }
@@ -656,8 +649,21 @@ export class TransactionsModule extends AbstractModule {
       await this.sendCallResultWithMessage(message, response);
     }
 
-    // Deactivate reservation
-    if (request.reservationId) {
+    await this.deactivateOtherActiveTransactionsAtEvse16(
+      tenantId,
+      response.transactionId.toString(),
+      stationId,
+      request,
+    );
+
+    // Deactivate reservation only if the transaction was accepted.
+    // A rejected StartTransaction (auth failure or DB error) should not
+    // consume the reservation — the charger may retry or another idTag
+    // may use it.
+    if (
+      request.reservationId &&
+      response.idTagInfo.status === OCPP1_6.StartTransactionResponseStatus.Accepted
+    ) {
       await this._transactionService.deactivateReservation(
         tenantId,
         response.transactionId.toString(),
@@ -770,5 +776,52 @@ export class TransactionsModule extends AbstractModule {
     transaction.stoppedReason = request.reason;
     transaction.endTime = request.timestamp;
     await transaction.save();
+  }
+
+  protected async deactivateOtherActiveTransactionsAtEvse201(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    request: OCPP2_0_1.TransactionEventRequest,
+  ) {
+    const eventType = request.eventType;
+    const evse = request.evse;
+    const evseIsDefined = evse !== null && evse !== undefined;
+    if (evseIsDefined) {
+      if (
+        eventType === OCPP2_0_1.TransactionEventEnumType.Started ||
+        eventType === OCPP2_0_1.TransactionEventEnumType.Updated
+      ) {
+        await this._transactionService.deactivateOtherActiveTransactionsAtEvse(
+          tenantId,
+          transactionId,
+          stationId,
+          evse,
+        );
+      }
+    }
+  }
+
+  protected async deactivateOtherActiveTransactionsAtEvse16(
+    tenantId: number,
+    transactionId: string,
+    stationId: string,
+    request: OCPP1_6.StartTransactionRequest,
+  ) {
+    const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+      tenantId,
+      stationId,
+      request.connectorId,
+    );
+    if (!connector) {
+      this._logger.error(`Unable to find connector ${request.connectorId}.`);
+      throw new Error(`Unable to find connector ${request.connectorId}.`);
+    }
+    await this._transactionService.deactivateOtherActiveTransactionsAtEvse(
+      tenantId,
+      transactionId,
+      stationId,
+      request.connectorId,
+    );
   }
 }

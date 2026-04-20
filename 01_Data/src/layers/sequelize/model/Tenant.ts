@@ -113,6 +113,12 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
   })
   declare isUserTenant: boolean;
 
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
+  declare maxChargingStations: number | null;
+
   /**
    * Relationships
    */

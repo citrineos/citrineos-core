@@ -55,7 +55,7 @@ export class CostNotifier extends Scheduler {
   async calculateCostAndNotify(transaction: Transaction, tenantId: number): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(
       tenantId,
-      transaction.stationId,
+      transaction.connectorId,
       transaction.totalKwh!,
     );
 

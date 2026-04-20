@@ -3,7 +3,7 @@
   "comment": "OCPP 2.0.1 FINAL",
   "definitions": {
     "CustomDataType": {
-      "description": "This class does not get 'AdditionalProperties = false' in the schema generation, so it can be extended with arbitrary JSON properties to allow adding custom data.",
+      "description": "Represents OCPP CustomData. Allows vendor-specific extension properties.",
       "javaType": "CustomData",
       "type": "object",
       "properties": {
@@ -18,7 +18,7 @@
       "description": "This contains the type of log file that the Charging Station\r\nshould send.\r\n",
       "javaType": "LogEnum",
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["DiagnosticsLog", "SecurityLog"],
       "tsEnumNames": ["DiagnosticsLog", "SecurityLog"]
     },
@@ -26,7 +26,7 @@
       "description": "Log\r\nurn:x-enexis:ecdm:uid:2:233373\r\nGeneric class for the configuration of logging entries.\r\n",
       "javaType": "LogParameters",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -51,7 +51,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

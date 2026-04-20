@@ -6,7 +6,7 @@
       "type": "integer"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["listVersion"],
   "$id": "GetLocalListVersionResponse",
   "definitions": {}

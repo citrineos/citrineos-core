@@ -17,16 +17,16 @@
           "$ref": "#/definitions/StopTransactionResponseStatus"
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["status"]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "$id": "StopTransactionResponse",
   "definitions": {
     "StopTransactionResponseStatus": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"],
       "tsEnumNames": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
     }

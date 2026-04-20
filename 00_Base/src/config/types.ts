@@ -27,26 +27,26 @@ export const websocketServerInputSchema = z.object({
   host: z.string().default('localhost').optional(),
   port: z.number().int().min(1).default(8080).optional(),
   pingInterval: z.number().int().min(1).default(60).optional(),
-  protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']).default('ocpp2.0.1').optional(),
+  protocols: z
+    .array(z.enum(['ocpp1.6', 'ocpp2.0.1']))
+    .default(['ocpp2.0.1'])
+    .optional(),
   securityProfile: z.number().int().min(0).max(3).default(0).optional(),
   allowUnknownChargingStations: z.boolean().default(false).optional(),
+  ignoreAuthenticationHeaders: z.boolean().default(false).optional(), // When true, authorization headers will be ignored and authentication will be bypassed.
   tlsKeyFilePath: z.string().optional(), // Leaf certificate's private key pem which decrypts the message from client
   tlsCertificateChainFilePath: z.string().optional(), // Certificate chain pem consist of a leaf followed by sub CAs
   mtlsCertificateAuthorityKeyFilePath: z.string().optional(), // Sub CA's private key which signs the leaf (e.g.,
   // charging station certificate and csms certificate)
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
-  tenantId: z.number(),
+  tenantId: z.number().optional(),
   // Mapping from path segments to tenant IDs.
   // Example: { "my-tenant": 1 }
   tenantPathMapping: z.record(z.string(), z.number()).optional(),
   // When true, tenant can be resolved at connection upgrade time from the request
   // (query param, path segment, or header). Defaults to false for strict per-server tenant.
   dynamicTenantResolution: z.boolean().optional().default(false),
-  // Optional soft limit for concurrent connections per tenant for this server.
-  // If set and the tenant exceeds this number of concurrent connections, new
-  // connections will be rejected at upgrade time with a 1013 close code.
-  maxConnectionsPerTenant: z.number().int().min(1).optional(),
 });
 
 export const HUBJECT_DEFAULT_BASEURL = 'https://open.plugncharge-test.hubject.com';
@@ -54,15 +54,12 @@ export const HUBJECT_DEFAULT_TOKENURL =
   'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token';
 export const HUBJECT_DEFAULT_CLIENTID = 'YOUR_CLIENT_ID';
 export const HUBJECT_DEFAULT_CLIENTSECRET = 'YOUR_CLIENT_SECRET';
-export const HUBJECT_DEFAULT_AUTH_TOKEN =
-  'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkJ3eEV0TkFGUnpSM3JlNVF2elM2QyJ9.eyJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vcm9sZSI6WyJBRE1JTiIsIk9FTSIsIkNQTyIsIk1PX0hVQkpFQ1RfUEtJIl0sImh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbS9wY2lkIjpbIkhVQiIsImh1YiJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZW1haWQiOlsiREVIVUIiLCJFTVA3NyJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vY2xpZW50X25hbWUiOlsiSHViamVjdCJdLCJodHRwczovL2V1LnBsdWduY2hhcmdlLXRlc3QuaHViamVjdC5jb20vZGFzaDIwIjpbInRydWUiXSwiaHR0cHM6Ly9ldS5wbHVnbmNoYXJnZS10ZXN0Lmh1YmplY3QuY29tL2NsaWVudF9hcHAiOiJPcGVuIFRlc3QgRW52aXJvbm1lbnQiLCJpc3MiOiJodHRwczovL2F1dGguZXUucGx1Z25jaGFyZ2UuaHViamVjdC5jb20vIiwic3ViIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmdAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vZXUucGx1Z25jaGFyZ2UtdGVzdC5odWJqZWN0LmNvbSIsImlhdCI6MTc3MDcwMTgxMSwiZXhwIjoxNzcwNzg4MjExLCJzY29wZSI6InJjcHNlcnZpY2UgcGNwc2VydmljZSBjY3BzZXJ2aWNlIGNwc2VydmljZSBwa2lnYXRld2F5IiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIiwiYXpwIjoibzU3UWF3cTFvbms3VWtacmhGbUVxalNPTXFkaDM0UmciLCJwZXJtaXNzaW9ucyI6WyJyY3BzZXJ2aWNlIiwicGNwc2VydmljZSIsImNjcHNlcnZpY2UiLCJjcHNlcnZpY2UiLCJwa2lnYXRld2F5Il19.qpkB0reRKznCNXnbxCs0WMPCZx2ezo3Uv7vb0FW0qtMFHLF88IjzA0TUn4azD3zwjIG0N6rnTws4kzKkzwC-_XejCF-RvTEWKM4iUisdbl3Hz8nov0QmAME9U7BYJ52BHaQxP0S6o89qWRgtkzB63XRbbI_Z1fAh9Pzz-eVJePgD2GANNb8JqCzlV0vgyZU3jvdmVvJDYMyqyGe_lLlU5E0ocUntAWaP_TyrmRqctb5VB82WEdwdsRB5Wusqc5C0rLUwsySOff5gcDg5LXtGwUZtsA7TTtVQSqhQ1HrPVYhlKl-s5TZ-v7uho8wCnaCoJt6GPvZzKqHJHydBMlWDWg';
 
 export const systemConfigInputSchema = z.object({
   env: z.enum(['development', 'production']),
   centralSystem: z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().min(1).default(8081).optional(),
-    systemApiToken: z.string().optional(),
   }),
   modules: z.object({
     certificates: z
@@ -189,18 +186,6 @@ export const systemConfigInputSchema = z.object({
       }),
     messageBroker: z
       .object({
-        kafka: z
-          .object({
-            topicPrefix: z.string().optional(),
-            topicName: z.string().optional(),
-            brokers: z.array(z.string()),
-            sasl: z.object({
-              mechanism: z.string(),
-              username: z.string(),
-              password: z.string(),
-            }),
-          })
-          .optional(),
         amqp: z
           .object({
             url: z.string(),
@@ -208,7 +193,7 @@ export const systemConfigInputSchema = z.object({
           })
           .optional(),
       })
-      .refine((obj) => obj.kafka || obj.amqp, {
+      .refine((obj) => obj.amqp, {
         message: 'A message broker implementation must be set',
       }),
     authProvider: z
@@ -313,22 +298,19 @@ export const websocketServerSchema = z
     host: z.string(),
     port: z.number().int().min(1),
     pingInterval: z.number().int().min(1),
-    protocol: z.enum(['ocpp1.6', 'ocpp2.0.1']),
+    protocols: z.array(z.enum(['ocpp1.6', 'ocpp2.0.1'])),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean(),
+    ignoreAuthenticationHeaders: z.boolean().default(false).optional(),
     tlsKeyFilePath: z.string().optional(),
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
-    tenantId: z.number(),
+    tenantId: z.number().optional(),
     tenantPathMapping: z.record(z.string(), z.number()).optional(),
     // When true, tenant can be resolved at connection upgrade time from the request
     // (query param, path segment, or header). Defaults to false for strict per-server tenant.
     dynamicTenantResolution: z.boolean().optional().default(false),
-    // Optional soft limit for concurrent connections per tenant for this server.
-    // If set and the tenant exceeds this number of concurrent connections, new
-    // connections will be rejected at upgrade time with a 1013 close code.
-    maxConnectionsPerTenant: z.number().int().min(1).optional(),
   })
   .refine((obj) => {
     switch (obj.securityProfile) {
@@ -346,7 +328,14 @@ export const websocketServerSchema = z
       default:
         return false;
     }
-  });
+  })
+  .refine((obj) => {
+    if ((obj.tenantId !== undefined) === obj.dynamicTenantResolution) {
+      return false; // Cannot have both or neither tenantId and dynamicTenantResolution
+    } else {
+      return true;
+    }
+  }, 'Invalid websocket server configuration: tenantId and dynamicTenantResolution are mutually exclusive and one must be set');
 
 export const systemConfigSchema = z
   .object({
@@ -354,7 +343,6 @@ export const systemConfigSchema = z
     centralSystem: z.object({
       host: z.string(),
       port: z.number().int().min(1),
-      systemApiToken: z.string().optional(),
     }),
     modules: z.object({
       certificates: z
@@ -491,18 +479,6 @@ export const systemConfigSchema = z
         }),
       messageBroker: z
         .object({
-          kafka: z
-            .object({
-              topicPrefix: z.string().optional(),
-              topicName: z.string().optional(),
-              brokers: z.array(z.string()),
-              sasl: z.object({
-                mechanism: z.string(),
-                username: z.string(),
-                password: z.string(),
-              }),
-            })
-            .optional(),
           amqp: z
             .object({
               url: z.string(),
@@ -510,7 +486,7 @@ export const systemConfigSchema = z
             })
             .optional(),
         })
-        .refine((obj) => obj.kafka || obj.amqp, {
+        .refine((obj) => obj.amqp, {
           message: 'A message broker implementation must be set',
         }),
       authProvider: z

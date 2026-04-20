@@ -52,8 +52,10 @@ export const eventGroupFromString = (source: string): EventGroup => {
   return eventGroup;
 };
 
+export { AbstractConnectionManager } from './AbstractConnectionManager.js';
 export { AbstractMessageHandler } from './AbstractMessageHandler.js';
 export { AbstractMessageSender } from './AbstractMessageSender.js';
+export type { IConnectionManager } from './IConnectionManager.js';
 export { Message } from './Message.js';
 export type { IMessage } from './Message.js';
 export type { IMessageConfirmation } from './MessageConfirmation.js';

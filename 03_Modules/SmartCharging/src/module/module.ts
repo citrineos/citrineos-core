@@ -39,7 +39,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   Transaction,
 } from '@citrineos/data';
-import { IdGenerator, RabbitMqReceiver, RabbitMqSender } from '@citrineos/util';
+import { IdGenerator } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ISmartCharging } from './smartCharging/index.js';
@@ -107,8 +107,8 @@ export class SmartChargingModule extends AbstractModule {
   constructor(
     config: BootstrapConfig & SystemConfig,
     cache: ICache,
-    sender?: IMessageSender,
-    handler?: IMessageHandler,
+    sender: IMessageSender,
+    handler: IMessageHandler,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     transactionEventRepository?: ITransactionEventRepository,
@@ -118,15 +118,7 @@ export class SmartChargingModule extends AbstractModule {
     idGenerator?: IdGenerator,
     ocppMessageRepository?: IOCPPMessageRepository,
   ) {
-    super(
-      config,
-      cache,
-      handler || new RabbitMqReceiver(config, logger),
-      sender || new RabbitMqSender(config, logger),
-      EventGroup.SmartCharging,
-      logger,
-      ocppValidator,
-    );
+    super(config, cache, handler, sender, EventGroup.SmartCharging, logger, ocppValidator);
 
     this._requests = config.modules.smartcharging?.requests ?? [];
     this._responses = config.modules.smartcharging?.responses ?? [];

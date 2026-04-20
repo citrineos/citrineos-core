@@ -6,7 +6,6 @@ import type {
   Call,
   CallError,
   CallResult,
-  CircuitBreakerOptions,
   ICache,
   IMessageHandler,
   IMessageSender,
@@ -16,7 +15,6 @@ import type {
 } from '@citrineos/base';
 import {
   CacheNamespace,
-  CircuitBreaker,
   createIdentifier,
   ErrorCode,
   EventGroup,
@@ -57,6 +55,7 @@ function buildConfig(overrides?: Partial<SystemConfig & BootstrapConfig>): any {
 function buildMockCache(): Mocked<ICache> {
   return {
     exists: vi.fn().mockResolvedValue(false),
+    existsAnyInNamespace: vi.fn().mockResolvedValue(false),
     remove: vi.fn().mockResolvedValue(true),
     get: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue(true),
@@ -81,7 +80,6 @@ function buildMockHandler(): Mocked<IMessageHandler> {
     unsubscribe: vi.fn().mockResolvedValue(true),
     handle: vi.fn(),
     shutdown: vi.fn().mockResolvedValue(undefined),
-    initConnection: vi.fn().mockResolvedValue(undefined),
     module: undefined,
   } as unknown as Mocked<IMessageHandler>;
 }
@@ -145,66 +143,9 @@ describe('MessageRouterImpl', () => {
   // ─── Constructor ───────────────────────────────────────────────────────────
 
   describe('constructor', () => {
-    it('should call handler.initConnection on construction', () => {
-      expect(handler.initConnection).toHaveBeenCalled();
-    });
-
     it('should use provided locationRepository', () => {
       // Verify it doesn't try to create a default one by checking our mock is used
       expect(router['_locationRepository']).toBe(locationRepository);
-    });
-
-    it('should use default maxReconnectDelay from config', () => {
-      expect(router['_maxReconnectDelay']).toBe(30);
-    });
-
-    it('should use custom maxReconnectDelay from config', () => {
-      const customConfig = buildConfig({ maxReconnectDelay: 60 });
-      const customRouter = new MessageRouterImpl(
-        customConfig,
-        cache,
-        sender,
-        handler,
-        dispatcher,
-        networkHook,
-        undefined,
-        undefined,
-        locationRepository,
-      );
-      expect(customRouter['_maxReconnectDelay']).toBe(60);
-    });
-
-    it('should fall back to DEFAULT_MAX_RECONNECT_DELAY when config is undefined', () => {
-      const customConfig = buildConfig({ maxReconnectDelay: undefined });
-      const customRouter = new MessageRouterImpl(
-        customConfig,
-        cache,
-        sender,
-        handler,
-        dispatcher,
-        networkHook,
-        undefined,
-        undefined,
-        locationRepository,
-      );
-      expect(customRouter['_maxReconnectDelay']).toBe(30);
-    });
-
-    it('should accept custom circuitBreakerOptions', () => {
-      const opts: CircuitBreakerOptions = { maxReconnectDelayMs: 5000 };
-      const customRouter = new MessageRouterImpl(
-        config,
-        cache,
-        sender,
-        handler,
-        dispatcher,
-        networkHook,
-        undefined,
-        undefined,
-        locationRepository,
-        opts,
-      );
-      expect(customRouter['_circuitBreaker']).toBeInstanceOf(CircuitBreaker);
     });
   });
 
@@ -406,7 +347,7 @@ describe('MessageRouterImpl', () => {
         // CallResult that will fail processing (no cached action)
         const callResultMessage = JSON.stringify([MessageTypeId.CallResult, CORRELATION_ID, {}]);
 
-        const _result = await router.onMessage(IDENTIFIER, callResultMessage, timestamp, PROTOCOL);
+        await router.onMessage(IDENTIFIER, callResultMessage, timestamp, PROTOCOL);
 
         // CallResult errors should not trigger a CallError response
         expect(networkHook).not.toHaveBeenCalled();
@@ -431,8 +372,8 @@ describe('MessageRouterImpl', () => {
 
     describe('CallResult messages', () => {
       it('should process a valid CallResult message', async () => {
-        // Set up cached action for the correlation id
-        cache.get.mockResolvedValue(`BootNotification:${CORRELATION_ID}`);
+        // Set up cached action for the correlation id (new format: action@isoTimestamp)
+        cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
         vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
 
         const callResultMessage: CallResult = [MessageTypeId.CallResult, CORRELATION_ID, {}];
@@ -441,13 +382,16 @@ describe('MessageRouterImpl', () => {
         const result = await router.onMessage(IDENTIFIER, rawMessage, timestamp, PROTOCOL);
 
         expect(result).toBe(true);
-        expect(cache.remove).toHaveBeenCalledWith(IDENTIFIER, CacheNamespace.Transactions);
+        expect(cache.remove).toHaveBeenCalledWith(
+          CORRELATION_ID,
+          CacheNamespace.Transactions + IDENTIFIER,
+        );
       });
     });
 
     describe('CallError messages', () => {
       it('should process a valid CallError message', async () => {
-        cache.get.mockResolvedValue(`BootNotification:${CORRELATION_ID}`);
+        cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
 
         const callErrorMessage: CallError = [
           MessageTypeId.CallError,
@@ -461,7 +405,10 @@ describe('MessageRouterImpl', () => {
         const result = await router.onMessage(IDENTIFIER, rawMessage, timestamp, PROTOCOL);
 
         expect(result).toBe(true);
-        expect(cache.remove).toHaveBeenCalledWith(IDENTIFIER, CacheNamespace.Transactions);
+        expect(cache.remove).toHaveBeenCalledWith(
+          CORRELATION_ID,
+          CacheNamespace.Transactions + IDENTIFIER,
+        );
       });
     });
 
@@ -563,50 +510,6 @@ describe('MessageRouterImpl', () => {
       expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
     });
 
-    it('should wait for ongoing call and retry when setIfNotExist fails initially', async () => {
-      cache.exists.mockResolvedValue(false);
-      vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
-
-      // First setIfNotExist fails (call in progress), onChange resolves, second setIfNotExist succeeds
-      cache.setIfNotExist.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-      cache.onChange.mockResolvedValue(null);
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP2_0_1_CallAction.Heartbeat,
-        {},
-      ]);
-
-      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-
-      expect(result).toBe(true);
-      expect(cache.setIfNotExist).toHaveBeenCalledTimes(2);
-      expect(cache.onChange).toHaveBeenCalled();
-    });
-
-    it('should send CallError when setIfNotExist fails on both attempts', async () => {
-      cache.exists.mockResolvedValue(false);
-      vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
-
-      cache.setIfNotExist.mockResolvedValue(false);
-      cache.onChange.mockResolvedValue(null);
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP2_0_1_CallAction.Heartbeat,
-        {},
-      ]);
-
-      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-
-      expect(result).toBe(false);
-      expect(networkHook).toHaveBeenCalled();
-      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
-      expect(sentMessage[2]).toBe(ErrorCode.RpcFrameworkError);
-    });
-
     it('should send CallError when _routeCall fails', async () => {
       cache.exists.mockResolvedValue(false);
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
@@ -619,7 +522,7 @@ describe('MessageRouterImpl', () => {
         {},
       ]);
 
-      const _result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+      await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
       // The error is handled asynchronously via sendCallError, so success is still true from onMessage
       // but the call itself will trigger sendCallError
@@ -634,9 +537,8 @@ describe('MessageRouterImpl', () => {
     const payload = { requestId: 1, reportBase: 'FullInventory' } as unknown as OcppRequest;
 
     it('should send a Call message successfully', async () => {
-      // Not rejected boot status
+      // Not rejected boot status, no ongoing call
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
 
       const result = await router.sendCall(
         STATION_ID,
@@ -657,7 +559,7 @@ describe('MessageRouterImpl', () => {
 
     it('should throw RetryMessageError when call is already in progress', async () => {
       cache.get.mockResolvedValue(null); // not rejected
-      cache.setIfNotExist.mockResolvedValue(false); // call in progress
+      cache.existsAnyInNamespace.mockResolvedValue(true); // call in progress
 
       await expect(
         router.sendCall(STATION_ID, TENANT_ID, PROTOCOL, action, payload, CORRELATION_ID),
@@ -682,7 +584,6 @@ describe('MessageRouterImpl', () => {
 
     it('should allow TriggerMessage<BootNotification> even when Rejected', async () => {
       cache.get.mockResolvedValue(OCPP2_0_1.RegistrationStatusEnumType.Rejected);
-      cache.setIfNotExist.mockResolvedValue(true);
 
       const triggerPayload = {
         requestedMessage: OCPP2_0_1.MessageTriggerEnumType.BootNotification,
@@ -703,7 +604,6 @@ describe('MessageRouterImpl', () => {
 
     it('should return success false when networkHook fails', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
       networkHook.mockRejectedValue(new Error('network error'));
 
       const result = await router.sendCall(
@@ -716,27 +616,29 @@ describe('MessageRouterImpl', () => {
       );
 
       expect(result.success).toBe(false);
+      expect(cache.remove).toHaveBeenCalledWith(
+        CORRELATION_ID,
+        CacheNamespace.Transactions + IDENTIFIER,
+      );
     });
 
     it('should dispatch webhook on successful send', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
 
       await router.sendCall(STATION_ID, TENANT_ID, PROTOCOL, action, payload, CORRELATION_ID);
 
       expect(dispatcher.dispatchMessageSent).toHaveBeenCalled();
     });
 
-    it('should set cache entry with action:correlationId', async () => {
+    it('should set cache entry with correlationId key and action@timestamp value', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
 
       await router.sendCall(STATION_ID, TENANT_ID, PROTOCOL, action, payload, CORRELATION_ID);
 
-      expect(cache.setIfNotExist).toHaveBeenCalledWith(
-        IDENTIFIER,
-        `${action}:${CORRELATION_ID}`,
-        CacheNamespace.Transactions,
+      expect(cache.set).toHaveBeenCalledWith(
+        CORRELATION_ID,
+        expect.stringMatching(new RegExp(`^${action}@`)),
+        CacheNamespace.Transactions + IDENTIFIER,
         config.maxCallLengthSeconds,
       );
     });
@@ -753,7 +655,8 @@ describe('MessageRouterImpl', () => {
     } as unknown as OcppResponse;
 
     it('should send a CallResult message successfully when cache matches', async () => {
-      cache.get.mockResolvedValue(`${action}:${CORRELATION_ID}`);
+      // New format: action@isoTimestamp, key is correlationId
+      cache.get.mockResolvedValue(`${action}@${new Date().toISOString()}`);
 
       const result = await router.sendCallResult(
         CORRELATION_ID,
@@ -769,10 +672,13 @@ describe('MessageRouterImpl', () => {
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[0]).toBe(MessageTypeId.CallResult);
       expect(sentMessage[1]).toBe(CORRELATION_ID);
-      expect(cache.remove).toHaveBeenCalledWith(IDENTIFIER, CacheNamespace.Transactions);
+      expect(cache.remove).toHaveBeenCalledWith(
+        CORRELATION_ID,
+        CacheNamespace.Transactions + IDENTIFIER,
+      );
     });
 
-    it('should return success false when no cached message id exists', async () => {
+    it('should return success false when no cached entry exists', async () => {
       cache.get.mockResolvedValue(null);
 
       const result = await router.sendCallResult(
@@ -789,7 +695,7 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should return success false when cached action does not match', async () => {
-      cache.get.mockResolvedValue(`DifferentAction:${CORRELATION_ID}`);
+      cache.get.mockResolvedValue(`DifferentAction@${new Date().toISOString()}`);
 
       const result = await router.sendCallResult(
         CORRELATION_ID,
@@ -803,27 +709,12 @@ describe('MessageRouterImpl', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should return success false when cached message id does not match', async () => {
-      cache.get.mockResolvedValue(`${action}:different-id`);
+    it('should handle timestamps containing colons (ISO format)', async () => {
+      // ISO timestamps contain colons (e.g. 2026-01-01T12:34:56.000Z) — delimiter is @ so this is safe
+      cache.get.mockResolvedValue(`${action}@${new Date().toISOString()}`);
 
       const result = await router.sendCallResult(
         CORRELATION_ID,
-        STATION_ID,
-        TENANT_ID,
-        PROTOCOL,
-        action,
-        payload,
-      );
-
-      expect(result.success).toBe(false);
-    });
-
-    it('should handle correlation ids containing colons', async () => {
-      const colonId = 'id:with:colons';
-      cache.get.mockResolvedValue(`${action}:${colonId}`);
-
-      const result = await router.sendCallResult(
-        colonId,
         STATION_ID,
         TENANT_ID,
         PROTOCOL,
@@ -835,7 +726,7 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should dispatch webhook on successful send', async () => {
-      cache.get.mockResolvedValue(`${action}:${CORRELATION_ID}`);
+      cache.get.mockResolvedValue(`${action}@${new Date().toISOString()}`);
 
       await router.sendCallResult(CORRELATION_ID, STATION_ID, TENANT_ID, PROTOCOL, action, payload);
 
@@ -855,7 +746,8 @@ describe('MessageRouterImpl', () => {
     );
 
     it('should send a CallError message successfully when cache matches', async () => {
-      cache.get.mockResolvedValue(`${action}:${CORRELATION_ID}`);
+      // New format: action@isoTimestamp, key is correlationId
+      cache.get.mockResolvedValue(`${action}@${new Date().toISOString()}`);
 
       const result = await router.sendCallError(
         CORRELATION_ID,
@@ -872,10 +764,13 @@ describe('MessageRouterImpl', () => {
       expect(sentMessage[0]).toBe(MessageTypeId.CallError);
       expect(sentMessage[1]).toBe(CORRELATION_ID);
       expect(sentMessage[2]).toBe(ErrorCode.InternalError);
-      expect(cache.remove).toHaveBeenCalledWith(IDENTIFIER, CacheNamespace.Transactions);
+      expect(cache.remove).toHaveBeenCalledWith(
+        CORRELATION_ID,
+        CacheNamespace.Transactions + IDENTIFIER,
+      );
     });
 
-    it('should return success false when no cached message id exists', async () => {
+    it('should return success false when no cached entry exists', async () => {
       cache.get.mockResolvedValue(null);
 
       const result = await router.sendCallError(
@@ -891,23 +786,8 @@ describe('MessageRouterImpl', () => {
       expect(networkHook).not.toHaveBeenCalled();
     });
 
-    it('should return success false when cached message id does not match', async () => {
-      cache.get.mockResolvedValue(`${action}:different-id`);
-
-      const result = await router.sendCallError(
-        CORRELATION_ID,
-        STATION_ID,
-        TENANT_ID,
-        PROTOCOL,
-        action,
-        ocppError,
-      );
-
-      expect(result.success).toBe(false);
-    });
-
     it('should return success false when cached action does not match', async () => {
-      cache.get.mockResolvedValue(`DifferentAction:${CORRELATION_ID}`);
+      cache.get.mockResolvedValue(`DifferentAction@${new Date().toISOString()}`);
 
       const result = await router.sendCallError(
         CORRELATION_ID,
@@ -921,18 +801,17 @@ describe('MessageRouterImpl', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should handle correlation ids containing colons', async () => {
-      const colonId = 'id:with:colons';
-      const error = new OcppError(colonId, ErrorCode.InternalError, 'error', {});
-      cache.get.mockResolvedValue(`${action}:${colonId}`);
+    it('should handle timestamps containing colons (ISO format)', async () => {
+      // ISO timestamps contain colons — delimiter is @ so this is safe
+      cache.get.mockResolvedValue(`${action}@${new Date().toISOString()}`);
 
       const result = await router.sendCallError(
-        colonId,
+        CORRELATION_ID,
         STATION_ID,
         TENANT_ID,
         PROTOCOL,
         action,
-        error,
+        ocppError,
       );
 
       expect(result.success).toBe(true);
@@ -950,132 +829,11 @@ describe('MessageRouterImpl', () => {
     });
   });
 
-  // ─── Circuit Breaker ──────────────────────────────────────────────────────
-
-  describe('circuit breaker', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    describe('handleCircuitBreakerStateChange', () => {
-      it('should reset failingReconnectDelay on CLOSED state', () => {
-        router['_failingReconnectDelay'] = 16;
-        router['handleCircuitBreakerStateChange']('CLOSED', 'test reason');
-        expect(router['_failingReconnectDelay']).toBe(1);
-      });
-
-      it('should reset failingReconnectDelay on OPEN state', () => {
-        router['_failingReconnectDelay'] = 16;
-        router['handleCircuitBreakerStateChange']('OPEN', 'test reason');
-        expect(router['_failingReconnectDelay']).toBe(1);
-      });
-
-      it('should attempt exponential reconnect on FAILING state', () => {
-        const spy = vi.spyOn(router as any, '_attemptExponentialReconnect');
-        router['handleCircuitBreakerStateChange']('FAILING', 'test reason');
-        expect(spy).toHaveBeenCalled();
-      });
-    });
-
-    describe('_attemptExponentialReconnect', () => {
-      it('should close circuit breaker when max delay is exceeded', () => {
-        const closeSpy = vi.spyOn(router['_circuitBreaker'], 'close');
-        router['_failingReconnectDelay'] = 31; // > DEFAULT_MAX_RECONNECT_DELAY (30)
-        router['_attemptExponentialReconnect']();
-
-        expect(closeSpy).toHaveBeenCalledWith('Max reconnect delay reached');
-      });
-
-      it('should double the reconnect delay on each attempt', () => {
-        const reconnectSpy = vi.spyOn(router, 'onBrokerReconnect' as any);
-        router['_failingReconnectDelay'] = 1;
-
-        router['_attemptExponentialReconnect']();
-        vi.advanceTimersByTime(1000);
-
-        expect(reconnectSpy).toHaveBeenCalled();
-        expect(router['_failingReconnectDelay']).toBe(2);
-      });
-
-      it('should cap reconnect delay at maxReconnectDelay', () => {
-        const reconnectSpy = vi.spyOn(router, 'onBrokerReconnect' as any);
-        router['_failingReconnectDelay'] = 16;
-
-        router['_attemptExponentialReconnect']();
-        vi.advanceTimersByTime(16000);
-
-        expect(reconnectSpy).toHaveBeenCalled();
-        expect(router['_failingReconnectDelay']).toBe(30); // capped at max
-      });
-    });
-
-    describe('onCircuitBreakerClosed', () => {
-      it('should set up a reconnect interval', () => {
-        router['onCircuitBreakerClosed']('test');
-        expect(router['_reconnectInterval']).toBeDefined();
-      });
-
-      it('should clear existing interval before creating new one', () => {
-        const existingInterval = setInterval(() => {}, 100000);
-        router['_reconnectInterval'] = existingInterval;
-
-        router['onCircuitBreakerClosed']('test');
-
-        expect(router['_reconnectInterval']).not.toBe(existingInterval);
-      });
-
-      it('should call onBrokerReconnect periodically', () => {
-        const reconnectSpy = vi.spyOn(router, 'onBrokerReconnect' as any);
-        router['onCircuitBreakerClosed']('test');
-
-        vi.advanceTimersByTime(30000); // maxReconnectDelay * 1000
-        expect(reconnectSpy).toHaveBeenCalledTimes(1);
-
-        vi.advanceTimersByTime(30000);
-        expect(reconnectSpy).toHaveBeenCalledTimes(2);
-      });
-    });
-
-    describe('onCircuitBreakerOpen', () => {
-      it('should clear reconnect interval', () => {
-        router['_reconnectInterval'] = setInterval(() => {}, 100000);
-        router['onCircuitBreakerOpen']();
-        expect(router['_reconnectInterval']).toBeUndefined();
-      });
-
-      it('should handle no existing interval gracefully', () => {
-        router['_reconnectInterval'] = undefined;
-        expect(() => router['onCircuitBreakerOpen']()).not.toThrow();
-      });
-    });
-
-    describe('onBrokerDisconnect', () => {
-      it('should trigger circuit breaker failure', () => {
-        const failureSpy = vi.spyOn(router['_circuitBreaker'], 'triggerFailure');
-        router['onBrokerDisconnect']('disconnect reason');
-        expect(failureSpy).toHaveBeenCalledWith('disconnect reason');
-      });
-    });
-
-    describe('onBrokerReconnect', () => {
-      it('should trigger circuit breaker success', () => {
-        const successSpy = vi.spyOn(router['_circuitBreaker'], 'triggerSuccess');
-        router['onBrokerReconnect']();
-        expect(successSpy).toHaveBeenCalled();
-      });
-    });
-  });
-
   // ─── _sendMessage (tested indirectly) ──────────────────────────────────────
 
   describe('_sendMessage (via sendCall)', () => {
     it('should return false and not dispatch webhook when networkHook throws', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
       networkHook.mockRejectedValue(new Error('connection lost'));
 
       const result = await router.sendCall(
@@ -1093,7 +851,6 @@ describe('MessageRouterImpl', () => {
 
     it('should not throw when webhook dispatch fails after successful send', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
       dispatcher.dispatchMessageSent.mockRejectedValue(new Error('webhook error'));
 
       const result = await router.sendCall(
@@ -1114,8 +871,6 @@ describe('MessageRouterImpl', () => {
   describe('_sendCallIsAllowed (via sendCall)', () => {
     it('should allow non-Rejected boot status', async () => {
       cache.get.mockResolvedValue(OCPP2_0_1.RegistrationStatusEnumType.Accepted);
-      cache.setIfNotExist.mockResolvedValue(true);
-
       const result = await router.sendCall(
         STATION_ID,
         TENANT_ID,
@@ -1130,8 +885,6 @@ describe('MessageRouterImpl', () => {
 
     it('should allow Pending boot status', async () => {
       cache.get.mockResolvedValue(OCPP2_0_1.RegistrationStatusEnumType.Pending);
-      cache.setIfNotExist.mockResolvedValue(true);
-
       const result = await router.sendCall(
         STATION_ID,
         TENANT_ID,
@@ -1146,8 +899,6 @@ describe('MessageRouterImpl', () => {
 
     it('should allow when no boot status is cached', async () => {
       cache.get.mockResolvedValue(null);
-      cache.setIfNotExist.mockResolvedValue(true);
-
       const result = await router.sendCall(
         STATION_ID,
         TENANT_ID,
@@ -1196,8 +947,6 @@ describe('MessageRouterImpl', () => {
   // ─── _handleMessageApiCallback (tested indirectly via onMessage) ───────────
 
   describe('_handleMessageApiCallback', () => {
-    const _timestamp = new Date('2025-01-01T00:00:00Z');
-
     beforeEach(() => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
     });
@@ -1357,7 +1106,6 @@ describe('MessageRouterImpl', () => {
 
     it('should process a complete Call -> route -> send cycle', async () => {
       cache.exists.mockResolvedValue(false); // not blacklisted
-      cache.setIfNotExist.mockResolvedValue(true);
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
       sender.send.mockResolvedValue({ success: true });
 
@@ -1372,16 +1120,17 @@ describe('MessageRouterImpl', () => {
 
       expect(result).toBe(true);
       expect(sender.send).toHaveBeenCalled();
+      // New: key is messageId, namespace is CacheNamespace.Transactions + identifier, value is action@timestamp
       expect(cache.setIfNotExist).toHaveBeenCalledWith(
-        IDENTIFIER,
-        `${OCPP2_0_1_CallAction.Heartbeat}:${CORRELATION_ID}`,
-        CacheNamespace.Transactions,
+        CORRELATION_ID,
+        expect.stringMatching(new RegExp(`^${OCPP2_0_1_CallAction.Heartbeat}@`)),
+        CacheNamespace.Transactions + IDENTIFIER,
         config.maxCallLengthSeconds,
       );
     });
 
     it('should handle a CallResult response for a pending Call', async () => {
-      cache.get.mockResolvedValue(`BootNotification:${CORRELATION_ID}`);
+      cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
       vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
       sender.send.mockResolvedValue({ success: true });
 
@@ -1397,7 +1146,7 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should handle a CallError response for a pending Call', async () => {
-      cache.get.mockResolvedValue(`BootNotification:${CORRELATION_ID}`);
+      cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
 
       const callErrorMessage = JSON.stringify([
         MessageTypeId.CallError,

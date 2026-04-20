@@ -22,23 +22,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - apn
-        - correlationId
-        - ocppCsmsUrl
-        - ocppInterface
-        - ocppTransport
-        - ocppVersion
-        - stationId
-        - vpn
-        - websocketServerConfigId
-        - configurationSlot
-        - id
-        - messageTimeout
-        - securityProfile
-        - tenantId
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

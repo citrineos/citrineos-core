@@ -20,7 +20,7 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["connectorId", "idTag", "meterStart", "timestamp"],
   "$id": "StartTransactionRequest",
   "definitions": {}

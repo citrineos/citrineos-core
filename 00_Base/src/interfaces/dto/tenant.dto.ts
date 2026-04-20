@@ -13,6 +13,7 @@ export const TenantSchema = z.object({
   partyId: z.string().nullable().optional(),
   serverProfileOCPI: ServerProfileSchema.nullable().optional(),
   isUserTenant: z.boolean().default(false),
+  maxChargingStations: z.number().int().nullable().optional(),
   updatedAt: z.date().optional(),
   createdAt: z.date().optional(),
 });

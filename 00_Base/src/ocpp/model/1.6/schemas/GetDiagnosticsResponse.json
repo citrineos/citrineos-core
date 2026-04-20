@@ -7,7 +7,7 @@
       "maxLength": 255
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "$id": "GetDiagnosticsResponse",
   "definitions": {}
 }

@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ResetRequestType"
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": ["type"],
   "$id": "ResetRequest",
   "definitions": {
     "ResetRequestType": {
       "type": "string",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "enum": ["Hard", "Soft"],
       "tsEnumNames": ["Hard", "Soft"]
     }

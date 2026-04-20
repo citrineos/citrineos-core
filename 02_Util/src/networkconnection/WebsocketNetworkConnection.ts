@@ -5,6 +5,7 @@
 import type {
   IAuthenticator,
   ICache,
+  IConnectionManager,
   IMessageRouter,
   INetworkConnection,
   IWebsocketConnection,
@@ -15,6 +16,7 @@ import type {
 import {
   CacheNamespace,
   createIdentifier,
+  getCacheTenantPathMappingKey,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
@@ -27,6 +29,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
+import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
@@ -34,14 +37,21 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   protected _config: SystemConfig;
   protected _logger: Logger<ILogObj>;
   private _identifierConnections: Map<string, WebSocket> = new Map();
+  private _pingTimers: Map<string, NodeJS.Timeout> = new Map();
+  private _pongTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private _closeHandlers = new Map<string, () => void>();
+  // tenantId as key and number of active connections as value
+  private _tenantConnectionCounts: Map<number, number> = new Map();
   // websocketServers id as key and http server as value
   private _httpServersMap: Map<string, http.Server | https.Server>;
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
+  private _connectionManager?: IConnectionManager;
   private _doesChargingStationExistByStationId?: (
     tenantId: number,
     stationId: string,
   ) => Promise<boolean>;
+  private _getMaxChargingStationsForTenant?: (tenantId: number) => Promise<number | null>;
 
   constructor(
     config: SystemConfig,
@@ -50,10 +60,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router: IMessageRouter,
     logger?: Logger<ILogObj>,
     doesChargingStationExistByStationId?: (tenantId: number, stationId: string) => Promise<boolean>,
+    getMaxChargingStationsForTenant?: (tenantId: number) => Promise<number | null>,
+    connectionManager?: IConnectionManager,
   ) {
+    this._getMaxChargingStationsForTenant = getMaxChargingStationsForTenant;
     this._cache = cache;
     this._config = config;
     this._doesChargingStationExistByStationId = doesChargingStationExistByStationId;
+    this._connectionManager = connectionManager;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -75,39 +89,39 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @param {string} message - The message to send.
    * @return {void} rejects the promise if message fails to send, otherwise returns void.
    */
-  sendMessage(identifier: string, message: string): Promise<void> {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        const clientConnection = await this._cache.get(identifier, CacheNamespace.Connections);
-        if (clientConnection) {
-          const websocketConnection = this._identifierConnections.get(identifier);
-          if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
-            websocketConnection.send(message, (error) => {
-              if (error) {
-                reject(error); // Reject the promise with the error
-              } else {
-                resolve(); // Resolve the promise with true indicating success
-              }
-            });
-          } else {
-            const errorMsg = 'Websocket connection is not ready - ' + identifier;
-            this._logger.fatal(errorMsg);
-            websocketConnection?.close(1011, errorMsg);
-            reject(new Error(errorMsg)); // Reject with a new error
-          }
+  async sendMessage(identifier: string, message: string): Promise<void> {
+    const clientConnection = await this._cache.get(identifier, CacheNamespace.Connections);
+    if (!clientConnection) {
+      const errorMsg = 'Cannot identify client connection for ' + identifier;
+      // This can happen when a charging station disconnects in the moment a message is trying to send.
+      // Retry logic on the message sender might not suffice as charging station might connect to different instance.
+      this._logger.error(errorMsg);
+      this._identifierConnections.get(identifier)?.terminate();
+      throw new Error(errorMsg);
+    }
+
+    const websocketConnection = this._identifierConnections.get(identifier);
+    if (!websocketConnection) {
+      const errorMsg = 'Websocket connection not found for ' + identifier;
+      this._logger.fatal(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    if (websocketConnection.readyState !== WebSocket.OPEN) {
+      const errorMsg = 'Websocket connection is not ready - ' + identifier;
+      this._logger.fatal(errorMsg);
+      websocketConnection.terminate();
+      throw new Error(errorMsg);
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      websocketConnection.send(message, (error) => {
+        if (error) {
+          reject(error);
         } else {
-          const errorMsg = 'Cannot identify client connection for ' + identifier;
-          // This can happen when a charging station disconnects in the moment a message is trying to send.
-          // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-          this._logger.error(errorMsg);
-          this._identifierConnections
-            .get(identifier)
-            ?.close(1011, 'Failed to get connection information for ' + identifier);
-          reject(new Error(errorMsg)); // Reject with a new error
+          resolve();
         }
-      } catch (error) {
-        reject(error);
-      }
+      });
     });
   }
 
@@ -132,6 +146,22 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   async shutdown(): Promise<void> {
+    // Deregister all connections before closing servers
+    const websocketClosePromises = [];
+    for (const [identifier, ws] of this._identifierConnections) {
+      // Remove the listener so closing the socket doesn't trigger it
+      const closeHandler = this._closeHandlers.get(identifier);
+      if (closeHandler) {
+        ws.removeListener('close', closeHandler);
+        this._closeHandlers.delete(identifier);
+      }
+
+      ws.close(1001, 'Server shutting down');
+
+      // Now manually call it and await it
+      websocketClosePromises.push(this._handleWebsocketClose(identifier));
+    }
+    await Promise.all(websocketClosePromises);
     this._httpServersMap.forEach((server) => server.close());
   }
 
@@ -220,13 +250,24 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       websocketServerConfig,
     );
 
+    if (this._connectionManager && !this._connectionManager.isConnected()) {
+      this._logger.warn('Rejecting websocket upgrade: message broker is not connected.');
+      this._terminateConnectionServiceUnavailable(socket);
+      return;
+    }
+
     try {
       // Resolve tenant at upgrade time (query param, path segment, header),
       // falling back to the server-configured tenant if none provided.
       const resolvedTenantId = websocketServerConfig.dynamicTenantResolution
-        ? this._extractTenantIdFromRequest(req, websocketServerConfig) ??
-          websocketServerConfig.tenantId
+        ? await this._extractTenantIdFromRequest(req, websocketServerConfig)
         : websocketServerConfig.tenantId;
+
+      if (resolvedTenantId === undefined) {
+        throw new UpgradeAuthenticationError(
+          'Tenant resolution failed: no valid tenant path provided in request and server is not configured with a default tenantId',
+        );
+      }
 
       // Attach resolved tenant to request so downstream handlers (connection) can use it
       (req as any).__resolvedTenantId = resolvedTenantId;
@@ -234,6 +275,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const { identifier } = await this._authenticator.authenticate(req, resolvedTenantId, {
         securityProfile: websocketServerConfig.securityProfile,
         allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
+        ignoreAuthenticationHeaders: websocketServerConfig.ignoreAuthenticationHeaders || false,
       });
 
       this._logger.debug('Successfully registered websocket client', identifier);
@@ -246,7 +288,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
        * See {@link IUpgradeError.terminateConnection}
        **/
       error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
-      this._logger.warn(error);
+      this._logger.warn('Connection upgrade failed', error);
     }
   }
 
@@ -256,6 +298,13 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    */
   private _terminateConnectionInternalError(socket: Duplex) {
     socket.write('HTTP/1.1 500 Internal Server Error\r\n');
+    socket.write('\r\n');
+    socket.end();
+    socket.destroy();
+  }
+
+  private _terminateConnectionServiceUnavailable(socket: Duplex) {
+    socket.write('HTTP/1.1 503 Service Unavailable\r\n');
     socket.write('\r\n');
     socket.end();
     socket.destroy();
@@ -272,14 +321,16 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _handleProtocols(
     protocols: Set<string>,
     _req: http.IncomingMessage,
-    wsServerProtocol: OCPPVersionType,
+    wsServerProtocols: OCPPVersionType[],
   ) {
     // Only supports configured protocol version
-    if (protocols.has(wsServerProtocol)) {
-      return wsServerProtocol;
+    for (const wsServerProtocol of wsServerProtocols) {
+      if (protocols.has(wsServerProtocol)) {
+        return wsServerProtocol;
+      }
     }
     this._logger.error(
-      `Protocol mismatch. Charger supports: [${[...protocols].join(', ')}], but server expects: '${wsServerProtocol}'.`,
+      `Protocol mismatch. Charger supports: [${[...protocols].join(', ')}], but server expects: '${wsServerProtocols.join(', ')}'.`,
     );
     // Reject the client trying to connect
     return false;
@@ -302,7 +353,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     req: http.IncomingMessage,
   ): Promise<void> {
     if (!ws.protocol) {
-      this._logger.debug('Websocket connection without protocol');
+      this._logger.warn('Websocket connection without protocol');
+      ws.close(1002, 'Protocol not specified');
       return;
     } else {
       // Pause the WebSocket event emitter until broker is established
@@ -334,22 +386,37 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
       const identifier = createIdentifier(tenantId, stationId);
 
-      // Enforce optional per-tenant connection limit if configured
-      const maxConnections = websocketServerConfig.maxConnectionsPerTenant;
-      if (typeof maxConnections === 'number' && maxConnections > 0) {
-        const currentCount = [...this._identifierConnections.keys()].filter(
-          (k) => getTenantIdFromIdentifier(k) === tenantId,
-        ).length;
-        if (currentCount >= maxConnections) {
-          this._logger.warn(
-            `Tenant ${tenantId} exceeded max connections (${maxConnections}), rejecting ${identifier}`,
-          );
-          ws.close(1013, 'Tenant connection limit exceeded');
-          return;
+      // Enforce per-tenant connection limit from the tenant's maxChargingStations field
+      if (this._getMaxChargingStationsForTenant) {
+        const maxConnections = await this._getMaxChargingStationsForTenant(tenantId);
+        if (typeof maxConnections === 'number' && maxConnections > 0) {
+          const currentCount = this._tenantConnectionCounts.get(tenantId) ?? 0;
+          if (currentCount >= maxConnections) {
+            this._logger.warn(
+              `Tenant ${tenantId} exceeded max connections (${maxConnections}), rejecting ${identifier}`,
+            );
+            ws.close(1013, 'Tenant connection limit exceeded');
+            return;
+          }
         }
       }
 
+      const staleWs = this._identifierConnections.get(identifier);
+      if (staleWs) {
+        staleWs.terminate();
+        try {
+          await this._router.deregisterConnection(tenantId, stationId);
+        } catch (err) {
+          this._logger.error(`Failed to deregister stale connection for ${identifier}`, err);
+        }
+        this._logger.warn(`Terminated stale websocket connection for ${identifier}`);
+      }
+
       this._identifierConnections.set(identifier, ws);
+      this._tenantConnectionCounts.set(
+        tenantId,
+        (this._tenantConnectionCounts.get(tenantId) ?? 0) + 1,
+      );
       try {
         // Get IP address of client
         const ip =
@@ -371,6 +438,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           identifier,
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
+          pingInterval * 3,
         );
         registered =
           registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
@@ -379,7 +447,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           throw new Error('Failed to register websocket client');
         }
 
-        connLogger.info('Successfully connected new charging station.', identifier);
+        connLogger.info(
+          `Successfully connected new charging station: ${identifier} live connections: ${this._identifierConnections.size}`,
+        );
 
         // Register all websocket events
         this._registerWebsocketEvents(identifier, ws, pingInterval);
@@ -416,40 +486,31 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
     };
 
-    ws.once('close', () => {
-      // Unregister client
-      this._logger.info('Connection closed for', identifier);
-      this._cache.remove(identifier, CacheNamespace.Connections);
-      this._identifierConnections.delete(identifier);
-      this._router.deregisterConnection(
-        getTenantIdFromIdentifier(identifier),
-        getStationIdFromIdentifier(identifier),
-      );
-    });
+    const closeHandler = () => {
+      this._handleWebsocketClose(identifier);
+    };
+    ws.once('close', closeHandler);
+    this._closeHandlers.set(identifier, closeHandler);
 
-    ws.on('ping', async (message) => {
-      this._logger.debug(`Ping received for ${identifier} with message ${JSON.stringify(message)}`);
+    ws.on('ping', (message) => {
+      this._logger.debug('Ping received for', identifier, 'with message', message);
       ws.pong(message);
     });
 
-    ws.on('pong', async () => {
+    ws.on('pong', () => {
       this._logger.debug('Pong received for', identifier);
-      const clientConnection: string | null = await this._cache.get(
-        identifier,
-        CacheNamespace.Connections,
-      );
 
-      if (clientConnection) {
-        // Remove expiration for connection and send ping to client in pingInterval seconds.
-        await this._cache.set(identifier, clientConnection, CacheNamespace.Connections);
-        this._ping(identifier, ws, pingInterval);
-      } else {
-        this._logger.debug('Pong received for', identifier, 'but client is not alive');
-        ws.close(1011, 'Client is not alive');
+      // Disarm the pong-timeout — the client is alive.
+      const pongTimeout = this._pongTimeouts.get(identifier);
+      if (pongTimeout) {
+        clearTimeout(pongTimeout);
+        this._pongTimeouts.delete(identifier);
       }
+
+      this._ping(identifier, ws, pingInterval, false);
     });
 
-    this._ping(identifier, ws, pingInterval);
+    this._ping(identifier, ws, pingInterval, true);
   }
 
   /**
@@ -462,6 +523,40 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    */
   private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
     this._router.onMessage(identifier, message, new Date(), protocol);
+  }
+
+  private async _handleWebsocketClose(identifier: string): Promise<void> {
+    this._closeHandlers.delete(identifier);
+    // Cancel any pending ping timer so it doesn't fire against a closed socket
+    const timer = this._pingTimers.get(identifier);
+    if (timer) {
+      clearTimeout(timer);
+      this._pingTimers.delete(identifier);
+    }
+    const pongTimeout = this._pongTimeouts.get(identifier);
+    if (pongTimeout) {
+      clearTimeout(pongTimeout);
+      this._pongTimeouts.delete(identifier);
+    }
+
+    const closedTenantId = getTenantIdFromIdentifier(identifier);
+
+    // Unregister client
+    await Promise.all([
+      this._cache.remove(identifier, CacheNamespace.Connections),
+      this._router.deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier)),
+    ]);
+
+    const prevCount = this._tenantConnectionCounts.get(closedTenantId) ?? 0;
+    if (prevCount <= 1) {
+      this._tenantConnectionCounts.delete(closedTenantId);
+    } else {
+      this._tenantConnectionCounts.set(closedTenantId, prevCount - 1);
+    }
+    this._identifierConnections.delete(identifier);
+    this._logger.info(
+      `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,
+    );
   }
 
   /**
@@ -492,29 +587,47 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    *
    * @param {string} identifier - The identifier of the client connection.
    * @param {WebSocket} ws - The WebSocket connection to ping.
-   * @param {number} pingInterval - The ping interval in milliseconds.
+   * @param {number} pingInterval - The ping interval in seconds.
+   * @param {boolean} applyJitter - Whether to apply jitter to the ping interval.
    * @return {void} This function does not return anything.
    */
-  private async _ping(identifier: string, ws: WebSocket, pingInterval: number): Promise<void> {
-    setTimeout(async () => {
-      const clientConnection: string | null = await this._cache.get(
-        identifier,
-        CacheNamespace.Connections,
-      );
-      if (clientConnection) {
+  private _ping(
+    identifier: string,
+    ws: WebSocket,
+    pingInterval: number,
+    applyJitter: boolean,
+  ): void {
+    const jitter = applyJitter ? Math.random() * pingInterval * 1000 : 0;
+
+    const sendTimer = setTimeout(
+      () => {
+        this._pingTimers.delete(identifier);
+
+        const pongTimeout = setTimeout(() => {
+          this._logger.debug('Pong timeout for', identifier, '— terminating');
+          this._pongTimeouts.delete(identifier);
+          ws.terminate();
+        }, pingInterval * 1000);
+
+        this._pongTimeouts.set(identifier, pongTimeout);
+
         this._logger.debug('Pinging client', identifier);
-        // Set connection expiration and send ping to client
-        await this._cache.set(
-          identifier,
-          clientConnection,
-          CacheNamespace.Connections,
-          pingInterval * 2,
-        );
         ws.ping();
-      } else {
-        ws.close(1011, 'Client is not alive');
-      }
-    }, pingInterval * 1000);
+      },
+      pingInterval * 1000 + jitter,
+    );
+
+    this._pingTimers.set(identifier, sendTimer);
+    this._cache
+      .updateExpiration(identifier, pingInterval * 3, CacheNamespace.Connections)
+      .catch((error) => {
+        this._logger.error(
+          'Failed to update cache expiration - will close websocket for',
+          identifier,
+          error,
+        );
+        ws.close(1011, 'Failed to update cache expiration');
+      });
   }
   /**
    *
@@ -532,10 +645,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * Supported sources (in order): query `tenant`/`tenantId`, header `x-tenant-id`,
    * path segment (second-last segment if URL is `/tenant/station`).
    */
-  private _extractTenantIdFromRequest(
+  private async _extractTenantIdFromRequest(
     req: http.IncomingMessage,
     config: WebsocketServerConfig,
-  ): number | undefined {
+  ): Promise<number | undefined> {
     try {
       const rawUrl = req.url ?? '';
       const url = new URL(rawUrl, 'http://localhost');
@@ -545,11 +658,15 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       // We look for a mapping of pathSegment to tenantId.
       if (segments.length >= 2 && config.tenantPathMapping) {
         const pathSegment = segments[segments.length - 2];
-        if (config.tenantPathMapping[pathSegment]) {
-          return config.tenantPathMapping[pathSegment];
-        } else {
+
+        const cachedTenantIdString = await this._cache.get<string>(
+          getCacheTenantPathMappingKey(config.id, pathSegment),
+          CacheNamespace.TenantPathMapping,
+        );
+        if (!cachedTenantIdString) {
           this._logger.debug(`No mapping found for path segment: ${pathSegment}`);
         }
+        return cachedTenantIdString ? Number(cachedTenantIdString) : undefined;
       }
     } catch (err) {
       // If parsing fails, ignore and fall back to server-configured tenant
@@ -581,6 +698,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _createAndStartWebsocketServer(
     wsConfig: WebsocketServerConfig,
   ): Promise<http.Server | https.Server> {
+    for (const [key, value] of Object.entries(wsConfig.tenantPathMapping ?? {})) {
+      this._cache.set(
+        getCacheTenantPathMappingKey(wsConfig.id, key),
+        value.toString(),
+        CacheNamespace.TenantPathMapping,
+      );
+    }
+
     return new Promise((resolve) => {
       let httpServer: http.Server | https.Server;
       switch (wsConfig.securityProfile) {
@@ -601,7 +726,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const wss = new WebSocketServer({
         noServer: true,
         handleProtocols: (protocols, req) =>
-          this._handleProtocols(protocols, req, wsConfig.protocol as OCPPVersionType),
+          this._handleProtocols(protocols, req, wsConfig.protocols),
         clientTracking: false,
       });
 

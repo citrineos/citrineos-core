@@ -14,18 +14,7 @@ object_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - supportsMonitoring
-        - dataType
-        - unit
-        - valuesList
-        - id
-        - tenantId
-        - variableId
-        - maxLimit
-        - minLimit
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

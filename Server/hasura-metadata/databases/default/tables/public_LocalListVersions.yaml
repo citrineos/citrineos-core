@@ -19,13 +19,7 @@ array_relationships:
 select_permissions:
   - role: user
     permission:
-      columns:
-        - stationId
-        - id
-        - tenantId
-        - versionNumber
-        - createdAt
-        - updatedAt
+      columns: '*'
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

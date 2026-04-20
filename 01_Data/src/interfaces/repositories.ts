@@ -356,6 +356,12 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     transactionId: string,
     stationId: string,
   ): Promise<Transaction | undefined>;
+  deactivateActiveTransactionsByStationIdAndEvseId(
+    tenantId: number,
+    stationId: string,
+    evseId: number,
+    excludeTransactionId: string,
+  ): Promise<Transaction[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
@@ -409,7 +415,7 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
 }
 
 export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByStationId(tenantId: number, stationId: string): Promise<Tariff | undefined>;
+  findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined>;
   readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
   upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;

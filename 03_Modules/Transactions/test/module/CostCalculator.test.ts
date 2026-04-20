@@ -16,7 +16,7 @@ describe('CostCalculator', () => {
 
   beforeEach(() => {
     tariffRepository = {
-      findByStationId: vi.fn(),
+      findByConnectorId: vi.fn(),
     } as unknown as Mocked<ITariffRepository>;
 
     transactionService = {
@@ -27,7 +27,7 @@ describe('CostCalculator', () => {
   });
 
   afterEach(() => {
-    tariffRepository.findByStationId.mockReset();
+    tariffRepository.findByConnectorId.mockReset();
     transactionService.recalculateTotalKwh.mockReset();
   });
 
@@ -40,10 +40,11 @@ describe('CostCalculator', () => {
       { tariff: aTariff({ pricePerKwh: 0.47 }), kwh: 20, expectedCost: 9.4 },
       { tariff: aTariff({ pricePerKwh: 0.61 }), kwh: 20, expectedCost: 12.2 },
     ])('should calculate cost using provided kWh', async ({ tariff, kwh, expectedCost }) => {
+      const connectorId = faker.number.int({ min: 1 });
       givenTariff(tariff);
-      expect(
-        await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, tariff.stationId, kwh),
-      ).toBe(expectedCost);
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, kwh)).toBe(
+        expectedCost,
+      );
     });
 
     it.each([
@@ -78,31 +79,36 @@ describe('CostCalculator', () => {
         expectedCost: 12.8,
       },
     ])('should floor cost to 2 decimal places', async ({ tariff, kwh, expectedCost }) => {
+      const connectorId = faker.number.int({ min: 1 });
       givenTariff(tariff);
-      expect(
-        await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, tariff.stationId, kwh),
-      ).toBe(expectedCost);
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, kwh)).toBe(
+        expectedCost,
+      );
+    });
+
+    it('should return 0 when connectorId is undefined', async () => {
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, undefined, 20.99)).toBe(0);
     });
 
     it('should return 0 when tariff not found', async () => {
-      const anyStationId = faker.string.uuid();
-      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, anyStationId, 20.99)).toBe(
-        0,
-      );
-    });
-
-    it('should return 0 when pricePerKwh is 0', async () => {
-      const tariff = givenTariff(aTariff({ pricePerKwh: 0.0 }));
+      const anyConnectorId = faker.number.int({ min: 1 });
       expect(
-        await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, tariff.stationId, 20.99),
+        await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, anyConnectorId, 20.99),
       ).toBe(0);
     });
 
-    it('should return 0 when kWh is 0', async () => {
-      const tariff = givenTariff(aTariff({ pricePerKwh: 0.61 }));
-      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, tariff.stationId, 0)).toBe(
+    it('should return 0 when pricePerKwh is 0', async () => {
+      const connectorId = faker.number.int({ min: 1 });
+      givenTariff(aTariff({ pricePerKwh: 0.0 }));
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, 20.99)).toBe(
         0,
       );
+    });
+
+    it('should return 0 when kWh is 0', async () => {
+      const connectorId = faker.number.int({ min: 1 });
+      givenTariff(aTariff({ pricePerKwh: 0.61 }));
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, 0)).toBe(0);
     });
 
     it.each([
@@ -110,15 +116,14 @@ describe('CostCalculator', () => {
       { tariff: aTariff({ pricePerKwh: 0.2 }), kwh: 0.049 },
       { tariff: aTariff({ pricePerKwh: 0.23 }), kwh: 0.02 },
     ])('should return 0 when calculated cost is less than 0.01', async ({ tariff, kwh }) => {
+      const connectorId = faker.number.int({ min: 1 });
       givenTariff(tariff);
-      expect(
-        await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, tariff.stationId, kwh),
-      ).toBe(0);
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, kwh)).toBe(0);
     });
   });
 
   function givenTariff(tariff: Tariff) {
-    tariffRepository.findByStationId.mockResolvedValue(tariff);
+    tariffRepository.findByConnectorId.mockResolvedValue(tariff);
     return tariff;
   }
 });
