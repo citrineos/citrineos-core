@@ -6,6 +6,22 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import {
+  validateASCIIContent,
+  validateChargingProfileType,
+  validateHTMLContent,
+  validateIdentifierStringIdToken,
+  validateIdToken,
+  validateISO14443IdToken,
+  validateISO15693IdToken,
+  validateLanguageTag,
+  validateMessageContent,
+  validateMessageContentType,
+  validateNoAuthorizationIdToken,
+  validatePEMEncodedCSR,
+  validateURIContent,
+  validateUTF8Content,
+} from '../../index';
+import {
   aChargingNeeds,
   aChargingProfileType,
   aChargingSchedule,
@@ -35,22 +51,6 @@ import {
   VALID_URI_CONTENT,
   VALID_UTF8_CONTENT,
 } from '../providers/ValidatorProvider';
-import {
-  validateASCIIContent,
-  validateChargingProfileType,
-  validateHTMLContent,
-  validateIdentifierStringIdToken,
-  validateIdToken,
-  validateISO14443IdToken,
-  validateISO15693IdToken,
-  validateLanguageTag,
-  validateMessageContent,
-  validateMessageContentType,
-  validateNoAuthorizationIdToken,
-  validatePEMEncodedCSR,
-  validateURIContent,
-  validateUTF8Content,
-} from '../../util/validator';
 
 describe('validateLanguageTag', () => {
   it.each(VALID_LANGUAGE_TAGS)('should return true for valid language tag "%s"', (languageTag) => {

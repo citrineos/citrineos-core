@@ -16,7 +16,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from './Location/ChargingStation.js';
+import { ChargingStation } from './Location/index.js';
 import { Tenant } from './Tenant.js';
 
 @Table

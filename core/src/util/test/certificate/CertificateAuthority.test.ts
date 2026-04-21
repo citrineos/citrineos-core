@@ -10,13 +10,12 @@ import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
 } from '../../certificate/client/interface.js';
+import { CertificateAuthorityService, MemoryCache } from '../../index.js';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
 } from '../providers/CertificateAuthority.js';
 import { readFile } from '../utils/FileUtil.js';
-import { CertificateAuthorityService } from '../../certificate';
-import { MemoryCache } from '../../cache/memory';
 
 vi.mock('../../certificate/CertificateUtil');
 vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {

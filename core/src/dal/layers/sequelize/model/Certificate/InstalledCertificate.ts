@@ -8,7 +8,7 @@ import type {
   InstalledCertificateDto,
   TenantDto,
 } from '@citrineos/base';
-import { type ChargingStationDto, DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace, type ChargingStationDto } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -20,7 +20,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 
-import { ChargingStation } from '../Location/ChargingStation.js';
+import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 import { Certificate } from './Certificate.js';
 

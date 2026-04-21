@@ -4,8 +4,8 @@
 import type { AdditionalInfo } from '@citrineos/base';
 import { AuthorizationStatusEnum, IdTokenEnum } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
+import { Authorization } from '../../index.js';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { Authorization } from '../../layers/sequelize/model/Authorization/Authorization';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(

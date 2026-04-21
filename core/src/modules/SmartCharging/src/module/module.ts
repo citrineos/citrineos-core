@@ -10,11 +10,11 @@ import type {
   IMessage,
   IMessageHandler,
   IMessageSender,
-  OCPP2_common_types,
+  SystemConfig,
   OCPP2_request_types,
   OCPP2_response_types,
+  OCPP2_common_types,
   OCPPValidator,
-  SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -28,12 +28,12 @@ import {
   EnergyTransferModeEnum,
   EventGroup,
   GenericStatusEnum,
-  MessageOrigin,
   NotifyEVChargingNeedsStatusEnum,
   OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
+  MessageOrigin,
 } from '@citrineos/base';
 import type {
   IChargingProfileRepository,
@@ -43,18 +43,15 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
-import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/Transaction.js';
+import { sequelize } from '@dal/index.js';
+import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/index.js';
+import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import { IdGenerator } from '@util/util/idGenerator.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ISmartCharging } from './smartCharging/SmartCharging.js';
 import { InternalSmartCharging } from './smartCharging/InternalSmartCharging.js';
 import type { CompositeScheduleInput } from '@/dal/layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
-import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/repository/ChargingStationSequence.js';
-import { SequelizeTransactionEventRepository } from '@dal/layers/sequelize/repository/TransactionEvent.js';
-import { SequelizeDeviceModelRepository } from '@dal/layers/sequelize/repository/DeviceModel.js';
-import { SequelizeChargingProfileRepository } from '@dal/layers/sequelize/repository/ChargingProfile.js';
-import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/repository/OCPPMessage.js';
 
 /**
  * Component that handles provisioning related messages.
@@ -135,13 +132,15 @@ export class SmartChargingModule extends AbstractModule {
     this._responses = config.modules.smartcharging?.responses ?? [];
 
     this._transactionEventRepository =
-      transactionEventRepository || new SequelizeTransactionEventRepository(config, this._logger);
+      transactionEventRepository ||
+      new sequelize.SequelizeTransactionEventRepository(config, this._logger);
     this._deviceModelRepository =
-      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._chargingProfileRepository =
-      chargingProfileRepository || new SequelizeChargingProfileRepository(config, this._logger);
+      chargingProfileRepository ||
+      new sequelize.SequelizeChargingProfileRepository(config, this._logger);
     this._ocppMessageRepository =
-      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
+      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
 
     this._smartChargingService =
       smartChargingService || new InternalSmartCharging(this._chargingProfileRepository);

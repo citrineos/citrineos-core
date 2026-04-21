@@ -40,7 +40,6 @@ import {
   ConfigurationOcpp16Api,
   ConfigurationOcpp2Api,
   ConnectedStationFilter,
-  DefaultSequelizeInstance,
   EVDriverDataApi,
   EVDriverModule,
   EVDriverOcpp16Api,
@@ -66,9 +65,8 @@ import {
   ReportingOcpp16Api,
   ReportingOcpp2Api,
   RepositoryStore,
+  sequelize,
   Sequelize,
-  SequelizeDeviceModelRepository,
-  SequelizeLocationRepository,
   SmartChargingModule,
   SmartChargingOcpp16Api,
   SmartChargingOcpp2Api,
@@ -313,7 +311,7 @@ export class CitrineOSServer {
   }
 
   protected async initDb() {
-    await DefaultSequelizeInstance.initializeSequelize();
+    await sequelize.DefaultSequelizeInstance.initializeSequelize();
   }
 
   protected initCache(cache?: ICache): ICache {
@@ -365,16 +363,16 @@ export class CitrineOSServer {
   protected initNetworkConnection() {
     this._authenticator = new Authenticator(
       new UnknownStationFilter(
-        new SequelizeLocationRepository(this._config, this._logger),
+        new sequelize.SequelizeLocationRepository(this._config, this._logger),
         this._logger,
       ),
       new ConnectedStationFilter(this._cache, this._logger),
       new NetworkProfileFilter(
-        new SequelizeDeviceModelRepository(this._config, this._logger),
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       new BasicAuthenticationFilter(
-        new SequelizeDeviceModelRepository(this._config, this._logger),
+        new sequelize.SequelizeDeviceModelRepository(this._config, this._logger),
         this._logger,
       ),
       this._logger,
@@ -732,7 +730,10 @@ export class CitrineOSServer {
   }
 
   protected initRepositoryStore() {
-    this._sequelizeInstance = DefaultSequelizeInstance.getInstance(this._config, this._logger);
+    this._sequelizeInstance = sequelize.DefaultSequelizeInstance.getInstance(
+      this._config,
+      this._logger,
+    );
     this._repositoryStore = new RepositoryStore(
       this._config,
       this._logger,

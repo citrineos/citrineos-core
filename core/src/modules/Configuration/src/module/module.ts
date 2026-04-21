@@ -28,7 +28,6 @@ import {
   createIdentifier,
   DataTransferStatusEnum,
   DisplayMessageStatusEnum,
-  type DisplayMessageStatusEnumType,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -44,7 +43,9 @@ import {
   ResetEnum,
   SetNetworkProfileStatusEnum,
   SetVariableStatusEnum,
+  type DisplayMessageStatusEnumType,
 } from '@citrineos/base';
+import { sequelize } from '@dal/index.js';
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
@@ -54,28 +55,24 @@ import type {
   IOCPPMessageRepository,
   ITenantRepository,
 } from '@dal/interfaces/repositories.js';
+import {
+  Boot,
+  ChangeConfiguration,
+  ChargingStation,
+  ChargingStationNetworkProfile,
+  Component,
+  SequelizeChangeConfigurationRepository,
+  SequelizeChargingStationSequenceRepository,
+  SequelizeOCPPMessageRepository,
+  ServerNetworkProfile,
+  SetNetworkProfile,
+} from '@dal/layers/sequelize/index.js';
+import { IdGenerator, validateMessageContentType } from '@util/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { BootNotificationService } from './BootNotificationService.js';
 import { DeviceModelService } from './DeviceModelService.js';
-import { SequelizeBootRepository } from '@dal/layers/sequelize/repository/Boot.js';
-import { SequelizeDeviceModelRepository } from '@dal/layers/sequelize/repository/DeviceModel.js';
-import { SequelizeMessageInfoRepository } from '@dal/layers/sequelize/repository/MessageInfo.js';
-import { SequelizeLocationRepository } from '@dal/layers/sequelize/repository/Location.js';
-import { SequelizeTenantRepository } from '@dal/layers/sequelize/repository/Tenant.js';
-import { Boot } from '@dal/layers/sequelize/model/Boot.js';
-import { ChangeConfiguration } from '@dal/layers/sequelize/model/ChangeConfiguration.js';
-import { ChargingStation } from '@dal/layers/sequelize/model/Location/ChargingStation.js';
-import { ChargingStationNetworkProfile } from '@dal/layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
-import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
-import { SequelizeChangeConfigurationRepository } from '@dal/layers/sequelize/repository/ChangeConfiguration.js';
-import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/repository/ChargingStationSequence.js';
-import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/repository/OCPPMessage.js';
-import { ServerNetworkProfile } from '@dal/layers/sequelize/model/Location/ServerNetworkProfile.js';
-import { SetNetworkProfile } from '@dal/layers/sequelize/model/Location/SetNetworkProfile.js';
-import { IdGenerator } from '@util/util/idGenerator.js';
-import { validateMessageContentType } from '@util/util/validator.js';
 
 /**
  * Component that handles Configuration related messages.
@@ -153,13 +150,14 @@ export class ConfigurationModule extends AbstractModule {
     this._requests = config.modules.configuration.requests;
     this._responses = config.modules.configuration.responses;
 
-    this._bootRepository = bootRepository || new SequelizeBootRepository(config, this._logger);
+    this._bootRepository =
+      bootRepository || new sequelize.SequelizeBootRepository(config, this._logger);
     this._deviceModelRepository =
-      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
+      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
     this._messageInfoRepository =
-      messageInfoRepository || new SequelizeMessageInfoRepository(config, this._logger);
+      messageInfoRepository || new sequelize.SequelizeMessageInfoRepository(config, this._logger);
     this._locationRepository =
-      locationRepository || new SequelizeLocationRepository(config, this._logger);
+      locationRepository || new sequelize.SequelizeLocationRepository(config, this._logger);
     this._changeConfigurationRepository =
       changeConfigurationRepository ||
       new SequelizeChangeConfigurationRepository(config, this._logger);
@@ -167,7 +165,7 @@ export class ConfigurationModule extends AbstractModule {
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
 
     this._tenantRepository =
-      tenantRepository || new SequelizeTenantRepository(config, this._logger);
+      tenantRepository || new sequelize.SequelizeTenantRepository(config, this._logger);
 
     this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
 

@@ -10,13 +10,13 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
+import { DeleteCertificateAttempt } from '@dal/index.js';
+import { packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ICertificatesModuleApi } from '../interface.js';
 import { CertificatesModule } from '../module.js';
-import { DeleteCertificateAttempt } from '@dal/layers/sequelize/model/Certificate/DeleteCertificateAttempt.js';
-import { packageGroupCall } from '@util/util/sendCall.js';
 
 /**
  * Server API for the Certificates module.

@@ -14,7 +14,7 @@ import {
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
-} from '../../../../dal/interfaces/repositories';
+} from '@citrineos/core';
 import { TransactionService } from '../../src/module/TransactionService.js';
 import { anAuthorization } from '../providers/AuthorizationProvider.js';
 import { anIdToken } from '../providers/IdTokenProvider.js';

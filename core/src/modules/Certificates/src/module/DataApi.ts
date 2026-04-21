@@ -13,11 +13,17 @@ import {
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1,
-  OCPP2_Namespace,
   OCPP_CallAction,
+  OCPP2_Namespace,
   OCPPVersion,
   type WebsocketServerConfig,
 } from '@citrineos/base';
+import {
+  Certificate,
+  CountryNameEnumType,
+  InstalledCertificate,
+  SignatureAlgorithmEnumType,
+} from '@dal/layers/sequelize/index.js';
 import {
   GenerateCertificateChainRequest,
   GenerateCertificateChainSchema,
@@ -34,6 +40,7 @@ import {
   UploadExistingCertificate,
   UploadExistingCertificateSchema,
 } from '@dal/interfaces/index.js';
+import { generateCertificate } from '@util/index.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';
@@ -42,13 +49,6 @@ import { Logger } from 'tslog';
 import type { ICertificatesModuleApi } from './interface.js';
 import { CertificatesModule } from './module.js';
 import { PemType } from './installCertificateHelperService.js';
-import { Certificate } from '@/dal/layers/sequelize/model/Certificate/Certificate.js';
-import {
-  CountryNameEnumType,
-  SignatureAlgorithmEnumType,
-} from '@/dal/layers/sequelize/model/Certificate/CertificateTypes.js';
-import { InstalledCertificate } from '@/dal/layers/sequelize/model/Certificate/InstalledCertificate.js';
-import { generateCertificate } from '@util/certificate/index.js';
 
 /**
  * Server API for the Certificates module.

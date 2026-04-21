@@ -6,7 +6,7 @@
 process.env.APP_ENV = 'local';
 
 import { DEFAULT_TENANT_ID, loadBootstrapConfig } from '@citrineos/base';
-import { DefaultSequelizeInstance } from './core/src/index.js';
+import { DefaultSequelizeInstance } from '@citrineos/core';
 
 async function initializeDatabase() {
   const bootstrapConfig = loadBootstrapConfig();

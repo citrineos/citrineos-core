@@ -21,6 +21,7 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
+  UnauthorizedError,
 } from '@citrineos/base';
 import type {
   ChargingStationKeyQuerystring,
@@ -33,6 +34,7 @@ import type {
   WebsocketGetQuerystring,
   WebsocketMappingQuerystring,
 } from '@dal/interfaces/index.js';
+import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import {
   ChargingStationKeyQuerySchema,
   ConnectionDeleteQuerySchema,
@@ -44,13 +46,11 @@ import {
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from '@dal/interfaces/index.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/Subscription.js';
+import { sequelize } from '@dal/index.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IAdminApi } from './interface.js';
-import { SequelizeSubscriptionRepository } from '@dal/layers/sequelize/repository/Subscription.js';
-import { SequelizeServerNetworkProfileRepository } from '@dal/layers/sequelize/repository/ServerNetworkProfile.js';
 
 /**
  * Admin API for the OcppRouter.
@@ -83,10 +83,10 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     super(ocppRouter, server, null, logger);
     this._networkConnection = networkConnection;
     this._subscriptionRepository =
-      subscriptionRepository || new SequelizeSubscriptionRepository(config, this._logger);
+      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
     this._serverNetworkProfileRepository =
       serverNetworkProfileRepository ||
-      new SequelizeServerNetworkProfileRepository(config, this._logger);
+      new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.

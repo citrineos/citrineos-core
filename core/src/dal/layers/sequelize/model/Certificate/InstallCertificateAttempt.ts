@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  DEFAULT_TENANT_ID,
+  OCPP2_Namespace,
   type CertificateDto,
   type CertificateUseEnumType,
   type ChargingStationDto,
-  DEFAULT_TENANT_ID,
   type InstallCertificateStatusEnumType,
-  OCPP2_Namespace,
   type TenantDto,
 } from '@citrineos/base';
 import {
@@ -20,7 +20,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { ChargingStation } from '../Location/ChargingStation.js';
+import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 import { Certificate } from './Certificate.js';
 

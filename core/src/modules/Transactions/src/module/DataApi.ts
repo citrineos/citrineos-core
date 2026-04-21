@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { TariffQueryString } from '@dal/interfaces/queries/Tariff.js';
-import { TariffQuerySchema } from '@dal/interfaces/queries/Tariff.js';
 import type { TenantQueryString } from '@dal/interfaces/queries/Tenant.js';
-import { TenantQuerySchema } from '@dal/interfaces/queries/Tenant.js';
 import type { TransactionEventQuerystring } from '@dal/interfaces/queries/TransactionEvent.js';
+import { Tariff } from '@dal/layers/sequelize/model/Tariff/index.js';
+import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
+import { TariffQuerySchema } from '@dal/interfaces/queries/Tariff.js';
+import { TenantQuerySchema } from '@dal/interfaces/queries/Tenant.js';
 import { TransactionEventQuerySchema } from '@dal/interfaces/queries/TransactionEvent.js';
-import { Tariff } from '@dal/layers/sequelize/model/Tariff/Tariffs.js';
-import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/Transaction.js';
 import { default as TariffSchema } from '@dal/interfaces/projections/schemas/TariffSchema.json' with { type: 'json' };
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

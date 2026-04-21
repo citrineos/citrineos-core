@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ITransactionEventRepository } from '@dal/interfaces/repositories.js';
-import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/Transaction.js';
+import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import { AbstractModule, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

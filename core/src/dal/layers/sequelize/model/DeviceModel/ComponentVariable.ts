@@ -15,8 +15,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
-import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
-import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
+import { Component, Variable } from './index.js';
 
 @Table
 export class ComponentVariable extends Model {

@@ -31,22 +31,21 @@ import type {
   NetworkProfileQuerystring,
   UpdateChargingStationPasswordQueryString,
 } from '@dal/interfaces/index.js';
+import { Boot, Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
 import {
   ChargingStationKeyQuerySchema,
   NetworkProfileDeleteQuerySchema,
   NetworkProfileQuerySchema,
   UpdateChargingStationPasswordQuerySchema,
 } from '@dal/interfaces/index.js';
+import {
+  ChargingStationNetworkProfile,
+  ServerNetworkProfile,
+  SetNetworkProfile,
+} from '@dal/layers/sequelize/index.js';
 import { Op } from 'sequelize';
+import { generatePassword, isValidPassword } from '@util/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { Boot } from '@dal/layers/sequelize/model/Boot.js';
-import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
-import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
-import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
-import { ChargingStationNetworkProfile } from '@dal/layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
-import { ServerNetworkProfile } from '@dal/layers/sequelize/model/Location/ServerNetworkProfile.js';
-import { SetNetworkProfile } from '@dal/layers/sequelize/model/Location/SetNetworkProfile.js';
-import { generatePassword, isValidPassword } from '@util/security/authentication.js';
 
 /**
  * Server API for the Configuration component.

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { ChargingStation } from 'citrineos-core/core/src/index';
+import { ChargingStation } from '@citrineos/core';
 
 export const MOCK_CHARGING_STATION_ID = 'cp001';
 

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AuthorizationStatusEnum,
-  type AuthorizationStatusEnumType,
   AuthorizationWhitelistEnum,
+  type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
   type IAuthorizer,
@@ -12,7 +12,7 @@ import {
   type IMessageContext,
   type SystemConfig,
 } from '@citrineos/base';
-import type { Authorization } from '@dal/layers/sequelize/model/Authorization/Authorization.js';
+import type { Authorization } from '@dal/layers/sequelize/index.js';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

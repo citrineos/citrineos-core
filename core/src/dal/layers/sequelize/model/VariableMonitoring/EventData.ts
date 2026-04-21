@@ -5,9 +5,9 @@ import type {
   ChargingStationDto,
   ComponentDto,
   EventDataDto,
-  EventNotificationEnumType,
-  EventTriggerEnumType,
   TenantDto,
+  EventTriggerEnumType,
+  EventNotificationEnumType,
   VariableDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
@@ -22,11 +22,9 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-
-import { ChargingStation } from '../Location/ChargingStation.js';
+import { Component, Variable } from '../DeviceModel/index.js';
+import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
-import { Component } from '@dal/layers/sequelize/model/DeviceModel/Component.js';
-import { Variable } from '@dal/layers/sequelize/model/DeviceModel/Variable.js';
 
 @Table
 export class EventData extends Model implements EventDataDto {
@@ -133,7 +131,7 @@ export class EventData extends Model implements EventDataDto {
   static async resolveStationPkId(instance: EventData): Promise<void> {
     if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
       // Lazy load ChargingStation to avoid circular dependency
-      const { ChargingStation } = await import('../Location/ChargingStation.js');
+      const { ChargingStation } = await import('../Location/index.js');
       const station = await ChargingStation.findOne({
         where: { id: instance.stationId, tenantId: instance.tenantId },
         attributes: ['pkId'],

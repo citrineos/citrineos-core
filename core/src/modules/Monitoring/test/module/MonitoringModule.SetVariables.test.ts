@@ -13,6 +13,19 @@ import {
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
+import {
+  ChargingStation,
+  Component,
+  DefaultSequelizeInstance,
+  OCPPMessage,
+  SequelizeDeviceModelRepository,
+  SequelizeOCPPMessageRepository,
+  SequelizeVariableMonitoringRepository,
+  Tenant,
+  Variable,
+  VariableAttribute,
+  VariableStatus,
+} from '@dal/index.js';
 import { MonitoringModule } from '../../src/module/module.js';
 import {
   aSetVariableData,
@@ -20,17 +33,6 @@ import {
   aSetVariablesResponse,
   aSetVariablesResponseMessage,
 } from '../providers/Monitoring.js';
-import { ChargingStation } from '../../../../dal/layers/sequelize/model/Location/ChargingStation.js';
-import { Component } from '../../../../dal/layers/sequelize/model/DeviceModel/Component';
-import { DefaultSequelizeInstance } from '../../../../dal/layers/sequelize/util';
-import { OCPPMessage } from '../../../../dal/layers/sequelize/model/OCPPMessage.js';
-import { SequelizeDeviceModelRepository } from '../../../../dal/layers/sequelize/repository/DeviceModel.js';
-import { SequelizeOCPPMessageRepository } from '../../../../dal/layers/sequelize/repository/OCPPMessage.js';
-import { SequelizeVariableMonitoringRepository } from '../../../../dal/layers/sequelize/repository/VariableMonitoring.js';
-import { Tenant } from '../../../../dal/layers/sequelize/model/Tenant.js';
-import { Variable } from '../../../../dal/layers/sequelize/model/DeviceModel/Variable.js';
-import { VariableAttribute } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
-import { VariableStatus } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableStatus.js';
 
 // ---------------------------------------------------------------------------
 // Constants

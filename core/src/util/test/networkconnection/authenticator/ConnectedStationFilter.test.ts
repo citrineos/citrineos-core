@@ -5,8 +5,8 @@ import { faker } from '@faker-js/faker';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { ConnectedStationFilter } from '../../../index.js';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { ConnectedStationFilter } from '../../../networkconnection';
 
 describe('ConnectedStationFilter', () => {
   let cache: Mocked<ICache>;

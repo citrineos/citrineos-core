@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { createIdentifier, DEFAULT_TENANT_ID, MessageOrigin, MessageState } from '@citrineos/base';
+import {
+  IOCPPMessageRepository,
+  ISubscriptionRepository,
+  OCPPMessage,
+  Subscription,
+} from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { WebhookDispatcher } from '../../src';
 import { aSubscription } from '../providers/SubscriptionProvider.js';
-import { OCPPMessage } from '../../../../dal/layers/sequelize/model/OCPPMessage';
-import { Subscription } from '../../../../dal/layers/sequelize/model/Subscription/Subscription';
-import { IOCPPMessageRepository, ISubscriptionRepository } from '../../../../dal/interfaces';
 
 describe('WebhookDispatcher', () => {
   const fetch = vi.fn(() =>

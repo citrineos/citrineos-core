@@ -18,16 +18,7 @@ import {
   mockFileStorageSaveFile,
   mockLogger,
 } from '../../vitest.setup';
-import {
-  ICertificateRepository,
-  IDeleteCertificateAttemptRepository,
-  IInstallCertificateAttemptRepository,
-  IInstalledCertificateRepository,
-} from '../../../../dal/interfaces/repositories.js';
 import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
-import type { CertificateAuthorityService } from '../../../../util/certificate';
-import { WebsocketNetworkConnection } from '../../../../util/networkconnection';
-import { Certificate } from '../../../../dal/layers/sequelize/model/Certificate/Certificate';
 
 // Define constants BEFORE mocks to avoid hoisting issues
 const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.hoisted(() => ({

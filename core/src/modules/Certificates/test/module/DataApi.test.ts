@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { aSystemConfig } from '../providers/SystemConfig';
+import { InstalledCertificate } from '@citrineos/core';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CertificatesDataApi, CertificatesModule } from '../../src';
 import { aUploadExistingCertificate } from '../providers/UploadExistingCertificateProvider';
 import { mockFastifyInstance, mockFileStorage } from '../../vitest.setup';
 import { MOCK_CHARGING_STATION_ID } from '../providers/ChargingStation';
-import { InstalledCertificate } from '../../../../dal/layers/sequelize/model/Certificate/InstalledCertificate';
 
 // Mock the decorator metadata before importing the class
 vi.mock('reflect-metadata', async (importOriginal) => {
@@ -25,7 +25,7 @@ const mockHandleUploadExistingCertificate = vi.fn();
 let createdInstalledCertificateInstances: any[] = [];
 
 vi.mock('@citrineos/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('citrineos-core/core/src/index')>();
+  const actual = await importOriginal<typeof import('@citrineos/core')>();
 
   class MockInstalledCertificate {
     id?: number;

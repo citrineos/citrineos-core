@@ -7,7 +7,7 @@ import {
   DEFAULT_TENANT_ID,
   IdTokenEnum,
 } from '@citrineos/base';
-import { Authorization } from 'citrineos-core/core/src/index';
+import { Authorization } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 

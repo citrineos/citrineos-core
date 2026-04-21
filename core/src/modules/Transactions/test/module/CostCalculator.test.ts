@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { ITariffRepository, Tariff } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { CostCalculator } from '../../src/module/CostCalculator.js';
 import { TransactionService } from '../../src/module/TransactionService.js';
 import { aTariff } from '../providers/Tariff.js';
-import { Tariff } from '../../../../dal/layers/sequelize/model/Tariff/Tariffs';
-import { ITariffRepository } from '../../../../dal/interfaces';
 
 describe('CostCalculator', () => {
   let tariffRepository: Mocked<ITariffRepository>;
@@ -82,8 +81,8 @@ describe('CostCalculator', () => {
     });
 
     it('should return 0 when tariff not found', async () => {
-      const connectorId = faker.number.int();
-      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, connectorId, 20.99)).toBe(
+      const anyStationId = faker.string.uuid();
+      expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, anyStationId, 20.99)).toBe(
         0,
       );
     });

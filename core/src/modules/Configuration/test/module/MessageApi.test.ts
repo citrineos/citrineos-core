@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
+import { SetNetworkProfile } from '@dal/index.js';
+import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPPVersion, OCPP_CallAction } from '@citrineos/base';
 import { ConfigurationOcpp2Api } from '../../src/module/2/MessageApi.js';
-import { SetNetworkProfile } from '../../../../dal/layers/sequelize/model/Location/SetNetworkProfile';
 
 vi.mock('uuid', () => ({
   v4: () => 'test-correlation-id',

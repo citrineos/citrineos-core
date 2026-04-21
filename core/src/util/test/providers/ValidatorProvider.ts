@@ -12,9 +12,9 @@ import {
   ITransactionEventRepository,
   TransactionEvent,
   VariableAttribute,
-} from 'citrineos-core/core/src/index';
+} from '@citrineos/core';
 import { ILogObj, Logger } from 'tslog';
-import { Mocked, vi } from 'vitest';
+import { vi, Mocked } from 'vitest';
 
 // Mock logger that can be used in tests
 export function createMockLogger(): Mocked<Logger<ILogObj>> {

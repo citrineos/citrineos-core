@@ -13,15 +13,14 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
+import { OCPP2_0_1_Mapper } from '@dal/index.js';
+import { packageGroupCall, validateChargingProfileType } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type { IEVDriverModuleApi } from '../interface.js';
 import { EVDriverModule } from '../module.js';
-import { validateChargingProfileType } from '@util/util/validator.js';
-import { packageGroupCall } from '@util/util/sendCall.js';
 
 const DEFAULT_VERSION = OCPPVersion.OCPP2_0_1;
 

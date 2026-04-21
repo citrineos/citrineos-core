@@ -13,8 +13,8 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import type { ChargingStation as ChargingStationType } from '../Location/ChargingStation.js';
-import { ChargingStation } from '../Location/ChargingStation.js';
+import { ChargingStation } from '../Location/index.js';
+import type { ChargingStation as ChargingStationType } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
 @Table

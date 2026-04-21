@@ -5,24 +5,23 @@
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
-  type CallAction,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
-  type IMessageConfirmation,
-  type OCPP2_common_types,
   OCPP2_request_types,
   OCPP_CallAction,
   OCPPVersion,
+  type CallAction,
+  type IMessageConfirmation,
+  type OCPP2_common_types,
 } from '@citrineos/base';
+import { SetNetworkProfile } from '@dal/index.js';
+import { packageGroupCall, validateLanguageTag } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type { IConfigurationModuleApi } from '../interface.js';
 import { ConfigurationModule } from '../module.js';
-import { SetNetworkProfile } from '@/dal/layers/sequelize/model/Location/SetNetworkProfile.js';
-import { packageGroupCall } from '@/util/util/sendCall.js';
-import { validateLanguageTag } from '@/util/util/validator.js';
 
 enum SetNetworkProfileExtraQuerystrings {
   websocketServerConfigId = 'websocketServerConfigId',

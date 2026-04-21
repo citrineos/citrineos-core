@@ -21,7 +21,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from '../Location/Evse.js';
+import { Evse } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 import { Transaction } from '../TransactionEvent/Transaction.js';
 

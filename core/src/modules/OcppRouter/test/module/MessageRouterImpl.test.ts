@@ -29,7 +29,7 @@ import {
   RequestBuilder,
   RetryMessageError,
 } from '@citrineos/base';
-import type { ILocationRepository } from 'citrineos-core/core/src/index';
+import type { ILocationRepository } from '@citrineos/core';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { MessageRouterImpl } from '../../src/module/router.js';
 import { WebhookDispatcher } from '../../src/module/webhook.dispatcher.js';

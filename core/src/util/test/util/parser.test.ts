@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { assert, describe, it } from 'vitest';
-import { getBatches } from '../../util/parser';
+import { getBatches } from '../../index';
 
 describe('getBatches', () => {
   it('splits array into batches of given positive size', () => {

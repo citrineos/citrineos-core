@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Subscription } from 'citrineos-core/core/src/index';
+import { Subscription } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 
 export function aSubscription(override?: Partial<Subscription>): Subscription {

@@ -4,13 +4,15 @@
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/base';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
+import {
+  ChargingStationNetworkProfile,
+  ServerNetworkProfile,
+} from '@dal/layers/sequelize/index.js';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
-import { ChargingStationNetworkProfile } from '@dal/layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
-import { ServerNetworkProfile } from '@dal/layers/sequelize/model/Location/ServerNetworkProfile.js';
 
 /**
  * Filter used to block connections when charging stations attempt to connect to disallowed security profiles
