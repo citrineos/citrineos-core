@@ -12,6 +12,7 @@ import { DefaultSequelizeInstance } from '../../../../dal/layers/sequelize/util'
 import { Component } from '../../../../dal/layers/sequelize/model/DeviceModel/Component';
 import { Variable } from '../../../../dal/layers/sequelize/model/DeviceModel/Variable';
 import { VariableAttribute } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableAttribute';
+import { VariableAttributeTable } from '../../../../dal/layers/sequelize/model/DeviceModel/VariableAttributeTable';
 import { Boot } from '../../../../dal/layers/sequelize/model/Boot';
 import { ChargingStation } from '../../../../dal/layers/sequelize/model/Location/ChargingStation';
 import { Tenant } from '../../../../dal/layers/sequelize/model/Tenant';
@@ -202,7 +203,7 @@ describe('BootNotificationService – createBootNotificationResponse integration
       await seedVariableAttributeLinkedToBoot(component.id, variable.id, boot.id);
 
       const bootConfig = await Boot.findByPk(STATION_ID, {
-        include: [{ model: VariableAttribute, as: 'pendingBootSetVariables' }],
+        include: [{ model: VariableAttributeTable, as: 'pendingBootSetVariables' }],
       });
 
       expect(bootConfig).not.toBeNull();

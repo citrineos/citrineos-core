@@ -54,6 +54,7 @@ import { Transaction } from './model/TransactionEvent/Transaction.js';
 import { TransactionEvent } from './model/TransactionEvent/TransactionEvent.js';
 import { Variable } from './model/DeviceModel/Variable.js';
 import { VariableAttribute } from './model/DeviceModel/VariableAttribute.js';
+import { VariableAttributeTable } from './model/DeviceModel/VariableAttributeTable.js';
 import { VariableCharacteristics } from './model/DeviceModel/VariableCharacteristics.js';
 import { VariableMonitoring } from './model/VariableMonitoring/VariableMonitoring.js';
 import { VariableMonitoringStatus } from './model/VariableMonitoring/VariableMonitoringStatus.js';
@@ -180,6 +181,7 @@ export class DefaultSequelizeInstance {
         Subscription,
         TransactionEvent,
         Tariff,
+        VariableAttributeTable,
         VariableAttribute,
         VariableCharacteristics,
         VariableMonitoring,

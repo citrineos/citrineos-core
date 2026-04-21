@@ -26,7 +26,8 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prepare": "husky",
-    "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully"
+    "migrate": "npx sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "madge": "npx madge --circular --extensions ts ./"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,md}": "prettier --write"

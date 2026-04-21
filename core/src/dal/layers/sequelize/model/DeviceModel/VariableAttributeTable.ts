@@ -6,72 +6,7 @@ import { OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 import { CryptoUtils } from '../../../../util/CryptoUtils.js';
 
-@Table({
-  tableName: 'VariableAttributes',
-  indexes: [
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId',
-      fields: ['stationPkId'],
-      where: {
-        type: null,
-        variableId: null,
-        componentId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_type',
-      fields: ['stationPkId', 'type'],
-      where: {
-        variableId: null,
-        componentId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_variableId',
-      fields: ['stationPkId', 'variableId'],
-      where: {
-        type: null,
-        componentId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_componentId',
-      fields: ['stationPkId', 'componentId'],
-      where: {
-        type: null,
-        variableId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_type_variableId',
-      fields: ['stationPkId', 'type', 'variableId'],
-      where: {
-        componentId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_type_componentId',
-      fields: ['stationPkId', 'type', 'componentId'],
-      where: {
-        variableId: null,
-      },
-    },
-    {
-      unique: true,
-      name: 'variable_attributes_stationPkId_variableId_componentId',
-      fields: ['stationPkId', 'variableId', 'componentId'],
-      where: {
-        type: null,
-      },
-    },
-  ],
-})
+@Table({ tableName: 'VariableAttributes' })
 export class VariableAttributeTable
   extends Model
   implements OCPP2_0_1.VariableAttributeType, VariableAttributeTableDto

@@ -20,6 +20,7 @@ import {
   DataType,
   ForeignKey,
   HasMany,
+  Table,
 } from 'sequelize-typescript';
 
 import { ChargingStation } from '../Location/ChargingStation.js';
@@ -32,6 +33,53 @@ import { Variable } from './Variable.js';
 import { VariableStatus } from './VariableStatus.js';
 import { VariableAttributeTable } from '@dal/layers/sequelize/model/DeviceModel/VariableAttributeTable.js';
 
+@Table({
+  tableName: 'VariableAttributes',
+  indexes: [
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId',
+      fields: ['stationPkId'],
+      where: { type: null, variableId: null, componentId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_type',
+      fields: ['stationPkId', 'type'],
+      where: { variableId: null, componentId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_variableId',
+      fields: ['stationPkId', 'variableId'],
+      where: { type: null, componentId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_componentId',
+      fields: ['stationPkId', 'componentId'],
+      where: { type: null, variableId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_type_variableId',
+      fields: ['stationPkId', 'type', 'variableId'],
+      where: { componentId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_type_componentId',
+      fields: ['stationPkId', 'type', 'componentId'],
+      where: { variableId: null },
+    },
+    {
+      unique: true,
+      name: 'variable_attributes_stationPkId_variableId_componentId',
+      fields: ['stationPkId', 'variableId', 'componentId'],
+      where: { type: null },
+    },
+  ],
+})
 export class VariableAttribute
   extends VariableAttributeTable
   implements OCPP2_0_1.VariableAttributeType, VariableAttributeDto
