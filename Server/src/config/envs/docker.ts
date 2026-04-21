@@ -157,6 +157,7 @@ export function createDockerConfig() {
           OCPP_CallAction.StatusNotification,
           OCPP_CallAction.StartTransaction,
           OCPP_CallAction.StopTransaction,
+          OCPP_CallAction.NotifySettlement,
         ],
       },
     },

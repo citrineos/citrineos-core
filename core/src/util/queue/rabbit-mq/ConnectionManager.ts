@@ -98,8 +98,8 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
   }
 
   async close(): Promise<void> {
+    this.state = 'closed';
     if (this.connection) {
-      this.state = 'closed';
       await this.connection.close();
       this.connection = null;
     }

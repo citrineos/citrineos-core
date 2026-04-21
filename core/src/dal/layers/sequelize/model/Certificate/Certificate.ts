@@ -88,7 +88,7 @@ export class Certificate extends Model implements CertificateDto {
   declare privateKeyFileId?: string | null;
 
   @ForeignKey(() => Certificate)
-  @Column(DataType.STRING)
+  @Column(DataType.INTEGER)
   declare signedBy?: number | null; // certificate id
 
   @BelongsTo(() => Certificate, { foreignKey: 'signedBy', as: 'signingCertificate' })

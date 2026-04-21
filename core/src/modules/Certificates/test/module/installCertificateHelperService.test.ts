@@ -1,7 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import {
+  type CertificateAuthorityService,
+  type ICertificateRepository,
+  type IDeleteCertificateAttemptRepository,
+  type IInstallCertificateAttemptRepository,
+  type IInstalledCertificateRepository,
+  WebsocketNetworkConnection,
+} from '@citrineos/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Certificate } from '../../../../dal/layers/sequelize/index.js';
+import { InstallCertificateHelperService } from '../../src/module/installCertificateHelperService';
 import {
   mockFileStorage,
   mockFileStorageGetFile,
@@ -14,8 +24,7 @@ import {
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '../../../../dal/interfaces/repositories.js';
-import { InstallCertificateHelperService } from '../../src/module/installCertificateHelperService';
-import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider'; // Define constants BEFORE mocks to avoid hoisting issues
+import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
 import type { CertificateAuthorityService } from '../../../../util/certificate';
 import { WebsocketNetworkConnection } from '../../../../util/networkconnection';
 import { Certificate } from '../../../../dal/layers/sequelize/model/Certificate/Certificate';
@@ -33,8 +42,30 @@ let createdCertificateInstances: any[] = [];
 let createdInstallCertificateAttemptInstances: any[] = [];
 let createdInstalledCertificateInstances: any[] = [];
 
-vi.mock('@dal/layers/sequelize/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@dal/layers/sequelize/index.js')>();
+vi.mock('jsrsasign', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('jsrsasign')>();
+  const MockX509 = class {
+    readCertPEM = vi.fn();
+  };
+  return {
+    ...actual,
+    default: {
+      ...(actual as any).default,
+      X509: MockX509,
+    },
+  };
+});
+
+vi.mock('../../../../util/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../util/index.js')>();
+  return {
+    ...actual,
+    extractCertificateDetails: mockExtractCertificateDetails,
+  };
+});
+
+vi.mock('../../../../dal/layers/sequelize/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../dal/layers/sequelize/index.js')>();
 
   class MockCertificate {
     id?: number;
@@ -59,6 +90,8 @@ vi.mock('@dal/layers/sequelize/index.js', async (importOriginal) => {
       Object.assign(instance, data);
       return instance;
     });
+
+    static create = vi.fn().mockResolvedValue(undefined);
   }
 
   class MockInstallCertificateAttempt {
@@ -497,7 +530,9 @@ describe('InstallCertificateHelperService', () => {
         '/custom/path',
       );
       expect(mockExistingCert.certificateFileId).toBe('newFileId');
-      expect(mockCertSave).toHaveBeenCalled();
+      expect(Certificate.create).toHaveBeenCalledWith(
+        expect.objectContaining({ certificateFileId: 'newFileId' }),
+      );
     });
 
     it('should get or create certificate and update installed cert if no cert tied', async () => {

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import amqp from 'amqplib';
-import { Logger, type ILogObj } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 import type { RabbitMQConnectionManager } from './ConnectionManager.js';
 
 export class RabbitMQChannelManager {
@@ -63,6 +63,10 @@ export class RabbitMQChannelManager {
       await channel.close();
       this.channelMap.delete(channelId);
     }
+  }
+
+  getConnectionManager(): RabbitMQConnectionManager {
+    return this.connectionManager;
   }
 
   async closeAll(): Promise<void> {

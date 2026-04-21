@@ -9,17 +9,17 @@ import {
   HUBJECT_DEFAULT_TOKENURL,
   SystemConfig,
 } from '@citrineos/base';
+import { faker } from '@faker-js/faker';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { faker } from '@faker-js/faker';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Hubject } from '../../../certificate/client/hubject.js';
+import { MemoryCache } from '../../../index.js';
 import {
   aValidRootCertificates,
   aValidSignedContractData,
   HUBJECT_DEFAULT_AUTH_TOKEN,
 } from '../../providers/Hubject.js';
-import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { MemoryCache } from '../../../index.js';
 
 describe('Hubject', () => {
   const mockBaseURL = 'https://hubject.base.test';
@@ -412,6 +412,32 @@ describe('Hubject', () => {
           }),
         };
         expect(fetch).toHaveBeenLastCalledWith(expectedUrl, expectedRequestInit);
+      });
+
+      it('fails when server returns 404', async () => {
+        const responseBody = JSON.stringify({
+          CCPResponse: {
+            emaidContent: [
+              {
+                messageDef: {
+                  certificateInstallationRes: 'gJgCNWnz+qh6tzbBAMIagnkDGyuToktzm6MLY2EDm6',
+                },
+              },
+            ],
+          },
+        });
+        (fetch as Mock).mockReturnValueOnce(
+          Promise.resolve({
+            status: 404,
+            text: async () => responseBody,
+          }),
+        );
+
+        const givenXsdMsgDefNamespace = faker.lorem.word();
+        const givenCertificateInstallationReq = faker.lorem.word();
+        await expect(
+          hubject.getSignedContractData(givenXsdMsgDefNamespace, givenCertificateInstallationReq),
+        ).rejects.toThrow(`Get signed contract data response is unexpected: 404: ${responseBody}`);
       });
     });
 

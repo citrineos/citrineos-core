@@ -292,14 +292,7 @@ export class CitrineOSServer {
   }
 
   protected _createHandler(): IMessageHandler {
-    const exchange = this._config.util.messageBroker.amqp?.exchange;
-    if (!exchange) {
-      throw new Error('RabbitMQ exchange is not configured');
-    }
-    if (!this._channelManager) {
-      throw new Error('RabbitMQ channel manager is not initialized');
-    }
-    return new RabbitMqReceiver(exchange, this._channelManager, this._logger);
+    return new RabbitMqReceiver(this._config, this._channelManager!, this._logger);
   }
 
   protected initHealthCheck() {

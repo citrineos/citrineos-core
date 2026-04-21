@@ -322,7 +322,23 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     protocols: Set<string>,
     _req: http.IncomingMessage,
     wsServerProtocols: OCPPVersionType[],
+    forceProtocol?: OCPPVersionType,
   ) {
+    // Mainly for dev purposes. Sets a specific protocol to be used instead of determining based on the lists of protocols from both ends
+    if (forceProtocol) {
+      if (
+        protocols.has(forceProtocol) &&
+        wsServerProtocols.find((webServerProtocol) => webServerProtocol === forceProtocol)
+      ) {
+        return forceProtocol;
+      }
+
+      this._logger.error(
+        `Forced protocol version '${forceProtocol}' is not supported by the current charger and server communication. Charger supports: [${[...protocols].join(', ')}] and server expects '${wsServerProtocols.join(', ')}'.`,
+      );
+      return false;
+    }
+
     // Only supports configured protocol version
     for (const wsServerProtocol of wsServerProtocols) {
       if (protocols.has(wsServerProtocol)) {
@@ -727,7 +743,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const wss = new WebSocketServer({
         noServer: true,
         handleProtocols: (protocols, req) =>
-          this._handleProtocols(protocols, req, wsConfig.protocols),
+          this._handleProtocols(protocols, req, wsConfig.protocols, wsConfig.forceProtocol),
         clientTracking: false,
       });
 

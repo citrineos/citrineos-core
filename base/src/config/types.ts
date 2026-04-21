@@ -209,6 +209,7 @@ export const systemConfigInputSchema = z.object({
           .object({
             url: z.string(),
             exchange: z.string(),
+            instanceIdentifier: z.string().optional(),
           })
           .optional(),
       })
@@ -519,6 +520,7 @@ export const systemConfigSchema = z
             .object({
               url: z.string(),
               exchange: z.string(),
+              instanceIdentifier: z.string().optional(),
             })
             .optional(),
         })

@@ -1,20 +1,20 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { faker } from '@faker-js/faker';
+import { KJUR } from 'jsrsasign';
+import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import * as CertificateUtil from '../../certificate/CertificateUtil.js';
 import {
   IChargingStationCertificateAuthorityClient,
   IV2GCertificateAuthorityClient,
 } from '../../certificate/client/interface.js';
-import { OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
 } from '../providers/CertificateAuthority.js';
-import { faker } from '@faker-js/faker';
-import * as CertificateUtil from '../../certificate/CertificateUtil.js';
 import { readFile } from '../utils/FileUtil.js';
-import { KJUR } from 'jsrsasign';
-import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
 import { CertificateAuthorityService } from '../../certificate';
 import { MemoryCache } from '../../cache/memory';
 
@@ -43,6 +43,7 @@ describe('CertificateAuthorityService', () => {
       getSignedCertificate: vi.fn(),
       getCACertificates: vi.fn(),
       getRootCertificates: vi.fn(),
+      getSignedContractData: vi.fn(),
     } as unknown as Mocked<IV2GCertificateAuthorityClient>;
 
     mockChargingStationClient = {
@@ -150,6 +151,35 @@ describe('CertificateAuthorityService', () => {
 
       expect(mockChargingStationClient.getRootCACertificate).toHaveBeenCalled();
       expect(actualResult).toBe(mockPem);
+    });
+  });
+
+  describe('getSignedContractData', () => {
+    it('returns signed contract data from v2g client', async () => {
+      const givenSchemaVersion = faker.lorem.word();
+      const givenExiRequest = faker.lorem.word();
+      const mockSignedContractData = faker.lorem.word();
+      mockV2GClient.getSignedContractData.mockReturnValue(Promise.resolve(mockSignedContractData));
+
+      const actualResult = await certificateAuthorityService.getSignedContractData(
+        givenSchemaVersion,
+        givenExiRequest,
+      );
+
+      expect(mockV2GClient.getSignedContractData).toHaveBeenCalledWith(
+        givenSchemaVersion,
+        givenExiRequest,
+      );
+      expect(actualResult).toBe(mockSignedContractData);
+    });
+
+    it('propagates errors from v2g client', async () => {
+      const givenError = new Error('v2g client error');
+      mockV2GClient.getSignedContractData.mockRejectedValue(givenError);
+
+      await expect(
+        certificateAuthorityService.getSignedContractData(faker.lorem.word(), faker.lorem.word()),
+      ).rejects.toThrow(givenError);
     });
   });
 

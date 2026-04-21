@@ -25,6 +25,7 @@ import {
   ErrorCode,
   EventGroup,
   OCPP1_6,
+  OCPP2_1,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
@@ -544,6 +545,31 @@ export class TransactionsModule extends AbstractModule {
         response.ongoingIndicator,
       );
     }
+  }
+
+  /**
+   * C19 - Cancellation prior to transaction
+   * Handles NotifySettlementRequest from Charging Station to inform CSMS
+   * that a payment has been canceled or settled.
+   */
+  @AsHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifySettlement)
+  protected async _handleNotifySettlement(
+    message: IMessage<OCPP2_1.NotifySettlementRequest>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('NotifySettlementRequest received:', message, props);
+
+    const request = message.payload;
+
+    this._logger.info(
+      `NotifySettlement received: pspRef=${request.pspRef}, status=${request.status}, ` +
+        `amount=${request.settlementAmount}, transactionId=${request.transactionId ?? 'none'}`,
+    );
+
+    const response: OCPP2_1.NotifySettlementResponse = {};
+
+    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    this._logger.debug('NotifySettlement response sent:', messageConfirmation);
   }
 
   /**

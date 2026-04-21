@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, IModule } from '@citrineos/base';
+import type { CallAction, IModule, SystemConfig } from '@citrineos/base';
 import { AbstractMessageHandler, Message, RetryMessageError } from '@citrineos/base';
 import * as amqplib from 'amqplib';
 import type { ILogObj } from 'tslog';
@@ -11,7 +11,25 @@ import { RabbitMQChannelManager } from './ChannelManager.js';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
+ *
+ * Supports two operating modes:
+ *
+ * MODULE MODE (default): each identifier gets its own queue (`rabbit_queue_<identifier>`).
+ * Suitable for the small fixed set of module queues (Provisioning, Transactions, etc.).
+ *
+ * ROUTER MODE (per-instance queue): activated automatically when `amqpConfig` is supplied
+ * to the constructor. A single shared queue is created lazily on the first `subscribe()` call.
+ * Charger connections add/remove bindings on that queue rather than creating new queues and
+ * consumers. Consumer count stays constant (1) regardless of how many chargers are connected,
+ * making it suitable for scaling to thousands of chargers without hitting MQ's per-channel
+ * consumer limit.
+ *
+ * The instance queue name is derived from `amqpConfig.instanceIdentifier`, defaulting to
+ * `router-<Date.now()>` when not set. This value should be set to a stable, unique identifier
+ * per process (e.g. the ECS task hostname or Kubernetes pod name) via the `INSTANCE_IDENTIFIER`
+ * environment variable wired into `SystemConfig.util.messageBroker.amqp.instanceIdentifier`.
  */
+
 export class RabbitMqReceiver extends AbstractMessageHandler {
   /**
    * Constants
@@ -23,21 +41,133 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
    * Fields
    */
   protected _channelManager: RabbitMQChannelManager;
-  protected _consumerTags = new Map<string, string[]>(); // Map of identifier to consumerTags for unsubscribing
+
+  // MODULE MODE: tracks consumer tags per identifier for cancellation on unsubscribe
+  protected _consumerTags = new Map<string, string[]>();
+
+  // ROUTER MODE: single per-instance queue with fixed consumers and dynamic bindings
+  private _instanceQueueName?: string;
+  private _instanceConsumerTags: string[] = [];
+  private _instanceBindings = new Map<string, Array<Record<string, string>>>();
+
+  // Lazy-init: set when amqpConfig is provided; fulfilled once initializeInstanceQueue completes
+  private _pendingInstanceQueueName?: string;
+  private _instanceQueueInit?: Promise<void>;
+  private exchange: string;
 
   constructor(
-    private exchange: string,
+    config: SystemConfig,
     channelManager: RabbitMQChannelManager,
     logger?: Logger<ILogObj>,
     module?: IModule,
+    routerMode?: boolean,
   ) {
     super(logger, module);
     this._channelManager = channelManager;
+    const exchange = config.util.messageBroker.amqp?.exchange;
+    if (!exchange) {
+      throw new Error('RabbitMQ exchange is not configured');
+    }
+    this.exchange = exchange;
+    if (routerMode) {
+      const id = config.util.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
+      this._pendingInstanceQueueName = `rabbit_queue_router_${id}`;
+    }
   }
 
   /**
    * Methods
    */
+
+  /**
+   * Ensures the instance queue is initialized exactly once, triggered lazily on first subscribe.
+   * No-op if this receiver is not in router mode (no `amqpConfig` was supplied).
+   */
+  private async _lazyInitInstanceQueue(): Promise<void> {
+    if (this._instanceQueueName) return; // already initialized
+    if (!this._pendingInstanceQueueName) return; // not router mode
+    if (!this._instanceQueueInit) {
+      this._instanceQueueInit = this.initializeInstanceQueue(this._pendingInstanceQueueName);
+    }
+    await this._instanceQueueInit;
+  }
+
+  /**
+   * Switches this receiver into router mode by creating a single per-process queue.
+   *
+   * After this is called, {@link subscribe} adds bindings to this queue instead of
+   * creating per-charger queues and consumers. A single consumer handles all messages
+   * for all connected chargers — requests and responses, all origins — with routing
+   * done in application code via the stationId in each message.
+   *
+   * Call once at router startup, before any chargers connect.
+   *
+   * @param queueName  Stable, instance-unique name (e.g. `rabbit_queue_router_<hostname>`).
+   */
+  async initializeInstanceQueue(queueName: string): Promise<void> {
+    const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
+    await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    await channel.assertQueue(queueName, {
+      durable: true,
+      autoDelete: false,
+      exclusive: false,
+    });
+
+    this._instanceQueueName = queueName;
+
+    const { consumerTag } = await channel.consume(queueName, (msg) =>
+      this._onMessage(msg, channel),
+    );
+    this._instanceConsumerTags.push(consumerTag);
+
+    this._logger.info(`[instance-queue] Initialized ${queueName} with 1 consumer`);
+
+    // On reconnect: re-assert queue, restore all active bindings, re-create consumers
+    this._channelManager.getConnectionManager().on('connected', () => {
+      this._reinitializeInstanceQueue().catch((err) => {
+        this._logger.error('[instance-queue] Failed to reinitialize after reconnect:', err);
+      });
+    });
+  }
+
+  /**
+   * Re-establishes the instance queue and its consumers after a reconnection.
+   * Re-adds all currently tracked bindings (idempotent — handles the edge case
+   * where the queue was deleted and needs to be fully rebuilt).
+   */
+  private async _reinitializeInstanceQueue(): Promise<void> {
+    if (!this._instanceQueueName) return;
+
+    const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
+
+    await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    await channel.assertQueue(this._instanceQueueName, {
+      durable: true,
+      autoDelete: false,
+      exclusive: false,
+    });
+
+    // Re-bind all active charger subscriptions (idempotent if queue already has them)
+    let reboundCount = 0;
+    for (const bindings of this._instanceBindings.values()) {
+      for (const args of bindings) {
+        await channel.bindQueue(this._instanceQueueName, this.exchange, '', args);
+        reboundCount++;
+      }
+    }
+
+    // Re-create the single consumer on the new channel
+    this._instanceConsumerTags = [];
+    const { consumerTag } = await channel.consume(this._instanceQueueName, (msg) =>
+      this._onMessage(msg, channel),
+    );
+    this._instanceConsumerTags.push(consumerTag);
+
+    this._logger.info(
+      `[instance-queue] Reinitialized ${this._instanceQueueName} after reconnect: ` +
+        `1 consumer, ${reboundCount} binding(s) restored`,
+    );
+  }
 
   /**
    * Binds queue to an exchange given identifier and optional actions and filter.
@@ -62,19 +192,64 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       this._logger.debug(
         `Skipping queue binding for module ${identifier} as there are no available actions.`,
       );
-
       return true;
     }
 
+    if (this._instanceQueueName || this._pendingInstanceQueueName) {
+      await this._lazyInitInstanceQueue();
+      return this._bindToInstanceQueue(identifier, actions, filter);
+    }
+
+    return this._subscribePerIdentifierQueue(identifier, actions, filter);
+  }
+
+  /**
+   * ROUTER MODE: adds header bindings to the shared instance queue for this charger.
+   * No new queue or consumer is created.
+   */
+  private async _bindToInstanceQueue(
+    identifier: string,
+    actions?: CallAction[],
+    filter?: { [k: string]: string },
+  ): Promise<boolean> {
+    const baseArgs: Record<string, string> = { 'x-match': 'all', ...filter };
+    const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
+    const addedBindings: Array<Record<string, string>> = [];
+
+    if (actions && actions.length > 0) {
+      for (const action of actions) {
+        const args = { action: action.toString(), ...baseArgs };
+        await channel.bindQueue(this._instanceQueueName!, this.exchange, '', args);
+        addedBindings.push(args);
+      }
+    } else {
+      await channel.bindQueue(this._instanceQueueName!, this.exchange, '', baseArgs);
+      addedBindings.push(baseArgs);
+    }
+
+    const existing = this._instanceBindings.get(identifier) ?? [];
+    this._instanceBindings.set(identifier, [...existing, ...addedBindings]);
+
+    this._logger.debug(
+      `[instance-queue] Added ${addedBindings.length} binding(s) for ${identifier} ` +
+        `(chargers tracked: ${this._instanceBindings.size})`,
+    );
+    return true;
+  }
+
+  /**
+   * MODULE MODE: creates a dedicated queue per identifier with its own consumer(s).
+   * Original behavior, unchanged.
+   */
+  private async _subscribePerIdentifierQueue(
+    identifier: string,
+    actions?: CallAction[],
+    filter?: { [k: string]: string },
+  ): Promise<boolean> {
     const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
 
     // Ensure that filter includes the x-match header set to all
-    filter = filter
-      ? {
-          'x-match': 'all',
-          ...filter,
-        }
-      : { 'x-match': 'all' };
+    filter = filter ? { 'x-match': 'all', ...filter } : { 'x-match': 'all' };
 
     const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
     if (!channel) {
@@ -119,6 +294,40 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }
 
   async unsubscribe(identifier: string): Promise<boolean> {
+    // ROUTER MODE: remove bindings from shared queue
+    if (this._instanceQueueName) {
+      const bindings = this._instanceBindings.get(identifier);
+      if (!bindings?.length) {
+        this._logger.warn(`No bindings found for ${identifier} during unsubscribe.`);
+        return false;
+      }
+
+      // Remove from map first — prevents reconnect from re-adding bindings for a disconnected charger
+      this._instanceBindings.delete(identifier);
+
+      try {
+        const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
+        for (const args of bindings) {
+          try {
+            await channel.unbindQueue(this._instanceQueueName, this.exchange, '', args);
+          } catch {
+            this._logger.warn(`Could not unbind ${identifier} binding — may already be gone.`);
+          }
+        }
+        this._logger.debug(
+          `[instance-queue] Removed ${bindings.length} binding(s) for ${identifier} ` +
+            `(chargers tracked: ${this._instanceBindings.size})`,
+        );
+      } catch {
+        this._logger.warn(
+          `Channel unavailable during unsubscribe for ${identifier} — bindings removed from local map only`,
+        );
+      }
+
+      return true;
+    }
+
+    // MODULE MODE: cancel consumers
     const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
     if (!channel) {
       this._logger.error('RabbitMQ is down: cannot unsubscribe.');
@@ -139,6 +348,28 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }
 
   async shutdown(): Promise<void> {
+    // ROUTER MODE: cancel all tracked consumers on the shared queue
+    if (this._instanceQueueName) {
+      try {
+        const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
+        for (const tag of this._instanceConsumerTags) {
+          try {
+            await channel.cancel(tag);
+            this._logger.debug(`[instance-queue] Cancelled consumer ${tag} during shutdown.`);
+          } catch (error) {
+            this._logger.error(
+              `[instance-queue] Error cancelling consumer ${tag} during shutdown.`,
+              error,
+            );
+          }
+        }
+      } catch {
+        this._logger.warn('[instance-queue] Channel unavailable during shutdown.');
+      }
+      return;
+    }
+
+    // MODULE MODE: cancel all tracked consumers
     for (const consumerTags of this._consumerTags.values()) {
       const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
       if (channel) {
