@@ -68,9 +68,15 @@ services:
       # Bootstrap Configuration Environment Variables
       BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
       BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
-      # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
+      # Uncomment the following lines to use local file access instead of S3
+      # BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
+      # BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "s3"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ENDPOINT: "http://minio:9000"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME: "citrineos-s3-bucket"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE: "true"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID: "minioadmin"
+      BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY: "minioadmin"
       # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
       CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
     depends_on:
@@ -94,7 +100,11 @@ services:
       test:
         [
           "CMD-SHELL",
-          'node -e "const net = require(\"net\"); const client = net.createConnection(8080, \"127.0.0.1\", () => { client.end(); process.exit(0); }); client.on(\"error\", () => process.exit(1)); client.setTimeout(5000, () => { client.destroy(); process.exit(1); });"',
+          "node -e \"const net = require(\\\"net\\\"); const client =
+            net.createConnection(8080, \\\"127.0.0.1\\\", () => { client.end();
+            process.exit(0); }); client.on(\\\"error\\\", () =>
+            process.exit(1)); client.setTimeout(5000, () => { client.destroy();
+            process.exit(1); });\"",
         ]
       interval: 30s
       timeout: 10s
@@ -130,13 +140,23 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    volumes:
+      - ./src/assets/certificates:/certificates:ro
     entrypoint: >
       /bin/sh -c "
-      # Enable command echoing and error reporting
-      set -x
+        set -e
 
-      echo 'Setting up MinIO alias'
-      mc alias set myminio http://minio:9000 minioadmin minioadmin || echo 'FAILED: alias setup'
+        echo 'Setting up MinIO alias...'
+        mc alias set myminio http://minio:9000 minioadmin minioadmin
+
+        echo 'Creating citrineos bucket...'
+        mc mb --ignore-existing myminio/citrineos-s3-bucket
+
+        echo 'Uploading certificates...'
+        mc cp --recursive /certificates/ myminio/citrineos-s3-bucket/
+
+        echo 'Done. Uploaded files:'
+        mc ls myminio/citrineos-s3-bucket
       "
 
   graphql-engine:
@@ -166,7 +186,13 @@ services:
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
       ## uncomment next line to set an admin secret - warning, without configuration this will cause upstream services to fail
       # HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
-      HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
+      HASURA_GRAPHQL_METADATA_DEFAULTS: "{\"backend_configs\":{\"dataconnector\":{\"a\
+        thena\":{\"uri\":\"http://data-connector-agent:8081/api/v1/athena\"},\"\
+        mariadb\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mariadb\"},\
+        \"mysql8\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mysql\"},\
+        \"oracle\":{\"uri\":\"http://data-connector-agent:8081/api/v1/oracle\"},\
+        \"snowflake\":{\"uri\":\"http://data-connector-agent:8081/api/v1/snowfl\
+        ake\"}}}}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://graphql-engine:8080/healthz"]
       interval: 5s

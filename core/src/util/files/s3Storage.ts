@@ -119,7 +119,11 @@ export class S3Storage implements ConfigStore {
       const command = new CreateBucketCommand({ Bucket: bucket });
       await this.s3Client.send(command);
       this._logger.info(`Bucket "${bucket}" created successfully.`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.Code === 'BucketAlreadyOwnedByYou' || error.name === 'BucketAlreadyOwnedByYou') {
+        this._logger.info(`Bucket "${bucket}" already exists and is owned by you.`);
+        return;
+      }
       this._logger.error(`Failed to create bucket "${bucket}":`, error);
       throw error;
     }
