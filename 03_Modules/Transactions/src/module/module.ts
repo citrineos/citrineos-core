@@ -730,52 +730,63 @@ export class TransactionsModule extends AbstractModule {
 
     await this.sendCallResultWithMessage(message, stopTransactionResponse);
 
-    const transaction = await Transaction.findOne({
-      where: {
+    // Persistence below must not throw out of the handler: the CallResult has already
+    // been queued, and any thrown error would cause AbstractModule.handle to emit a
+    // CallError on the same correlationId that can race ahead of the CallResult.
+    try {
+      const transaction = await Transaction.findOne({
+        where: {
+          stationId,
+          transactionId: request.transactionId.toString(),
+        },
+        include: [StartTransaction],
+      });
+
+      if (!transaction) {
+        this._logger.error(`Transaction ${request.transactionId} not found.`);
+        return;
+      }
+
+      const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+        tenantId,
+        transaction.id,
         stationId,
-        transactionId: request.transactionId.toString(),
-      },
-      include: [StartTransaction],
-    });
-
-    if (!transaction) {
-      this._logger.error(`Transaction ${request.transactionId} not found.`);
-      return;
-    }
-
-    const stopTransaction = await this._transactionEventRepository.createStopTransaction(
-      tenantId,
-      transaction.id,
-      stationId,
-      request.meterStop,
-      new Date(request.timestamp),
-      request.transactionData?.map((data) =>
-        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
-          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
-        ),
-      ) || [],
-      request.reason || (request.idTag ? 'Remote' : 'Local'),
-      authorization?.id,
-    );
-
-    if (!stopTransaction) {
-      this._logger.error(
-        `Failed to create StopTransaction record for transaction ${request.transactionId}`,
+        request.meterStop,
+        new Date(request.timestamp),
+        request.transactionData?.map((data) =>
+          OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+            data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+          ),
+        ) || [],
+        request.reason || (request.idTag ? 'Remote' : 'Local'),
+        authorization?.id,
       );
-    }
 
-    if (transaction.startTransaction) {
-      transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
-    } else {
-      this._logger.warn(
-        `StartTransaction record not found at station ${stationId} for transactionId ${request.transactionId}. 
+      if (!stopTransaction) {
+        this._logger.error(
+          `Failed to create StopTransaction record for transaction ${request.transactionId}`,
+        );
+      }
+
+      if (transaction.startTransaction) {
+        transaction.totalKwh =
+          (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
+      } else {
+        this._logger.warn(
+          `StartTransaction record not found at station ${stationId} for transactionId ${request.transactionId}.
         Cannot calculate totalKwh.`,
+        );
+      }
+      transaction.isActive = false;
+      transaction.stoppedReason = request.reason;
+      transaction.endTime = request.timestamp;
+      await transaction.save();
+    } catch (err) {
+      this._logger.error(
+        `StopTransaction persistence failed for transaction ${request.transactionId} at station ${stationId}`,
+        err,
       );
     }
-    transaction.isActive = false;
-    transaction.stoppedReason = request.reason;
-    transaction.endTime = request.timestamp;
-    await transaction.save();
   }
 
   protected async deactivateOtherActiveTransactionsAtEvse201(
