@@ -192,9 +192,7 @@ describe('OCPPValidator', () => {
 
         expect(result.isValid).toBe(true);
       });
-    });
 
-    describe('OCPP 2.0.1', () => {
       it('should validate a valid RequestStartTransaction request', () => {
         const result = validator.validateOCPPRequest(
           OCPP2_0_1_CallAction.RequestStartTransaction,
@@ -210,6 +208,88 @@ describe('OCPPValidator', () => {
         );
 
         expect(result.isValid).toBe(true);
+      });
+
+      it('should validate Custom SetChargingProfile from logs', () => {
+        const message1Payload = {
+          evseId: 12,
+          chargingProfile: {
+            id: 10002,
+            chargingProfileKind: 'Absolute',
+            chargingProfilePurpose: 'TxDefaultProfile',
+            validFrom: '2026-04-21T15:35:00Z',
+            validTo: '2026-04-21T15:46:00Z',
+            chargingSchedule: [
+              {
+                id: 866384,
+                startSchedule: '2026-04-21T15:35:00Z',
+                chargingRateUnit: 'W',
+                chargingSchedulePeriod: [
+                  {
+                    limit: 60000,
+                    startPeriod: 0,
+                  },
+                  {
+                    limit: 0,
+                    startPeriod: 300,
+                  },
+                ],
+                duration: 660,
+              },
+            ],
+            stackLevel: 2,
+          },
+        };
+
+        const result = validator.validateOCPPRequest(
+          'SetChargingProfile' as any,
+          message1Payload,
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        console.log('VALIDATION RESULT: ', JSON.stringify(result, null, 2));
+
+        expect(result.isValid).toBe(true);
+      });
+      it('should validate Custom SetChargingProfile from logs (Payload 2)', () => {
+        const message2Payload = {
+          evseId: 1,
+          chargingProfile: {
+            id: 201603,
+            chargingProfileKind: 'Absolute',
+            chargingProfilePurpose: 'TxDefaultProfile',
+            validFrom: '2026-04-21T15:35:00Z',
+            validTo: '2026-04-21T15:46:00Z',
+            chargingSchedule: [
+              {
+                id: 406065,
+                startSchedule: '2026-04-21T15:35:00Z',
+                chargingRateUnit: 'W',
+                chargingSchedulePeriod: [
+                  {
+                    limit: 5000,
+                    startPeriod: 0,
+                  },
+                  {
+                    limit: 5000,
+                    startPeriod: 300,
+                  },
+                ],
+                duration: 660,
+              },
+            ],
+            stackLevel: 1,
+          },
+        };
+
+        const result2 = validator.validateOCPPRequest(
+          'SetChargingProfile' as any,
+          message2Payload,
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        console.log('VALIDATION RESULT 2: ', JSON.stringify(result2, null, 2));
+        expect(result2.isValid).toBe(true);
       });
     });
 
