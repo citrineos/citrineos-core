@@ -289,8 +289,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
        **/
       error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
       this._logger.warn(
-        'Connection upgrade failed',
-        error instanceof Error ? error : new Error(String(error)),
+        `Connection upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -410,7 +409,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         try {
           await this._router.deregisterConnection(tenantId, stationId);
         } catch (err) {
-          this._logger.error(`Failed to deregister stale connection for ${identifier}`, err);
+          this._logger.error(
+            `Failed to deregister stale connection for ${identifier}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
         this._logger.warn(`Terminated stale websocket connection for ${identifier}`);
       }

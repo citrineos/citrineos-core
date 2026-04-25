@@ -35,7 +35,9 @@ export abstract class AuthenticatorFilter {
         await this.filter(tenantId, stationId, request, options);
         this._logger.debug(`Filter passed for: ${stationId}`);
       } catch (error) {
-        this._logger.warn(`Filter failed for: ${stationId}`);
+        this._logger.warn(
+          `Filter failed for: ${stationId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
         throw error;
       }
     } else {

@@ -62,7 +62,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
             return CryptoUtils.isPasswordMatch(hashedPassword, password);
           }
         }
-        this._logger.warn('Has no password', username);
+        this._logger.warn(`Has no password for station: ${username}`);
         return false;
       });
   }
