@@ -45,34 +45,23 @@ PACKAGES=(
 rewrite_package_json() {
   local pkg_path="$1/package.json"
 
-  # Backup original
   cp "$pkg_path" "$pkg_path.bak"
 
-  # Use node to rewrite the package.json cleanly
-  FORK_VERSION="$FORK_VERSION" PKG_PATH="$pkg_path" node -e '
-
+  FORK_VERSION="$FORK_VERSION" PKG_PATH="$pkg_path" node -e "$(cat <<'EOF'
     const fs = require('fs');
+    const { FORK_VERSION, PKG_PATH } = process.env;
     const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
 
-    // Rename package: @citrineos/foo -> @zetra/citrineos-foo
     pkg.name = pkg.name.replace('@citrineos/', '@zetra/citrineos-');
-
-    // Update version
     pkg.version = FORK_VERSION;
 
-    // Rewrite @citrineos/* dependencies
     const rewriteDeps = (deps) => {
       if (!deps) return deps;
-      const result = {};
-      for (const [key, val] of Object.entries(deps)) {
-        if (key.startsWith('@citrineos/')) {
-          const newKey = key.replace('@citrineos/', '@zetra/citrineos-');
-          result[newKey] = FORK_VERSION;
-        } else {
-          result[key] = val;
-        }
-      }
-      return result;
+      return Object.fromEntries(Object.entries(deps).map(([k, v]) =>
+        k.startsWith('@citrineos/')
+          ? [k.replace('@citrineos/', '@zetra/citrineos-'), FORK_VERSION]
+          : [k, v]
+      ));
     };
 
     pkg.dependencies = rewriteDeps(pkg.dependencies);
@@ -81,7 +70,8 @@ rewrite_package_json() {
 
     fs.writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2));
     console.log('Rewritten:', pkg.name, pkg.version);
-  '
+EOF
+)"
 }
 
 # ─────────────────────────────────────────────
