@@ -7,8 +7,6 @@ name: Publish citrine to npm
 on:
   push:
     branches: [ env/staging, env/prod, tech-1564-use-our-own-citrine-npm-package ]
-    tags:
-      - 'v*'
 
 jobs:
   publish:
@@ -34,17 +32,13 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Clean and install dependencies
+      - name: Install and build
         run: |
-          npm run remove-dependencies
           npm install
           npm run build
-
- 
-      - name: Build all packages
-        run: npm run build
  
       - name: Publish all packages
         run: bash scripts/publish-to-npm.sh ${{ steps.version.outputs.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ZETRA }}
+          NPM_TAG: ${{ github.ref_name == 'env/prod' && 'prod' || 'staging' }}

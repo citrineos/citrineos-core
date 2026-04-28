@@ -14,6 +14,8 @@ set -e
 ZETRA_SCOPE="@zetra"
 CITRINE_SCOPE="@citrineos"
 FORK_VERSION="${1#v}"
+NPM_TAG="${NPM_TAG:-dev}"
+
 
 if [ -z "$FORK_VERSION" ]; then
   echo "❌ No version provided. Usage: bash publish-all.sh <version>"
@@ -47,15 +49,16 @@ rewrite_package_json() {
   cp "$pkg_path" "$pkg_path.bak"
 
   # Use node to rewrite the package.json cleanly
-  node -e "
+  FORK_VERSION="$FORK_VERSION" PKG_PATH="$pkg_path" node -e '
+
     const fs = require('fs');
-    const pkg = JSON.parse(fs.readFileSync('$pkg_path', 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
 
     // Rename package: @citrineos/foo -> @zetra/citrineos-foo
     pkg.name = pkg.name.replace('@citrineos/', '@zetra/citrineos-');
 
     // Update version
-    pkg.version = '$FORK_VERSION';
+    pkg.version = FORK_VERSION;
 
     // Rewrite @citrineos/* dependencies
     const rewriteDeps = (deps) => {
@@ -64,7 +67,7 @@ rewrite_package_json() {
       for (const [key, val] of Object.entries(deps)) {
         if (key.startsWith('@citrineos/')) {
           const newKey = key.replace('@citrineos/', '@zetra/citrineos-');
-          result[newKey] = '$FORK_VERSION';
+          result[newKey] = FORK_VERSION;
         } else {
           result[key] = val;
         }
@@ -76,21 +79,24 @@ rewrite_package_json() {
     pkg.devDependencies = rewriteDeps(pkg.devDependencies);
     pkg.peerDependencies = rewriteDeps(pkg.peerDependencies);
 
-    fs.writeFileSync('$pkg_path', JSON.stringify(pkg, null, 2));
+    fs.writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2));
     console.log('Rewritten:', pkg.name, pkg.version);
-  "
+  '
 }
 
 # ─────────────────────────────────────────────
-# Helper: restore original package.json
+# Cleanup trap
 # ─────────────────────────────────────────────
-restore_package_json() {
-  local pkg_path="$1/package.json"
-  if [ -f "$pkg_path.bak" ]; then
-    mv "$pkg_path.bak" "$pkg_path"
-    echo "Restored: $1/package.json"
-  fi
+cleanup() {
+  for pkg in "${PACKAGES[@]}"; do
+    if [ -f "$pkg/package.json.bak" ]; then
+      mv "$pkg/package.json.bak" "$pkg/package.json"
+      echo "Restored: $pkg/package.json"
+    fi
+  done
 }
+trap cleanup EXIT
+
 
 # ─────────────────────────────────────────────
 # Main
@@ -118,15 +124,8 @@ for pkg in "${PACKAGES[@]}"; do
 
   # Publish
   cd "$pkg"
-  if npm publish --access public --tag fork; then
-    echo "✅ Published $pkg successfully"
-  else
-    echo "❌ Failed to publish $pkg"
-    cd "$ROOT_DIR"
-    restore_package_json "$pkg"
-    exit 1
-  fi
-
+  npm publish --access public --tag "$NPM_TAG"
+  echo "✅ Published $pkg successfully"
   cd "$ROOT_DIR"
 
   # Restore original package.json
