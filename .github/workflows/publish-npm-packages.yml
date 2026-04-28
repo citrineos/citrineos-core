@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Publish citrine to npm
+
+on:
+  push:
+    branches: [ env/staging, env/prod, tech-1564-use-our-own-citrine-npm-package ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            BASE_VERSION=$(node -p "require('./package.json').version")
+            echo "version=${BASE_VERSION}-fork.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install and build
+        run: |
+          npm install
+          npm run build
+ 
+      - name: Publish all packages
+        run: bash scripts/publish-to-npm.sh ${{ steps.version.outputs.version }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ZETRA }}
+          NPM_TAG: ${{ github.ref_name == 'env/prod' && 'prod' || 'staging' }}
