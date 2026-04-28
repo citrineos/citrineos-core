@@ -118,9 +118,6 @@ for pkg in "${PACKAGES[@]}"; do
   echo "✅ Published $pkg successfully"
   cd "$ROOT_DIR"
 
-  # Restore original package.json
-  restore_package_json "$pkg"
-
   echo ""
 done
 
