@@ -23,22 +23,16 @@ export class ChargingStationSequence extends Model {
 
   @ForeignKey(() => ChargingStation)
   @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-    unique: 'stationPkId_type',
-  })
-  declare stationPkId?: number;
-
-  @Column({
     type: DataType.STRING(36),
     allowNull: false,
+    unique: 'stationId_type',
   })
   declare stationId: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: 'stationPkId_type',
+    unique: 'stationId_type',
   })
   type!: ChargingStationSequenceTypeEnumType;
 
@@ -49,7 +43,7 @@ export class ChargingStationSequence extends Model {
   })
   value!: number;
 
-  @BelongsTo(() => ChargingStation, 'stationPkId')
+  @BelongsTo(() => ChargingStation, 'stationId')
   declare station: ChargingStationType;
 
   @ForeignKey(() => Tenant)
@@ -63,19 +57,6 @@ export class ChargingStationSequence extends Model {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: ChargingStationSequence): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

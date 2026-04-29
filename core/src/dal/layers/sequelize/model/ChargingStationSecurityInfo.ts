@@ -28,17 +28,14 @@ export class ChargingStationSecurityInfo extends Model implements ChargingStatio
   static readonly MODEL_NAME: string = OCPP2_Namespace.ChargingStationSecurityInfo;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationPkId?: number;
-
-  @BelongsTo(() => ChargingStation, 'stationPkId')
-  declare chargingStation?: ChargingStationDto;
-
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_tenantId',
+    unique: true,
   })
   stationId!: string;
+
+  @BelongsTo(() => ChargingStation, 'stationId')
+  declare chargingStation?: ChargingStationDto;
 
   @Column(DataType.STRING)
   publicKeyFileId!: string;
@@ -49,26 +46,11 @@ export class ChargingStationSecurityInfo extends Model implements ChargingStatio
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationId_tenantId',
   })
   declare tenantId: number;
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: ChargingStationSecurityInfo): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const { ChargingStation } = await import('./Location/ChargingStation.js');
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

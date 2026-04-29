@@ -24,9 +24,6 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   static readonly MODEL_NAME: string = Namespace.OCPPMessage;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationPkId?: number;
-
   @Index
   @Column(DataType.STRING)
   declare stationId: string;
@@ -50,7 +47,7 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   @Column(DataType.JSONB)
   declare message: any;
 
-  @BelongsTo(() => ChargingStation, 'stationPkId')
+  @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
   @ForeignKey(() => OCPPMessage)
@@ -83,19 +80,6 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
 
   @HasMany(() => OCPPMessage, { foreignKey: 'requestMessageId', as: 'responseMessages' })
   declare responseMessages?: OCPPMessage[];
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: OCPPMessage): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

@@ -38,21 +38,18 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
 
   @ForeignKey(() => ChargingStation)
   @Column({
-    type: DataType.INTEGER,
-    unique: 'stationPkId_correlationId',
+    type: DataType.STRING,
+    unique: 'stationId_correlationId',
   })
-  declare stationPkId?: number;
-
-  @BelongsTo(() => ChargingStation, 'stationPkId')
-  declare chargingStation?: ChargingStationDto;
-
-  @Column(DataType.STRING)
   declare stationId: string;
+
+  @BelongsTo(() => ChargingStation, 'stationId')
+  declare chargingStation?: ChargingStationDto;
 
   @Index
   @Column({
     type: DataType.STRING,
-    unique: 'stationPkId_correlationId',
+    unique: 'stationId_correlationId',
   })
   declare correlationId: string;
 
@@ -125,19 +122,6 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: SetNetworkProfile): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

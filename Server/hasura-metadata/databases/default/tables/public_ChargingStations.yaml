@@ -15,112 +15,112 @@ array_relationships:
   - name: ChargingStationNetworkProfiles
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: ChargingStationNetworkProfiles
           schema: public
   - name: ChargingStationSecurityInfos
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: ChargingStationSecurityInfos
           schema: public
   - name: ChargingStationSequences
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: ChargingStationSequences
           schema: public
   - name: Connectors
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: Connectors
           schema: public
   - name: DeleteCertificateAttempts
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: DeleteCertificateAttempts
           schema: public
   - name: EventData
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: EventData
           schema: public
   - name: Evses
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: Evses
           schema: public
   - name: InstallCertificateAttempts
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: InstallCertificateAttempts
           schema: public
   - name: InstalledCertificates
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: InstalledCertificates
           schema: public
   - name: LatestStatusNotifications
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: LatestStatusNotifications
           schema: public
   - name: OCPPMessages
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: OCPPMessages
           schema: public
   - name: SetNetworkProfiles
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: SetNetworkProfiles
           schema: public
   - name: StatusNotifications
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: StatusNotifications
           schema: public
   - name: Transactions
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: Transactions
           schema: public
   - name: VariableAttributes
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: VariableAttributes
           schema: public
   - name: VariableMonitorings
     using:
       foreign_key_constraint_on:
-        column: stationPkId
+        column: stationId
         table:
           name: VariableMonitorings
           schema: public

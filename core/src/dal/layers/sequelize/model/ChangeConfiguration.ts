@@ -20,14 +20,14 @@ export class ChangeConfiguration extends Model implements ChangeConfigurationDto
   static readonly MODEL_NAME: string = OCPP1_6_Namespace.ChangeConfiguration;
 
   @Column({
-    unique: 'stationId_tenantId_key',
+    unique: 'stationId_key',
     allowNull: false,
     type: DataType.STRING,
   })
   declare stationId: string;
 
   @Column({
-    unique: 'stationId_tenantId_key',
+    unique: 'stationId_key',
     allowNull: false,
     type: DataType.STRING(50),
   })
@@ -45,7 +45,6 @@ export class ChangeConfiguration extends Model implements ChangeConfigurationDto
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationId_tenantId_key',
   })
   declare tenantId: number;
 

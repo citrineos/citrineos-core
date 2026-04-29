@@ -10,7 +10,7 @@ object_relationships:
       foreign_key_constraint_on: bootConfigId
   - name: ChargingStation
     using:
-      foreign_key_constraint_on: stationPkId
+      foreign_key_constraint_on: stationId
   - name: Component
     using:
       foreign_key_constraint_on: componentId

@@ -32,13 +32,13 @@ export class Reservation extends Model implements ReservationDto {
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_tenantId_id',
+    unique: 'stationId_id',
   })
   declare id: number;
 
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_tenantId_id',
+    unique: 'stationId_id',
   })
   declare stationId: string;
 
@@ -86,7 +86,6 @@ export class Reservation extends Model implements ReservationDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationId_tenantId_id',
   })
   declare tenantId: number;
 

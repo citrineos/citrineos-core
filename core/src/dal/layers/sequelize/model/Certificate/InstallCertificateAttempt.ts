@@ -29,16 +29,13 @@ export class InstallCertificateAttempt extends Model {
   static readonly MODEL_NAME: string = OCPP2_Namespace.InstallCertificateAttempt;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationPkId?: number;
-
   @Column({
     type: DataType.STRING(36),
     allowNull: false,
   })
   declare stationId: string;
 
-  @BelongsTo(() => ChargingStation, 'stationPkId')
+  @BelongsTo(() => ChargingStation, 'stationId')
   declare station?: ChargingStationDto;
 
   @Column({
@@ -74,19 +71,6 @@ export class InstallCertificateAttempt extends Model {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: InstallCertificateAttempt): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

@@ -35,13 +35,10 @@ export class EventData extends Model implements EventDataDto {
    */
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationPkId?: number;
-
   @Index
   @Column({
     type: DataType.STRING,
-    unique: 'stationId_tenantId_eventId',
+    unique: 'stationId_eventId',
   })
   declare stationId: string;
 
@@ -111,7 +108,7 @@ export class EventData extends Model implements EventDataDto {
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 
-  @BelongsTo(() => ChargingStation, 'stationPkId')
+  @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
   @ForeignKey(() => Tenant)
@@ -120,27 +117,11 @@ export class EventData extends Model implements EventDataDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationId_tenantId_eventId',
   })
   declare tenantId: number;
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: EventData): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      // Lazy load ChargingStation to avoid circular dependency
-      const { ChargingStation } = await import('../Location/index.js');
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

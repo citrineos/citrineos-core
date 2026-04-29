@@ -7,7 +7,7 @@ table:
 object_relationships:
   - name: ChargingStation
     using:
-      foreign_key_constraint_on: stationPkId
+      foreign_key_constraint_on: stationId
   - name: OCPPMessage
     using:
       foreign_key_constraint_on: requestMessageId

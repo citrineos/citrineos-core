@@ -46,13 +46,7 @@ export class Connector extends Model implements ConnectorDto {
 
   @ForeignKey(() => ChargingStation)
   @Column({
-    unique: 'stationPkId_connectorId',
-    allowNull: true,
-    type: DataType.INTEGER,
-  })
-  declare stationPkId?: number;
-
-  @Column({
+    unique: 'stationId_connectorId',
     allowNull: false,
     type: DataType.STRING,
   })
@@ -67,7 +61,7 @@ export class Connector extends Model implements ConnectorDto {
   declare evseId: number;
 
   @Column({
-    unique: 'stationPkId_connectorId',
+    unique: 'stationId_connectorId',
     allowNull: false,
     type: DataType.INTEGER,
   })
@@ -131,7 +125,7 @@ export class Connector extends Model implements ConnectorDto {
   @Column(DataType.STRING)
   declare termsAndConditionsUrl?: string | null;
 
-  @BelongsTo(() => ChargingStation, 'stationPkId')
+  @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
   @BelongsTo(() => Evse, 'evseId')
@@ -178,19 +172,6 @@ export class Connector extends Model implements ConnectorDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationPkId(instance: Connector): Promise<void> {
-    if (instance.stationPkId == null && instance.stationId && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { id: instance.stationId, tenantId: instance.tenantId },
-        attributes: ['pkId'],
-      });
-      if (station) {
-        instance.stationPkId = station.pkId;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate
