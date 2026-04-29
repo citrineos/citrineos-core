@@ -9,7 +9,6 @@ import type {
   AuthorizationWhitelistEnumType,
   IdTokenEnumType,
   RealTimeAuthLastAttempt,
-  TenantDto,
 } from '@citrineos/base';
 import { Namespace } from '@citrineos/base';
 import {
@@ -24,7 +23,6 @@ import {
 } from 'sequelize-typescript';
 import { AuthorizationTenant } from '../AuthorizationTenant.js';
 
-import { Tenant } from '../Tenant.js';
 import { TenantPartner } from '../TenantPartner.js';
 
 @Table

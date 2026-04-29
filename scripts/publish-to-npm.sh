@@ -44,6 +44,7 @@ PACKAGES=(
 # ─────────────────────────────────────────────
 rewrite_package_json() {
   local pkg_path="$1/package.json"
+  local dist_dir="$1/dist"
 
   cp "$pkg_path" "$pkg_path.bak"
 
@@ -72,8 +73,16 @@ rewrite_package_json() {
     console.log('Rewritten:', pkg.name, pkg.version);
 EOF
 )"
-}
 
+  if [ -d "$dist_dir" ]; then
+    echo "  🔧 Rewriting @citrineos/ imports in dist/..."
+    find "$dist_dir" -type f \( -name "*.js" -o -name "*.mjs" -o -name "*.cjs" -o -name "*.d.ts" -o -name "*.d.mts" \) \
+      -exec sed -i "s|@citrineos/\([a-zA-Z0-9_-]*\)|@zetra/citrineos-\1|g" {} +
+    echo "  ✅ dist/ imports rewritten"
+  else
+    echo "  ⚠️  No dist/ directory found in $1 — did the build run?"
+  fi
+}
 # ─────────────────────────────────────────────
 # Cleanup trap
 # ─────────────────────────────────────────────

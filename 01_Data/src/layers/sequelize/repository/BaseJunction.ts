@@ -40,12 +40,10 @@ export abstract class SequelizeTenantJunctionRepository<
   protected abstract getJunctionModel(): ModelStatic<Model>;
   protected abstract getJunctionForeignKey(): string;
 
-  /** Cast a namespace model to the full Sequelize static API. */
   private _model<M extends Model = T>(namespace: string): SequelizeModelStatic<M> {
     return this.s.models[namespace] as unknown as SequelizeModelStatic<M>;
   }
 
-  /** Cast the junction model to the full Sequelize static API. */
   private _junctionModel(): SequelizeModelStatic<Model> {
     return this.getJunctionModel() as unknown as SequelizeModelStatic<Model>;
   }
@@ -72,9 +70,12 @@ export abstract class SequelizeTenantJunctionRepository<
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
     const row = (await this._model(namespace).findByPk(key)) as T | null;
+    console.log('!!! row !!', row);
     if (!row) return undefined;
     const fk = this.getJunctionForeignKey();
+    console.log('!!! fk !!', fk);
     const junctionRow = await this._junctionModel().findOne({ where: { [fk]: key, tenantId } });
+    console.log('!!! junctionRow !!', junctionRow);
     return junctionRow ? row : undefined;
   }
 
@@ -150,6 +151,7 @@ export abstract class SequelizeTenantJunctionRepository<
     value: T,
     _namespace: string = this.namespace,
   ): Promise<T> {
+    console.log('!!! _create', tenantId, value, _namespace);
     const saved = await value.save();
     const pk = this._model(_namespace).primaryKeyAttribute;
     const fk = this.getJunctionForeignKey();

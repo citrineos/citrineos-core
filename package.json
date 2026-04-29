@@ -51,7 +51,9 @@
     "node": ">=24.4.1"
   },
   "devDependencies": {
+    "@testcontainers/postgresql": "^11.14.0",
     "sequelize-cli": "^6.6.2",
+    "testcontainers": "^11.14.0",
     "typescript": "^5.8.2"
   }
 }

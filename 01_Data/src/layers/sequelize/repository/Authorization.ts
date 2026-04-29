@@ -3,9 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootstrapConfig } from '@citrineos/base';
+import { Model, Sequelize, type ModelStatic } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
-import type { Model, ModelStatic, Sequelize } from 'sequelize-typescript';
-
 import { Logger } from 'tslog';
 import {
   type AuthorizationQuerystring,

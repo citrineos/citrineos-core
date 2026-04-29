@@ -6,6 +6,7 @@ import { z } from 'zod/v4';
 import { TenantPartnerSchema } from './tenant.partner.dto.js';
 import { AdditionalInfoSchema, RealTimeAuthLastAttemptSchema } from './types/authorization.js';
 import { BaseSchema } from './types/base.dto.js';
+import { TenantSchema } from './tenant.dto.js';
 import {
   AuthorizationStatusEnumSchema,
   AuthorizationWhitelistEnumSchema,
@@ -33,6 +34,10 @@ const authorizationFields = {
   tenantPartnerId: z.number().int().nullable().optional(),
   tenantPartner: TenantPartnerSchema.nullable().optional(),
   groupAuthorizationId: z.number().int().nullable().optional(),
+  tenants: z
+    .array(z.object({ tenantId: z.number().int(), tenant: TenantSchema.nullable().optional() }))
+    .nullable()
+    .optional(),
 };
 
 export const GroupAuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend(

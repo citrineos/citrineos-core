@@ -5,7 +5,6 @@ import type { ServerProfile, TenantDto } from '@citrineos/base';
 import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
-  Authorization,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
