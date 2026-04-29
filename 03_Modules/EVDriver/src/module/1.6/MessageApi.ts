@@ -16,6 +16,7 @@ import {
   OCPP1_6_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
+import { v4 as uuidv4 } from 'uuid';
 
 export class EVDriverOcpp16Api
   extends AbstractModuleApi<EVDriverModule>
@@ -111,6 +112,71 @@ export class EVDriverOcpp16Api
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP1_6_CallAction.ClearCache,
+        request,
+        callbackUrl,
+      ),
+    );
+    return Promise.all(results);
+  }
+
+  @AsMessageEndpoint(OCPP1_6_CallAction.SendLocalList, OCPP1_6.SendLocalListRequestSchema)
+  async sendLocalList(
+    identifier: string[],
+    request: OCPP1_6.SendLocalListRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results: IMessageConfirmation[] = [];
+
+    for (const i of identifier) {
+      try {
+        const correlationId = uuidv4();
+
+        await this._module.localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest16(
+          tenantId,
+          i,
+          correlationId,
+          request,
+        );
+
+        const confirmation = await this._module.sendCall(
+          i,
+          tenantId,
+          OCPPVersion.OCPP1_6,
+          OCPP1_6_CallAction.SendLocalList,
+          request,
+          callbackUrl,
+          correlationId,
+        );
+
+        results.push(confirmation);
+      } catch (error) {
+        results.push({
+          success: false,
+          payload: error instanceof Error ? error.message : JSON.stringify(error),
+        });
+      }
+    }
+
+    return results;
+  }
+
+  @AsMessageEndpoint(
+    OCPP1_6_CallAction.GetLocalListVersion,
+    OCPP1_6.GetLocalListVersionRequestSchema,
+  )
+  async getLocalListVersion(
+    identifier: string[],
+    request: OCPP1_6.GetLocalListVersionRequest,
+    callbackUrl?: string,
+    tenantId: number = DEFAULT_TENANT_ID,
+  ): Promise<IMessageConfirmation[]> {
+    const results = identifier.map((id) =>
+      this._module.sendCall(
+        id,
+        tenantId,
+        OCPPVersion.OCPP1_6,
+        OCPP1_6_CallAction.GetLocalListVersion,
         request,
         callbackUrl,
       ),

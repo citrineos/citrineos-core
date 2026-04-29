@@ -893,6 +893,88 @@ export class EVDriverModule extends AbstractModule {
     this._logger.debug('ClearCacheResponse received:', message, props);
   }
 
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.SendLocalList)
+  protected async _handleOcpp16SendLocalList(
+    message: IMessage<OCPP1_6.SendLocalListResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 SendLocalListResponse received:', message, props);
+
+    const stationId = message.context.stationId;
+
+    const sendLocalListRequest =
+      await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
+        message.context.tenantId,
+        stationId,
+        message.context.correlationId,
+      );
+
+    if (!sendLocalListRequest) {
+      this._logger.error(
+        `Unable to process OCPP 1.6 SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`,
+      );
+      return;
+    }
+
+    switch (message.payload.status) {
+      case OCPP1_6.SendLocalListResponseStatus.Accepted:
+        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+          message.context.tenantId,
+          stationId,
+          sendLocalListRequest,
+        );
+        break;
+      case OCPP1_6.SendLocalListResponseStatus.Failed:
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`,
+        );
+        break;
+      case OCPP1_6.SendLocalListResponseStatus.VersionMismatch: {
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest version mismatch for StationId ${stationId}; firing GetLocalListVersion to resync.`,
+        );
+        const messageConfirmation = await this.sendCall(
+          stationId,
+          message.context.tenantId,
+          OCPPVersion.OCPP1_6,
+          OCPP1_6_CallAction.GetLocalListVersion,
+          {} as OCPP1_6.GetLocalListVersionRequest,
+        );
+        if (!messageConfirmation.success) {
+          this._logger.error(
+            `Unable to send OCPP 1.6 GetLocalListVersion for StationId ${stationId} after version mismatch.`,
+            messageConfirmation,
+          );
+        }
+        break;
+      }
+      case OCPP1_6.SendLocalListResponseStatus.NotSupported:
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest reported NotSupported for StationId ${stationId}.`,
+        );
+        break;
+      default:
+        this._logger.error(
+          `Unknown OCPP 1.6 SendLocalListResponseStatus: ${message.payload.status}.`,
+        );
+        break;
+    }
+  }
+
+  @AsHandler(OCPPVersion.OCPP1_6, OCPP1_6_CallAction.GetLocalListVersion)
+  protected async _handleOcpp16GetLocalListVersion(
+    message: IMessage<OCPP1_6.GetLocalListVersionResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 GetLocalListVersionResponse received:', message, props);
+
+    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
+      message.context.tenantId,
+      message.payload.listVersion,
+      message.context.stationId,
+    );
+  }
+
   private _updateAuthorizationFromDto(
     auth: Authorization,
     dto: Partial<AuthorizationDto>,

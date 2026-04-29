@@ -16,7 +16,11 @@ import {
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
 import type { ChargingStationKeyQuerystring } from '@citrineos/data';
-import { ChargingStationKeyQuerySchema, LocalListVersion } from '@citrineos/data';
+import {
+  ChargingStationKeyQuerySchema,
+  LocalListAuthorization,
+  LocalListVersion,
+} from '@citrineos/data';
 
 export class EVDriverDataApi
   extends AbstractModuleApi<EVDriverModule>
@@ -43,8 +47,11 @@ export class EVDriverDataApi
   ): Promise<LocalListVersion | undefined> {
     const tenantId = request.query.tenantId;
     return await this._module.localAuthListRepository.readOnlyOneByQuery(tenantId, {
-      tenantId: tenantId,
-      stationId: request.query.stationId,
+      where: {
+        tenantId: tenantId,
+        stationId: request.query.stationId,
+      },
+      include: [LocalListAuthorization],
     });
   }
 
