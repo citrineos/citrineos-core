@@ -7,3 +7,4 @@ export { AuthorizationMapper } from './AuthorizationMapper.js';
 export { LocationMapper } from './LocationMapper.js';
 export { MeterValueMapper } from './MeterValueMapper.js';
 export { ChargingProfileMapper } from './ChargingProfileMapper.js';
+export { LocalAuthListMapper } from './LocalAuthListMapper.js';

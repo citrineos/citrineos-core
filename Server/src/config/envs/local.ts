@@ -98,7 +98,11 @@ export function createLocalConfig() {
           OCPP1_6_CallAction.RemoteStartTransaction,
           OCPP1_6_CallAction.ClearCache,
         ],
-        requests: [OCPP2_0_1_CallAction.Authorize, OCPP2_0_1_CallAction.ReservationStatusUpdate],
+        requests: [
+          OCPP2_0_1_CallAction.Authorize,
+          OCPP2_0_1_CallAction.ReservationStatusUpdate,
+          OCPP1_6_CallAction.Authorize,
+        ],
       },
       monitoring: {
         endpointPrefix: '/monitoring',

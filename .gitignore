@@ -303,3 +303,4 @@ data
 
 # Generated certificate backup files
 **/certificates/*.pem.backup
+local/
