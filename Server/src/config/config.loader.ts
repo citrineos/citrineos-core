@@ -71,23 +71,30 @@ export async function loadSystemConfig(
       // stored config from an older release auto-heals instead of crashing
       // strict validation in defineConfig.
       //
-      // CRITICAL: backfill runs against the on-disk snapshot only — env var
-      // overrides are NOT applied here. The persisted config must never carry
-      // transient CITRINEOS_* env values; otherwise removing the env on a
-      // future boot wouldn't revert the change.
+      // CRITICAL constraints:
+      //  1. Backfill runs against the on-disk snapshot only — env var
+      //     overrides are NOT applied here. The persisted config must never
+      //     carry transient CITRINEOS_* env values; otherwise removing the
+      //     env on a future boot wouldn't revert the change.
+      //  2. systemConfigInputSchema's z.object() strips unknown keys (Zod's
+      //     default). Some optional top-level fields like `oidcClient` only
+      //     live on the strict schema. We therefore DO NOT replace stored
+      //     config with parse output — we use the parse output as a
+      //     defaults-source and overlay the original config on top of it,
+      //     preserving any keys the input schema doesn't know about.
       const inputResult = systemConfigInputSchema.safeParse(config);
       if (inputResult.success) {
-        const normalized = inputResult.data as SystemConfig;
+        const normalized = mergePreservingOriginal(inputResult.data, config) as SystemConfig;
         if (!jsonEqual(config, normalized)) {
           try {
             await configStore.saveConfig(normalized);
             console.log('Stored config normalized with schema defaults');
-            config = normalized;
           } catch (saveErr) {
             console.warn('Could not persist normalized config to storage:', saveErr);
-            // Keep the in-memory normalized form so boot can proceed.
-            config = normalized;
           }
+          // Use the merged form whether or not the persist succeeded, so boot
+          // proceeds even when the storage backend is read-only.
+          config = normalized;
         }
       }
     }
@@ -109,4 +116,51 @@ function jsonEqual(a: unknown, b: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Merge `original` over `defaults` so the result has:
+ *  - every leaf from `original` where it is defined
+ *  - falling back to `defaults` only where `original` lacks the key
+ *  - all unknown keys from `original` preserved (Zod's strip would otherwise
+ *    have removed them)
+ *
+ * Arrays are merged element-wise by index — index N from `original` wins for
+ * known fields, index N from `defaults` fills any missing defaulted fields.
+ * If one side is longer, extra elements come through as-is.
+ */
+function mergePreservingOriginal(defaults: unknown, original: unknown): unknown {
+  if (original === undefined) {
+    return defaults;
+  }
+  if (defaults === undefined) {
+    return original;
+  }
+
+  if (Array.isArray(defaults) && Array.isArray(original)) {
+    const length = Math.max(defaults.length, original.length);
+    const out: unknown[] = [];
+    for (let i = 0; i < length; i++) {
+      out.push(mergePreservingOriginal(defaults[i], original[i]));
+    }
+    return out;
+  }
+
+  if (isPlainObject(defaults) && isPlainObject(original)) {
+    const out: Record<string, unknown> = { ...defaults };
+    for (const key of Object.keys(original)) {
+      out[key] = mergePreservingOriginal(
+        (defaults as Record<string, unknown>)[key],
+        (original as Record<string, unknown>)[key],
+      );
+    }
+    return out;
+  }
+
+  // Primitive or type mismatch: original wins.
+  return original;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
