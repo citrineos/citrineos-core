@@ -39,7 +39,14 @@ export class SequelizeLocalAuthListRepository
     localListAuthorization?: CrudRepository<LocalListAuthorization>,
     sendLocalList?: CrudRepository<SendLocalList>,
   ) {
-    super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
+    // The repo's primary model is LocalListVersion (matches the
+    // ILocalAuthListRepository<LocalListVersion> contract). Earlier code passed
+    // Authorization.MODEL_NAME here, which made readOnlyOneByQuery/readAllByQuery
+    // query the Authorization model — and any include like
+    // `include: [LocalListAuthorization]` then threw
+    // "LocalListAuthorization is not associated to Authorization!" because no such
+    // association exists on Authorization.
+    super(config, LocalListVersion.MODEL_NAME, logger, sequelizeInstance);
     this.authorization = authorization
       ? authorization
       : new SequelizeAuthorizationRepository(config, logger);
