@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import type { SystemConfig, SystemConfigInput } from './types.js';
-import { systemConfigSchema } from './types.js';
+import { systemConfigInputSchema, systemConfigSchema } from './types.js';
 
 const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
 
@@ -141,12 +141,25 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
 }
 
 /**
- * Validates the  system configuration to ensure required properties are set.
+ * Validates the system configuration.
+ *
+ * Two-pass:
+ *   1. Parse with `systemConfigInputSchema` so any defaults declared on the input
+ *      schema (e.g. `websocketServers[*].protocols = ['ocpp2.0.1']`) are filled in.
+ *      This lets stored configs that predate a newer optional-with-default field
+ *      auto-heal instead of crashing the boot.
+ *   2. Re-parse with the strict `systemConfigSchema` to enforce the final shape.
+ *
+ * If pass 1 fails (truly malformed config), fall back to the strict schema so
+ * the original error surface is preserved for genuinely broken configs.
+ *
  * @param finalConfig The final system configuration.
  * @throws Error if required properties are not set.
  */
 function validateFinalConfig(finalConfig: SystemConfigInput): SystemConfig {
-  return systemConfigSchema.parse(finalConfig);
+  const inputResult = systemConfigInputSchema.safeParse(finalConfig);
+  const withDefaults = inputResult.success ? inputResult.data : finalConfig;
+  return systemConfigSchema.parse(withDefaults);
 }
 
 /**

@@ -69,9 +69,29 @@ export async function loadSystemConfig(
 
     const validatedConfig = defineConfig(config);
 
+    // Persist the normalized form so any defaults backfilled by the input schema
+    // (e.g. websocketServers[*].protocols added in a later release) are written
+    // back to storage. Stops the next boot from re-running the same backfill.
+    if (!shallowEqual(config, validatedConfig)) {
+      try {
+        await configStore.saveConfig(validatedConfig);
+        console.log('Stored config normalized with schema defaults');
+      } catch (saveErr) {
+        console.warn('Could not persist normalized config to storage:', saveErr);
+      }
+    }
+
     return validatedConfig;
   } catch (error) {
     console.error('Failed to load system configuration:', error);
     throw error;
+  }
+}
+
+function shallowEqual(a: unknown, b: unknown): boolean {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
   }
 }
