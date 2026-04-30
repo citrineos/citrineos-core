@@ -26,7 +26,6 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPValidator,
-  OCPPVersion,
   SetVariableStatusEnum,
   type SystemConfig,
 } from '@citrineos/base';

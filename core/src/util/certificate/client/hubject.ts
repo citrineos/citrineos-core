@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IV2GCertificateAuthorityClient } from './interface.js';
 import {
   HttpMethod,
   HttpStatus,
@@ -13,9 +12,10 @@ import {
   type ICache,
   type SystemConfig,
 } from '@citrineos/base';
+import { createPemBlock } from '@util/certificate/CertificateUtil.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { createPemBlock } from '@util/certificate/CertificateUtil.js';
+import type { IV2GCertificateAuthorityClient } from './interface.js';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
   private readonly _baseUrl: string;
@@ -231,7 +231,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     } finally {
       // Always release lock
       const removed = await this._cache.remove(lockKey, Hubject.AUTH_TOKEN_CACHE_NAMESPACE);
-      if (!removed) {
+      if (removed === null) {
         this._logger.warn('Failed to remove lock, it may have already expired');
       }
     }

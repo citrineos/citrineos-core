@@ -14,7 +14,7 @@ export default {
     }
   },
 
-  down: async (queryInterface: QueryInterface) => {
+  down: async (_queryInterface: QueryInterface) => {
     // Column is intentionally not restored; per-tenant limits are now driven by Tenant.maxChargingStations
   },
 };

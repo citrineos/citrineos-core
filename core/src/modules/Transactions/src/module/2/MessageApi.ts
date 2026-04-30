@@ -16,7 +16,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { packageGroupCall } from '@util/index.js';
+import { packageGroupCall, validateTariffConditionsTimeFields } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -107,6 +107,10 @@ export class TransactionsOcpp2Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
+    const validation = validateTariffConditionsTimeFields(request.tariff);
+    if (!validation.isValid) {
+      return [{ success: false, payload: validation.errorMessage }];
+    }
     return packageGroupCall(
       this._module,
       identifier,

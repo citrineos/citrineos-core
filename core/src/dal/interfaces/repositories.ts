@@ -429,6 +429,7 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
   deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
   upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
+  upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
 }
 
 export interface ICertificateRepository extends CrudRepository<Certificate> {

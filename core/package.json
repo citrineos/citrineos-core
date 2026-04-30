@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/core",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "The core module including data, util, and all functional modules.",
   "type": "module",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
-    "@citrineos/base": "1.9.1",
+    "@citrineos/base": "1.9.2",
     "@fastify/auth": "^5.0.0",
     "@fastify/swagger": "^9.4.0",
     "@fastify/swagger-ui": "^5.2.0",
@@ -41,7 +41,7 @@
     "moment": "^2.29.4",
     "node-cron": "^3.0.3",
     "node-forge": "^1.3.0",
-    "nodemailer": "^6.9.8",
+    "nodemailer": "^8.0.0",
     "openapi-types": "^12.0.0",
     "pg": "8.11.3",
     "pg-hstore": "2.3.4",
@@ -51,7 +51,7 @@
     "sequelize-typescript": "2.1.6",
     "ssh2-sftp-client": "^10.0.3",
     "tslog": "^4.9.2",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "ws": "^8.17.0"
   },
   "devDependencies": {
@@ -60,7 +60,7 @@
     "@types/bcryptjs": "2.4.6",
     "@types/jsonwebtoken": "9.0.10",
     "@types/node-cron": "3.0.11",
-    "@types/nodemailer": "6.4.14",
+    "@types/nodemailer": "6.4.23",
     "@types/ws": "^8.5.0",
     "eslint": "8.48.0",
     "testcontainers": "^11.0.0",

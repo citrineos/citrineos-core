@@ -156,10 +156,14 @@ let receiver: RabbitMqReceiver;
 // Each test uses a unique suffix so durable queues from one test don't affect another.
 let uid: string;
 
-beforeEach(() => {
+beforeEach(async () => {
   uid = Date.now().toString(36);
   connectionManager = new RabbitMQConnectionManager(5_000, amqpUrl);
   channelManager = new RabbitMQChannelManager(connectionManager);
+  // Mirror production startup: connect before any subscribe() calls so the
+  // initial 'connected' event fires while _moduleSubscriptions/_instanceQueueReady
+  // are still empty, and _onReconnect is a no-op on first connect.
+  await connectionManager.connect();
 });
 
 afterEach(async () => {
@@ -282,7 +286,7 @@ describe('RabbitMqReceiver', () => {
 
       expect(queue).not.toBeNull();
       expect(queue!.durable).toBe(true);
-      expect(queue!.auto_delete).toBe(false);
+      expect(queue!.auto_delete).toBe(true);
       expect(queue!.exclusive).toBe(false);
     }, 15_000);
 
@@ -370,16 +374,16 @@ describe('RabbitMqReceiver', () => {
       await waitForConsumerCount(queueName, 1);
     }, 15_000);
 
-    it('should cancel the consumer on shutdown, leaving the durable queue intact', async () => {
+    it('should cancel the consumer on shutdown and auto-delete the queue', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
       await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
       await receiver.shutdown();
 
-      // Queue must still exist (durable) and have no active consumers
-      const queue = await getQueue(queueName);
-      expect(queue).not.toBeNull(); // durable — queue survives
+      // autoDelete:true — queue is removed once the last consumer is cancelled
       await waitForConsumerCount(queueName, 0);
+      const queue = await getQueue(queueName);
+      expect(queue).toBeNull();
     }, 15_000);
   });
 });

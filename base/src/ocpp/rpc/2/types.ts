@@ -57,3 +57,4 @@ export type ChargingSchedulePeriodType =
 export type CompositeScheduleType = OCPP2_1.CompositeScheduleType | OCPP2_0_1.CompositeScheduleType;
 
 export type SignedMeterValueType = OCPP2_1.SignedMeterValueType | OCPP2_0_1.SignedMeterValueType;
+export type SampledValueType = OCPP2_1.SampledValueType | OCPP2_0_1.SampledValueType;

@@ -14,5 +14,7 @@ export interface INetworkConnection {
 
   shutdown(): Promise<void>;
 
-  addWebsocketServer(websocketServerConfig: WebsocketServerConfig): Promise<void>;
+  addWebsocketServer?(websocketServerConfig: WebsocketServerConfig): Promise<void>;
+
+  reloadTlsCertificates?(serverId: string): void;
 }

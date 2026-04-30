@@ -1,0 +1,50 @@
+{
+  "title": "SignedFirmwareStatusNotificationRequest",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/SignedFirmwareStatusNotificationRequestStatus"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["status"],
+  "$id": "SignedFirmwareStatusNotificationRequest",
+  "definitions": {
+    "SignedFirmwareStatusNotificationRequestStatus": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": [
+        "Downloaded",
+        "DownloadFailed",
+        "Downloading",
+        "DownloadScheduled",
+        "DownloadPaused",
+        "Idle",
+        "InstallationFailed",
+        "Installing",
+        "Installed",
+        "InstallRebooting",
+        "InstallScheduled",
+        "InstallVerificationFailed",
+        "InvalidSignature",
+        "SignatureVerified"
+      ],
+      "tsEnumNames": [
+        "Downloaded",
+        "DownloadFailed",
+        "Downloading",
+	"DownloadScheduled",
+	"DownloadPaused",
+        "Idle",
+        "InstallationFailed",
+        "Installing",
+        "Installed",
+        "InstallRebooting",
+        "InstallScheduled",
+        "InstallVerificaitonFailed",
+        "InvalidSignature",
+        "SignatureVerified"
+      ]
+    }
+  }
+}

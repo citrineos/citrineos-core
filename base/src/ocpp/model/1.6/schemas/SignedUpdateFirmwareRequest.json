@@ -1,0 +1,48 @@
+{
+  "title": "SignedUpdateFirmwareRequest",
+  "type": "object",
+  "properties": {
+    "retries": {
+      "type": "integer"
+    },
+    "retryInterval": {
+      "type": "integer"
+    },
+    "requestId": {
+      "type": "integer"
+    },
+    "firmware": {
+      "type": "object",
+      "properties": {
+          "location": {
+             "type": "string",
+             "format": "uri"
+           },
+          "retrieveDateTime": {
+             "type": "string",
+             "format": "date-time"
+          },
+          "installDateTime": {
+             "type": "string",
+             "format": "date-time"
+          },
+          "signingCertificate": {
+             "type": "string",
+	     "maxLength": 5500 
+          },
+          "signature": {
+             "type": "string",
+	     "maxLength": 800
+          }
+     },
+     "additionalProperties": false,     
+     "required": ["location", "retrieveDateTime", "signingCertificate", "signature"],
+     "$id": "v16FirmwareType",
+     "definitions": {}
+    }
+  },
+  "additionalProperties": false,
+  "required": ["requestId", "firmware"],
+  "$id": "SignedUpdateFirmwareRequest",
+  "definitions": {}
+}

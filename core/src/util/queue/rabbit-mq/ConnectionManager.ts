@@ -11,6 +11,7 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
   private isConnecting = false;
   private reconnectAttempts = 0;
   private reconnectDelay = 1000; // Start with 1 second
+  private reconnectTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private maxReconnectDelay: number,
@@ -75,6 +76,10 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
       this._logger.info('Connection is closed, will not attempt to reconnect.');
       return;
     }
+    if (this.reconnectTimer) {
+      this._logger.info('Reconnect already scheduled, skipping.');
+      return;
+    }
     this.reconnectAttempts++;
 
     // Exponential backoff with full jitter
@@ -88,8 +93,9 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
       `Reconnecting in ${Math.round(delay / 1000)}s (attempt ${this.reconnectAttempts})`,
     );
 
-    setTimeout(async () => {
+    this.reconnectTimer = setTimeout(async () => {
       try {
+        this.reconnectTimer = null;
         await this.connect();
       } catch (_error) {
         // Error already logged in connect()
@@ -99,6 +105,10 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
 
   async close(): Promise<void> {
     this.state = 'closed';
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.connection) {
       await this.connection.close();
       this.connection = null;

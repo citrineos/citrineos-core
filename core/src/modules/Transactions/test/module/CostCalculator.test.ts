@@ -88,12 +88,12 @@ describe('CostCalculator', () => {
     });
 
     it('should return 0 when pricePerKwh is 0', async () => {
-      const tariff = givenTariff(aTariff({ pricePerKwh: 0.0 }));
+      givenTariff(aTariff({ pricePerKwh: 0.0 }));
       expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, 1, 20.99)).toBe(0);
     });
 
     it('should return 0 when kWh is 0', async () => {
-      const tariff = givenTariff(aTariff({ pricePerKwh: 0.61 }));
+      givenTariff(aTariff({ pricePerKwh: 0.61 }));
       expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, 1, 0)).toBe(0);
     });
 

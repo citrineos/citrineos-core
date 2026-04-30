@@ -50,6 +50,26 @@ export class SequelizeTariffRepository
     });
   }
 
+  async upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff> {
+    tariff.tenantId = tenantId;
+    return await this.s.transaction(async (transaction) => {
+      const savedTariff = tariff.tariffId
+        ? await this.readOnlyOneByQuery(tenantId, {
+            where: { tariffId: tariff.tariffId },
+            transaction,
+          })
+        : undefined;
+      if (savedTariff) {
+        const updatedTariff = await savedTariff.set(tariff.data).save({ transaction });
+        this.emit('updated', [updatedTariff]);
+        return updatedTariff;
+      }
+      const createdTariff = await tariff.save({ transaction });
+      this.emit('created', [createdTariff]);
+      return createdTariff;
+    });
+  }
+
   async readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]> {
     return super.readAllByQuery(tenantId, {
       where: {

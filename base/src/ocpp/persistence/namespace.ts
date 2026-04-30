@@ -25,6 +25,7 @@ export enum Namespace {
   Websocket = 'Websocket',
   WebsocketMapping = 'WebsocketMapping',
   Tenant = 'Tenant',
+  TlsReload = 'TlsReload',
 }
 
 export enum OCPP2_Namespace {

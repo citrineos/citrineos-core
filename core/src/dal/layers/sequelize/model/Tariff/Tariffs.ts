@@ -123,7 +123,10 @@ export class Tariff extends Model implements TariffDto {
 
   // OCPP 2.1 TariffType fields
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    unique: 'tariffId_tenantId',
+  })
   declare tariffId?: string | null;
 
   @Column({
@@ -198,6 +201,7 @@ export class Tariff extends Model implements TariffDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
+    unique: 'tariffId_tenantId',
   })
   declare tenantId: number;
 

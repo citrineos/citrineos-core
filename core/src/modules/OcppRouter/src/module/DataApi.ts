@@ -21,8 +21,8 @@ import {
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
-  UnauthorizedError,
 } from '@citrineos/base';
+import { sequelize } from '@dal/index.js';
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,
@@ -30,23 +30,24 @@ import type {
   ISubscriptionRepository,
   ModelKeyQuerystring,
   TenantQueryString,
+  TlsReloadQueryString,
   WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
   WebsocketMappingQuerystring,
 } from '@dal/interfaces/index.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import {
   ChargingStationKeyQuerySchema,
   ConnectionDeleteQuerySchema,
   CreateSubscriptionSchema,
   ModelKeyQuerystringSchema,
   TenantQuerySchema,
+  TlsReloadQuerySchema,
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from '@dal/interfaces/index.js';
-import { sequelize } from '@dal/index.js';
+import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -87,6 +88,16 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     this._serverNetworkProfileRepository =
       serverNetworkProfileRepository ||
       new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
+  }
+
+  @AsDataEndpoint(Namespace.TlsReload, HttpMethod.Post, TlsReloadQuerySchema)
+  async reloadTlsCertificates(
+    request: FastifyRequest<{ Querystring: TlsReloadQueryString }>,
+  ): Promise<void> {
+    if (!this._networkConnection.reloadTlsCertificates) {
+      throw new Error('Tls certificate reloading is not implemented');
+    }
+    await this._networkConnection.reloadTlsCertificates(request.query.serverId);
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.

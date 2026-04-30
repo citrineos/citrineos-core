@@ -718,6 +718,46 @@ export function validateMessageContentType(
 }
 
 /**
+ * Validate a time-of-day string per RFC 3339 time-hour "hh:mm" format.
+ */
+export function validateTimeOfDay(time: string): boolean {
+  return /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+}
+
+/**
+ * Validate all startTimeOfDay and endTimeOfDay fields in a TariffType per I07.FR.17.
+ * Checks every TariffConditionsType and TariffConditionsFixedType across all price arrays.
+ */
+export function validateTariffConditionsTimeFields(tariff: OCPP2_1.TariffType): ValidationResult {
+  const conditions = [
+    ...(tariff.energy?.prices.map((p) => p.conditions) ?? []),
+    ...(tariff.chargingTime?.prices.map((p) => p.conditions) ?? []),
+    ...(tariff.idleTime?.prices.map((p) => p.conditions) ?? []),
+    ...(tariff.reservationTime?.prices.map((p) => p.conditions) ?? []),
+    ...(tariff.fixedFee?.prices.map((p) => p.conditions) ?? []),
+    ...(tariff.reservationFixed?.prices.map((p) => p.conditions) ?? []),
+  ];
+
+  for (const condition of conditions) {
+    if (!condition) continue;
+    if (condition.startTimeOfDay != null && !validateTimeOfDay(condition.startTimeOfDay)) {
+      return {
+        isValid: false,
+        errorMessage: `Invalid startTimeOfDay "${condition.startTimeOfDay}": must be in "hh:mm" format (RFC 3339 time-hour ":" time-minute, e.g. "08:30")`,
+      };
+    }
+    if (condition.endTimeOfDay != null && !validateTimeOfDay(condition.endTimeOfDay)) {
+      return {
+        isValid: false,
+        errorMessage: `Invalid endTimeOfDay "${condition.endTimeOfDay}": must be in "hh:mm" format (RFC 3339 time-hour ":" time-minute, e.g. "20:00")`,
+      };
+    }
+  }
+
+  return { isValid: true };
+}
+
+/**
  * Validate PEM-encoded Certificate Signing Request (CSR)
  * According to RFC 2986, CSR must be PEM-encoded with proper headers and valid base64 content
  * @param csr CSR string to validate

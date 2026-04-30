@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,7 +29,7 @@
     "@vitest/coverage-v8": "3.2.4",
     "concurrently": "8.2.2",
     "eslint": "9.16.0",
-    "eslint-config-prettier": "9.1.0",
+    "eslint-config-prettier": "9.1.2",
     "eslint-plugin-prettier": "5.2.3",
     "fastify": "5.8.5",
     "husky": "9.1.7",
@@ -56,7 +56,7 @@
     "fastify": "5.8.5",
     "reflect-metadata": "0.1.13",
     "tslog": "4.9.2",
-    "uuid": "9.0.1",
+    "uuid": "14.0.0",
     "zod": "4.1.12"
   }
 }

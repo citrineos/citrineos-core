@@ -24,6 +24,7 @@ import {
   CrudRepository,
   ErrorCode,
   EventGroup,
+  MessageOrigin,
   OCPP1_6,
   OCPP2_1,
   OCPP_2_VER_LIST,
@@ -31,6 +32,7 @@ import {
   OcppError,
   OCPPValidator,
   OCPPVersion,
+  TariffSetStatusEnum,
   TransactionEventEnum,
 } from '@citrineos/base';
 import { sequelize } from '@dal/index.js';
@@ -47,6 +49,7 @@ import { SequelizeOCPPMessageRepository } from '@dal/layers/sequelize/index.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import { Authorization } from '@dal/layers/sequelize/model/Authorization/index.js';
 import { Component, VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/index.js';
+import { Tariff } from '@dal/layers/sequelize/model/Tariff/Tariffs.js';
 import {
   StartTransaction,
   Transaction,
@@ -408,6 +411,42 @@ export class TransactionsModule extends AbstractModule {
         );
       }
 
+      // C21.FR.05/FR.06: If SettlementByCSMS is true and transaction ended, CSMS should settle with PSP
+      if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
+        try {
+          const settlementByCSMSAttributes: VariableAttribute[] =
+            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+              tenantId,
+              stationId,
+              component_name: 'PaymentCtrlr',
+              variable_name: 'SettlementByCSMS',
+              type: AttributeEnum.Actual,
+            });
+
+          const settlementByCSMS =
+            settlementByCSMSAttributes.length > 0 &&
+            settlementByCSMSAttributes[0].value?.toLowerCase() === 'true';
+
+          if (settlementByCSMS) {
+            const totalCost = response.totalCost ?? transaction.totalCost;
+            this._logger.info(
+              `C21.FR.05: SettlementByCSMS is true for station ${stationId}, ` +
+                `transaction ${transaction.transactionId}. ` +
+                `CSMS should settle totalCost=${totalCost} with PSP. ` +
+                `This requires external PSP integration.`,
+            );
+            // PSP settlement integration point:
+            // Implementers should extend this to call their PSP API to settle
+            // the payment using the pspRef from the authorization's idToken.
+          }
+        } catch (error) {
+          this._logger.error(
+            'Failed to check PaymentCtrlr.SettlementByCSMS from device model',
+            error,
+          );
+        }
+      }
+
       if (transactionEvent.meterValue) {
         const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
           tenantId,
@@ -555,8 +594,13 @@ export class TransactionsModule extends AbstractModule {
 
   /**
    * C19 - Cancellation prior to transaction
+   * C21 - Settlement at end of transaction
    * Handles NotifySettlementRequest from Charging Station to inform CSMS
    * that a payment has been canceled or settled.
+   *
+   * C21.FR.02: CS sends NotifySettlementRequest with status, amount, time, transId, and pspRef.
+   * C21.FR.03: If PaymentCtrlr.ReceiptByCSMS = true, CSMS responds with receiptUrl.
+   * C21.FR.04: If ReceiptByCSMS = false, CS includes receiptUrl/receiptId in the request (no action needed from CSMS).
    */
   @AsHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifySettlement)
   protected async _handleNotifySettlement(
@@ -565,6 +609,8 @@ export class TransactionsModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifySettlementRequest received:', message, props);
 
+    const tenantId = message.context.tenantId;
+    const stationId = message.context.stationId;
     const request = message.payload;
 
     this._logger.info(
@@ -572,7 +618,71 @@ export class TransactionsModule extends AbstractModule {
         `amount=${request.settlementAmount}, transactionId=${request.transactionId ?? 'none'}`,
     );
 
+    // Store settlement data on the transaction if a transactionId is provided
+    if (request.transactionId) {
+      try {
+        await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+          tenantId,
+          {
+            customData: {
+              settlement: {
+                pspRef: request.pspRef,
+                status: request.status,
+                settlementAmount: request.settlementAmount,
+                settlementTime: request.settlementTime,
+                receiptId: request.receiptId,
+                receiptUrl: request.receiptUrl,
+                vatNumber: request.vatNumber,
+              },
+            },
+          } as any,
+          request.transactionId,
+          stationId,
+        );
+      } catch (error) {
+        this._logger.error(
+          `Failed to store settlement data for transaction ${request.transactionId}`,
+          error,
+        );
+      }
+    }
+
     const response: OCPP2_1.NotifySettlementResponse = {};
+
+    // C21.FR.03: If PaymentCtrlr.ReceiptByCSMS is true, generate and include receiptUrl in response
+    try {
+      const receiptByCSMSAttributes: VariableAttribute[] =
+        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+          tenantId,
+          stationId,
+          component_name: 'PaymentCtrlr',
+          variable_name: 'ReceiptByCSMS',
+          type: AttributeEnum.Actual,
+        });
+
+      const receiptByCSMS =
+        receiptByCSMSAttributes.length > 0 &&
+        receiptByCSMSAttributes[0].value?.toLowerCase() === 'true';
+
+      if (receiptByCSMS) {
+        const receiptBaseUrl = this.config.modules.transactions.receiptBaseUrl;
+        if (receiptBaseUrl) {
+          const receiptId = request.transactionId
+            ? `${stationId}-${request.transactionId}-${request.pspRef}`
+            : `${stationId}-${request.pspRef}`;
+          response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptId)}`;
+          response.receiptId = receiptId;
+          this._logger.info(`ReceiptByCSMS is true, generated receiptUrl=${response.receiptUrl}`);
+        } else {
+          this._logger.warn(
+            'ReceiptByCSMS is true but no receiptBaseUrl configured in transactions module config. ' +
+              'Cannot generate receiptUrl.',
+          );
+        }
+      }
+    } catch (error) {
+      this._logger.error('Failed to read PaymentCtrlr.ReceiptByCSMS from device model', error);
+    }
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifySettlement response sent:', messageConfirmation);
@@ -826,6 +936,55 @@ export class TransactionsModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('OCPP 2.1 SetDefaultTariff response received:', message, props);
+
+    if (message.payload.status !== TariffSetStatusEnum.Accepted) {
+      this._logger.warn(
+        `SetDefaultTariff rejected for station ${message.context.stationId}: ${message.payload.status}`,
+      );
+      return;
+    }
+
+    const tenantId = message.context.tenantId;
+    const stationId = message.context.stationId;
+
+    const storedRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        tenantId,
+        stationId,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+
+    if (!storedRequest) {
+      this._logger.error(
+        `No SetDefaultTariffRequest found for correlationId ${message.context.correlationId} on station ${stationId}`,
+      );
+      return;
+    }
+
+    const request = storedRequest.message[3] as OCPP2_1.SetDefaultTariffRequest;
+    const tariffData = request.tariff;
+
+    const newTariff = Tariff.build({
+      tenantId,
+      currency: tariffData.currency,
+      pricePerKwh: 0,
+      tariffId: tariffData.tariffId,
+      validFrom: tariffData.validFrom ?? undefined,
+      description: tariffData.description ?? undefined,
+      energy: tariffData.energy ?? undefined,
+      chargingTime: tariffData.chargingTime ?? undefined,
+      idleTime: tariffData.idleTime ?? undefined,
+      fixedFee: tariffData.fixedFee ?? undefined,
+      reservationTime: tariffData.reservationTime ?? undefined,
+      reservationFixed: tariffData.reservationFixed ?? undefined,
+      minCost: tariffData.minCost ?? undefined,
+      maxCost: tariffData.maxCost ?? undefined,
+    });
+
+    const storedTariff = await this._tariffRepository.upsertTariffByTariffId(tenantId, newTariff);
+    this._logger.info(`Tariff ${storedTariff.id} stored for station ${stationId}`);
   }
 
   protected async deactivateOtherActiveTransactionsAtEvse201(

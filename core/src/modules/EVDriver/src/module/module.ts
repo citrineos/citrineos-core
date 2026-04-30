@@ -759,8 +759,11 @@ export class EVDriverModule extends AbstractModule {
             authorization.tariffId,
           );
           if (tariff) {
-            (response as OCPP2_1.AuthorizeResponse).tariff =
+            // I08.FR.09: CSMS SHALL NOT provide validFrom in AuthorizeResponse
+            const { validFrom: _, ...tariffForResponse } =
               OCPP2_1_Mapper.TariffMapper.toTariffType(tariff);
+            (response as OCPP2_1.AuthorizeResponse).tariff =
+              tariffForResponse as OCPP2_1.TariffType;
           }
         }
       }

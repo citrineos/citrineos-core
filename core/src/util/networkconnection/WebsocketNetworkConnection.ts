@@ -25,12 +25,14 @@ import * as http from 'http';
 import * as https from 'https';
 import { Duplex } from 'stream';
 import type { SecureContextOptions } from 'tls';
+import * as tls from 'tls';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
 import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
+import { TlsCredentialManager } from './TlsCertificateManager.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
@@ -39,11 +41,16 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _identifierConnections: Map<string, WebSocket> = new Map();
   private _pingTimers: Map<string, NodeJS.Timeout> = new Map();
   private _pongTimeouts: Map<string, NodeJS.Timeout> = new Map();
-  private _closeHandlers = new Map<string, () => void>();
+  private _closeHandlers = new Map<
+    string,
+    (code: number, reason: Buffer<ArrayBufferLike>) => void
+  >();
   // tenantId as key and number of active connections as value
   private _tenantConnectionCounts: Map<number, number> = new Map();
   // websocketServers id as key and http server as value
-  private _httpServersMap: Map<string, http.Server | https.Server>;
+  private _httpServersMap: Map<string, http.Server | https.Server> = new Map();
+  // websocketServers id as key and tls credential manager as value
+  private _certManagersMap: Map<string, TlsCredentialManager> = new Map();
   private _authenticator: IAuthenticator;
   private _router: IMessageRouter;
   private _connectionManager?: IConnectionManager;
@@ -75,11 +82,30 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
 
-    this._httpServersMap = new Map<string, http.Server | https.Server>();
     this._config.util.networkConnection.websocketServers.forEach(async (websocketServerConfig) => {
       const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
+      if (websocketServerConfig.securityProfile > 1) {
+        const certManager = new TlsCredentialManager(websocketServerConfig);
+        this._certManagersMap.set(websocketServerConfig.id, certManager);
+      }
     });
+  }
+
+  /**
+   * Reloads the TLS certificates (from disk) for the websocket server with the given ID.
+   * This is useful when certificates are renewed and need to be updated without restarting the server.
+   *
+   * @param serverId websocketServerConfig.id
+   */
+  public reloadTlsCertificates(serverId: string): void {
+    const certManager = this._certManagersMap.get(serverId);
+    if (certManager) {
+      certManager.reload();
+    } else {
+      this._logger.error(`No TLS Credential Manager found for server ${serverId}`);
+      throw new Error(`No TLS Credential Manager found for server ${serverId}`);
+    }
   }
 
   /**
@@ -159,7 +185,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       ws.close(1001, 'Server shutting down');
 
       // Now manually call it and await it
-      websocketClosePromises.push(this._handleWebsocketClose(identifier));
+      websocketClosePromises.push(
+        this._handleWebsocketClose(identifier, 1001, 'Server shutting down'),
+      );
     }
     await Promise.all(websocketClosePromises);
     this._httpServersMap.forEach((server) => server.close());
@@ -209,20 +237,19 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._httpServersMap.set(websocketServerConfig.id, httpServer);
   }
 
+  getHttpServers(): ReadonlyMap<string, http.Server | https.Server> {
+    return this._httpServersMap;
+  }
+
   private _onHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
-    if (req.method === 'GET' && req.url === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'healthy' }));
-    } else {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(
-        JSON.stringify({
-          message: `Route ${req.method}:${req.url} not found`,
-          error: 'Not Found',
-          statusCode: 404,
-        }),
-      );
-    }
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        message: `Route ${req.method}:${req.url} not found`,
+        error: 'Not Found',
+        statusCode: 404,
+      }),
+    );
   }
 
   /**
@@ -419,20 +446,18 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
       const staleWs = this._identifierConnections.get(identifier);
       if (staleWs) {
-        staleWs.terminate();
-        try {
-          await this._router.deregisterConnection(tenantId, stationId);
-        } catch (err) {
-          this._logger.error(`Failed to deregister stale connection for ${identifier}`, err);
+        // Detach the close listener so the async close event doesn't race with
+        // the new connection's state; drive cleanup synchronously below.
+        const staleCloseHandler = this._closeHandlers.get(identifier);
+        if (staleCloseHandler) {
+          staleWs.removeListener('close', staleCloseHandler);
+          this._closeHandlers.delete(identifier);
         }
+        staleWs.terminate();
+        await this._handleWebsocketClose(identifier, 1006, 'Replaced by new connection');
         this._logger.warn(`Terminated stale websocket connection for ${identifier}`);
       }
 
-      this._identifierConnections.set(identifier, ws);
-      this._tenantConnectionCounts.set(
-        tenantId,
-        (this._tenantConnectionCounts.get(tenantId) ?? 0) + 1,
-      );
       try {
         // Get IP address of client
         const ip =
@@ -445,32 +470,52 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         });
         connLogger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
-        // Register client
+        // Register client. Use atomic SET NX so that if another instance
+        // (sharing the same Redis cache) already holds the slot for this
+        // identifier, we lose the race deterministically and reject here
+        // rather than silently overwriting a peer's claim.
         const websocketConnection: IWebsocketConnection = {
           id: websocketServerConfig.id,
+          timeConnected: new Date().toISOString(),
           protocol: ws.protocol,
           allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
         };
-        let registered = await this._cache.set(
+        const claimed = await this._cache.setIfNotExist(
           identifier,
           JSON.stringify(websocketConnection),
           CacheNamespace.Connections,
           pingInterval * 3,
         );
-        registered =
-          registered && (await this._router.registerConnection(tenantId, stationId, ws.protocol));
-        if (!registered) {
-          connLogger.fatal('Failed to register websocket client', identifier);
-          throw new Error('Failed to register websocket client');
+        if (!claimed) {
+          connLogger.warn(
+            `Connection slot already held for ${identifier}, rejecting new connection`,
+          );
+          ws.close(1013, 'Already connected on another instance');
+          return;
         }
 
-        connLogger.info(
-          `Successfully connected new charging station: ${identifier} live connections: ${this._identifierConnections.size}`,
+        const registered = await this._router.registerConnection(tenantId, stationId, ws.protocol);
+        if (!registered) {
+          connLogger.fatal('Failed to register websocket client', identifier);
+          await this._cache.remove(identifier, CacheNamespace.Connections).catch((err) => {
+            this._logger.error(`Failed to remove connection string ${identifier} from cache`, err);
+          });
+          ws.close(1011, 'Failed to register connection in message router');
+          return;
+        }
+
+        this._identifierConnections.set(identifier, ws);
+        this._tenantConnectionCounts.set(
+          tenantId,
+          (this._tenantConnectionCounts.get(tenantId) ?? 0) + 1,
         );
 
         // Register all websocket events
         this._registerWebsocketEvents(identifier, ws, pingInterval);
 
+        connLogger.info(
+          `Successfully connected new charging station: ${identifier} live connections: ${this._identifierConnections.size}`,
+        );
         // Resume the WebSocket event emitter after events have been subscribed to
         ws.resume();
       } catch (error) {
@@ -503,8 +548,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
     };
 
-    const closeHandler = () => {
-      this._handleWebsocketClose(identifier);
+    const closeHandler = (code: number, reason: Buffer<ArrayBufferLike>) => {
+      this._handleWebsocketClose(identifier, code, reason.toString());
     };
     ws.once('close', closeHandler);
     this._closeHandlers.set(identifier, closeHandler);
@@ -542,7 +587,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._router.onMessage(identifier, message, new Date(), protocol);
   }
 
-  private async _handleWebsocketClose(identifier: string): Promise<void> {
+  private async _handleWebsocketClose(
+    identifier: string,
+    code: number,
+    reason: string,
+  ): Promise<void> {
     this._closeHandlers.delete(identifier);
     // Cancel any pending ping timer so it doesn't fire against a closed socket
     const timer = this._pingTimers.get(identifier);
@@ -558,19 +607,41 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     const closedTenantId = getTenantIdFromIdentifier(identifier);
 
-    // Unregister client
-    await Promise.all([
-      this._cache.remove(identifier, CacheNamespace.Connections),
-      this._router.deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier)),
-    ]);
-
-    const prevCount = this._tenantConnectionCounts.get(closedTenantId) ?? 0;
-    if (prevCount <= 1) {
+    const prevCount = this._tenantConnectionCounts.get(closedTenantId);
+    if (prevCount === undefined) {
+      this._logger.warn(
+        `No previous connection count found for tenant ${closedTenantId} when closing connection ${identifier}`,
+      );
+    } else if (prevCount <= 1) {
       this._tenantConnectionCounts.delete(closedTenantId);
     } else {
       this._tenantConnectionCounts.set(closedTenantId, prevCount - 1);
     }
     this._identifierConnections.delete(identifier);
+
+    // Unregister client
+    const connectionStringPromise = this._cache
+      .remove<string>(identifier, CacheNamespace.Connections)
+      .catch((err) => {
+        this._logger.error(`Failed to remove connection string ${identifier} from cache`, err);
+      });
+    const deregisterPromise = this._router
+      .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
+      .catch((err) => {
+        this._logger.error(`Failed to deregister connection ${identifier} from router`, err);
+      });
+
+    const connectionString = await connectionStringPromise;
+    if (connectionString) {
+      const connection: IWebsocketConnection = JSON.parse(connectionString);
+      const timeConnected = new Date().getTime() - new Date(connection.timeConnected).getTime();
+      this._logger.info(
+        `Connection ${identifier} closed after being connected for ${timeConnected} ms with code ${code} and reason ${reason}`,
+      );
+    }
+
+    await deregisterPromise;
+
     this._logger.info(
       `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,
     );
@@ -614,6 +685,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     pingInterval: number,
     applyJitter: boolean,
   ): void {
+    if (this._pingTimers.has(identifier)) {
+      // Ping already scheduled, do not schedule another one
+      return;
+    }
     const jitter = applyJitter ? Math.random() * pingInterval * 1000 : 0;
 
     const sendTimer = setTimeout(
@@ -694,21 +769,21 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
   private _generateServerOptions(config: WebsocketServerConfig): https.ServerOptions {
     const serverOptions: https.ServerOptions = {
-      key: fs.readFileSync(config.tlsKeyFilePath as string),
-      cert: fs.readFileSync(config.tlsCertificateChainFilePath as string),
+      SNICallback:
+        config.securityProfile > 1
+          ? (serverName, cb) => {
+              const opts = this._certManagersMap.get(config.id)!.getServerOptions(config);
+              const ctx = tls.createSecureContext(opts);
+              cb(null, ctx);
+            }
+          : undefined,
+      ca:
+        config.securityProfile > 2 && config.rootCACertificateFilePath
+          ? fs.readFileSync(config.rootCACertificateFilePath)
+          : undefined,
+      requestCert: config.securityProfile > 2,
+      rejectUnauthorized: config.securityProfile > 2,
     };
-
-    if (config.rootCACertificateFilePath) {
-      serverOptions.ca = fs.readFileSync(config.rootCACertificateFilePath as string);
-    }
-
-    if (config.securityProfile > 2) {
-      serverOptions.requestCert = true;
-      serverOptions.rejectUnauthorized = true;
-    } else {
-      serverOptions.rejectUnauthorized = false;
-    }
-
     return serverOptions;
   }
 

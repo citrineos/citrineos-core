@@ -44,6 +44,10 @@ export const getStationIdFromIdentifier = (identifier: string): string => {
  */
 export interface IWebsocketConnection {
   id: string;
+  /**
+   * Stored as ISO string in the cache, converted to Date when retrieved
+   */
+  timeConnected: string;
   protocol: string;
   allowUnknownChargingStations: boolean;
 }

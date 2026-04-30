@@ -186,7 +186,7 @@ describe('RabbitMqReceiver', () => {
 
         expect(mockChannel.assertQueue).toHaveBeenCalledWith(
           'rabbit_queue_router_pod-1',
-          expect.objectContaining({ durable: true, autoDelete: false, exclusive: false }),
+          expect.objectContaining({ durable: true, autoDelete: true, exclusive: false }),
         );
       });
 

@@ -1,19 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IChargingStationSecurityInfoRepository } from '@dal/interfaces/repositories.js';
-import { sequelize } from '@dal/index.js';
 import type {
   BootstrapConfig,
   IFileStorage,
   OCPP2_common_types,
   SystemConfig,
 } from '@citrineos/base';
-import { OCPP2_0_1, SignedMeterValuesConfig } from '@citrineos/base';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { sequelize } from '@dal/index.js';
+import type { IChargingStationSecurityInfoRepository } from '@dal/interfaces/repositories.js';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 /**
  * Util to process and validate signed meter values.
@@ -23,7 +22,9 @@ export class SignedMeterValuesUtil {
   private readonly _logger: Logger<ILogObj>;
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
-  private readonly _signedMeterValuesConfiguration: SignedMeterValuesConfig | undefined;
+  private readonly _signedMeterValuesConfiguration:
+    | SystemConfig['modules']['transactions']['signedMeterValuesConfiguration']
+    | undefined;
 
   /**
    * @param {IFileStorage} [fileStorage] - The `fileStorage` allows access to the configured file storage.
@@ -128,6 +129,15 @@ export class SignedMeterValuesUtil {
     const incomingPublicKeyString = signedMeterValue.publicKey;
     const signingMethod = signedMeterValue.signingMethod;
 
+    if (this._signedMeterValuesConfiguration?.signingMethod !== signingMethod) {
+      this._logger.warn(
+        'Invalid signature because incoming signing method does not match configured signing method.',
+      );
+      return this._signedMeterValuesConfiguration?.rejectUnsupportedSignedMeterValues
+        ? false
+        : true;
+    }
+
     if (!this._signedMeterValuesConfiguration?.publicKeyFileId) {
       this._logger.warn('Invalid signature because public key is missing from system config.');
       return false;
@@ -149,13 +159,6 @@ export class SignedMeterValuesUtil {
     ) {
       this._logger.warn(
         'Invalid signature because no configured public key and incoming signed meter values has no public key.',
-      );
-      return false;
-    }
-
-    if (this._signedMeterValuesConfiguration?.signingMethod !== signingMethod) {
-      this._logger.warn(
-        'Invalid signature because incoming signing method does not match configured signing method.',
       );
       return false;
     }

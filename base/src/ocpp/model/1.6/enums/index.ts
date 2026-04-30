@@ -79,6 +79,22 @@ export enum FirmwareStatusNotificationRequestStatus {
   Installed = 'Installed',
 }
 
+export enum SignedFirmwareStatusNotificationRequestStatus {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  DownloadScheduled = 'DownloadScheduled',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installing = 'Installing',
+  Installed = 'Installed',
+  InstallRebooting = 'InstallRebooting',
+  InstallScheduled = 'InstallScheduled',
+  InstallVerificationFailed = 'InstallVerificationFailed',
+  InvalidSignature = 'InvalidSignature',
+  SignatureVerified = 'SignatureVerified',
+}
+
 export enum GetCompositeScheduleRequestChargingRateUnit {
   A = 'A',
   W = 'W',
