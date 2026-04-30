@@ -147,8 +147,15 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
  *   1. Parse with `systemConfigInputSchema` so any defaults declared on the input
  *      schema (e.g. `websocketServers[*].protocols = ['ocpp2.0.1']`) are filled in.
  *      This lets stored configs that predate a newer optional-with-default field
- *      auto-heal instead of crashing the boot.
+ *      auto-heal instead of crashing strict validation.
  *   2. Re-parse with the strict `systemConfigSchema` to enforce the final shape.
+ *
+ * Zod's `z.object()` strips unknown keys by default. Some optional top-level
+ * fields (e.g. `oidcClient`) only live on the strict schema, so we must NOT
+ * replace `finalConfig` with the parse output — that would silently drop them.
+ * Instead the parsed form is used as a defaults-source that the original
+ * config is overlaid onto, preserving every original key/leaf and only
+ * filling values where the original was missing.
  *
  * If pass 1 fails (truly malformed config), fall back to the strict schema so
  * the original error surface is preserved for genuinely broken configs.
@@ -158,8 +165,56 @@ function mergeConfigFromEnvVars<T extends Record<string, any>>(
  */
 function validateFinalConfig(finalConfig: SystemConfigInput): SystemConfig {
   const inputResult = systemConfigInputSchema.safeParse(finalConfig);
-  const withDefaults = inputResult.success ? inputResult.data : finalConfig;
+  const withDefaults = inputResult.success
+    ? (mergePreservingOriginal(inputResult.data, finalConfig) as SystemConfigInput)
+    : finalConfig;
   return systemConfigSchema.parse(withDefaults);
+}
+
+/**
+ * Merge `original` over `defaults` so the result has every leaf from
+ * `original` where defined, falling back to `defaults` only where `original`
+ * is missing the key. Unknown keys on `original` are preserved (Zod's
+ * default strip would otherwise have removed them). Arrays merge by index;
+ * if one side is longer, extra elements come through as-is.
+ *
+ * Kept inline rather than shared from the Server package so 00_Base has no
+ * upward dependencies.
+ */
+function mergePreservingOriginal(defaults: unknown, original: unknown): unknown {
+  if (original === undefined) {
+    return defaults;
+  }
+  if (defaults === undefined) {
+    return original;
+  }
+  if (Array.isArray(defaults) && Array.isArray(original)) {
+    const length = Math.max(defaults.length, original.length);
+    const out: unknown[] = [];
+    for (let i = 0; i < length; i++) {
+      out.push(mergePreservingOriginal(defaults[i], original[i]));
+    }
+    return out;
+  }
+  if (
+    typeof defaults === 'object' &&
+    defaults !== null &&
+    !Array.isArray(defaults) &&
+    typeof original === 'object' &&
+    original !== null &&
+    !Array.isArray(original)
+  ) {
+    const out: Record<string, unknown> = { ...(defaults as Record<string, unknown>) };
+    for (const key of Object.keys(original as Record<string, unknown>)) {
+      out[key] = mergePreservingOriginal(
+        (defaults as Record<string, unknown>)[key],
+        (original as Record<string, unknown>)[key],
+      );
+    }
+    return out;
+  }
+  // Primitive or type mismatch: original wins.
+  return original;
 }
 
 /**
