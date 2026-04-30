@@ -99,6 +99,7 @@ export {
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
   RbacRulesSchema,
+  systemConfigInputSchema,
   systemConfigSchema,
 } from './config/types.js';
 export type { RbacRules, SystemConfig, WebsocketServerConfig } from './config/types.js';
