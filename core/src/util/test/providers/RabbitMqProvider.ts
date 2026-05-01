@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type * as amqplib from 'amqplib';
 import {
   EventGroup,
   MessageOrigin,
@@ -11,6 +10,7 @@ import {
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/base';
+import type * as amqplib from 'amqplib';
 import { vi } from 'vitest';
 import type { RabbitMQChannelManager } from '../../queue/rabbit-mq/ChannelManager.js';
 
@@ -127,7 +127,6 @@ export function aConsumeMessage(override?: {
 
 /**
  * Creates a ConsumeMessage using the underscore-prefixed field format
- * (the format produced by class-transformer's instanceToPlain on a Message instance).
  * Used to verify that the receiver handles both serialisation formats.
  */
 export function aConsumeMessageWithPrefixedFields(override?: {

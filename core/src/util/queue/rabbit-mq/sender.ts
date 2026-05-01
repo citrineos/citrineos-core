@@ -10,7 +10,6 @@ import type {
   OcppResponse,
 } from '@citrineos/base';
 import { AbstractMessageSender, MessageState, OcppError } from '@citrineos/base';
-import { instanceToPlain } from 'class-transformer';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { RabbitMQChannelManager } from './ChannelManager.js';
@@ -122,7 +121,7 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     const success = channel.publish(
       this.exchange || '',
       '',
-      Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'),
+      Buffer.from(JSON.stringify(message), 'utf-8'),
       {
         contentEncoding: 'utf-8',
         contentType: 'application/json',

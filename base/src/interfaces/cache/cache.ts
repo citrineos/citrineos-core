@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ClassConstructor } from 'class-transformer';
-
 /**
  * Interface for cache
  * Implementers SHALL ensure minimal logic outside of promise resolution or async function to prevent lag
@@ -32,12 +30,7 @@ export interface ICache {
    * @param {string} [namespace] - The namespace for the key.
    * @returns {Promise<string | null>} Returns the value as string once it is modified or waitSeconds has elapsed; or null if the key does not exist.
    * */
-  onChange<T>(
-    key: string,
-    waitSeconds: number,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): Promise<T | null>;
+  onChange<T>(key: string, waitSeconds: number, namespace?: string): Promise<T | null>;
 
   /**
    * Gets a value asynchronously from the underlying cache.
@@ -47,11 +40,7 @@ export interface ICache {
    * @returns {Promise<string | null>} - Returns the value as string or null if the key does not exist.
    * */
 
-  get<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): Promise<T | null>;
+  get<T>(key: string, namespace?: string): Promise<T | null>;
 
   /**
    * Sets a value asynchronously in the underlying cache.

@@ -52,7 +52,6 @@
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
     "big.js": "6.2.2",
-    "class-transformer": "0.5.1",
     "fastify": "5.8.5",
     "reflect-metadata": "0.1.13",
     "tslog": "4.9.2",

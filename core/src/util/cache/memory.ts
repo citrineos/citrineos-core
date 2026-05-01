@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ICache } from '@citrineos/base';
-import type { ClassConstructor } from 'class-transformer';
-import { plainToInstance } from 'class-transformer';
 
 /**
  * Implementation of cache interface with memory storage
@@ -73,12 +71,7 @@ export class MemoryCache implements ICache {
     return this._cache.delete(namespaceKey);
   }
 
-  onChange<T>(
-    key: string,
-    waitSeconds: number,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): Promise<T | null> {
+  onChange<T>(key: string, waitSeconds: number, namespace?: string): Promise<T | null> {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
 
@@ -104,35 +97,24 @@ export class MemoryCache implements ICache {
     return Promise.race([
       onChangeValuePromise?.then((value) => {
         if (typeof value === 'string') {
-          if (classConstructor) {
-            return plainToInstance(classConstructor(), JSON.parse(value));
-          } else {
-            return value as T;
-          }
+          return value as T;
         } else {
           return value;
         }
       }),
       new Promise<T | null>((resolve) => {
         setTimeout(() => {
-          resolve(this.get(key, namespace, classConstructor));
+          resolve(this.get(key, namespace));
         }, waitSeconds * 1000);
       }),
     ]) as Promise<T>;
   }
 
-  async get<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): Promise<T | null> {
+  async get<T>(key: string, namespace?: string): Promise<T | null> {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     const result = this._cache.get(namespaceKey);
     if (result) {
-      if (classConstructor) {
-        return plainToInstance(classConstructor(), JSON.parse(result));
-      }
       return result as T;
     }
     return null;

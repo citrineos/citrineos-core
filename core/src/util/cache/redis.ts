@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ICache } from '@citrineos/base';
-import type { ClassConstructor } from 'class-transformer';
-import { plainToInstance } from 'class-transformer';
 import type {
   RedisClientOptions,
   RedisClientType,
@@ -54,12 +52,7 @@ export class RedisCache implements ICache {
     return this._client.del(key).then((result) => result === 1);
   }
 
-  onChange<T>(
-    key: string,
-    waitSeconds: number,
-    namespace?: string | undefined,
-    classConstructor?: (() => ClassConstructor<T>) | undefined,
-  ): Promise<T | null> {
+  onChange<T>(key: string, waitSeconds: number, namespace?: string | undefined): Promise<T | null> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
 
@@ -71,7 +64,7 @@ export class RedisCache implements ICache {
         .subscribe(`__keyspace@0__:${key}`, (channel, message) => {
           switch (message) {
             case 'set':
-              resolve(this.get(key, namespace, classConstructor));
+              resolve(this.get(key, namespace));
               subscriber
                 .quit()
                 .then()
@@ -105,7 +98,7 @@ export class RedisCache implements ICache {
           this._logger.error('Error creating Redis subscriber', error);
         });
       setTimeout(() => {
-        resolve(this.get(key, namespace, classConstructor));
+        resolve(this.get(key, namespace));
         subscriber
           .quit()
           .then()
@@ -119,18 +112,11 @@ export class RedisCache implements ICache {
     });
   }
 
-  get<T>(
-    key: string,
-    namespace?: string,
-    classConstructor?: () => ClassConstructor<T>,
-  ): Promise<T | null> {
+  get<T>(key: string, namespace?: string): Promise<T | null> {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     return this._client.get(key).then((result) => {
       if (result) {
-        if (classConstructor) {
-          return plainToInstance(classConstructor(), JSON.parse(result));
-        }
         return result as T;
       }
       return null;
