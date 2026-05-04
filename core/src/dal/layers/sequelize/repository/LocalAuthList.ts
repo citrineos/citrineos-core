@@ -70,7 +70,7 @@ export class SequelizeLocalAuthListRepository
       tenantId,
       SendLocalList.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         correlationId,
         versionNumber,
         updateType,
@@ -140,7 +140,7 @@ export class SequelizeLocalAuthListRepository
   ): Promise<void> {
     await this.s.transaction(async (transaction) => {
       const localListVersion = await LocalListVersion.findOne({
-        where: { stationId },
+        where: { stationId: stationId },
         transaction,
       });
       if (localListVersion && localListVersion.versionNumber === versionNumber) {
@@ -155,7 +155,7 @@ export class SequelizeLocalAuthListRepository
       }
       if (!localListVersion) {
         const newLocalListVersion = await LocalListVersion.create(
-          { tenantId, stationId, versionNumber },
+          { tenantId, stationId: stationId, versionNumber },
           { transaction },
         );
         this.emit('created', [newLocalListVersion]);
@@ -171,7 +171,9 @@ export class SequelizeLocalAuthListRepository
     stationId: string,
     correlationId: string,
   ): Promise<SendLocalList | undefined> {
-    return this.sendLocalList.readOnlyOneByQuery(tenantId, { where: { stationId, correlationId } });
+    return this.sendLocalList.readOnlyOneByQuery(tenantId, {
+      where: { stationId: stationId, correlationId },
+    });
   }
 
   async createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
@@ -202,7 +204,7 @@ export class SequelizeLocalAuthListRepository
   ): Promise<LocalListVersion> {
     const localListVersion = await this.s.transaction(async (transaction) => {
       const oldLocalListVersion = await LocalListVersion.findOne({
-        where: { stationId },
+        where: { stationId: stationId },
         include: [LocalListAuthorization],
         transaction,
       });
@@ -213,13 +215,16 @@ export class SequelizeLocalAuthListRepository
           transaction,
         });
         // Destroy old version
-        await LocalListVersion.destroy({ where: { stationId }, transaction });
+        await LocalListVersion.destroy({
+          where: { stationId: stationId },
+          transaction,
+        });
       }
 
       const localListVersion = await LocalListVersion.create(
         {
           tenantId,
-          stationId,
+          stationId: stationId,
           versionNumber: sendLocalList.versionNumber,
         },
         { transaction },
@@ -259,7 +264,7 @@ export class SequelizeLocalAuthListRepository
         const localListVersion = await this._updateAllByQuery(
           tenantId,
           { versionNumber: sendLocalList.versionNumber },
-          { where: { stationId }, transaction },
+          { where: { stationId: stationId }, transaction },
         );
         if (localListVersion.length !== 1) {
           throw new Error(
@@ -271,7 +276,7 @@ export class SequelizeLocalAuthListRepository
       }
 
       const localListVersion = await LocalListVersion.findOne({
-        where: { stationId },
+        where: { stationId: stationId },
         include: [LocalListAuthorization],
         transaction,
       });

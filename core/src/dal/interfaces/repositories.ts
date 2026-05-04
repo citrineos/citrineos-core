@@ -180,7 +180,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   /**
    * Creates a SendLocalList.
    * @param {number} tenantId - The tenant ID.
-   * @param {string} stationId - The ID of the station.
+   * @param stationId - The connection name of the charging station
    * @param {string} correlationId - The correlation ID.
    * @param {UpdateEnumType} updateType - The type of update.
    * @param {number} versionNumber - The version number.
@@ -199,7 +199,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
    * @param tenantId
    * @param versionNumber
-   * @param stationId
+   * @param stationId - The connection name of the charging station
    */
   validateOrReplaceLocalListVersionForStation(
     tenantId: number,
@@ -214,7 +214,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   /**
    * Used to process SendLocalListResponse.
    * @param tenantId
-   * @param stationId
+   * @param stationId - The connection name of the charging station
    * @param {SendLocalList} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
    * @returns {LocalListVersion} LocalListVersion - The updated LocalListVersion.
    */

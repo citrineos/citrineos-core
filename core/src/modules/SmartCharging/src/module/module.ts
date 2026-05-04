@@ -520,7 +520,7 @@ export class SmartChargingModule extends AbstractModule {
    *
    * @param request - The `NotifyEVChargingScheduleRequest` containing EV's charging schedule.
    * @param transaction - The transaction associated with the charging profile.
-   * @param stationId - Station ID
+   * @param stationId - The connection name of the charging station
    *
    * @returns A `SetChargingProfileRequest` with a generated charging profile.
    */

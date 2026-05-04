@@ -266,7 +266,7 @@ export class SequelizeDeviceModelRepository
           tenantId,
           VariableAttribute.build({
             tenantId,
-            stationId,
+            stationId: stationId,
             variableId: defaultComponentVariable.id,
             componentId: component.id,
             evseDatabaseId: evse?.databaseId,
@@ -371,7 +371,10 @@ export class SequelizeDeviceModelRepository
   ): Promise<VariableAttribute | undefined> {
     if (!existingVariableAttribute) {
       existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
-        where: { stationId, type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual },
+        where: {
+          stationId: stationId,
+          type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual,
+        },
         include: [
           {
             model: Component,
@@ -431,7 +434,7 @@ export class SequelizeDeviceModelRepository
   ): Promise<OCPP2_0_1.SetVariableDataType[]> {
     const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
         bootConfigSetId: { [Op.ne]: null },
       },
       include: [{ model: Component, include: [EvseType] }, Variable],

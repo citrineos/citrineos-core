@@ -42,9 +42,9 @@ export class ReportingOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.GetDiagnostics,

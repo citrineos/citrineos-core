@@ -304,7 +304,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Sends a Call message to a charging station with given identifier.
    *
-   * @param {string} stationId - The identifier of the station.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message.
    * @param {CallAction} action - The action to be called.
@@ -379,7 +379,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * Sends the CallResult to a charging station with given identifier.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} stationId - The identifier of the charging station.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message.
    * @param {CallAction} action - The action to be called.
@@ -443,7 +443,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * Sends a CallError message to a charging station with given identifier.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} stationId - The identifier of the charging station.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message.
    * @param {CallAction} _action - The action to be called.

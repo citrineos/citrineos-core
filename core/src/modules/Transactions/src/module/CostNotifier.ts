@@ -30,7 +30,7 @@ export class CostNotifier extends Scheduler {
    * Repeatedly sends a CostUpdated call for an ongoing transaction based on the intervalSeconds.
    * Stops sending requests once the transaction becomes inactive.
    *
-   * @param {string} stationId - The identifier of the client connection.
+   * @param stationId - The connection name of the charging station
    * @param {string} transactionId - The identifier of the transaction.
    * @param {number} intervalSeconds - The costUpdated interval in seconds.
    * @param {number} tenantId - The identifier of the tenant.

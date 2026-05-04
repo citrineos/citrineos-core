@@ -68,7 +68,7 @@ export class SequelizeVariableMonitoringRepository
               const existingVariableMonitoring = await this.s.models[
                 VariableMonitoring.MODEL_NAME
               ].findOne({
-                where: { stationId, variableId, componentId },
+                where: { stationId: stationId, variableId, componentId },
                 transaction,
               });
 
@@ -76,7 +76,7 @@ export class SequelizeVariableMonitoringRepository
                 // If the record does not exist, build and save a new instance
                 const vm = VariableMonitoring.build({
                   tenantId,
-                  stationId,
+                  stationId: stationId,
                   variableId,
                   componentId,
                   ...variableMonitoring,
@@ -135,14 +135,14 @@ export class SequelizeVariableMonitoringRepository
 
     await this.s.transaction(async (transaction) => {
       const savedVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
-        where: { stationId, variableId, componentId },
+        where: { stationId: stationId, variableId, componentId },
         transaction,
       });
 
       if (!savedVariableMonitoring) {
         const variableMonitoring = VariableMonitoring.build({
           tenantId,
-          stationId,
+          stationId: stationId,
           variableId,
           componentId,
           ...value,
@@ -173,7 +173,7 @@ export class SequelizeVariableMonitoringRepository
   ): Promise<void> {
     await this.readAllByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -196,7 +196,7 @@ export class SequelizeVariableMonitoringRepository
     await this.readAllByQuery(tenantId, {
       where: {
         id,
-        stationId,
+        stationId: stationId,
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -217,7 +217,11 @@ export class SequelizeVariableMonitoringRepository
   ): Promise<VariableMonitoring> {
     const savedVariableMonitoring = await super
       .readAllByQuery(tenantId, {
-        where: { stationId, type: result.type, severity: result.severity },
+        where: {
+          stationId: stationId,
+          type: result.type,
+          severity: result.severity,
+        },
         include: [
           {
             model: Component,
@@ -279,7 +283,7 @@ export class SequelizeVariableMonitoringRepository
       tenantId,
       EventData.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         variableId,
         componentId,
         ...event,

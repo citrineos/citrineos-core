@@ -62,7 +62,7 @@ export class SignedMeterValuesUtil {
    * OR
    * - The incoming signed meter value's public key isn't empty and it matches the configured public key
    *
-   * @param stationId - The charging station the meter values belong to
+   * @param stationId - The connection name of the charging station
    * @param meterValues - The list of meter values
    */
   public async validateMeterValues(

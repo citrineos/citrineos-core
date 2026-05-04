@@ -114,7 +114,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
       { bootConfigId: null },
       {
         where: {
-          stationId,
+          stationId: stationId,
         },
       },
     );

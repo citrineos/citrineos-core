@@ -21,7 +21,7 @@ export class DeviceModelService {
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
    * @param tenantId
-   * @param stationId Charging station identifier.
+   * @param stationId - The connection name of the charging station
    * @returns ItemsPerMessageSetVariables as a number or null if no such attribute exists.
    */
   async getItemsPerMessageSetVariablesByStationId(
@@ -55,7 +55,7 @@ export class DeviceModelService {
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
    * @param tenantId
-   * @param stationId Charging station identifier.
+   * @param stationId - The connection name of the charging station
    * @returns ItemsPerMessageGetVariables as a number or null if no such attribute exists.
    */
   async getItemsPerMessageGetVariablesByStationId(

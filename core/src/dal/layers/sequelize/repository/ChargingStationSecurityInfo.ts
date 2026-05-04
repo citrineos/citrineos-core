@@ -18,7 +18,9 @@ export class SequelizeChargingStationSecurityInfoRepository
   }
 
   async readChargingStationPublicKeyFileId(tenantId: number, stationId: string): Promise<string> {
-    const existingInfo = await this.readOnlyOneByQuery(tenantId, { where: { stationId } });
+    const existingInfo = await this.readOnlyOneByQuery(tenantId, {
+      where: { stationId: stationId },
+    });
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }
 
@@ -30,7 +32,7 @@ export class SequelizeChargingStationSecurityInfoRepository
     await this.readOrCreateByQuery(tenantId, {
       where: {
         tenantId,
-        stationId,
+        stationId: stationId,
       },
       defaults: {
         publicKeyFileId,

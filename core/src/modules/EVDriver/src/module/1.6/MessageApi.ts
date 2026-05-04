@@ -42,9 +42,9 @@ export class EVDriverOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results = identifier.map((id) =>
+    const results = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.RemoteStartTransaction,
@@ -65,9 +65,9 @@ export class EVDriverOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results = identifier.map((id) =>
+    const results = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.RemoteStopTransaction,
@@ -85,9 +85,9 @@ export class EVDriverOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results = identifier.map((id) =>
+    const results = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.UnlockConnector,
@@ -105,9 +105,9 @@ export class EVDriverOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results = identifier.map((id) =>
+    const results = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.ClearCache,

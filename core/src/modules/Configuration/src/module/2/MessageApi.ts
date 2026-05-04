@@ -336,9 +336,9 @@ export class ConfigurationOcpp2Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         this._ocppVersion ?? DEFAULT_VERSION,
         OCPP_CallAction.DataTransfer,

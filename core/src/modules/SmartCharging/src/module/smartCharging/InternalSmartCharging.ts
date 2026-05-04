@@ -31,7 +31,7 @@ export class InternalSmartCharging implements ISmartCharging {
    *
    * @param request - The `NotifyEVChargingNeedsRequest` containing details about the EV's charging requirements.
    * @param transaction - The ID of the transaction associated with the charging profile.
-   * @param stationId - The ID of the station
+   * @param stationId - The connection name of the charging station
    * @returns A `ChargingProfileType`.
    *
    * @throws Error if the energy transfer mode is unsupported.

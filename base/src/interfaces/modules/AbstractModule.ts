@@ -260,7 +260,7 @@ export abstract class AbstractModule implements IModule {
   /**
    * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
    *
-   * @param {string} stationId - The identifier of the station making the call.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The action to be performed.
@@ -357,7 +357,7 @@ export abstract class AbstractModule implements IModule {
    * Sends the call result message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} stationId - The identifier of the station making the call.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.
@@ -439,7 +439,7 @@ export abstract class AbstractModule implements IModule {
    * Sends the call error message and returns a Promise that resolves with the confirmation message.
    *
    * @param {string} correlationId - The correlation ID of the message.
-   * @param {string} stationId - The identifier of the station making the call.
+   * @param stationId - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
    * @param {CallAction} action - The call action.

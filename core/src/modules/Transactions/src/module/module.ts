@@ -338,6 +338,48 @@ export class TransactionsModule extends AbstractModule {
     );
 
     if (response) {
+      // For DirectPayment tokens on Started events, include transactionLimit
+      // based on PaymentCtrlr.AuthorizationAmount from the device model.
+      if (
+        transactionEvent.eventType === TransactionEventEnum.Started &&
+        response.idTokenInfo?.status === AuthorizationStatusEnum.Accepted &&
+        message.protocol === OCPPVersion.OCPP2_1 &&
+        transactionEvent.idToken?.type === OCPP2_1.IdTokenEnumType.DirectPayment
+      ) {
+        try {
+          const authAmountAttributes: VariableAttribute[] =
+            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+              tenantId,
+              stationId,
+              component_name: 'PaymentCtrlr',
+              variable_name: 'AuthorizationAmount',
+              type: AttributeEnum.Actual,
+            });
+
+          if (authAmountAttributes.length > 0 && authAmountAttributes[0].value) {
+            const authorizationAmount = parseFloat(authAmountAttributes[0].value);
+            if (!isNaN(authorizationAmount) && authorizationAmount > 0) {
+              const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+              // Only set if not already set by another flow (e.g., C17 prepaid)
+              if (!ocpp21Response.transactionLimit) {
+                ocpp21Response.transactionLimit = {
+                  maxCost: authorizationAmount,
+                };
+                this._logger.info(
+                  `Set transactionLimit.maxCost=${authorizationAmount} for DirectPayment ` +
+                    `token on station ${stationId}, transaction ${transactionId}.`,
+                );
+              }
+            }
+          }
+        } catch (error) {
+          this._logger.error(
+            'Failed to read PaymentCtrlr.AuthorizationAmount from device model',
+            error,
+          );
+        }
+      }
+
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('Transaction response sent: ', messageConfirmation);
       // If the transaction is accepted and interval is set, start the cost update
@@ -371,6 +413,47 @@ export class TransactionsModule extends AbstractModule {
             transaction.connectorId,
             transaction.totalKwh,
           );
+        }
+
+        // C23: Increasing authorization amount
+        // When CS sends TransactionEventRequest(Updated) with triggerReason=LimitSet (OCPP 2.1),
+        // it indicates the authorization amount has been increased and transactionLimit.maxCost updated.
+        if (message.protocol === OCPPVersion.OCPP2_1 && transaction && transaction.isActive) {
+          const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
+          if (
+            ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.LimitSet &&
+            ocpp21Payload.transactionInfo?.transactionLimit?.maxCost != null
+          ) {
+            const newMaxCost = ocpp21Payload.transactionInfo.transactionLimit.maxCost;
+            this._logger.info(
+              `Authorization amount increased for station ${stationId}, ` +
+                `transaction ${transactionId}. New maxCost=${newMaxCost}.`,
+            );
+
+            // Store the updated maxCost in customData
+            try {
+              const existingCustomData = transaction.customData ?? {};
+              await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+                tenantId,
+                {
+                  customData: {
+                    ...existingCustomData,
+                    transactionLimit: {
+                      ...(existingCustomData.transactionLimit ?? {}),
+                      maxCost: newMaxCost,
+                    },
+                  },
+                } as Partial<Transaction>,
+                transactionId,
+                stationId,
+              );
+            } catch (error) {
+              this._logger.error(
+                `Failed to store updated maxCost for transaction ${transactionId}`,
+                error,
+              );
+            }
+          }
         }
 
         // I06 - Update Tariff Information During Transaction
@@ -595,12 +678,15 @@ export class TransactionsModule extends AbstractModule {
   /**
    * C19 - Cancellation prior to transaction
    * C21 - Settlement at end of transaction
+   * C22 - Settlement is rejected or fails
    * Handles NotifySettlementRequest from Charging Station to inform CSMS
-   * that a payment has been canceled or settled.
+   * that a payment has been canceled, settled, rejected, or failed.
    *
    * C21.FR.02: CS sends NotifySettlementRequest with status, amount, time, transId, and pspRef.
-   * C21.FR.03: If PaymentCtrlr.ReceiptByCSMS = true, CSMS responds with receiptUrl.
+   * C21.FR.03: If PaymentCtrlr.ReceiptByCSMS = true, CSMS responds with receiptUrl (only for Settled).
    * C21.FR.04: If ReceiptByCSMS = false, CS includes receiptUrl/receiptId in the request (no action needed from CSMS).
+   * C22.FR.01: If status is Rejected, store settlement data without receipt information.
+   * C22.FR.02: If status is Failed, store settlement data without receipt information.
    */
   @AsHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifySettlement)
   protected async _handleNotifySettlement(
@@ -618,24 +704,53 @@ export class TransactionsModule extends AbstractModule {
         `amount=${request.settlementAmount}, transactionId=${request.transactionId ?? 'none'}`,
     );
 
+    const isSettled = request.status === OCPP2_1.PaymentStatusEnumType.Settled;
+    const isRejected = request.status === OCPP2_1.PaymentStatusEnumType.Rejected;
+    const isFailed = request.status === OCPP2_1.PaymentStatusEnumType.Failed;
+    const isCancelled = request.status === OCPP2_1.PaymentStatusEnumType.Canceled;
+
+    const isValidSettlementStatus = isSettled || isRejected || isFailed || isCancelled;
+    if (!isValidSettlementStatus) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.PropertyConstraintViolation,
+        `Invalid settlement status: ${request.status}. Must be one of 'Settled', 'Rejected', 'Canceled' or 'Failed'.`,
+      );
+    }
+
+    if (isRejected || isFailed) {
+      this._logger.warn(
+        `Settlement ${request.status} for station ${stationId}, ` +
+          `transaction ${request.transactionId ?? 'none'}, pspRef=${request.pspRef}, ` +
+          `amount=${request.settlementAmount}. ` +
+          `statusInfo=${request.statusInfo ?? 'none'}. ` +
+          `CPO may need to manually capture the amount via PSP using the pspRef.`,
+      );
+    }
+
     // Store settlement data on the transaction if a transactionId is provided
     if (request.transactionId) {
       try {
+        const settlementData: Record<string, unknown> = {
+          pspRef: request.pspRef,
+          status: request.status,
+          settlementAmount: request.settlementAmount,
+          settlementTime: request.settlementTime,
+          statusInfo: request.statusInfo,
+        };
+        //Do NOT include receipt information for Rejected/Failed statuses
+        if (isSettled) {
+          settlementData.receiptId = request.receiptId;
+          settlementData.receiptUrl = request.receiptUrl;
+          settlementData.vatNumber = request.vatNumber;
+        }
         await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
           tenantId,
           {
             customData: {
-              settlement: {
-                pspRef: request.pspRef,
-                status: request.status,
-                settlementAmount: request.settlementAmount,
-                settlementTime: request.settlementTime,
-                receiptId: request.receiptId,
-                receiptUrl: request.receiptUrl,
-                vatNumber: request.vatNumber,
-              },
+              settlement: settlementData,
             },
-          } as any,
+          } as Partial<Transaction>,
           request.transactionId,
           stationId,
         );
@@ -649,43 +764,80 @@ export class TransactionsModule extends AbstractModule {
 
     const response: OCPP2_1.NotifySettlementResponse = {};
 
-    // C21.FR.03: If PaymentCtrlr.ReceiptByCSMS is true, generate and include receiptUrl in response
-    try {
-      const receiptByCSMSAttributes: VariableAttribute[] =
-        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-          tenantId,
-          stationId,
-          component_name: 'PaymentCtrlr',
-          variable_name: 'ReceiptByCSMS',
-          type: AttributeEnum.Actual,
-        });
+    // Only generate receiptUrl for successful (Settled) settlements.
+    // Do NOT include receiptUrl or receiptId for Rejected/Failed statuses.
+    if (isSettled) {
+      try {
+        const receiptByCSMSAttributes: VariableAttribute[] =
+          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+            tenantId,
+            stationId,
+            component_name: 'PaymentCtrlr',
+            variable_name: 'ReceiptByCSMS',
+            type: AttributeEnum.Actual,
+          });
 
-      const receiptByCSMS =
-        receiptByCSMSAttributes.length > 0 &&
-        receiptByCSMSAttributes[0].value?.toLowerCase() === 'true';
+        const receiptByCSMS =
+          receiptByCSMSAttributes.length > 0 &&
+          receiptByCSMSAttributes[0].value?.toLowerCase() === 'true';
 
-      if (receiptByCSMS) {
-        const receiptBaseUrl = this.config.modules.transactions.receiptBaseUrl;
-        if (receiptBaseUrl) {
-          const receiptId = request.transactionId
-            ? `${stationId}-${request.transactionId}-${request.pspRef}`
-            : `${stationId}-${request.pspRef}`;
-          response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptId)}`;
-          response.receiptId = receiptId;
-          this._logger.info(`ReceiptByCSMS is true, generated receiptUrl=${response.receiptUrl}`);
-        } else {
-          this._logger.warn(
-            'ReceiptByCSMS is true but no receiptBaseUrl configured in transactions module config. ' +
-              'Cannot generate receiptUrl.',
-          );
+        if (receiptByCSMS) {
+          const receiptBaseUrl = this.config.modules.transactions.receiptBaseUrl;
+          if (receiptBaseUrl) {
+            const receiptId = request.transactionId
+              ? `${stationId}-${request.transactionId}-${request.pspRef}`
+              : `${stationId}-${request.pspRef}`;
+            response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptId)}`;
+            response.receiptId = receiptId;
+            this._logger.info(`ReceiptByCSMS is true, generated receiptUrl=${response.receiptUrl}`);
+          } else {
+            this._logger.warn(
+              'ReceiptByCSMS is true but no receiptBaseUrl configured in transactions module config. ' +
+                'Cannot generate receiptUrl.',
+            );
+          }
         }
+      } catch (error) {
+        this._logger.error('Failed to read PaymentCtrlr.ReceiptByCSMS from device model', error);
       }
-    } catch (error) {
-      this._logger.error('Failed to read PaymentCtrlr.ReceiptByCSMS from device model', error);
     }
 
     const messageConfirmation = await this.sendCallResultWithMessage(message, response);
     this._logger.debug('NotifySettlement response sent:', messageConfirmation);
+
+    // After settlement, CSMS MAY send SetDisplayMessageRequest with receipt URL
+    // to display on the charging station (e.g., as a QR code).
+    const finalReceiptUrl = response.receiptUrl ?? request.receiptUrl;
+    if (isSettled && finalReceiptUrl) {
+      try {
+        const displayMessageId = Date.now() % 2147483647; // Unique positive integer ID
+        await this.sendCall(
+          stationId,
+          tenantId,
+          OCPPVersion.OCPP2_1,
+          OCPP_CallAction.SetDisplayMessage,
+          {
+            message: {
+              id: displayMessageId,
+              priority: OCPP2_1.MessagePriorityEnumType.AlwaysFront,
+              transactionId: request.transactionId,
+              message: {
+                format: OCPP2_1.MessageFormatEnumType.URI,
+                content: finalReceiptUrl,
+              },
+            },
+          } as OCPP2_1.SetDisplayMessageRequest,
+        );
+        this._logger.info(
+          `Sent SetDisplayMessageRequest with receiptUrl=${finalReceiptUrl} to station ${stationId}`,
+        );
+      } catch (error) {
+        this._logger.error(
+          `Failed to send SetDisplayMessageRequest to station ${stationId}`,
+          error,
+        );
+      }
+    }
   }
 
   /**

@@ -652,13 +652,18 @@ export class ConfigurationModule extends AbstractModule {
           setNetworkProfile.websocketServerConfigId!,
         );
         if (serverNetworkProfile) {
-          const chargingStation = await ChargingStation.findByPk(message.context.stationId);
+          const chargingStation = await ChargingStation.findOne({
+            where: {
+              id: message.context.stationId,
+              tenantId: message.context.tenantId,
+            },
+          });
           if (chargingStation) {
             const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild(
               {
                 where: {
                   tenantId: message.context.tenantId,
-                  stationId: chargingStation.id,
+                  id: chargingStation.id,
                   configurationSlot: setNetworkProfile.configurationSlot!,
                 },
               },
@@ -1014,7 +1019,7 @@ export class ConfigurationModule extends AbstractModule {
 
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

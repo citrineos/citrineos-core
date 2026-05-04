@@ -118,7 +118,7 @@ export class SequelizeTransactionEventRepository
    * MeterValues, and either create or update Transaction. IdTokens (and associated AdditionalInfo) and EVSEs are
    * assumed to already exist and will not be created as part of this call.
    *
-   * @param stationId StationId of charging station which sent TransactionEventRequest.
+   * @param stationId - The connection name of the charging station
    *
    * @returns Saved TransactionEvent
    */
@@ -134,7 +134,7 @@ export class SequelizeTransactionEventRepository
       let created = false;
       const existingTransaction = await this.transaction.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           transactionId: value.transactionInfo.transactionId,
         },
         transaction: sequelizeTransaction,
@@ -146,7 +146,7 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              stationId,
+              stationId: stationId,
               evseTypeId: value.evse.id,
             },
           });
@@ -158,14 +158,14 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              stationId,
+              stationId: stationId,
               evseTypeId: value.evse.id,
             },
           });
           const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              stationId,
+              stationId: stationId,
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
             },
@@ -223,7 +223,7 @@ export class SequelizeTransactionEventRepository
       } else {
         const newTransaction = Transaction.build({
           tenantId,
-          stationId,
+          stationId: stationId,
           isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
           startTime:
             value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
@@ -236,7 +236,7 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              stationId,
+              stationId: stationId,
               evseTypeId: value.evse.id,
             },
           });
@@ -245,7 +245,7 @@ export class SequelizeTransactionEventRepository
             const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
               where: {
                 tenantId,
-                stationId,
+                stationId: stationId,
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
@@ -285,7 +285,7 @@ export class SequelizeTransactionEventRepository
         }
 
         const [chargingStation] = await this.station.readAllByQuery(tenantId, {
-          where: { id: stationId, tenantId },
+          where: { stationId: stationId, tenantId },
         });
         if (!chargingStation) {
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
@@ -307,7 +307,7 @@ export class SequelizeTransactionEventRepository
 
       let event = TransactionEvent.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         transactionDatabaseId,
         ...value,
       });
@@ -398,7 +398,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<TransactionEvent[]> {
     return await super
       .readAllByQuery(tenantId, {
-        where: { stationId },
+        where: { stationId: stationId },
         include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse],
       })
       .then((transactionEvents) => {
@@ -415,7 +415,7 @@ export class SequelizeTransactionEventRepository
     transactionId: string,
   ): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
-      where: { stationId, transactionId },
+      where: { stationId: stationId, transactionId },
     });
   }
 
@@ -442,7 +442,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}),
         },
         include: includeObj,
@@ -571,7 +571,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           isActive: true,
         },
         include: [
@@ -677,7 +677,7 @@ export class SequelizeTransactionEventRepository
       // Build StartTransaction event
       let event = StartTransaction.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         ...request,
       });
 
@@ -685,7 +685,7 @@ export class SequelizeTransactionEventRepository
       const connector = await this.connector.readOnlyOneByQuery(tenantId, {
         where: {
           connectorId: request.connectorId,
-          stationId,
+          stationId: stationId,
         },
         include: [Tariff],
         sequelizeTransaction,
@@ -717,7 +717,7 @@ export class SequelizeTransactionEventRepository
       // Store transaction in db
       let newTransaction = Transaction.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         evseId: connector.evseId,
         connectorId: connector.id,
         tariffId: connector.tariff?.id,
@@ -729,7 +729,7 @@ export class SequelizeTransactionEventRepository
       });
 
       const [chargingStation] = await this.station.readAllByQuery(tenantId, {
-        where: { id: stationId, tenantId },
+        where: { stationId: stationId, tenantId },
       });
       if (chargingStation) {
         if (chargingStation.locationId) {
@@ -779,7 +779,7 @@ export class SequelizeTransactionEventRepository
 
     const stopTransaction = await StopTransaction.create({
       tenantId,
-      stationId,
+      stationId: stationId,
       transactionDatabaseId,
       meterStop,
       timestamp: timestamp.toISOString(),
@@ -817,7 +817,7 @@ export class SequelizeTransactionEventRepository
       where: {
         // unique constraint
         transactionId,
-        stationId,
+        stationId: stationId,
       },
     });
     return transactions.length > 0 ? transactions[0] : undefined;
@@ -831,7 +831,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<Transaction[]> {
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
         isActive: true,
         transactionId: { [Op.ne]: excludeTransactionId },
       },

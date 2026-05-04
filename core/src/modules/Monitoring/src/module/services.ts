@@ -20,7 +20,7 @@ export class DeviceModelService {
    * are associated with alternate options. That structure is not supported by this logic, and that
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
-   * @param stationId Charging station identifier.
+   * @param stationId - The connection name of the charging station
    * @returns ItemsPerMessage as a number or null if no such attribute exists.
    */
   async getItemsPerMessageByComponentAndVariableInstanceAndStationId(
@@ -55,7 +55,7 @@ export class DeviceModelService {
    * are associated with alternate options. That structure is not supported by this logic, and that
    * structure is a violation of Part 2 - Specification of OCPP 2.0.1.
    * In that case, the first attribute will be returned.
-   * @param stationId Charging station identifier.
+   * @param stationId - The connection name of the charging station
    * @returns BytesPerMessage as a number or null if no such attribute exists.
    */
   async getBytesPerMessageByComponentAndVariableInstanceAndStationId(

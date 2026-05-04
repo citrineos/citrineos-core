@@ -28,7 +28,7 @@ export class SequelizeSecurityEventRepository
       tenantId,
       SecurityEvent.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         ...value,
       }),
     );
@@ -43,7 +43,7 @@ export class SequelizeSecurityEventRepository
     const timestampQuery = this.generateTimestampQuery(from?.toISOString(), to?.toISOString());
     return await this.readAllByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
         ...timestampQuery,
       },
     }).then((row) => row as SecurityEvent[]);

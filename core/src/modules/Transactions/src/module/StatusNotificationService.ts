@@ -44,7 +44,7 @@ export class StatusNotificationService {
   /**
    * Stores an internal record of the incoming status, then updates the device model for the updated connector.
    *
-   * @param {string} stationId - The Charging Station sending the status notification request
+   * @param stationId - The connection name of the charging station
    * @param {StatusNotificationRequest} statusNotificationRequest
    */
   async processStatusNotification(
@@ -59,7 +59,7 @@ export class StatusNotificationService {
     if (chargingStation) {
       const statusNotification = StatusNotification.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         ...statusNotificationRequest,
       });
       await this._locationRepository.addStatusNotificationToChargingStation(
@@ -71,7 +71,7 @@ export class StatusNotificationService {
       const connector = {
         tenantId,
         connectorId: statusNotificationRequest.connectorId,
-        stationId,
+        stationId: stationId,
         status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
           statusNotificationRequest.connectorStatus,
         ),
@@ -172,7 +172,7 @@ export class StatusNotificationService {
       const statusNotificationInput: Partial<StatusNotification> = {
         tenantId,
         ...statusNotificationRequest,
-        stationId,
+        stationId: stationId,
         connectorStatus: statusNotificationRequest.status,
       };
       if (matchingEvse) {
@@ -188,7 +188,7 @@ export class StatusNotificationService {
       const connector = {
         tenantId,
         connectorId: statusNotificationRequest.connectorId,
-        stationId,
+        stationId: stationId,
         status: OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
           statusNotificationRequest.status,
         ),
@@ -214,7 +214,7 @@ export class StatusNotificationService {
           },
           {
             where: {
-              stationId,
+              stationId: stationId,
               tenantId,
             },
           },

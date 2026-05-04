@@ -961,7 +961,11 @@ describe('MessageRouterImpl', () => {
       cache.get.mockResolvedValueOnce(callbackUrl);
 
       const message: any = {
-        context: { correlationId: CORRELATION_ID, stationId: STATION_ID, tenantId: TENANT_ID },
+        context: {
+          correlationId: CORRELATION_ID,
+          stationId: STATION_ID,
+          tenantId: TENANT_ID,
+        },
         payload: new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'test', {}),
       };
 
@@ -978,7 +982,11 @@ describe('MessageRouterImpl', () => {
       cache.get.mockResolvedValue(null);
 
       const message: any = {
-        context: { correlationId: CORRELATION_ID, stationId: STATION_ID, tenantId: TENANT_ID },
+        context: {
+          correlationId: CORRELATION_ID,
+          stationId: STATION_ID,
+          tenantId: TENANT_ID,
+        },
         payload: new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'test', {}),
       };
 

@@ -83,15 +83,15 @@ export class CertificatesOcpp2Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map(async (id) => {
+    const results: Promise<IMessageConfirmation>[] = identifier.map(async (stationId) => {
       await this._module.installCertificateHelperService.prepareToInstallCertificate(
         tenantId,
-        id,
+        stationId,
         request.certificate,
         request.certificateType,
       );
       return this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         this._ocppVersion ?? DEFAULT_VERSION,
         OCPP_CallAction.InstallCertificate,
@@ -137,12 +137,12 @@ export class CertificatesOcpp2Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map(async (id) => {
+    const results: Promise<IMessageConfirmation>[] = identifier.map(async (stationId) => {
       const certificateHashData = request.certificateHashData;
       const existingPendingDeleteCertificateAttempt =
         await this._module.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
           where: {
-            stationId: id,
+            stationId,
             hashAlgorithm: certificateHashData.hashAlgorithm,
             issuerNameHash: certificateHashData.issuerNameHash,
             issuerKeyHash: certificateHashData.issuerKeyHash,
@@ -152,7 +152,7 @@ export class CertificatesOcpp2Api
         });
       if (!existingPendingDeleteCertificateAttempt) {
         const deleteCertificateAttempt = new DeleteCertificateAttempt();
-        deleteCertificateAttempt.stationId = id;
+        deleteCertificateAttempt.stationId = stationId;
         deleteCertificateAttempt.hashAlgorithm = certificateHashData.hashAlgorithm;
         deleteCertificateAttempt.issuerNameHash = certificateHashData.issuerNameHash;
         deleteCertificateAttempt.issuerKeyHash = certificateHashData.issuerKeyHash;
@@ -160,7 +160,7 @@ export class CertificatesOcpp2Api
         await deleteCertificateAttempt.save();
       }
       return this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         this._ocppVersion ?? DEFAULT_VERSION,
         OCPP_CallAction.DeleteCertificate,

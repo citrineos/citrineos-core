@@ -454,7 +454,7 @@ export class TransactionService {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         tenantId,
-        stationId,
+        stationId: stationId,
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

@@ -29,7 +29,7 @@ export class LocalAuthListService {
   /**
    * Validates a SendLocalListRequest and persists it, then returns the correlation Id.
    *
-   * @param {string} stationId - The ID of the station to which the SendLocalListRequest belongs.
+   * @param stationId - The connection name of the charging station
    * @param {string} correlationId - The correlation Id that will be used for the SendLocalListRequest.
    * @param {SendLocalListRequest} sendLocalListRequest - The SendLocalListRequest to validate and persist.
    * @return {SendLocalList} The persisted SendLocalList.

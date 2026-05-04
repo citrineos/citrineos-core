@@ -382,7 +382,7 @@ export class CertificatesModule extends AbstractModule {
     const existingPendingDeleteCertificateAttempt =
       await this.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           status: null,
         },
       });
@@ -394,7 +394,7 @@ export class CertificatesModule extends AbstractModule {
         const existingInstalledCertificates =
           await this.installedCertificateRepository.readAllByQuery(tenantId, {
             where: {
-              stationId,
+              stationId: stationId,
               hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
               issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
               issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
@@ -425,7 +425,7 @@ export class CertificatesModule extends AbstractModule {
     if (message.payload.status === GetInstalledCertificateStatusEnum.NotFound) {
       const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           correlationId,
           origin: MessageOrigin.ChargingStationManagementSystem,
         },
@@ -447,7 +447,7 @@ export class CertificatesModule extends AbstractModule {
           );
           await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
             where: {
-              stationId,
+              stationId: stationId,
               certificateType,
             },
           });
@@ -457,7 +457,7 @@ export class CertificatesModule extends AbstractModule {
           );
           await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
             where: {
-              stationId,
+              stationId: stationId,
             },
           });
         }

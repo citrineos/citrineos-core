@@ -14,7 +14,7 @@ export interface IMessageRouter extends IModule {
    * Register a connection to the message handler with the given connection identifier.
    *
    * @param {number} tenantId
-   * @param {string} stationId
+   * @param stationId - The connection name of the charging station
    * @param {string} protocol - The protocol of the Websocket.
    * @return {Promise<boolean>} true if both request and response subscriptions are successful, false otherwise
    */
@@ -25,7 +25,7 @@ export interface IMessageRouter extends IModule {
    * Check if a charging station exists for a given tenant.
    *
    * @param tenantId The tenant ID.
-   * @param stationId The station ID.
+   * @param stationId - The connection name of the charging station
    * @returns true if the station exists for this tenant, false otherwise
    */
   doesChargingStationExistByStationId?(tenantId: number, stationId: string): Promise<boolean>;

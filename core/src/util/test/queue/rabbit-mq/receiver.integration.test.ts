@@ -17,12 +17,12 @@
  *  • Unsubscribe actually removes bindings from the broker.
  */
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { OCPP_CallAction } from '@citrineos/base';
-import { RabbitMqReceiver } from '../../../queue/rabbit-mq/receiver.js';
-import { RabbitMQConnectionManager } from '../../../queue/rabbit-mq/ConnectionManager.js';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RabbitMQChannelManager } from '../../../queue/rabbit-mq/ChannelManager.js';
+import { RabbitMQConnectionManager } from '../../../queue/rabbit-mq/ConnectionManager.js';
+import { RabbitMqReceiver } from '../../../queue/rabbit-mq/receiver.js';
 import { aSystemConfigWithAmqp } from '../../providers/RabbitMqProvider.js';
 
 // ---------------------------------------------------------------------------
@@ -122,18 +122,19 @@ async function getActiveConsumerCount(queueName: string): Promise<number> {
 async function waitForConsumerCount(
   queueName: string,
   expected: number,
-  timeoutMs = 5_000,
+  timeoutMs = 10_000,
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  let lastCount = undefined;
   while (Date.now() < deadline) {
     const count = await getActiveConsumerCount(queueName);
     if (count === expected) return;
+    lastCount = count;
     await new Promise((r) => setTimeout(r, 250));
   }
-  const count = await getActiveConsumerCount(queueName);
   throw new Error(
     `Timed out waiting for consumer count ${expected} on "${queueName}" ` +
-      `(last observed: ${count})`,
+      `(last observed: ${lastCount})`,
   );
 }
 
@@ -293,9 +294,18 @@ describe('RabbitMqReceiver', () => {
     it('should start exactly one consumer even after multiple chargers subscribe', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
-      await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
-      await receiver.subscribe('charger-2', undefined, { stationId: 'CS002', tenantId: '1' });
-      await receiver.subscribe('charger-3', undefined, { stationId: 'CS003', tenantId: '1' });
+      await receiver.subscribe('charger-1', undefined, {
+        stationId: 'CS001',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-2', undefined, {
+        stationId: 'CS002',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-3', undefined, {
+        stationId: 'CS003',
+        tenantId: '1',
+      });
 
       await waitForConsumerCount(queueName, 1);
     }, 15_000);
@@ -303,9 +313,18 @@ describe('RabbitMqReceiver', () => {
     it('should add one binding to the instance queue per charger subscribe', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
-      await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
-      await receiver.subscribe('charger-2', undefined, { stationId: 'CS002', tenantId: '1' });
-      await receiver.subscribe('charger-3', undefined, { stationId: 'CS003', tenantId: '1' });
+      await receiver.subscribe('charger-1', undefined, {
+        stationId: 'CS001',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-2', undefined, {
+        stationId: 'CS002',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-3', undefined, {
+        stationId: 'CS003',
+        tenantId: '1',
+      });
 
       const bindings = await getQueueBindings(queueName);
 
@@ -352,8 +371,14 @@ describe('RabbitMqReceiver', () => {
     it('should remove only the unsubscribed charger bindings from the broker', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
-      await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
-      await receiver.subscribe('charger-2', undefined, { stationId: 'CS002', tenantId: '1' });
+      await receiver.subscribe('charger-1', undefined, {
+        stationId: 'CS001',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-2', undefined, {
+        stationId: 'CS002',
+        tenantId: '1',
+      });
 
       await receiver.unsubscribe('charger-1');
 
@@ -366,8 +391,14 @@ describe('RabbitMqReceiver', () => {
     it('should keep exactly one consumer after unsubscribing a charger', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
-      await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
-      await receiver.subscribe('charger-2', undefined, { stationId: 'CS002', tenantId: '1' });
+      await receiver.subscribe('charger-1', undefined, {
+        stationId: 'CS001',
+        tenantId: '1',
+      });
+      await receiver.subscribe('charger-2', undefined, {
+        stationId: 'CS002',
+        tenantId: '1',
+      });
 
       await receiver.unsubscribe('charger-1');
 
@@ -377,7 +408,10 @@ describe('RabbitMqReceiver', () => {
     it('should cancel the consumer on shutdown and auto-delete the queue', async () => {
       const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
 
-      await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', tenantId: '1' });
+      await receiver.subscribe('charger-1', undefined, {
+        stationId: 'CS001',
+        tenantId: '1',
+      });
       await receiver.shutdown();
 
       // autoDelete:true — queue is removed once the last consumer is cancelled

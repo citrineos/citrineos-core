@@ -86,7 +86,11 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
           let securityProfileAllowed = false;
           for (const configurationSlot of configurationSlotsArray) {
             const chargingStationNetworkProfile = await ChargingStationNetworkProfile.findOne({
-              where: { tenantId, stationId: identifier, configurationSlot: configurationSlot },
+              where: {
+                tenantId,
+                stationId: identifier,
+                configurationSlot: configurationSlot,
+              },
             });
             if (chargingStationNetworkProfile) {
               const serverNetworkProfile = await ServerNetworkProfile.findByPk(

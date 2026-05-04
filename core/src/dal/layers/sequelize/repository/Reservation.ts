@@ -60,7 +60,7 @@ export class SequelizeReservationRepository
       where: {
         tenantId,
         // unique constraints
-        stationId,
+        stationId: stationId,
         id: reserveNowRequest.id,
       },
       defaults: {
@@ -91,6 +91,8 @@ export class SequelizeReservationRepository
   }
 
   async getNextReservationId(tenantId: number, stationId: string): Promise<number> {
-    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
+    return await this.readNextValue(tenantId, 'id', {
+      where: { stationId: stationId },
+    });
   }
 }

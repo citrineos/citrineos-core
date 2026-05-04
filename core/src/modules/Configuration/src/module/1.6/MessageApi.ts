@@ -54,9 +54,9 @@ export class ConfigurationOcpp16Api
       return [{ success: false, payload: errorMsg }];
     }
 
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.TriggerMessage,
@@ -201,9 +201,9 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.Reset,
@@ -221,9 +221,9 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.ChangeAvailability,
@@ -241,9 +241,9 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.UpdateFirmware,
@@ -284,9 +284,9 @@ export class ConfigurationOcpp16Api
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
-    const results: Promise<IMessageConfirmation>[] = identifier.map((id) =>
+    const results: Promise<IMessageConfirmation>[] = identifier.map((stationId) =>
       this._module.sendCall(
-        id,
+        stationId,
         tenantId,
         OCPPVersion.OCPP1_6,
         OCPP_CallAction.DataTransfer,

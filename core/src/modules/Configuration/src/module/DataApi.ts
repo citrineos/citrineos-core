@@ -159,7 +159,10 @@ export class ConfigurationDataApi
     request: FastifyRequest<{ Querystring: NetworkProfileQuerystring }>,
   ): Promise<ChargingStationNetworkProfile[]> {
     return ChargingStationNetworkProfile.findAll({
-      where: { stationId: request.query.stationId, tenantId: request.query.tenantId },
+      where: {
+        stationId: request.query.stationId,
+        tenantId: request.query.tenantId,
+      },
       include: [SetNetworkProfile, ServerNetworkProfile],
     });
   }

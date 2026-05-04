@@ -140,7 +140,7 @@ export class InstallCertificateHelperService {
     const existingPendingInstallCertificateAttempt =
       await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
           status: null,
         },
       });
@@ -155,7 +155,7 @@ export class InstallCertificateHelperService {
         const existingInstalledCertificate =
           await this.installedCertificateRepository.readOnlyOneByQuery(tenantId, {
             where: {
-              stationId,
+              stationId: stationId,
               certificateType: existingPendingInstallCertificateAttempt.certificateType,
             },
           });

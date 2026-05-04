@@ -145,7 +145,7 @@ export class SequelizeLocationRepository
     const existingLatestStatusNotifications: LatestStatusNotification[] =
       await this.latestStatusNotification.readAllByQuery(tenantId, {
         where: {
-          stationId,
+          stationId: stationId,
         },
         include: [
           {
@@ -161,7 +161,7 @@ export class SequelizeLocationRepository
     const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
     await this.latestStatusNotification.deleteAllByQuery(tenantId, {
       where: {
-        stationId,
+        stationId: stationId,
         id: {
           [Op.in]: idsToDelete,
         },
@@ -171,7 +171,7 @@ export class SequelizeLocationRepository
       tenantId,
       LatestStatusNotification.build({
         tenantId,
-        stationId,
+        stationId: stationId,
         statusNotificationId,
       }),
     );
@@ -179,12 +179,12 @@ export class SequelizeLocationRepository
 
   async getChargingStationsByIds(
     tenantId: number,
-    stationIds: string[],
+    stationNames: string[],
   ): Promise<ChargingStation[]> {
     const query = {
       where: {
         id: {
-          [Op.in]: stationIds,
+          [Op.in]: stationNames,
         },
       },
     };
@@ -357,7 +357,7 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          stationId,
+          stationId: stationId,
           connectorId: ocpp16ConnectorId,
         },
         include: [Evse],
@@ -373,7 +373,7 @@ export class SequelizeLocationRepository
     return (
       (await Evse.findOne({
         where: {
-          stationId,
+          stationId: stationId,
           evseTypeId: ocpp201EvseId,
           tenantId,
         },
@@ -391,7 +391,7 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          stationId,
+          stationId: stationId,
           evseTypeConnectorId: ocpp201EvseType.connectorId,
         },
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],

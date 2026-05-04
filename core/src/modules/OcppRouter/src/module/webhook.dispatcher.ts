@@ -246,7 +246,7 @@ export class WebhookDispatcher {
    * Loads all subscriptions for a given connection into memory
    *
    * @param {number} tenantId
-   * @param {string} stationId
+   * @param stationId - The connection name of the charging station
    * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
    */
   protected async _loadSubscriptionsForConnection(tenantId: number, stationId: string) {

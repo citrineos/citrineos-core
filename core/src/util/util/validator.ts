@@ -36,7 +36,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  *
  * @param chargingProfileType ChargingProfileType from the request
  * @param tenantId tenant id the profile belongs to
- * @param stationId station id
+ * @param stationId - The connection name of the charging station
  * @param deviceModelRepository deviceModelRepository
  * @param chargingProfileRepository chargingProfileRepository
  * @param transactionEventRepository transactionEventRepository

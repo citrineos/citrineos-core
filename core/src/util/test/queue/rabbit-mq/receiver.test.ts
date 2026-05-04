@@ -93,14 +93,21 @@ describe('RabbitMqReceiver', () => {
       });
 
       it('should bind a single filter-only entry when no actions are provided', async () => {
-        await receiver.subscribe('Router', undefined, { stationId: 'CS001', state: 'Request' });
+        await receiver.subscribe('Router', undefined, {
+          stationId: 'CS001',
+          state: 'Request',
+        });
 
         expect(mockChannel.bindQueue).toHaveBeenCalledTimes(1);
         expect(mockChannel.bindQueue).toHaveBeenCalledWith(
           'rabbit_queue_Router',
           'test-exchange',
           '',
-          expect.objectContaining({ 'x-match': 'all', stationId: 'CS001', state: 'Request' }),
+          expect.objectContaining({
+            'x-match': 'all',
+            stationId: 'CS001',
+            state: 'Request',
+          }),
         );
       });
 
@@ -235,9 +242,18 @@ describe('RabbitMqReceiver', () => {
       });
 
       it('should not start additional consumers on subsequent subscribe calls', async () => {
-        await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', state: 'Request' });
-        await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', state: 'Response' });
-        await receiver.subscribe('charger-2', undefined, { stationId: 'CS002', state: 'Request' });
+        await receiver.subscribe('charger-1', undefined, {
+          stationId: 'CS001',
+          state: 'Request',
+        });
+        await receiver.subscribe('charger-1', undefined, {
+          stationId: 'CS001',
+          state: 'Response',
+        });
+        await receiver.subscribe('charger-2', undefined, {
+          stationId: 'CS002',
+          state: 'Request',
+        });
 
         // initializeInstanceQueue only fires once — consume must be called exactly once
         expect(mockChannel.consume).toHaveBeenCalledTimes(1);
@@ -264,13 +280,20 @@ describe('RabbitMqReceiver', () => {
 
     describe('subscribe() — binding behaviour', () => {
       it('should bind to the instance queue (not create a new queue) on subscribe', async () => {
-        await receiver.subscribe('charger-1', undefined, { stationId: 'CS001', state: 'Request' });
+        await receiver.subscribe('charger-1', undefined, {
+          stationId: 'CS001',
+          state: 'Request',
+        });
 
         expect(mockChannel.bindQueue).toHaveBeenCalledWith(
           'rabbit_queue_router_pod-1',
           'test-exchange',
           '',
-          expect.objectContaining({ 'x-match': 'all', stationId: 'CS001', state: 'Request' }),
+          expect.objectContaining({
+            'x-match': 'all',
+            stationId: 'CS001',
+            state: 'Request',
+          }),
         );
       });
 

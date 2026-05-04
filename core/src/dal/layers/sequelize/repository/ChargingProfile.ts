@@ -106,7 +106,7 @@ export class SequelizeChargingProfileRepository
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
         where: {
-          stationId,
+          stationId: stationId,
           transactionId: chargingProfile.transactionId,
         },
       });
@@ -165,7 +165,7 @@ export class SequelizeChargingProfileRepository
         tenantId,
         ChargingSchedule.build({
           tenantId,
-          stationId,
+          stationId: stationId,
           chargingProfileDatabaseId: savedChargingProfile.databaseId,
           ...chargingSchedule,
         }),
@@ -192,7 +192,7 @@ export class SequelizeChargingProfileRepository
   ): Promise<ChargingNeeds> {
     const activeTransaction = await Transaction.findOne({
       where: {
-        stationId,
+        stationId: stationId,
         isActive: true,
       },
       include: [{ model: Evse, where: { evseTypeId: chargingNeedsReq.evseId }, required: true }],
@@ -241,17 +241,21 @@ export class SequelizeChargingProfileRepository
       CompositeSchedule.build({
         tenantId,
         ...compositeSchedule,
-        stationId,
+        stationId: stationId,
       }),
     );
   }
 
   async getNextChargingScheduleId(tenantId: number, stationId: string): Promise<number> {
-    return await this.chargingSchedule.readNextValue(tenantId, 'id', { where: { stationId } });
+    return await this.chargingSchedule.readNextValue(tenantId, 'id', {
+      where: { stationId: stationId },
+    });
   }
 
   async getNextChargingProfileId(tenantId: number, stationId: string): Promise<number> {
-    return await this.readNextValue(tenantId, 'id', { where: { stationId } });
+    return await this.readNextValue(tenantId, 'id', {
+      where: { stationId: stationId },
+    });
   }
 
   async getNextStackLevel(
@@ -265,7 +269,7 @@ export class SequelizeChargingProfileRepository
       'stackLevel',
       {
         where: {
-          stationId,
+          stationId: stationId,
           transactionDatabaseId: transactionDatabaseId,
           chargingProfilePurpose: profilePurpose,
         },

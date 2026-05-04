@@ -60,7 +60,7 @@ export class CertificateAuthorityService {
    * Retrieves the certificate chain for V2G- and Charging Station certificates.
    *
    * @param {string} csrString - The Certificate Signing Request string.
-   * @param {string} stationId - The station identifier.
+   * @param stationId - The connection name of the charging station
    * @param {CertificateSigningUseEnumType} [certificateType] - The type of certificate to retrieve.
    * @return {Promise<string>} The certificate chain without the root certificate.
    */

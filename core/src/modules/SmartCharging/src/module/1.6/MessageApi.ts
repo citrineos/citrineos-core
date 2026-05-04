@@ -47,9 +47,9 @@ export class SmartChargingOcpp16Api
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
-      identifier.map((id) =>
+      identifier.map((stationId) =>
         this._module.sendCall(
-          id,
+          stationId,
           tenantId,
           OCPPVersion.OCPP1_6,
           OCPP_CallAction.SetChargingProfile,
@@ -71,9 +71,9 @@ export class SmartChargingOcpp16Api
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
-      identifier.map((id) =>
+      identifier.map((stationId) =>
         this._module.sendCall(
-          id,
+          stationId,
           tenantId,
           OCPPVersion.OCPP1_6,
           OCPP_CallAction.ClearChargingProfile,
@@ -95,9 +95,9 @@ export class SmartChargingOcpp16Api
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
-      identifier.map((id) =>
+      identifier.map((stationId) =>
         this._module.sendCall(
-          id,
+          stationId,
           tenantId,
           OCPPVersion.OCPP1_6,
           OCPP_CallAction.GetCompositeSchedule,
