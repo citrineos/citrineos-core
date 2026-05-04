@@ -64,8 +64,10 @@ export class RedisCache implements ICache {
     key = `${namespace}:${key}`;
 
     return new Promise((resolve) => {
-      // Create a Redis subscriber to listen for operations affecting the key
-      const subscriber = createClient();
+      // Pub/sub requires a dedicated connection. duplicate() inherits the main
+      // client's options (URL/host) so the subscriber connects to the same
+      // Redis instance instead of falling back to the default 127.0.0.1.
+      const subscriber = this._client.duplicate();
       let closed = false;
 
       const safeQuit = (): void => {
@@ -82,23 +84,25 @@ export class RedisCache implements ICache {
 
       // Channel: Key-space, message: the name of the event, which is the command executed on the key
       subscriber
-        .subscribe(`__keyspace@0__:${key}`, (channel, message) => {
-          switch (message) {
-            case 'set':
-              resolve(this.get(key, namespace, classConstructor));
-              safeQuit();
-              break;
-            case 'del':
-            case 'expire':
-              resolve(null);
-              safeQuit();
-              break;
-            default:
-              // Do nothing
-              break;
-          }
-        })
-        .then()
+        .connect()
+        .then(() =>
+          subscriber.subscribe(`__keyspace@0__:${key}`, (channel, message) => {
+            switch (message) {
+              case 'set':
+                resolve(this.get(key, namespace, classConstructor));
+                safeQuit();
+                break;
+              case 'del':
+              case 'expire':
+                resolve(null);
+                safeQuit();
+                break;
+              default:
+                // Do nothing
+                break;
+            }
+          }),
+        )
         .catch((error) => {
           this._logger.error('Error creating Redis subscriber', error);
         });
