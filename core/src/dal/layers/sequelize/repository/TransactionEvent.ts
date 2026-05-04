@@ -8,7 +8,6 @@ import {
   MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
-  OCPP2_1,
 } from '@citrineos/base';
 import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
@@ -285,7 +284,7 @@ export class SequelizeTransactionEventRepository
         }
 
         const [chargingStation] = await this.station.readAllByQuery(tenantId, {
-          where: { stationId: stationId, tenantId },
+          where: { id: stationId, tenantId },
         });
         if (!chargingStation) {
           this.logger.error(`Charging station with stationId ${stationId} does not exist.`);
@@ -729,7 +728,7 @@ export class SequelizeTransactionEventRepository
       });
 
       const [chargingStation] = await this.station.readAllByQuery(tenantId, {
-        where: { stationId: stationId, tenantId },
+        where: { id: stationId, tenantId },
       });
       if (chargingStation) {
         if (chargingStation.locationId) {
