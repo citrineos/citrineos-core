@@ -277,7 +277,16 @@ export class SequelizeLocalAuthListRepository
     stationId: string,
     correlationId: string,
   ): Promise<SendLocalList | undefined> {
-    return this.sendLocalList.readOnlyOneByQuery(tenantId, { where: { stationId, correlationId } });
+    // Eager-load the LocalListAuthorization rows that the SendLocalList row was
+    // created with. The Accept-path of replaceLocalListVersion / updateLocal-
+    // ListVersion iterates sendLocalList.localAuthorizationList to populate the
+    // LocalListVersionAuthorization junction; without the include the relation
+    // is undefined and both paths early-return, so the new LocalListVersion is
+    // saved with zero entries and the UI shows an empty list after Accept.
+    return this.sendLocalList.readOnlyOneByQuery(tenantId, {
+      where: { stationId, correlationId },
+      include: [LocalListAuthorization],
+    });
   }
 
   async createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
