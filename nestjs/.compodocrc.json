@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/compodoc/compodoc/master/src/compodocrc.schema.json",
+  "tsconfig": "tsconfig.doc.json",
+  "name": "CitrineOS NestJS",
+  "output": "documentation",
+  "includes": "docs",
+  "includesName": "Guide",
+  "assetsFolder": "docs/assets",
+  "theme": "material",
+  "hideGenerator": true,
+  "disableCoverage": false,
+  "disablePrivate": false,
+  "disableInternal": false,
+  "disableLifeCycleHooks": true,
+  "disableSourceCode": false,
+  "disableSearch": false,
+  "disableDependencies": false,
+  "disableRoutesGraph": false,
+  "language": "en-US",
+  "navTabConfig": [
+    { "id": "info", "label": "Info" },
+    { "id": "readme", "label": "README" },
+    { "id": "source", "label": "Source" }
+  ]
+}

@@ -15,7 +15,7 @@
       "@base-util/*": ["./base/src/util/*"]
     }
   },
-  "exclude": ["./dist/**/*", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
+  "exclude": ["./dist/**/*", "**/node_modules/**", "**/vitest.config.ts", "**/test/**", "nestjs"],
   "references": [
     {
       "path": "./base"

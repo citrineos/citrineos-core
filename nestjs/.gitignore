@@ -1,0 +1,10 @@
+node_modules/
+dist/
+documentation/
+*.tsbuildinfo
+
+# Local environment — keep secrets and personal overrides out of git.
+# `.env.example` is the committed template.
+.env
+.env.local
+.env.*.local

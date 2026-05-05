@@ -1,0 +1,35 @@
+[
+  {
+    "title": "About",
+    "file": "index.md"
+  },
+  {
+    "title": "Roadmap",
+    "file": "roadmap.md"
+  },
+  {
+    "title": "References",
+    "file": "references.md"
+  },
+  {
+    "title": "Getting Started",
+    "children": [
+      { "title": "Prerequisites", "file": "getting-started/prerequisites.md" },
+      { "title": "Getting Started", "file": "getting-started/getting-started.md" },
+      { "title": "Testing with EVerest", "file": "getting-started/testing-with-everest.md" },
+      { "title": "Making Changes", "file": "getting-started/making-changes.md" },
+      { "title": "Running OCPI", "file": "getting-started/running-ocpi.md" }
+    ]
+  },
+  {
+    "title": "Core Concepts",
+    "children": [
+      { "title": "Architecture", "file": "core-concepts/architecture.md" },
+      { "title": "Configuration", "file": "core-concepts/configuration.md" },
+      { "title": "Connecting a Charger", "file": "core-concepts/connecting-a-charger.md" },
+      { "title": "Adding ID Tokens", "file": "core-concepts/adding-id-tokens.md" },
+      { "title": "Viewing OCPP Logs", "file": "core-concepts/viewing-ocpp-logs.md" },
+      { "title": "Data Model", "file": "core-concepts/data-model.md" }
+    ]
+  }
+]

@@ -1,0 +1,39 @@
+:root {
+    --md-primary-fg-color:        #E38900;
+    --md-primary-fg-color--light: #D16B00;
+    --md-primary-fg-color--dark: #D16B00;
+    --md-text-font: "Roobert";
+}
+.md-header{
+    background-color: #000000
+}
+
+.md-sidebar {
+    width: 9rem;
+}
+
+@font-face {
+    font-family: 'Roobert';
+    src: url('../fonts/Roobert-Bold.woff2') format('woff2'),
+    url('../fonts/Roobert-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roobert';
+    src: url('../fonts/Roobert-Heavy.woff2') format('woff2'),
+    url('../fonts/Roobert-Heavy.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roobert';
+    src: url('../fonts/Roobert-Light.woff2') format('woff2'),
+    url('../fonts/Roobert-Light.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+}
+
+
