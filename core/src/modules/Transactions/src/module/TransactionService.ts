@@ -340,10 +340,12 @@ export class TransactionService {
       }
 
       // Check concurrent transactions
-      const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
-      if (hasConcurrent) {
-        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
-        return response;
+      if (authorization.concurrentTransaction !== true) {
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        if (hasConcurrent) {
+          response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
+          return response;
+        }
       }
 
       // Check authorizers
