@@ -54,7 +54,7 @@
     "@fastify/swagger": "9.7.0",
     "@fastify/swagger-ui": "5.2.6",
     "@google-cloud/storage": "7.19.0",
-    "@peculiar/webcrypto": "1.5.0",
+    "@peculiar/webcrypto": "1.7.1",
     "acme-client": "5.4.0",
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
