@@ -70,12 +70,9 @@ export abstract class SequelizeTenantJunctionRepository<
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
     const row = (await this._model(namespace).findByPk(key)) as T | null;
-    console.log('!!! row !!', row);
     if (!row) return undefined;
     const fk = this.getJunctionForeignKey();
-    console.log('!!! fk !!', fk);
     const junctionRow = await this._junctionModel().findOne({ where: { [fk]: key, tenantId } });
-    console.log('!!! junctionRow !!', junctionRow);
     return junctionRow ? row : undefined;
   }
 
@@ -131,7 +128,7 @@ export abstract class SequelizeTenantJunctionRepository<
     namespace: string = this.namespace,
   ): Promise<number> {
     return await this._model(namespace)
-      .findAll(query as FindOptions<any>)
+      .findAll(this._injectJunctionInclude(query, tenantId) as FindOptions<any>)
       .then((rows) => rows.length);
   }
 
@@ -140,10 +137,12 @@ export abstract class SequelizeTenantJunctionRepository<
     options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>,
     namespace: string = this.namespace,
   ): Promise<{ rows: T[]; count: number }> {
-    return this._model<T>(namespace).findAndCountAll(options) as Promise<{
-      rows: T[];
-      count: number;
-    }>;
+    return this._model<T>(namespace).findAndCountAll(
+      this._injectJunctionInclude(options, tenantId) as Omit<
+        FindAndCountOptions<Attributes<T>>,
+        'group'
+      >,
+    ) as Promise<{ rows: T[]; count: number }>;
   }
 
   protected async _create(
@@ -151,12 +150,13 @@ export abstract class SequelizeTenantJunctionRepository<
     value: T,
     _namespace: string = this.namespace,
   ): Promise<T> {
-    console.log('!!! _create', tenantId, value, _namespace);
-    const saved = await value.save();
-    const pk = this._model(_namespace).primaryKeyAttribute;
-    const fk = this.getJunctionForeignKey();
-    await this._junctionModel().create({ [fk]: saved.get(pk), tenantId });
-    return saved;
+    return this.s.transaction(async (transaction) => {
+      const saved = await value.save({ transaction });
+      const pk = this._model(_namespace).primaryKeyAttribute;
+      const fk = this.getJunctionForeignKey();
+      await this._junctionModel().create({ [fk]: saved.get(pk), tenantId }, { transaction });
+      return saved;
+    });
   }
 
   protected async _bulkCreate(
@@ -164,7 +164,18 @@ export abstract class SequelizeTenantJunctionRepository<
     values: T[],
     namespace: string = this.namespace,
   ): Promise<T[]> {
-    return (await this._model<T>(namespace).bulkCreate(values as any)) as T[];
+    return this.s.transaction(async (transaction) => {
+      const saved = (await this._model<T>(namespace).bulkCreate(values as any, {
+        transaction,
+      })) as T[];
+      const pk = this._model(namespace).primaryKeyAttribute;
+      const fk = this.getJunctionForeignKey();
+      await this._junctionModel().bulkCreate(
+        saved.map((row) => ({ [fk]: row.get(pk), tenantId })),
+        { transaction },
+      );
+      return saved;
+    });
   }
 
   protected async _createByKey(
@@ -173,41 +184,72 @@ export abstract class SequelizeTenantJunctionRepository<
     key: string,
     namespace: string = this.namespace,
   ): Promise<T> {
-    const model = this._model<T>(namespace);
-    const primaryKey = model.primaryKeyAttribute;
-    value.setDataValue(primaryKey, key);
-    return (await model.create(value.toJSON())) as T;
+    return this.s.transaction(async (transaction) => {
+      const model = this._model<T>(namespace);
+      const primaryKey = model.primaryKeyAttribute;
+      value.setDataValue(primaryKey, key);
+      const saved = (await model.create(value.toJSON(), { transaction })) as T;
+      const fk = this.getJunctionForeignKey();
+      await this._junctionModel().create({ [fk]: key, tenantId }, { transaction });
+      return saved;
+    });
   }
-
   protected async _readOrCreateByQuery(
     tenantId: number,
     query: object,
     namespace: string = this.namespace,
   ): Promise<[T, boolean]> {
-    return await this._model<T>(namespace)
-      .findOrCreate(query as FindOptions<any>)
-      .then((result) => [result[0] as T, result[1]]);
-  }
+    return this.s.transaction(async (transaction) => {
+      const model = this._model<T>(namespace);
+      const pk = model.primaryKeyAttribute;
+      const fk = this.getJunctionForeignKey();
 
+      const [row, created] = (await model.findOrCreate({
+        ...(query as FindOptions<any>),
+        transaction,
+      })) as [T, boolean];
+
+      const rowKey = row.get(pk);
+
+      const [, junctionCreated] = await this._junctionModel().findOrCreate({
+        where: { [fk]: rowKey, tenantId },
+        defaults: { [fk]: rowKey, tenantId },
+        transaction,
+      });
+
+      return [row, junctionCreated];
+    });
+  }
   protected async _updateByKey(
     tenantId: number,
     value: Partial<T>,
     key: string,
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
-    const fk = this.getJunctionForeignKey();
-    const junctionRow = await this._junctionModel().findOne({ where: { [fk]: key, tenantId } });
-    if (!junctionRow) return undefined;
+    return this.s.transaction(async (transaction) => {
+      const fk = this.getJunctionForeignKey();
+      const junctionRow = await this._junctionModel().findOne({
+        where: { [fk]: key, tenantId },
+        transaction,
+      });
+      if (!junctionRow) return undefined;
 
-    const model = this._model<T>(namespace);
-    const pk = model.primaryKeyAttribute;
-    const { tenantId: _ignored, ...safeValue } = value as any;
-    const where: WhereOptions<any> = { [pk]: key };
-    const row = await model.findOne({ where });
-    if (!row) return undefined;
+      const sharedCount = await this._junctionModel().count({ where: { [fk]: key }, transaction });
+      if (sharedCount > 1) {
+        throw new Error(
+          `Cannot mutate Authorization ${key}: it is shared by ${sharedCount} tenants`,
+        );
+      }
 
-    await row.update(safeValue);
-    return row.reload() as Promise<T>;
+      const model = this._model<T>(namespace);
+      const pk = model.primaryKeyAttribute;
+      const { tenantId: _ignored, ...safeValue } = value as any;
+      const row = await model.findOne({ where: { [pk]: key } as WhereOptions<any>, transaction });
+      if (!row) return undefined;
+
+      await row.update(safeValue, { transaction });
+      return row.reload({ transaction }) as Promise<T>;
+    });
   }
 
   protected async _updateAllByQuery(
@@ -217,6 +259,7 @@ export abstract class SequelizeTenantJunctionRepository<
     namespace: string = this.namespace,
   ): Promise<T[]> {
     const model = this._model<T>(namespace);
+
     const rows = (await model.findAll(
       this._injectJunctionInclude(query, tenantId) as FindOptions<any>,
     )) as T[];
@@ -242,20 +285,25 @@ export abstract class SequelizeTenantJunctionRepository<
         transaction,
       });
       if (!junctionRow) return undefined;
-      await junctionRow.destroy({ transaction });
 
       const model = this._model<T>(namespace);
       const entryToDelete = (await model.findByPk(key, { transaction })) as T | null;
+      if (!entryToDelete) return undefined;
 
-      if (entryToDelete) {
+      await junctionRow.destroy({ transaction });
+
+      const remainingCount = await this._junctionModel().count({
+        where: { [fk]: key },
+        transaction,
+      });
+      if (remainingCount === 0) {
         await model.destroy({
           where: { [model.primaryKeyAttribute]: key } as WhereOptions<any>,
           transaction,
         });
-        return entryToDelete;
-      } else {
-        return undefined;
       }
+
+      return entryToDelete;
     });
   }
 

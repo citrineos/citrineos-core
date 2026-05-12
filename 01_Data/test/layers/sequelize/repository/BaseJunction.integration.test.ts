@@ -156,7 +156,7 @@ describe('SequelizeAuthorizationRepository - integration', () => {
     });
 
     const result = await repo.findAndCount(1, { where: { idTokenType: 'ISO14443' } });
-    expect(result.count).toBe(2);
+    expect(result.count).toBe(1);
     expect(result.rows[0].idToken).toBe('DEADBEEF');
   });
 
@@ -181,6 +181,22 @@ describe('SequelizeAuthorizationRepository - integration', () => {
     expect(resultTenant3?.idToken).toBe('DEADBEEB');
   });
 
+  it('Base Junction with Authorization and AuthorizationTenant _create does not leak authorization to other tenant', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+    await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
+
+    const auth = Authorization.build({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
+    await repo.create(1, auth);
+
+    expect(await repo.readByKey(1, auth.id)).toBeDefined();
+    expect(await repo.readByKey(2, auth.id)).toBeUndefined();
+
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 2 });
+
+    expect(await repo.readByKey(1, auth.id)).toBeDefined();
+    expect(await repo.readByKey(2, auth.id)).toBeDefined();
+  });
+
   it('Base Junction with Authorization and AuthorizationTenant _bulkCreate', async () => {
     await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
     const auth1 = await Authorization.create({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
@@ -195,6 +211,21 @@ describe('SequelizeAuthorizationRepository - integration', () => {
 
     const raw1 = await Authorization.findByPk(auth1.id);
     expect(raw1).toBeDefined();
+  });
+
+  it('Base Junction with Authorization and AuthorizationTenant _bulkCreate creates junction rows for the correct tenant', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+    await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
+
+    const auth1 = Authorization.build({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
+    const auth2 = Authorization.build({ idToken: 'DEADBEEB', idTokenType: 'ISO14443' });
+    const [saved1, saved2] = await repo.bulkCreate(1, [auth1, auth2], Authorization.MODEL_NAME);
+
+    expect(await repo.readByKey(1, saved1.id)).toBeDefined();
+    expect(await repo.readByKey(1, saved2.id)).toBeDefined();
+
+    expect(await repo.readByKey(2, auth1.id)).toBeUndefined();
+    expect(await repo.readByKey(2, auth2.id)).toBeUndefined();
   });
 
   it('Base Junction with Authorization and AuthorizationTenant _createByKey', async () => {
@@ -233,6 +264,27 @@ describe('SequelizeAuthorizationRepository - integration', () => {
     expect(created2).toBe(false);
   });
 
+  it('Base Junction with Authorization and AuthorizationTenant _readOrCreateByQuery does not allow tenant 2 to hijack tenant 1 authorization', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+    await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
+
+    const [t1auth, t1created] = await repo.readOrCreateByQuery(1, {
+      where: { idToken: 'DEADBEEF', idTokenType: 'ISO14443' },
+      defaults: { idToken: 'DEADBEEF', idTokenType: 'ISO14443' },
+    });
+    expect(t1created).toBe(true);
+
+    const [t2auth, t2created] = await repo.readOrCreateByQuery(2, {
+      where: { idToken: 'DEADBEEF', idTokenType: 'ISO14443' },
+      defaults: { idToken: 'DEADBEEF', idTokenType: 'ISO14443' },
+    });
+    expect(t2auth.id).toBe(t1auth.id);
+    expect(t2created).toBe(true);
+
+    expect(await repo.readByKey(1, t1auth.id)).toBeDefined();
+    expect(await repo.readByKey(2, t2auth.id)).toBeDefined();
+  });
+
   it('Base Junction with Authorization and AuthorizationTenant _updateByKey', async () => {
     await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
     const auth = await Authorization.create({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
@@ -243,6 +295,20 @@ describe('SequelizeAuthorizationRepository - integration', () => {
 
     const notFound = await repo.updateByKey(2, { idToken: 'UPDATED' }, String(auth.id));
     expect(notFound).toBeUndefined();
+  });
+
+  it('Base Junction with Authorization and AuthorizationTenant _updateByKey throws when authorization is shared across tenants', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+    await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
+
+    const auth = await Authorization.create({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 1 });
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 2 });
+
+    await expect(repo.updateByKey(1, { idToken: 'HACKED' }, String(auth.id))).rejects.toThrow();
+
+    const unchanged = await Authorization.findByPk(auth.id);
+    expect(unchanged?.idToken).toBe('DEADBEEF');
   });
 
   it('Base Junction with Authorization and AuthorizationTenant _updateAllByQuery', async () => {
@@ -272,6 +338,34 @@ describe('SequelizeAuthorizationRepository - integration', () => {
     await repo.deleteByKey(1, auth.id);
     const resultTenant1 = await repo.readByKey(1, auth.id);
     expect(resultTenant1).toBeUndefined();
+  });
+
+  it('Base Junction with Authorization and AuthorizationTenant _deleteByKey only detaches the calling tenant, leaves shared record for other tenant', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+    await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
+
+    const auth = await Authorization.create({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 1 });
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 2 });
+
+    await repo.deleteByKey(1, auth.id);
+
+    expect(await repo.readByKey(1, auth.id)).toBeUndefined();
+    expect(await repo.readByKey(2, auth.id)).toBeDefined();
+    expect(await Authorization.findByPk(auth.id)).toBeDefined();
+  });
+
+  it('Base Junction with Authorization and AuthorizationTenant _deleteByKey destroys base row when last tenant detaches', async () => {
+    await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
+
+    const auth = await Authorization.create({ idToken: 'DEADBEEF', idTokenType: 'ISO14443' });
+    await AuthorizationTenant.create({ authorizationId: auth.id, tenantId: 1 });
+
+    await repo.deleteByKey(1, auth.id);
+
+    expect(await repo.readByKey(1, auth.id)).toBeUndefined();
+
+    expect(await Authorization.findByPk(auth.id)).toBeNull();
   });
 
   it('Base Junction with Authorization and AuthorizationTenant _deleteAllByQuery', async () => {
