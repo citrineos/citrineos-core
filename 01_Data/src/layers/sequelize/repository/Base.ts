@@ -85,7 +85,10 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string,
     namespace: string = this.namespace,
   ): Promise<boolean> {
-    return await this.s.models[namespace].findByPk(key).then((row) => row !== null);
+    const pk = this.s.models[namespace].primaryKeyAttribute;
+    return await this.s.models[namespace]
+      .findOne({ where: { [pk]: key, tenantId } as WhereOptions<any> })
+      .then((row) => row !== null);
   }
 
   async existByQuery(
@@ -93,7 +96,12 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<number> {
-    return await this.s.models[namespace].findAll(query).then((row) => row.length);
+    const q = query as FindOptions<any>;
+    const mergedQuery = {
+      ...q,
+      where: { ...((q.where as object) ?? {}), tenantId } as WhereOptions<any>,
+    };
+    return await this.s.models[namespace].findAll(mergedQuery).then((row) => row.length);
   }
 
   async findAndCount(
@@ -101,7 +109,11 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     options: Omit<FindAndCountOptions<Attributes<T>>, 'group'>,
     namespace: string = this.namespace,
   ): Promise<{ rows: T[]; count: number }> {
-    return (this.s.models[namespace] as ModelStatic<T>).findAndCountAll(options);
+    const merged = {
+      ...options,
+      where: { ...((options.where as object) ?? {}), tenantId } as WhereOptions<any>,
+    };
+    return (this.s.models[namespace] as ModelStatic<T>).findAndCountAll(merged);
   }
 
   protected async _create(

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootstrapConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
+import { Model, Sequelize, type ModelStatic } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import {
@@ -11,35 +11,44 @@ import {
   type IAuthorizationRepository,
 } from '../../../interfaces/index.js';
 import { Authorization } from '../model/index.js';
-import { SequelizeRepository } from './Base.js';
+import { AuthorizationTenant } from '../model/AuthorizationTenant.js';
+import { SequelizeTenantJunctionRepository } from './BaseJunction.js';
 
 export class SequelizeAuthorizationRepository
-  extends SequelizeRepository<Authorization>
+  extends SequelizeTenantJunctionRepository<Authorization>
   implements IAuthorizationRepository
 {
   constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
     super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
   }
 
+  protected getJunctionModel(): ModelStatic<Model> {
+    return AuthorizationTenant;
+  }
+
+  protected getJunctionForeignKey(): string {
+    return 'authorizationId';
+  }
+
   async readAllByQuerystring(
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<Authorization[]> {
-    return await super.readAllByQuery(tenantId, this._constructQuery(query));
+    return await super.readAllByQuery(tenantId, this._constructQuery(query, tenantId));
   }
 
   async readOnlyOneByQuerystring(
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<Authorization | undefined> {
-    return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query));
+    return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query, tenantId));
   }
 
   /**
    * Private Methods
    */
 
-  private _constructQuery(queryParams: AuthorizationQuerystring): object {
+  private _constructQuery(queryParams: AuthorizationQuerystring, tenantId: number): object {
     const where: any = {};
     if (queryParams.idToken) {
       where.idToken = queryParams.idToken;
@@ -51,6 +60,15 @@ export class SequelizeAuthorizationRepository
 
     return {
       where,
+      include: [
+        {
+          model: AuthorizationTenant,
+          as: 'tenants',
+          required: true,
+          where: { tenantId },
+          attributes: [],
+        },
+      ],
     };
   }
 }

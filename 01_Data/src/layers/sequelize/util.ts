@@ -58,6 +58,7 @@ import {
   VariableMonitoring,
   VariableMonitoringStatus,
   VariableStatus,
+  AuthorizationTenant,
 } from './index.js';
 
 export class DefaultSequelizeInstance {
@@ -192,6 +193,7 @@ export class DefaultSequelizeInstance {
         SendLocalListAuthorization,
         Tenant,
         TenantPartner,
+        AuthorizationTenant,
       ],
       pool: this.config.database.pool,
       logging: (_sql: string, _timing?: number) => {},

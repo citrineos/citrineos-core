@@ -5,7 +5,6 @@ import type { ServerProfile, TenantDto } from '@citrineos/base';
 import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import {
-  Authorization,
   LocalListAuthorization,
   LocalListVersion,
   LocalListVersionAuthorization,
@@ -62,6 +61,7 @@ import {
   VariableMonitoring,
   VariableMonitoringStatus,
 } from './VariableMonitoring/index.js';
+import { AuthorizationTenant } from './AuthorizationTenant.js';
 
 export enum TenantAttributeProps {
   id = 'id',
@@ -120,8 +120,8 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
   @HasMany(() => TenantPartner)
   declare tenantPartners: TenantPartner[];
 
-  @HasMany(() => Authorization)
-  declare authorizations: Authorization[];
+  @HasMany(() => AuthorizationTenant)
+  declare authorizationTenants: AuthorizationTenant[];
 
   @HasMany(() => Boot)
   declare boots: Boot[];

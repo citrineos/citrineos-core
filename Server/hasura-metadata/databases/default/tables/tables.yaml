@@ -55,3 +55,4 @@
 - "!include public_ConnectorTariffs.yaml"
 - "!include public_TariffElements.yaml"
 - "!include public_Cdrs.yaml"
+- "!include public_AuthorizationTenants.yaml"

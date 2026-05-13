@@ -6,6 +6,7 @@ import { z } from 'zod/v4';
 import { TenantPartnerSchema } from './tenant.partner.dto.js';
 import { AdditionalInfoSchema, RealTimeAuthLastAttemptSchema } from './types/authorization.js';
 import { BaseSchema } from './types/base.dto.js';
+import { TenantSchema } from './tenant.dto.js';
 import {
   AuthorizationStatusEnumSchema,
   AuthorizationWhitelistEnumSchema,
@@ -33,13 +34,19 @@ const authorizationFields = {
   tenantPartnerId: z.number().int().nullable().optional(),
   tenantPartner: TenantPartnerSchema.nullable().optional(),
   groupAuthorizationId: z.number().int().nullable().optional(),
+  tenants: z
+    .array(z.object({ tenantId: z.number().int(), tenant: TenantSchema.nullable().optional() }))
+    .nullable()
+    .optional(),
 };
 
-export const GroupAuthorizationSchema = BaseSchema.extend(authorizationFields);
+export const GroupAuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend(
+  authorizationFields,
+);
 
 export type GroupAuthorizationDto = z.infer<typeof GroupAuthorizationSchema>;
 
-export const AuthorizationSchema = BaseSchema.extend({
+export const AuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend({
   ...authorizationFields,
   groupAuthorizationId: z.number().int().nullable().optional(),
   groupAuthorization: z.lazy(() => GroupAuthorizationSchema).optional(),
@@ -51,7 +58,6 @@ export type AuthorizationDto = z.infer<typeof AuthorizationSchema>;
 
 export const AuthorizationCreateSchema = AuthorizationSchema.omit({
   id: true,
-  tenant: true,
   updatedAt: true,
   createdAt: true,
   groupAuthorization: true,
@@ -62,13 +68,12 @@ export type AuthorizationCreate = z.infer<typeof AuthorizationCreateSchema>;
 
 export const AuthorizationUpdateSchema = AuthorizationSchema.partial()
   .omit({
-    tenant: true,
     updatedAt: true,
     createdAt: true,
     groupAuthorization: true,
     tenantPartner: true,
   })
-  .required({ id: true, tenantId: true });
+  .required({ id: true });
 
 export type AuthorizationUpdate = z.infer<typeof AuthorizationUpdateSchema>;
 
