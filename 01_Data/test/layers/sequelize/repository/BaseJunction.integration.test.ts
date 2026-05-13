@@ -142,22 +142,30 @@ describe('SequelizeAuthorizationRepository - integration', () => {
   it('Base Junction with Authorization and AuthorizationTenant findAndCount', async () => {
     await Tenant.create({ id: 1, name: 'tenant-1', isUserTenant: false } as any);
     await Tenant.create({ id: 2, name: 'tenant-2', isUserTenant: false } as any);
-    const auth = await Authorization.create({
+    const auth1 = await Authorization.create({
       idToken: 'DEADBEEF',
       idTokenType: 'ISO14443',
     });
-    await Authorization.create({
+    const auth2 = await Authorization.create({
       idToken: 'DEADBEEB',
       idTokenType: 'ISO14443',
     });
     await AuthorizationTenant.create({
-      authorizationId: auth.id,
+      authorizationId: auth1.id,
       tenantId: 1,
     });
 
     const result = await repo.findAndCount(1, { where: { idTokenType: 'ISO14443' } });
     expect(result.count).toBe(1);
     expect(result.rows[0].idToken).toBe('DEADBEEF');
+    await AuthorizationTenant.create({
+      authorizationId: auth2.id,
+      tenantId: 1,
+    });
+    const result2 = await repo.findAndCount(1, { where: { idTokenType: 'ISO14443' } });
+    expect(result2.count).toBe(2);
+    expect(result2.rows[0].idToken).toBe('DEADBEEF');
+    expect(result2.rows[1].idToken).toBe('DEADBEEB');
   });
 
   it('Base Junction with Authorization and AuthorizationTenant _create', async () => {

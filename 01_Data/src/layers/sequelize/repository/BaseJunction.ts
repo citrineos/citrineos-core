@@ -86,13 +86,15 @@ export abstract class SequelizeTenantJunctionRepository<
       .then((rows) => rows as T[]);
   }
 
-  async readAllBySqlString(
-    tenantId: number,
-    sqlString: string,
-    _namespace: string = this.namespace,
-  ): Promise<object[]> {
-    return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
-  }
+  // TODO: add this back in when we have a use case for it
+  // This was removed because it was not used and it was not clear how to use it with the new junction model.
+  // async readAllBySqlString(
+  //   tenantId: number,
+  //   sqlString: string,
+  //   _namespace: string = this.namespace,
+  // ): Promise<object[]> {
+  //   return await this.s.query(`${sqlString}`, { type: QueryTypes.SELECT });
+  // }
 
   async readNextValue(
     tenantId: number,
@@ -194,6 +196,7 @@ export abstract class SequelizeTenantJunctionRepository<
       return saved;
     });
   }
+
   protected async _readOrCreateByQuery(
     tenantId: number,
     query: object,
@@ -220,6 +223,7 @@ export abstract class SequelizeTenantJunctionRepository<
       return [row, junctionCreated];
     });
   }
+
   protected async _updateByKey(
     tenantId: number,
     value: Partial<T>,
