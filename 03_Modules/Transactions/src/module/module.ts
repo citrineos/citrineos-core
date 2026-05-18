@@ -58,6 +58,39 @@ import { StatusNotificationService } from './StatusNotificationService.js';
 import { TransactionService } from './TransactionService.js';
 
 /**
+ * Vendor quirk: some DC chargers (observed on Ruisu firmware 1209.x at
+ * Nyamirambo and Kibagabaga sites) tag Voltage / Current.Import /
+ * Power.Active.Import with phase: "L1" even though they have no AC phases.
+ * The aggregation layer treats phase=L1 as per-wire detail and filters those
+ * samples out via isOverallPhase(), leaving V/A/W graphs empty for these
+ * stations. If the payload uses only "L1" with no L2/L3 alongside, this is a
+ * DC charger using the wrong template — strip the phase tag so the existing
+ * filter accepts the sample as the overall reading.
+ */
+export function normalizeDcPhaseQuirk(
+  meterValue: OCPP1_6.MeterValuesRequest['meterValue'][number],
+): void {
+  const phases = new Set<string>();
+  for (const s of meterValue.sampledValue) {
+    if (s.phase != null) {
+      phases.add(s.phase as unknown as string);
+    }
+  }
+  // DC charger signature: payload uses "L1" but no L2 or L3 anywhere.
+  // A real AC 3-phase charger would include L2 and L3 alongside L1.
+  // Other phases like "N" may coexist (used for Energy/SoC aggregates) — ignore those.
+  const hasL1 = phases.has('L1');
+  const hasL2OrL3 = phases.has('L2') || phases.has('L3');
+  if (hasL1 && !hasL2OrL3) {
+    for (const s of meterValue.sampledValue) {
+      if ((s.phase as unknown as string) === 'L1') {
+        delete s.phase;
+      }
+    }
+  }
+}
+
+/**
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
@@ -581,6 +614,7 @@ export class TransactionsModule extends AbstractModule {
         const meterValueEntities: MeterValueDto[] = [];
         for (const meterValue of meterValues) {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
+            normalizeDcPhaseQuirk(meterValue);
             const meterValueEntity = OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
             meterValueEntity.tenantId = tenantId;
             meterValueEntity.connectorId = connectorId;
@@ -769,8 +803,7 @@ export class TransactionsModule extends AbstractModule {
       }
 
       if (transaction.startTransaction) {
-        transaction.totalKwh =
-          (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
+        transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
       } else {
         this._logger.warn(
           `StartTransaction record not found at station ${stationId} for transactionId ${request.transactionId}.
