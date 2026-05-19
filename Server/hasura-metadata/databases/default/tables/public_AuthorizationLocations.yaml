@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: AuthorizationLocations
+  schema: public
+object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on: authorizationId
+  - name: Location
+    using:
+      foreign_key_constraint_on: locationId
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - authorizationId
+        - locationId
+        - createdAt
+        - updatedAt
+      filter:
+        Location:
+          tenantId:
+              _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

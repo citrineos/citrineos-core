@@ -47,6 +47,13 @@ array_relationships:
         table:
           name: AuthorizationTenants
           schema: public
+  - name: Locations
+    using:
+      foreign_key_constraint_on:
+        column: authorizationId
+        table:
+          name: AuthorizationLocations
+          schema: public
 select_permissions:
   - role: user
     permission:
