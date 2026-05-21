@@ -7,6 +7,7 @@ import {
   Boot,
   Authorization,
   AuthorizationTenant,
+  AuthorizationLocation,
   Tenant,
   TenantPartner,
   VariableAttribute,
@@ -65,6 +66,7 @@ import { afterAll, beforeAll } from 'vitest';
 const ALL_MODELS = [
   Authorization,
   AuthorizationTenant,
+  AuthorizationLocation,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
@@ -145,6 +147,11 @@ export function setupTestDatabase(): TestDatabase {
       password: container.getPassword(),
       models: ALL_MODELS,
       logging: false,
+    });
+
+    Authorization.hasMany(AuthorizationLocation, {
+      foreignKey: 'authorizationId',
+      as: 'locations',
     });
 
     await sequelize.query('CREATE EXTENSION IF NOT EXISTS citext;');

@@ -371,6 +371,10 @@ export class EVDriverModule extends AbstractModule {
                 status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
                 groupIdToken: idTokenInfo.groupIdToken,
               };
+              this._logger.warn(
+                `Authorization not allowed at this location. Station location ID: ${stationLocationId} - Allowed location IDs: ${allowedLocationIds.join(', ')}`,
+              );
+              await this.sendCallResultWithMessage(message, response);
               return;
             }
           }
