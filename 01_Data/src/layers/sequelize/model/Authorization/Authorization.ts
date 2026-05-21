@@ -22,7 +22,6 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { AuthorizationTenant } from '../AuthorizationTenant.js';
-
 import { TenantPartner } from '../TenantPartner.js';
 
 @Table
@@ -87,6 +86,8 @@ export class Authorization extends Model implements AuthorizationDto {
 
   @HasMany(() => AuthorizationTenant, { foreignKey: 'authorizationId', as: 'tenants' })
   declare tenants?: AuthorizationTenant[] | null;
+
+  declare locations?: { authorizationId: number; locationId: number }[] | null;
 
   // Reference to another Authorization for groupAuthorization
   @ForeignKey(() => Authorization)

@@ -12,6 +12,7 @@ import {
 } from '../../../interfaces/index.js';
 import { Authorization } from '../model/index.js';
 import { AuthorizationTenant } from '../model/AuthorizationTenant.js';
+import { AuthorizationLocation } from '../model/AuthorizationLocation.js';
 import { SequelizeTenantJunctionRepository } from './BaseJunction.js';
 
 export class SequelizeAuthorizationRepository
@@ -67,6 +68,12 @@ export class SequelizeAuthorizationRepository
           required: true,
           where: { tenantId },
           attributes: [],
+        },
+        {
+          model: AuthorizationLocation,
+          as: 'locations',
+          required: false,
+          attributes: ['locationId'],
         },
       ],
     };

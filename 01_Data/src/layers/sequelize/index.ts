@@ -45,6 +45,7 @@ export {
   StatusNotification,
   Connector,
 } from './model/Location/index.js';
+export { AuthorizationLocation } from './model/AuthorizationLocation.js';
 export { ChargingStationSequence } from './model/ChargingStationSequence/index.js';
 export { MessageInfo } from './model/MessageInfo/index.js';
 export { Tariff } from './model/Tariff/index.js';
