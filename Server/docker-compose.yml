@@ -39,6 +39,10 @@ services:
     build:
       context: ../
       dockerfile: ./Server/deploy.Dockerfile
+    working_dir: /usr/local/apps/citrineos
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "set -e && npm run migrate && exec npm run start-docker --prefix ./Server"
     volumes:
       - ../package-lock.json:/usr/local/apps/citrineos/package-lock-host.json
       - ../package.json:/usr/local/apps/citrineos/package.json
@@ -115,7 +119,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     ports:
-      - 8080:8080
+      - 8980:8080
       - 8081:8081
       - 8082:8082
       - 8443:8443
