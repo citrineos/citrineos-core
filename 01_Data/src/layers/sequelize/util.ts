@@ -201,11 +201,6 @@ export class DefaultSequelizeInstance {
       logging: (_sql: string, _timing?: number) => {},
     });
 
-    Authorization.hasMany(AuthorizationLocation, {
-      foreignKey: 'authorizationId',
-      as: 'locations',
-    });
-
     return sequelize;
   }
 }
