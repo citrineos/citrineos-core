@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   DEFAULT_TENANT_ID,
+  type ChargingStationDto,
   type LatestStatusNotificationDto,
   OCPP2_0_1_Namespace,
+  type StatusNotificationDto,
 } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/base';
 import {
@@ -29,13 +31,13 @@ export class LatestStatusNotification extends Model implements LatestStatusNotif
   declare stationId: string;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation: ChargingStation;
+  declare chargingStation: ChargingStationDto;
 
   @ForeignKey(() => StatusNotification)
   declare statusNotificationId: string;
 
   @BelongsTo(() => StatusNotification)
-  declare statusNotification: StatusNotification;
+  declare statusNotification: StatusNotificationDto;
 
   @ForeignKey(() => Tenant)
   @Column({

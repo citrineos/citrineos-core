@@ -2,10 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
+  AuthorizationDto,
+  ConnectorDto,
+  EvseDto,
   StartTransactionDto,
   StopTransactionDto,
+  TariffDto,
   TenantDto,
   TransactionDto,
+  TransactionEventDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
@@ -62,28 +67,28 @@ export class Transaction extends Model implements TransactionDto {
   declare evseId?: number;
 
   @BelongsTo(() => Evse)
-  declare evse?: Evse | null;
+  declare evse?: EvseDto | null;
 
   @Column(DataType.INTEGER)
   @ForeignKey(() => Connector)
   declare connectorId?: number;
 
   @BelongsTo(() => Connector)
-  declare connector?: Connector | null;
+  declare connector?: ConnectorDto | null;
 
   @Column(DataType.INTEGER)
   @ForeignKey(() => Authorization)
   authorizationId?: number;
 
   @BelongsTo(() => Authorization)
-  authorization?: Authorization;
+  authorization?: AuthorizationDto;
 
   @Column(DataType.INTEGER)
   @ForeignKey(() => Tariff)
   tariffId?: number;
 
   @BelongsTo(() => Tariff)
-  tariff?: Tariff;
+  tariff?: TariffDto;
 
   @Column({
     type: DataType.STRING,
@@ -98,14 +103,14 @@ export class Transaction extends Model implements TransactionDto {
     as: Transaction.TRANSACTION_EVENTS_ALIAS,
     foreignKey: 'transactionDatabaseId',
   })
-  declare transactionEvents?: TransactionEvent[];
+  declare transactionEvents?: TransactionEventDto[];
 
   // required only for filtering, should not be used to pull transaction events
   @HasMany(() => TransactionEvent, {
     as: Transaction.TRANSACTION_EVENTS_FILTER_ALIAS,
     foreignKey: 'transactionDatabaseId',
   })
-  declare transactionEventsFilter?: TransactionEvent[];
+  declare transactionEventsFilter?: TransactionEventDto[];
 
   @HasMany(() => MeterValue)
   declare meterValues?: MeterValue[];

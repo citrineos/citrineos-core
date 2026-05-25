@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   BootDto,
+  ChargingStationDto,
   ComponentDto,
   VariableAttributeDto,
   VariableDto,
@@ -108,7 +109,7 @@ export class VariableAttribute
   declare stationId: string;
 
   @BelongsTo(() => ChargingStation)
-  declare chargingStation: ChargingStation;
+  declare chargingStation: ChargingStationDto;
 
   @Column({
     type: DataType.STRING,

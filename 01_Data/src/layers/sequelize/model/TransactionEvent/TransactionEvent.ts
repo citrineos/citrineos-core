@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   TenantDto,
+  TransactionDto,
   TransactionEventDto,
   TransactionEventEnumType,
   TriggerReasonEnumType,
@@ -68,7 +69,7 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   declare transactionDatabaseId?: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction?: Transaction;
+  declare transaction?: TransactionDto;
 
   @Column(DataType.JSON)
   declare transactionInfo: TransactionType;
