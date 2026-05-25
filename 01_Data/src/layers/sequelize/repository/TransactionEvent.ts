@@ -773,7 +773,9 @@ export class SequelizeTransactionEventRepository
     });
 
     if (meterValues.length > 0) {
-      await Promise.all(
+      // allSettled: one bad MeterValue row must not abort the whole batch and bubble
+      // up as a failed StopTransaction. Rejected rows are logged; valid rows persist.
+      const results = await Promise.allSettled(
         meterValues.map(async (meterValue) => {
           meterValue.transactionDatabaseId = transactionDatabaseId;
           const createdMeterValue = MeterValue.build(meterValue);
@@ -782,6 +784,15 @@ export class SequelizeTransactionEventRepository
           this.meterValue.emit('created', [createdMeterValue]);
         }),
       );
+      const rejected = results.filter(
+        (r): r is PromiseRejectedResult => r.status === 'rejected',
+      );
+      if (rejected.length > 0) {
+        this.logger.error(
+          `Failed to persist ${rejected.length}/${meterValues.length} MeterValue row(s) for transaction ${transactionDatabaseId} at station ${stationId}`,
+          rejected.map((r) => r.reason),
+        );
+      }
     }
 
     return stopTransaction;
