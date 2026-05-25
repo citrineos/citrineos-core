@@ -149,11 +149,6 @@ export function setupTestDatabase(): TestDatabase {
       logging: false,
     });
 
-    Authorization.hasMany(AuthorizationLocation, {
-      foreignKey: 'authorizationId',
-      as: 'locations',
-    });
-
     await sequelize.query('CREATE EXTENSION IF NOT EXISTS citext;');
     await sequelize.query('CREATE EXTENSION IF NOT EXISTS postgis;');
     await sequelize.sync({ force: true });
