@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   ChargingNeedsDto,
+  EvseDto,
   TransactionDto,
   TenantDto,
   EnergyTransferModeEnumType,
@@ -60,7 +61,7 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
   declare evseId: number;
 
   @BelongsTo(() => Evse)
-  declare evse: Evse;
+  declare evse: EvseDto;
 
   @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)

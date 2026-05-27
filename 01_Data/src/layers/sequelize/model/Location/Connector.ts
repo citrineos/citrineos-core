@@ -9,6 +9,7 @@ import type {
   ConnectorPowerTypeEnumType,
   ConnectorStatusEnumType,
   ConnectorTypeEnumType,
+  EvseDto,
   TenantDto,
 } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
@@ -116,7 +117,7 @@ export class Connector extends Model implements ConnectorDto {
   declare chargingStation?: ChargingStationDto;
 
   @BelongsTo(() => Evse)
-  declare evse?: Evse;
+  declare evse?: EvseDto;
 
   @HasMany(() => Tariff)
   declare tariffs?: Tariff[];

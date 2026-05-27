@@ -7,6 +7,7 @@ import {
   Boot,
   Authorization,
   AuthorizationTenant,
+  AuthorizationLocation,
   Tenant,
   TenantPartner,
   VariableAttribute,
@@ -65,6 +66,7 @@ import { afterAll, beforeAll } from 'vitest';
 const ALL_MODELS = [
   Authorization,
   AuthorizationTenant,
+  AuthorizationLocation,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,

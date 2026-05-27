@@ -12,7 +12,13 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Certificate } from './Certificate.js';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_0_1_Namespace, type TenantDto } from '@citrineos/base';
+import {
+  DEFAULT_TENANT_ID,
+  OCPP2_0_1,
+  OCPP2_0_1_Namespace,
+  type ChargingStationDto,
+  type TenantDto,
+} from '@citrineos/base';
 import { ChargingStation } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
@@ -28,7 +34,7 @@ export class InstallCertificateAttempt extends Model {
   declare stationId: string;
 
   @BelongsTo(() => ChargingStation)
-  station?: ChargingStation;
+  station?: ChargingStationDto;
 
   @Column({
     type: DataType.STRING,

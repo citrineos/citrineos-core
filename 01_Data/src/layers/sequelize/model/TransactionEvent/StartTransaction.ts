@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { StartTransactionDto, TenantDto } from '@citrineos/base';
+import type { ConnectorDto, StartTransactionDto, TenantDto, TransactionDto } from '@citrineos/base';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -46,13 +46,13 @@ export class StartTransaction extends Model implements StartTransactionDto {
   declare transactionDatabaseId: number;
 
   @BelongsTo(() => Transaction)
-  declare transaction: Transaction;
+  declare transaction: TransactionDto;
 
   @ForeignKey(() => Connector)
   declare connectorDatabaseId: number;
 
   @BelongsTo(() => Connector)
-  declare connector: Connector;
+  declare connector: ConnectorDto;
 
   @ForeignKey(() => Tenant)
   @Column({

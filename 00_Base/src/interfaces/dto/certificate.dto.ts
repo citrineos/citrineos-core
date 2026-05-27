@@ -24,6 +24,7 @@ export const CertificateSchema = BaseSchema.extend({
   isCA: z.boolean().optional(),
   pathLen: z.number().int().nullable().optional(),
   certificateFileId: z.string().nullable().optional(),
+  certificateFileHash: z.string().nullable().optional(),
   privateKeyFileId: z.string().nullable().optional(),
   signedBy: z.string().nullable().optional(),
 });

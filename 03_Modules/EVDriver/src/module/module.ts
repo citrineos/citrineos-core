@@ -356,6 +356,29 @@ export class EVDriverModule extends AbstractModule {
             // TODO determine how/if to set personalMessage
           };
         } else {
+          // Check if charging station location is allowed
+          const station = await this._locationRepository.readChargingStationByStationId(
+            context.tenantId,
+            message.context.stationId,
+          );
+
+          const allowedLocationIds = authorization.locations?.map((l) => l.locationId) ?? [];
+
+          if (allowedLocationIds.length > 0) {
+            const stationLocationId = station?.locationId;
+            if (stationLocationId && !allowedLocationIds.includes(stationLocationId)) {
+              response.idTokenInfo = {
+                status: OCPP2_0_1.AuthorizationStatusEnumType.NotAtThisLocation,
+                groupIdToken: idTokenInfo.groupIdToken,
+              };
+              this._logger.warn(
+                `Authorization not allowed at this location. Station location ID: ${stationLocationId} - Allowed location IDs: ${allowedLocationIds.join(', ')}`,
+              );
+              await this.sendCallResultWithMessage(message, response);
+              return;
+            }
+          }
+
           // If charging station does not have values and evses associated with the component/variable pairs below,
           // this logic will break. CSMS's aiming to use the allowedConnectorTypes or disallowedEvseIdPrefixes
           // Authorization restrictions MUST provide these variable attributes as defined in Physical Component

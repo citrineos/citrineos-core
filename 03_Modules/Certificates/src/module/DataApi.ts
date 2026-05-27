@@ -466,7 +466,7 @@ export class CertificatesDataApi
     newCertificateRecord.countryName = existingCertificateRecord.countryName;
     newCertificateRecord.isCA = existingCertificateRecord.isCA;
     newCertificateRecord.pathLen = existingCertificateRecord.pathLen;
-    newCertificateRecord.signedBy = existingCertificateRecord.id;
+    newCertificateRecord.signedBy = String(existingCertificateRecord.id);
     newCertificateRecord.certificateFileHash = existingCertificateRecord.certificateFileHash;
     const [newCertificatePem, newPrivateKeyPem] = generateCertificate(
       newCertificateRecord,
