@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { TenantPartner } from './TenantPartner.js';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table({ tableName: 'RoamingPartners' })
 export class RoamingPartner extends Model {
@@ -19,10 +18,6 @@ export class RoamingPartner extends Model {
   @Column({ type: DataType.STRING(20), allowNull: false })
   declare status: string;
 
-  @ForeignKey(() => TenantPartner)
-  @Column({ type: DataType.INTEGER, allowNull: false, onUpdate: 'CASCADE', onDelete: 'RESTRICT' })
+  @Column({ type: DataType.INTEGER, allowNull: false })
   declare tenantPartnerId: number;
-
-  @BelongsTo(() => TenantPartner)
-  declare tenantPartner?: TenantPartner;
 }

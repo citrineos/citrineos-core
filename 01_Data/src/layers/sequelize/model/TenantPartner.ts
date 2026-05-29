@@ -34,7 +34,7 @@ export class TenantPartner extends Model implements TenantPartnerDto {
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
 
-  @HasMany(() => RoamingPartner)
+  @HasMany(() => RoamingPartner, { foreignKey: 'tenantPartnerId' })
   declare roamingPartners: RoamingPartner[];
 
   @ForeignKey(() => Tenant)
