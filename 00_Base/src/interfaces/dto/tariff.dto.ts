@@ -25,6 +25,8 @@ export const TariffSchema = BaseSchema.extend({
   energyMix: z.record(z.string(), z.any()).nullable().optional(),
   startDateTime: z.coerce.date().nullable().optional(),
   endDateTime: z.coerce.date().nullable().optional(),
+  tenantPartnerId: z.number().int().nullable().optional(),
+  roamingPartnerId: z.number().int().nullable().optional(),
 });
 
 export const TariffProps = TariffSchema.keyof().enum;

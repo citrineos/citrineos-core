@@ -104,6 +104,7 @@ export const CdrDtoSchema = z.object({
   credit_reference_id: z.string().max(39).nullable().optional(),
   home_charging_compensation: z.boolean().nullable().optional(),
   last_updated: z.coerce.date(),
+  roaming_partner_id: z.number().int().nullable().optional(),
 });
 
 export const CdrDtoSchemaName = 'CdrDtoSchema';

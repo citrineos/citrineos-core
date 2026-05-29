@@ -11,6 +11,9 @@ object_relationships:
   - name: TenantPartner
     using:
       foreign_key_constraint_on: tenantPartnerId
+  - name: RoamingPartner
+    using:
+      foreign_key_constraint_on: roamingPartnerId
 array_relationships:
   - name: Authorizations
     using:
@@ -72,6 +75,8 @@ select_permissions:
         - personalMessage
         - groupAuthorizationId
         - concurrentTransaction
+        - roamingPartnerId
+        - tenantPartnerId
         - createdAt
         - updatedAt
       filter:

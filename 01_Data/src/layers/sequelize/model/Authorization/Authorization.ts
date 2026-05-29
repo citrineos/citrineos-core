@@ -24,6 +24,7 @@ import {
 import { AuthorizationLocation } from '../AuthorizationLocation.js';
 import { AuthorizationTenant } from '../AuthorizationTenant.js';
 import { TenantPartner } from '../TenantPartner.js';
+import { RoamingPartner } from '../RoamingPartner.js';
 
 @Table
 export class Authorization extends Model implements AuthorizationDto {
@@ -112,4 +113,11 @@ export class Authorization extends Model implements AuthorizationDto {
 
   @BelongsTo(() => TenantPartner)
   declare tenantPartner?: TenantPartner | null;
+
+  @ForeignKey(() => RoamingPartner)
+  @Column({ type: DataType.INTEGER, allowNull: true, onUpdate: 'CASCADE', onDelete: 'SET NULL' })
+  declare roamingPartnerId?: number | null;
+
+  @BelongsTo(() => RoamingPartner)
+  declare roamingPartner?: RoamingPartner;
 }

@@ -16,6 +16,7 @@ import {
 } from 'sequelize-typescript';
 import { Authorization } from './Authorization/index.js';
 import { Tenant } from './Tenant.js';
+import { RoamingPartner } from './RoamingPartner.js';
 
 @Table
 export class TenantPartner extends Model implements TenantPartnerDto {
@@ -32,6 +33,9 @@ export class TenantPartner extends Model implements TenantPartnerDto {
 
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
+
+  @HasMany(() => RoamingPartner)
+  declare roamingPartners: RoamingPartner[];
 
   @ForeignKey(() => Tenant)
   @Column({

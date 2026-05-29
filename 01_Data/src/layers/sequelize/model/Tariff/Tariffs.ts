@@ -17,6 +17,8 @@ import {
 } from 'sequelize-typescript';
 import { Connector } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
+import { RoamingPartner } from '../RoamingPartner.js';
+import { TenantPartner } from '../TenantPartner.js';
 
 @Table
 export class Tariff extends Model implements TariffDto {
@@ -148,6 +150,20 @@ export class Tariff extends Model implements TariffDto {
 
   @BelongsTo(() => Tenant)
   declare tenant?: TenantDto;
+
+  @ForeignKey(() => TenantPartner)
+  @Column({ type: DataType.INTEGER, allowNull: true, onUpdate: 'CASCADE', onDelete: 'SET NULL' })
+  declare tenantPartnerId?: number | null;
+
+  @BelongsTo(() => TenantPartner)
+  declare tenantPartner?: TenantPartner;
+
+  @ForeignKey(() => RoamingPartner)
+  @Column({ type: DataType.INTEGER, allowNull: true, onUpdate: 'CASCADE', onDelete: 'SET NULL' })
+  declare roamingPartnerId?: number | null;
+
+  @BelongsTo(() => RoamingPartner)
+  declare roamingPartner?: RoamingPartner;
 
   @BeforeUpdate
   @BeforeCreate

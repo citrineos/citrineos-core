@@ -105,6 +105,7 @@ export const LocationSchema = BaseSchema.extend({
   ownerTenantPartnerId: z.number().int().nullable().optional(),
   relatedLocations: z.array(AdditionalGeoLocationSchema).nullable().optional(),
   ocpiId: z.string().max(36).nullable().optional(),
+  roamingPartnerId: z.number().int().nullable().optional(),
 });
 
 export const LocationProps = LocationSchema.keyof().enum;

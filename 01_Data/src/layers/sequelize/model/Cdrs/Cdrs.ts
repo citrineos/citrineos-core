@@ -22,6 +22,7 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../Tenant.js';
 import { TenantPartner } from '../TenantPartner.js';
+import { RoamingPartner } from '../RoamingPartner.js';
 
 @Table({ tableName: 'Cdrs' })
 export class Cdr extends Model {
@@ -167,6 +168,13 @@ export class Cdr extends Model {
 
   @BelongsTo(() => TenantPartner)
   declare tenantPartner?: TenantPartner;
+
+  @ForeignKey(() => RoamingPartner)
+  @Column({ type: DataType.INTEGER, allowNull: true, onUpdate: 'CASCADE', onDelete: 'SET NULL' })
+  declare roamingPartnerId?: number | null;
+
+  @BelongsTo(() => RoamingPartner)
+  declare roamingPartner?: RoamingPartner;
 
   @BeforeCreate
   @BeforeUpdate
