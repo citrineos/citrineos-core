@@ -8,6 +8,42 @@ object_relationships:
   - name: TenantPartner
     using:
       foreign_key_constraint_on: tenantPartnerId
+array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Authorizations
+          schema: public
+  - name: Cdrs
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Cdrs
+          schema: public
+  - name: Locations
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Locations
+          schema: public
+  - name: Sessions
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Sessions
+          schema: public
+  - name: Tariffs
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Tariffs
+          schema: public
 select_permissions:
   - role: user
     permission:
