@@ -30,6 +30,9 @@ export class TenantPartner extends Model implements TenantPartnerDto {
   @Column(DataType.JSONB)
   declare partnerProfileOCPI: PartnerProfile;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare awsSecretCertificateArn?: string | null;
+
   @HasMany(() => Authorization)
   declare authorizations: Authorization[];
 

@@ -11,6 +11,7 @@ export const TenantPartnerSchema = BaseSchema.extend({
   countryCode: z.string().nullable().optional(),
   partyId: z.string().nullable().optional(),
   partnerProfileOCPI: PartnerProfileSchema,
+  awsSecretCertificateArn: z.string().nullable().optional(),
 });
 
 export const TenantPartnerProps = TenantPartnerSchema.keyof().enum;
