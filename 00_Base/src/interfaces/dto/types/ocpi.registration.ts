@@ -41,7 +41,7 @@ export const CredentialsSchema = z.object({
 });
 
 export const ServerProfileSchema = z.object({
-  credentialsRole: CredentialRoleSchema,
+  credentialsRoles: z.array(CredentialRoleSchema),
   versionDetails: z.array(VersionSchema),
   versionEndpoints: z.record(z.string(), z.array(EndpointSchema)),
 });
