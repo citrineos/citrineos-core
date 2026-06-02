@@ -29,6 +29,7 @@ import {
 import { Tenant } from '../Tenant.js';
 import { ChargingStation } from './ChargingStation.js';
 import { TenantPartner } from '../TenantPartner.js';
+import { RoamingPartner } from '../RoamingPartner.js';
 
 /**
  * Represents a location.
@@ -157,6 +158,13 @@ export class Location extends Model implements LocationDto {
 
   @BelongsTo(() => TenantPartner)
   declare ownerTenantPartner?: TenantPartner;
+
+  @ForeignKey(() => RoamingPartner)
+  @Column({ type: DataType.INTEGER, allowNull: true, onUpdate: 'CASCADE', onDelete: 'SET NULL' })
+  declare roamingPartnerId?: number | null;
+
+  @BelongsTo(() => RoamingPartner)
+  declare roamingPartner?: RoamingPartner;
 
   constructor(...args: any[]) {
     super(...args);

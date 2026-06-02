@@ -24,3 +24,4 @@ export * from './TransactionEvent/index.js';
 export * from './VariableMonitoring/index.js';
 export * from './TenantPartner.js';
 export * from './AuthorizationTenant.js';
+export * from './RoamingPartner.js';

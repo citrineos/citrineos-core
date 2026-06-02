@@ -57,6 +57,7 @@ import {
   AsyncJobStatus,
   DeleteCertificateAttempt,
   InstallCertificateAttempt,
+  RoamingPartner,
 } from '../../../../src/layers/sequelize/index.js';
 import { ComponentVariable } from '../../../../src/layers/sequelize/model/DeviceModel/ComponentVariable.js';
 import { Cdr } from '../../../../src/layers/sequelize/model/Cdrs/Cdrs.js';
@@ -120,6 +121,7 @@ const ALL_MODELS = [
   Subscription,
   TariffElement,
   Tariff,
+  RoamingPartner,
 ];
 
 export interface TestDatabase {

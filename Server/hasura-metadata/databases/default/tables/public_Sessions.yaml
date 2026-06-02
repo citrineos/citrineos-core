@@ -11,6 +11,9 @@ object_relationships:
   - name: TenantPartner
     using:
       foreign_key_constraint_on: tenantPartnerId
+  - name: RoamingPartner
+    using:
+      foreign_key_constraint_on: roamingPartnerId
 select_permissions:
   - role: user
     permission:
@@ -36,6 +39,7 @@ select_permissions:
         - lastUpdated
         - tenantId
         - tenantPartnerId
+        - roamingPartnerId
         - createdAt
         - updatedAt
       filter:

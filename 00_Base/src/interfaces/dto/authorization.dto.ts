@@ -38,6 +38,7 @@ const authorizationFields = {
     .array(z.object({ tenantId: z.number().int(), tenant: TenantSchema.nullable().optional() }))
     .nullable()
     .optional(),
+  roamingPartnerId: z.number().int().nullable().optional(),
 };
 
 export const GroupAuthorizationSchema = BaseSchema.omit({ tenant: true, tenantId: true }).extend(

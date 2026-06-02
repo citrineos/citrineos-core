@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: RoamingPartners
+  schema: public
+object_relationships:
+  - name: TenantPartner
+    using:
+      foreign_key_constraint_on: tenantPartnerId
+array_relationships:
+  - name: Authorizations
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Authorizations
+          schema: public
+  - name: Cdrs
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Cdrs
+          schema: public
+  - name: Locations
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Locations
+          schema: public
+  - name: Sessions
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Sessions
+          schema: public
+  - name: Tariffs
+    using:
+      foreign_key_constraint_on:
+        column: roamingPartnerId
+        table:
+          name: Tariffs
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - countryCode
+        - partyId
+        - tenantPartnerId
+        - createdAt
+        - updatedAt
+      filter: {}
+      allow_aggregations: true
+    comment: ""

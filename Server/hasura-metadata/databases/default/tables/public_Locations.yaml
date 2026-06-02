@@ -11,6 +11,9 @@ object_relationships:
   - name: OwnerTenantPartner
     using:
       foreign_key_constraint_on: ownerTenantPartnerId
+  - name: RoamingPartner
+    using:
+      foreign_key_constraint_on: roamingPartnerId
 array_relationships:
   - name: ChargingStations
     using:
@@ -52,6 +55,7 @@ select_permissions:
         - chargingWhenClosed
         - relatedLocations
         - ocpiId
+        - roamingPartnerId
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

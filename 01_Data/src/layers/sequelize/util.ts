@@ -60,6 +60,7 @@ import {
   VariableStatus,
   AuthorizationTenant,
   AuthorizationLocation,
+  RoamingPartner,
 } from './index.js';
 
 export class DefaultSequelizeInstance {
@@ -196,6 +197,7 @@ export class DefaultSequelizeInstance {
         TenantPartner,
         AuthorizationTenant,
         AuthorizationLocation,
+        RoamingPartner,
       ],
       pool: this.config.database.pool,
       logging: (_sql: string, _timing?: number) => {},
