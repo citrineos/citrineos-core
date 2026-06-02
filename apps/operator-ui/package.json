@@ -46,7 +46,7 @@
     "@radix-ui/react-tabs": "1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@reduxjs/toolkit": "2.9.0",
-    "@refinedev/cli": "2.16.48",
+    "@refinedev/cli": "2.16.52",
     "@refinedev/core": "5.0.0",
     "@refinedev/devtools": "2.0.1",
     "@refinedev/hasura": "7.0.0",
