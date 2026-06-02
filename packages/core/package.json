@@ -76,6 +76,6 @@
     "testcontainers": "^11.0.0",
     "typescript": "^6.0.0",
     "typescript-eslint": "catalog:",
-    "vitest": "^2.0.0"
+    "vitest": "^4.0.0"
   }
 }
