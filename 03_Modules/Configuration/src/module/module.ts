@@ -33,6 +33,7 @@ import {
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
+  IDataTransferRepository,
   IDeviceModelRepository,
   ILocationRepository,
   IMessageInfoRepository,
@@ -45,13 +46,21 @@ import {
   ChargingStation,
   ChargingStationNetworkProfile,
   Component,
+  DataTransferDirection,
   sequelize,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingStationSequenceRepository,
+  SequelizeDataTransferRepository,
   SequelizeOCPPMessageRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
+import {
+  decodeDataField,
+  isKnownVendor,
+  lookupParser,
+  rawDataString,
+} from './dataTransfer/parser.js';
 import { IdGenerator, validateMessageContentType } from '@citrineos/util';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -129,6 +138,7 @@ export class ConfigurationModule extends AbstractModule {
     ocppMessageRepository?: IOCPPMessageRepository,
     idGenerator?: IdGenerator,
     tenantRepository?: ITenantRepository,
+    dataTransferRepository?: IDataTransferRepository,
   ) {
     super(config, cache, handler, sender, EventGroup.Configuration, logger, ocppValidator);
 
@@ -148,6 +158,8 @@ export class ConfigurationModule extends AbstractModule {
       new SequelizeChangeConfigurationRepository(config, this._logger);
     this._ocppMessageRepository =
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
+    this._dataTransferRepository =
+      dataTransferRepository || new SequelizeDataTransferRepository(config, this._logger);
 
     this._tenantRepository =
       tenantRepository || new sequelize.SequelizeTenantRepository(config, this._logger);
@@ -206,6 +218,12 @@ export class ConfigurationModule extends AbstractModule {
 
   get ocppMessageRepository(): IOCPPMessageRepository {
     return this._ocppMessageRepository;
+  }
+
+  protected _dataTransferRepository: IDataTransferRepository;
+
+  get dataTransferRepository(): IDataTransferRepository {
+    return this._dataTransferRepository;
   }
 
   /**
@@ -755,6 +773,75 @@ export class ConfigurationModule extends AbstractModule {
 
   // Data Transfer can be either a request and a response
 
+  /**
+   * Parse, persist and classify an incoming DataTransfer request.
+   *
+   * Storage is best-effort and never throws out of this method. The returned
+   * status follows the KAB-24 rule: `Accepted` only when we recognized the
+   * vendor + messageId, decoded the payload, AND stored it; otherwise the
+   * appropriate rejection (`UnknownVendorId` / `UnknownMessageId` / `Rejected`).
+   */
+  private async _processDataTransferRequest(
+    message: IMessage<OCPP1_6.DataTransferRequest | OCPP2_0_1.DataTransferRequest>,
+    ocppVersion: OCPPVersion,
+  ): Promise<'Accepted' | 'Rejected' | 'UnknownMessageId' | 'UnknownVendorId'> {
+    const { vendorId, messageId, data } = message.payload;
+    const { stationId, tenantId, correlationId } = message.context;
+
+    const raw = rawDataString(data);
+    const { parsed, encoding } = decodeDataField(data);
+    const parser = lookupParser(vendorId, messageId);
+
+    let status: 'Accepted' | 'Rejected' | 'UnknownMessageId' | 'UnknownVendorId';
+    let parserName: string | null = null;
+    let vid: string | null = null;
+    let dataParsed: unknown = parsed;
+    // TODO(KAB-24 phase 2): resolve transactionDbId from parsed transactionId + stationId.
+    const transactionDbId: number | null = null;
+
+    if (!isKnownVendor(vendorId)) {
+      status = 'UnknownVendorId';
+    } else if (!parser) {
+      status = 'UnknownMessageId';
+    } else {
+      // Vendor parser may recover fields from `raw` even when strict decode failed
+      // (e.g. wl's malformed JSON). Reject only if nothing usable could be extracted.
+      const out = parser.parse(parsed, raw);
+      if (!out) {
+        status = 'Rejected';
+      } else {
+        parserName = parser.name;
+        vid = out.vid ?? null;
+        dataParsed = { ...(parsed ?? {}), _parsed: out };
+        status = 'Accepted';
+      }
+    }
+
+    try {
+      await this._dataTransferRepository.createDataTransfer(tenantId, {
+        stationId,
+        ocppMessageId: correlationId,
+        direction: DataTransferDirection.CP_TO_CSMS,
+        ocppVersion,
+        vendorId,
+        messageId: messageId ?? null,
+        dataRaw: raw,
+        dataParsed: status === 'Accepted' ? dataParsed : parsed,
+        dataEncoding: encoding,
+        parser: parserName,
+        responseStatus: status,
+        transactionDbId,
+        vid,
+      });
+    } catch (error) {
+      // Could not store → cannot Accept (rule: accept iff parsed AND stored).
+      this._logger.error('Failed to persist DataTransfer, downgrading to Rejected:', error);
+      status = 'Rejected';
+    }
+
+    return status;
+  }
+
   @AsHandler(OCPPVersion.OCPP2_0_1, OCPP2_0_1_CallAction.DataTransfer)
   protected async _handleDataTransfer(
     message: IMessage<OCPP2_0_1.DataTransferRequest | OCPP2_0_1.DataTransferResponse>,
@@ -763,11 +850,17 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('DataTransfer received:', message, props);
 
     if (message.state === MessageState.Request) {
-      // Create response
+      const status = await this._processDataTransferRequest(
+        message as IMessage<OCPP2_0_1.DataTransferRequest>,
+        OCPPVersion.OCPP2_0_1,
+      );
+
       const response: OCPP2_0_1.DataTransferResponse = {
-        status: OCPP2_0_1.DataTransferStatusEnumType.Rejected,
-        statusInfo: { reasonCode: ErrorCode.NotImplemented },
+        status: OCPP2_0_1.DataTransferStatusEnumType[status],
       };
+      if (status !== 'Accepted') {
+        response.statusInfo = { reasonCode: ErrorCode.NotImplemented };
+      }
 
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);
       this._logger.debug('DataTransfer response sent: ', messageConfirmation);
@@ -1077,9 +1170,13 @@ export class ConfigurationModule extends AbstractModule {
     this._logger.debug('DataTransfer received:', message, props);
 
     if (message.state === MessageState.Request) {
-      // Create response
+      const status = await this._processDataTransferRequest(
+        message as IMessage<OCPP1_6.DataTransferRequest>,
+        OCPPVersion.OCPP1_6,
+      );
+
       const response: OCPP1_6.DataTransferResponse = {
-        status: OCPP1_6.DataTransferResponseStatus.Rejected,
+        status: OCPP1_6.DataTransferResponseStatus[status],
       };
 
       const messageConfirmation = await this.sendCallResultWithMessage(message, response);

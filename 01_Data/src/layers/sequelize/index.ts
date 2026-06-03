@@ -62,6 +62,11 @@ export {
   SalesTariff,
 } from './model/ChargingProfile/index.js';
 export { OCPPMessage } from './model/OCPPMessage.js';
+export {
+  DataTransferData,
+  DataTransferDirection,
+  DataTransferEncoding,
+} from './model/DataTransferData.js';
 export { Reservation } from './model/Reservation.js';
 export { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo.js';
 export { ChangeConfiguration } from './model/ChangeConfiguration.js';
@@ -88,6 +93,7 @@ export { SequelizeCertificateRepository } from './repository/Certificate.js';
 export { SequelizeInstalledCertificateRepository } from './repository/InstalledCertificate.js';
 export { SequelizeChargingProfileRepository } from './repository/ChargingProfile.js';
 export { SequelizeOCPPMessageRepository } from './repository/OCPPMessage.js';
+export { SequelizeDataTransferRepository } from './repository/DataTransfer.js';
 export { SequelizeReservationRepository } from './repository/Reservation.js';
 export { SequelizeChargingStationSecurityInfoRepository } from './repository/ChargingStationSecurityInfo.js';
 export { SequelizeChargingStationSequenceRepository } from './repository/ChargingStationSequence.js';
