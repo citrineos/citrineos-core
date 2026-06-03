@@ -16,6 +16,7 @@ import type {
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
+  IDataTransferRepository,
   IReservationRepository,
   ISecurityEventRepository,
   IServerNetworkProfileRepository,
@@ -48,7 +49,11 @@ import { SequelizeLocalAuthListRepository } from './LocalAuthList.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
 import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
-import { SequelizeOCPPMessageRepository, SequelizeTenantRepository } from '../index.js';
+import {
+  SequelizeDataTransferRepository,
+  SequelizeOCPPMessageRepository,
+  SequelizeTenantRepository,
+} from '../index.js';
 import { SequelizeServerNetworkProfileRepository } from './ServerNetworkProfile.js';
 import { SequelizeInstalledCertificateRepository } from './InstalledCertificate.js';
 import { SequelizeInstallCertificateAttemptRepository } from './InstallCertificateAttempt.js';
@@ -71,6 +76,7 @@ export class RepositoryStore {
   locationRepository: ILocationRepository;
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
+  dataTransferRepository: IDataTransferRepository;
   reservationRepository: IReservationRepository;
   securityEventRepository: ISecurityEventRepository;
   subscriptionRepository: ISubscriptionRepository;
@@ -145,6 +151,11 @@ export class RepositoryStore {
       sequelizeInstance,
     );
     this.ocppMessageRepository = new SequelizeOCPPMessageRepository(
+      config,
+      logger,
+      sequelizeInstance,
+    );
+    this.dataTransferRepository = new SequelizeDataTransferRepository(
       config,
       logger,
       sequelizeInstance,

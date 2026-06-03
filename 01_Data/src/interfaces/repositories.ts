@@ -42,6 +42,7 @@ import {
   ChargingStationSequence,
   CompositeSchedule,
   Connector,
+  DataTransferData,
   DeleteCertificateAttempt,
   EvseType,
   InstallCertificateAttempt,
@@ -492,6 +493,13 @@ export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
     tenantId: number,
     correlationId: string,
   ): Promise<OCPPMessage | undefined>;
+}
+
+export interface IDataTransferRepository extends CrudRepository<DataTransferData> {
+  createDataTransfer(
+    tenantId: number,
+    data: Partial<DataTransferData>,
+  ): Promise<DataTransferData>;
 }
 
 export interface IChargingStationSecurityInfoRepository

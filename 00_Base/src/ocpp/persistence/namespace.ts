@@ -14,6 +14,7 @@ export enum Namespace {
   ChargingStation = 'ChargingStation',
   CompositeSchedule = 'CompositeSchedule',
   Connection = 'Connection',
+  DataTransferData = 'DataTransferData',
   Evse = 'Evse',
   IdTokenType = 'IdToken',
   IdTokenInfoType = 'IdTokenInfo',

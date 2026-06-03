@@ -11,6 +11,7 @@ export * from './ChangeConfiguration.js';
 export * from './ChargingProfile/index.js';
 export * from './ChargingStationSecurityInfo.js';
 export * from './ChargingStationSequence/index.js';
+export * from './DataTransferData.js';
 export * from './DeviceModel/index.js';
 export * from './Location/index.js';
 export * from './MessageInfo/index.js';
