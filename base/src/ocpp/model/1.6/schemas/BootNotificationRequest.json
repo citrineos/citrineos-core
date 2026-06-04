@@ -4,19 +4,19 @@
   "properties": {
     "chargePointVendor": {
       "type": "string",
-      "maxLength": 20
+      "maxLength": 50
     },
     "chargePointModel": {
       "type": "string",
-      "maxLength": 20
+      "maxLength": 50
     },
     "chargePointSerialNumber": {
       "type": "string",
-      "maxLength": 25
+      "maxLength": 50
     },
     "chargeBoxSerialNumber": {
       "type": "string",
-      "maxLength": 25
+      "maxLength": 50
     },
     "firmwareVersion": {
       "type": "string",
@@ -24,19 +24,19 @@
     },
     "iccid": {
       "type": "string",
-      "maxLength": 20
+      "maxLength": 50
     },
     "imsi": {
       "type": "string",
-      "maxLength": 20
+      "maxLength": 50
     },
     "meterType": {
       "type": "string",
-      "maxLength": 25
+      "maxLength": 50
     },
     "meterSerialNumber": {
       "type": "string",
-      "maxLength": 25
+      "maxLength": 50
     }
   },
   "additionalProperties": true,
