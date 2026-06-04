@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: DataTransferData
+  schema: public
+object_relationships:
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: Transaction
+    using:
+      foreign_key_constraint_on: transactionDbId
+  - name: ChargingStation
+    using:
+      manual_configuration:
+        remote_table:
+          name: ChargingStations
+          schema: public
+        column_mapping:
+          stationId: id
+select_permissions:
+  - role: user
+    permission:
+      columns: '*'
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
