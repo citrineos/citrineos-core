@@ -10,7 +10,7 @@ services:
   citrine:
     build:
       context: .
-      dockerfile: ./apps/server/deploy.Dockerfile
+      dockerfile: ./apps/Server/deploy.Dockerfile
     environment:
       APP_NAME: "all"
       APP_ENV: "docker"
@@ -73,7 +73,7 @@ services:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
     volumes:
-      - ./apps/server/data/rabbitmq:/var/lib/rabbitmq
+      - ./apps/Server/data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: rabbitmq-diagnostics -q check_port_connectivity
       interval: 10s
@@ -86,7 +86,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./apps/server/data/postgresql/pgdata:/var/lib/postgresql/data
+      - ./apps/Server/data/postgresql/pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
@@ -109,7 +109,7 @@ services:
       MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
       MINIO_SERVER_URL: http://localhost:9000
     volumes:
-      - ./apps/server/data/minio:/data
+      - ./apps/Server/data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -132,7 +132,7 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
     volumes:
-      - ./apps/server/hasura-metadata:/hasura-metadata
+      - ./apps/Server/hasura-metadata:/hasura-metadata
     ports:
       - 8090:8080
     restart: always

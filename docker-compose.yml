@@ -130,7 +130,7 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
     volumes:
-      - ./apps/server/hasura-metadata:/hasura-metadata
+      - ./apps/Server/hasura-metadata:/hasura-metadata
     ports:
       - 8090:8080
     restart: always
