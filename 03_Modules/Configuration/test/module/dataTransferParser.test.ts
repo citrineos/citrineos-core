@@ -85,6 +85,17 @@ describe('DataTransfer parser', () => {
       });
     });
 
+    it('vidInfoReport is vendor-agnostic — matched by messageId for any vendorId', () => {
+      const wl = lookupParser('wl', 'vidInfoReport');
+      const other = lookupParser('some-other-manufacturer', 'vidInfoReport');
+      expect(wl).toBeDefined();
+      expect(other).toBeDefined();
+      expect(other!.name).toBe('vidInfoReport');
+      expect(
+        other!.parse({ vid: 'AABBCCDDEEFF', connecterId: 1, transactionId: 42 }, null),
+      ).toMatchObject({ vid: 'AABBCCDDEEFF', connectorId: 1, transactionId: 42 });
+    });
+
     it('maps chargefairy telemetry messageIds', () => {
       expect(lookupParser('com.chargefairy', 'soc')!.parse({ soc: 10 }, null)).toEqual({ soc: 10 });
       expect(lookupParser('com.chargefairy', 'power')!.parse({ power: -1024 }, null)).toEqual({

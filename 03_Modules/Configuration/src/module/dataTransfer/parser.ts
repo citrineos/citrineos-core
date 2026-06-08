@@ -98,12 +98,16 @@ function normalizeVid(rawVid?: string | null): string | null {
 }
 
 /**
- * wl `vidInfoReport`. Strict-parses when possible; otherwise tolerantly extracts
- * fields from the raw string — wl emits malformed JSON with an unclosed `vid` quote,
- * e.g. `{"transactionId":5, "connecterId":1, "vid":"1063A350C4E8, "timestamp":"..."}`.
+ * `vidInfoReport` — vendor-agnostic. The manufacturer code (vendorId) varies per
+ * charger, but the messageId + payload shape are identical, so this is matched by
+ * messageId alone (see lookupParser), not a hardcoded vendorId.
+ *
+ * Strict-parses when possible; otherwise tolerantly extracts fields from the raw
+ * string — some firmwares emit malformed JSON with an unclosed `vid` quote, e.g.
+ * `{"transactionId":5, "connecterId":1, "vid":"1063A350C4E8, "timestamp":"..."}`.
  */
-const wlVidInfoReport: VendorParser = {
-  name: 'wl:vidInfoReport',
+const vidInfoReportParser: VendorParser = {
+  name: 'vidInfoReport',
   parse: (parsed, raw) => {
     const src = parsed ?? extractWlFields(raw);
     if (!src) return null;
@@ -146,15 +150,19 @@ const chargeFairyLocation: VendorParser = {
 };
 
 /**
- * Registry keyed by `${vendorId}:${messageId}`. Add a vendor message here to start
- * parsing + Accepting it. Unknown vendor → UnknownVendorId; known vendor, unknown
- * messageId → UnknownMessageId.
+ * Vendor+messageId-specific parsers, keyed by `${vendorId}:${messageId}`. These need
+ * the vendorId to disambiguate generic messageIds (soc/power/Location). vidInfoReport
+ * is intentionally NOT here — it is matched by messageId alone (see lookupParser).
  */
 const REGISTRY: ReadonlyMap<string, VendorParser> = new Map([
-  [wlVidInfoReport.name, wlVidInfoReport],
   [chargeFairySoc.name, chargeFairySoc],
   [chargeFairyPower.name, chargeFairyPower],
   [chargeFairyLocation.name, chargeFairyLocation],
+]);
+
+/** messageIds recognized for ANY vendorId (manufacturer code varies per charger). */
+const VENDOR_AGNOSTIC: ReadonlyMap<string, VendorParser> = new Map([
+  ['vidInfoReport', vidInfoReportParser],
 ]);
 
 const KNOWN_VENDORS: ReadonlySet<string> = new Set(['wl', 'com.chargefairy']);
@@ -164,5 +172,6 @@ export function isKnownVendor(vendorId: string): boolean {
 }
 
 export function lookupParser(vendorId: string, messageId?: string | null): VendorParser | undefined {
-  return REGISTRY.get(`${vendorId}:${messageId ?? ''}`);
+  // Vendor+messageId-specific first, then vendor-agnostic messageId (e.g. vidInfoReport).
+  return REGISTRY.get(`${vendorId}:${messageId ?? ''}`) ?? VENDOR_AGNOSTIC.get(messageId ?? '');
 }
