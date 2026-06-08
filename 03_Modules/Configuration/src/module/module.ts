@@ -39,6 +39,7 @@ import type {
   IMessageInfoRepository,
   IOCPPMessageRepository,
   ITenantRepository,
+  ITransactionEventRepository,
 } from '@citrineos/data';
 import {
   Boot,
@@ -52,6 +53,7 @@ import {
   SequelizeChargingStationSequenceRepository,
   SequelizeDataTransferRepository,
   SequelizeOCPPMessageRepository,
+  SequelizeTransactionEventRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/data';
@@ -139,6 +141,7 @@ export class ConfigurationModule extends AbstractModule {
     idGenerator?: IdGenerator,
     tenantRepository?: ITenantRepository,
     dataTransferRepository?: IDataTransferRepository,
+    transactionEventRepository?: ITransactionEventRepository,
   ) {
     super(config, cache, handler, sender, EventGroup.Configuration, logger, ocppValidator);
 
@@ -160,6 +163,9 @@ export class ConfigurationModule extends AbstractModule {
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._dataTransferRepository =
       dataTransferRepository || new SequelizeDataTransferRepository(config, this._logger);
+    this._transactionEventRepository =
+      transactionEventRepository ||
+      new SequelizeTransactionEventRepository(config, this._logger);
 
     this._tenantRepository =
       tenantRepository || new sequelize.SequelizeTenantRepository(config, this._logger);
@@ -224,6 +230,12 @@ export class ConfigurationModule extends AbstractModule {
 
   get dataTransferRepository(): IDataTransferRepository {
     return this._dataTransferRepository;
+  }
+
+  protected _transactionEventRepository: ITransactionEventRepository;
+
+  get transactionEventRepository(): ITransactionEventRepository {
+    return this._transactionEventRepository;
   }
 
   /**
@@ -796,14 +808,12 @@ export class ConfigurationModule extends AbstractModule {
     let parserName: string | null = null;
     let vid: string | null = null;
     let dataParsed: unknown = parsed;
-    // TODO(KAB-24 phase 2): resolve transactionDbId from parsed transactionId + stationId.
-    const transactionDbId: number | null = null;
+    let transactionDbId: number | null = null;
 
-    if (!isKnownVendor(vendorId)) {
-      status = 'UnknownVendorId';
-    } else if (!parser) {
-      status = 'UnknownMessageId';
-    } else {
+    // Parser-first: `vidInfoReport` is recognized by messageId for ANY vendorId
+    // (the manufacturer code varies per charger; don't gate on a hardcoded
+    // allowlist). Vendor+messageId-specific parsers (e.g. chargefairy) still match.
+    if (parser) {
       // Vendor parser may recover fields from `raw` even when strict decode failed
       // (e.g. wl's malformed JSON). Reject only if nothing usable could be extracted.
       const out = parser.parse(parsed, raw);
@@ -814,7 +824,26 @@ export class ConfigurationModule extends AbstractModule {
         vid = out.vid ?? null;
         dataParsed = { ...(parsed ?? {}), _parsed: out };
         status = 'Accepted';
+
+        // Resolve the owning transaction from the charger-local transactionId
+        // + stationId (best-effort; null when absent or no match). Never throws.
+        if (out.transactionId != null) {
+          try {
+            const tx = await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+              tenantId,
+              stationId,
+              String(out.transactionId),
+            );
+            transactionDbId = tx?.id ?? null;
+          } catch (error) {
+            this._logger.warn('DataTransfer: failed to resolve transactionDbId:', error);
+          }
+        }
       }
+    } else if (!isKnownVendor(vendorId)) {
+      status = 'UnknownVendorId';
+    } else {
+      status = 'UnknownMessageId';
     }
 
     try {
