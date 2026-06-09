@@ -25,7 +25,12 @@ export const AuthorizationStatusEnumSchema = z.enum([
   'Unknown',
 ]);
 
-export const AuthorizationWhitelistEnumSchema = z.enum(['Never', 'Allowed', 'AllowedOffline']);
+export const AuthorizationWhitelistEnumSchema = z.enum([
+  'Never',
+  'Allowed',
+  'AllowedOffline',
+  'Always',
+]);
 
 export const CertificateUseEnumSchema = z.enum([
   'V2GRootCertificate',
