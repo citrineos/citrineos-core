@@ -7,45 +7,43 @@ import { Buffer } from 'node:buffer';
 export interface IFileStorage {
   /**
    *
-   * @param fileName Name of the file
+   * @param fileId  Relative storage key (e.g. `certs/leaf.pem`).
    * @param content File content
-   * @param filePath The path of the file, if not in root. Used as the bucket name for S3.
    *
    * @returns The ID of the file
    */
-  saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string>;
+  saveFile(fileId: string, content: Buffer): Promise<string>;
 
   /**
    *
-   * @param id The ID of the file
-   * @param filePath The path of the file, if not included in the ID. Used as the bucket name for S3.
+   * @param fileId Relative storage key
    *
    * @returns The file content
    */
-  getFile(id: string, filePath?: string): Promise<string | undefined>;
+  getFile(fileId: string): Promise<string | undefined>;
 
   /**
-   * Checks whether a file or directory exists at the given path.
+   * Check whether a file or directory exists at `fileId`.
    *
-   * @param path The file or directory path. For object storage (S3, GCP), treated as an object key or prefix.
+   * @param fileId The file or directory path. For object storage (S3, GCP), treated as an object key or prefix.
    */
-  exists(path: string): Promise<boolean>;
+  exists(fileId: string): Promise<boolean>;
 
   /**
-   * Creates a directory at the given path.
+   * Create a directory at `fileId`.
    * For object storage backends (S3, GCP) this may be a no-op since directories are implicit.
    *
-   * @param path The directory path to create
-   * @param options Optional options, e.g. { recursive: true }
+   * @param fileId  Directory path (local) or prefix (bucket).
+   * @param options Optional options, e.g. `{ recursive: true }`.
    */
-  createDirectory(path: string, options?: { recursive?: boolean }): Promise<void>;
+  createDirectory(fileId: string, options?: { recursive?: boolean }): Promise<void>;
 
   /**
-   * Removes a file or directory at the given path.
+   * Remove the file or directory at `fileId`.
    * For object storage backends (S3, GCP), recursive removal deletes all objects sharing the path prefix.
    *
-   * @param path The path to remove
-   * @param options Optional options, e.g. { recursive: true, force: true }
+   * @param fileId  Relative storage key or prefix.
+   * @param options Optional options, e.g. `{ recursive: true, force: true }`.
    */
-  deleteFile(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
+  deleteFile(fileId: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
 }

@@ -84,14 +84,6 @@ describe('GcpCloudStorage', () => {
       });
     });
 
-    it('should use custom bucket if filePath is provided', async () => {
-      mockFile.save.mockResolvedValue(undefined);
-
-      await gcpStorage.saveFile(fileName, content, 'custom-bucket');
-
-      expect(mockStorageInstance.bucket).toHaveBeenCalledWith('custom-bucket');
-    });
-
     it('should create bucket and retry if bucket not found', async () => {
       const notFoundError = { code: 404, message: 'Not Found' };
       mockFile.save.mockRejectedValueOnce(notFoundError).mockResolvedValueOnce(undefined);
@@ -148,15 +140,6 @@ describe('GcpCloudStorage', () => {
 
       expect(result).toBeUndefined();
       expect(mockFile.download).not.toHaveBeenCalled();
-    });
-
-    it('should use custom bucket if filePath is provided', async () => {
-      mockFile.exists.mockResolvedValue([true]);
-      mockFile.download.mockResolvedValue([Buffer.from(fileContent)]);
-
-      await gcpStorage.getFile(fileId, 'custom-bucket');
-
-      expect(mockStorageInstance.bucket).toHaveBeenCalledWith('custom-bucket');
     });
 
     it('should return undefined if 404 error is thrown', async () => {

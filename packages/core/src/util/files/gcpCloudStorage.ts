@@ -36,27 +36,25 @@ export class GcpCloudStorage implements ConfigStore {
   /**
    * Save a raw file buffer into GCS.
    *
-   * @param fileName - Object key / blob name.
+   * @param fileId - Object key / blob name.
    * @param content  - File data.
-   * @param filePath - Optional bucket name, falls back to configBucketName.
    */
-  async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const bucketName = filePath ? filePath : this.configBucketName;
-    const bucket = this.getBucket(bucketName);
-    const file = bucket.file(fileName);
+  async saveFile(fileId: string, content: Buffer): Promise<string> {
+    const bucket = this.getBucket(this.configBucketName);
+    const file = bucket.file(fileId);
 
     try {
       await file.save(content, {
         contentType: 'application/octet-stream',
         resumable: false,
       });
-      return fileName;
+      return fileId;
     } catch (error: any) {
       if (this.isNotFoundError(error)) {
-        this._logger.warn(`Bucket "${bucketName}" not found. Creating it...`);
-        await this.createBucket(bucketName);
-        this._logger.info(`Bucket "${bucketName}" created. Retrying file save...`);
-        return this.saveFile(fileName, content, filePath);
+        this._logger.warn(`Bucket "${this.configBucketName}" not found. Creating it...`);
+        await this.createBucket(this.configBucketName);
+        this._logger.info(`Bucket "${this.configBucketName}" created. Retrying file save...`);
+        return this.saveFile(fileId, content);
       }
 
       this._logger.error('Error saving file to GCP Cloud Storage:', error);
@@ -67,13 +65,11 @@ export class GcpCloudStorage implements ConfigStore {
   /**
    * Read a file from GCS and return its contents as UTF-8 string.
    *
-   * @param id       - Object key / blob name.
-   * @param filePath - Optional bucket name, falls back to configBucketName.
+   * @param fileId - Object key / blob name.
    */
-  async getFile(id: string, filePath?: string): Promise<string | undefined> {
-    const bucketName = filePath ? filePath : this.configBucketName;
-    const bucket = this.getBucket(bucketName);
-    const file = bucket.file(id);
+  async getFile(fileId: string): Promise<string | undefined> {
+    const bucket = this.getBucket(this.configBucketName);
+    const file = bucket.file(fileId);
 
     try {
       const [exists] = await file.exists();
@@ -91,19 +87,45 @@ export class GcpCloudStorage implements ConfigStore {
     }
   }
 
-  async exists(_path: string): Promise<boolean> {
-    throw new Error('exists is not implemented for GCP Cloud Storage');
+  async exists(fileId: string): Promise<boolean> {
+    const bucket = this.getBucket(this.configBucketName);
+    try {
+      const [exists] = await bucket.file(fileId).exists();
+      return exists;
+    } catch (error: any) {
+      if (this.isNotFoundError(error)) {
+        return false;
+      }
+      this._logger.error(`Error checking existence of "${fileId}" in GCP Cloud Storage:`, error);
+      throw error;
+    }
   }
 
-  async createDirectory(_path: string, _options?: { recursive?: boolean }): Promise<void> {
-    throw new Error('createDirectory is not implemented for GCP Cloud Storage');
+  // GCP Cloud Storage has no concept of directories;
+  // This is intentionally a no-op to satisfy the IFileStorage contract.
+  async createDirectory(_fileId: string, _options?: { recursive?: boolean }): Promise<void> {
+    return;
   }
 
   async deleteFile(
-    _path: string,
-    _options?: { recursive?: boolean; force?: boolean },
+    fileId: string,
+    options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
-    throw new Error('deleteFile is not implemented for GCP Cloud Storage');
+    const bucket = this.getBucket(this.configBucketName);
+    try {
+      if (options?.recursive) {
+        const [files] = await bucket.getFiles({ prefix: fileId });
+        await Promise.all(files.map((f) => f.delete()));
+      } else {
+        await bucket.file(fileId).delete();
+      }
+    } catch (error: any) {
+      if (options?.force && this.isNotFoundError(error)) {
+        return;
+      }
+      this._logger.error(`Error deleting "${fileId}" from GCP Cloud Storage:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -111,7 +133,7 @@ export class GcpCloudStorage implements ConfigStore {
    */
   async fetchConfig(): Promise<SystemConfig | null> {
     try {
-      const configString = await this.getFile(this.configFileName, this.configBucketName);
+      const configString = await this.getFile(this.configFileName);
       if (!configString) return null;
       return JSON.parse(configString) as SystemConfig;
     } catch (error: any) {
@@ -128,11 +150,7 @@ export class GcpCloudStorage implements ConfigStore {
    * Serialize and save SystemConfig JSON to GCS.
    */
   async saveConfig(config: SystemConfig): Promise<void> {
-    await this.saveFile(
-      this.configFileName,
-      Buffer.from(JSON.stringify(config, null, 2)),
-      this.configBucketName,
-    );
+    await this.saveFile(this.configFileName, Buffer.from(JSON.stringify(config, null, 2)));
     this._logger.info('Config saved to GCP Cloud Storage.');
   }
 

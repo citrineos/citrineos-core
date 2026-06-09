@@ -53,51 +53,31 @@ export class S3Storage implements ConfigStore {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
-  async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const bucketName = filePath ? filePath : this.defaultBucketName;
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: fileName,
-      Body: content,
-      ContentType: 'application/octet-stream',
-    });
-    try {
-      const result = await this.s3Client.send(command);
 
-      if (result.$metadata.httpStatusCode !== 200) {
-        throw new Error(`Failed to upload file ${fileName}: ${result.$metadata.httpStatusCode}`);
-      } else {
-        return fileName;
-      }
+  async saveFile(fileId: string, content: Buffer): Promise<string> {
+    try {
+      await this._putObject(this.defaultBucketName, fileId, content);
+      return fileId;
     } catch (error: any) {
       if (error.name === 'NoSuchBucket' || error.$metadata?.httpStatusCode === 404) {
-        this._logger.warn(`Bucket "${bucketName}" not found. Creating it...`);
-        await this.createBucket(bucketName);
-        this._logger.info(`Bucket "${bucketName}" created. Retrying config save...`);
-        return await this.saveFile(fileName, content, filePath);
-      } else {
-        this._logger.error('Error saving config to S3:', error);
-        throw error;
+        this._logger.warn(`Bucket "${this.defaultBucketName}" not found. Creating it...`);
+        await this.createBucket(this.defaultBucketName);
+        this._logger.info(`Bucket "${this.defaultBucketName}" created. Retrying file save...`);
+        return this.saveFile(fileId, content);
       }
+      this._logger.error('Error saving file to S3:', error);
+      throw error;
     }
   }
 
-  async getFile(id: string, filePath?: string): Promise<string | undefined> {
-    const command = new GetObjectCommand({
-      Bucket: filePath ? filePath : this.defaultBucketName,
-      Key: id,
-    });
-    const { Body } = await this.s3Client.send(command);
-
-    if (!Body) return;
-
-    return await S3Storage.streamToString(Body as Readable);
+  async getFile(fileId: string): Promise<string | undefined> {
+    return this._getObject(this.defaultBucketName, fileId);
   }
 
-  async exists(path: string): Promise<boolean> {
+  async exists(fileId: string): Promise<boolean> {
     const command = new HeadObjectCommand({
       Bucket: this.defaultBucketName,
-      Key: path,
+      Key: fileId,
     });
     try {
       await this.s3Client.send(command);
@@ -110,7 +90,7 @@ export class S3Storage implements ConfigStore {
       ) {
         return false;
       }
-      this._logger.error(`Error checking existence of "${path}" in S3:`, error);
+      this._logger.error(`Error checking existence of "${fileId}" in S3:`, error);
       throw error;
     }
   }
@@ -118,22 +98,22 @@ export class S3Storage implements ConfigStore {
   // S3 has no concept of directories; object keys with "/" separators are
   // implicit, so a key can be written without first creating its prefix.
   // This is intentionally a no-op to satisfy the IFileStorage contract.
-  async createDirectory(_path: string, _options?: { recursive?: boolean }): Promise<void> {
+  async createDirectory(_fileId: string, _options?: { recursive?: boolean }): Promise<void> {
     return;
   }
 
   async deleteFile(
-    path: string,
+    fileId: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
     try {
       if (options?.recursive) {
-        await this.deletePrefix(path);
+        await this.deletePrefix(fileId);
       } else {
         await this.s3Client.send(
           new DeleteObjectCommand({
             Bucket: this.defaultBucketName,
-            Key: path,
+            Key: fileId,
           }),
         );
       }
@@ -145,14 +125,15 @@ export class S3Storage implements ConfigStore {
       if (notFound && options?.force) {
         return;
       }
-      this._logger.error(`Error deleting "${path}" from S3:`, error);
+      this._logger.error(`Error deleting "${fileId}" from S3:`, error);
       throw error;
     }
   }
 
   async fetchConfig(): Promise<SystemConfig | null> {
+    const bucket = this.configBucketName ?? this.defaultBucketName;
     try {
-      const configString = await this.getFile(this.configFileName, this.configBucketName);
+      const configString = await this._getObject(bucket, this.configFileName);
       if (!configString) return null;
       return JSON.parse(configString) as SystemConfig;
     } catch (error: any) {
@@ -166,12 +147,44 @@ export class S3Storage implements ConfigStore {
   }
 
   async saveConfig(config: SystemConfig): Promise<void> {
-    await this.saveFile(
-      this.configFileName,
-      Buffer.from(JSON.stringify(config, null, 2)),
-      this.configBucketName,
+    const bucket = this.configBucketName ?? this.defaultBucketName;
+    try {
+      await this._putObject(
+        bucket,
+        this.configFileName,
+        Buffer.from(JSON.stringify(config, null, 2)),
+      );
+      this._logger.info('Config saved to S3.');
+    } catch (error: any) {
+      if (error.name === 'NoSuchBucket' || error.$metadata?.httpStatusCode === 404) {
+        this._logger.warn(`Bucket "${bucket}" not found. Creating it...`);
+        await this.createBucket(bucket);
+        this._logger.info(`Bucket "${bucket}" created. Retrying config save...`);
+        return this.saveConfig(config);
+      }
+      this._logger.error('Error saving config to S3:', error);
+      throw error;
+    }
+  }
+
+  private async _getObject(bucket: string, key: string): Promise<string | undefined> {
+    const { Body } = await this.s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    if (!Body) return undefined;
+    return S3Storage.streamToString(Body as Readable);
+  }
+
+  private async _putObject(bucket: string, key: string, content: Buffer): Promise<void> {
+    const result = await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: content,
+        ContentType: 'application/octet-stream',
+      }),
     );
-    this._logger.info('Config saved to S3.');
+    if (result.$metadata.httpStatusCode !== 200) {
+      throw new Error(`Failed to upload file ${key}: ${result.$metadata.httpStatusCode}`);
+    }
   }
 
   private async createBucket(bucket: string): Promise<void> {

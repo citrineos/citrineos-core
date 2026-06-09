@@ -256,9 +256,10 @@ export class InstallCertificateHelperService {
       } else if (existingCertificate && !existingCertificate.certificateFileId) {
         // set file where previously undefined
         existingCertificate.certificateFileId = await this.fileStorage.saveFile(
-          `Existing_Key_${serialNumber}.pem`,
+          filePath
+            ? `${filePath}/Existing_Key_${serialNumber}.pem`
+            : `Existing_Key_${serialNumber}.pem`,
           Buffer.from(certificate),
-          filePath,
         );
         await Certificate.create({
           ...existingCertificate,
@@ -350,15 +351,15 @@ export class InstallCertificateHelperService {
   ): Promise<Certificate> {
     const certificateHash = this.getCertificateHash(certPem);
     // Store certificate and private key in file storage
+    const keyFileName = `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`;
+    const certFileName = `${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`;
     certificateEntity.privateKeyFileId = await this.fileStorage.saveFile(
-      `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
+      filePath ? `${filePath}/${keyFileName}` : keyFileName,
       Buffer.from(keyPem),
-      filePath,
     );
     certificateEntity.certificateFileId = await this.fileStorage.saveFile(
-      `${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`,
+      filePath ? `${filePath}/${certFileName}` : certFileName,
       Buffer.from(certPem),
-      filePath,
     );
     certificateEntity.certificateFileHash = certificateHash;
     // Store certificate in db

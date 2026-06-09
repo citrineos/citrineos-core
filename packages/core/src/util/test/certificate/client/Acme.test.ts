@@ -13,6 +13,18 @@ import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'v
 
 vi.mock('../../../certificate/CertificateUtil');
 
+const mockLocalStorageInstance = vi.hoisted(() => ({
+  exists: vi.fn().mockResolvedValue(false),
+  createDirectory: vi.fn().mockResolvedValue(undefined),
+  saveFile: vi.fn().mockResolvedValue(undefined),
+  deleteFile: vi.fn().mockResolvedValue(undefined),
+  getFile: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/util/files/localStorage.js', () => ({
+  LocalStorage: vi.fn().mockImplementation(() => mockLocalStorageInstance),
+}));
+
 describe('ACME', () => {
   const mockTlsCertificateChain = faker.lorem.word();
   const mockMtlsCertificateAuthorityKey = faker.lorem.word();
@@ -102,7 +114,7 @@ describe('ACME', () => {
       const mockKeyAuth = faker.lorem.word();
       const mockAuthz = { identifier: { value: faker.internet.domainName() } };
 
-      (mockFileStorage.exists as Mock).mockResolvedValueOnce(false);
+      mockLocalStorageInstance.exists.mockResolvedValueOnce(false);
       (mockClient as any).auto = vi.fn().mockImplementation(async (options: any) => {
         await options.challengeCreateFn(mockAuthz, { token: mockToken }, mockKeyAuth);
         await options.challengeRemoveFn({}, {}, '');
@@ -113,13 +125,15 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
-      expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, { recursive: true });
-      expect(mockFileStorage.saveFile).toHaveBeenCalledWith(
+      expect(mockLocalStorageInstance.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockLocalStorageInstance.createDirectory).toHaveBeenCalledWith(folderPath, {
+        recursive: true,
+      });
+      expect(mockLocalStorageInstance.saveFile).toHaveBeenCalledWith(
         `${folderPath}/${mockToken}`,
         Buffer.from(mockKeyAuth),
       );
-      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, {
+      expect(mockLocalStorageInstance.deleteFile).toHaveBeenCalledWith(folderPath, {
         recursive: true,
         force: true,
       });
@@ -130,7 +144,7 @@ describe('ACME', () => {
       const mockToken = faker.lorem.word();
       const mockKeyAuth = faker.lorem.word();
 
-      (mockFileStorage.exists as Mock).mockResolvedValueOnce(true);
+      mockLocalStorageInstance.exists.mockResolvedValueOnce(true);
       (mockClient as any).auto = vi.fn().mockImplementation(async (options: any) => {
         await options.challengeCreateFn(
           { identifier: { value: faker.internet.domainName() } },
@@ -145,9 +159,9 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
-      expect(mockFileStorage.createDirectory).not.toHaveBeenCalled();
-      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, {
+      expect(mockLocalStorageInstance.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockLocalStorageInstance.createDirectory).not.toHaveBeenCalled();
+      expect(mockLocalStorageInstance.deleteFile).toHaveBeenCalledWith(folderPath, {
         recursive: true,
         force: true,
       });

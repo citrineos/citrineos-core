@@ -27,56 +27,49 @@ export class LocalStorage implements ConfigStore {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const relativePath = path.join(filePath ? filePath : this.defaultFilePath, fileName);
-    // path.resolve so an absolute filePath/defaultFilePath is honored as-is;
-    // path.join would treat it as relative and re-anchor under cwd.
-    const absoluteFilePath = path.resolve(process.cwd(), relativePath);
-    this._logger.debug(`Saving file to ${absoluteFilePath}`);
-    fs.mkdirSync(path.dirname(absoluteFilePath), { recursive: true });
-    fs.writeFileSync(absoluteFilePath, content, 'utf-8');
-    return filePath ? relativePath : fileName;
+  async saveFile(fileId: string, content: Buffer): Promise<string> {
+    const absolutePath = this._resolvePath(fileId);
+    this._logger.debug(`Saving file to ${absolutePath}`);
+    fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+    fs.writeFileSync(absolutePath, content, 'utf-8');
+    return fileId;
   }
 
-  async getFile(id: string, filePath?: string): Promise<string | undefined> {
-    const absoluteFilePath = path.resolve(
-      process.cwd(),
-      filePath ? filePath : this.defaultFilePath,
-      id,
-    );
-    this._logger.debug(`Getting file from ${absoluteFilePath}`);
-    if (!fs.existsSync(absoluteFilePath)) {
+  async getFile(fileId: string): Promise<string | undefined> {
+    const absolutePath = this._resolvePath(fileId);
+    this._logger.debug(`Getting file from ${absolutePath}`);
+    if (!fs.existsSync(absolutePath)) {
       return;
     }
-    return fs.readFileSync(absoluteFilePath, 'utf-8');
+    return fs.readFileSync(absolutePath, 'utf-8');
   }
 
-  async exists(filePath: string): Promise<boolean> {
-    const absoluteFilePath = path.resolve(process.cwd(), this.defaultFilePath, filePath);
-    this._logger.debug(`Checking existence of ${absoluteFilePath}`);
-    return fs.existsSync(absoluteFilePath);
+  async exists(fileId: string): Promise<boolean> {
+    const absolutePath = this._resolvePath(fileId);
+    this._logger.debug(`Checking existence of ${absolutePath}`);
+    return fs.existsSync(absolutePath);
   }
 
-  async createDirectory(dirPath: string, options?: { recursive?: boolean }): Promise<void> {
-    const absoluteDirPath = path.resolve(process.cwd(), this.defaultFilePath, dirPath);
-    this._logger.debug(`Creating directory ${absoluteDirPath}`);
-    fs.mkdirSync(absoluteDirPath, options);
+  async createDirectory(fileId: string, options?: { recursive?: boolean }): Promise<void> {
+    const absolutePath = this._resolvePath(fileId);
+    this._logger.debug(`Creating directory ${absolutePath}`);
+    fs.mkdirSync(absolutePath, options);
   }
 
   async deleteFile(
-    target: string,
+    fileId: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
-    const absoluteFilePath = path.resolve(process.cwd(), this.defaultFilePath, target);
-    this._logger.debug(`Deleting ${absoluteFilePath}`);
-    fs.rmSync(absoluteFilePath, options);
+    const absolutePath = this._resolvePath(fileId);
+    this._logger.debug(`Deleting ${absolutePath}`);
+    fs.rmSync(absolutePath, options);
   }
 
   async fetchConfig(): Promise<SystemConfig | null> {
     try {
-      const configString = await this.getFile(this.configFileName, this.configDir);
-      if (!configString) return null;
-      return JSON.parse(configString) as SystemConfig;
+      const filePath = this._configFilePath();
+      if (!fs.existsSync(filePath)) return null;
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as SystemConfig;
     } catch (error) {
       this._logger.error('Error fetching config from local storage:', error);
       return null;
@@ -85,14 +78,23 @@ export class LocalStorage implements ConfigStore {
 
   async saveConfig(config: SystemConfig): Promise<void> {
     try {
-      await this.saveFile(
-        this.configFileName,
-        Buffer.from(JSON.stringify(config, null, 2)),
-        this.configDir,
-      );
+      const filePath = this._configFilePath();
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify(config, null, 2), 'utf-8');
       this._logger.info('Config saved locally.');
     } catch (error) {
       this._logger.error('Error saving config to local storage:', error);
     }
+  }
+
+  private _configFilePath(): string {
+    const dir = this.configDir
+      ? path.resolve(this.configDir)
+      : path.resolve(process.cwd(), this.defaultFilePath);
+    return path.join(dir, this.configFileName);
+  }
+
+  private _resolvePath(fileId: string): string {
+    return path.resolve(process.cwd(), this.defaultFilePath, fileId);
   }
 }

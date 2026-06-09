@@ -25,16 +25,15 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
 
   private _client: Client | undefined;
   private _logger: Logger<ILogObj>;
-  private readonly _fileStorage: IFileStorage;
+  private readonly _localFileStorage: LocalStorage;
 
   private constructor(
     config: SystemConfig,
-    fileStorage: IFileStorage,
     securityCertChainKeyMap: Map<string, [string, string]>,
     client: Client,
     logger?: Logger<ILogObj>,
   ) {
-    this._fileStorage = fileStorage;
+    this._localFileStorage = new LocalStorage('', '');
     this._securityCertChainKeyMap = securityCertChainKeyMap;
     this._client = client;
     this._logger = logger
@@ -112,7 +111,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       });
     }
 
-    return new Acme(config, fileStorage, securityCertChainKeyMap, resolvedClient, logger);
+    return new Acme(config, securityCertChainKeyMap, resolvedClient, logger);
   }
 
   /**
@@ -150,8 +149,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       challengeCreateFn: async (authz, challenge, keyAuthorization) => {
         this._logger.debug('Triggered challengeCreateFn()');
         const filePath = `${folderPath}/${challenge.token}`;
-        if (!(await this._fileStorage.exists(folderPath))) {
-          await this._fileStorage.createDirectory(folderPath, { recursive: true });
+        if (!(await this._localFileStorage.exists(folderPath))) {
+          await this._localFileStorage.createDirectory(folderPath, { recursive: true });
           this._logger.debug(`Directory created: ${folderPath}`);
         } else {
           this._logger.debug(`Directory already exists: ${folderPath}`);
@@ -159,11 +158,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         this._logger.debug(
           `Creating challenge response ${keyAuthorization} for ${authz.identifier.value} at path: ${filePath}`,
         );
-        await this._fileStorage.saveFile(filePath, Buffer.from(keyAuthorization));
+        await this._localFileStorage.saveFile(filePath, Buffer.from(keyAuthorization));
       },
       challengeRemoveFn: async (_authz, _challenge, _keyAuthorization) => {
         this._logger.debug(`Triggered challengeRemoveFn(). Would remove "${folderPath}`);
-        await this._fileStorage.deleteFile(folderPath, { recursive: true, force: true });
+        await this._localFileStorage.deleteFile(folderPath, { recursive: true, force: true });
       },
     });
 
