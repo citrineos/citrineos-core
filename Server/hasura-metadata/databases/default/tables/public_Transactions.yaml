@@ -55,6 +55,13 @@ array_relationships:
         table:
           name: ChargingProfiles
           schema: public
+  - name: DataTransferData
+    using:
+      foreign_key_constraint_on:
+        column: transactionDbId
+        table:
+          name: DataTransferData
+          schema: public
   - name: MeterValues
     using:
       foreign_key_constraint_on:
