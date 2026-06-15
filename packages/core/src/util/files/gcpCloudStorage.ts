@@ -43,6 +43,7 @@ export class GcpCloudStorage implements ConfigStore {
    */
   async saveFile(key: string, content: Buffer, bucket?: string): Promise<string> {
     const bucketName = bucket ?? this.configBucketName;
+    this._logger.debug(`Saving file to ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
     try {
@@ -72,6 +73,7 @@ export class GcpCloudStorage implements ConfigStore {
    */
   async getFile(key: string, bucket?: string): Promise<string | undefined> {
     const bucketName = bucket ?? this.configBucketName;
+    this._logger.debug(`Getting file from ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
     try {
@@ -99,6 +101,7 @@ export class GcpCloudStorage implements ConfigStore {
    */
   async exists(key: string, bucket?: string): Promise<boolean> {
     const bucketName = bucket ?? this.configBucketName;
+    this._logger.debug(`Checking existence of ${bucketName}/${key}`);
     try {
       const [exists] = await this.getBucket(bucketName).file(key).exists();
       return exists;
@@ -122,6 +125,7 @@ export class GcpCloudStorage implements ConfigStore {
     _bucket?: string,
     _options?: { recursive?: boolean },
   ): Promise<void> {
+    this._logger.debug(`Creating directory ${_bucket ?? this.configBucketName}/${_key}`);
     return;
   }
 
@@ -137,6 +141,7 @@ export class GcpCloudStorage implements ConfigStore {
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
     const bucketName = bucket ?? this.configBucketName;
+    this._logger.debug(`Deleting ${bucketName}/${key}`);
     try {
       if (options?.recursive) {
         await this.deletePrefix(bucketName, key);

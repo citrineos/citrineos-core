@@ -64,6 +64,7 @@ export class S3Storage implements ConfigStore {
    */
   async saveFile(key: string, content: Buffer, bucket?: string): Promise<string> {
     const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Saving file to ${bucketName}/${key}`);
     const command = new PutObjectCommand({
       Bucket: bucketName,
       Key: key,
@@ -96,8 +97,10 @@ export class S3Storage implements ConfigStore {
    * @returns Object content, or undefined if the key does not exist.
    */
   async getFile(key: string, bucket?: string): Promise<string | undefined> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Getting file from ${bucketName}/${key}`);
     const command = new GetObjectCommand({
-      Bucket: bucket ?? this.defaultBucketName,
+      Bucket: bucketName,
       Key: key,
     });
     try {
@@ -120,8 +123,10 @@ export class S3Storage implements ConfigStore {
    * @returns True if the object exists.
    */
   async exists(key: string, bucket?: string): Promise<boolean> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Checking existence of ${bucketName}/${key}`);
     const command = new HeadObjectCommand({
-      Bucket: bucket ?? this.defaultBucketName,
+      Bucket: bucketName,
       Key: key,
     });
     try {
@@ -151,6 +156,7 @@ export class S3Storage implements ConfigStore {
     _bucket?: string,
     _options?: { recursive?: boolean },
   ): Promise<void> {
+    this._logger.debug(`Creating directory ${_bucket ?? this.defaultBucketName}/${_key}`);
     return;
   }
 
@@ -166,6 +172,7 @@ export class S3Storage implements ConfigStore {
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
     const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Deleting ${bucketName}/${key}`);
     try {
       if (options?.recursive) {
         await this.deletePrefix(bucketName, key);

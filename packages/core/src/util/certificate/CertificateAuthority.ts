@@ -41,8 +41,6 @@ export class CertificateAuthorityService {
   private readonly _v2gClient: IV2GCertificateAuthorityClient;
   private readonly _chargingStationClientPromise: Promise<IChargingStationCertificateAuthorityClient>;
   private readonly _logger: Logger<ILogObj>;
-  private readonly _cache: ICache;
-  private readonly _config: SystemConfig;
   private readonly _fileStorage: IFileStorage;
 
   constructor(
@@ -53,8 +51,6 @@ export class CertificateAuthorityService {
     v2gClient?: IV2GCertificateAuthorityClient,
     fileStorage?: IFileStorage,
   ) {
-    this._config = config;
-    this._cache = cache;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

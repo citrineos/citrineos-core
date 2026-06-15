@@ -115,6 +115,7 @@ export class CertificatesModule extends AbstractModule {
    * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
    * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
    *
+   * @param {OCPPValidator} [ocppValidator] - Validate OCPP request and response
    * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
    * If no `deviceModelRepository` is provided, a default {@link sequelize.deviceModelRepository} instance is created and used.
    *
@@ -124,15 +125,15 @@ export class CertificatesModule extends AbstractModule {
    *
    * @param {IInstalledCertificateRepository} [installedCertificateRepository] - An optional parameter of type {@link IInstalledCertificateRepository} which
    * represents a repository for accessing and manipulating installed certificate data.
-   * If no `installedCertificateRepository` is provided, a default {@link sequelize.InstalledCertificateRepository} instance is created and used.
+   * If no `installedCertificateRepository` is provided, a default {@link sequelize.installedCertificateRepository} instance is created and used.
    *
    * @param {IInstallCertificateAttemptRepository} [installCertificateAttemptRepository] - An optional parameter of type {@link IInstallCertificateAttemptRepository} which
    * represents a repository for accessing and manipulating installed certificate attempt data.
-   * If no `installCertificateAttemptRepository` is provided, a default {@link sequelize.InstallCertificateAttemptRepository} instance is created and used.
+   * If no `installCertificateAttemptRepository` is provided, a default {@link sequelize.installCertificateAttemptRepository} instance is created and used.
    *
    * @param {IDeleteCertificateAttemptRepository} [deleteCertificateAttemptRepository] - An optional parameter of type {@link IDeleteCertificateAttemptRepository} which
    * represents a repository for accessing and manipulating deleted certificate attempt data.
-   * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.DeleteCertificateAttemptRepository} instance is created and used.
+   * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.deleteCertificateAttemptRepository} instance is created and used.
    *
    * @param {IOCPPMessageRepository} [ocppMessageRepository] - repository to check ocpp messages
    *
@@ -180,7 +181,15 @@ export class CertificatesModule extends AbstractModule {
     this._ocppMessageRepository =
       ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
     this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, cache, this._logger);
+      certificateAuthorityService ||
+      new CertificateAuthorityService(
+        config,
+        cache,
+        this._logger,
+        undefined,
+        undefined,
+        fileStorage,
+      );
 
     this._installCertificateHelperService =
       installCertificateHelperService ||
