@@ -26,7 +26,7 @@ export class S3Storage implements ConfigStore {
   constructor(
     config: BootstrapConfig['fileAccess']['s3'],
     configFileName: string,
-    configDir?: string,
+    configBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
     this.s3Client = new S3Client({
@@ -48,7 +48,7 @@ export class S3Storage implements ConfigStore {
     });
     this.defaultBucketName = config!.defaultBucketName!;
     this.configFileName = configFileName!;
-    this.configBucketName = configDir;
+    this.configBucketName = configBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

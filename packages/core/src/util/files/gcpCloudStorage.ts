@@ -16,7 +16,7 @@ export class GcpCloudStorage implements ConfigStore {
   constructor(
     config: BootstrapConfig['fileAccess']['gcp'],
     configFileName: string,
-    configDir?: string,
+    configBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
     if (!config) {
@@ -26,7 +26,7 @@ export class GcpCloudStorage implements ConfigStore {
       projectId: config.projectId,
       credentials: config.credentials,
     });
-    this.configBucketName = configDir || 'default';
+    this.configBucketName = configBucket || 'default';
     this.configFileName = configFileName;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

@@ -11,17 +11,17 @@ export class LocalStorage implements ConfigStore {
   protected readonly _logger: Logger<ILogObj>;
   private defaultRoot: string;
   private configFileName: string;
-  private configDir: string | undefined;
+  private configBucket: string | undefined;
 
   constructor(
     defaultRoot: string,
     configFileName: string,
-    configDir?: string,
+    configBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
     this.defaultRoot = defaultRoot;
     this.configFileName = configFileName;
-    this.configDir = configDir;
+    this.configBucket = configBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -106,7 +106,7 @@ export class LocalStorage implements ConfigStore {
 
   async fetchConfig(): Promise<SystemConfig | null> {
     try {
-      const configString = await this.getFile(this.configFileName, this.configDir);
+      const configString = await this.getFile(this.configFileName, this.configBucket);
       if (!configString) return null;
       return JSON.parse(configString) as SystemConfig;
     } catch (error) {
@@ -120,7 +120,7 @@ export class LocalStorage implements ConfigStore {
       await this.saveFile(
         this.configFileName,
         Buffer.from(JSON.stringify(config, null, 2)),
-        this.configDir,
+        this.configBucket,
       );
       this._logger.info('Config saved locally.');
     } catch (error) {
