@@ -69,8 +69,7 @@ services:
       # Bootstrap Configuration Environment Variables
       BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
       BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
-      # CITRINEOS_CONFIG_DIR: '/custom/config/path'  # Optional - uncomment if needed
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
+      # BOOTSTRAP_CITRINEOS_CONFIG_BUCKET: 'my-config-bucket'  # Optional - uncomment if needed      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
       BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
       # No System Config file persistence respected, to avoid local conflicts across version updates - recommended to remove for production
       CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
@@ -164,7 +163,7 @@ services:
       ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
       ## uncomment next line to set an admin secret - warning, without configuration this will cause upstream services to fail
-      # HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
+      HASURA_GRAPHQL_ADMIN_SECRET: CitrineOS!
       HASURA_GRAPHQL_METADATA_DEFAULTS:
         "{\"backend_configs\":{\"dataconnector\":{\"a\
         thena\":{\"uri\":\"http://data-connector-agent:8081/api/v1/athena\"},\"\
