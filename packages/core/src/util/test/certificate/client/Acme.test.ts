@@ -114,7 +114,9 @@ describe('ACME', () => {
 
       expect(actualResult).toBe(mockCert);
       expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
-      expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, undefined, { recursive: true });
+      expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, undefined, {
+        recursive: true,
+      });
       expect(mockFileStorage.saveFile).toHaveBeenCalledWith(
         `${folderPath}/${mockToken}`,
         Buffer.from(mockKeyAuth),
