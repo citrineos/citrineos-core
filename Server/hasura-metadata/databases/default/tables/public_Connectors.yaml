@@ -60,6 +60,7 @@ select_permissions:
         - errorCode
         - status
         - ocpiId
+        - deletedAt
       filter:
         tenantId:
           _eq: x-hasura-tenant-id

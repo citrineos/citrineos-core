@@ -113,6 +113,12 @@ export class Connector extends Model implements ConnectorDto {
   @Column(DataType.STRING)
   declare termsAndConditionsUrl?: string | null;
 
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  declare deletedAt?: Date | null;
+
   @BelongsTo(() => ChargingStation)
   declare chargingStation?: ChargingStationDto;
 
