@@ -110,6 +110,15 @@ services:
       CITRINEOS_UTIL_AUTHPROVIDER_OIDC_AUDIENCE: 'citrineos'
       CITRINEOS_UTIL_AUTHPROVIDER_OIDC_RATELIMIT: 'true'
       CITRINEOS_UTIL_AUTHPROVIDER_LOCALBYPASS: 'false'
+      # OIDC client credentials used to authenticate OUTBOUND message-API callbacks
+      # (e.g. the callbackUrl provided by the OCPI module, protected by keycloak).
+      # All four values are required together, otherwise config validation fails.
+      CITRINEOS_OIDCCLIENT_TOKENURL: 'http://keycloak:8180/auth/realms/patterm/protocol/openid-connect/token'
+      CITRINEOS_OIDCCLIENT_CLIENTID: 'timeseries_api'
+      CITRINEOS_OIDCCLIENT_CLIENTSECRET: '1rLt3aDu9Zjgvr9aBE29h36p4igZpn0s'
+      # Must match the audience the OCPI callback endpoint validates
+      # (citrineos-ocpi: CITRINEOS_OCPI_OIDC_AUDIENCE)
+      CITRINEOS_OIDCCLIENT_AUDIENCE: 'citrineos-ocpi'
     depends_on:
       ocpp-db:
         condition: service_healthy
