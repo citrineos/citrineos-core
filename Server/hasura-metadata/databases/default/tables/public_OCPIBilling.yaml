@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: OCPIBilling
+  schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - tenantId
+        - session_start
+        - session_end
+        - energy_charged
+        - total_cost
+        - badge_id
+        - location
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""
