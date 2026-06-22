@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 table:
-  name: OCPIBilling
+  name: OCPIBillingEmsp
   schema: public
 select_permissions:
   - role: user
@@ -12,8 +12,8 @@ select_permissions:
         - tenantId
         - session_start
         - session_end
-        - energy_charged
-        - total_cost
+        - energy_charged_kwh
+        - total_cost_eur_excl_vat
         - badge_id
         - location
       filter:
