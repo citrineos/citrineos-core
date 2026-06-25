@@ -18,11 +18,16 @@ import {
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import type { Authorization, ChargingStationKeyQuerystring } from '@citrineos/data';
+import type {
+  Authorization,
+  ChargingStationKeyQuerystring,
+  TenantQueryString,
+} from '@citrineos/data';
 import {
   ChargingStationKeyQuerySchema,
   LocalListAuthorization,
   LocalListVersion,
+  TenantQuerySchema,
 } from '@citrineos/data';
 import { z } from 'zod/v4';
 
@@ -81,6 +86,23 @@ export class EVDriverDataApi
   ): Promise<Authorization> {
     const tenantId = request.body.tenantId ?? DEFAULT_TENANT_ID;
     return this._module.authorizeRepository.createOrUpdateByIdToken(tenantId, request.body);
+  }
+
+  /**
+   * Kabisa: list every Authorization for a tenant (token, status,
+   * `allowedChargingStations`). Lets our backend treat CitrineOS as the source
+   * of truth for tag authorizations and merge its own metadata (label,
+   * assignee) on top, rather than keeping a parallel list. GET shares the
+   * `/data/evdriver/authorizationData` path with the PUT above (different verb).
+   */
+  @AsDataEndpoint(Namespace.AuthorizationData, HttpMethod.Get, TenantQuerySchema)
+  async getAuthorizations(
+    request: FastifyRequest<{ Querystring: TenantQueryString }>,
+  ): Promise<Authorization[]> {
+    const tenantId = request.query.tenantId;
+    return this._module.authorizeRepository.readAllByQuery(tenantId, {
+      where: { tenantId },
+    });
   }
 
   /**
