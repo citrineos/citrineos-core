@@ -7,20 +7,30 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IEVDriverModuleApi } from './interface.js';
 import { EVDriverModule } from './module.js';
+import type { AuthorizationCreate } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
+  AuthorizationCreateSchema,
+  DEFAULT_TENANT_ID,
   HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_0_1_Namespace,
 } from '@citrineos/base';
-import type { ChargingStationKeyQuerystring } from '@citrineos/data';
+import type { Authorization, ChargingStationKeyQuerystring } from '@citrineos/data';
 import {
   ChargingStationKeyQuerySchema,
   LocalListAuthorization,
   LocalListVersion,
 } from '@citrineos/data';
+import { z } from 'zod/v4';
+
+// JSON-schema form of the Authorization create payload, for Fastify body
+// validation + Swagger (the repo registers JSON schemas, not raw zod).
+const AuthorizationCreateJsonSchema = z.toJSONSchema(AuthorizationCreateSchema, {
+  target: 'openapi-3.0',
+});
 
 export class EVDriverDataApi
   extends AbstractModuleApi<EVDriverModule>
@@ -53,6 +63,24 @@ export class EVDriverDataApi
       },
       include: [LocalListAuthorization],
     });
+  }
+
+  /**
+   * Kabisa: upsert an Authorization (token) — status + per-token station scope.
+   * Lets our backend sync a tag's block state and `allowedChargingStations` into
+   * the core. Keyed by (tenantId, idToken, idTokenType).
+   */
+  @AsDataEndpoint(
+    Namespace.AuthorizationData,
+    HttpMethod.Put,
+    undefined,
+    AuthorizationCreateJsonSchema,
+  )
+  async putAuthorization(
+    request: FastifyRequest<{ Body: AuthorizationCreate }>,
+  ): Promise<Authorization> {
+    const tenantId = request.body.tenantId ?? DEFAULT_TENANT_ID;
+    return this._module.authorizeRepository.createOrUpdateByIdToken(tenantId, request.body);
   }
 
   /**

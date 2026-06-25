@@ -95,6 +95,7 @@ Server/src/assets/certificates/subCAKey.pem
 # Documentation
 02_Util/test/resources/README.md
 Server/everest/README.md
+KAB-24-datatransfer-plan.md
 
 # Configuration files
 Server/nodemon.json

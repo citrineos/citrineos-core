@@ -16,6 +16,8 @@ const authorizationFields = {
   id: z.number().int().optional(),
   allowedConnectorTypes: z.array(z.string()).optional(),
   disallowedEvseIdPrefixes: z.array(z.string()).optional(),
+  // Kabisa scope allow-list: station ids this token may authorize at (empty = all).
+  allowedChargingStations: z.array(z.string()).optional(),
   idToken: z.string(),
   idTokenType: IdTokenEnumSchema.nullable().optional(),
   additionalInfo: z.tuple([AdditionalInfoSchema]).rest(AdditionalInfoSchema).nullable().optional(),

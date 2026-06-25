@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
+import type { AuthorizationCreate, BootstrapConfig } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -33,6 +34,26 @@ export class SequelizeAuthorizationRepository
     query: AuthorizationQuerystring,
   ): Promise<Authorization | undefined> {
     return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query));
+  }
+
+  // Kabisa: upsert an Authorization keyed by (tenantId, idToken, idTokenType).
+  // Used by our backend to sync a tag's status + station scope into the core.
+  async createOrUpdateByIdToken(
+    tenantId: number,
+    value: AuthorizationCreate,
+  ): Promise<Authorization> {
+    const resolvedTenantId = value.tenantId ?? tenantId ?? DEFAULT_TENANT_ID;
+    const where = {
+      tenantId: resolvedTenantId,
+      idToken: value.idToken,
+      idTokenType: value.idTokenType ?? null,
+    };
+    const [row] = await this._readOrCreateByQuery(resolvedTenantId, {
+      where,
+      defaults: { ...value, tenantId: resolvedTenantId },
+    });
+    await row.update({ ...value, tenantId: resolvedTenantId });
+    return row.reload();
   }
 
   /**

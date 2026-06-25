@@ -33,6 +33,12 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column(DataType.ARRAY(DataType.STRING))
   declare allowedConnectorTypes?: string[];
 
+  // Kabisa scope (allow-list): if set, this token may only authorize at these
+  // charging-station ids. Empty/undefined = allowed everywhere. Enforced by
+  // KabisaScopeAuthorizer.
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare allowedChargingStations?: string[];
+
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 

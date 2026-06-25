@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type {
+  AuthorizationCreate,
   BootConfig,
   CallAction,
   ChargingLimitSourceEnumType,
@@ -75,6 +76,12 @@ export interface IAuthorizationRepository extends CrudRepository<Authorization> 
     tenantId: number,
     query: AuthorizationQuerystring,
   ) => Promise<Authorization | undefined>;
+  // Kabisa: upsert an Authorization keyed by (tenantId, idToken, idTokenType).
+  // Lets our backend sync a tag's status + station scope into the core.
+  createOrUpdateByIdToken: (
+    tenantId: number,
+    value: AuthorizationCreate,
+  ) => Promise<Authorization>;
 }
 
 /**

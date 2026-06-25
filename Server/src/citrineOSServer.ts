@@ -74,6 +74,7 @@ import {
   RabbitMQConnectionManager,
   RabbitMqReceiver,
   RabbitMqSender,
+  KabisaScopeAuthorizer,
   RealTimeAuthorizer,
   RedisCache,
   UnknownStationFilter,
@@ -562,7 +563,9 @@ export class CitrineOSServer {
       this._repositoryStore.locationRepository,
       this._certificateAuthorityService,
       this._realTimeAuthorizer,
-      [],
+      // Kabisa per-token station scope (Tags & Operations) runs after the
+      // real-time authorizer in the EVDriver authorize chain.
+      [new KabisaScopeAuthorizer(this._logger)],
       this._idGenerator,
     );
     await this.initHandlersAndAddModule(module);
