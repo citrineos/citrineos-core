@@ -58,3 +58,4 @@
 - "!include public_AuthorizationTenants.yaml"
 - "!include public_AuthorizationLocations.yaml"
 - "!include public_RoamingPartners.yaml"
+- "!include public_OCPIBilling.yaml"
