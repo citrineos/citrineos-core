@@ -57,6 +57,7 @@ select_permissions:
         - ocpiId
         - roamingPartnerId
         - deletedAt
+        - disableOCPI
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
