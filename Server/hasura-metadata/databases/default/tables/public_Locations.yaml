@@ -30,6 +30,20 @@ array_relationships:
           name: Transactions
           schema: public
 select_permissions:
+  - role: roaming_reader
+    permission:
+      columns:
+        - id
+        - name
+        - address
+        - city
+        - postalCode
+        - country
+        - coordinates
+        - openingHours
+        - tenantId
+      filter: {}
+    comment: Read-only role for the Patterm timeseries_api roaming proxy (TECH-1807); SELECT only, cross-tenant (proxy filters by partner in-query).
   - role: user
     permission:
       columns:
