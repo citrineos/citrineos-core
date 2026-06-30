@@ -585,12 +585,19 @@ describe('MessageRouterImpl', () => {
       expect(cache.onChange).toHaveBeenCalled();
     });
 
-    it('should send CallError when setIfNotExist fails on both attempts', async () => {
+    it('should send CallError when the lock cannot be acquired before the deadline', async () => {
       cache.exists.mockResolvedValue(false);
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
 
       cache.setIfNotExist.mockResolvedValue(false);
       cache.onChange.mockResolvedValue(null);
+
+      // First Date.now() seeds the deadline; subsequent calls are past it so the
+      // retry loop exits after a single attempt instead of busy-spinning.
+      const nowSpy = vi
+        .spyOn(Date, 'now')
+        .mockReturnValueOnce(0)
+        .mockReturnValue(Number.MAX_SAFE_INTEGER);
 
       const callMessage = JSON.stringify([
         MessageTypeId.Call,
@@ -605,6 +612,8 @@ describe('MessageRouterImpl', () => {
       expect(networkHook).toHaveBeenCalled();
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[2]).toBe(ErrorCode.RpcFrameworkError);
+
+      nowSpy.mockRestore();
     });
 
     it('should send CallError when _routeCall fails', async () => {

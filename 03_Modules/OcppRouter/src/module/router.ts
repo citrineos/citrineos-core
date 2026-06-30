@@ -550,36 +550,42 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       });
     }
 
-    // Ensure only one call is processed at a time
-    const callOngoing = this._cache.onChange(
-      identifier,
-      this.config.maxCallLengthSeconds,
-      CacheNamespace.Transactions,
-    );
-    let successfullySet = await this._cache.setIfNotExist(
-      identifier,
-      `${action}:${messageId}`,
-      CacheNamespace.Transactions,
-      this._config.maxCallLengthSeconds,
-    );
-
-    if (!successfullySet) {
-      this._logger.debug(
-        'Ongoing Call already in progress, waiting for ongoing call before handling',
+    // Ensure only one call is processed at a time. Charging stations can send
+    // bursts of Calls (e.g. chunked ReportChargingProfiles / NotifyReport with
+    // tbc=true) faster than we can answer the first one. Rather than rejecting
+    // the losers of the lock race with an RpcFrameworkError, queue them: wait
+    // for the in-progress call to release the lock and retry until we acquire it
+    // or exceed maxCallLengthSeconds.
+    const maxWaitSeconds = this._config.maxCallLengthSeconds;
+    const deadline = Date.now() + maxWaitSeconds * 1000;
+    let successfullySet = false;
+    do {
+      // Subscribe before attempting to set so we don't miss the release notification.
+      const callOngoing = this._cache.onChange(
         identifier,
-        message,
+        maxWaitSeconds,
+        CacheNamespace.Transactions,
       );
-      await callOngoing; // Wait for ongoing call to finish
-      this._logger.debug('Ongoing Call finished, proceeding with call', identifier, message);
       successfullySet = await this._cache.setIfNotExist(
         identifier,
         `${action}:${messageId}`,
         CacheNamespace.Transactions,
         this._config.maxCallLengthSeconds,
       );
-      if (!successfullySet) {
-        throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
+      if (successfullySet) {
+        // Lock acquired; the dangling subscription resolves on its own timeout.
+        break;
       }
+      this._logger.debug(
+        'Ongoing Call already in progress, waiting for ongoing call before retrying',
+        identifier,
+        message,
+      );
+      await callOngoing; // Wait for the ongoing call to release the lock (or timeout)
+    } while (Date.now() < deadline);
+
+    if (!successfullySet) {
+      throw new OcppError(messageId, ErrorCode.RpcFrameworkError, 'Call already in progress', {});
     }
 
     try {
