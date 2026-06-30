@@ -11,6 +11,7 @@ import type { OcppRequest, OcppResponse } from '../../index.js';
 import type { CallAction, OCPPVersionType } from '../../ocpp/rpc/message.js';
 import { ErrorCode, OcppError, OCPPVersion } from '../../ocpp/rpc/message.js';
 import { RequestBuilder } from '../../util/request.js';
+import { OidcTokenProvider } from '../../util/OidcTokenProvider.js';
 import type { ICache } from '../cache/cache.js';
 import type { IWebsocketConnection } from '../cache/types.js';
 import { CacheNamespace, createIdentifier } from '../cache/types.js';
@@ -40,6 +41,7 @@ export abstract class AbstractModule implements IModule {
   protected _requests: CallAction[] = [];
   protected _responses: CallAction[] = [];
   private startTime = Date.now();
+  private _callbackOidcTokenProvider?: OidcTokenProvider;
 
   constructor(
     config: SystemConfig,
@@ -228,12 +230,31 @@ export abstract class AbstractModule implements IModule {
       this._logger.debug(
         `Sending call result to callback URL: ${url} for correlationId: ${message.context.correlationId}`,
       );
+
+      const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json',
+      };
+
+      // When an OIDC client is configured, authenticate the callback with a
+      // bearer token. This is required when the callback target (e.g. the OCPI
+      // module) is protected by keycloak/OIDC. If we cannot obtain a token we
+      // abort rather than sending an unauthenticated request that would be
+      // rejected by the callback target.
+      const tokenProvider = this.getCallbackOidcTokenProvider();
+      if (tokenProvider) {
+        try {
+          const token = await tokenProvider.getToken();
+          headers['Authorization'] = `Bearer ${token}`;
+        } catch (error) {
+          this._logger.error('Failed to get OIDC token for callback:', error);
+          return;
+        }
+      }
+
       try {
         await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(message.payload),
         });
       } catch (error) {
@@ -241,6 +262,24 @@ export abstract class AbstractModule implements IModule {
         this._logger.error('Failed sending call result: ', error);
       }
     }
+  }
+
+  /**
+   * Lazily builds the {@link OidcTokenProvider} used to authenticate message API
+   * callbacks, based on the configured {@link SystemConfig.oidcClient}. Returns
+   * undefined when no OIDC client is configured (callbacks are sent unauthenticated).
+   */
+  private getCallbackOidcTokenProvider(): OidcTokenProvider | undefined {
+    if (!this._config.oidcClient) {
+      return undefined;
+    }
+    if (!this._callbackOidcTokenProvider) {
+      this._callbackOidcTokenProvider = new OidcTokenProvider(
+        this._config.oidcClient,
+        this._logger,
+      );
+    }
+    return this._callbackOidcTokenProvider;
   }
 
   /**
