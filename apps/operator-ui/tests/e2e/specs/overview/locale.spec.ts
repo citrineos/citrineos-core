@@ -15,11 +15,14 @@ test.setTimeout(90_000);
 //
 // The switcher (src/lib/client/components/locale-switcher) writes the
 // NEXT_LOCALE cookie via a server action and then calls router.refresh() to
-// re-render the server tree in place. Two things made a naive "wait for the
-// localized heading" assertion flaky:
-//   1. The Radix dropdown renders its items in a portal after an open
-//      animation, so the option must be awaited-visible before clicking or the
-//      selection can race the menu opening and never register.
+// re-render the server tree in place. Two things made a naive "click the option,
+// wait for the localized heading" assertion flaky:
+//   1. The Radix dropdown item renders in a portal and the open animation — on
+//      the live, frequently re-rendering overview page — leaves it "not stable"
+//      / momentarily detached, so a normal click times out waiting for the
+//      element to settle. We wait for the item to be visible, then click with
+//      `force` so the click lands on the (confirmed-present) item without
+//      blocking on Radix's animation-stability check.
 //   2. The in-place router.refresh() is an async RSC round-trip that can lag —
 //      or be dropped — under CI load. We therefore wait on the authoritative
 //      `<html lang>` attribute (set by the root layout from the active locale),
@@ -37,7 +40,7 @@ async function selectLocale(
   await page.getByRole('button', { name: switcher }).click();
   const item = page.getByRole('menuitemradio', { name: option });
   await expect(item).toBeVisible({ timeout: 15_000 });
-  await item.click();
+  await item.click({ force: true });
 
   const html = page.locator('html');
   try {
