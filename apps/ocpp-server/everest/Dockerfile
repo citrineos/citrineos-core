@@ -1,4 +1,4 @@
-ARG EVEREST_IMAGE_TAG="2025.6.1-dt-esdp"
+ARG EVEREST_IMAGE_TAG="2025.6.2-dt-esdp"
 FROM ghcr.io/everest/everest-demo/manager:${EVEREST_IMAGE_TAG}
 
 WORKDIR /workspace
