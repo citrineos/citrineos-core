@@ -106,6 +106,7 @@ export const LocationSchema = BaseSchema.extend({
   relatedLocations: z.array(AdditionalGeoLocationSchema).nullable().optional(),
   ocpiId: z.string().max(36).nullable().optional(),
   roamingPartnerId: z.number().int().nullable().optional(),
+  disableOCPI: z.boolean().default(false).nullable().optional(),
 });
 
 export const LocationProps = LocationSchema.keyof().enum;

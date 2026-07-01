@@ -32,7 +32,7 @@ array_relationships:
         table:
           name: Transactions
           schema: public
-  - name: ConnectorTariffsOcpiPartner
+  - name: ConnectorTariffs
     using:
       foreign_key_constraint_on:
         column: tariffId

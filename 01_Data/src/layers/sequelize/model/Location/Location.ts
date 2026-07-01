@@ -118,6 +118,9 @@ export class Location extends Model implements LocationDto {
   @Column(DataType.JSONB)
   declare openingHours?: LocationHours | null;
 
+  @Column(DataType.BOOLEAN)
+  declare disableOCPI?: boolean | null;
+
   /**
    * [longitude, latitude]
    */
