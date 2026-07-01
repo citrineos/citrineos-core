@@ -547,9 +547,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const { isValid, errors } = this._validateCall(identifier, message, protocol);
 
     if (!isValid || errors) {
-      throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
+      if (this._ocppValidator.isUnknownSecurityEventTypeOnly(action, errors)) {
+        // type is free-form per OCPP, not an enum: log unlisted values but still ack.
+        this._logger.error(
+          'SecurityEventNotification reported an unknown security event type; acknowledging per OCPP',
+          identifier,
+          (message[3] as OCPP2_1.SecurityEventNotificationRequest).type,
+          errors,
+        );
+      } else {
+        throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
+          errors: errors,
+        });
+      }
     }
 
     this._cache

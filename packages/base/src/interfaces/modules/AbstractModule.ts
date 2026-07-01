@@ -138,7 +138,11 @@ export abstract class AbstractModule implements IModule {
           message.protocol as OCPPVersion,
         );
 
-        if (!isValid || errors) {
+        // An unlisted SecurityEventNotification type is tolerated by the OCPP spec, logged in router
+        if (
+          (!isValid || errors) &&
+          !this._ocppValidator.isUnknownSecurityEventTypeOnly(message.action, errors)
+        ) {
           throw new OcppError(
             message.context.correlationId,
             ErrorCode.FormatViolation,
