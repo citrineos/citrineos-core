@@ -25,6 +25,7 @@ export default {
       UPDATE "SetNetworkProfiles"           t SET "temp_fk" = cs."temp_id" FROM "ChargingStations" cs WHERE t."stationId" = cs."id";
       UPDATE "VariableMonitorings"          t SET "temp_fk" = cs."temp_id" FROM "ChargingStations" cs WHERE t."stationId" = cs."id";
 
+      ALTER TABLE "ChargingStationNetworkProfiles" DROP CONSTRAINT IF EXISTS "ChargingStationNetworkProfiles_stationId_fkey";
       ALTER TABLE "ChargingStationSecurityInfos" DROP CONSTRAINT IF EXISTS "ChargingStationSecurityInfos_stationId_fkey";
       ALTER TABLE "ChargingStationSequences"     DROP CONSTRAINT IF EXISTS "ChargingStationSequences_stationId_fkey";
       ALTER TABLE "Connectors"                   DROP CONSTRAINT IF EXISTS "Connectors_stationId_fkey";
@@ -64,6 +65,7 @@ export default {
       ALTER TABLE "ChargingStations" ALTER COLUMN "id" SET DEFAULT nextval('"ChargingStations_id_seq"');
       ALTER SEQUENCE "ChargingStations_id_seq" OWNED BY "ChargingStations"."id";
 
+      ALTER TABLE "ChargingStationNetworkProfiles" ADD CONSTRAINT "ChargingStationNetworkProfiles_stationId_fkey" FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "ChargingStationSecurityInfos" ADD CONSTRAINT "ChargingStationSecurityInfos_stationId_fkey" FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "ChargingStationSequences"     ADD CONSTRAINT "ChargingStationSequences_stationId_fkey"     FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "Connectors"                   ADD CONSTRAINT "Connectors_stationId_fkey"                   FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -138,6 +140,7 @@ export default {
         RETURN NEW;
       END; $$;
 
+      ALTER TABLE "ChargingStationNetworkProfiles" DROP CONSTRAINT IF EXISTS "ChargingStationNetworkProfiles_stationId_fkey";
       ALTER TABLE "ChargingStationSecurityInfos" DROP CONSTRAINT IF EXISTS "ChargingStationSecurityInfos_stationId_fkey";
       ALTER TABLE "ChargingStationSequences"     DROP CONSTRAINT IF EXISTS "ChargingStationSequences_stationId_fkey";
       ALTER TABLE "Connectors"                   DROP CONSTRAINT IF EXISTS "Connectors_stationId_fkey";
@@ -194,6 +197,7 @@ export default {
       ALTER TABLE "VariableAttributes"             ALTER COLUMN "stationId" TYPE VARCHAR(255);
       ALTER TABLE "VariableMonitorings"            ALTER COLUMN "stationId" TYPE VARCHAR(255);
 
+      ALTER TABLE "ChargingStationNetworkProfiles" ADD CONSTRAINT "ChargingStationNetworkProfiles_stationId_fkey" FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "ChargingStationSecurityInfos" ADD CONSTRAINT "ChargingStationSecurityInfos_stationId_fkey" FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "ChargingStationSequences"     ADD CONSTRAINT "ChargingStationSequences_stationId_fkey"     FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
       ALTER TABLE "Connectors"                   ADD CONSTRAINT "Connectors_stationId_fkey"                   FOREIGN KEY ("stationId") REFERENCES "ChargingStations"(id) ON UPDATE CASCADE ON DELETE CASCADE;
