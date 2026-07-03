@@ -253,6 +253,12 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  createOrUpdateConnectorByOcpp201EvseType(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+    connectorUpdate: Partial<Connector>,
+  ): Promise<Connector | undefined>;
   updateAllConnectorsByQuery(
     tenantId: number,
     value: Partial<Connector>,

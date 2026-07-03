@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { CrudRepository, DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
 import {
   Component,
   IDeviceModelRepository,
@@ -45,6 +45,7 @@ describe('StatusNotificationService', () => {
       addStatusNotificationToChargingStation: vi.fn(),
       readChargingStationByStationId: vi.fn(),
       createOrUpdateConnector: vi.fn(),
+      createOrUpdateConnectorByOcpp201EvseType: vi.fn(),
     } as unknown as Mocked<ILocationRepository>;
 
     statusNotificationService = new StatusNotificationService(
@@ -68,6 +69,36 @@ describe('StatusNotificationService', () => {
     );
 
     expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+    expect(locationRepository.createOrUpdateConnectorByOcpp201EvseType).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      MOCK_STATION_ID,
+      { id: MOCK_EVSE_ID, connectorId: MOCK_CONNECTOR_ID },
+      expect.objectContaining({ status: 'Available' }),
+    );
+  });
+
+  it('should update connector status for non-default OCPP 2.0.1 connector ids', async () => {
+    locationRepository.readChargingStationByStationId.mockResolvedValue(aChargingStation());
+    componentRepository.readAllByQuery.mockResolvedValue([]);
+    vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
+      return aStatusNotification();
+    });
+
+    await statusNotificationService.processStatusNotification(
+      DEFAULT_TENANT_ID,
+      MOCK_STATION_ID,
+      aStatusNotificationRequest((req) => {
+        req.connectorId = 2;
+        req.connectorStatus = OCPP2_0_1.ConnectorStatusEnumType.Occupied;
+      }),
+    );
+
+    expect(locationRepository.createOrUpdateConnectorByOcpp201EvseType).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      MOCK_STATION_ID,
+      { id: MOCK_EVSE_ID, connectorId: 2 },
+      expect.objectContaining({ status: 'Occupied' }),
+    );
   });
 
   it('should not save StatusNotification for Charging Station because Charging Station does not exist', async () => {
