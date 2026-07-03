@@ -330,6 +330,60 @@ export class SequelizeLocationRepository
     return result;
   }
 
+  async createOrUpdateConnectorByOcpp201EvseType(
+    tenantId: number,
+    stationId: string,
+    ocpp201EvseType: OCPP2_0_1.EVSEType,
+    connectorUpdate: Partial<Connector>,
+  ): Promise<Connector | undefined> {
+    const evse = await this.readEvseByStationIdAndOcpp201EvseId(
+      tenantId,
+      stationId,
+      ocpp201EvseType.id,
+    );
+    if (!evse) {
+      this.logger.warn(
+        `EVSE ${ocpp201EvseType.id} not found for station ${stationId}. Connector status cannot be updated.`,
+      );
+      return undefined;
+    }
+
+    let result;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
+        tenantId,
+        {
+          where: {
+            tenantId,
+            stationId,
+            evseId: evse.id,
+            evseTypeConnectorId: ocpp201EvseType.connectorId,
+          },
+          defaults: {
+            tenantId,
+            stationId,
+            evseId: evse.id,
+            evseTypeConnectorId: ocpp201EvseType.connectorId,
+            ...connectorUpdate,
+          },
+          transaction: sequelizeTransaction,
+        },
+      );
+      if (!connectorCreated) {
+        const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connectorUpdate, {
+          where: {
+            id: savedConnector.id,
+          },
+          transaction: sequelizeTransaction,
+        });
+        result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
+      } else {
+        result = savedConnector;
+      }
+    });
+    return result;
+  }
+
   async updateAllConnectorsByQuery(
     tenantId: number,
     value: Partial<Connector>,

@@ -63,9 +63,8 @@ export class StatusNotificationService {
         statusNotification,
       );
 
-      const connector = {
+      const connectorUpdate = {
         tenantId,
-        connectorId: statusNotificationRequest.connectorId,
         stationId,
         status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
           statusNotificationRequest.connectorStatus,
@@ -73,8 +72,16 @@ export class StatusNotificationService {
         timestamp: statusNotificationRequest.timestamp
           ? statusNotificationRequest.timestamp
           : new Date().toISOString(),
-      } as Connector;
-      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      } as Partial<Connector>;
+      await this._locationRepository.createOrUpdateConnectorByOcpp201EvseType(
+        tenantId,
+        stationId,
+        {
+          id: statusNotificationRequest.evseId,
+          connectorId: statusNotificationRequest.connectorId,
+        },
+        connectorUpdate,
+      );
 
       let components = await this._componentRepository.readAllByQuery(tenantId, {
         where: {
