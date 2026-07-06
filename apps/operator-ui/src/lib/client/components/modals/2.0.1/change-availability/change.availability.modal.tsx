@@ -17,6 +17,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import { z } from 'zod';
 import { Controller } from 'react-hook-form';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
@@ -26,15 +27,11 @@ export interface ChangeAvailabilityModalProps {
   station: ChargingStationDto;
 }
 
-const ChangeAvailabilitySchema = z.object({
-  operationalStatus: z.enum(OCPP2_0_1.OperationalStatusEnumType, {
-    message: 'Please select an operational status',
-  }),
-  evse: z.string().optional(), // { id, evseTypeId }
-  connectorId: z.number().optional(),
-});
-
-type ChangeAvailabilityFormData = z.infer<typeof ChangeAvailabilitySchema>;
+type ChangeAvailabilityFormData = {
+  operationalStatus: OCPP2_0_1.OperationalStatusEnumType;
+  evse?: string;
+  connectorId?: number;
+};
 
 const statuses: OCPP2_0_1.OperationalStatusEnumType[] = Object.keys(
   OCPP2_0_1.OperationalStatusEnumType,
@@ -42,6 +39,7 @@ const statuses: OCPP2_0_1.OperationalStatusEnumType[] = Object.keys(
 
 export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -50,6 +48,18 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const ChangeAvailabilitySchema = useMemo(
+    () =>
+      z.object({
+        operationalStatus: z.enum(OCPP2_0_1.OperationalStatusEnumType, {
+          message: translate('ChargingStations.changeAvailabilityModal.selectStatusError'),
+        }),
+        evse: z.string().optional(), // { id, evseTypeId }
+        connectorId: z.number().optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(ChangeAvailabilitySchema),
@@ -75,6 +85,7 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/changeAvailability?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -108,12 +119,12 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
       <ComboboxFormField
         control={form.control}
         name="operationalStatus"
-        label="Operational Status"
+        label={translate('ChargingStations.changeAvailabilityModal.operationalStatus')}
         options={statuses.map((status) => ({
           label: status,
           value: status,
         }))}
-        placeholder="Select Status"
+        placeholder={translate('ChargingStations.changeAvailabilityModal.selectStatus')}
         required
       />
 

@@ -2,12 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ChargingStationDto, OCPP2_0_1 } from '@citrineos/base';
+import type { ChargingStationDto, OCPP2_0_1 } from '@citrineos/base';
 import { CrudRepository, OCPPVersion } from '@citrineos/base';
 import { Op } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { type ILocationRepository } from '../../../interfaces/repositories.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';
 import { ChargingStation } from '../model/Location/ChargingStation.js';
@@ -16,7 +13,7 @@ import { Evse } from '../model/Location/Evse.js';
 import { LatestStatusNotification } from '../model/Location/LatestStatusNotification.js';
 import { Location } from '../model/Location/Location.js';
 import { StatusNotification } from '../model/Location/StatusNotification.js';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -27,43 +24,32 @@ export class SequelizeLocationRepository
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
   connector: CrudRepository<Connector>;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    chargingStation?: CrudRepository<ChargingStation>,
-    statusNotification?: CrudRepository<StatusNotification>,
-    latestStatusNotification?: CrudRepository<LatestStatusNotification>,
-    connector?: CrudRepository<Connector>,
-  ) {
-    super(config, Location.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingStation = chargingStation
-      ? chargingStation
-      : new SequelizeRepository<ChargingStation>(
-          config,
-          ChargingStation.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.statusNotification = statusNotification
-      ? statusNotification
-      : new SequelizeRepository<StatusNotification>(
-          config,
-          StatusNotification.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.latestStatusNotification = latestStatusNotification
-      ? latestStatusNotification
-      : new SequelizeRepository<LatestStatusNotification>(
-          config,
-          LatestStatusNotification.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.connector = connector
-      ? connector
-      : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Location.MODEL_NAME, logger, sequelizeInstance });
+    this.chargingStation = new SequelizeRepository<ChargingStation>({
+      config,
+      namespace: ChargingStation.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.statusNotification = new SequelizeRepository<StatusNotification>({
+      config,
+      namespace: StatusNotification.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.latestStatusNotification = new SequelizeRepository<LatestStatusNotification>({
+      config,
+      namespace: LatestStatusNotification.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.connector = new SequelizeRepository<Connector>({
+      config,
+      namespace: Connector.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
   }
 
   async readLocationById(tenantId: number, id: number): Promise<Location | undefined> {
@@ -433,3 +419,5 @@ export class SequelizeLocationRepository
     );
   }
 }
+
+export default SequelizeLocationRepository;

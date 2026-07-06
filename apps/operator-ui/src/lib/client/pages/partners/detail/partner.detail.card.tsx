@@ -45,7 +45,7 @@ export const PartnerDetailCard = ({ tenantPartner }: { tenantPartner: TenantPart
             <Image
               width={40}
               src={businessDetails.logo.url}
-              alt={`${businessDetails.name} logo`}
+              alt={translate('TenantPartners.detail.logoAlt', { name: businessDetails.name })}
               className="rounded"
             />
           )}
@@ -61,10 +61,16 @@ export const PartnerDetailCard = ({ tenantPartner }: { tenantPartner: TenantPart
       </CardHeader>
       <CardContent>
         <div className={cardGridStyle}>
-          <KeyValueDisplay keyLabel="Country Code" value={tenantPartner?.countryCode} />
-          <KeyValueDisplay keyLabel="Party ID" value={tenantPartner?.partyId} />
           <KeyValueDisplay
-            keyLabel="Website"
+            keyLabel={translate('TenantPartners.detail.countryCode')}
+            value={tenantPartner?.countryCode}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('TenantPartners.detail.partyId')}
+            value={tenantPartner?.partyId}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('TenantPartners.detail.website')}
             value={''}
             valueRender={() =>
               businessDetails?.website ? (
@@ -82,7 +88,7 @@ export const PartnerDetailCard = ({ tenantPartner }: { tenantPartner: TenantPart
             }
           />
           <KeyValueDisplay
-            keyLabel="Roles"
+            keyLabel={translate('TenantPartners.detail.roles')}
             value={''}
             valueRender={() =>
               tenantPartner?.partnerProfileOCPI?.roles?.map((role: any) => (
@@ -91,11 +97,11 @@ export const PartnerDetailCard = ({ tenantPartner }: { tenantPartner: TenantPart
             }
           />
           <KeyValueDisplay
-            keyLabel="OCPI Version"
+            keyLabel={translate('TenantPartners.detail.ocpiVersion')}
             value={tenantPartner?.partnerProfileOCPI?.version?.version}
           />
           <KeyValueDisplay
-            keyLabel="Versions URL"
+            keyLabel={translate('TenantPartners.detail.versionsUrl')}
             value={''}
             valueRender={() =>
               tenantPartner?.partnerProfileOCPI?.version?.versionDetailsUrl ? (

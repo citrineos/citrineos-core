@@ -8,6 +8,7 @@ import { Input } from '../ui/input';
 import debounce from 'lodash.debounce';
 import { autocompleteAddress } from '@lib/server/actions/map/autocompleteAddress';
 import { getPlaceDetails } from '@lib/server/actions/map/getPlaceDetails';
+import { useTranslate } from '@refinedev/core';
 
 type Prediction = {
   description: string;
@@ -38,9 +39,11 @@ export const AddressAutocomplete: React.FC<Props> = ({
   onChangeAction,
   onSelectPlaceAction,
   countryCode,
-  placeholder = 'Start typing an address...',
+  placeholder,
   sessionToken,
 }) => {
+  const translate = useTranslate();
+  const resolvedPlaceholder = placeholder ?? translate('Common.startTypingAddress');
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -148,7 +151,7 @@ export const AddressAutocomplete: React.FC<Props> = ({
             setShowDropdown(true);
           }
         }}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         autoComplete="off"
         data-1p-ignore
         data-lpignore="true"
@@ -157,7 +160,9 @@ export const AddressAutocomplete: React.FC<Props> = ({
       {showDropdown && (predictions.length > 0 || loading) && (
         <ul className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-md max-h-60 overflow-auto">
           {loading && predictions.length === 0 && (
-            <li className="px-3 py-2 text-sm text-muted-foreground">Loading...</li>
+            <li className="px-3 py-2 text-sm text-muted-foreground">
+              {translate('Common.loadingEllipsis')}
+            </li>
           )}
           {predictions.map((p) => (
             <li

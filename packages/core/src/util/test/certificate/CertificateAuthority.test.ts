@@ -5,6 +5,7 @@ import { IFileStorage, OCPP2_0_1, SystemConfig } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { KJUR } from 'jsrsasign';
 import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import { createTestContainer, getTestInstance } from '../../../test/testContainer.js';
 import * as CertificateUtil from '../../certificate/CertificateUtil.js';
 import {
   IChargingStationCertificateAuthorityClient,
@@ -29,6 +30,7 @@ vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() =
 });
 
 describe('CertificateAuthorityService', () => {
+  const { container } = createTestContainer();
   let mockV2GClient: Mocked<IV2GCertificateAuthorityClient>;
   let mockChargingStationClient: Mocked<IChargingStationCertificateAuthorityClient>;
   let mockSystemConfig: Mocked<SystemConfig>;
@@ -52,14 +54,35 @@ describe('CertificateAuthorityService', () => {
 
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
 
-    certificateAuthorityService = new CertificateAuthorityService(
-      mockSystemConfig,
-      new MemoryCache(),
-      undefined,
-      mockChargingStationClient,
-      mockV2GClient,
-      undefined as unknown as IFileStorage,
-    );
+    type WithFactoryHooks = typeof CertificateAuthorityService & {
+      _instantiateV2GClient: (...args: unknown[]) => IV2GCertificateAuthorityClient;
+      _instantiateChargingStationClient: (
+        ...args: unknown[]
+      ) => Promise<IChargingStationCertificateAuthorityClient>;
+    };
+
+    vi.spyOn(
+      CertificateAuthorityService as WithFactoryHooks,
+      '_instantiateV2GClient',
+    ).mockReturnValue(mockV2GClient);
+    vi.spyOn(
+      CertificateAuthorityService as WithFactoryHooks,
+      '_instantiateChargingStationClient',
+    ).mockReturnValue(Promise.resolve(mockChargingStationClient));
+
+    const fileStorage: IFileStorage = {
+      saveFile: vi.fn() as IFileStorage['saveFile'],
+      getFile: vi.fn() as IFileStorage['getFile'],
+      exists: vi.fn() as IFileStorage['exists'],
+      createDirectory: vi.fn() as IFileStorage['createDirectory'],
+      deleteFile: vi.fn() as IFileStorage['deleteFile'],
+    };
+
+    certificateAuthorityService = getTestInstance(container, CertificateAuthorityService, {
+      config: mockSystemConfig,
+      cache: new MemoryCache(),
+      fileStorage,
+    });
   });
 
   describe('getCertificateChain', () => {

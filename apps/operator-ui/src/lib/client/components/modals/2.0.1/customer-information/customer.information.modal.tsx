@@ -13,7 +13,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
@@ -27,18 +27,17 @@ export interface CustomerInformationModalProps {
   station: any;
 }
 
-export const CustomerInformationSchema = z.object({
-  requestId: z.coerce.number<number>().int().positive('Request ID must be a positive number'),
-  report: z.boolean(),
-  clear: z.boolean(),
-  customerIdentifier: z.string().optional(),
-  authorization: z.string().optional(),
-});
-
-export type CustomerInformationFormData = z.infer<typeof CustomerInformationSchema>;
+export type CustomerInformationFormData = {
+  requestId: number;
+  report: boolean;
+  clear: boolean;
+  customerIdentifier?: string;
+  authorization?: string;
+};
 
 export const CustomerInformationModal = ({ station }: CustomerInformationModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -47,6 +46,21 @@ export const CustomerInformationModal = ({ station }: CustomerInformationModalPr
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const CustomerInformationSchema = useMemo(
+    () =>
+      z.object({
+        requestId: z.coerce
+          .number<number>()
+          .int()
+          .positive(translate('ChargingStations.requestId.positiveError')),
+        report: z.boolean(),
+        clear: z.boolean(),
+        customerIdentifier: z.string().optional(),
+        authorization: z.string().optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(CustomerInformationSchema),
@@ -99,6 +113,7 @@ export const CustomerInformationModal = ({ station }: CustomerInformationModalPr
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/reporting/customerInformation?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data: payload,
       setLoading,
@@ -126,25 +141,46 @@ export const CustomerInformationModal = ({ station }: CustomerInformationModalPr
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Request ID" name="requestId" required>
-        <Input type="number" placeholder="Enter request ID" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.requestId.label')}
+        name="requestId"
+        required
+      >
+        <Input type="number" placeholder={translate('ChargingStations.requestId.placeholder')} />
       </FormField>
 
-      <CheckboxFormField control={form.control} label="Report" name="report" />
+      <CheckboxFormField
+        control={form.control}
+        label={translate('ChargingStations.customerInformationModal.report')}
+        name="report"
+      />
 
-      <CheckboxFormField control={form.control} label="Clear" name="clear" />
+      <CheckboxFormField
+        control={form.control}
+        label={translate('ChargingStations.customerInformationModal.clear')}
+        name="clear"
+      />
 
-      <FormField control={form.control} label="Customer Identifier" name="customerIdentifier">
-        <Input placeholder="Enter customer identifier" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.customerInformationModal.customerIdentifier')}
+        name="customerIdentifier"
+      >
+        <Input
+          placeholder={translate(
+            'ChargingStations.customerInformationModal.customerIdentifierPlaceholder',
+          )}
+        />
       </FormField>
 
       <ComboboxFormField
         control={form.control}
         name="authorization"
-        label="Authorization"
+        label={translate('ChargingStations.remoteStartModal.authorization')}
         options={options}
         onSearch={onSearch}
-        placeholder="Search Authorizations"
+        placeholder={translate('ChargingStations.remoteStartModal.searchAuthorizations')}
         isLoading={query.isLoading}
       />
     </Form>

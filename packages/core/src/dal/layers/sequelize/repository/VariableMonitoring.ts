@@ -2,28 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { Component } from '../model/DeviceModel/Component.js';
 import { EventData } from '../model/VariableMonitoring/EventData.js';
 import { Variable } from '../model/DeviceModel/Variable.js';
 import { VariableMonitoring } from '../model/VariableMonitoring/VariableMonitoring.js';
 import { VariableMonitoringStatus } from '../model/VariableMonitoring/VariableMonitoringStatus.js';
 import type { IVariableMonitoringRepository } from '../../../interfaces/repositories.js';
-import type {
-  BootstrapConfig,
-  CallAction,
-  OCPP2_common_types,
-  SetMonitoringStatusEnumType,
-} from '@citrineos/base';
+import type { CallAction, OCPP2_common_types, SetMonitoringStatusEnumType } from '@citrineos/base';
 import {
   CrudRepository,
   OCPP2_0_1,
   OCPP_CallAction,
   SetMonitoringStatusEnum,
 } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 
 export class SequelizeVariableMonitoringRepository
   extends SequelizeRepository<VariableMonitoring>
@@ -32,25 +24,20 @@ export class SequelizeVariableMonitoringRepository
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    eventData?: CrudRepository<EventData>,
-    variableMonitoringStatus?: CrudRepository<VariableMonitoringStatus>,
-  ) {
-    super(config, VariableMonitoring.MODEL_NAME, logger, sequelizeInstance);
-    this.eventData = eventData
-      ? eventData
-      : new SequelizeRepository<EventData>(config, EventData.MODEL_NAME, logger, sequelizeInstance);
-    this.variableMonitoringStatus = variableMonitoringStatus
-      ? variableMonitoringStatus
-      : new SequelizeRepository<VariableMonitoringStatus>(
-          config,
-          VariableMonitoringStatus.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: VariableMonitoring.MODEL_NAME, logger, sequelizeInstance });
+    this.eventData = new SequelizeRepository<EventData>({
+      config,
+      namespace: EventData.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.variableMonitoringStatus = new SequelizeRepository<VariableMonitoringStatus>({
+      config,
+      namespace: VariableMonitoringStatus.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
   }
 
   async createOrUpdateByMonitoringDataTypeAndStationId(
@@ -291,3 +278,5 @@ export class SequelizeVariableMonitoringRepository
     );
   }
 }
+
+export default SequelizeVariableMonitoringRepository;

@@ -44,26 +44,43 @@ export class MonitoringOcpp2Api
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    monitoringModule: MonitoringModule,
-    server: FastifyInstance,
-    version: OCPPVersion = DEFAULT_VERSION,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(monitoringModule, server, version, logger);
+  constructor({
+    monitoringModule,
+    server,
+    logger,
+  }: {
+    monitoringModule: MonitoringModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    // The OCPP version is no longer instance state — it is supplied per route /
+    // per request via supportedVersions() and the handler `version` parameter.
+    super(monitoringModule, server, logger);
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.SetVariableMonitoring, (instance: MonitoringOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'SetVariableMonitoringRequestSchema',
-    ),
+  /**
+   * This API serves both OCPP 2.0.1 and 2.1 from a single instance; each
+   * message endpoint is registered once per version with the version threaded
+   * into schema selection, the route path, and the handler.
+   */
+  protected get supportedVersions(): OCPPVersion[] {
+    return [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
+  }
+
+  @AsMessageEndpoint(
+    OCPP_CallAction.SetVariableMonitoring,
+    (_instance: MonitoringOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'SetVariableMonitoringRequestSchema',
+      ),
   )
   async setVariableMonitoring(
     identifier: string[],
     request: OCPP2_request_types.SetVariableMonitoringRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     // For each station, check request size, process monitoring data, and handle batch sending
     const confirmations: IMessageConfirmation[] = [];
@@ -132,7 +149,7 @@ export class MonitoringOcpp2Api
         const result = await this.processBatches(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.SetVariableMonitoring,
           { setMonitoringData },
           'setMonitoringData',
@@ -151,17 +168,20 @@ export class MonitoringOcpp2Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.ClearVariableMonitoring, (instance: MonitoringOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'ClearVariableMonitoringRequestSchema',
-    ),
+  @AsMessageEndpoint(
+    OCPP_CallAction.ClearVariableMonitoring,
+    (_instance: MonitoringOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'ClearVariableMonitoringRequestSchema',
+      ),
   )
   async clearVariableMonitoring(
     identifier: string[],
     request: OCPP2_request_types.ClearVariableMonitoringRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -203,7 +223,7 @@ export class MonitoringOcpp2Api
         const result = await this.processBatches(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.ClearVariableMonitoring,
           { id: ids },
           'id',
@@ -222,9 +242,9 @@ export class MonitoringOcpp2Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringLevel, (instance: MonitoringOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringLevel, (_instance: MonitoringOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'SetMonitoringLevelRequestSchema',
     ),
   )
@@ -233,21 +253,22 @@ export class MonitoringOcpp2Api
     request: OCPP2_request_types.SetMonitoringLevelRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.SetMonitoringLevel,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringBase, (instance: MonitoringOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.SetMonitoringBase, (_instance: MonitoringOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'SetMonitoringBaseRequestSchema',
     ),
   )
@@ -256,21 +277,22 @@ export class MonitoringOcpp2Api
     request: OCPP2_request_types.SetMonitoringBaseRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.SetMonitoringBase,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.SetVariables, (instance: MonitoringOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.SetVariables, (_instance: MonitoringOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'SetVariablesRequestSchema',
     ),
   )
@@ -279,6 +301,7 @@ export class MonitoringOcpp2Api
     request: OCPP2_request_types.SetVariablesRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -307,7 +330,7 @@ export class MonitoringOcpp2Api
         const result = await this.processBatches(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.SetVariables,
           { setVariableData },
           'setVariableData',
@@ -326,9 +349,9 @@ export class MonitoringOcpp2Api
     return confirmations;
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetVariables, (instance: MonitoringOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.GetVariables, (_instance: MonitoringOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'GetVariablesRequestSchema',
     ),
   )
@@ -337,6 +360,7 @@ export class MonitoringOcpp2Api
     request: OCPP2_request_types.GetVariablesRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
 
@@ -373,7 +397,7 @@ export class MonitoringOcpp2Api
         const result = await this.processBatches(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.GetVariables,
           { getVariableData },
           'getVariableData',
@@ -453,8 +477,8 @@ export class MonitoringOcpp2Api
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
    */
-  protected _toMessagePath(input: CallAction): string {
+  protected _toMessagePath(input: CallAction, version?: OCPPVersion | null): string {
     const endpointPrefix = this._module.config.modules.monitoring.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix);
+    return super._toMessagePath(input, version, endpointPrefix);
   }
 }

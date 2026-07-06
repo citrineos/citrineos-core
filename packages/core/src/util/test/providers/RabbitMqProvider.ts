@@ -21,7 +21,11 @@ import type { RabbitMQChannelManager } from '../../queue/rabbit-mq/ChannelManage
 export function aSystemConfigWithAmqp(override?: {
   exchange?: string;
   instanceIdentifier?: string;
+  noAmqp?: boolean;
 }): SystemConfig {
+  if (override?.noAmqp) {
+    return { util: { messageBroker: { amqp: undefined } } } as unknown as SystemConfig;
+  }
   return {
     util: {
       messageBroker: {

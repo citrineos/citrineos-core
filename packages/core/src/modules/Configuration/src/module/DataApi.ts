@@ -61,12 +61,16 @@ export class ConfigurationDataApi
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - Optional logger instance.
    */
-  constructor(
-    ConfigurationComponent: ConfigurationModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(ConfigurationComponent, server, null, logger);
+  constructor({
+    configurationModule,
+    server,
+    logger,
+  }: {
+    configurationModule: ConfigurationModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(configurationModule, server, logger);
   }
 
   @AsDataEndpoint(

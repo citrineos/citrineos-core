@@ -10,29 +10,31 @@ import type { LocationHours } from '@citrineos/base';
 import { Clock, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { NOT_APPLICABLE } from '@lib/utils/consts';
+import { useTranslate } from '@refinedev/core';
 
 interface OpeningHoursDisplayProps {
   openingHours?: LocationHours | null;
 }
 
-const WEEKDAY_NAMES = [
+const WEEKDAY_KEYS = [
   '', // 0 index unused
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
+  'openingHours.weekdays.monday',
+  'openingHours.weekdays.tuesday',
+  'openingHours.weekdays.wednesday',
+  'openingHours.weekdays.thursday',
+  'openingHours.weekdays.friday',
+  'openingHours.weekdays.saturday',
+  'openingHours.weekdays.sunday',
 ];
 
 export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({ openingHours }) => {
+  const translate = useTranslate();
   if (!openingHours) {
     return (
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 py-3">
           <Clock className="h-4 w-4" />
-          <span className="font-medium">Opening Hours</span>
+          <span className="font-medium">{translate('openingHours.title')}</span>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">{NOT_APPLICABLE}</p>
@@ -68,29 +70,29 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({ openin
     <Card>
       <CardHeader className="flex flex-row items-center gap-2 py-3">
         <Clock className="h-4 w-4" />
-        <span className="font-medium">Opening Hours</span>
+        <span className="font-medium">{translate('openingHours.title')}</span>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 24/7 Status */}
         {twentyfourSeven ? (
           <div className="space-y-2">
             <Badge variant="success" className="text-sm px-3 py-1">
-              24/7 Operation
+              {translate('openingHours.twentyFourSeven')}
             </Badge>
             <p className="text-sm text-muted-foreground">
-              This location is open 24 hours a day, 7 days a week
+              {translate('openingHours.twentyFourSevenDescription')}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Regular Hours */}
             <div>
-              <h4 className="font-medium mb-3">Regular Hours</h4>
+              <h4 className="font-medium mb-3">{translate('openingHours.regularHours')}</h4>
               {sortedRegularHours.length > 0 ? (
                 <div className="space-y-2">
                   {sortedRegularHours.map((hours, index) => (
                     <div key={index} className="flex justify-between items-center py-1">
-                      <span className="font-medium">{WEEKDAY_NAMES[hours.weekday]}</span>
+                      <span className="font-medium">{translate(WEEKDAY_KEYS[hours.weekday])}</span>
                       <span className="text-muted-foreground">
                         {formatTime(hours.periodBegin)} - {formatTime(hours.periodEnd)}
                       </span>
@@ -98,7 +100,7 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({ openin
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">No regular hours specified</p>
+                <p className="text-muted-foreground">{translate('openingHours.noRegularHours')}</p>
               )}
             </div>
           </div>
@@ -111,12 +113,12 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({ openin
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="h-4 w-4" />
-                <h4 className="font-medium">Exceptional Openings</h4>
+                <h4 className="font-medium">{translate('openingHours.exceptionalOpenings')}</h4>
               </div>
               <div className="space-y-2">
                 {exceptionalOpenings?.map((period, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <Badge variant="default">Special Opening</Badge>
+                    <Badge variant="default">{translate('openingHours.specialOpening')}</Badge>
                     <span className="text-sm">
                       {formatDateRange(period.periodBegin, period.periodEnd)}
                     </span>
@@ -134,12 +136,12 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({ openin
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="h-4 w-4" />
-                <h4 className="font-medium">Exceptional Closings</h4>
+                <h4 className="font-medium">{translate('openingHours.exceptionalClosings')}</h4>
               </div>
               <div className="space-y-2">
                 {exceptionalClosings?.map((period, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <Badge variant="destructive">Closed</Badge>
+                    <Badge variant="destructive">{translate('openingHours.closed')}</Badge>
                     <span className="text-sm">
                       {formatDateRange(period.periodBegin, period.periodEnd)}
                     </span>

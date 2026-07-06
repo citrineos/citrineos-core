@@ -65,7 +65,7 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             {translate('Transactions.transaction')} {transaction.transactionId}
           </h2>
           <Badge variant={transaction.isActive ? 'success' : 'destructive'}>
-            {transaction.isActive ? 'Active' : 'Inactive'}
+            {transaction.isActive ? translate('Common.active') : translate('Common.inactive')}
           </Badge>
           <CanAccess
             resource={ResourceType.TRANSACTIONS}
@@ -103,7 +103,7 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             }
           />
           <KeyValueDisplay
-            keyLabel="Station ID"
+            keyLabel={translate('Transactions.detail.stationId')}
             value={''}
             valueRender={() => (
               <Link
@@ -116,7 +116,7 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             )}
           />
           <KeyValueDisplay
-            keyLabel="Location"
+            keyLabel={translate('Transactions.detail.location')}
             value={''}
             valueRender={() => (
               <Link
@@ -129,22 +129,25 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             )}
           />
           <KeyValueDisplay
-            keyLabel="Total kWh"
+            keyLabel={translate('Transactions.detail.totalKwh')}
             value={`${transaction.totalKwh ? transaction.totalKwh.toFixed(2) : 0} kWh`}
           />
-          <KeyValueDisplay keyLabel="Charging State" value={transaction.chargingState} />
           <KeyValueDisplay
-            keyLabel="Start Time"
+            keyLabel={translate('Transactions.detail.chargingState')}
+            value={transaction.chargingState}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Transactions.detail.startTime')}
             value={transaction.startTime}
             valueRender={(startTime) => <TimestampDisplay isoTimestamp={startTime ?? ''} />}
           />
           <KeyValueDisplay
-            keyLabel="End Time"
+            keyLabel={translate('Transactions.detail.endTime')}
             value={transaction.endTime}
             valueRender={(endTime) => <TimestampDisplay isoTimestamp={endTime ?? ''} />}
           />
           <KeyValueDisplay
-            keyLabel="Tariff"
+            keyLabel={translate('Transactions.detail.tariff')}
             value={''}
             valueRender={() =>
               transaction.connector?.tariff ? (

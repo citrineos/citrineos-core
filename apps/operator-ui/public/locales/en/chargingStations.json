@@ -23,6 +23,408 @@
     "liveLogDisabledInactivity": "Live log disabled due to inactivity",
     "refreshMessages": "Refresh Messages",
     "noDataFound": "No charging station found with id {id}.",
+    "unsupportedProtocol": "Unsupported protocol version: {protocol}",
+    "fieldRequired": "{field} is required",
+    "exportToCsvError": "Could export to CSV due to error: {error}",
+    "detailCard": {
+      "lastOcppMessage": "Last OCPP Message",
+      "connectorTypes": "Connector Types",
+      "totalEvses": "Total EVSEs"
+    },
+    "tabs": {
+      "evses": "EVSEs",
+      "ocppMessages": "OCPP Messages",
+      "configuration": "Configuration",
+      "aggregatedMeterValuesData": "Aggregated Meter Values Data",
+      "noEvsesPermission": "You don't have permission to view EVSEs.",
+      "noOcppLogsPermission": "You don't have permission to view OCPP logs.",
+      "noConfigurationsPermission": "You don't have permission to view station configurations."
+    },
+    "columns": {
+      "name": "Name",
+      "stationId": "Station ID",
+      "location": "Location",
+      "onlineStatus": "Online status",
+      "protocol": "Protocol",
+      "vendorModel": "Vendor / Model",
+      "vendor": "Vendor",
+      "floorLevel": "Floor Level",
+      "parkingRestrictions": "Parking Restrictions",
+      "capabilities": "Capabilities",
+      "firmwareVersion": "Firmware Version",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    },
+    "aggregatedData": {
+      "timeRange": "Time Range:",
+      "contexts": "Contexts:",
+      "selectReadingContexts": "Select reading contexts"
+    },
+    "connectors": {
+      "connectorId": "Connector ID",
+      "connectorIdDescription": "The serial integers starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station.",
+      "evseTypeConnectorId": "EVSE Type Connector ID",
+      "evseTypeConnectorIdDescription": "The serial integers starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.",
+      "type": "Type",
+      "format": "Format",
+      "powerType": "Power Type",
+      "maxPower": "Max Power",
+      "maximumAmperage": "Maximum Amperage",
+      "maximumVoltage": "Maximum Voltage",
+      "maximumPowerWatts": "Maximum Power Watts",
+      "termsAndConditionsUrl": "Terms and Conditions URL",
+      "tariff": "Tariff",
+      "selectType": "Select Type",
+      "searchTypes": "Search Types",
+      "selectFormat": "Select Format",
+      "selectPowerType": "Select Power Type",
+      "searchPowerTypes": "Search Power Types",
+      "selectTariff": "Select Tariff",
+      "searchTariffs": "Search Tariffs",
+      "noConnectors": "No connectors",
+      "addConnector": "Add Connector",
+      "addNewConnector": "Add New Connector",
+      "editConnector": "Edit Connector"
+    },
+    "evses": {
+      "evseTypeId": "EVSE Type ID",
+      "evseTypeIdDescription": "The serial integers used in OCPP 2.0.1 to refer to the EVSE, unique per Charging Station.",
+      "evseId": "EVSE ID",
+      "evseIdDescription": "The eMI3 compliant EVSE ID, which must be globally unique.",
+      "physicalReference": "Physical Reference",
+      "physicalReferenceDescription": "Any identifier printed on the EVSE used to identify it when physically at the location, e.g. a number or a letter.",
+      "removed": "Removed",
+      "removedDescription": "Marked as REMOVED",
+      "noEvses": "No EVSEs",
+      "viewConnectors": "View Connectors",
+      "addNewEvse": "Add New EVSE",
+      "editEvse": "Edit Evse"
+    },
+    "evseSelector": {
+      "label": "EVSE",
+      "loading": "Loading EVSEs...",
+      "searchPlaceholder": "Search EVSE",
+      "description": "EVSE IDs are serial integers starting at 1"
+    },
+    "connectorSelector": {
+      "label": "Connector",
+      "loading": "Loading Connectors...",
+      "searchPlaceholder": "Search Connectors",
+      "selectConnector": "Select Connector",
+      "selectEvse": "Select an EVSE",
+      "description": "Connector IDs are serial integers starting at 1",
+      "descriptionForEvse": "Connectors for selected EVSE"
+    },
+    "requestId": {
+      "label": "Request ID",
+      "placeholder": "Enter request ID",
+      "positiveError": "Request ID must be a positive number"
+    },
+    "firmwareDiagnostics": {
+      "locationUrl": "Location (URL)",
+      "invalidUrl": "Must be a valid URL",
+      "locationRequired": "Location is required",
+      "retries": "Retries",
+      "retriesPlaceholder": "Number of retries",
+      "retryInterval": "Retry Interval",
+      "retryIntervalPlaceholder": "Retry interval in seconds"
+    },
+    "commands": {
+      "certificateSigned": "Certificate Signed",
+      "changeAvailability": "Change Availability",
+      "changeConfiguration": "Change Configuration",
+      "clearCache": "Clear Cache",
+      "customerInformation": "Customer Information",
+      "dataTransfer": "Data Transfer",
+      "deleteCertificate": "Delete Certificate",
+      "deleteStationNetworkProfiles": "Delete Station Network Profiles",
+      "getBaseReport": "Get Base Report",
+      "getConfiguration": "Get Configuration",
+      "getDiagnostics": "Get Diagnostics",
+      "getInstalledCertificateIds": "Get Installed Certificate IDs",
+      "getLogs": "Get Logs",
+      "getTransactionStatus": "Get Transaction Status",
+      "getVariables": "Get Variables",
+      "installCertificate": "Install Certificate",
+      "setNetworkProfile": "Set Network Profile",
+      "setVariables": "Set Variables",
+      "triggerMessage": "Trigger Message",
+      "unlockConnector": "Unlock Connector",
+      "updateAuthPassword": "Update Auth Password",
+      "updateFirmware": "Update Firmware"
+    },
+    "resetModal": {
+      "resetType": "Reset Type",
+      "selectResetType": "Select Reset Type",
+      "selectResetTypeError": "Please select a reset type"
+    },
+    "remoteStartModal": {
+      "start": "Start",
+      "remoteStartId": "Remote Start ID",
+      "remoteStartIdMin": "Remote Start ID must be at least 0",
+      "idToken": "ID Token",
+      "idTokenRequired": "ID Token is required",
+      "searchIdToken": "Search ID Token",
+      "authorization": "Authorization",
+      "authorizationRequired": "Authorization is required",
+      "selectAuthorization": "Select Authorization",
+      "searchAuthorizations": "Search Authorizations"
+    },
+    "remoteStopModal": {
+      "stop": "Stop",
+      "transactionRequired": "Transaction is required",
+      "noActiveTransactions": "No active transactions found for this charging station.",
+      "activeTransactions": "Active Transactions",
+      "selectTransaction": "Select Transaction",
+      "searchTransactions": "Search Transactions",
+      "unknownEvse": "Unknown"
+    },
+    "dataTransferModal": {
+      "vendorId": "Vendor ID",
+      "vendorIdRequired": "Vendor ID is required",
+      "vendorIdPlaceholder": "Vendor specific implementation identifier",
+      "messageId": "Message ID",
+      "messageIdPlaceholder": "Specific message or implementation identifier",
+      "data": "Data",
+      "dataPlaceholder": "Data to send (freeform text)"
+    },
+    "changeAvailabilityModal": {
+      "availability": "Availability",
+      "selectAvailabilityError": "Please select an availability type",
+      "connectorRequired": "Connector is required",
+      "operationalStatus": "Operational Status",
+      "selectStatus": "Select Status",
+      "selectStatusError": "Please select an operational status"
+    },
+    "changeConfigurationModal": {
+      "key": "Key",
+      "keyRequired": "Key is required",
+      "keyPlaceholder": "Configuration key",
+      "value": "Value",
+      "valueRequired": "Value is required",
+      "valuePlaceholder": "Configuration value"
+    },
+    "getConfigurationModal": {
+      "description": "Optionally specify configuration keys to retrieve. Leave empty to get all configuration values.",
+      "key": "Key",
+      "keyNumber": "Key #{number}",
+      "keyPlaceholder": "Enter configuration key"
+    },
+    "getDiagnosticsModal": {
+      "startTimestamp": "Start Timestamp",
+      "stopTimestamp": "Stop Timestamp"
+    },
+    "triggerMessageModal": {
+      "requestedMessage": "Requested Message",
+      "selectMessage": "Select Message",
+      "selectMessageError": "Please select a message type",
+      "selectMessageType": "Select Message Type",
+      "searchMessageTypes": "Search Message Types"
+    },
+    "updateFirmwareModal": {
+      "retrieveDate": "Retrieve Date",
+      "retrieveDateRequired": "Retrieve date is required",
+      "retrieveDateTime": "Retrieve Date/Time",
+      "installDateTime": "Install Date/Time",
+      "signingCertificate": "Signing Certificate (PEM)",
+      "signingCertificatePlaceholder": "Paste PEM-formatted certificate here",
+      "signature": "Signature",
+      "signaturePlaceholder": "Firmware signature"
+    },
+    "certificateSignedModal": {
+      "certificateFile": "Certificate File",
+      "certificateRequired": "Certificate file is required",
+      "fileTypeError": "File must be one of: {types}",
+      "fileSizeError": "File size must be less than 5MB",
+      "certificateType": "Certificate Type",
+      "selectCertificateType": "Select Certificate Type"
+    },
+    "clearCacheModal": {
+      "description": "This will send a Clear Cache request to the charging station. The station will clear its authorization cache.",
+      "proceed": "Do you want to proceed?",
+      "clearing": "Clearing..."
+    },
+    "customerInformationModal": {
+      "report": "Report",
+      "clear": "Clear",
+      "customerIdentifier": "Customer Identifier",
+      "customerIdentifierPlaceholder": "Enter customer identifier"
+    },
+    "deleteCertificateModal": {
+      "certificateRequired": "Certificate is required",
+      "selectCertificateError": "Please select a certificate",
+      "wrongStationError": "This certificate does not belong to this station",
+      "hashAlgorithm": "Hash Algorithm:",
+      "installedCertificate": "Installed Certificate",
+      "searchCertificates": "Search Certificates by Serial Number"
+    },
+    "deleteStationNetworkProfilesModal": {
+      "slotsRequired": "At least one configuration slot is required",
+      "deleteProfiles": "Delete Profiles",
+      "slot": "Slot",
+      "slotNumber": "Slot #{number}",
+      "slotPlaceholder": "Enter slot number"
+    },
+    "getBaseReportModal": {
+      "reportBase": "Report Base",
+      "reportBaseRequired": "Report Base is required",
+      "selectReportBase": "Select Report Base"
+    },
+    "getInstalledCertificateIdsModal": {
+      "certificateTypes": "Certificate Types",
+      "description": "When certificate types are omitted, all certificate types are requested.",
+      "selectCertificateTypes": "Select Certificate Types",
+      "searchCertificateTypes": "Search Certificate Types"
+    },
+    "getLogsModal": {
+      "remoteLocationUrl": "Remote Location (URL)",
+      "remoteLocationRequired": "Remote Location is required",
+      "logType": "Log Type",
+      "logTypeRequired": "Log Type is required",
+      "selectLogType": "Select Log Type",
+      "oldestTimestamp": "Oldest Timestamp",
+      "latestTimestamp": "Latest Timestamp"
+    },
+    "getTransactionStatusModal": {
+      "transaction": "Transaction",
+      "description": "Optionally select a transaction to get its status. Leave empty to get the status of all transactions."
+    },
+    "getVariablesModal": {
+      "alert": "Send a GetBaseReport to this Charging Station to populate Components and Variables.",
+      "atLeastOneVariable": "At least one variable is required",
+      "componentAndVariableRequired": "Component and Variable are required for each entry",
+      "component": "Component",
+      "variable": "Variable",
+      "componentNumber": "Component #{number}",
+      "variableNumber": "Variable #{number}",
+      "componentInstanceNumber": "Component Instance #{number}",
+      "variableInstanceNumber": "Variable Instance #{number}",
+      "attributeTypeNumber": "Attribute Type #{number}",
+      "instance": "Instance",
+      "selectComponent": "Select Component",
+      "searchComponents": "Search Components",
+      "selectVariable": "Select Variable",
+      "searchVariables": "Search Variables",
+      "selectAttributeType": "Select Attribute Type"
+    },
+    "setVariablesModal": {
+      "valueRequired": "Value is required",
+      "allFieldsRequired": "Component, Variable, and Value are required for each entry",
+      "valueNumber": "Value #{number}",
+      "valuePlaceholder": "Value To Set"
+    },
+    "installCertificateModal": {
+      "certificateRequired": "Certificate is required",
+      "certificateTooLong": "Certificate must be less than 5500 characters",
+      "certificateTypeRequired": "Certificate Type is required",
+      "invalidPem": "Incorrectly formatted PEM certificate",
+      "certificatePem": "Certificate (PEM)"
+    },
+    "setNetworkProfileModal": {
+      "apnRequired": "APN is required",
+      "apnAuthRequired": "APN Authentication is required",
+      "serverRequired": "Server is required",
+      "userRequired": "User is required",
+      "passwordRequired": "Password is required",
+      "keyRequired": "Key is required",
+      "vpnTypeRequired": "VPN Type is required",
+      "ocppVersionRequired": "OCPP Version is required",
+      "ocppTransportRequired": "OCPP Transport is required",
+      "csmsUrlRequired": "CSMS URL is required",
+      "messageTimeoutPositive": "Message timeout must be positive",
+      "securityProfilePositive": "Security profile must be positive",
+      "ocppInterfaceRequired": "OCPP Interface is required",
+      "configurationSlotNonNegative": "Configuration slot must be non-negative",
+      "websocketServerConfig": "Websocket Server Config",
+      "searchServerProfiles": "Search Server Network Profiles",
+      "configurationSlot": "Configuration Slot",
+      "ocppVersion": "OCPP Version",
+      "selectOcppVersion": "Select OCPP Version",
+      "ocppTransport": "OCPP Transport",
+      "selectOcppTransport": "Select OCPP Transport",
+      "ocppCsmsUrl": "OCPP CSMS URL",
+      "messageTimeout": "Message Timeout (seconds)",
+      "securityProfile": "Security Profile",
+      "ocppInterface": "OCPP Interface",
+      "selectOcppInterface": "Select OCPP Interface",
+      "includeApn": "Include APN Configuration",
+      "includeVpn": "Include VPN Configuration",
+      "apn": "APN",
+      "apnPlaceholder": "APN name",
+      "apnAuthentication": "APN Authentication",
+      "selectAuthType": "Select Authentication Type",
+      "apnUsername": "APN Username",
+      "apnPassword": "APN Password",
+      "simPin": "SIM PIN",
+      "preferredNetwork": "Preferred Network",
+      "useOnlyPreferredNetwork": "Use Only Preferred Network",
+      "vpnType": "VPN Type",
+      "selectVpnType": "Select VPN Type",
+      "server": "Server",
+      "serverPlaceholder": "VPN server",
+      "user": "User",
+      "userPlaceholder": "VPN username",
+      "group": "Group",
+      "password": "Password",
+      "passwordPlaceholder": "VPN password",
+      "key": "Key",
+      "keyPlaceholder": "VPN key"
+    },
+    "updateAuthPasswordModal": {
+      "passwordRequired": "Password is required",
+      "updatePassword": "Update Password",
+      "password": "Password",
+      "passwordPlaceholder": "Enter new password",
+      "setOnCharger": "Set On Charger"
+    },
+    "upsert": {
+      "selectLocation": "Select Location",
+      "selectParkingRestrictions": "Select Parking Restrictions",
+      "searchParkingRestrictions": "Search Parking Restrictions",
+      "selectCapabilities": "Select Capabilities",
+      "searchCapabilities": "Search Capabilities",
+      "useLocationCoordinates": "Use Location Coordinates",
+      "latitude": "Latitude",
+      "enterLatitude": "Enter latitude",
+      "longitude": "Longitude",
+      "enterLongitude": "Enter longitude",
+      "image": "Image"
+    },
+    "ocppMessages": {
+      "searchCorrelationId": "Search Correlation ID",
+      "selectActions": "Select Actions",
+      "searchActions": "Search Actions",
+      "filterOrigins": "Filter Origins",
+      "allOrigins": "All Origins",
+      "pickStartDate": "Pick Start Date",
+      "pickEndDate": "Pick End Date",
+      "correlationId": "Correlation ID",
+      "actionOrigin": "Action - Origin",
+      "unknownAction": "Unknown Action",
+      "timestamp": "Timestamp",
+      "content": "Content",
+      "findRelatedMessage": "Find related message",
+      "copyCorrelationId": "Copy Correlation ID"
+    },
+    "configuration": {
+      "key": "Key",
+      "value": "Value",
+      "type": "Type",
+      "componentNameInstance": "Component Name:Instance",
+      "variableNameInstance": "Variable Name:Instance",
+      "evseConnectorId": "EVSE ID:Connector ID",
+      "stationId": "Station Id",
+      "action": "Action",
+      "noData": "No data",
+      "noDataForDownload": "No data available for download",
+      "loadAttributesError": "Failed to load variable attributes",
+      "loadConfigurationsError": "Failed to load change configurations",
+      "selectOcppVersion": "Select OCPP Version",
+      "downloadCsv": "Download CSV",
+      "searchPlaceholder": "Search...",
+      "addConfiguration": "Add Configuration",
+      "editConfiguration": "Edit Configuration"
+    },
     "connectionModal": {
       "welcomeTitle": "Welcome to CitrineOS Operator UI",
       "connectionTitle": "Charging Station Connection",
@@ -61,6 +463,13 @@
           "description": "Both the Charging Station and CSMS authenticate themselves using certificates."
         }
       }
+    },
+    "exportDialog": {
+      "correlationId": "Correlation ID",
+      "actions": "Actions",
+      "origin": "Origin",
+      "startDate": "Start Date",
+      "endDate": "End Date"
     }
   }
 }

@@ -13,10 +13,16 @@ import type { CellContext } from '@tanstack/react-table';
 import type { ColumnConfiguration } from '@lib/utils/column.configuration';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 
-export const tariffsColumns: ColumnConfiguration[] = [
+type TranslateFn = (key: string, options?: any) => string;
+
+const identityTranslate: TranslateFn = (key, options) => options?.fallback ?? key;
+
+export const getTariffsColumns = (
+  translate: TranslateFn = identityTranslate,
+): ColumnConfiguration[] => [
   {
     key: TariffProps.id,
-    header: 'ID',
+    header: translate('Tariffs.columns.id'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<TariffClass, unknown>) => (
@@ -25,7 +31,7 @@ export const tariffsColumns: ColumnConfiguration[] = [
   },
   {
     key: TariffProps.currency,
-    header: 'Currency',
+    header: translate('Tariffs.columns.currency'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<TariffClass, unknown>) => (
@@ -34,7 +40,7 @@ export const tariffsColumns: ColumnConfiguration[] = [
   },
   {
     key: TariffProps.pricePerKwh,
-    header: 'Price / kWh',
+    header: translate('Tariffs.columns.pricePerKwh'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<TariffClass, unknown>) => (
@@ -43,7 +49,7 @@ export const tariffsColumns: ColumnConfiguration[] = [
   },
   {
     key: TariffProps.pricePerMin,
-    header: 'Price / min',
+    header: translate('Tariffs.columns.pricePerMin'),
     visible: true,
     cellRender: ({ row }: CellContext<TariffClass, unknown>) => (
       <span>
@@ -53,7 +59,7 @@ export const tariffsColumns: ColumnConfiguration[] = [
   },
   {
     key: TariffProps.pricePerSession,
-    header: 'Price / session',
+    header: translate('Tariffs.columns.pricePerSession'),
     visible: true,
     cellRender: ({ row }: CellContext<TariffClass, unknown>) => (
       <span>

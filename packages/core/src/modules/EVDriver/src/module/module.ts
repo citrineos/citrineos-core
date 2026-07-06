@@ -3,22 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   AuthorizationStatusEnumType,
-  BootstrapConfig,
   CallAction,
   HandlerProperties,
   IAuthorizer,
-  ICache,
   IMessage,
   IMessageContext,
-  IMessageHandler,
-  IMessageSender,
   IVatProvider,
+  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   ReservationUpdateStatusEnumType,
   ReserveNowStatusEnumType,
-  SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -40,7 +36,6 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
-  OCPPValidator,
   OCPPVersion,
   RequestStartStopStatusEnum,
   ReservationUpdateStatusEnum,
@@ -62,21 +57,35 @@ import {
   OCPP1_6_Mapper,
   OCPP2_0_1_Mapper,
   OCPP2_1_Mapper,
-  SequelizeChargingStationSequenceRepository,
   VariableAttribute,
 } from '@dal/layers/sequelize/index.js';
-import { sequelize } from '@dal/index.js';
+
 import {
   CertificateAuthorityService,
   IdGenerator,
-  RealTimeAuthorizer,
   validateIdToken,
   validateOcpp21IdToken,
-  ViesVatProvider,
 } from '@util/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { LocalAuthListService } from './LocalAuthListService.js';
+
+import type { LocalAuthListService } from './LocalAuthListService.js';
+
+export interface EVDriverModuleDependencies extends OcppModuleDependencies {
+  authorizationRepository: IAuthorizationRepository;
+  localAuthListRepository: ILocalAuthListRepository;
+  deviceModelRepository: IDeviceModelRepository;
+  tariffRepository: ITariffRepository;
+  transactionEventRepository: ITransactionEventRepository;
+  chargingProfileRepository: IChargingProfileRepository;
+  reservationRepository: IReservationRepository;
+  ocppMessageRepository: IOCPPMessageRepository;
+  locationRepository: ILocationRepository;
+  certificateAuthorityService: CertificateAuthorityService;
+  realTimeAuthorizer: IAuthorizer;
+  authorizers: IAuthorizer[];
+  idGenerator: IdGenerator;
+  localAuthListService: LocalAuthListService;
+  viesVatProvider: IVatProvider;
+}
 
 /**
  * Component that handles provisioning related messages.
@@ -96,141 +105,50 @@ export class EVDriverModule extends AbstractModule {
   private _vatProvider?: IVatProvider;
   private _idGenerator: IdGenerator;
 
-  /**
-   * This is the constructor function that initializes the {@link EVDriverModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {OCPPValidator} [ocppValidator] - An optional parameter of type {@link OCPPValidator} used to validate
-   * incoming and outgoing OCPP messages against their JSON schemas. If no `ocppValidator` is provided, a default
-   * instance is created and used.
-   *
-   * @param {IAuthorizationRepository} [authorizeRepository] - An optional parameter of type {@link IAuthorizationRepository} which represents a repository for accessing and manipulating Authorization data.
-   * If no `authorizeRepository` is provided, a default {@link sequelize:AuthorizationRepository} instance is created and used.
-   *
-   * @param {ILocalAuthListRepository} [localAuthListRepository] - An optional parameter of type {@link ILocalAuthListRepository} which represents a repository for accessing and manipulating Local Authorization List data.
-   * If no `localAuthListRepository` is provided, a default {@link sequelize:localAuthListRepository} instance is created and used.
-   *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is
-   * created and used.
-   *
-   * @param {ITariffRepository} [tariffRepository] - An optional parameter of type {@link ITariffRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:tariffRepository} instance is
-   * created and used.
-   *
-   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
-   * which represents a repository for accessing and manipulating transaction data.
-   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is
-   * created and used.
-   *
-   * @param {IChargingProfileRepository} [chargingProfileRepository] - An optional parameter of type {@link IChargingProfileRepository}
-   * which represents a repository for accessing and manipulating charging profile data.
-   * If no `chargingProfileRepository` is provided, a default {@link sequelize:chargingProfileRepository} instance is created and used.
-   *
-   * @param {IReservationRepository} [reservationRepository] - An optional parameter of type {@link IReservationRepository}
-   * which represents a repository for accessing and manipulating reservation data.
-   * If no `reservationRepository` is provided, a default {@link sequelize:reservationRepository} instance is created and used.
-   *
-   * @param {IOCPPMessageRepository} [ocppMessageRepository]  - An optional parameter of type {@link IOCPPMessageRepository}
-   * which represents a repository for accessing and manipulating ocppMessage data.
-   * If no `ocppMessageRepository` is provided, a default {@link sequelize:ocppMessageRepository} instance is created and used.
-   *
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which represents a repository for accessing and manipulating location and charging station data.
-   * If no `locationRepository` is provided, a default {@link sequelize:locationRepository} instance is
-   * created and used.
-   *
-   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of
-   * type {@link CertificateAuthorityService} which handles certificate authority operations.
-   *
-   * @param {IAuthorizer} [realTimeAuthorizer] - An optional parameter of type {@link IAuthorizer} which represents
-   * a real-time authorizer that can be used to authorize real-time requests.
-   *
-   * @param {IAuthorizer[]} [authorizers] - An optional parameter of type {@link IAuthorizer[]} which represents
-   * a list of authorizers that can be used to authorize requests.
-   *
-   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which generates
-   * unique identifiers.
-   *
-   * @param {IVatProvider} [vatProvider] - An optional parameter of type {@link IVatProvider} which find vat info
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    authorizeRepository?: IAuthorizationRepository,
-    localAuthListRepository?: ILocalAuthListRepository,
-    deviceModelRepository?: IDeviceModelRepository,
-    tariffRepository?: ITariffRepository,
-    transactionEventRepository?: ITransactionEventRepository,
-    chargingProfileRepository?: IChargingProfileRepository,
-    reservationRepository?: IReservationRepository,
-    ocppMessageRepository?: IOCPPMessageRepository,
-    locationRepository?: ILocationRepository,
-    certificateAuthorityService?: CertificateAuthorityService,
-    realTimeAuthorizer?: IAuthorizer,
-    authorizers?: IAuthorizer[],
-    idGenerator?: IdGenerator,
-    vatProvider?: IVatProvider,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    authorizationRepository,
+    localAuthListRepository,
+    deviceModelRepository,
+    tariffRepository,
+    transactionEventRepository,
+    chargingProfileRepository,
+    reservationRepository,
+    ocppMessageRepository,
+    locationRepository,
+    certificateAuthorityService,
+    realTimeAuthorizer,
+    authorizers,
+    idGenerator,
+    localAuthListService,
+    viesVatProvider,
+  }: EVDriverModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.EVDriver, logger, ocppValidator);
 
     this._requests = config.modules.evdriver.requests;
     this._responses = config.modules.evdriver.responses;
 
-    this._authorizeRepository =
-      authorizeRepository || new sequelize.SequelizeAuthorizationRepository(config, logger);
-    this._localAuthListRepository =
-      localAuthListRepository || new sequelize.SequelizeLocalAuthListRepository(config, logger);
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
-    this._tariffRepository =
-      tariffRepository || new sequelize.SequelizeTariffRepository(config, logger);
-    this._transactionEventRepository =
-      transactionEventRepository ||
-      new sequelize.SequelizeTransactionEventRepository(config, logger);
-    this._chargingProfileRepository =
-      chargingProfileRepository || new sequelize.SequelizeChargingProfileRepository(config, logger);
-    this._reservationRepository =
-      reservationRepository || new sequelize.SequelizeReservationRepository(config, logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, logger);
-    this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
+    this._authorizeRepository = authorizationRepository;
+    this._localAuthListRepository = localAuthListRepository;
+    this._deviceModelRepository = deviceModelRepository;
+    this._tariffRepository = tariffRepository;
+    this._transactionEventRepository = transactionEventRepository;
+    this._chargingProfileRepository = chargingProfileRepository;
+    this._reservationRepository = reservationRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._locationRepository = locationRepository;
+    this._certificateAuthorityService = certificateAuthorityService;
 
-    this._certificateAuthorityService =
-      certificateAuthorityService || new CertificateAuthorityService(config, cache, logger);
+    this._localAuthListService = localAuthListService;
 
-    this._localAuthListService = new LocalAuthListService(
-      this._localAuthListRepository,
-      this._deviceModelRepository,
-    );
-
-    const _realTimeAuthorizer =
-      realTimeAuthorizer ||
-      new RealTimeAuthorizer(this._locationRepository, this.config, this._logger);
-    this._authorizers = [_realTimeAuthorizer, ...(authorizers || [])];
-
-    this._idGenerator =
-      idGenerator ||
-      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
-
-    this._vatProvider = vatProvider || new ViesVatProvider();
+    this._authorizers = [realTimeAuthorizer, ...authorizers];
+    this._idGenerator = idGenerator;
+    this._vatProvider = viesVatProvider;
   }
 
   protected _authorizeRepository: IAuthorizationRepository;
@@ -1239,4 +1157,88 @@ export class EVDriverModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('ClearCacheResponse received:', message, props);
   }
+
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SendLocalList)
+  protected async _handleOcpp16SendLocalList(
+    message: IMessage<OCPP1_6.SendLocalListResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 SendLocalListResponse received:', message, props);
+
+    const stationId = message.context.ocppConnectionName;
+
+    const sendLocalListRequest =
+      await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
+        message.context.tenantId,
+        stationId,
+        message.context.correlationId,
+      );
+
+    if (!sendLocalListRequest) {
+      this._logger.error(
+        `Unable to process OCPP 1.6 SendLocalListResponse. SendLocalListRequest not found for StationId ${stationId} by CorrelationId ${message.context.correlationId}.`,
+      );
+      return;
+    }
+
+    switch (message.payload.status) {
+      case OCPP1_6.SendLocalListResponseStatus.Accepted:
+        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+          message.context.tenantId,
+          stationId,
+          sendLocalListRequest,
+        );
+        break;
+      case OCPP1_6.SendLocalListResponseStatus.Failed:
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest failed for StationId ${stationId}: ${message.context.correlationId}, ${JSON.stringify(sendLocalListRequest)}.`,
+        );
+        break;
+      case OCPP1_6.SendLocalListResponseStatus.VersionMismatch: {
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest version mismatch for StationId ${stationId}; firing GetLocalListVersion to resync.`,
+        );
+        const messageConfirmation = await this.sendCall(
+          stationId,
+          message.context.tenantId,
+          OCPPVersion.OCPP1_6,
+          OCPP_CallAction.GetLocalListVersion,
+          {} as OCPP1_6.GetLocalListVersionRequest,
+        );
+        if (!messageConfirmation.success) {
+          this._logger.error(
+            `Unable to send OCPP 1.6 GetLocalListVersion for StationId ${stationId} after version mismatch.`,
+            messageConfirmation,
+          );
+        }
+        break;
+      }
+      case OCPP1_6.SendLocalListResponseStatus.NotSupported:
+        this._logger.error(
+          `OCPP 1.6 SendLocalListRequest reported NotSupported for StationId ${stationId}.`,
+        );
+        break;
+      default:
+        this._logger.error(
+          `Unknown OCPP 1.6 SendLocalListResponseStatus: ${message.payload.status}.`,
+        );
+        break;
+    }
+  }
+
+  @AsHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetLocalListVersion)
+  protected async _handleOcpp16GetLocalListVersion(
+    message: IMessage<OCPP1_6.GetLocalListVersionResponse>,
+    props?: HandlerProperties,
+  ): Promise<void> {
+    this._logger.debug('OCPP 1.6 GetLocalListVersionResponse received:', message, props);
+
+    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
+      message.context.tenantId,
+      message.payload.listVersion,
+      message.context.ocppConnectionName,
+    );
+  }
 }
+
+export default EVDriverModule;

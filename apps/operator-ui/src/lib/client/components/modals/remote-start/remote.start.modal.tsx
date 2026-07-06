@@ -7,6 +7,7 @@ import { OCPPVersion } from '@citrineos/base';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import { plainToInstance } from 'class-transformer';
 import { useMemo } from 'react';
+import { useTranslate } from '@refinedev/core';
 import { OCPP1_6_RemoteStart } from './1.6';
 import { OCPP2_0_1_RemoteStart } from './2.0.1';
 
@@ -15,6 +16,7 @@ export interface RemoteStartTransactionModalProps {
 }
 
 export const RemoteStartTransactionModal = ({ station }: RemoteStartTransactionModalProps) => {
+  const translate = useTranslate();
   const parsedStation: ChargingStationDto = useMemo(
     () => plainToInstance(ChargingStationClass, station),
     [station],
@@ -29,7 +31,13 @@ export const RemoteStartTransactionModal = ({ station }: RemoteStartTransactionM
       case OCPPVersion.OCPP2_1:
         return <OCPP2_0_1_RemoteStart station={parsedStation} />;
       default:
-        return <div>Unsupported protocol version: {parsedStation.protocol}</div>;
+        return (
+          <div>
+            {translate('ChargingStations.unsupportedProtocol', {
+              protocol: parsedStation.protocol,
+            })}
+          </div>
+        );
     }
   };
 

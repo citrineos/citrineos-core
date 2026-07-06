@@ -9,14 +9,15 @@ import type {
   ConnectorDto,
   ConnectorStatusEnumType,
   EvseDto,
+  LatestStatusNotificationDto,
   LocationDto,
   StatusNotificationDto,
 } from '@citrineos/base';
 import {
   ChargingStationSchema,
+  LatestStatusNotificationSchema,
   LocationSchema,
   OCPP2_0_1,
-  StatusNotificationSchema,
   TransactionSchema,
 } from '@citrineos/base';
 import { Expose } from 'class-transformer';
@@ -26,7 +27,7 @@ import { z } from 'zod';
 
 const ChargingStationDetailsSchema = ChargingStationSchema.extend({
   location: LocationSchema.omit({ chargingPool: true }).optional(),
-  statusNotifications: z.array(StatusNotificationSchema).optional(),
+  statusNotifications: z.array(LatestStatusNotificationSchema).optional(),
   transactions: z.array(TransactionSchema.omit({ station: true, location: true })).optional(),
 });
 
@@ -35,7 +36,7 @@ export const ChargingStationDetailsProps = ChargingStationDetailsSchema.keyof().
 export type ChargingStationDetailsDto = z.infer<typeof ChargingStationDetailsSchema>;
 
 const ChargingStationStatusCountsSchema = ChargingStationSchema.extend({
-  statusNotifications: z.array(StatusNotificationSchema).optional(),
+  statusNotifications: z.array(LatestStatusNotificationSchema).optional(),
 });
 
 export type ChargingStationStatusCountsDto = z.infer<typeof ChargingStationStatusCountsSchema>;
@@ -60,8 +61,8 @@ export class ChargingStationClass implements Partial<ChargingStationDto> {
   parkingRestrictions?: ChargingStationParkingRestrictionEnumType[] | null;
   capabilities?: ChargingStationCapabilityEnumType[] | null;
   locationId?: number | null;
-  @Expose({ name: 'StatusNotifications' })
-  statusNotifications?: StatusNotificationDto[] | null;
+  @Expose({ name: 'LatestStatusNotifications' })
+  statusNotifications?: LatestStatusNotificationDto[] | null;
   evses?: EvseDto[] | null;
   connectors?: ConnectorDto[] | null;
   // TODO: Add missing properties from ChargingStationDto
@@ -92,6 +93,8 @@ export const getChargingStationStatus = (chargingStation: ChargingStationStatusC
 
   if (counts[ChargingStationStatus.FAULTED] > 0) {
     return ChargingStationStatus.FAULTED;
+  } else if (counts[ChargingStationStatus.CHARGING] > 0) {
+    return ChargingStationStatus.CHARGING;
   } else if (counts[ChargingStationStatus.AVAILABLE] > 0) {
     return ChargingStationStatus.AVAILABLE;
   } else if (counts[ChargingStationStatus.CHARGING_SUSPENDED] > 0) {
@@ -112,11 +115,16 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
   const evses = chargingStation?.evses;
   if (evses && evses.length > 0) {
     for (const evse of evses) {
-      const latestStatusNotificationForEvse = chargingStation?.statusNotifications?.find(
-        (latestStatusNotification) =>
-          latestStatusNotification?.evseId === evse.id &&
-          latestStatusNotification?.connectorId === evse.connectors?.[0]?.id,
-      );
+      let latestStatusNotificationForEvse: StatusNotificationDto | undefined;
+      chargingStation?.statusNotifications?.forEach((statusNotificationForStation) => {
+        if (
+          statusNotificationForStation.statusNotification?.evseId === parseInt(evse.evseId) &&
+          statusNotificationForStation.statusNotification?.connectorId ===
+            evse.connectors?.[0]?.connectorId
+        ) {
+          latestStatusNotificationForEvse = statusNotificationForStation.statusNotification;
+        }
+      });
       if (latestStatusNotificationForEvse) {
         const connectorStatus: ConnectorStatusEnumType =
           latestStatusNotificationForEvse?.connectorStatus ||
@@ -127,7 +135,7 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
             break;
           case OCPP2_0_1.ConnectorStatusEnumType.Occupied: {
             const activeTransaction = (chargingStation as ChargingStationClass)?.transactions?.find(
-              (transaction) => transaction.evse?.id === evse.id,
+              (transaction) => transaction.evseId === evse.id,
             );
             if (activeTransaction && activeTransaction.isActive) {
               const chargingState = activeTransaction.chargingState;
@@ -136,6 +144,8 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
               } else {
                 counts[ChargingStationStatus.CHARGING_SUSPENDED]++;
               }
+            } else {
+              counts[ChargingStationStatus.CHARGING_SUSPENDED]++;
             }
             break;
           }

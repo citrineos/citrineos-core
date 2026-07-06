@@ -1,8 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersion, OCPPVersionType } from '@citrineos/base';
+import type {
+  BootstrapConfig,
+  ICache,
+  OCPPVersion,
+  OCPPVersionType,
+  SystemConfig,
+} from '@citrineos/base';
 import {
+  AbstractModule,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
@@ -14,6 +21,7 @@ import type {
   ISubscriptionRepository,
 } from '@dal/interfaces/repositories.js';
 import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
+import { OidcTokenProvider } from '@util/authorization/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,6 +33,8 @@ export class WebhookDispatcher {
   protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _subscriptionRepository: ISubscriptionRepository;
 
+  protected _cache: ICache;
+  protected readonly _oidcTokenProvider?: OidcTokenProvider;
   protected _identifiers: Set<string> = new Set();
 
   // Structure of the maps: key = identifier, value = array of callbacks
@@ -33,16 +43,29 @@ export class WebhookDispatcher {
   protected _onMessageCallbacks: Map<string, OnMessageCallback[]> = new Map();
   protected _sentMessageCallbacks: Map<string, OnSentMessageCallback[]> = new Map();
 
-  constructor(
-    ocppMessageRepository: IOCPPMessageRepository,
-    subscriptionRepository: ISubscriptionRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    ocppMessageRepository,
+    subscriptionRepository,
+    cache,
+    logger,
+    config,
+  }: {
+    ocppMessageRepository: IOCPPMessageRepository;
+    subscriptionRepository: ISubscriptionRepository;
+    cache: ICache;
+    logger?: Logger<ILogObj>;
+    config?: BootstrapConfig & SystemConfig;
+  }) {
     this._ocppMessageRepository = ocppMessageRepository;
     this._subscriptionRepository = subscriptionRepository;
+    this._cache = cache;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
+
+    if (config?.oidcClient) {
+      this._oidcTokenProvider = new OidcTokenProvider(config.oidcClient, this._logger);
+    }
 
     setInterval(async () => {
       await this._refreshSubscriptions();
@@ -229,6 +252,48 @@ export class WebhookDispatcher {
     }
   }
 
+  async dispatchCallbackUrl(
+    correlationId: string,
+    ocppConnectionName: string,
+    payload: any,
+  ): Promise<void> {
+    const url: string | null = await this._cache.get(
+      correlationId,
+      AbstractModule.CALLBACK_URL_CACHE_PREFIX + ocppConnectionName,
+    );
+    if (!url) return;
+
+    this._logger.debug(`Sending callback to ${url} for correlationId: ${correlationId}`);
+
+    const headers: { [key: string]: string } = { 'Content-Type': 'application/json' };
+
+    if (this._oidcTokenProvider) {
+      try {
+        const token = await this._oidcTokenProvider.getToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      } catch (error) {
+        this._logger.error('Failed to get OIDC token for callback:', error);
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        this._logger.error(
+          `Callback to ${url} failed: ${response.status} ${response.statusText} - ${errorText}`,
+        );
+      }
+    } catch (error) {
+      this._logger.error(`Callback to ${url} failed:`, error);
+    }
+  }
+
   protected async _refreshSubscriptions() {
     if (this._identifiers.size === 0) {
       return;
@@ -249,7 +314,10 @@ export class WebhookDispatcher {
    * @param ocppConnectionName - The connection name of the charging station
    * @return {Promise<void>} a promise that resolves once all subscriptions are loaded
    */
-  protected async _loadSubscriptionsForConnection(tenantId: number, ocppConnectionName: string) {
+  protected async _loadSubscriptionsForConnection(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<void> {
     const onConnectionCallbacks: OnConnectionCallback[] = [];
     const onCloseCallbacks: OnCloseCallback[] = [];
     const onMessageCallbacks: OnMessageCallback[] = [];
@@ -418,3 +486,5 @@ export type OnSentMessageCallback = (
   message: string,
   info?: Map<string, string>,
 ) => Promise<boolean>;
+
+export default WebhookDispatcher;

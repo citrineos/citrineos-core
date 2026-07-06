@@ -1,0 +1,57 @@
+{
+  "Authorizations": {
+    "Authorizations": "Autorizações",
+    "authorization": "Autorização",
+    "noDataFound": "Nenhuma autorização encontrada com o id {id}.",
+    "noId": "Sem ID",
+    "allowed": "Permitido",
+    "notAllowed": "Não Permitido",
+    "columns": {
+      "authorizationId": "ID da Autorização",
+      "type": "Tipo",
+      "status": "Status",
+      "concurrentTransactions": "Transações Simultâneas",
+      "allowedTypes": "Tipos Permitidos",
+      "disallowedPrefixes": "Prefixos Não Permitidos",
+      "createdAt": "Criado em",
+      "updatedAt": "Atualizado em"
+    },
+    "fields": {
+      "idToken": "idToken",
+      "idTokenType": "Tipo de idToken",
+      "status": "Status",
+      "cacheExpiryDateTime": "Data/Hora de Expiração do Cache",
+      "chargingPriority": "Prioridade de Recarga",
+      "language1": "Idioma 1",
+      "language2": "Idioma 2",
+      "personalMessage": "Mensagem Pessoal",
+      "groupAuthorizationId": "ID da Autorização de Grupo",
+      "allowedConnectorTypes": "Tipos de Conector Permitidos (separados por vírgula)",
+      "disallowedEvseIdPrefixes": "Prefixos de EVSE ID Não Permitidos (separados por vírgula)",
+      "realTimeAuth": "Autenticação em Tempo Real",
+      "realTimeAuthUrl": "URL de Autenticação em Tempo Real",
+      "realTimeAuthTimeout": "Tempo Limite de Autenticação em Tempo Real (segundos)",
+      "concurrentTransaction": "Permitir Transação Simultânea",
+      "additionalInfo": "Informações Adicionais",
+      "additionalIdToken": "idToken Adicional #{index}",
+      "type": "Tipo",
+      "typeNumbered": "Tipo #{index}"
+    },
+    "placeholders": {
+      "selectType": "Selecione o Tipo",
+      "searchTypes": "Buscar Tipos",
+      "selectStatus": "Selecione o Status",
+      "searchStatuses": "Buscar Status",
+      "allowedConnectorTypes": "ex.: Type2, CCS",
+      "disallowedEvseIdPrefixes": "ex.: EVSE1, EVSE2",
+      "selectOption": "Selecione a Opção",
+      "searchOption": "Buscar Opção",
+      "additionalInfo": "Informações Adicionais",
+      "type": "Tipo"
+    },
+    "detail": {
+      "partner": "Parceiro",
+      "realTimeAuthTimeoutSeconds": "{timeout} segundos"
+    }
+  }
+}

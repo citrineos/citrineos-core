@@ -2,22 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ITariffRepository } from '../../../interfaces/repositories.js';
 import type { TariffQueryString } from '../../../interfaces/queries/Tariff.js';
 import { Tariff } from '../model/Tariff/Tariffs.js';
-import { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { Connector } from '../model/Location/Connector.js';
 
 export class SequelizeTariffRepository
   extends SequelizeRepository<Tariff>
   implements ITariffRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, Tariff.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Tariff.MODEL_NAME, logger, sequelizeInstance });
   }
 
   async findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined> {
@@ -89,3 +85,5 @@ export class SequelizeTariffRepository
     });
   }
 }
+
+export default SequelizeTariffRepository;

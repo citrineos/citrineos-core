@@ -8,11 +8,10 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import {
   chartMargin,
   chartSize,
-  elapsedTimeAxisLabel,
   formatTimeLabel,
   generateTimeTicks,
+  getXAxisLabelConfig,
   getYAxisLabelConfig,
-  xAxisLabelConfig,
 } from '@lib/client/pages/transactions/chart/util';
 import { getTimestampToMeasurandArray } from '@lib/cls/meter.value.dto';
 import { useMemo } from 'react';
@@ -25,24 +24,26 @@ import {
   ChartTooltipContent,
 } from '@lib/client/components/ui/chart';
 import { heading3Style } from '@lib/client/styles/page';
+import { useTranslate } from '@refinedev/core';
 
 interface EnergyOverTimeProps {
   meterValues: MeterValueDto[];
   validContexts: OCPP2_0_1.ReadingContextEnumType[];
 }
 
-const energyAxisLabel = 'Energy (kWh)';
-
-const chartConfig = {
-  elapsedTime: {
-    label: elapsedTimeAxisLabel,
-  },
-  kWh: {
-    label: energyAxisLabel,
-  },
-} satisfies ChartConfig;
-
 export const EnergyOverTime = ({ meterValues, validContexts }: EnergyOverTimeProps) => {
+  const translate = useTranslate();
+  const energyAxisLabel = translate('Transactions.charts.energyLabel');
+
+  const chartConfig = {
+    elapsedTime: {
+      label: translate('Transactions.charts.timeElapsed'),
+    },
+    kWh: {
+      label: energyAxisLabel,
+    },
+  } satisfies ChartConfig;
+
   const buffer = 1;
 
   const { chartData, minValue, maxValue } = useMemo(() => {
@@ -66,11 +67,11 @@ export const EnergyOverTime = ({ meterValues, validContexts }: EnergyOverTimePro
   return (
     <Card>
       <CardHeader>
-        <h3 className={heading3Style}>Energy Over Time</h3>
+        <h3 className={heading3Style}>{translate('Transactions.charts.energyTitle')}</h3>
       </CardHeader>
       <CardContent>
         {!chartData || chartData.length === 0 ? (
-          <div>No Energy data available</div>
+          <div>{translate('Transactions.charts.noEnergyData')}</div>
         ) : (
           <ChartContainer config={chartConfig} className={chartSize}>
             <LineChart data={chartData} margin={chartMargin}>
@@ -80,7 +81,7 @@ export const EnergyOverTime = ({ meterValues, validContexts }: EnergyOverTimePro
                 type="number"
                 ticks={generateTimeTicks(chartData)}
                 tickFormatter={formatTimeLabel}
-                label={xAxisLabelConfig}
+                label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
                 domain={[minValue - buffer, maxValue + buffer]}

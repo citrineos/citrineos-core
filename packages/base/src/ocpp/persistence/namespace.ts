@@ -71,6 +71,7 @@ export enum OCPP2_Namespace {
 export enum OCPP1_6_Namespace {
   ChangeConfiguration = 'ChangeConfiguration',
   Connector = 'Connector',
+  LocalListVersion = 'LocalListVersion',
   StartTransaction = 'StartTransaction',
   StopTransaction = 'StopTransaction',
 }

@@ -40,7 +40,7 @@ import { Controller } from 'react-hook-form';
 import { ScrollArea } from '@ferdiunal/refine-shadcn/ui';
 import { evsesFormUpsertGrid } from '@lib/client/pages/charging-stations/detail/evses/evses.list';
 import { Combobox } from '@lib/client/components/combobox';
-import { useList } from '@refinedev/core';
+import { useList, useTranslate } from '@refinedev/core';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 interface ConnectorUpsertProps {
@@ -60,6 +60,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
   connector,
   evseId,
 }) => {
+  const translate = useTranslate();
   const selectedChargingStation = useSelector(getSelectedChargingStation());
 
   const tenantId = useTenantId();
@@ -154,8 +155,8 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.connectorId}
-            label="Connector ID"
-            description="The serial integers starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station."
+            label={translate('ChargingStations.connectors.connectorId')}
+            description={translate('ChargingStations.connectors.connectorIdDescription')}
           >
             <Input />
           </FormField>
@@ -163,8 +164,8 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.evseTypeConnectorId}
-            label="EVSE Type Connector ID"
-            description="The serial integers starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE."
+            label={translate('ChargingStations.connectors.evseTypeConnectorId')}
+            description={translate('ChargingStations.connectors.evseTypeConnectorIdDescription')}
           >
             <Input />
           </FormField>
@@ -175,7 +176,9 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name} className={formLabelWrapperStyle}>
-                  <span className={formLabelStyle}>Type</span>
+                  <span className={formLabelStyle}>
+                    {translate('ChargingStations.connectors.type')}
+                  </span>
                   {formRequiredAsterisk}
                 </FieldLabel>
                 <Combobox<string>
@@ -185,8 +188,8 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
                   }))}
                   value={field.value ?? undefined}
                   onSelect={(value) => form.setValue(ConnectorProps.type, value)}
-                  placeholder="Select Type"
-                  searchPlaceholder="Search Types"
+                  placeholder={translate('ChargingStations.connectors.selectType')}
+                  searchPlaceholder={translate('ChargingStations.connectors.searchTypes')}
                 />
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
@@ -199,12 +202,16 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name} className={formLabelWrapperStyle}>
-                  <span className={formLabelStyle}>Format</span>
+                  <span className={formLabelStyle}>
+                    {translate('ChargingStations.connectors.format')}
+                  </span>
                   {formRequiredAsterisk}
                 </FieldLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Format" />
+                    <SelectValue
+                      placeholder={translate('ChargingStations.connectors.selectFormat')}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {formats.map((f) => (
@@ -225,7 +232,9 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name} className={formLabelWrapperStyle}>
-                  <span className={formLabelStyle}>Power Type</span>
+                  <span className={formLabelStyle}>
+                    {translate('ChargingStations.connectors.powerType')}
+                  </span>
                   {formRequiredAsterisk}
                 </FieldLabel>
                 <Combobox<string>
@@ -235,8 +244,8 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
                   }))}
                   value={field.value ?? undefined}
                   onSelect={(value) => form.setValue(ConnectorProps.powerType, value)}
-                  placeholder="Select Power Type"
-                  searchPlaceholder="Search Power Types"
+                  placeholder={translate('ChargingStations.connectors.selectPowerType')}
+                  searchPlaceholder={translate('ChargingStations.connectors.searchPowerTypes')}
                 />
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
@@ -246,7 +255,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.maximumAmperage}
-            label="Maximum Amperage"
+            label={translate('ChargingStations.connectors.maximumAmperage')}
           >
             <Input type="number" />
           </FormField>
@@ -254,7 +263,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.maximumVoltage}
-            label="Maximum Voltage"
+            label={translate('ChargingStations.connectors.maximumVoltage')}
           >
             <Input type="number" />
           </FormField>
@@ -262,7 +271,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.maximumPowerWatts}
-            label="Maximum Power Watts"
+            label={translate('ChargingStations.connectors.maximumPowerWatts')}
           >
             <Input type="number" />
           </FormField>
@@ -270,7 +279,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <FormField
             control={form.control}
             name={ConnectorProps.termsAndConditionsUrl}
-            label="Terms and Conditions URL"
+            label={translate('ChargingStations.connectors.termsAndConditionsUrl')}
           >
             <Input />
           </FormField>
@@ -278,10 +287,10 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
           <ComboboxFormField<number, any>
             control={form.control}
             name="tariffId"
-            label="Tariff"
+            label={translate('ChargingStations.connectors.tariff')}
             options={tariffOptions}
-            placeholder="Select Tariff"
-            searchPlaceholder="Search Tariffs"
+            placeholder={translate('ChargingStations.connectors.selectTariff')}
+            searchPlaceholder={translate('ChargingStations.connectors.searchTariffs')}
             isLoading={tariffQuery.isLoading}
           />
         </div>

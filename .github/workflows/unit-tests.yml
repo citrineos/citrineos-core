@@ -39,7 +39,7 @@ jobs:
               - 'packages/core/**'
               - 'packages/base/**'
             server:
-              - 'apps/Server/**'
+              - 'apps/ocpp-server/**'
               - 'packages/**'
             operator-ui:
               - 'apps/operator-ui/**'
@@ -63,7 +63,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24.16.0"
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -95,7 +95,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24.16.0"
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -124,7 +124,17 @@ jobs:
         # Build with the default docker driver (builds straight into the daemon's
         # image store) — no tarball export/import or cache round-trip, which is
         # what made the build-push-action approach ~3min slower than the build itself.
-        run: docker compose -f ${{ github.workspace }}/apps/Server/docker-compose.yml up -d --build
+        # Retry the bring-up: Docker Hub image pulls intermittently fail with a
+        # transient "registry-1.docker.io ... manifests ...: unknown" error.
+        run: |
+          COMPOSE="docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml"
+          n=0
+          until $COMPOSE up -d --build; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "backend stack failed to start after 3 attempts" >&2; exit 1; fi
+            echo "::warning::backend bring-up failed (attempt ${n}/3) — transient Docker registry pull error; retrying in 15s"
+            sleep 15
+          done
 
       - name: Wait for backend healthy
         run: |
@@ -178,4 +188,164 @@ jobs:
 
       - name: Tear down backend stack
         if: always()
-        run: docker compose -f ${{ github.workspace }}/apps/Server/docker-compose.yml down -v
+        run: docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml down -v
+
+  operator-ui-e2e-everest:
+    needs: changes
+    if: ${{ needs.changes.outputs.operator-ui == 'true' || needs.changes.outputs.shared == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.16.0"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build @citrineos/operator-ui and its workspace deps
+        run: pnpm --filter "@citrineos/operator-ui..." run build
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/operator-ui/package.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: apps/operator-ui
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: apps/operator-ui
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Start backend stack (Hasura + CitrineOS Core)
+        # Retry the bring-up: Docker Hub image pulls intermittently fail with a
+        # transient "registry-1.docker.io ... manifests ...: unknown" error.
+        run: |
+          COMPOSE="docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml"
+          n=0
+          until $COMPOSE up -d --build; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "backend stack failed to start after 3 attempts" >&2; exit 1; fi
+            echo "::warning::backend bring-up failed (attempt ${n}/3) — transient Docker registry pull error; retrying in 15s"
+            sleep 15
+          done
+
+      - name: Wait for backend healthy
+        run: |
+          set -e
+          for i in $(seq 1 60); do
+            HASURA_OK=$(curl -fs http://localhost:8090/healthz > /dev/null && echo yes || echo no)
+            CORE_OK=$(curl -fs http://localhost:8080/health > /dev/null && echo yes || echo no)
+            if [ "$HASURA_OK" = "yes" ] && [ "$CORE_OK" = "yes" ]; then
+              echo "Backend healthy after ${i} attempts."
+              exit 0
+            fi
+            echo "Waiting for backend (attempt ${i}/60): hasura=${HASURA_OK} core=${CORE_OK}"
+            sleep 5
+          done
+          echo "Backend did not become healthy in time."
+          exit 1
+
+      - name: Free up runner disk space
+        # The EVerest manager image (FROM everest-demo/manager) is several GB; with
+        # the core stack images, Playwright browsers and node_modules already on
+        # disk it can exhaust the ~14GB default free space on ubuntu-latest,
+        # surfacing as "no space left on device" while building/pulling the manager
+        # image. Reclaim ~13GB of preinstalled toolchains the lane never uses.
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/share/swift || true
+          df -h /
+
+      - name: Pre-pull and build EVerest SIL images
+        # Fetch/build the manager image (FROM everest-demo/manager) plus the
+        # mqtt/nodered images ahead of time so the first @everest test's fixture
+        # — which runs `docker compose up -d` itself — doesn't pay the
+        # multi-minute cold pull inside its boot-timeout budget. We deliberately
+        # do NOT start the stack here: the fixture owns the lifecycle, and the
+        # manager's FIRST boot must coincide with the fixture's awaitStationOnline
+        # (which waits for a StatusNotification fresher than fixture start). A
+        # manager started here would emit its only boot StatusNotification
+        # minutes before the tests run, so awaitStationOnline would never see a
+        # fresh one. The fixture's cold boot also lets libocpp create the
+        # device-model DB clean from start.sh's already-URL-corrected JSON.
+        env:
+          OCPP_VERSION: "2.1"
+          EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
+        working-directory: apps/ocpp-server/everest
+        # Retry: Docker Hub / ghcr pulls intermittently fail with a transient
+        # "registry ... manifests ...: unknown" error.
+        run: |
+          n=0
+          until docker compose build && docker compose pull mqtt-server nodered; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "EVerest image fetch failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::EVerest image build/pull failed (attempt ${n}/3) — transient Docker registry error; retrying in 15s"
+            sleep 15
+          done
+
+      - name: Run operator-ui Playwright EVerest lane
+        env:
+          CI: "true"
+          NODE_OPTIONS: "--max_old_space_size=4096"
+          NEXT_PUBLIC_ADMIN_EMAIL: admin@citrineos.com
+          ADMIN_PASSWORD: CitrineOS!
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: test-secret-for-e2e-only
+          HASURA_ADMIN_SECRET: CitrineOS!
+          NEXT_PUBLIC_API_URL: http://localhost:8090/v1/graphql
+          NEXT_PUBLIC_WS_URL: ws://localhost:8090/v1/graphql
+          NEXT_PUBLIC_CITRINE_CORE_URL: http://localhost:8080
+          NEXT_PUBLIC_FILE_SERVER_URL: http://localhost:8050
+          ALLOW_IMAGE_UPLOAD: "false"
+          OCPP_VERSION: "2.1"
+          EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
+          CITRINE_CORE_PATH: ${{ github.workspace }}/apps/ocpp-server
+        working-directory: apps/operator-ui
+        run: pnpm exec playwright test --project=everest-serial
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operator-ui-everest-playwright-report
+          path: |
+            apps/operator-ui/playwright-report
+            apps/operator-ui/test-results
+            apps/operator-ui/reports
+          retention-days: 7
+
+      - name: Dump backend + EVerest logs on failure
+        if: failure()
+        run: |
+          docker ps -a
+          echo "=== full everest-manager-1 logs (first boot included) ==="
+          docker logs everest-manager-1 2>&1 || true
+          docker container ls -aq | xargs -I {} docker logs --tail 400 {} || true
+
+      - name: Tear down EVerest stack
+        if: always()
+        working-directory: apps/ocpp-server/everest
+        run: docker compose down -v
+
+      - name: Tear down backend stack
+        if: always()
+        run: docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml down -v

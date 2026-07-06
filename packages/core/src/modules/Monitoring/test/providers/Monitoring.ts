@@ -15,6 +15,19 @@ export const aClearMonitoringResult = (
   return applyUpdateFunction(clear, updateFunction);
 };
 
+export const aGetVariableResult = (
+  updateFunction?: UpdateFunction<OCPP2_0_1.GetVariableResultType>,
+): OCPP2_0_1.GetVariableResultType => {
+  const result: OCPP2_0_1.GetVariableResultType = {
+    component: { name: 'TestComponent' },
+    variable: { name: 'TestVariable' },
+    attributeStatus: OCPP2_0_1.GetVariableStatusEnumType.Accepted,
+    attributeType: OCPP2_0_1.AttributeEnumType.Actual,
+    attributeValue: 'test-value',
+  };
+  return applyUpdateFunction(result, updateFunction);
+};
+
 export const aSetVariableData = (
   updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableDataType>,
 ): OCPP2_0_1.SetVariableDataType => {

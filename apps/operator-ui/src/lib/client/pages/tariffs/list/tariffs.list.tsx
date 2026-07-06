@@ -4,7 +4,7 @@
 'use client';
 
 import { Table } from '@lib/client/components/table';
-import { getTariffsFilters, tariffsColumns } from '@lib/client/pages/tariffs/columns';
+import { getTariffsColumns, getTariffsFilters } from '@lib/client/pages/tariffs/columns';
 import { TariffClass } from '@lib/cls/tariff.dto';
 import { TARIFF_LIST_QUERY } from '@lib/queries/tariffs';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
@@ -33,7 +33,7 @@ export const TariffsList = () => {
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    tariffsColumns,
+    getTariffsColumns(translate),
     ResourceType.TARIFFS,
   );
 

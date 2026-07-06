@@ -38,11 +38,11 @@ export const PluginSuccessRateCard = () => {
     >
       <Card>
         <CardHeader>
-          <h2 className={heading2Style}>{translate('overview.plugInSuccessRate')}</h2>
+          <h2 className={heading2Style}>{translate('Overview.plugInSuccessRate')}</h2>
         </CardHeader>
         <CardContent>
           {error ? (
-            <p>{translate('overview.errorLoadingData')}</p>
+            <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
             <div className="flex flex-col gap-4">
               <div className="w-full h-6 bg-gray-200 rounded-full overflow-hidden">

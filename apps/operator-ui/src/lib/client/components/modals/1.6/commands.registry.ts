@@ -8,8 +8,10 @@ import { ModalComponentType } from '@lib/client/components/modals/modal.types';
  * Command definition for OCPP 1.6 commands
  */
 export interface CommandDefinition {
-  /** Display name shown in the UI */
+  /** Display name shown in the UI (English fallback) */
   displayName: string;
+  /** i18n key resolving to the localized display name */
+  displayNameKey: string;
   /** Modal component type for registration */
   modalType: ModalComponentType;
 }
@@ -26,30 +28,37 @@ export interface CommandDefinition {
 export const OCPP1_6_COMMANDS_REGISTRY: Record<string, CommandDefinition> = {
   'Change Availability': {
     displayName: 'Change Availability',
+    displayNameKey: 'ChargingStations.commands.changeAvailability',
     modalType: ModalComponentType.changeAvailability16,
   },
   'Data Transfer': {
     displayName: 'Data Transfer',
+    displayNameKey: 'ChargingStations.commands.dataTransfer',
     modalType: ModalComponentType.dataTransfer,
   },
   'Change Configuration': {
     displayName: 'Change Configuration',
+    displayNameKey: 'ChargingStations.commands.changeConfiguration',
     modalType: ModalComponentType.changeConfiguration16,
   },
   'Get Configuration': {
     displayName: 'Get Configuration',
+    displayNameKey: 'ChargingStations.commands.getConfiguration',
     modalType: ModalComponentType.getConfiguration16,
   },
   'Get Diagnostics': {
     displayName: 'Get Diagnostics',
+    displayNameKey: 'ChargingStations.commands.getDiagnostics',
     modalType: ModalComponentType.getDiagnostics16,
   },
   'Trigger Message': {
     displayName: 'Trigger Message',
+    displayNameKey: 'ChargingStations.commands.triggerMessage',
     modalType: ModalComponentType.triggerMessage16,
   },
   'Update Firmware': {
     displayName: 'Update Firmware',
+    displayNameKey: 'ChargingStations.commands.updateFirmware',
     modalType: ModalComponentType.updateFirmware16,
   },
 };

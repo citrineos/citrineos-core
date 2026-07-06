@@ -69,29 +69,34 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   ) => Promise<boolean>;
   private _getMaxChargingStationsForTenant?: (tenantId: number) => Promise<number | null>;
 
-  constructor(
-    config: SystemConfig,
-    cache: ICache,
-    authenticator: IAuthenticator,
-    router: IMessageRouter,
-    fileStorage: IFileStorage,
-    logger?: Logger<ILogObj>,
-    doesChargingStationExistByStationId?: (
-      tenantId: number,
-      ocppConnectionName: string,
-    ) => Promise<boolean>,
-    getMaxChargingStationsForTenant?: (tenantId: number) => Promise<number | null>,
-    connectionManager?: IConnectionManager,
-  ) {
+  constructor({
+    config,
+    cache,
+    authenticator,
+    router,
+    fileStorage,
+    logger,
+    doesChargingStationExistByStationId,
+    getMaxChargingStationsForTenant,
+    connectionManager,
+  }: {
+    config: SystemConfig;
+    cache: ICache;
+    authenticator: IAuthenticator;
+    router: IMessageRouter;
+    fileStorage: IFileStorage;
+    logger: Logger<ILogObj>;
+    doesChargingStationExistByStationId: (tenantId: number, ocppConnectionName: string) => Promise<boolean>;
+    getMaxChargingStationsForTenant: (tenantId: number) => Promise<number | null>;
+    connectionManager: IConnectionManager;
+  }) {
     this._getMaxChargingStationsForTenant = getMaxChargingStationsForTenant;
     this._cache = cache;
     this._config = config;
     this._doesChargingStationExistByStationId = doesChargingStationExistByStationId;
     this._connectionManager = connectionManager;
     this._fileStorage = fileStorage;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
     this._authenticator = authenticator;
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
@@ -857,3 +862,5 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     });
   }
 }
+
+export default WebsocketNetworkConnection;

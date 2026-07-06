@@ -68,36 +68,37 @@ type LocationsUpsertProps = {
   allowImageUpload?: boolean;
 };
 
-const LocationCreateSchema = LocationSchema.pick({
-  [LocationProps.name]: true,
-  [LocationProps.address]: true,
-  [LocationProps.city]: true,
-  [LocationProps.postalCode]: true,
-  [LocationProps.state]: true,
-  [LocationProps.country]: true,
-  [LocationProps.timeZone]: true,
-  [LocationProps.coordinates]: true,
-  [LocationProps.parkingType]: true,
-  [LocationProps.facilities]: true,
-  [LocationProps.chargingPool]: true,
-  [LocationProps.openingHours]: true,
-}).extend({
-  [LocationProps.chargingPool]: z
-    .array(
-      ChargingStationSchema.pick({
-        [ChargingStationProps.id]: true,
-      }),
-    )
-    .nullable()
-    .optional(),
-  [LocationProps.address]: z.string().min(1, 'Street address is required'),
-  [LocationProps.city]: z.string().optional().default(''),
-  [LocationProps.state]: z.string().nullable().optional().default(''),
-  [LocationProps.postalCode]: z.string().optional().default(''),
-  [LocationProps.country]: z.string().optional().default(''),
-});
+const buildLocationCreateSchema = (addressRequiredMessage: string) =>
+  LocationSchema.pick({
+    [LocationProps.name]: true,
+    [LocationProps.address]: true,
+    [LocationProps.city]: true,
+    [LocationProps.postalCode]: true,
+    [LocationProps.state]: true,
+    [LocationProps.country]: true,
+    [LocationProps.timeZone]: true,
+    [LocationProps.coordinates]: true,
+    [LocationProps.parkingType]: true,
+    [LocationProps.facilities]: true,
+    [LocationProps.chargingPool]: true,
+    [LocationProps.openingHours]: true,
+  }).extend({
+    [LocationProps.chargingPool]: z
+      .array(
+        ChargingStationSchema.pick({
+          [ChargingStationProps.id]: true,
+        }),
+      )
+      .nullable()
+      .optional(),
+    [LocationProps.address]: z.string().min(1, addressRequiredMessage),
+    [LocationProps.city]: z.string().optional().default(''),
+    [LocationProps.state]: z.string().nullable().optional().default(''),
+    [LocationProps.postalCode]: z.string().optional().default(''),
+    [LocationProps.country]: z.string().optional().default(''),
+  });
 
-type LocationCreateDto = z.infer<typeof LocationCreateSchema>;
+type LocationCreateDto = z.infer<ReturnType<typeof buildLocationCreateSchema>>;
 
 const defaultLocation = {
   [LocationProps.name]: '',
@@ -157,7 +158,9 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
       },
     },
     defaultValues: defaultLocation,
-    resolver: zodResolver(LocationCreateSchema),
+    resolver: zodResolver(
+      buildLocationCreateSchema(translate('Locations.form.streetAddressRequired')),
+    ),
     warnWhenUnsavedChanges: true,
   });
 
@@ -235,9 +238,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
     }
 
     Promise.all(updateOperations).catch((err: any) =>
-      toast.error(
-        `Failed to update charging stations on location due to error ${JSON.stringify(err)}`,
-      ),
+      toast.error(translate('Locations.form.uploadFailedToast', { error: JSON.stringify(err) })),
     );
   };
 
@@ -376,7 +377,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   <div className="col-span-2">
                     <FormField
                       control={form.control}
-                      label="Name"
+                      label={translate('Locations.form.name')}
                       name={LocationProps.name}
                       required
                     >
@@ -388,7 +389,9 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   <div className="col-span-2">
                     <Field>
                       <FieldLabel className={formLabelWrapperStyle}>
-                        <span className={formLabelStyle}>Street Address</span>
+                        <span className={formLabelStyle}>
+                          {translate('Locations.form.streetAddress')}
+                        </span>
                         {formRequiredAsterisk}
                       </FieldLabel>
                       <AddressAutocomplete
@@ -409,7 +412,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                             });
                           }
                         }}
-                        placeholder="Start typing to search, or enter manually below"
+                        placeholder={translate('Locations.form.addressAutocompletePlaceholder')}
                       />
                       {form.formState.errors[LocationProps.address] && (
                         <p className="text-sm text-destructive mt-1">
@@ -420,40 +423,46 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   </div>
 
                   {/* City */}
-                  <FormField control={form.control} label="City" name={LocationProps.city}>
-                    <Input placeholder="e.g. Berlin" />
+                  <FormField
+                    control={form.control}
+                    label={translate('Locations.form.city')}
+                    name={LocationProps.city}
+                  >
+                    <Input placeholder={translate('Locations.form.cityPlaceholder')} />
                   </FormField>
 
                   {/* State / Province / Region — free text, works globally */}
                   <FormField
                     control={form.control}
-                    label="State / Province / Region"
+                    label={translate('Locations.form.stateProvinceRegion')}
                     name={LocationProps.state}
                   >
-                    <Input placeholder="e.g. California, Ontario, Bayern" />
+                    <Input
+                      placeholder={translate('Locations.form.stateProvinceRegionPlaceholder')}
+                    />
                   </FormField>
 
                   {/* Postal Code */}
                   <FormField
                     control={form.control}
-                    label="Postal Code"
+                    label={translate('Locations.form.postalCode')}
                     name={LocationProps.postalCode}
                   >
-                    <Input placeholder="e.g. 94105, SW1A 1AA, 10115" />
+                    <Input placeholder={translate('Locations.form.postalCodePlaceholder')} />
                   </FormField>
 
                   {/* Country */}
                   <ComboboxFormField
                     control={form.control}
                     name={LocationProps.country}
-                    label="Country"
+                    label={translate('Locations.form.country')}
                     value={chosenCountryName}
                     options={countryList.map((country) => ({
                       label: country.name,
                       value: country.name,
                     }))}
-                    placeholder="Select country"
-                    searchPlaceholder="Search countries..."
+                    placeholder={translate('Locations.form.selectCountry')}
+                    searchPlaceholder={translate('Locations.form.searchCountries')}
                     onSelect={(countryName: string) => {
                       const selected = countryList.find((c) => c.name === countryName);
                       if (selected) {
@@ -465,7 +474,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   {/* Lat / Lng */}
                   <Field>
                     <FieldLabel htmlFor="latitude" className={formLabelWrapperStyle}>
-                      <span className={formLabelStyle}>Latitude</span>
+                      <span className={formLabelStyle}>{translate('Locations.form.latitude')}</span>
                       {formRequiredAsterisk}
                     </FieldLabel>
                     <Input
@@ -481,12 +490,14 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                           });
                       }}
                       type="number"
-                      placeholder="Auto-filled from address"
+                      placeholder={translate('Locations.form.autoFilledFromAddress')}
                     />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="longitude" className={formLabelWrapperStyle}>
-                      <span className={formLabelStyle}>Longitude</span>
+                      <span className={formLabelStyle}>
+                        {translate('Locations.form.longitude')}
+                      </span>
                       {formRequiredAsterisk}
                     </FieldLabel>
                     <Input
@@ -502,14 +513,14 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                           });
                       }}
                       type="number"
-                      placeholder="Auto-filled from address"
+                      placeholder={translate('Locations.form.autoFilledFromAddress')}
                     />
                   </Field>
 
                   {/* Time Zone */}
                   <FormField
                     control={form.control}
-                    label="Time Zone"
+                    label={translate('Locations.form.timeZone')}
                     name={LocationProps.timeZone}
                     required
                   >
@@ -520,24 +531,24 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   <ComboboxFormField
                     control={form.control}
                     name={LocationProps.parkingType}
-                    label="Parking Type"
+                    label={translate('Locations.form.parkingType')}
                     options={parkingTypes.map((pt: LocationParkingEnumType) => ({
                       label: pt,
                       value: pt,
                     }))}
-                    placeholder="Select Parking Type"
-                    searchPlaceholder="Search Parking Types"
+                    placeholder={translate('Locations.form.selectParkingType')}
+                    searchPlaceholder={translate('Locations.form.searchParkingTypes')}
                   />
 
                   {/* Facilities */}
                   <div className="col-span-2">
                     <MultiSelectFormField
                       control={form.control}
-                      label="Facilities"
+                      label={translate('Locations.form.facilities')}
                       name={LocationProps.facilities}
                       options={facilities}
-                      placeholder="Select Facilities"
-                      searchPlaceholder="Search Facilities"
+                      placeholder={translate('Locations.form.selectFacilities')}
+                      searchPlaceholder={translate('Locations.form.searchFacilities')}
                     />
                   </div>
 
@@ -545,7 +556,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                   {allowImageUpload && (
                     <Field>
                       <FieldLabel>
-                        <span className={formLabelStyle}>Image</span>
+                        <span className={formLabelStyle}>{translate('Locations.form.image')}</span>
                       </FieldLabel>
                       <Input
                         type="file"
@@ -565,7 +576,7 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
                         onClick={() => document.getElementById('uploadInput')?.click()}
                       >
                         <UploadIcon className={buttonIconSize} />
-                        Upload
+                        {translate('Locations.form.upload')}
                       </Button>
                       {uploadedFileName && (
                         <span className="text-sm text-gray-700">{uploadedFileName}</span>

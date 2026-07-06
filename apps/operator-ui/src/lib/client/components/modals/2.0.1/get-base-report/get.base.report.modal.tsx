@@ -12,7 +12,7 @@ import { CHARGING_STATION_SEQUENCES_GET_QUERY } from '@lib/queries/charging.stat
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useApiUrl, useCustom, useGetIdentity } from '@refinedev/core';
+import { useApiUrl, useCustom, useGetIdentity, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useEffect, useMemo, useState } from 'react';
@@ -26,20 +26,31 @@ export interface GetBaseReportModalProps {
   station: any;
 }
 
-const GetBaseReportSchema = z.object({
-  requestId: z.coerce.number<number>().int().positive('Request ID must be a positive number'),
-  reportBase: z.enum(OCPP2_0_1.ReportBaseEnumType, {
-    message: 'Report Base is required',
-  }),
-});
-
-type GetBaseReportFormData = z.infer<typeof GetBaseReportSchema>;
+type GetBaseReportFormData = {
+  requestId: number;
+  reportBase: OCPP2_0_1.ReportBaseEnumType;
+};
 
 const reportBaseTypes = Object.keys(OCPP2_0_1.ReportBaseEnumType);
 
 export const GetBaseReportModal = ({ station }: GetBaseReportModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
+
+  const GetBaseReportSchema = useMemo(
+    () =>
+      z.object({
+        requestId: z.coerce
+          .number<number>()
+          .int()
+          .positive(translate('ChargingStations.requestId.positiveError')),
+        reportBase: z.enum(OCPP2_0_1.ReportBaseEnumType, {
+          message: translate('ChargingStations.getBaseReportModal.reportBaseRequired'),
+        }),
+      }),
+    [translate],
+  );
 
   const tenantId = useTenantId();
 
@@ -95,6 +106,7 @@ export const GetBaseReportModal = ({ station }: GetBaseReportModalProps) => {
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/reporting/getBaseReport?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -113,16 +125,21 @@ export const GetBaseReportModal = ({ station }: GetBaseReportModalProps) => {
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Request ID" name="requestId" required>
-        <Input type="number" placeholder="Enter request ID" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.requestId.label')}
+        name="requestId"
+        required
+      >
+        <Input type="number" placeholder={translate('ChargingStations.requestId.placeholder')} />
       </FormField>
 
       <SelectFormField
         control={form.control}
-        label="Report Base"
+        label={translate('ChargingStations.getBaseReportModal.reportBase')}
         name="reportBase"
         options={reportBaseTypes}
-        placeholder="Select Report Base"
+        placeholder={translate('ChargingStations.getBaseReportModal.selectReportBase')}
         required
       />
     </Form>

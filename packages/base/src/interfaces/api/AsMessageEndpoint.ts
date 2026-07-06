@@ -4,7 +4,7 @@
 
 import type { IMessageEndpointDefinition } from '@interfaces/api/MessageEndpointDefinition.js';
 import { METADATA_MESSAGE_ENDPOINTS } from '@interfaces/api/metadata.js';
-import type { CallAction } from '@ocpp/rpc/message.js';
+import type { CallAction, OCPPVersion } from '@ocpp/rpc/message.js';
 
 /**
  * Decorator for use in module API class to expose methods as REST OCPP message endpoints.
@@ -16,7 +16,7 @@ import type { CallAction } from '@ocpp/rpc/message.js';
  */
 export const AsMessageEndpoint = function (
   action: CallAction,
-  bodySchema: object | ((instance: any) => object),
+  bodySchema: object | ((instance: any, version: OCPPVersion | null) => object),
   optionalQuerystrings?: Record<string, any>,
 ) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor): void => {

@@ -16,16 +16,15 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 
-export const ChangeConfigurationSchema = z.object({
-  key: z.string().min(1, 'Key is required'),
-  value: z.string().min(1, 'Value is required'),
-});
-
-export type ChangeConfigurationFormData = z.infer<typeof ChangeConfigurationSchema>;
+export type ChangeConfigurationFormData = {
+  key: string;
+  value: string;
+};
 
 export interface ChangeConfigurationModalProps {
   station: any;
@@ -39,6 +38,7 @@ export const ChangeConfigurationModal = ({
   onFinish,
 }: ChangeConfigurationModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -47,6 +47,17 @@ export const ChangeConfigurationModal = ({
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const ChangeConfigurationSchema = useMemo(
+    () =>
+      z.object({
+        key: z.string().min(1, translate('ChargingStations.changeConfigurationModal.keyRequired')),
+        value: z
+          .string()
+          .min(1, translate('ChargingStations.changeConfigurationModal.valueRequired')),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(ChangeConfigurationSchema),
@@ -70,6 +81,7 @@ export const ChangeConfigurationModal = ({
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/changeConfiguration?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -93,12 +105,24 @@ export const ChangeConfigurationModal = ({
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Key" name="key">
-        <Input placeholder="Configuration key" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.changeConfigurationModal.key')}
+        name="key"
+      >
+        <Input
+          placeholder={translate('ChargingStations.changeConfigurationModal.keyPlaceholder')}
+        />
       </FormField>
 
-      <FormField control={form.control} label="Value" name="value">
-        <Input placeholder="Configuration value" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.changeConfigurationModal.value')}
+        name="value"
+      >
+        <Input
+          placeholder={translate('ChargingStations.changeConfigurationModal.valuePlaceholder')}
+        />
       </FormField>
     </Form>
   );

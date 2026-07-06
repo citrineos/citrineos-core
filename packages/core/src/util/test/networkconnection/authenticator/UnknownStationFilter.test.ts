@@ -1,25 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ILocationRepository } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 import { UnknownStationFilter } from '../../../index.js';
 import { aRequest } from '../../providers/IncomingMessageProvider.js';
 import { anAuthenticationOptions } from '../../providers/AuthenticationOptionsProvider.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 describe('UnknownStationFilter', () => {
-  let locationRepository: Mocked<ILocationRepository>;
-  let filter: UnknownStationFilter;
-
-  beforeEach(() => {
-    locationRepository = {
-      doesChargingStationExistByStationId: vi.fn(),
-    } as unknown as Mocked<ILocationRepository>;
-
-    filter = new UnknownStationFilter(locationRepository);
-  });
+  const { container } = createTestContainer();
+  const locationRepository = { doesChargingStationExistByStationId: vi.fn() };
+  const filter = getTestInstance(container, UnknownStationFilter, { locationRepository });
 
   afterEach(() => {
     locationRepository.doesChargingStationExistByStationId.mockReset();

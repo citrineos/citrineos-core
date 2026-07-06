@@ -19,20 +19,24 @@ export class Authenticator implements IAuthenticator {
   private _networkProfileFilter: NetworkProfileFilter;
   private _basicAuthenticationFilter: BasicAuthenticationFilter;
 
-  constructor(
-    unknownStationFilter: UnknownStationFilter,
-    connectedStationFilter: ConnectedStationFilter,
-    networkProfileFilter: NetworkProfileFilter,
-    basicAuthenticationFilter: BasicAuthenticationFilter,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    unknownStationFilter,
+    connectedStationFilter,
+    networkProfileFilter,
+    basicAuthenticationFilter,
+    logger,
+  }: {
+    unknownStationFilter: UnknownStationFilter;
+    connectedStationFilter: ConnectedStationFilter;
+    networkProfileFilter: NetworkProfileFilter;
+    basicAuthenticationFilter: BasicAuthenticationFilter;
+    logger: Logger<ILogObj>;
+  }) {
     this._unknownStationFilter = unknownStationFilter;
     this._connectedStationFilter = connectedStationFilter;
     this._networkProfileFilter = networkProfileFilter;
     this._basicAuthenticationFilter = basicAuthenticationFilter;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
   }
 
   async authenticate(
@@ -52,3 +56,5 @@ export class Authenticator implements IAuthenticator {
     return { identifier };
   }
 }
+
+export default Authenticator;

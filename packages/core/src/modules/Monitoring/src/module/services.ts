@@ -9,7 +9,7 @@ import { VariableAttribute } from '@dal/layers/sequelize/index.js';
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
 
-  constructor(deviceModelRepository: IDeviceModelRepository) {
+  constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
     this._deviceModelRepository = deviceModelRepository;
   }
 

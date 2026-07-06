@@ -12,8 +12,9 @@ import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
@@ -22,21 +23,28 @@ export interface OCPP1_6_ResetProps {
   station: ChargingStationDto;
 }
 
-const ResetSchema = z.object({
-  type: z.enum(OCPP1_6.ResetRequestType, {
-    message: 'Please select a reset type',
-  }),
-});
-
-type ResetFormData = z.infer<typeof ResetSchema>;
+type ResetFormData = {
+  type: OCPP1_6.ResetRequestType;
+};
 
 const resetTypes = Object.keys(OCPP1_6.ResetRequestType);
 
 export const OCPP1_6_Reset = ({ station }: OCPP1_6_ResetProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
+
+  const ResetSchema = useMemo(
+    () =>
+      z.object({
+        type: z.enum(OCPP1_6.ResetRequestType, {
+          message: translate('ChargingStations.resetModal.selectResetTypeError'),
+        }),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(ResetSchema),
@@ -49,6 +57,7 @@ export const OCPP1_6_Reset = ({ station }: OCPP1_6_ResetProps) => {
     const data = { type: values.type };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/reset?identifier=${station.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -66,14 +75,14 @@ export const OCPP1_6_Reset = ({ station }: OCPP1_6_ResetProps) => {
       submitHandler={handleSubmit}
       hideCancel
       submitButtonVariant={FormButtonVariants.submit}
-      submitButtonLabel="Reset"
+      submitButtonLabel={translate('ChargingStations.reset')}
     >
       <SelectFormField
         control={form.control}
-        label="Reset Type"
+        label={translate('ChargingStations.resetModal.resetType')}
         name="type"
         options={resetTypes}
-        placeholder="Select Reset Type"
+        placeholder={translate('ChargingStations.resetModal.selectResetType')}
       />
     </Form>
   );

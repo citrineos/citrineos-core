@@ -2,6 +2,36 @@
   "Tariffs": {
     "Tariffs": "Tariffs",
     "tariff": "Tariff",
-    "noDataFound": "No tariff found with id {id}."
+    "noDataFound": "No tariff found with id {id}.",
+    "columns": {
+      "id": "ID",
+      "currency": "Currency",
+      "pricePerKwh": "Price / kWh",
+      "pricePerMin": "Price / min",
+      "pricePerSession": "Price / session"
+    },
+    "fields": {
+      "currency": "Currency (3-letter code)",
+      "pricePerKwh": "Price per kWh",
+      "pricePerMin": "Price per min",
+      "pricePerSession": "Price per session",
+      "authorizationAmount": "Authorization Amount",
+      "paymentFee": "Payment Fee",
+      "taxRate": "Tax Rate (%)",
+      "tariffAltText": "Tariff Alt Text (JSON)"
+    },
+    "placeholders": {
+      "currency": "e.g. USD",
+      "tariffAltText": "{ \"en\": \"Standard tariff\", \"de\": \"Standardtarif\" }"
+    },
+    "detail": {
+      "currency": "Currency",
+      "pricePerKwh": "Price / kWh",
+      "pricePerMin": "Price / min",
+      "pricePerSession": "Price / session",
+      "authorizationAmount": "Authorization Amount",
+      "paymentFee": "Payment Fee",
+      "taxRate": "Tax Rate (%)"
+    }
   }
 }

@@ -17,7 +17,7 @@ import { LocationClass } from '@lib/cls/location.dto';
 import { CHARGING_STATIONS_LIST_QUERY } from '@lib/queries/charging.stations';
 import { LOCATIONS_LIST_QUERY } from '@lib/queries/locations';
 import { ResourceType } from '@lib/utils/access.types';
-import { useList } from '@refinedev/core';
+import { useList, useTranslate } from '@refinedev/core';
 import { plainToInstance } from 'class-transformer';
 import React, { useState } from 'react';
 
@@ -33,6 +33,7 @@ export const CombinedMap: React.FC<CombinedMapProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'locations' | 'stations'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'location' | 'station' | 'mixed' | null>(null);
+  const translate = useTranslate();
 
   const {
     query: { data: locationsData },
@@ -83,16 +84,16 @@ export const CombinedMap: React.FC<CombinedMapProps> = ({
   return (
     <div className="combined-map-container">
       <div className="map-controls flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Network Overview</h2>
+        <h2 className="text-2xl font-semibold">{translate('Locations.map.networkOverview')}</h2>
         <div className="flex items-center gap-4">
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as 'all' | 'locations' | 'stations')}
           >
             <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="locations">Locations</TabsTrigger>
-              <TabsTrigger value="stations">Stations</TabsTrigger>
+              <TabsTrigger value="all">{translate('Locations.map.all')}</TabsTrigger>
+              <TabsTrigger value="locations">{translate('Locations.map.locations')}</TabsTrigger>
+              <TabsTrigger value="stations">{translate('Locations.map.stations')}</TabsTrigger>
             </TabsList>
           </Tabs>
           {selectedId && selectedType && (
@@ -107,11 +108,11 @@ export const CombinedMap: React.FC<CombinedMapProps> = ({
                           : `/charging-stations/${selectedId}`;
                     }}
                   >
-                    View Details
+                    {translate('Locations.map.viewDetails')}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>View {selectedType} details</p>
+                  <p>{translate('Locations.map.viewTypeDetails', { type: selectedType })}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -135,21 +136,21 @@ export const CombinedMap: React.FC<CombinedMapProps> = ({
             className="legend-color w-4 h-4 rounded"
             style={{ backgroundColor: 'var(--primary-color-1)' }}
           ></div>
-          <span>Online</span>
+          <span>{translate('Locations.map.online')}</span>
         </div>
         <div className="legend-item flex items-center gap-2">
           <div
             className="legend-color w-4 h-4 rounded"
             style={{ backgroundColor: 'var(--grayscale-color-2)' }}
           ></div>
-          <span>Partial</span>
+          <span>{translate('Locations.map.partial')}</span>
         </div>
         <div className="legend-item flex items-center gap-2">
           <div
             className="legend-color w-4 h-4 rounded"
             style={{ backgroundColor: 'var(--secondary-color-2)' }}
           ></div>
-          <span>Offline</span>
+          <span>{translate('Locations.map.offline')}</span>
         </div>
       </div>
     </div>

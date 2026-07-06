@@ -23,6 +23,7 @@ import {
 import { Checkbox } from '@lib/client/components/ui/checkbox';
 import { Combobox, type ComboboxProps } from '@lib/client/components/combobox';
 import { MultiSelect, type MultiSelectProps } from '@lib/client/components/multi-select';
+import { useTranslate } from '@refinedev/core';
 
 type Props<
   TFieldValues extends FieldValues = FieldValues,
@@ -107,6 +108,7 @@ export const SelectFormField = <
     placeholder?: string;
   },
 ) => {
+  const translate = useTranslate();
   return (
     <Controller
       name={props.name}
@@ -115,7 +117,7 @@ export const SelectFormField = <
         <FieldWrapper {...{ ...props, field, fieldState }}>
           <Select value={field.value} onValueChange={field.onChange}>
             <SelectTrigger>
-              <SelectValue placeholder={props.placeholder ?? 'Select Item'} />
+              <SelectValue placeholder={props.placeholder ?? translate('Common.selectItem')} />
             </SelectTrigger>
             <SelectContent>
               {props.options.map((o) => (

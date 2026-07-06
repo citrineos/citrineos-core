@@ -1,0 +1,67 @@
+{
+  "TenantPartners": {
+    "TenantPartners": "Parceiros",
+    "tenantPartner": "Parceiro",
+    "noDataFound": "Nenhum parceiro encontrado com o id {id}.",
+    "unnamedBusiness": "Empresa sem nome",
+    "loadingPartnerData": "Carregando dados do parceiro...",
+    "columns": {
+      "name": "Nome",
+      "countryCode": "Código do País",
+      "partyId": "ID da Parte"
+    },
+    "fields": {
+      "countryCode": "Código do País",
+      "partyId": "ID da Parte",
+      "versionsUrl": "URL de Versões",
+      "clientToken": "Token do Cliente",
+      "ocpiVersion": "Versão OCPI",
+      "versionDetailsUrl": "URL de Detalhes da Versão",
+      "serverCredentialsVersionsUrl": "(Credenciais do Servidor) URL de Versões",
+      "serverCredentialsToken": "(Credenciais do Servidor) Token",
+      "roles": "Papéis",
+      "role": "Papel",
+      "businessName": "Nome da Empresa",
+      "website": "Site"
+    },
+    "placeholders": {
+      "selectVersion": "Selecione a Versão",
+      "selectRole": "Selecione o Papel",
+      "businessName": "Nome da Empresa",
+      "website": "Site"
+    },
+    "validation": {
+      "countryCodeLength": "O Código do País deve ter exatamente 2 caracteres.",
+      "partyIdLength": "O ID da Parte deve ter exatamente 3 caracteres."
+    },
+    "notifications": {
+      "createSuccess": "Parceiro criado com sucesso",
+      "updateSuccess": "Parceiro atualizado com sucesso",
+      "createError": "Erro ao criar parceiro: {message}",
+      "updateError": "Erro ao atualizar parceiro: {message}"
+    },
+    "detail": {
+      "countryCode": "Código do País",
+      "partyId": "ID da Parte",
+      "website": "Site",
+      "roles": "Papéis",
+      "ocpiVersion": "Versão OCPI",
+      "versionsUrl": "URL de Versões",
+      "logoAlt": "logo de {name}"
+    },
+    "tabs": {
+      "endpoints": "Endpoints"
+    },
+    "endpoints": {
+      "endpoint": "Endpoint",
+      "identifier": "Identificador",
+      "url": "URL",
+      "noEndpointsFound": "Nenhum endpoint encontrado",
+      "deleteConfirm": "Tem certeza de que deseja excluir este endpoint? Esta ação não pode ser desfeita.",
+      "errorIdentifierRequired": "Por favor, informe o identificador",
+      "errorUrlRequired": "Por favor, informe a URL",
+      "placeholderIdentifier": "Informe o identificador",
+      "placeholderUrl": "Informe a URL"
+    }
+  }
+}

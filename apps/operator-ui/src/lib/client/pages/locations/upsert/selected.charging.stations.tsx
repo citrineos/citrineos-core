@@ -100,14 +100,18 @@ export const SelectedChargingStations = ({ form, params }: SelectedChargingStati
                 append(JSON.parse(stringifiedStation));
               }}
               onSearch={onSearch}
-              placeholder="Search Charging Station"
-              emptyMessage={query.isLoading ? 'Loading...' : 'No Charging Stations found'}
+              placeholder={translate('Locations.stations.searchChargingStation')}
+              emptyMessage={
+                query.isLoading
+                  ? translate('Common.loadingEllipsis')
+                  : translate('Locations.stations.noChargingStationsFound')
+              }
               isLoading={query.isLoading}
               skipValue
             />
             {chargingStations.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                No Charging Stations selected
+                {translate('Locations.stations.noChargingStationsSelected')}
               </div>
             ) : (
               <div className="border rounded-md flex flex-col gap-4">
@@ -116,23 +120,33 @@ export const SelectedChargingStations = ({ form, params }: SelectedChargingStati
                     key={station.fieldArrayId}
                     className="flex items-center justify-between gap-4 p-4 w-full border-b last:border-b-0"
                   >
-                    <KeyValueDisplay keyLabel="Station ID" value={station.ocppConnectionName} />
                     <KeyValueDisplay
-                      keyLabel="Status"
+                      keyLabel={translate('Locations.stations.stationId')}
+                      value={station.ocppConnectionName}
+                    />
+                    <KeyValueDisplay
+                      keyLabel={translate('Common.status')}
                       value={station.isOnline}
                       valueRender={(isOnline: any) => (
                         <span className={isOnline ? 'text-success' : 'text-destructive'}>
-                          {isOnline ? 'Online' : 'Offline'}
+                          {isOnline ? translate('Common.online') : translate('Common.offline')}
                         </span>
                       )}
                     />
                     <KeyValueDisplay
-                      keyLabel="Configuration"
-                      value={station.firmwareVersion ?? 'Needs configuration'}
+                      keyLabel={translate('Locations.stations.configuration')}
+                      value={
+                        station.firmwareVersion ??
+                        translate('Locations.stations.needsConfiguration')
+                      }
                     />
                     <KeyValueDisplay
-                      keyLabel="Model / Vendor"
-                      value={`${station.chargePointModel ?? 'Needs model'} / ${station.chargePointVendor ?? 'Needs Vendor'}`}
+                      keyLabel={translate('Locations.stations.modelVendor')}
+                      value={`${
+                        station.chargePointModel ?? translate('Locations.stations.needsModel')
+                      } / ${
+                        station.chargePointVendor ?? translate('Locations.stations.needsVendor')
+                      }`}
                     />
                     <RemoveArrayItemButton onRemoveAction={() => remove(index)} />
                   </div>

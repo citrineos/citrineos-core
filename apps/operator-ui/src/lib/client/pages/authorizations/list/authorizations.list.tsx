@@ -7,7 +7,7 @@ import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Table } from '@lib/client/components/table';
 import { Button } from '@lib/client/components/ui/button';
 import {
-  authorizationsColumns,
+  getAuthorizationsColumns,
   getAuthorizationFilters,
 } from '@lib/client/pages/authorizations/columns';
 import { AuthorizationClass } from '@lib/cls/authorization.dto';
@@ -37,7 +37,7 @@ export const AuthorizationsList = () => {
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    authorizationsColumns,
+    getAuthorizationsColumns(translate),
     ResourceType.AUTHORIZATIONS,
   );
 

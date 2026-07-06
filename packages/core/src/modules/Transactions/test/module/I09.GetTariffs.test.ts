@@ -5,20 +5,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type {
-  BootstrapConfig,
-  CrudRepository,
-  IAuthorizer,
-  ICache,
-  IFileStorage,
-  IMessage,
-  IMessageHandler,
-  IMessageSender,
-  OcppRequest,
-  SystemConfig,
-} from '@citrineos/base';
+import type { BootstrapConfig, IMessage, OcppRequest, SystemConfig } from '@citrineos/base';
 import {
-  AuthorizationStatusEnum,
   DEFAULT_TENANT_ID,
   EventGroup,
   MessageOrigin,
@@ -27,16 +15,10 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import type {
-  IAuthorizationRepository,
-  IDeviceModelRepository,
-  ILocationRepository,
-  IOCPPMessageRepository,
-  IReservationRepository,
-  ITariffRepository,
-  ITransactionEventRepository,
-} from '../../../../dal/interfaces/repositories.js';
+import { asValue } from 'awilix';
+import type { ILocationRepository } from '@citrineos/core';
 import { TransactionsModule } from '../../src/module/module.js';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 vi.mock('@util/security/SignedMeterValuesUtil.js', () => ({
   SignedMeterValuesUtil: vi.fn().mockImplementation(() => ({
@@ -142,6 +124,7 @@ function makeMessage<T extends OcppRequest>(
 }
 
 describe('I09 - Local Cost Calculation - Get Tariffs', () => {
+  const { container } = createTestContainer();
   let module: TransactionsModule;
   let mockLocationRepository: Partial<ILocationRepository>;
   let mockConnectorFindAll: any;
@@ -173,53 +156,37 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
     const config = makeConfig();
     const logger = new Logger<ILogObj>({ name: 'test', minLevel: 6 });
 
-    const mockHandler = {
-      subscribe: vi.fn().mockResolvedValue(true),
-      set module(_: any) {},
-    } as unknown as IMessageHandler;
-
-    const mockSender = {
-      sendResponse: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as IMessageSender;
-
-    module = new TransactionsModule(
-      config,
-      {} as ICache,
-      {} as IFileStorage,
-      mockSender,
-      mockHandler,
-      logger,
-      undefined,
-      {
+    // Register the module's dependencies as untyped values (asValue needs no casts).
+    // Repos carry only the methods the handler touches; the module's injected
+    // services are mocked at the boundary.
+    container.register({
+      config: asValue(config),
+      logger: asValue(logger),
+      cache: asValue({}),
+      sender: asValue({ sendResponse: vi.fn().mockResolvedValue({ success: true }) }),
+      handler: asValue({ subscribe: vi.fn().mockResolvedValue(true), set module(_: unknown) {} }),
+      ocppValidator: asValue(undefined),
+      transactionEventRepository: asValue({
         createOrUpdateTransactionByTransactionEventAndStationId: vi.fn(),
-      } as unknown as ITransactionEventRepository,
-      {
-        readAllByQuerystring: vi.fn().mockResolvedValue([]),
-      } as unknown as IAuthorizationRepository,
-      {
-        readAllByQuerystring: vi.fn().mockResolvedValue([]),
-      } as unknown as IDeviceModelRepository,
-      {
-        readAllByQuery: vi.fn().mockResolvedValue([]),
-      } as unknown as CrudRepository<any>,
-      mockLocationRepository as ILocationRepository,
-      {
-        readAllByQuerystring: vi.fn().mockResolvedValue([]),
-      } as unknown as ITariffRepository,
-      {
-        updateAllByQuery: vi.fn().mockResolvedValue([]),
-      } as unknown as IReservationRepository,
-      {
-        readOnlyOneByQuery: vi.fn().mockResolvedValue(null),
-      } as unknown as IOCPPMessageRepository,
-      {
-        authorize: vi.fn().mockResolvedValue(AuthorizationStatusEnum.Accepted),
-      } as unknown as IAuthorizer,
-      undefined,
-      {
-        readAllByQuery: vi.fn().mockResolvedValue([]),
-      } as unknown as any,
-    );
+      }),
+      authorizationRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
+      deviceModelRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
+      locationRepository: asValue(mockLocationRepository),
+      tariffRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
+      ocppMessageRepository: asValue({ readOnlyOneByQuery: vi.fn().mockResolvedValue(null) }),
+      chargingProfileRepository: asValue({ readAllByQuery: vi.fn().mockResolvedValue([]) }),
+      transactionService: asValue({
+        authorizeOcpp21IdToken: vi.fn().mockResolvedValue({}),
+        authorizeOcpp201IdToken: vi.fn().mockResolvedValue({}),
+        deactivateReservation: vi.fn().mockResolvedValue(undefined),
+      }),
+      statusNotificationService: asValue({}),
+      costCalculator: asValue({}),
+      costNotifier: asValue({}),
+      signedMeterValuesUtil: asValue({ validateMeterValues: vi.fn().mockResolvedValue(true) }),
+    });
+
+    module = getTestInstance(container, TransactionsModule, {});
   });
 
   describe('I09.FR.03 - No tariffs returns NoTariff status', () => {

@@ -88,8 +88,12 @@ export const LocationsDetail = ({ params }: LocationDetailProps) => {
           <CardContent>
             <Tabs defaultValue="charging-stations">
               <TabsList>
-                <TabsTrigger value="charging-stations">Charging Stations</TabsTrigger>
-                <TabsTrigger value="opening-hours">Opening Hours</TabsTrigger>
+                <TabsTrigger value="charging-stations">
+                  {translate('Locations.chargingStations')}
+                </TabsTrigger>
+                <TabsTrigger value="opening-hours">
+                  {translate('Locations.openingHours')}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="charging-stations">
                 <LocationsChargingStationsTable location={location} showHeader />

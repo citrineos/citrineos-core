@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
 import type { IChangeConfigurationRepository } from '../../../interfaces/repositories.js';
 import { ChangeConfiguration } from '../model/ChangeConfiguration.js';
-import { SequelizeRepository } from './Base.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Sequelize } from 'sequelize-typescript';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeChangeConfigurationRepository
   extends SequelizeRepository<ChangeConfiguration>
   implements IChangeConfigurationRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, ChangeConfiguration.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: ChangeConfiguration.MODEL_NAME, logger, sequelizeInstance });
   }
 
   async createOrUpdateChangeConfiguration(
@@ -49,3 +45,5 @@ export class SequelizeChangeConfigurationRepository
     return changeConfiguration;
   }
 }
+
+export default SequelizeChangeConfigurationRepository;

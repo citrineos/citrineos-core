@@ -116,7 +116,7 @@ export const useColumnPreferences = (allColumns: ColumnConfiguration[], resource
       </PopoverTrigger>
       <PopoverContent className="p-0">
         <Command>
-          <CommandInput placeholder="Search Columns" />
+          <CommandInput placeholder={translate('Common.searchColumns')} />
           <CommandList>
             <CommandEmpty></CommandEmpty>
             <CommandGroup>

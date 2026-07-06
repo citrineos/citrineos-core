@@ -10,10 +10,13 @@ export class MonitoringService {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
   protected _logger: Logger<ILogObj>;
 
-  constructor(
-    variableMonitoringRepository: IVariableMonitoringRepository,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    variableMonitoringRepository,
+    logger,
+  }: {
+    variableMonitoringRepository: IVariableMonitoringRepository;
+    logger: Logger<ILogObj>;
+  }) {
     this._variableMonitoringRepository = variableMonitoringRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

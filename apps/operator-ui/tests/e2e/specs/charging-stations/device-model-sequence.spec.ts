@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
 import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
 import { ModalHarness } from '../../pages/components/modal.po';
@@ -13,6 +14,14 @@ import { ModalHarness } from '../../pages/components/modal.po';
 //
 // Serial: a shared worker-scoped EVerest station; GetBaseReport runs first so
 // the selectors are populated for the read/write tests that follow.
+//
+// Determinism note (why there is no conditional skip): NotifyReport ingestion
+// is implemented citrineos-core behaviour, already exercised by E2E-094, and
+// cp001's Components/Variables rows are PERSISTENT — the global purge only
+// removes `e2e-%` rows, never cp001's device model — so once any GetBaseReport
+// has populated the model it stays populated across runs. We therefore wait
+// for the model deterministically (expect.poll, the test's actual assertion)
+// rather than skipping on a slow ingest.
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -27,6 +36,40 @@ async function deviceModelComponentCount(apiClient: {
      }`,
   );
   return data.Components_aggregate.aggregate.count;
+}
+
+// Waits for the device model to be populated (Components > 0). A fresh stack
+// needs a few seconds to ingest the NotifyReport stream; a warm stack returns
+// on the first poll. The 90s budget sits well inside the 180s everest-serial
+// test timeout.
+async function waitForDeviceModel(apiClient: { gql: <T>(q: string) => Promise<T> }): Promise<void> {
+  await expect
+    .poll(() => deviceModelComponentCount(apiClient), {
+      timeout: 90_000,
+      intervals: [3_000],
+    })
+    .toBeGreaterThan(0);
+}
+
+// Opens the combobox anchored on the given group label and picks its first
+// real option. Waits for an option to render before clicking so a still-
+// loading useSelect query (the trigger flips enabled before the option list
+// arrives) cannot race the click into the empty state.
+async function selectFirstOption(
+  page: Page,
+  modal: ModalHarness,
+  groupLabel: RegExp,
+): Promise<void> {
+  const trigger = modal.dialog
+    .getByRole('group')
+    .filter({ hasText: groupLabel })
+    .getByRole('combobox')
+    .first();
+  await expect(trigger).toBeEnabled({ timeout: 15_000 });
+  await trigger.click();
+  const firstOption = page.getByRole('option').first();
+  await expect(firstOption).toBeVisible({ timeout: 15_000 });
+  await firstOption.click();
 }
 
 test.describe('charging-stations › device model sequence @everest', () => {
@@ -46,28 +89,9 @@ test.describe('charging-stations › device model sequence @everest', () => {
     await baseReport.expectOpen();
     await baseReport.submitAndWaitForToast();
 
-    // Wait for the device model to be populated (already persistent from prior
-    // NotifyReports in a warm stack; gives a fresh stack time to ingest). A
-    // timeout here is acceptable — test.skip below documents it as an EVerest
-    // limitation rather than a test failure.
-    let components = 0;
-    try {
-      await expect
-        .poll(
-          async () => {
-            components = await deviceModelComponentCount(apiClient);
-            return components;
-          },
-          { timeout: 90_000, intervals: [3_000] },
-        )
-        .toBeGreaterThan(0);
-    } catch {
-      // components remains 0 and test.skip below fires.
-    }
-    test.skip(
-      components === 0,
-      'NotifyReport did not populate the device model within 90s — documented EVerest limitation.',
-    );
+    // The model populates deterministically (persistent cp001 rows + implemented
+    // NotifyReport ingestion); wait for it as the test's assertion.
+    await waitForDeviceModel(apiClient);
 
     // Selectors are populated — reload so the modal picks up the rows, then
     // read a real Component/Variable end-to-end.
@@ -77,22 +101,8 @@ test.describe('charging-stations › device model sequence @everest', () => {
     const getVars = new ModalHarness(page, /get variables/i);
     await getVars.expectOpen();
 
-    const componentTrigger = getVars.dialog
-      .getByRole('group')
-      .filter({ hasText: /component #1/i })
-      .getByRole('combobox')
-      .first();
-    await componentTrigger.click();
-    await page.getByRole('option').first().click();
-
-    const variableTrigger = getVars.dialog
-      .getByRole('group')
-      .filter({ hasText: /variable #1/i })
-      .getByRole('combobox')
-      .first();
-    await expect(variableTrigger).toBeEnabled({ timeout: 15_000 });
-    await variableTrigger.click();
-    await page.getByRole('option').first().click();
+    await selectFirstOption(page, getVars, /component #1/i);
+    await selectFirstOption(page, getVars, /variable #1/i);
 
     await getVars.submitAndWaitForToast();
   });
@@ -102,10 +112,9 @@ test.describe('charging-stations › device model sequence @everest', () => {
     everestStation,
     apiClient,
   }) => {
-    test.skip(
-      (await deviceModelComponentCount(apiClient)) === 0,
-      'Device model empty — SetVariables has no variables to write.',
-    );
+    // E2E-097 (serial-prior) populated the persistent model; wait for it
+    // deterministically so this test does not silently depend on ordering.
+    await waitForDeviceModel(apiClient);
 
     const detail = new ChargingStationDetailPage(page);
     await detail.goto(everestStation.id);
@@ -113,22 +122,8 @@ test.describe('charging-stations › device model sequence @everest', () => {
     const setVars = new ModalHarness(page, /set variables/i);
     await setVars.expectOpen();
 
-    const componentTrigger = setVars.dialog
-      .getByRole('group')
-      .filter({ hasText: /component #1/i })
-      .getByRole('combobox')
-      .first();
-    await componentTrigger.click();
-    await page.getByRole('option').first().click();
-
-    const variableTrigger = setVars.dialog
-      .getByRole('group')
-      .filter({ hasText: /variable #1/i })
-      .getByRole('combobox')
-      .first();
-    await expect(variableTrigger).toBeEnabled({ timeout: 15_000 });
-    await variableTrigger.click();
-    await page.getByRole('option').first().click();
+    await selectFirstOption(page, setVars, /component #1/i);
+    await selectFirstOption(page, setVars, /variable #1/i);
 
     await setVars.dialog
       .getByRole('group')

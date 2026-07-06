@@ -16,11 +16,15 @@ export class InternalSmartCharging implements ISmartCharging {
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(chargingProfileRepository: IChargingProfileRepository, logger?: Logger<ILogObj>) {
+  constructor({
+    chargingProfileRepository,
+    logger,
+  }: {
+    chargingProfileRepository: IChargingProfileRepository;
+    logger: Logger<ILogObj>;
+  }) {
     this._chargingProfileRepository = chargingProfileRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
   }
 
   /**
@@ -257,3 +261,5 @@ export class InternalSmartCharging implements ISmartCharging {
     }
   }
 }
+
+export default InternalSmartCharging;

@@ -13,7 +13,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
@@ -26,16 +26,10 @@ export interface ChangeAvailabilityModalProps {
   station: ChargingStationDto;
 }
 
-const ChangeAvailabilitySchema = z.object({
-  type: z.enum(OCPP1_6.ChangeAvailabilityRequestType, {
-    message: 'Please select an availability type',
-  }),
-  connectorId: z.number({
-    message: 'Connector is required',
-  }),
-});
-
-type ChangeAvailabilityFormData = z.infer<typeof ChangeAvailabilitySchema>;
+type ChangeAvailabilityFormData = {
+  type: OCPP1_6.ChangeAvailabilityRequestType;
+  connectorId: number;
+};
 
 const availabilityTypes: OCPP1_6.ChangeAvailabilityRequestType[] = Object.keys(
   OCPP1_6.ChangeAvailabilityRequestType,
@@ -43,6 +37,7 @@ const availabilityTypes: OCPP1_6.ChangeAvailabilityRequestType[] = Object.keys(
 
 export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -51,6 +46,19 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const ChangeAvailabilitySchema = useMemo(
+    () =>
+      z.object({
+        type: z.enum(OCPP1_6.ChangeAvailabilityRequestType, {
+          message: translate('ChargingStations.changeAvailabilityModal.selectAvailabilityError'),
+        }),
+        connectorId: z.number({
+          message: translate('ChargingStations.changeAvailabilityModal.connectorRequired'),
+        }),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(ChangeAvailabilitySchema),
@@ -95,6 +103,7 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
     };
 
     await triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/changeAvailability?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -119,20 +128,20 @@ export const ChangeAvailabilityModal = ({ station }: ChangeAvailabilityModalProp
     >
       <SelectFormField
         control={form.control}
-        label="Availability"
+        label={translate('ChargingStations.changeAvailabilityModal.availability')}
         name="type"
         options={availabilityTypes}
         required
       />
       <ComboboxFormField
         control={form.control}
-        label="Connector"
+        label={translate('ChargingStations.connectorSelector.label')}
         name="connectorId"
-        description="Connector IDs are serial integers starting at 1"
+        description={translate('ChargingStations.connectorSelector.description')}
         options={options}
         onSearch={onSearch}
-        placeholder="Select Connector"
-        searchPlaceholder="Search Connectors"
+        placeholder={translate('ChargingStations.connectorSelector.selectConnector')}
+        searchPlaceholder={translate('ChargingStations.connectorSelector.searchPlaceholder')}
         isLoading={query.isLoading}
         required
       />

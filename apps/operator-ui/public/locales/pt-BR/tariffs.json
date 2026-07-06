@@ -1,0 +1,37 @@
+{
+  "Tariffs": {
+    "Tariffs": "Tarifas",
+    "tariff": "Tarifa",
+    "noDataFound": "Nenhuma tarifa encontrada com o id {id}.",
+    "columns": {
+      "id": "ID",
+      "currency": "Moeda",
+      "pricePerKwh": "Preço / kWh",
+      "pricePerMin": "Preço / min",
+      "pricePerSession": "Preço / sessão"
+    },
+    "fields": {
+      "currency": "Moeda (código de 3 letras)",
+      "pricePerKwh": "Preço por kWh",
+      "pricePerMin": "Preço por min",
+      "pricePerSession": "Preço por sessão",
+      "authorizationAmount": "Valor de Autorização",
+      "paymentFee": "Taxa de Pagamento",
+      "taxRate": "Alíquota de Imposto (%)",
+      "tariffAltText": "Texto Alternativo da Tarifa (JSON)"
+    },
+    "placeholders": {
+      "currency": "ex.: USD",
+      "tariffAltText": "{ \"en\": \"Standard tariff\", \"de\": \"Standardtarif\" }"
+    },
+    "detail": {
+      "currency": "Moeda",
+      "pricePerKwh": "Preço / kWh",
+      "pricePerMin": "Preço / min",
+      "pricePerSession": "Preço / sessão",
+      "authorizationAmount": "Valor de Autorização",
+      "paymentFee": "Taxa de Pagamento",
+      "taxRate": "Alíquota de Imposto (%)"
+    }
+  }
+}

@@ -7,10 +7,10 @@ import React from 'react';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { Circle } from '@lib/client/pages/overview/circle/circle';
-import { CHARGING_STATIONS_STATUS_COUNT_QUERY } from '@lib/queries/charging.stations';
+import { CHARGING_STATIONS_LIST_QUERY } from '@lib/queries/charging.stations';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
-import { CanAccess, useCustom, useTranslate } from '@refinedev/core';
+import { CanAccess, useList, useTranslate } from '@refinedev/core';
 import { ChevronRightIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { heading2Style } from '@lib/client/styles/page';
@@ -27,15 +27,37 @@ export const OnlineStatusCard = () => {
   const translate = useTranslate();
 
   const {
-    query: { data, isLoading, error },
-  } = useCustom({
-    meta: {
-      gqlQuery: CHARGING_STATIONS_STATUS_COUNT_QUERY,
-    },
-  } as any);
+    query: { data: onlineData, isLoading: onlineLoading, error: onlineError },
+  } = useList({
+    resource: ResourceType.CHARGING_STATIONS,
+    liveMode: 'auto',
+    filters: [{ field: 'isOnline', operator: 'eq', value: true }],
+    pagination: { currentPage: 1, pageSize: 1 },
+    meta: { gqlQuery: CHARGING_STATIONS_LIST_QUERY },
+  });
 
-  const onlineCount = data?.data?.online?.aggregate?.count || 0;
-  const offlineCount = data?.data?.offline?.aggregate?.count || 0;
+  const {
+    query: { data: offlineData, isLoading: offlineLoading, error: offlineError },
+  } = useList({
+    resource: ResourceType.CHARGING_STATIONS,
+    liveMode: 'auto',
+    filters: [
+      {
+        operator: 'or',
+        value: [
+          { field: 'isOnline', operator: 'eq', value: false },
+          { field: 'isOnline', operator: 'null', value: true },
+        ],
+      },
+    ],
+    pagination: { currentPage: 1, pageSize: 1 },
+    meta: { gqlQuery: CHARGING_STATIONS_LIST_QUERY },
+  });
+
+  const isLoading = onlineLoading || offlineLoading;
+  const error = onlineError || offlineError;
+  const onlineCount = onlineData?.total ?? 0;
+  const offlineCount = offlineData?.total ?? 0;
 
   if (isLoading) return <OverviewCardSkeleton />;
 
@@ -48,32 +70,32 @@ export const OnlineStatusCard = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h2 className={heading2Style}>{translate('overview.chargerOnlineStatus')}</h2>
+            <h2 className={heading2Style}>{translate('Overview.chargerOnlineStatus')}</h2>
             <div
               onClick={() => push(`/${MenuSection.CHARGING_STATIONS}`)}
               className={overviewClickableStyle}
             >
-              {translate('overview.viewAllChargers')} <ChevronRightIcon />
+              {translate('Overview.viewAllChargers')} <ChevronRightIcon />
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {error ? (
-            <p>{translate('overview.errorLoadingData')}</p>
+            <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
             <div className="flex items-center gap-12">
               <div className={statusFlex}>
                 <span className={statusLabelStyle}>{onlineCount}</span>
                 <div className={statusIndicatorFlex}>
                   <Circle status={ChargerStatusEnum.ONLINE} />
-                  Online
+                  {translate('Common.online')}
                 </div>
               </div>
               <div className={statusFlex}>
                 <span className={statusLabelStyle}>{offlineCount}</span>
                 <div className={statusIndicatorFlex}>
                   <Circle status={ChargerStatusEnum.OFFLINE} />
-                  Offline
+                  {translate('Common.offline')}
                 </div>
               </div>
             </div>

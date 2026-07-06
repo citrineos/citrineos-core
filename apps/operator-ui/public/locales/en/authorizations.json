@@ -2,6 +2,56 @@
   "Authorizations": {
     "Authorizations": "Authorizations",
     "authorization": "Authorization",
-    "noDataFound": "No authorization found with id {id}."
+    "noDataFound": "No authorization found with id {id}.",
+    "noId": "No ID",
+    "allowed": "Allowed",
+    "notAllowed": "Not Allowed",
+    "columns": {
+      "authorizationId": "Authorization ID",
+      "type": "Type",
+      "status": "Status",
+      "concurrentTransactions": "Concurrent Transactions",
+      "allowedTypes": "Allowed Types",
+      "disallowedPrefixes": "Disallowed Prefixes",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    },
+    "fields": {
+      "idToken": "ID Token",
+      "idTokenType": "ID Token Type",
+      "status": "Status",
+      "cacheExpiryDateTime": "Cache Expiry DateTime",
+      "chargingPriority": "Charging Priority",
+      "language1": "Language 1",
+      "language2": "Language 2",
+      "personalMessage": "Personal Message",
+      "groupAuthorizationId": "Group Authorization ID",
+      "allowedConnectorTypes": "Allowed Connector Types (comma-separated)",
+      "disallowedEvseIdPrefixes": "Disallowed EVSE ID Prefixes (comma-separated)",
+      "realTimeAuth": "Real-Time Authentication",
+      "realTimeAuthUrl": "Real-Time Authentication URL",
+      "realTimeAuthTimeout": "Real-Time Authentication Timeout (seconds)",
+      "concurrentTransaction": "Allow Concurrent Transaction",
+      "additionalInfo": "Additional Info",
+      "additionalIdToken": "Additional Id Token #{index}",
+      "type": "Type",
+      "typeNumbered": "Type #{index}"
+    },
+    "placeholders": {
+      "selectType": "Select Type",
+      "searchTypes": "Search Types",
+      "selectStatus": "Select Status",
+      "searchStatuses": "Search Statuses",
+      "allowedConnectorTypes": "e.g., Type2, CCS",
+      "disallowedEvseIdPrefixes": "e.g., EVSE1, EVSE2",
+      "selectOption": "Select Option",
+      "searchOption": "Search Option",
+      "additionalInfo": "Additional Info",
+      "type": "Type"
+    },
+    "detail": {
+      "partner": "Partner",
+      "realTimeAuthTimeoutSeconds": "{timeout} seconds"
+    }
   }
 }

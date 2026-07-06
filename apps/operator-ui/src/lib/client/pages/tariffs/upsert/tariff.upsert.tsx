@@ -149,16 +149,16 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
             <div className={cardGridStyle}>
               <FormField
                 control={form.control}
-                label="Currency (3-letter code)"
+                label={translate('Tariffs.fields.currency')}
                 name={TariffProps.currency}
                 required
               >
-                <Input placeholder="e.g. USD" maxLength={3} />
+                <Input placeholder={translate('Tariffs.placeholders.currency')} maxLength={3} />
               </FormField>
 
               <FormField
                 control={form.control}
-                label="Price per kWh"
+                label={translate('Tariffs.fields.pricePerKwh')}
                 name={TariffProps.pricePerKwh}
                 required
               >
@@ -167,7 +167,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Price per min"
+                label={translate('Tariffs.fields.pricePerMin')}
                 name={TariffProps.pricePerMin}
               >
                 <Input type="number" min="0" step="0.01" />
@@ -175,7 +175,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Price per session"
+                label={translate('Tariffs.fields.pricePerSession')}
                 name={TariffProps.pricePerSession}
               >
                 <Input type="number" min="0" step="0.01" />
@@ -183,26 +183,34 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Authorization Amount"
+                label={translate('Tariffs.fields.authorizationAmount')}
                 name={TariffProps.authorizationAmount}
               >
                 <Input type="number" min="0" step="0.01" />
               </FormField>
 
-              <FormField control={form.control} label="Payment Fee" name={TariffProps.paymentFee}>
+              <FormField
+                control={form.control}
+                label={translate('Tariffs.fields.paymentFee')}
+                name={TariffProps.paymentFee}
+              >
                 <Input type="number" min="0" step="0.01" />
               </FormField>
 
-              <FormField control={form.control} label="Tax Rate (%)" name={TariffProps.taxRate}>
+              <FormField
+                control={form.control}
+                label={translate('Tariffs.fields.taxRate')}
+                name={TariffProps.taxRate}
+              >
                 <Input type="number" min="0" step="0.0001" />
               </FormField>
 
               <FormField
                 control={form.control}
-                label="Tariff Alt Text (JSON)"
+                label={translate('Tariffs.fields.tariffAltText')}
                 name={TariffProps.tariffAltText}
               >
-                <Textarea placeholder='{ "en": "Standard tariff", "de": "Standardtarif" }' />
+                <Textarea placeholder={translate('Tariffs.placeholders.tariffAltText')} />
               </FormField>
             </div>
           </Form>

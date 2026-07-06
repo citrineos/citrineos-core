@@ -196,6 +196,18 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
     localAuthorizationList?: OCPP2_common_types.AuthorizationData[],
   ): Promise<SendLocalList>;
   /**
+   * OCPP 1.6 variant. Resolves Authorization rows by flat idTag (no IdTokenEnumType).
+   * For DIFFERENTIAL deletes, an entry without idTagInfo is allowed and recorded as a tombstone.
+   */
+  createSendLocalListFromRequestData16(
+    tenantId: number,
+    stationId: string,
+    correlationId: string,
+    updateType: OCPP1_6.SendLocalListRequestUpdateType,
+    versionNumber: number,
+    localAuthorizationList?: NonNullable<OCPP1_6.SendLocalListRequest['localAuthorizationList']>,
+  ): Promise<SendLocalList>;
+  /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
    * @param tenantId
    * @param versionNumber

@@ -1,0 +1,24 @@
+{
+  "Overview": {
+    "activeTransactions": "Active Transactions",
+    "chargerActivity": "Charger Activity",
+    "chargerOnlineStatus": "Charger Online Status",
+    "chargers": "Chargers",
+    "errorLoadingData": "Error loading data",
+    "plugInSuccessRate": "Plug-In Success Rate",
+    "noActiveTransactions": "No active transactions.",
+    "noChargersStatus": "No chargers currently have {status} status.",
+    "viewAllChargers": "View all chargers",
+    "viewAllLocations": "View all locations",
+    "viewAllTransactions": "View all transactions",
+    "viewAll": "View all",
+    "faultedChargers": "Faulted Chargers",
+    "somethingWentWrong": "Something went wrong!",
+    "station": "Station",
+    "stationLabel": "Station: {value}",
+    "location": "Location:",
+    "totalKwh": "Total kWh: {value}",
+    "totalTime": "Total Time: {value}",
+    "transactionStatus": "Status: {value}"
+  }
+}

@@ -18,11 +18,10 @@ export class OverviewPage {
   readonly kpiChargerActivityHeading: Locator;
   readonly faultedChargersHeading: Locator;
   readonly locationsCardHeading: Locator;
+  readonly locationsMapSurface: Locator;
 
   readonly expandSidebarButton: Locator;
   readonly collapseSidebarButton: Locator;
-  readonly themeToggleLightLabel: Locator;
-  readonly themeToggleDarkLabel: Locator;
   readonly logoutButton: Locator;
 
   constructor(private readonly page: Page) {
@@ -54,18 +53,17 @@ export class OverviewPage {
     this.locationsCardHeading = page.getByRole('heading', {
       name: /^locations$/i,
     });
+    // The Google Maps SDK only mounts its `.gm-style` tile container after it
+    // authenticates a valid API key; with the placeholder key it never appears.
+    // Asserting on it (rather than the statically-rendered card heading) proves
+    // the key-gated map surface actually rendered.
+    this.locationsMapSurface = page.locator('.gm-style').first();
 
     this.expandSidebarButton = page.getByRole('button', {
       name: /expand sidebar/i,
     });
     this.collapseSidebarButton = page.getByRole('button', {
       name: /collapse sidebar/i,
-    });
-    this.themeToggleLightLabel = page.getByRole('button', {
-      name: /^light mode$/i,
-    });
-    this.themeToggleDarkLabel = page.getByRole('button', {
-      name: /^dark mode$/i,
     });
     this.logoutButton = page.getByRole('button', { name: /^logout$/i });
   }
@@ -123,13 +121,6 @@ export class OverviewPage {
       await this.expandSidebarButton.click();
       await expect(this.collapseSidebarButton).toBeVisible();
     }
-  }
-
-  async toggleTheme(): Promise<void> {
-    await this.expandSidebar();
-    const lightVisible = await this.themeToggleLightLabel.isVisible().catch(() => false);
-    const target = lightVisible ? this.themeToggleLightLabel : this.themeToggleDarkLabel;
-    await target.click();
   }
 
   async signOut(): Promise<void> {

@@ -6,3 +6,4 @@ export { ReportingOcpp16Api } from './module/1.6/MessageApi.js';
 export { ReportingOcpp2Api } from './module/2/MessageApi.js';
 export type { IReportingModuleApi } from './module/interface.js';
 export { ReportingModule } from './module/module.js';
+export { registerReportingServices } from './register.js';

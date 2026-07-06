@@ -4,22 +4,17 @@
 import {
   AbstractModule,
   AsHandler,
-  type BootstrapConfig,
   type CallAction,
   ErrorCode,
   EventGroup,
   type HandlerProperties,
-  type ICache,
   type IFileStorage,
   type IMessage,
-  type IMessageHandler,
-  type IMessageSender,
+  type OcppModuleDependencies,
   MessageOrigin,
   OCPP_CallAction,
   OCPP_2_VER_LIST,
   OcppError,
-  OCPPValidator,
-  type SystemConfig,
   OCPP2_response_types,
   OCPP2_request_types,
   OCPP2_common_types,
@@ -44,30 +39,37 @@ import type {
   IInstalledCertificateRepository,
   IOCPPMessageRepository,
 } from '@dal/interfaces/repositories.js';
-import {
-  InstalledCertificate,
-  SequelizeOCPPMessageRepository,
-} from '@dal/layers/sequelize/index.js';
-import { sequelize } from '@dal/index.js';
+import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
+
 import {
   parseCSRForVerification,
   sendOCSPRequest,
   validatePEMEncodedCSR,
-  WebsocketNetworkConnection,
   CertificateAuthorityService,
 } from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { InstallCertificateHelperService } from './installCertificateHelperService.js';
+
+import type { InstallCertificateHelperService } from './installCertificateHelperService.js';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
 });
 pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
+
+export interface CertificatesModuleDependencies extends OcppModuleDependencies {
+  fileStorage: IFileStorage;
+  deviceModelRepository: IDeviceModelRepository;
+  certificateRepository: ICertificateRepository;
+  installedCertificateRepository: IInstalledCertificateRepository;
+  installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+  deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+  ocppMessageRepository: IOCPPMessageRepository;
+  certificateAuthorityService: CertificateAuthorityService;
+  installCertificateHelperService: InstallCertificateHelperService;
+}
 
 /**
  * Component that handles provisioning related messages.
@@ -91,118 +93,38 @@ export class CertificatesModule extends AbstractModule {
   protected _fileStorage: IFileStorage;
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
-  /**
-   * Constructor
-   */
-
-  /**
-   * This is the constructor function that initializes the {@link CertificatesModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {IFileStorage} [fileStorage]  - file storage for persisting certs
-   *
-   * @param {WebsocketNetworkConnection} [networkConnection] - network connection
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {OCPPValidator} [ocppValidator] - Validate OCPP request and response
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.deviceModelRepository} instance is created and used.
-   *
-   * @param {ICertificateRepository} [certificateRepository] - An optional parameter of type {@link ICertificateRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize.certificateRepository} instance is created and used.
-   *
-   * @param {IInstalledCertificateRepository} [installedCertificateRepository] - An optional parameter of type {@link IInstalledCertificateRepository} which
-   * represents a repository for accessing and manipulating installed certificate data.
-   * If no `installedCertificateRepository` is provided, a default {@link sequelize.installedCertificateRepository} instance is created and used.
-   *
-   * @param {IInstallCertificateAttemptRepository} [installCertificateAttemptRepository] - An optional parameter of type {@link IInstallCertificateAttemptRepository} which
-   * represents a repository for accessing and manipulating installed certificate attempt data.
-   * If no `installCertificateAttemptRepository` is provided, a default {@link sequelize.installCertificateAttemptRepository} instance is created and used.
-   *
-   * @param {IDeleteCertificateAttemptRepository} [deleteCertificateAttemptRepository] - An optional parameter of type {@link IDeleteCertificateAttemptRepository} which
-   * represents a repository for accessing and manipulating deleted certificate attempt data.
-   * If no `deleteCertificateAttemptRepository` is provided, a default {@link sequelize.deleteCertificateAttemptRepository} instance is created and used.
-   *
-   * @param {IOCPPMessageRepository} [ocppMessageRepository] - repository to check ocpp messages
-   *
-   * @param {CertificateAuthorityService} [certificateAuthorityService] - An optional parameter of type {@link CertificateAuthorityService} which handles certificate authority operations.
-   *
-   * @param {InstallCertificateHelperService} [installCertificateHelperService] - helper service for installing certificates
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    fileStorage: IFileStorage,
-    networkConnection: WebsocketNetworkConnection,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    deviceModelRepository?: IDeviceModelRepository,
-    certificateRepository?: ICertificateRepository,
-    installedCertificateRepository?: IInstalledCertificateRepository,
-    installCertificateAttemptRepository?: IInstallCertificateAttemptRepository,
-    deleteCertificateAttemptRepository?: IDeleteCertificateAttemptRepository,
-    ocppMessageRepository?: IOCPPMessageRepository,
-    certificateAuthorityService?: CertificateAuthorityService,
-    installCertificateHelperService?: InstallCertificateHelperService,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    fileStorage,
+    logger,
+    ocppValidator,
+    deviceModelRepository,
+    certificateRepository,
+    installedCertificateRepository,
+    installCertificateAttemptRepository,
+    deleteCertificateAttemptRepository,
+    ocppMessageRepository,
+    certificateAuthorityService,
+    installCertificateHelperService,
+  }: CertificatesModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.Certificates, logger, ocppValidator);
 
     this._requests = config.modules.certificates?.requests ?? [];
     this._responses = config.modules.certificates?.responses ?? [];
     this._fileStorage = fileStorage;
 
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, logger);
-    this._certificateRepository =
-      certificateRepository || new sequelize.SequelizeCertificateRepository(config, logger);
-    this._installedCertificateRepository =
-      installedCertificateRepository ||
-      new sequelize.SequelizeInstalledCertificateRepository(config, logger);
-    this._installCertificateAttemptRepository =
-      installCertificateAttemptRepository ||
-      new sequelize.SequelizeInstallCertificateAttemptRepository(config, logger);
-    this._deleteCertificateAttemptRepository =
-      deleteCertificateAttemptRepository ||
-      new sequelize.SequelizeDeleteCertificateAttemptRepository(config, logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
-    this._certificateAuthorityService =
-      certificateAuthorityService ||
-      new CertificateAuthorityService(
-        config,
-        cache,
-        this._logger,
-        undefined,
-        undefined,
-        fileStorage,
-      );
+    this._deviceModelRepository = deviceModelRepository;
+    this._certificateRepository = certificateRepository;
+    this._installedCertificateRepository = installedCertificateRepository;
+    this._installCertificateAttemptRepository = installCertificateAttemptRepository;
+    this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._certificateAuthorityService = certificateAuthorityService;
 
-    this._installCertificateHelperService =
-      installCertificateHelperService ||
-      new InstallCertificateHelperService(
-        this._certificateRepository,
-        this._installedCertificateRepository,
-        this._installCertificateAttemptRepository,
-        this._deleteCertificateAttemptRepository,
-        this._certificateAuthorityService,
-        networkConnection,
-        this._fileStorage,
-        this._logger,
-      );
+    this._installCertificateHelperService = installCertificateHelperService;
   }
 
   get certificateAuthorityService(): CertificateAuthorityService {
@@ -615,3 +537,5 @@ export class CertificatesModule extends AbstractModule {
     this._logger.info(`Verified SignCertRequest for station ${ocppConnectionName} successfully.`);
   }
 }
+
+export default CertificatesModule;

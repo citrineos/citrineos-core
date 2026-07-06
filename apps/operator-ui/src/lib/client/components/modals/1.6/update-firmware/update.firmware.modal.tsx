@@ -17,6 +17,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
@@ -25,17 +26,16 @@ export interface UpdateFirmwareModalProps {
   station: ChargingStationDto;
 }
 
-const UpdateFirmwareSchema = z.object({
-  location: z.url('Must be a valid URL').min(1, 'Location is required').max(512),
-  retrieveDate: z.string().min(1, 'Retrieve date is required'),
-  retries: z.coerce.number<number>().int().min(0).optional(),
-  retryInterval: z.coerce.number<number>().int().min(0).optional(),
-});
-
-type UpdateFirmwareFormData = z.infer<typeof UpdateFirmwareSchema>;
+type UpdateFirmwareFormData = {
+  location: string;
+  retrieveDate: string;
+  retries?: number;
+  retryInterval?: number;
+};
 
 export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -44,6 +44,22 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const UpdateFirmwareSchema = useMemo(
+    () =>
+      z.object({
+        location: z
+          .url(translate('ChargingStations.firmwareDiagnostics.invalidUrl'))
+          .min(1, translate('ChargingStations.firmwareDiagnostics.locationRequired'))
+          .max(512),
+        retrieveDate: z
+          .string()
+          .min(1, translate('ChargingStations.updateFirmwareModal.retrieveDateRequired')),
+        retries: z.coerce.number<number>().int().min(0).optional(),
+        retryInterval: z.coerce.number<number>().int().min(0).optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(UpdateFirmwareSchema),
@@ -71,6 +87,7 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/updateFirmware?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -95,20 +112,46 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Location (URL)" name="location" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.locationUrl')}
+        name="location"
+        required
+      >
         <Input placeholder="https://example.com/firmware.bin" type="url" />
       </FormField>
 
-      <FormField control={form.control} label="Retrieve Date" name="retrieveDate" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.updateFirmwareModal.retrieveDate')}
+        name="retrieveDate"
+        required
+      >
         <Input type="datetime-local" />
       </FormField>
 
-      <FormField control={form.control} label="Retries" name="retries">
-        <Input type="number" placeholder="Number of retries" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retries')}
+        name="retries"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retriesPlaceholder')}
+          min="0"
+        />
       </FormField>
 
-      <FormField control={form.control} label="Retry Interval" name="retryInterval">
-        <Input type="number" placeholder="Retry interval in seconds" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retryInterval')}
+        name="retryInterval"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retryIntervalPlaceholder')}
+          min="0"
+        />
       </FormField>
     </Form>
   );

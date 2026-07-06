@@ -2,17 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base.js';
-import type { BootstrapConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { FindOptions } from 'sequelize';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { AsyncJobStatus } from '../model/AsyncJob/AsyncJobStatus.js';
 
 export class SequelizeAsyncJobStatusRepository extends SequelizeRepository<AsyncJobStatus> {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, AsyncJobStatus.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: AsyncJobStatus.MODEL_NAME, logger, sequelizeInstance });
   }
 
   async createAsyncJobStatus(asyncJobStatus: AsyncJobStatus): Promise<AsyncJobStatus> {
@@ -57,3 +53,5 @@ export class SequelizeAsyncJobStatusRepository extends SequelizeRepository<Async
     return await this._deleteByKey(0, jobId);
   }
 }
+
+export default SequelizeAsyncJobStatusRepository;

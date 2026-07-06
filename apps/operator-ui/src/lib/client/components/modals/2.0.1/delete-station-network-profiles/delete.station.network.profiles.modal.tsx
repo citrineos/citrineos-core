@@ -15,6 +15,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { useFieldArray } from 'react-hook-form';
@@ -26,30 +27,35 @@ export interface DeleteStationNetworkProfilesModalProps {
   station: any;
 }
 
-export const DeleteStationNetworkProfilesSchema = z.object({
-  configurationSlots: z
-    .array(
-      z.object({
-        slot: z.coerce.number<number>().int().positive(),
-      }),
-    ) // an array of objects to allow react-hook-form useFieldArray to work
-    .min(1, 'At least one configuration slot is required'),
-});
-
-export type DeleteStationNetworkProfilesFormData = z.infer<
-  typeof DeleteStationNetworkProfilesSchema
->;
+export type DeleteStationNetworkProfilesFormData = {
+  configurationSlots: { slot: number }[];
+};
 
 export const DeleteStationNetworkProfilesModal = ({
   station,
 }: DeleteStationNetworkProfilesModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const parsedStation: ChargingStationDto = useMemo(
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const DeleteStationNetworkProfilesSchema = useMemo(
+    () =>
+      z.object({
+        configurationSlots: z
+          .array(
+            z.object({
+              slot: z.coerce.number<number>().int().positive(),
+            }),
+          ) // an array of objects to allow react-hook-form useFieldArray to work
+          .min(1, translate('ChargingStations.deleteStationNetworkProfilesModal.slotsRequired')),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(DeleteStationNetworkProfilesSchema),
@@ -79,6 +85,7 @@ export const DeleteStationNetworkProfilesModal = ({
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation>({
+      translate,
       url: url,
       data: undefined,
       setLoading,
@@ -96,7 +103,9 @@ export const DeleteStationNetworkProfilesModal = ({
       loading={loading}
       submitHandler={onFinish}
       submitButtonVariant={FormButtonVariants.delete}
-      submitButtonLabel="Delete Profiles"
+      submitButtonLabel={translate(
+        'ChargingStations.deleteStationNetworkProfilesModal.deleteProfiles',
+      )}
       hideCancel
     >
       <AddArrayItemButton
@@ -105,16 +114,24 @@ export const DeleteStationNetworkProfilesModal = ({
             slot: 0,
           })
         }
-        itemLabel="Slot"
+        itemLabel={translate('ChargingStations.deleteStationNetworkProfilesModal.slot')}
       />
       {fields.map((field, index) => (
         <div key={field.id} className={nestedFormRowFlex}>
           <FormField
             control={form.control}
-            label={`Slot #${index + 1}`}
+            label={translate('ChargingStations.deleteStationNetworkProfilesModal.slotNumber', {
+              number: index + 1,
+            })}
             name={`configurationSlots.${index}.slot`}
           >
-            <Input type="number" placeholder="Enter slot number" min="1" />
+            <Input
+              type="number"
+              placeholder={translate(
+                'ChargingStations.deleteStationNetworkProfilesModal.slotPlaceholder',
+              )}
+              min="1"
+            />
           </FormField>
 
           <RemoveArrayItemButton onRemoveAction={() => remove(index)} />

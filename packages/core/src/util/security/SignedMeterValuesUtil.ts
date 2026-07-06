@@ -34,15 +34,19 @@ export class SignedMeterValuesUtil {
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
    */
-  constructor(
-    fileStorage: IFileStorage,
-    config: BootstrapConfig & SystemConfig,
-    logger: Logger<ILogObj>,
-  ) {
+  constructor({
+    fileStorage,
+    config,
+    logger,
+  }: {
+    fileStorage: IFileStorage;
+    config: BootstrapConfig & SystemConfig;
+    logger: Logger<ILogObj>;
+  }) {
     this._fileStorage = fileStorage;
     this._logger = logger;
     this._chargingStationSecurityInfoRepository =
-      new sequelize.SequelizeChargingStationSecurityInfoRepository(config, logger);
+      new sequelize.SequelizeChargingStationSecurityInfoRepository({ config, logger });
 
     this._signedMeterValuesConfiguration =
       config.modules.transactions.signedMeterValuesConfiguration;

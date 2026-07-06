@@ -12,7 +12,7 @@ import { GET_METER_VALUES_FOR_STATION } from '@lib/queries/meter.values';
 import { GET_TRANSACTION_LIST_FOR_STATION } from '@lib/queries/transactions';
 import { ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
-import { useList } from '@refinedev/core';
+import { useList, useTranslate } from '@refinedev/core';
 import { endOfDay, isAfter, isBefore, isSameDay, parseISO, startOfDay, subDays } from 'date-fns';
 import type { FC } from 'react';
 import { useMemo, useState } from 'react';
@@ -39,6 +39,7 @@ const filterByDate = (series: MeterValueDto[], range: DateRange | undefined) => 
 };
 
 export const AggregatedMeterValuesData: FC<{ id: number }> = ({ id }) => {
+  const translate = useTranslate();
   const {
     query: { data: txData, isLoading: txLoading },
   } = useList<TransactionDto>({
@@ -88,16 +89,20 @@ export const AggregatedMeterValuesData: FC<{ id: number }> = ({ id }) => {
     <div className={pageFlex}>
       <div className="grid grid-cols-3 gap-4 w-full">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold">Time Range:</label>
+          <label className="text-sm font-semibold">
+            {translate('ChargingStations.aggregatedData.timeRange')}
+          </label>
           <RangePicker dateRange={dateRange} setDateRange={setDateRange} />
         </div>
         <div className="col-span-2 flex flex-col gap-2">
-          <label className="text-sm font-semibold">Contexts:</label>
+          <label className="text-sm font-semibold">
+            {translate('ChargingStations.aggregatedData.contexts')}
+          </label>
           <MultiSelect<OCPP2_0_1.ReadingContextEnumType>
             options={Object.values(OCPP2_0_1.ReadingContextEnumType)}
             selectedValues={validContexts}
             setSelectedValues={setValidContexts}
-            placeholder="Select reading contexts"
+            placeholder={translate('ChargingStations.aggregatedData.selectReadingContexts')}
           />
         </div>
       </div>

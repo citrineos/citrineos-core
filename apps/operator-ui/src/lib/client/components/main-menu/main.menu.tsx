@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@lib/client/components/ui/button';
 import { sidebarIconSize } from '@lib/client/styles/icon';
 import { ThemeToggle } from '@lib/client/components/theme-toggle';
+import { LocaleSwitcher } from '@lib/client/components/locale-switcher';
 import { ConnectionModal } from '@lib/client/components/modals/shared/connection-modal/connection.modal';
 import { LogoutButton } from '@lib/client/components/logout-button';
 import { useTranslate } from '@refinedev/core';
@@ -145,7 +146,12 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
         {/* Bottom Menu - Help Link */}
         <div className="border-t border-border p-3 flex flex-col gap-2 items-center">
           <ThemeToggle expanded={!collapsed} />
-          <Button variant="ghost" onClick={() => setIsHelpOpen(true)} title="Help">
+          <LocaleSwitcher expanded={!collapsed} />
+          <Button
+            variant="ghost"
+            onClick={() => setIsHelpOpen(true)}
+            title={translate('menu.help')}
+          >
             <HelpCircle className={sidebarIconSize} />
             {!collapsed && <span>{translate('menu.help')}</span>}
           </Button>
@@ -157,7 +163,9 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
           variant="link"
           onClick={() => setCollapsed(!collapsed)}
           className="absolute top-0 right-0 transform translate-x-1/2 translate-y-[110px] size-8 bg-card text-accent-foreground border-transparent rounded-full shadow-md"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={
+            collapsed ? translate('menu.expandSidebar') : translate('menu.collapseSidebar')
+          }
         >
           {collapsed ? (
             <ChevronRight className={sidebarIconSize} />

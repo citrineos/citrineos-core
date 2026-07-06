@@ -1,0 +1,79 @@
+{
+  "Locations": {
+    "Locations": "Locais",
+    "location": "Local",
+    "noDataFound": "Nenhum local encontrado com o id {id}.",
+    "unnamedLocation": "Local sem nome",
+    "noAddress": "Sem endereço",
+    "chargingStations": "Estações de recarga",
+    "openingHours": "Horário de funcionamento",
+    "viewStations": "Ver estações",
+    "columns": {
+      "name": "Nome",
+      "address": "Endereço",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "timeZone": "Fuso horário",
+      "parkingType": "Tipo de estacionamento",
+      "facilities": "Comodidades",
+      "totalStations": "Total de estações",
+      "createdAt": "Criado em",
+      "updatedAt": "Atualizado em"
+    },
+    "detail": {
+      "totalChargers": "Total de carregadores",
+      "imageAlt": "Imagem de {name}"
+    },
+    "form": {
+      "name": "Nome",
+      "streetAddress": "Endereço",
+      "streetAddressRequired": "O endereço é obrigatório",
+      "addressAutocompletePlaceholder": "Comece a digitar para buscar ou insira manualmente abaixo",
+      "city": "Cidade",
+      "cityPlaceholder": "ex.: Berlim",
+      "stateProvinceRegion": "Estado / Província / Região",
+      "stateProvinceRegionPlaceholder": "ex.: São Paulo, Califórnia, Ontário",
+      "postalCode": "CEP",
+      "postalCodePlaceholder": "ex.: 01001-000, 94105, SW1A 1AA",
+      "country": "País",
+      "selectCountry": "Selecione o país",
+      "searchCountries": "Buscar países...",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "autoFilledFromAddress": "Preenchido automaticamente a partir do endereço",
+      "timeZone": "Fuso horário",
+      "parkingType": "Tipo de estacionamento",
+      "selectParkingType": "Selecione o tipo de estacionamento",
+      "searchParkingTypes": "Buscar tipos de estacionamento",
+      "facilities": "Comodidades",
+      "selectFacilities": "Selecione as comodidades",
+      "searchFacilities": "Buscar comodidades",
+      "image": "Imagem",
+      "upload": "Enviar",
+      "uploadFailedToast": "Falha ao atualizar as estações de recarga do local devido ao erro {error}"
+    },
+    "stations": {
+      "searchChargingStation": "Buscar estação de recarga",
+      "noChargingStationsFound": "Nenhuma estação de recarga encontrada",
+      "noChargingStationsSelected": "Nenhuma estação de recarga selecionada",
+      "stationId": "ID da estação",
+      "configuration": "Configuração",
+      "needsConfiguration": "Requer configuração",
+      "modelVendor": "Modelo / Fabricante",
+      "needsModel": "Requer modelo",
+      "needsVendor": "Requer fabricante"
+    },
+    "map": {
+      "viewDetails": "Ver detalhes",
+      "networkOverview": "Visão geral da rede",
+      "all": "Todos",
+      "locations": "Locais",
+      "stations": "Estações",
+      "viewTypeDetails": "Ver detalhes de {type}",
+      "online": "Online",
+      "partial": "Parcial",
+      "offline": "Offline",
+      "noChargers": "Nenhum carregador."
+    }
+  }
+}

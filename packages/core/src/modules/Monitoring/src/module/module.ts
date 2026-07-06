@@ -6,7 +6,6 @@ import {
   AsHandler,
   AttributeEnum,
   type AttributeEnumType,
-  type BootstrapConfig,
   type CallAction,
   ChargingStationSequenceTypeEnum,
   EventGroup,
@@ -15,39 +14,39 @@ import {
   GenericStatusEnum,
   type GenericStatusEnumType,
   type HandlerProperties,
-  type ICache,
   type IMessage,
-  type IMessageHandler,
-  type IMessageSender,
+  type OcppModuleDependencies,
   MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OCPPValidator,
   SetVariableStatusEnum,
-  type SystemConfig,
 } from '@citrineos/base';
 import {
   Component,
   type IDeviceModelRepository,
   type IOCPPMessageRepository,
   type IVariableMonitoringRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeDeviceModelRepository,
-  SequelizeOCPPMessageRepository,
-  SequelizeVariableMonitoringRepository,
   Variable,
   type VariableAttribute,
 } from '@dal/index.js';
 import { IdGenerator } from '@util/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { MonitoringService } from './MonitoringService.js';
-import { DeviceModelService } from './services.js';
+
+import type { MonitoringService } from './MonitoringService.js';
+import type { DeviceModelService } from './services.js';
 
 type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataType };
+
+export interface MonitoringModuleDependencies extends OcppModuleDependencies {
+  deviceModelRepository: IDeviceModelRepository;
+  variableMonitoringRepository: IVariableMonitoringRepository;
+  ocppMessageRepository: IOCPPMessageRepository;
+  idGenerator: IdGenerator;
+  monitoringDeviceModelService: DeviceModelService;
+  monitoringService: MonitoringService;
+}
 
 /**
  * Component that handles monitoring related messages.
@@ -65,67 +64,33 @@ export class MonitoringModule extends AbstractModule {
   protected _ocppMessageRepository: IOCPPMessageRepository;
   private _idGenerator: IdGenerator;
 
-  /**
-   * This is the constructor function that initializes the {@link MonitoringModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system-wide logger settings and will serve as the parent logger for any subcomponent logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link SequelizeDeviceModelRepository} instance is created and used.
-   *
-   * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository}
-   * which represents a repository for accessing and manipulating variable monitoring data.
-   * If no `variableMonitoringRepository` is provided, a default {@link SequelizeVariableMonitoringRepository}
-   * instance is created and used.
-   *
-   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
-   * represents a generator for ids.
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    deviceModelRepository?: IDeviceModelRepository,
-    variableMonitoringRepository?: IVariableMonitoringRepository,
-    ocppMessageRepository?: IOCPPMessageRepository,
-    idGenerator?: IdGenerator,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    deviceModelRepository,
+    variableMonitoringRepository,
+    ocppMessageRepository,
+    idGenerator,
+    monitoringDeviceModelService,
+    monitoringService,
+  }: MonitoringModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.Monitoring, logger, ocppValidator);
 
     this._requests = config.modules.monitoring.requests;
     this._responses = config.modules.monitoring.responses;
 
-    this._deviceModelRepository =
-      deviceModelRepository || new SequelizeDeviceModelRepository(config, this._logger);
-    this._variableMonitoringRepository =
-      variableMonitoringRepository ||
-      new SequelizeVariableMonitoringRepository(config, this._logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
+    this._deviceModelRepository = deviceModelRepository;
+    this._variableMonitoringRepository = variableMonitoringRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
 
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
-    this._monitoringService = new MonitoringService(
-      this._variableMonitoringRepository,
-      this._logger,
-    );
+    this._deviceModelService = monitoringDeviceModelService;
+    this._monitoringService = monitoringService;
 
-    this._idGenerator =
-      idGenerator ||
-      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
+    this._idGenerator = idGenerator;
   }
 
   get deviceModelRepository(): IDeviceModelRepository {
@@ -502,3 +467,5 @@ export class MonitoringModule extends AbstractModule {
     return `${componentName}-${componentInstance}-${variableName}-${variableInstance}`;
   }
 }
+
+export default MonitoringModule;

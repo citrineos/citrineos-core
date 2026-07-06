@@ -15,21 +15,25 @@ import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { TransactionClass } from '@lib/cls/transaction.dto';
 import type { AuthorizationDto } from '@citrineos/base';
 import {
+  getTransactionsColumns,
   transactionAuthorizationIdTokenField,
-  transactionsColumns,
 } from '@lib/client/pages/transactions/columns';
 import { cardTabsStyle } from '@lib/client/styles/card';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
+import { useTranslate } from '@refinedev/core';
 
 export const AuthorizationDetailTabsCard = ({
   authorization,
 }: {
   authorization: AuthorizationDto;
 }) => {
+  const translate = useTranslate();
   const authIdToken = authorization?.idToken;
 
   const { renderedVisibleColumns } = useColumnPreferences(
-    transactionsColumns.filter((tc) => tc.key !== transactionAuthorizationIdTokenField),
+    getTransactionsColumns(translate).filter(
+      (tc) => tc.key !== transactionAuthorizationIdTokenField,
+    ),
     ResourceType.TRANSACTIONS,
   );
 
@@ -38,7 +42,7 @@ export const AuthorizationDetailTabsCard = ({
       <CardContent>
         <Tabs defaultValue="transactions">
           <TabsList>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="transactions">{translate('Transactions.Transactions')}</TabsTrigger>
           </TabsList>
           <TabsContent value="transactions" className={cardTabsStyle}>
             <CanAccess

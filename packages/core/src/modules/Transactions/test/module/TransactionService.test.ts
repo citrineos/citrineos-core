@@ -21,10 +21,12 @@ import { anIdToken } from '../providers/IdTokenProvider.js';
 
 import { faker } from '@faker-js/faker';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 import { aMessageContext } from '../providers/MessageContextProvider.js';
 import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 
 describe('TransactionService', () => {
+  const { container } = createTestContainer();
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
@@ -61,15 +63,15 @@ describe('TransactionService', () => {
       authorize: vi.fn(),
     } as Mocked<IAuthorizer>;
 
-    transactionService = new TransactionService(
+    transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
       authorizationRepository,
       locationRepository,
       reservationRepository,
       ocppMessageRepository,
       realTimeAuthorizer,
-      [authorizer],
-    );
+      authorizers: [authorizer],
+    });
   });
 
   it('should return Unknown status when authorizations length is not 1', async () => {
@@ -317,14 +319,15 @@ describe('TransactionService', () => {
         authorize: vi.fn(),
       } as Mocked<IAuthorizer>;
 
-      transactionService = new TransactionService(
+      transactionService = getTestInstance(container, TransactionService, {
         transactionEventRepository,
-        {} as unknown as IAuthorizationRepository,
+        authorizationRepository: {} as unknown as IAuthorizationRepository,
         locationRepository,
-        {} as unknown as IReservationRepository,
-        {} as unknown as IOCPPMessageRepository,
+        reservationRepository: {} as unknown as IReservationRepository,
+        ocppMessageRepository: {} as unknown as IOCPPMessageRepository,
         realTimeAuthorizer,
-      );
+        authorizers: [],
+      });
     });
 
     describe('OCPP 2.0.1 — EVSEType identifier', () => {

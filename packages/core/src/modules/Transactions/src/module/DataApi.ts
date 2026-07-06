@@ -36,16 +36,20 @@ export class TransactionsDataApi
   /**
    * Constructor for the class.
    *
-   * @param {TransactionsModule} transactionModule - The transaction module.
+   * @param {TransactionsModule} transactionsModule - The transaction module.
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - Optional logger.
    */
-  constructor(
-    transactionModule: TransactionsModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(transactionModule, server, null, logger);
+  constructor({
+    transactionsModule,
+    server,
+    logger,
+  }: {
+    transactionsModule: TransactionsModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(transactionsModule, server, logger);
   }
 
   @AsDataEndpoint(Namespace.TransactionType, HttpMethod.Get, TransactionEventQuerySchema)

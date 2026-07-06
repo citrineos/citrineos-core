@@ -29,7 +29,7 @@ jobs:
               - 'tsconfig*.json'
               - '.github/workflows/**'
             server:
-              - 'apps/Server/**'
+              - 'apps/ocpp-server/**'
               - 'packages/**'
 
   build:
@@ -46,7 +46,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.16.0'
+          node-version: "24.16.0"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -55,7 +55,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Build and Run Docker Compose
-        run: docker compose -f ${{ github.workspace }}/apps/Server/docker-compose.yml up -d
+        run: docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml up -d --build
 
       - name: Install Newman
         run: |
@@ -83,4 +83,4 @@ jobs:
           docker container ls -aq | xargs -I {} docker logs {}
 
       - name: Clean up
-        run: docker compose -f ${{ github.workspace }}/apps/Server/docker-compose.yml down
+        run: docker compose -f ${{ github.workspace }}/docker-compose.yml -f ${{ github.workspace }}/docker-compose.local.yml down

@@ -15,6 +15,7 @@ import {
 
 export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   id: z.number().int().optional(),
+  stationId: z.number().int().nullable().optional(),
   ocppConnectionName: z.string(),
   evseId: z.number().int(),
   connectorId: z.number().int(),
@@ -47,6 +48,7 @@ export type ConnectorDto = z.infer<typeof ConnectorSchema>;
 
 export const ConnectorCreateSchema = ConnectorSchema.omit({
   id: true,
+  stationId: true,
   tenant: true,
   evse: true,
   chargingStation: true,

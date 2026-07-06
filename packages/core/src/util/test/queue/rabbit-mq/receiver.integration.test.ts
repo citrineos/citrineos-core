@@ -159,8 +159,8 @@ let uid: string;
 
 beforeEach(async () => {
   uid = Date.now().toString(36);
-  connectionManager = new RabbitMQConnectionManager(5_000, amqpUrl);
-  channelManager = new RabbitMQChannelManager(connectionManager);
+  connectionManager = new RabbitMQConnectionManager({ maxReconnectDelay: 5_000, amqpUrl });
+  channelManager = new RabbitMQChannelManager({ connectionManager });
   // Mirror production startup: connect before any subscribe() calls so the
   // initial 'connected' event fires while _moduleSubscriptions/_instanceQueueReady
   // are still empty, and _onReconnect is a no-op on first connect.
@@ -190,10 +190,10 @@ describe('RabbitMqReceiver', () => {
 
   describe('MODULE_MODE — broker state', () => {
     beforeEach(() => {
-      receiver = new RabbitMqReceiver(
-        aSystemConfigWithAmqp({ exchange: EXCHANGE }),
+      receiver = new RabbitMqReceiver({
+        config: aSystemConfigWithAmqp({ exchange: EXCHANGE }),
         channelManager,
-      );
+      });
     });
 
     it('should create a durable, auto-delete queue named after the identifier', async () => {
@@ -265,13 +265,14 @@ describe('RabbitMqReceiver', () => {
     const instanceId = `router-integration`;
 
     beforeEach(() => {
-      receiver = new RabbitMqReceiver(
-        aSystemConfigWithAmqp({ exchange: EXCHANGE, instanceIdentifier: `${instanceId}-${uid}` }),
+      receiver = new RabbitMqReceiver({
+        config: aSystemConfigWithAmqp({
+          exchange: EXCHANGE,
+          instanceIdentifier: `${instanceId}-${uid}`,
+        }),
         channelManager,
-        undefined,
-        undefined,
-        /* routerMode */ true,
-      );
+        routerMode: true,
+      });
     });
 
     it('should create a single durable, non-auto-delete instance queue', async () => {

@@ -27,23 +27,31 @@ import { AuthorizationSecurity } from '@interfaces/api/AuthorizationSecurity.js'
 import { z } from 'zod';
 
 /**
+ * Canonical signature every OCPP message-endpoint handler is invoked with by
+ * {@link AbstractModuleApi._addMessageRoute}.
+ */
+export type OcppMessageHandler = (
+  identifiers: string[],
+  // Fastify surfaces the parsed body as `unknown` at this boundary; each handler
+  // re-types it to its specific OCPP request type.
+  request: unknown,
+  callbackUrl: string | undefined,
+  tenantId: number,
+  version: OCPPVersion | null,
+  extraQueries?: Record<string, unknown>,
+) => Promise<IMessageConfirmation[]>;
+
+/**
  * Abstract module api class implementation.
  */
 export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi {
   protected readonly _server: FastifyInstance;
   protected readonly _module: T;
   protected readonly _logger: Logger<ILogObj>;
-  protected readonly _ocppVersion: OCPPVersion | null;
 
-  constructor(
-    module: T,
-    server: FastifyInstance,
-    ocppVersion: OCPPVersion | null,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(module: T, server: FastifyInstance, logger?: Logger<ILogObj>) {
     this._module = module;
     this._server = server;
-    this._ocppVersion = ocppVersion;
 
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -52,25 +60,47 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
   }
 
   /**
+   * The OCPP versions this API serves. Each message endpoint is registered once
+   * per version, with the version threaded through schema selection, the route
+   * path, and the request handler — so one API instance can serve several
+   * versions (e.g. 2.0.1 and 2.1) from distinct `/ocpp/<version>/...` routes.
+   *
+   * Defaults to [null], version-agnostic. Data-only APIs, whose routes
+   * carry no version segment.
+   * OCPP message APIs override this:
+   * OCPP2 APIs return [OCPP2_0_1, OCPP2_1], OCPP 1.6 APIs return [OCPP1_6].
+   */
+  protected get supportedVersions(): (OCPPVersion | null)[] {
+    return [null];
+  }
+
+  /**
    * Initializes the API for the given module.
    *
    * @param {T} module - The module to initialize the API for.
    */
   protected _init(module: T): void {
-    (
-      Reflect.getMetadata(
-        METADATA_MESSAGE_ENDPOINTS,
-        this.constructor,
-      ) as Array<IMessageEndpointDefinition>
-    )?.forEach((expose) => {
-      this._addMessageRoute.call(
-        this,
-        expose.action,
-        expose.method,
-        typeof expose.bodySchema === 'function' ? expose.bodySchema(this) : expose.bodySchema,
-        expose.optionalQuerystrings,
-      );
-    });
+    const messageEndpointDefinitions = Reflect.getMetadata(
+      METADATA_MESSAGE_ENDPOINTS,
+      this.constructor,
+    ) as Array<IMessageEndpointDefinition>;
+
+    // Register each message endpoint once per supported version. The version is
+    // passed to the schema getter, the path builder, and the handler closure.
+    for (const version of this.supportedVersions) {
+      messageEndpointDefinitions?.forEach((expose) => {
+        this._addMessageRoute.call(
+          this,
+          expose.action,
+          expose.method,
+          typeof expose.bodySchema === 'function'
+            ? expose.bodySchema(this, version)
+            : expose.bodySchema,
+          expose.optionalQuerystrings,
+          version,
+        );
+      });
+    }
 
     const dataEndpointDefinitions = Reflect.getMetadata(
       METADATA_DATA_ENDPOINTS,
@@ -109,17 +139,18 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
    */
   protected _addMessageRoute(
     action: CallAction,
-    method: (...args: any[]) => any,
+    method: OcppMessageHandler,
     bodySchema: object,
     optionalQuerystrings?: Record<string, any>,
+    version: OCPPVersion | null = null,
   ): void {
     if (!bodySchema) {
       this._logger.debug(
-        `Skipping message route for ${action} — schema not available for ${this._ocppVersion}`,
+        `Skipping message route for ${action} — schema not available for ${version}`,
       );
       return;
     }
-    this._logger.debug(`Adding message route for ${action}`, this._toMessagePath(action));
+    this._logger.debug(`Adding message route for ${action}`, this._toMessagePath(action, version));
 
     /**
      * Executes the handler function for the given request.
@@ -143,6 +174,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
         request.body,
         callbackUrl,
         tenantId,
+        version,
         Object.keys(extraQueries).length > 0 ? extraQueries : undefined,
       );
     };
@@ -157,7 +189,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
 
     const _opts: any = {
       method: HttpMethod.Post,
-      url: this._toMessagePath(action),
+      url: this._toMessagePath(action, version),
       handler: _handler,
       schema: {
         body: bodySchema,
@@ -174,7 +206,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
 
     if (this._module.config.util.swagger?.exposeMessage) {
       this._server.register(async (fastifyInstance) => {
-        this.registerSchemaForOpts(fastifyInstance, _opts);
+        this.registerSchemaForOpts(fastifyInstance, _opts, version);
         fastifyInstance.route(_opts);
       });
     } else {
@@ -298,7 +330,11 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
     }
   }
 
-  private registerSchemaForOpts = (fastifyInstance: FastifyInstance, _opts: any) => {
+  private registerSchemaForOpts = (
+    fastifyInstance: FastifyInstance,
+    _opts: any,
+    version: OCPPVersion | null = null,
+  ) => {
     if (_opts.schema['querystring']) {
       _opts.schema['querystring'] = this.registerSchema(
         fastifyInstance,
@@ -309,7 +345,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       _opts.schema['body'] = this.registerSchema(
         fastifyInstance,
         _opts.schema['body'],
-        this._ocppVersion ? `${this._ocppVersion}-` : '',
+        version ? `${version}-` : '',
       );
     }
     if (_opts.schema['params']) {
@@ -462,12 +498,14 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
    * @param {string} prefix - The module name.
    * @returns {string} - String representation of URL path.
    */
-  protected _toMessagePath(input: CallAction, prefix?: string): string {
+  protected _toMessagePath(
+    input: CallAction,
+    version?: OCPPVersion | null,
+    prefix?: string,
+  ): string {
     const endpointPrefix = prefix || '';
-    const endpointVersion = (this._ocppVersion ? this._ocppVersion : OCPPVersion.OCPP2_0_1).replace(
-      /^ocpp/,
-      '',
-    );
+    const effectiveVersion = version ?? OCPPVersion.OCPP2_0_1;
+    const endpointVersion = effectiveVersion.replace(/^ocpp/, '');
     return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${input.charAt(0).toLowerCase() + input.slice(1)}`;
   }
 

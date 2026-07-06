@@ -8,13 +8,17 @@ import { ModalHarness } from '../../pages/components/modal.po';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
-// Reset Immediate reboots the EVerest manager container, so a second Reset
-// running right after the first lands while the station is still reconnecting.
-// The everestStation guard waits for it to come back online, but recovery can
-// exceed a single attempt's budget; a retry lets the station settle before the
-// re-run. This is OCPP-timing non-determinism, not a logic gap.
+// A reboot-causing Reset (Immediate always; OnIdle on an idle station) reboots
+// the EVerest manager container, dropping cp001's OCPP link for >150s in CI. The
+// reset tests run LAST in the @everest lane, so the only test that can land on a
+// reconnecting station is the *next* reset test — its per-test everestStation
+// online guard waits for cp001 to come back (RECONNECT_TIMEOUT_MS). Because that
+// reconnect exceeds the default 180s test budget, this describe runs with an
+// extended timeout (so the guard can finish inside one attempt) plus retries as
+// a backstop. The contract under test is that the Reset is ACKnowledged (the
+// success toast); the reboot is a side effect we simply let settle.
 test.describe('charging-stations › Reset command @everest', () => {
-  test.describe.configure({ retries: 2 });
+  test.describe.configure({ retries: 2, timeout: 240_000 });
 
   test('E2E-070: Reset Hard happy path against EVerest station', async ({
     page,

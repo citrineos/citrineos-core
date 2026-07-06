@@ -13,12 +13,21 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
   private reconnectDelay = 1000; // Start with 1 second
   private reconnectTimer: NodeJS.Timeout | null = null;
 
-  constructor(
-    private maxReconnectDelay: number,
-    private url: string,
-    logger?: Logger<ILogObj>,
-  ) {
+  private maxReconnectDelay: number;
+  private url: string;
+
+  constructor({
+    maxReconnectDelay,
+    amqpUrl,
+    logger,
+  }: {
+    maxReconnectDelay: number;
+    amqpUrl: string;
+    logger?: Logger<ILogObj>;
+  }) {
     super(logger);
+    this.maxReconnectDelay = maxReconnectDelay;
+    this.url = amqpUrl;
   }
 
   async connect(): Promise<amqp.Connection> {

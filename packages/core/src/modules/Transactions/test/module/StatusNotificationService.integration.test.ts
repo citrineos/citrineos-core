@@ -53,11 +53,10 @@ beforeAll(async () => {
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
 
-  locationRepository = new SequelizeLocationRepository(
-    {} as BootstrapConfig,
-    undefined,
+  locationRepository = new SequelizeLocationRepository({
+    config: {} as BootstrapConfig,
     sequelizeInstance,
-  );
+  });
 }, 90_000);
 
 afterAll(async () => {
@@ -149,12 +148,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
 
     // The service needs ComponentRepository and DeviceModelRepository, but the
     // 1.6 path doesn't use them. Stubs are sufficient.
-    const service = new StatusNotificationService(
-      { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+    const service = new StatusNotificationService({
+      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       locationRepository,
       cache,
-    );
+    });
 
     await expect(
       service.processOcpp16StatusNotification(DEFAULT_TENANT_ID, ocppConnectionName, {
@@ -218,12 +217,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       get: vi.fn().mockResolvedValue(JSON.stringify(websocketConnection)),
     } as unknown as ICache;
 
-    const service = new StatusNotificationService(
-      { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+    const service = new StatusNotificationService({
+      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       locationRepository,
       cache,
-    );
+    });
 
     await expect(
       service.processOcpp16StatusNotification(DEFAULT_TENANT_ID, ocppConnectionName, {

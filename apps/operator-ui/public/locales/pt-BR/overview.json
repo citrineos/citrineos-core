@@ -1,0 +1,24 @@
+{
+  "Overview": {
+    "activeTransactions": "Transações ativas",
+    "chargerActivity": "Atividade dos carregadores",
+    "chargerOnlineStatus": "Status online dos carregadores",
+    "chargers": "Carregadores",
+    "errorLoadingData": "Erro ao carregar os dados",
+    "plugInSuccessRate": "Taxa de sucesso de conexão",
+    "noActiveTransactions": "Nenhuma transação ativa.",
+    "noChargersStatus": "Nenhum carregador está atualmente com o status {status}.",
+    "viewAllChargers": "Ver todos os carregadores",
+    "viewAllLocations": "Ver todos os locais",
+    "viewAllTransactions": "Ver todas as transações",
+    "viewAll": "Ver todos",
+    "faultedChargers": "Carregadores com falha",
+    "somethingWentWrong": "Algo deu errado!",
+    "station": "Estação",
+    "stationLabel": "Estação: {value}",
+    "location": "Local:",
+    "totalKwh": "Total kWh: {value}",
+    "totalTime": "Tempo total: {value}",
+    "transactionStatus": "Status: {value}"
+  }
+}

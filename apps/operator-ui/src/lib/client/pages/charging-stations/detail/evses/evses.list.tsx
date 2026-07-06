@@ -16,7 +16,7 @@ import { CHARGING_STATIONS_GET_QUERY } from '@lib/queries/charging.stations';
 import { ResourceType } from '@lib/utils/access.types';
 import { setSelectedChargingStation } from '@lib/utils/store/selected.charging.station.slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
-import { useOne } from '@refinedev/core';
+import { useOne, useTranslate } from '@refinedev/core';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -27,6 +27,7 @@ interface EVSESListProps {
 export const evsesFormUpsertGrid = 'grid grid-cols-2 xs:grid-cols-1 gap-6';
 
 export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
+  const translate = useTranslate();
   const dispatch = useDispatch();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'evse' | 'connector' | null>(null);
@@ -148,13 +149,17 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
 
   const modalTitle = useMemo(() => {
     if (modalType === 'evse') {
-      return selectedItem ? 'Edit Evse' : 'Add New Evse';
+      return selectedItem
+        ? translate('ChargingStations.evses.editEvse')
+        : translate('ChargingStations.evses.addNewEvse');
     }
     if (modalType === 'connector') {
-      return selectedItem ? 'Edit Connector' : 'Add New Connector';
+      return selectedItem
+        ? translate('ChargingStations.connectors.editConnector')
+        : translate('ChargingStations.connectors.addNewConnector');
     }
     return '';
-  }, [modalType, selectedItem]);
+  }, [modalType, selectedItem, translate]);
 
   const handleConnectorEdit = (connector: ConnectorDto, evseId: number | undefined) => {
     if (evseId === undefined) return;
@@ -166,30 +171,38 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
     openModal('connector', null, evseId);
   };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (!station) return <p>No Data Found</p>;
+  if (isLoading) return <p>{translate('Common.loadingEllipsis')}</p>;
+  if (!station) return <p>{translate('Common.noDataFound')}</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => openModal('evse')}>Add New EVSE</Button>
+        <Button onClick={() => openModal('evse')}>
+          {translate('ChargingStations.evses.addNewEvse')}
+        </Button>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-2 text-left font-medium">EVSE Type ID</th>
-              <th className="px-4 py-2 text-left font-medium">EVSE ID</th>
-              <th className="px-4 py-2 text-left font-medium">Physical Reference</th>
-              <th className="px-4 py-2 text-left font-medium">Actions</th>
+              <th className="px-4 py-2 text-left font-medium">
+                {translate('ChargingStations.evses.evseTypeId')}
+              </th>
+              <th className="px-4 py-2 text-left font-medium">
+                {translate('ChargingStations.evses.evseId')}
+              </th>
+              <th className="px-4 py-2 text-left font-medium">
+                {translate('ChargingStations.evses.physicalReference')}
+              </th>
+              <th className="px-4 py-2 text-left font-medium">{translate('Common.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {!station.evses || station.evses.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                  No EVSEs
+                  {translate('ChargingStations.evses.noEvses')}
                 </td>
               </tr>
             ) : (
@@ -212,7 +225,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                             onClick={() => handleExpandToggle(evse)}
                             className="flex items-center gap-1"
                           >
-                            <span>View Connectors</span>
+                            <span>{translate('ChargingStations.evses.viewConnectors')}</span>
                             <ChevronDown
                               className={`h-4 w-4 transition-transform ${
                                 isExpanded ? 'rotate-180' : ''
@@ -224,14 +237,14 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                             size="sm"
                             onClick={() => openModal('evse', evse)}
                           >
-                            Edit
+                            {translate('Common.edit')}
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => openModal('connector', null, evseId)}
                           >
-                            Add Connector
+                            {translate('ChargingStations.connectors.addConnector')}
                           </Button>
                         </div>
                       </td>

@@ -40,7 +40,7 @@ describe.skip('Integration Tests (requires real credentials)', () => {
         throw new Error('HUBJECT_CLIENT_ID environment variable not set');
       }
 
-      hubject = new Hubject(systemConfig, cache, logger);
+      hubject = new Hubject({ config: systemConfig, cache, logger });
     });
 
     it('should get root certificates from real API', async () => {

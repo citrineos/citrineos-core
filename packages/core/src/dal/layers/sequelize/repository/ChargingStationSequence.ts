@@ -1,13 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, ChargingStationSequenceTypeEnumType } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ChargingStationSequenceTypeEnumType } from '@citrineos/base';
 import type { IChargingStationSequenceRepository } from '../../../interfaces/repositories.js';
 import { ChargingStationSequence } from '../model/ChargingStationSequence/ChargingStationSequence.js';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeChargingStationSequenceRepository
   extends SequelizeRepository<ChargingStationSequence>
@@ -15,8 +12,8 @@ export class SequelizeChargingStationSequenceRepository
 {
   private static readonly SEQUENCE_START = 1;
 
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, ChargingStationSequence.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: ChargingStationSequence.MODEL_NAME, logger, sequelizeInstance });
   }
 
   /**
@@ -68,3 +65,5 @@ export class SequelizeChargingStationSequenceRepository
     });
   }
 }
+
+export default SequelizeChargingStationSequenceRepository;

@@ -8,7 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { makeApiClient, type ApiClient } from './api-client';
 
 // EVerest fixture using the citrineos-core docker-compose prototype
-// (apps/Server/everest/docker-compose.yml). The fixture brings the simulator
+// (apps/ocpp-server/everest/docker-compose.yml). The fixture brings the simulator
 // up, waits for cp001's OCPP BootNotification to register in citrineos-core's
 // DB (visible via Hasura), and tears the stack down on dispose.
 //
@@ -36,11 +36,17 @@ const CARSIM_CMD_PREFIX = `everest_external/nodered/${CARSIM_CONNECTOR_ID}/carsi
 const PLUGIN_CHARGE_COMMAND =
   'sleep 1;iec_wait_pwr_ready;sleep 1;draw_power_regulated 16,3;sleep 3600';
 const DEFAULT_BOOT_TIMEOUT_MS = 90_000;
-// Recovery after a Reset Immediate (which reboots the manager container)
-// takes longer than a cold boot — empirically >90s — so the per-test
-// online guard waits longer than the initial-boot budget.
-const RECONNECT_TIMEOUT_MS = 150_000;
+// Recovery after a reboot-causing Reset (which reboots the manager container)
+// is slow and variable — empirically >150s in CI — so the per-test online guard
+// waits well beyond the initial-boot budget. The reset describe runs under an
+// extended test timeout so this guard can finish inside a single attempt.
+const RECONNECT_TIMEOUT_MS = 210_000;
 const POLL_INTERVAL_MS = 2_000;
+// How long to wait for libocpp to materialise the device-model DB on a cold
+// boot before applying the network-profile patch. The DB normally appears a
+// few seconds after `compose up`; this bounds the wait so a manager that never
+// boots fails fast into awaitStationOnline's diagnostics rather than hanging.
+const DB_READY_TIMEOUT_MS = 60_000;
 
 export interface EverestHandle {
   readonly ocppConnectionName: string;
@@ -56,12 +62,9 @@ interface EverestStartOptions {
 function defaultCorePath(): string {
   // The operator-ui repo is a sibling of citrineos-core. The Server package
   // (docker-compose.yml + everest/ subdirectory) lives at
-  // citrineos-core/apps/Server. Override via CITRINE_CORE_PATH if your layout
+  // citrineos-core/apps/ocpp-server. Override via CITRINE_CORE_PATH if your layout
   // differs.
-  return (
-    process.env.CITRINE_CORE_PATH ??
-    resolve(__dirname, '..', '..', '..', '..', 'citrineos-core', 'apps', 'Server')
-  );
+  return process.env.CITRINE_CORE_PATH ?? resolve(__dirname, '..', '..', '..', '..', 'ocpp-server');
 }
 
 async function awaitStationOnline(
@@ -109,6 +112,26 @@ async function awaitStationOnline(
   );
 }
 
+// One-shot read of citrineos-core's ChargingStations.isOnline flag for cp001.
+// Returns the boolean flag, or null when the query throws (transient Hasura/
+// network blip) so pollers can treat it as "unknown, keep waiting" rather than
+// flipping a definite offline/online verdict on a fluke error.
+async function readEverestOnline(api: ApiClient): Promise<boolean | null> {
+  try {
+    const data = await api.gql<{
+      ChargingStations: { isOnline: boolean }[];
+    }>(
+      `query EverestOnlineGuard($name: String!) {
+         ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { isOnline }
+       }`,
+      { name: EVEREST_OCPP_CONNECTION_NAME },
+    );
+    return data.ChargingStations[0]?.isOnline ?? false;
+  } catch {
+    return null;
+  }
+}
+
 // Per-test guard for the worker-scoped manager: a destructive command in a
 // prior test (Reset Immediate reboots the manager container) drops cp001's
 // OCPP link, and the station is offline for ~1 minute while it reconnects.
@@ -119,26 +142,12 @@ export async function ensureEverestOnline(timeoutMs = RECONNECT_TIMEOUT_MS): Pro
   const api = await makeApiClient();
   try {
     const deadline = Date.now() + timeoutMs;
-    let lastErr: unknown;
     while (Date.now() < deadline) {
-      try {
-        const data = await api.gql<{
-          ChargingStations: { isOnline: boolean }[];
-        }>(
-          `query EverestOnlineGuard($name: String!) {
-             ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { isOnline }
-           }`,
-          { name: EVEREST_OCPP_CONNECTION_NAME },
-        );
-        if (data.ChargingStations[0]?.isOnline === true) return;
-      } catch (e) {
-        lastErr = e;
-      }
+      if ((await readEverestOnline(api)) === true) return;
       await delay(POLL_INTERVAL_MS);
     }
     throw new Error(
-      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not return online within ${timeoutMs}ms` +
-        (lastErr ? `; last error: ${String(lastErr)}` : ''),
+      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not return online within ${timeoutMs}ms`,
     );
   } finally {
     await api.dispose();
@@ -146,10 +155,10 @@ export async function ensureEverestOnline(timeoutMs = RECONNECT_TIMEOUT_MS): Pro
 }
 
 // Spawn `docker compose` directly with the same cwd + env as the upstream
-// `start-everest` npm script in apps/Server. Going through the npm script
-// would require apps/Server/node_modules to have cross-env installed, but in
+// `start-everest` npm script in apps/ocpp-server. Going through the npm script
+// would require apps/ocpp-server/node_modules to have cross-env installed, but in
 // the pnpm-workspace layout those deps are hoisted to the monorepo root and
-// apps/Server may not have a local node_modules at all. Calling docker
+// apps/ocpp-server may not have a local node_modules at all. Calling docker
 // compose ourselves removes that dependency.
 const EVEREST_COMPOSE_ENV: Record<string, string> = {
   OCPP_VERSION: '2.1',
@@ -185,15 +194,23 @@ function runEverestCompose(everestDir: string, args: ReadonlyArray<string>): Pro
   });
 }
 
-// citrineos-core's OCPP listener is on host port 8081, path `/cp001`. The
-// EVerest manager image ships a baked-in default of `ws://host.docker.internal/ws/cp001`
-// (port 80, wrong path) which is persisted into the manager's SQLite
-// device-model storage on first boot. start.sh patches the JSON template,
-// but the SQLite DB is the runtime source of truth and is not regenerated
-// from JSON on subsequent boots. We therefore correct it directly via
-// docker exec after compose up; the patch survives container restarts but
-// is re-applied on every fixture invocation in case the container was
-// recreated by `docker compose up --force-recreate`.
+// citrineos-core's OCPP listener is on host port 8081, path `/cp001`.
+// start.sh already rewrites the manager's InternalCtrlr.json on every boot to
+// point NetworkConnectionProfiles at ws://host.docker.internal:8081/cp001, and
+// libocpp builds the device-model SQLite DB FROM that JSON the first time it
+// creates the DB. So on a cold boot the runtime URL is already correct and no
+// SQLite patch is needed. We only correct the DB directly for the rare
+// warm/persisted-DB case where an old wrong URL lingers from a previous boot.
+//
+// CRITICAL: this is gated on a `sqlite3 -readonly` probe and only ever writes
+// when the DB already exists WITH the expected schema. Plain `sqlite3 <path>`
+// CREATES an empty database file when the path is missing — and an empty file
+// at this path makes libocpp's InitDeviceModelDb abort on its next boot with
+// "Database does not support migrations yet", crash-looping the manager. The
+// read-only probe never creates the file, so it cannot poison a cold boot that
+// is still initialising the DB.
+const CORRECT_CSMS_URL_NEEDLE = 'host.docker.internal:8081/cp001';
+const EVEREST_DEVICE_MODEL_DB = '/ext/dist/share/everest/modules/OCPP201/device_model_storage.db';
 const CORRECT_NETWORK_PROFILE_JSON = JSON.stringify([
   {
     configurationSlot: 1,
@@ -208,20 +225,62 @@ const CORRECT_NETWORK_PROFILE_JSON = JSON.stringify([
   },
 ]);
 
+// Reads the current NetworkConnectionProfiles value via `sqlite3 -readonly` so
+// a missing/uninitialised DB is never created as an empty file. Returns null
+// when the DB file or table isn't ready yet (cold boot still migrating) or the
+// row is absent — callers treat null as "nothing to patch".
+async function readEverestNetworkProfile(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const proc = spawn(
+      process.platform === 'win32' ? 'docker.exe' : 'docker',
+      [
+        'exec',
+        'everest-manager-1',
+        'sqlite3',
+        '-readonly',
+        EVEREST_DEVICE_MODEL_DB,
+        "SELECT VALUE FROM VARIABLE_ATTRIBUTE WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');",
+      ],
+      { stdio: ['ignore', 'pipe', 'pipe'], shell: false },
+    );
+    let stdout = '';
+    proc.stdout?.on('data', (c: Buffer) => (stdout += c.toString()));
+    proc.on('exit', (code) => resolve(code === 0 ? stdout.trim() : null));
+    proc.on('error', () => resolve(null));
+  });
+}
+
 async function patchEverestNetworkProfile(): Promise<void> {
+  // Wait — read-only, so we never create an empty file that would crash
+  // libocpp's migration init — until libocpp has materialised the device-model
+  // DB, then rewrite the network profile. The rewrite is REQUIRED on every boot,
+  // not just warm/stale ones: start.sh bakes ocppVersion=OCPP21 (from
+  // OCPP_VERSION=2.1) into the DB, but citrineos-core speaks OCPP 2.0.1, so the
+  // profile must be downgraded to OCPP20 (and the CSMS URL pinned to
+  // host:8081/cp001) before the manager can register with core. The trailing
+  // `docker restart` makes libocpp reconnect with the corrected profile, which
+  // also yields the fresh BootNotification/StatusNotification that
+  // awaitStationOnline waits for.
+  const deadline = Date.now() + DB_READY_TIMEOUT_MS;
+  let current = await readEverestNetworkProfile();
+  while (current === null) {
+    if (Date.now() >= deadline) return; // DB never appeared — awaitStationOnline reports it
+    await delay(POLL_INTERVAL_MS);
+    current = await readEverestNetworkProfile();
+  }
+  // Already exactly the citrineos profile (warm DB patched on a prior run) —
+  // skip the rewrite+restart to avoid a needless reconnect cycle.
+  if (current.includes(CORRECT_CSMS_URL_NEEDLE) && current.includes('"ocppVersion":"OCPP20"')) {
+    return;
+  }
+
   const escaped = CORRECT_NETWORK_PROFILE_JSON.replace(/'/g, "''");
   const sql = `UPDATE VARIABLE_ATTRIBUTE SET VALUE='${escaped}' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');\n`;
   // Pipe SQL via stdin to avoid shell quoting hell with the embedded JSON.
   await new Promise<void>((res, rej) => {
     const proc = spawn(
       process.platform === 'win32' ? 'docker.exe' : 'docker',
-      [
-        'exec',
-        '-i',
-        'everest-manager-1',
-        'sqlite3',
-        '/ext/dist/share/everest/modules/OCPP201/device_model_storage.db',
-      ],
+      ['exec', '-i', 'everest-manager-1', 'sqlite3', EVEREST_DEVICE_MODEL_DB],
       { stdio: ['pipe', 'pipe', 'pipe'], shell: false },
     );
     let stderr = '';
@@ -234,7 +293,6 @@ async function patchEverestNetworkProfile(): Promise<void> {
     proc.stdin?.write(sql);
     proc.stdin?.end();
   });
-  // Restart the manager so libocpp re-reads the device-model DB on boot.
   await new Promise<void>((res) => {
     const proc = spawn(
       process.platform === 'win32' ? 'docker.exe' : 'docker',
@@ -442,7 +500,7 @@ export async function startEverest(options: EverestStartOptions = {}): Promise<E
       const everestDir = resolve(cwd, 'everest');
       // `docker compose down` from the everest directory tears the
       // stack down. Wrapped in npm so we use the same toolchain shell as
-      // start-everest. Errors are non-fatal so a failed teardown doesn't
+      // start:everest. Errors are non-fatal so a failed teardown doesn't
       // mask test results.
       await new Promise<void>((res) => {
         const proc = spawn(

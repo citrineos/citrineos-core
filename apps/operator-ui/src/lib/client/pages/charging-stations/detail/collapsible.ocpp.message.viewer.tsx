@@ -20,11 +20,13 @@ import {
 import { ScrollArea } from '@ferdiunal/refine-shadcn/ui';
 import { copy } from '@lib/utils/copy';
 import { formatDate } from '@lib/client/components/timestamp-display';
+import { useTranslate } from '@refinedev/core';
 
 export const CollapsibleOCPPMessageViewer: React.FC<{
   ocppMessageDto: OCPPMessageDto;
   unparsed?: boolean;
 }> = ({ ocppMessageDto, unparsed }) => {
+  const translate = useTranslate();
   const [open, setOpen] = useState(false);
   const threshold = 7;
 
@@ -90,7 +92,7 @@ export const CollapsibleOCPPMessageViewer: React.FC<{
           size="xs"
           onClick={async (e) => {
             e.stopPropagation();
-            await copy(JSON.stringify(ocppMessage, null, 2), false);
+            await copy(JSON.stringify(ocppMessage, null, 2), false, translate);
           }}
           className={`absolute top-1 ${isExpandable ? 'right-8' : 'right-1'} p-1`}
         >
@@ -116,7 +118,7 @@ export const CollapsibleOCPPMessageViewer: React.FC<{
                   size="xs"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    await copy(correlationId);
+                    await copy(correlationId, true, translate);
                   }}
                 >
                   <Copy className={buttonIconSize} />
@@ -156,7 +158,7 @@ export const CollapsibleOCPPMessageViewer: React.FC<{
             size="xs"
             onClick={async (e) => {
               e.stopPropagation();
-              await copy(JSON.stringify(ocppMessage, null, 2), false);
+              await copy(JSON.stringify(ocppMessage, null, 2), false, translate);
             }}
             className="absolute top-4 right-6 p-1"
           >

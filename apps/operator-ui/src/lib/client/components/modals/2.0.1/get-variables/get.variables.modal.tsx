@@ -26,7 +26,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useFieldArray } from 'react-hook-form';
@@ -43,38 +43,23 @@ export interface GetVariablesModalProps {
   station: any;
 }
 
-const requiredIdOrName = (label: string) =>
-  z.custom<number | string>(
-    (val) =>
-      (typeof val === 'number' && val > 0) || (typeof val === 'string' && val.trim().length > 0),
-    `${label} is required`,
-  );
-
-const GetVariableDataSchema = z.object({
-  componentId: requiredIdOrName('Component'),
-  variableId: z.string().optional(),
-  componentInstance: z.string().max(50).optional(),
-  variableInstance: z.string().max(50).optional(),
-  evseId: z.number().optional(),
-  connectorId: z.number().optional(),
-  attributeType: z.enum(OCPP2_0_1.AttributeEnumType).optional(),
-});
-
-export const GetVariablesSchema = z.object({
-  getVariableData: z
-    .array(GetVariableDataSchema)
-    .min(1, 'At least one variable is required')
-    .refine((data) => data.every((item) => item.componentId && item.variableId), {
-      message: 'Component and Variable are required for each entry',
-    }),
-});
-
-export type GetVariablesFormData = z.infer<typeof GetVariablesSchema>;
+export type GetVariablesFormData = {
+  getVariableData: {
+    componentId: number | string;
+    variableId?: string;
+    componentInstance?: string;
+    variableInstance?: string;
+    evseId?: number;
+    connectorId?: number;
+    attributeType?: OCPP2_0_1.AttributeEnumType;
+  }[];
+};
 
 const attributeTypes = Object.keys(OCPP2_0_1.AttributeEnumType);
 
 export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -86,6 +71,35 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const GetVariablesSchema = useMemo(() => {
+    const requiredIdOrName = (label: string) =>
+      z.custom<number | string>(
+        (val) =>
+          (typeof val === 'number' && val > 0) ||
+          (typeof val === 'string' && val.trim().length > 0),
+        translate('ChargingStations.fieldRequired', { field: label }),
+      );
+
+    const GetVariableDataSchema = z.object({
+      componentId: requiredIdOrName(translate('ChargingStations.getVariablesModal.component')),
+      variableId: z.string().optional(),
+      componentInstance: z.string().max(50).optional(),
+      variableInstance: z.string().max(50).optional(),
+      evseId: z.number().optional(),
+      connectorId: z.number().optional(),
+      attributeType: z.enum(OCPP2_0_1.AttributeEnumType).optional(),
+    });
+
+    return z.object({
+      getVariableData: z
+        .array(GetVariableDataSchema)
+        .min(1, translate('ChargingStations.getVariablesModal.atLeastOneVariable'))
+        .refine((data) => data.every((item) => item.componentId && item.variableId), {
+          message: translate('ChargingStations.getVariablesModal.componentAndVariableRequired'),
+        }),
+    });
+  }, [translate]);
 
   const form = useForm({
     resolver: zodResolver(GetVariablesSchema),
@@ -191,6 +205,7 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
     });
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/monitoring/getVariables?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data: { getVariableData },
       setLoading,
@@ -208,14 +223,12 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
       loading={loading}
       submitHandler={onFinish}
       submitButtonVariant={FormButtonVariants.submit}
-      submitButtonlabel="Get Variables"
+      submitButtonlabel={translate('ChargingStations.commands.getVariables')}
       hideCancel
     >
       <Alert className="mb-4">
         <InfoIcon className="h-4 w-4" />
-        <AlertDescription>
-          Send a GetBaseReport to this Charging Station to populate Components and Variables.
-        </AlertDescription>
+        <AlertDescription>{translate('ChargingStations.getVariablesModal.alert')}</AlertDescription>
       </Alert>
       <div className="flex items-start">
         <AddArrayItemButton
@@ -230,7 +243,7 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
               attributeType: undefined,
             })
           }
-          itemLabel="Variable"
+          itemLabel={translate('ChargingStations.getVariablesModal.variable')}
         />
       </div>
       <div className="flex flex-col gap-6 w-full">
@@ -250,12 +263,14 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
             <div key={field.id} className={nestedFormRowFlex}>
               <ComboboxFormField
                 control={form.control}
-                label={`Component #${index + 1}`}
+                label={translate('ChargingStations.getVariablesModal.componentNumber', {
+                  number: index + 1,
+                })}
                 name={`getVariableData.${index}.componentId`}
                 options={componentOptions}
                 onSearch={onSearch}
-                placeholder="Select Component"
-                searchPlaceholder="Search Components"
+                placeholder={translate('ChargingStations.getVariablesModal.selectComponent')}
+                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchComponents')}
                 isLoading={componentQuery.isLoading}
                 required
                 allowManualEntry
@@ -263,12 +278,14 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
 
               <ComboboxFormField
                 control={form.control}
-                label={`Variable #${index + 1}`}
+                label={translate('ChargingStations.getVariablesModal.variableNumber', {
+                  number: index + 1,
+                })}
                 name={`getVariableData.${index}.variableId`}
                 options={variableOptions}
                 onSearch={variableOnSearch}
-                placeholder="Select Variable"
-                searchPlaceholder="Search Variables"
+                placeholder={translate('ChargingStations.getVariablesModal.selectVariable')}
+                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchVariables')}
                 isLoading={variableLoading}
                 required
                 disabled={!componentId || componentId === 0}
@@ -277,25 +294,31 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
 
               <FormField
                 control={form.control}
-                label={`Component Instance #${index + 1}`}
+                label={translate('ChargingStations.getVariablesModal.componentInstanceNumber', {
+                  number: index + 1,
+                })}
                 name={`getVariableData.${index}.componentInstance`}
               >
-                <Input placeholder="Instance" />
+                <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
               </FormField>
               <FormField
                 control={form.control}
-                label={`Variable Instance #${index + 1}`}
+                label={translate('ChargingStations.getVariablesModal.variableInstanceNumber', {
+                  number: index + 1,
+                })}
                 name={`getVariableData.${index}.variableInstance`}
               >
-                <Input placeholder="Instance" />
+                <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
               </FormField>
 
               <SelectFormField
                 control={form.control}
-                label={`Attribute Type #${index + 1}`}
+                label={translate('ChargingStations.getVariablesModal.attributeTypeNumber', {
+                  number: index + 1,
+                })}
                 name={`getVariableData.${index}.attributeType`}
                 options={attributeTypes}
-                placeholder="Select Attribute Type"
+                placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
               />
 
               <RemoveArrayItemButton onRemoveAction={() => remove(index)} />

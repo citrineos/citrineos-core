@@ -53,13 +53,12 @@ export const formatTimeLabel = (seconds: number) => {
 
 export const chartSize = 'min-w-[50px] min-h-[100px]';
 export const chartMargin = { bottom: 25 };
-export const elapsedTimeAxisLabel = 'Time Elapsed';
 
-export const xAxisLabelConfig: ImplicitLabelType = {
-  value: elapsedTimeAxisLabel,
+export const getXAxisLabelConfig = (label: string): ImplicitLabelType => ({
+  value: label,
   position: 'insideBottom',
   offset: -20,
-};
+});
 export const getYAxisLabelConfig = (label: string): ImplicitLabelType => ({
   value: label,
   angle: -90,

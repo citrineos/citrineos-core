@@ -17,6 +17,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Controller } from 'react-hook-form';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
@@ -26,20 +27,17 @@ export interface TriggerMessageModalProps {
   station: ChargingStationDto;
 }
 
-const TriggerMessageSchema = z.object({
-  requestedMessage: z.enum(OCPP2_0_1.MessageTriggerEnumType, {
-    message: 'Please select a message type',
-  }),
-  evse: z.string().optional(), // { id, evseTypeId }
-  connectorId: z.number().optional(),
-});
-
-type TriggerMessageFormData = z.infer<typeof TriggerMessageSchema>;
+type TriggerMessageFormData = {
+  requestedMessage: OCPP2_0_1.MessageTriggerEnumType;
+  evse?: string;
+  connectorId?: number;
+};
 
 const messageTriggers = Object.keys(OCPP2_0_1.MessageTriggerEnumType);
 
 export const TriggerMessageModal = ({ station }: TriggerMessageModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -48,6 +46,18 @@ export const TriggerMessageModal = ({ station }: TriggerMessageModalProps) => {
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const TriggerMessageSchema = useMemo(
+    () =>
+      z.object({
+        requestedMessage: z.enum(OCPP2_0_1.MessageTriggerEnumType, {
+          message: translate('ChargingStations.triggerMessageModal.selectMessageError'),
+        }),
+        evse: z.string().optional(), // { id, evseTypeId }
+        connectorId: z.number().optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(TriggerMessageSchema),
@@ -73,6 +83,7 @@ export const TriggerMessageModal = ({ station }: TriggerMessageModalProps) => {
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/triggerMessage?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -105,13 +116,13 @@ export const TriggerMessageModal = ({ station }: TriggerMessageModalProps) => {
       <ComboboxFormField
         control={form.control}
         name="requestedMessage"
-        label="Requested Message"
+        label={translate('ChargingStations.triggerMessageModal.requestedMessage')}
         options={messageTriggers.map((mt: string) => ({
           label: mt,
           value: mt,
         }))}
-        placeholder="Select Message Type"
-        searchPlaceholder="Search Message Types"
+        placeholder={translate('ChargingStations.triggerMessageModal.selectMessageType')}
+        searchPlaceholder={translate('ChargingStations.triggerMessageModal.searchMessageTypes')}
         required
       />
 

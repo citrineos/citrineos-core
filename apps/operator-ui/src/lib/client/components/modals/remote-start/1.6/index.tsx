@@ -15,9 +15,9 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import z from 'zod';
 import { Controller } from 'react-hook-form';
@@ -28,19 +28,30 @@ export interface OCPP1_6_RemoteStartProps {
   station: ChargingStationDto;
 }
 
-const RemoteStartSchema = z.object({
-  remoteStartId: z.coerce.number<number>().min(0, 'Remote Start ID must be at least 0'),
-  idTag: z.string().min(1, 'ID Token is required'),
-  connectorId: z.number().optional(),
-});
-
-type RemoteStartFormData = z.infer<typeof RemoteStartSchema>;
+type RemoteStartFormData = {
+  remoteStartId: number;
+  idTag: string;
+  connectorId?: number;
+};
 
 export const OCPP1_6_RemoteStart = ({ station }: OCPP1_6_RemoteStartProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
+
+  const RemoteStartSchema = useMemo(
+    () =>
+      z.object({
+        remoteStartId: z.coerce
+          .number<number>()
+          .min(0, translate('ChargingStations.remoteStartModal.remoteStartIdMin')),
+        idTag: z.string().min(1, translate('ChargingStations.remoteStartModal.idTokenRequired')),
+        connectorId: z.number().optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(RemoteStartSchema),
@@ -100,6 +111,7 @@ export const OCPP1_6_RemoteStart = ({ station }: OCPP1_6_RemoteStartProps) => {
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/evdriver/remoteStartTransaction?identifier=${station.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       ocppVersion: OCPPVersion.OCPP1_6,
@@ -117,20 +129,24 @@ export const OCPP1_6_RemoteStart = ({ station }: OCPP1_6_RemoteStartProps) => {
       submitHandler={onFinish}
       hideCancel
       submitButtonVariant={FormButtonVariants.confirm}
-      submitButtonLabel="Start"
+      submitButtonLabel={translate('ChargingStations.remoteStartModal.start')}
     >
-      <FormField control={form.control} label="Remote Start ID" name="remoteStartId">
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.remoteStartModal.remoteStartId')}
+        name="remoteStartId"
+      >
         <Input type="number" min={0} />
       </FormField>
 
       <ComboboxFormField
         control={form.control}
-        label="ID Token"
+        label={translate('ChargingStations.remoteStartModal.idToken')}
         name="idTag"
         options={authorizationOptions}
         onSelect={handleIdTokenSelection}
         onSearch={authorizationOnSearch}
-        placeholder="Search ID Token"
+        placeholder={translate('ChargingStations.remoteStartModal.searchIdToken')}
         isLoading={authorizationQueryResult.isLoading}
       />
 

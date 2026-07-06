@@ -17,7 +17,7 @@ import {
 } from '@lib/queries/transaction.events';
 import { ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
-import { useList } from '@refinedev/core';
+import { useList, useTranslate } from '@refinedev/core';
 import { ChevronDownIcon } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import type { ExpandedState } from '@tanstack/react-table';
@@ -29,6 +29,7 @@ export const TransactionEventsList = ({
   ocppConnectionName,
 }: any) => {
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const translate = useTranslate();
 
   const tenantId = useTenantId();
 
@@ -107,7 +108,7 @@ export const TransactionEventsList = ({
   }, [eventsData?.data, messagesData?.data, transactionDatabaseId, tenantId]);
 
   const columns = [
-    ...getTransactionEventColumns(),
+    ...getTransactionEventColumns(translate),
     <Table.Column
       id="meterValues"
       key="meterValues"
@@ -123,7 +124,7 @@ export const TransactionEventsList = ({
               row.toggleExpanded();
             }}
           >
-            <span className="text-sm">View Meter Values</span>
+            <span className="text-sm">{translate('Transactions.events.viewMeterValues')}</span>
             <ChevronDownIcon
               className={`transition-transform duration-200 ${
                 row.getIsExpanded() ? 'rotate-180' : ''

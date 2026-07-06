@@ -2,21 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  BootstrapConfig,
   CallAction,
   ClearMessageStatusEnumType,
   HandlerProperties,
-  ICache,
   IMessage,
   IMessageConfirmation,
-  IMessageHandler,
-  IMessageSender,
   IWebsocketConnection,
+  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   RegistrationStatusEnumType,
-  SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -37,7 +33,6 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
-  OCPPValidator,
   OCPPVersion,
   RegistrationStatusEnum,
   ResetEnum,
@@ -45,7 +40,7 @@ import {
   SetVariableStatusEnum,
   type DisplayMessageStatusEnumType,
 } from '@citrineos/base';
-import { sequelize } from '@dal/index.js';
+
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
@@ -61,18 +56,27 @@ import {
   ChargingStation,
   ChargingStationNetworkProfile,
   Component,
-  SequelizeChangeConfigurationRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeOCPPMessageRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@dal/layers/sequelize/index.js';
 import { IdGenerator, validateMessageContentType } from '@util/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { BootNotificationService } from './BootNotificationService.js';
-import { DeviceModelService } from './DeviceModelService.js';
+
+import type { BootNotificationService } from './BootNotificationService.js';
+import type { DeviceModelService } from './DeviceModelService.js';
+
+export interface ConfigurationModuleDependencies extends OcppModuleDependencies {
+  bootRepository: IBootRepository;
+  deviceModelRepository: IDeviceModelRepository;
+  messageInfoRepository: IMessageInfoRepository;
+  locationRepository: ILocationRepository;
+  changeConfigurationRepository: IChangeConfigurationRepository;
+  ocppMessageRepository: IOCPPMessageRepository;
+  idGenerator: IdGenerator;
+  tenantRepository: ITenantRepository;
+  configurationDeviceModelService: DeviceModelService;
+  bootNotificationService: BootNotificationService;
+}
 
 /**
  * Component that handles Configuration related messages.
@@ -86,99 +90,41 @@ export class ConfigurationModule extends AbstractModule {
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
 
-  /**
-   * This is the constructor function that initializes the {@link ConfigurationModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system-wide logger settings and will serve as the parent logger for any subcomponent logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {IBootRepository} [bootRepository] - An optional parameter of type {@link IBootRepository} which represents a repository for accessing and manipulating authorization data.
-   * If no `bootRepository` is provided, a default {@link SequelizeBootRepository} instance is created and used.
-   *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
-   *
-   * @param {IMessageInfoRepository} [messageInfoRepository] - An optional parameter of type {@link messageInfoRepository} which
-   * represents a repository for accessing and manipulating message info data. If no `messageInfoRepository` is provided, a default
-   * {@link SequelizeMessageInfoRepository} instance is created and used.
-   *
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link locationRepository} which
-   * represents a repository for accessing and manipulating location data. If no `locationRepository` is provided, a default
-   * {@link SequelizeLocationRepository} instance is created and used.
-   *
-   * @param {IChangeConfigurationRepository} [changeConfigurationRepository] - An optional parameter of type {@link IChangeConfigurationRepository} which
-   * represents a repository for accessing and manipulating change configuration data. If no `changeConfigurationRepository` is provided, a default
-   * {@link SequelizeChangeConfigurationRepository} instance is created and used.
-   *
-   * @param {IOCPPMessageRepository} [ocppMessageRepository] - An optional parameter of type {@link IOCPPMessageRepository} which
-   * represents a repository for accessing and manipulating call message data. If no `ocppMessageRepository` is provided, a default
-   * {@link SequelizeOCPPMessageRepository} instance is created and used.
-   *
-   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
-   * represents a generator for ids.
-   *
-   *If no `deviceModelRepository` is provided, a default {@link sequelize:messageInfoRepository} instance is created and used.
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    bootRepository?: IBootRepository,
-    deviceModelRepository?: IDeviceModelRepository,
-    messageInfoRepository?: IMessageInfoRepository,
-    locationRepository?: ILocationRepository,
-    changeConfigurationRepository?: IChangeConfigurationRepository,
-    ocppMessageRepository?: IOCPPMessageRepository,
-    idGenerator?: IdGenerator,
-    tenantRepository?: ITenantRepository,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    bootRepository,
+    deviceModelRepository,
+    messageInfoRepository,
+    locationRepository,
+    changeConfigurationRepository,
+    ocppMessageRepository,
+    idGenerator,
+    tenantRepository,
+    configurationDeviceModelService,
+    bootNotificationService,
+  }: ConfigurationModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.Configuration, logger, ocppValidator);
 
     this._requests = config.modules.configuration.requests;
     this._responses = config.modules.configuration.responses;
 
-    this._bootRepository =
-      bootRepository || new sequelize.SequelizeBootRepository(config, this._logger);
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
-    this._messageInfoRepository =
-      messageInfoRepository || new sequelize.SequelizeMessageInfoRepository(config, this._logger);
-    this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, this._logger);
-    this._changeConfigurationRepository =
-      changeConfigurationRepository ||
-      new SequelizeChangeConfigurationRepository(config, this._logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new SequelizeOCPPMessageRepository(config, this._logger);
+    this._bootRepository = bootRepository;
+    this._deviceModelRepository = deviceModelRepository;
+    this._messageInfoRepository = messageInfoRepository;
+    this._locationRepository = locationRepository;
+    this._changeConfigurationRepository = changeConfigurationRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._tenantRepository = tenantRepository;
 
-    this._tenantRepository =
-      tenantRepository || new sequelize.SequelizeTenantRepository(config, this._logger);
+    this._deviceModelService = configurationDeviceModelService;
+    this._bootService = bootNotificationService;
 
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
-
-    this._bootService = new BootNotificationService(
-      this._bootRepository,
-      this._cache,
-      this._config.modules.configuration,
-      this._logger,
-    );
-
-    this._idGenerator =
-      idGenerator ||
-      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
+    this._idGenerator = idGenerator;
   }
 
   protected _tenantRepository: ITenantRepository;
@@ -1121,3 +1067,5 @@ export class ConfigurationModule extends AbstractModule {
     }
   }
 }
+
+export default ConfigurationModule;

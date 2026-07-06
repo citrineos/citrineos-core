@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import { Separator } from '@radix-ui/react-menu';
 import type { ChargerStatusEnum } from '@lib/utils/enums';
+import { useTranslate } from '@refinedev/core';
 
 export interface ChargerRowProps {
   chargingStation: ChargingStationDetailsDto;
@@ -28,6 +29,7 @@ export const ChargerRow: React.FC<ChargerRowProps> = ({
   showSeparator,
 }) => {
   const { push } = useRouter();
+  const translate = useTranslate();
   const label = evse
     ? `${chargingStation.ocppConnectionName}:EVSE ${evse.id}`
     : chargingStation.ocppConnectionName;
@@ -41,7 +43,7 @@ export const ChargerRow: React.FC<ChargerRowProps> = ({
         >
           <div className="flex items-center gap-2">
             <span className="font-bold text-lg">
-              Station <span>{label}</span>
+              {translate('Overview.station')} <span>{label}</span>
             </span>
             <Circle color={circleColor} status={lastStatus} />
           </div>
@@ -50,7 +52,7 @@ export const ChargerRow: React.FC<ChargerRowProps> = ({
           className="flex items-center gap-2 cursor-pointer hover:text-primary"
           onClick={() => push(`/${MenuSection.LOCATIONS}/${chargingStation.location?.id}`)}
         >
-          Location:
+          {translate('Overview.location')}
           <span>{chargingStation.location?.name}</span>
         </div>
       </div>

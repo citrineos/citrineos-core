@@ -16,6 +16,7 @@ import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Textarea } from '@lib/client/components/ui/textarea';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
@@ -25,22 +26,16 @@ interface InstallCertificateModalProps {
   station: any;
 }
 
-const InstallCertificateSchema = z.object({
-  certificate: z
-    .string()
-    .min(1, 'Certificate is required')
-    .max(5500, 'Certificate must be less than 5500 characters'),
-  certificateType: z.enum(OCPP2_0_1.InstallCertificateUseEnumType, {
-    message: 'Certificate Type is required',
-  }),
-});
-
-type InstallCertificateFormData = z.infer<typeof InstallCertificateSchema>;
+type InstallCertificateFormData = {
+  certificate: string;
+  certificateType: OCPP2_0_1.InstallCertificateUseEnumType;
+};
 
 const installCertificateTypes = Object.keys(OCPP2_0_1.InstallCertificateUseEnumType);
 
 export const InstallCertificateModal = ({ station }: InstallCertificateModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -49,6 +44,20 @@ export const InstallCertificateModal = ({ station }: InstallCertificateModalProp
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const InstallCertificateSchema = useMemo(
+    () =>
+      z.object({
+        certificate: z
+          .string()
+          .min(1, translate('ChargingStations.installCertificateModal.certificateRequired'))
+          .max(5500, translate('ChargingStations.installCertificateModal.certificateTooLong')),
+        certificateType: z.enum(OCPP2_0_1.InstallCertificateUseEnumType, {
+          message: translate('ChargingStations.installCertificateModal.certificateTypeRequired'),
+        }),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(InstallCertificateSchema),
@@ -68,7 +77,7 @@ export const InstallCertificateModal = ({ station }: InstallCertificateModalProp
 
     const pemString = formatPem(values.certificate);
     if (pemString == null) {
-      toast.error('Incorrectly formatted PEM certificate');
+      toast.error(translate('ChargingStations.installCertificateModal.invalidPem'));
       return;
     }
 
@@ -78,6 +87,7 @@ export const InstallCertificateModal = ({ station }: InstallCertificateModalProp
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/certificates/installCertificate?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -98,14 +108,19 @@ export const InstallCertificateModal = ({ station }: InstallCertificateModalProp
     >
       <SelectFormField
         control={form.control}
-        label="Certificate Type"
+        label={translate('ChargingStations.certificateSignedModal.certificateType')}
         name="certificateType"
         options={installCertificateTypes}
-        placeholder="Select Certificate Type"
+        placeholder={translate('ChargingStations.certificateSignedModal.selectCertificateType')}
         required
       />
 
-      <FormField control={form.control} label="Certificate (PEM)" name="certificate" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.installCertificateModal.certificatePem')}
+        name="certificate"
+        required
+      >
         <Textarea />
       </FormField>
     </Form>

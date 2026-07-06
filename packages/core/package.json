@@ -11,8 +11,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.json && tsc-alias -p tsconfig.json",
     "lint": "eslint .",
-    "lint-fix": "eslint . --fix",
-    "prepublish": "pnpm exec eslint",
+    "lint:fix": "eslint . --fix",
     "test": "vitest run"
   },
   "keywords": [
@@ -33,12 +32,11 @@
     "acme-client": "^5.3.0",
     "amqplib": "^0.10.3",
     "asn1js": "^3.0.0",
-    "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "drizzle-orm": "^0.45.0",
     "drizzle-zod": "^0.8.3",
-    "zod": "4.1.12",
-    "fastify": "^5.1.0",
+    "zod": "catalog:",
+    "fastify": "catalog:",
     "fastify-plugin": "^5.0.0",
     "jsonwebtoken": "^9.0.2",
     "jsrsasign": "^11.0.0",
@@ -61,10 +59,10 @@
     "ws": "^8.17.0"
   },
   "devDependencies": {
+    "awilix": "^13.0.3",
     "@eslint/js": "catalog:",
     "@faker-js/faker": "^8.0.0",
     "@types/amqplib": "0.10.4",
-    "@types/bcryptjs": "2.4.6",
     "@types/jsonwebtoken": "9.0.10",
     "@types/node-cron": "3.0.11",
     "@types/nodemailer": "6.4.23",

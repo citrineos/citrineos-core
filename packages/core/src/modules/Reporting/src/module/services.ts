@@ -8,7 +8,7 @@ import { OCPP2_0_1 } from '@citrineos/base';
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
 
-  constructor(deviceModelRepository: IDeviceModelRepository) {
+  constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
     this._deviceModelRepository = deviceModelRepository;
   }
 

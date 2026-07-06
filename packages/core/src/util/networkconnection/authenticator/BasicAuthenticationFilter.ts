@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/base';
-import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
-import { CryptoUtils } from '@dal/util/CryptoUtils.js';
+import type { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
+import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/VariableAttribute.js';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -16,10 +16,23 @@ import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
  * Filter used to authenticate incoming HTTP requests based on basic authorization header.
  * It only applies when the security profile is set to 1 or 2.
  */
-export class BasicAuthenticationFilter extends AuthenticatorFilter {
-  private _deviceModelRepository: IDeviceModelRepository;
+interface IDeviceModelLookup {
+  readAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttribute[]>;
+}
 
-  constructor(deviceModelRepository: IDeviceModelRepository, logger?: Logger<ILogObj>) {
+export class BasicAuthenticationFilter extends AuthenticatorFilter {
+  private _deviceModelRepository: IDeviceModelLookup;
+
+  constructor({
+    deviceModelRepository,
+    logger,
+  }: {
+    deviceModelRepository: IDeviceModelLookup;
+    logger: Logger<ILogObj>;
+  }) {
     super(logger);
     this._deviceModelRepository = deviceModelRepository;
   }
@@ -60,9 +73,9 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
       })
       .then((r) => {
         if (r && r[0]) {
-          const hashedPassword = r[0].value;
-          if (hashedPassword) {
-            return CryptoUtils.isPasswordMatch(hashedPassword, password);
+          const storedPassword = r[0].value;
+          if (storedPassword) {
+            return storedPassword === password;
           }
         }
         this._logger.warn('Has no password', username);
@@ -70,3 +83,5 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
       });
   }
 }
+
+export default BasicAuthenticationFilter;

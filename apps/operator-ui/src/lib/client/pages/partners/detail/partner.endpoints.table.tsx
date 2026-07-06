@@ -81,11 +81,11 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
     let isValid = true;
 
     if (!formData.identifier.trim()) {
-      newErrors.identifier = 'Please input identifier';
+      newErrors.identifier = translate('TenantPartners.endpoints.errorIdentifierRequired');
       isValid = false;
     }
     if (!formData.url.trim()) {
-      newErrors.url = 'Please input URL';
+      newErrors.url = translate('TenantPartners.endpoints.errorUrlRequired');
       isValid = false;
     }
 
@@ -158,7 +158,7 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
           disabled={!isValidPartnerId}
         >
           <Plus className={buttonIconSize} />
-          {translate('buttons.add')} Endpoint
+          {translate('buttons.add')} {translate('TenantPartners.endpoints.endpoint')}
         </Button>
       </div>
 
@@ -167,13 +167,13 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                Identifier
+                {translate('TenantPartners.endpoints.identifier')}
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                URL
+                {translate('TenantPartners.endpoints.url')}
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                Actions
+                {translate('table.actions')}
               </th>
             </tr>
           </thead>
@@ -181,7 +181,7 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
             {data.length === 0 ? (
               <tr>
                 <td colSpan={3} className="h-24 text-center text-muted-foreground">
-                  No endpoints found
+                  {translate('TenantPartners.endpoints.noEndpointsFound')}
                 </td>
               </tr>
             ) : (
@@ -229,26 +229,31 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {translate(`actions.${editingKey ? 'edit' : 'create'}`)} Endpoint
+              {translate(`actions.${editingKey ? 'edit' : 'create'}`)}{' '}
+              {translate('TenantPartners.endpoints.endpoint')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Identifier</label>
+              <label className="text-sm font-medium">
+                {translate('TenantPartners.endpoints.identifier')}
+              </label>
               <Input
                 value={formData.identifier}
                 onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
                 disabled={!!editingKey}
-                placeholder="Enter identifier"
+                placeholder={translate('TenantPartners.endpoints.placeholderIdentifier')}
               />
               {errors.identifier && <p className="text-sm text-destructive">{errors.identifier}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">URL</label>
+              <label className="text-sm font-medium">
+                {translate('TenantPartners.endpoints.url')}
+              </label>
               <Input
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                placeholder="Enter URL"
+                placeholder={translate('TenantPartners.endpoints.placeholderUrl')}
               />
               {errors.url && <p className="text-sm text-destructive">{errors.url}</p>}
             </div>
@@ -267,9 +272,11 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{translate('actions.delete')} Endpoint</AlertDialogTitle>
+            <AlertDialogTitle>
+              {translate('actions.delete')} {translate('TenantPartners.endpoints.endpoint')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this endpoint? This action cannot be undone.
+              {translate('TenantPartners.endpoints.deleteConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

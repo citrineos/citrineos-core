@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, MeterValueDto, OCPP2_request_types } from '@citrineos/base';
+import type { MeterValueDto, OCPP2_request_types } from '@citrineos/base';
 import {
   ChargingStationSequenceTypeEnum,
   CrudRepository,
@@ -11,9 +11,6 @@ import {
 } from '@citrineos/base';
 import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type {
   IChargingStationSequenceRepository,
   ITransactionEventRepository,
@@ -30,7 +27,7 @@ import { StartTransaction } from '../model/TransactionEvent/StartTransaction.js'
 import { StopTransaction } from '../model/TransactionEvent/StopTransaction.js';
 import { Transaction } from '../model/TransactionEvent/Transaction.js';
 import { TransactionEvent } from '../model/TransactionEvent/TransactionEvent.js';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
@@ -46,69 +43,55 @@ export class SequelizeTransactionEventRepository
   connector: CrudRepository<Connector>;
   chargingStationSequence: IChargingStationSequenceRepository;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    namespace = TransactionEvent.MODEL_NAME,
-    sequelizeInstance?: Sequelize,
-    transaction?: CrudRepository<Transaction>,
-    station?: CrudRepository<ChargingStation>,
-    evse?: CrudRepository<Evse>,
-    meterValue?: CrudRepository<MeterValue>,
-    startTransaction?: CrudRepository<StartTransaction>,
-    stopTransaction?: CrudRepository<StopTransaction>,
-    connector?: CrudRepository<Connector>,
-    chargingStationSequence?: IChargingStationSequenceRepository,
-  ) {
-    super(config, namespace, logger, sequelizeInstance);
-    this.transaction = transaction
-      ? transaction
-      : new SequelizeRepository<Transaction>(
-          config,
-          Transaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.evse = evse
-      ? evse
-      : new SequelizeRepository<Evse>(config, Evse.MODEL_NAME, logger, sequelizeInstance);
-    this.station = station
-      ? station
-      : new SequelizeRepository<ChargingStation>(
-          config,
-          ChargingStation.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.meterValue = meterValue
-      ? meterValue
-      : new SequelizeRepository<MeterValue>(
-          config,
-          MeterValue.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.startTransaction = startTransaction
-      ? startTransaction
-      : new SequelizeRepository<StartTransaction>(
-          config,
-          StartTransaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.stopTransaction = stopTransaction
-      ? stopTransaction
-      : new SequelizeRepository<StopTransaction>(
-          config,
-          StopTransaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.connector = connector
-      ? connector
-      : new SequelizeRepository<Connector>(config, Connector.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingStationSequence =
-      chargingStationSequence || new SequelizeChargingStationSequenceRepository(config, logger);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: TransactionEvent.MODEL_NAME, logger, sequelizeInstance });
+    this.transaction = new SequelizeRepository<Transaction>({
+      config,
+      namespace: Transaction.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.evse = new SequelizeRepository<Evse>({
+      config,
+      namespace: Evse.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.station = new SequelizeRepository<ChargingStation>({
+      config,
+      namespace: ChargingStation.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.meterValue = new SequelizeRepository<MeterValue>({
+      config,
+      namespace: MeterValue.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.startTransaction = new SequelizeRepository<StartTransaction>({
+      config,
+      namespace: StartTransaction.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.stopTransaction = new SequelizeRepository<StopTransaction>({
+      config,
+      namespace: StopTransaction.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.connector = new SequelizeRepository<Connector>({
+      config,
+      namespace: Connector.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.chargingStationSequence = new SequelizeChargingStationSequenceRepository({
+      config,
+      logger,
+      sequelizeInstance,
+    });
   }
 
   /**
@@ -853,3 +836,5 @@ export class SequelizeTransactionEventRepository
     );
   }
 }
+
+export default SequelizeTransactionEventRepository;

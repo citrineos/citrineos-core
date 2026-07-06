@@ -16,9 +16,9 @@ import {
   mockFileStorage,
   mockFileStorageGetFile,
   mockFileStorageSaveFile,
-  mockLogger,
 } from '../../vitest.setup';
 import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 // Define constants BEFORE mocks to avoid hoisting issues
 const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.hoisted(() => ({
@@ -132,6 +132,7 @@ vi.mock('../../../../dal/layers/sequelize/index.js', async (importOriginal) => {
 });
 
 describe('InstallCertificateHelperService', () => {
+  const { container, logger } = createTestContainer();
   let service: InstallCertificateHelperService;
   let mockCertificateRepository: ICertificateRepository;
   let mockInstalledCertificateRepository: IInstalledCertificateRepository;
@@ -171,16 +172,15 @@ describe('InstallCertificateHelperService', () => {
     mockCertificateAuthorityService = {} as any;
     mockNetworkConnection = {} as any;
 
-    service = new InstallCertificateHelperService(
-      mockCertificateRepository,
-      mockInstalledCertificateRepository,
-      mockInstallCertificateAttemptRepository,
-      mockDeleteCertificateAttemptRepository,
-      mockCertificateAuthorityService,
-      mockNetworkConnection,
-      mockFileStorage,
-      mockLogger,
-    );
+    service = getTestInstance(container, InstallCertificateHelperService, {
+      certificateRepository: mockCertificateRepository,
+      installedCertificateRepository: mockInstalledCertificateRepository,
+      installCertificateAttemptRepository: mockInstallCertificateAttemptRepository,
+      deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
+      certificateAuthorityService: mockCertificateAuthorityService,
+      networkConnection: mockNetworkConnection,
+      fileStorage: mockFileStorage,
+    });
 
     vi.spyOn(service, 'getCertificateHash').mockReturnValue(mockHash);
   });
@@ -495,7 +495,7 @@ describe('InstallCertificateHelperService', () => {
         MOCK_STATUS_ACCEPTED as any,
       );
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'Failed to retrieve certificate file from storage for certificate',
         {
           certificateFileId: 'file123',

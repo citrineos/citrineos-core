@@ -10,6 +10,7 @@ import { type Marker, MarkerClusterer } from '@googlemaps/markerclusterer';
 import { MapMarkerV2 } from '@lib/client/components/map/map.clusters.marker';
 import { ChargingStationStatusTag } from '@lib/client/pages/charging-stations/charging.station.status.tag';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { useTranslate } from '@refinedev/core';
 
 /**
  * Reference: https://github.com/visgl/react-google-maps/blob/main/examples/marker-clustering/src/clustered-tree-markers.tsx
@@ -17,6 +18,7 @@ import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 export const ClusteredLocationMarkers = ({ locations }: { locations: LocationDto[] }) => {
   const [markers, setMarkers] = useState<{ [id: number]: Marker }>({});
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const translate = useTranslate();
 
   const selectedLocation = useMemo(
     () =>
@@ -103,7 +105,7 @@ export const ClusteredLocationMarkers = ({ locations }: { locations: LocationDto
                     <span
                       className={`${charger.isOnline ? 'text-success' : 'text-destructive'} text-xs`}
                     >
-                      {charger.isOnline ? 'Online' : 'Offline'}
+                      {charger.isOnline ? translate('Common.online') : translate('Common.offline')}
                     </span>
                   </div>
                   {charger.evses && charger.evses.length > 0 && (
@@ -112,7 +114,7 @@ export const ClusteredLocationMarkers = ({ locations }: { locations: LocationDto
                 </div>
               ))
             ) : (
-              <div className="text-black">No chargers.</div>
+              <div className="text-black">{translate('Locations.map.noChargers')}</div>
             )}
           </div>
         </InfoWindow>

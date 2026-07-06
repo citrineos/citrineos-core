@@ -2,160 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Combined docker-compose for running CitrineOS server + operator UI using
-# the latest published images from ghcr.io (built by the
-# push-release-tagged-server.yml and push-release-tagged-operator-ui.yml
-# GitHub Actions workflows).
+# Local-build override for docker-compose.yml. Applied via the launcher's
+# `--local` flag (`pnpm citrine --local`), which expands to:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+#
+# It only adds `build:` blocks (merged by service name) so the published images
+# in the base file are built from local source instead of pulled.
 services:
   citrine:
     build:
       context: .
-      dockerfile: ./apps/server/deploy.Dockerfile
-    environment:
-      APP_NAME: "all"
-      APP_ENV: "docker"
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      DB_STRATEGY: "migrate"
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
-      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
-    depends_on:
-      ocpp-db:
-        condition: service_healthy
-      amqp-broker:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-    ports:
-      - 8080:8080
-      - 8081:8081
-      - 8082:8082
-      - 8083:8083
-      - 8443:8443
-      - 8444:8444
-      - 9229:9229
-    healthcheck:
-      test: [
-          "CMD-SHELL",
-          "node -e \"const net = require(\\\"net\\\"); const client =
-          net.createConnection(8080, \\\"127.0.0.1\\\", () => { client.end();
-          process.exit(0); }); client.on(\\\"error\\\", () =>
-          process.exit(1)); client.setTimeout(5000, () => { client.destroy();
-          process.exit(1); });\"",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      dockerfile: ./apps/ocpp-server/deploy.Dockerfile
 
   citrine-ui:
     build:
       context: .
-      dockerfile: apps/operator-ui/Dockerfile
-    ports:
-      - 3000:3000
-    depends_on:
-      citrine:
-        condition: service_healthy
-      graphql-engine:
-        condition: service_healthy
+      dockerfile: ./apps/operator-ui/Dockerfile
 
-  amqp-broker:
-    image: rabbitmq:3-management
-    ports:
-      - 15672:15672
-      - 5672:5672
-    environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
-    volumes:
-      - ./apps/server/data/rabbitmq:/var/lib/rabbitmq
-    healthcheck:
-      test: rabbitmq-diagnostics -q check_port_connectivity
-      interval: 10s
-      timeout: 10s
-      retries: 3
-
-  ocpp-db:
-    image: postgis/postgis:16-3.5
-    platform: linux/amd64
-    ports:
-      - 5432:5432
-    volumes:
-      - ./apps/server/data/postgresql/pgdata:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: citrine
-      POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
-    healthcheck:
-      test: "pg_isready --username=citrine"
-      interval: 5s
-      timeout: 10s
-      retries: 5
-
-  minio:
-    image: minio/minio
-    container_name: minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
-      MINIO_SERVER_URL: http://localhost:9000
-    volumes:
-      - ./apps/server/data/minio:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-
-  minio-init:
-    image: minio/mc
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c " # Enable command echoing and error reporting set -x
-
-      echo 'Setting up MinIO alias' mc alias set myminio http://minio:9000
-      minioadmin minioadmin || echo 'FAILED: alias setup' "
-
-  graphql-engine:
-    image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
-    volumes:
-      - ./apps/server/hasura-metadata:/hasura-metadata
-    ports:
-      - 8090:8080
-    restart: always
-    depends_on:
-      citrine:
-        condition: service_healthy
-    environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-      HASURA_GRAPHQL_DEV_MODE: "true"
-      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
-      HASURA_GRAPHQL_METADATA_DEFAULTS:
-        "{\"backend_configs\":{\"dataconnector\":{\"a\
-        thena\":{\"uri\":\"http://data-connector-agent:8081/api/v1/athena\"},\"\
-        mariadb\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mariadb\"},\
-        \"mysql8\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mysql\"},\
-        \"oracle\":{\"uri\":\"http://data-connector-agent:8081/api/v1/oracle\"},\
-        \"snowflake\":{\"uri\":\"http://data-connector-agent:8081/api/v1/snowfl\
-        ake\"}}}}"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://graphql-engine:8080/healthz"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 5s
+  citrineos-ocpi:
+    build:
+      context: .
+      dockerfile: ./apps/ocpi-server/deploy.Dockerfile

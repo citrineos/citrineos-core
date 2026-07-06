@@ -1,19 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  CallAction,
-  ICache,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
-} from '@citrineos/base';
-import { AbstractModule, EventGroup, OCPPValidator } from '@citrineos/base';
+import type { CallAction, OcppModuleDependencies } from '@citrineos/base';
+import { AbstractModule, EventGroup } from '@citrineos/base';
 import type { ITenantRepository } from '@dal/interfaces/repositories.js';
-import { SequelizeTenantRepository } from '@dal/layers/sequelize/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+
+export interface TenantModuleDependencies extends OcppModuleDependencies {
+  tenantRepository: ITenantRepository;
+}
 
 export class TenantModule extends AbstractModule {
   /**
@@ -23,47 +17,24 @@ export class TenantModule extends AbstractModule {
   _responses: CallAction[] = [];
   protected _tenantRepository: ITenantRepository;
 
-  /**
-   * Constructor
-   */
-
-  /**
-   * This is the constructor function that initializes the {@link TenantModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {ITenantRepository} [tenantRepository] - An optional parameter of type {@link ITenantRepository}
-   * which represents a repository for tenant data.
-   * If no `tenantRepository` is provided, a default {@link sequelize:tenantRepository} instance is created and used.
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    tenantRepository?: ITenantRepository,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    tenantRepository,
+  }: TenantModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.Tenant, logger, ocppValidator);
     this._requests = config.modules.tenant.requests;
     this._responses = config.modules.tenant.responses;
-
-    this._tenantRepository = tenantRepository || new SequelizeTenantRepository(config, logger);
+    this._tenantRepository = tenantRepository;
   }
 
   get tenantRepository(): ITenantRepository {
     return this._tenantRepository;
   }
 }
+
+export default TenantModule;

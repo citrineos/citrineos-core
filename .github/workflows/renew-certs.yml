@@ -10,7 +10,7 @@ name: Renew Certificates
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 1 * *'  # Runs on the 1st of every month
+    - cron: "0 0 1 * *" # Runs on the 1st of every month
 
 env:
   TARGET_BRANCH: main
@@ -33,12 +33,12 @@ jobs:
       - name: Set up OpenSSL + Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24.16.0'
+          node-version: "24.16.0"
 
       - name: Check certificate validity
         id: check_cert
         run: |
-          CERT_FILE="apps/Server/src/assets/certificates/certChain.pem"
+          CERT_FILE="apps/ocpp-server/src/assets/certificates/certChain.pem"
           # extract the expiry date of the leaf certificate (first cert in the chain)
           EXPIRY_DATE=$(awk 'BEGIN{found=0} /BEGIN CERTIFICATE/{if (++found==1) print > "/tmp/leaf.pem"; next} found==1 {print > "/tmp/leaf.pem"} /END CERTIFICATE/{if (found==1) exit}' "$CERT_FILE")
           END_DATE=$(openssl x509 -enddate -noout -in /tmp/leaf.pem | cut -d= -f2)
@@ -59,11 +59,11 @@ jobs:
       - name: Generate new certificates
         if: steps.check_cert.outputs.cert_needs_renewal == 'true'
         run: |
-          CERT_DIR="apps/Server/src/assets/certificates"
+          CERT_DIR="apps/ocpp-server/src/assets/certificates"
           CONFIG_FILE=".github/workflows/renew-certs/openssl.config"
 
           mkdir -p "$CERT_DIR"
-          
+
           # Create root key and self-signed root cert
           openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$CERT_DIR/rootKey.pem"
           openssl req -x509 -new -nodes -key "$CERT_DIR/rootKey.pem" -sha256 -days 365 \
@@ -106,6 +106,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add apps/Server/src/assets/certificates
+          git add apps/ocpp-server/src/assets/certificates
           git commit -m "chore(cert): Renewed certificates [auto]"
           git push origin $TARGET_BRANCH

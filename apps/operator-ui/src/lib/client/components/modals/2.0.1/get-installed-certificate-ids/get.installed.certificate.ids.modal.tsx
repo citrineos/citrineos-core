@@ -14,6 +14,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
@@ -35,6 +36,7 @@ export const GetInstalledCertificateIdsModal = ({
   station,
 }: GetInstalledCertificateIdsModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -67,6 +69,7 @@ export const GetInstalledCertificateIdsModal = ({
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/certificates/getInstalledCertificateIds?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -89,12 +92,16 @@ export const GetInstalledCertificateIdsModal = ({
     >
       <MultiSelectFormField
         control={form.control}
-        label="Certificate Types"
+        label={translate('ChargingStations.getInstalledCertificateIdsModal.certificateTypes')}
         name="certificateType"
-        description="When certificate types are omitted, all certificate types are requested."
+        description={translate('ChargingStations.getInstalledCertificateIdsModal.description')}
         options={certificateTypeOptions}
-        placeholder="Select Certificate Types"
-        searchPlaceholder="Search Certificate Types"
+        placeholder={translate(
+          'ChargingStations.getInstalledCertificateIdsModal.selectCertificateTypes',
+        )}
+        searchPlaceholder={translate(
+          'ChargingStations.getInstalledCertificateIdsModal.searchCertificateTypes',
+        )}
       />
     </Form>
   );

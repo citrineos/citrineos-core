@@ -219,7 +219,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
             <div className={cardGridStyle}>
               <FormField
                 control={form.control}
-                label="ID Token"
+                label={translate('Authorizations.fields.idToken')}
                 name={AuthorizationProps.idToken}
                 required
               >
@@ -228,33 +228,33 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <ComboboxFormField
                 control={form.control}
-                label="ID Token Type"
+                label={translate('Authorizations.fields.idTokenType')}
                 name={AuthorizationProps.idTokenType}
                 options={idTokenTypes.map((type) => ({
                   label: type,
                   value: type,
                 }))}
-                placeholder="Select Type"
-                searchPlaceholder="Search Types"
+                placeholder={translate('Authorizations.placeholders.selectType')}
+                searchPlaceholder={translate('Authorizations.placeholders.searchTypes')}
                 required
               />
 
               <ComboboxFormField
                 control={form.control}
-                label="Status"
+                label={translate('Authorizations.fields.status')}
                 name={AuthorizationProps.status}
                 options={authorizationStatuses.map((status) => ({
                   label: status,
                   value: status,
                 }))}
-                placeholder="Select Status"
-                searchPlaceholder="Search Statuses"
+                placeholder={translate('Authorizations.placeholders.selectStatus')}
+                searchPlaceholder={translate('Authorizations.placeholders.searchStatuses')}
                 required
               />
 
               <FormField
                 control={form.control}
-                label="Cache Expiry DateTime"
+                label={translate('Authorizations.fields.cacheExpiryDateTime')}
                 name={AuthorizationProps.cacheExpiryDateTime}
               >
                 <Input type="datetime-local" />
@@ -262,7 +262,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Charging Priority"
+                label={translate('Authorizations.fields.chargingPriority')}
                 name={AuthorizationProps.chargingPriority}
               >
                 <Input type="number" min="0" />
@@ -270,7 +270,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Language 1"
+                label={translate('Authorizations.fields.language1')}
                 name={AuthorizationProps.language1}
               >
                 <Input />
@@ -278,7 +278,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Language 2"
+                label={translate('Authorizations.fields.language2')}
                 name={AuthorizationProps.language2}
               >
                 <Input />
@@ -286,7 +286,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Personal Message"
+                label={translate('Authorizations.fields.personalMessage')}
                 name={AuthorizationProps.personalMessage}
               >
                 <Input />
@@ -294,7 +294,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Group Authorization ID"
+                label={translate('Authorizations.fields.groupAuthorizationId')}
                 name={AuthorizationProps.groupAuthorizationId}
               >
                 <Input type="number" min="1" />
@@ -302,35 +302,39 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Allowed Connector Types (comma-separated)"
+                label={translate('Authorizations.fields.allowedConnectorTypes')}
                 name="allowedConnectorTypes"
               >
-                <Input placeholder="e.g., Type2, CCS" />
+                <Input
+                  placeholder={translate('Authorizations.placeholders.allowedConnectorTypes')}
+                />
               </FormField>
 
               <FormField
                 control={form.control}
-                label="Disallowed EVSE ID Prefixes (comma-separated)"
+                label={translate('Authorizations.fields.disallowedEvseIdPrefixes')}
                 name="disallowedEvseIdPrefixes"
               >
-                <Input placeholder="e.g., EVSE1, EVSE2" />
+                <Input
+                  placeholder={translate('Authorizations.placeholders.disallowedEvseIdPrefixes')}
+                />
               </FormField>
 
               <ComboboxFormField
                 control={form.control}
-                label="Real-Time Authentication"
+                label={translate('Authorizations.fields.realTimeAuth')}
                 name={AuthorizationProps.realTimeAuth}
                 options={authorizationWhitelistOptions.map((options) => ({
                   label: options,
                   value: options,
                 }))}
-                placeholder="Select Option"
-                searchPlaceholder="Search Option"
+                placeholder={translate('Authorizations.placeholders.selectOption')}
+                searchPlaceholder={translate('Authorizations.placeholders.searchOption')}
               />
 
               <FormField
                 control={form.control}
-                label="Real-Time Authentication URL"
+                label={translate('Authorizations.fields.realTimeAuthUrl')}
                 name={AuthorizationProps.realTimeAuthUrl}
               >
                 <Input type="url" />
@@ -338,7 +342,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <FormField
                 control={form.control}
-                label="Real-Time Authentication Timeout (seconds)"
+                label={translate('Authorizations.fields.realTimeAuthTimeout')}
                 name="realTimeAuthTimeout"
               >
                 <Input type="number" min="0" />
@@ -346,7 +350,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
               <CheckboxFormField
                 control={form.control}
-                label="Allow Concurrent Transaction"
+                label={translate('Authorizations.fields.concurrentTransaction')}
                 name={AuthorizationProps.concurrentTransaction}
               />
 
@@ -354,7 +358,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
                 <div className="flex items-start">
                   <AddArrayItemButton
                     onAppendAction={() => appendAdditionalInfo({ additionalIdToken: '', type: '' })}
-                    itemLabel="Additional Info"
+                    itemLabel={translate('Authorizations.fields.additionalInfo')}
                   />
                 </div>
                 <div className="flex flex-col gap-6 w-full">
@@ -362,17 +366,23 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
                     <div key={field.id} className={nestedFormRowFlex}>
                       <FormField
                         control={form.control}
-                        label={`Additional Id Token #${index + 1}`}
+                        label={translate('Authorizations.fields.additionalIdToken', {
+                          index: index + 1,
+                        })}
                         name={`additionalInfo.${index}.additionalIdToken`}
                       >
-                        <Input placeholder="Additional Info" />
+                        <Input
+                          placeholder={translate('Authorizations.placeholders.additionalInfo')}
+                        />
                       </FormField>
                       <FormField
                         control={form.control}
-                        label={`Type #${index + 1}`}
+                        label={translate('Authorizations.fields.typeNumbered', {
+                          index: index + 1,
+                        })}
                         name={`additionalInfo.${index}.type`}
                       >
-                        <Input placeholder="Type" />
+                        <Input placeholder={translate('Authorizations.placeholders.type')} />
                       </FormField>
                       <RemoveArrayItemButton onRemoveAction={() => removeAdditionalInfo(index)} />
                     </div>

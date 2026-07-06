@@ -8,11 +8,10 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import {
   chartMargin,
   chartSize,
-  elapsedTimeAxisLabel,
   formatTimeLabel,
   generateTimeTicks,
+  getXAxisLabelConfig,
   getYAxisLabelConfig,
-  xAxisLabelConfig,
 } from '@lib/client/pages/transactions/chart/util';
 import { getTimestampToMeasurandArray } from '@lib/cls/meter.value.dto';
 import { useMemo } from 'react';
@@ -25,24 +24,26 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@lib/client/components/ui/chart';
+import { useTranslate } from '@refinedev/core';
 
 export interface VoltageOverTimeProps {
   meterValues: MeterValueDto[];
   validContexts: OCPP2_0_1.ReadingContextEnumType[];
 }
 
-const voltageAxisLabel = 'Voltage (V)';
-
-const chartConfig = {
-  elapsedTime: {
-    label: elapsedTimeAxisLabel,
-  },
-  v: {
-    label: voltageAxisLabel,
-  },
-} satisfies ChartConfig;
-
 export const VoltageOverTime = ({ meterValues, validContexts }: VoltageOverTimeProps) => {
+  const translate = useTranslate();
+  const voltageAxisLabel = translate('Transactions.charts.voltageLabel');
+
+  const chartConfig = {
+    elapsedTime: {
+      label: translate('Transactions.charts.timeElapsed'),
+    },
+    v: {
+      label: voltageAxisLabel,
+    },
+  } satisfies ChartConfig;
+
   const buffer = 1;
 
   const { chartData, minValue, maxValue } = useMemo(() => {
@@ -66,11 +67,11 @@ export const VoltageOverTime = ({ meterValues, validContexts }: VoltageOverTimeP
   return (
     <Card>
       <CardHeader>
-        <h3 className={heading3Style}>Voltage Over Time</h3>
+        <h3 className={heading3Style}>{translate('Transactions.charts.voltageTitle')}</h3>
       </CardHeader>
       <CardContent>
         {!chartData || chartData.length === 0 ? (
-          <div>No Voltage data available</div>
+          <div>{translate('Transactions.charts.noVoltageData')}</div>
         ) : (
           <ChartContainer config={chartConfig} className={chartSize}>
             <LineChart data={chartData} margin={chartMargin}>
@@ -80,7 +81,7 @@ export const VoltageOverTime = ({ meterValues, validContexts }: VoltageOverTimeP
                 type="number"
                 ticks={generateTimeTicks(chartData)}
                 tickFormatter={formatTimeLabel}
-                label={xAxisLabelConfig}
+                label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
                 domain={[minValue - buffer, maxValue + buffer]}

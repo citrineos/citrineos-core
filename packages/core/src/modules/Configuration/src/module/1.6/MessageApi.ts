@@ -32,12 +32,20 @@ export class ConfigurationOcpp16Api
    * @param {FastifyInstance} server - The server instance.
    * @param {Logger<ILogObj>} [logger] - Optional logger instance.
    */
-  constructor(
-    ConfigurationComponent: ConfigurationModule,
-    server: FastifyInstance,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(ConfigurationComponent, server, OCPPVersion.OCPP1_6, logger);
+  constructor({
+    configurationModule,
+    server,
+    logger,
+  }: {
+    configurationModule: ConfigurationModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(configurationModule, server, logger);
+  }
+
+  protected get supportedVersions(): OCPPVersion[] {
+    return [OCPPVersion.OCPP1_6];
   }
 
   @AsMessageEndpoint(OCPP_CallAction.TriggerMessage, OCPP1_6.TriggerMessageRequestSchema)
@@ -306,8 +314,8 @@ export class ConfigurationOcpp16Api
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
    */
-  protected _toMessagePath(input: CallAction): string {
+  protected _toMessagePath(input: CallAction, version?: OCPPVersion | null): string {
     const endpointPrefix = this._module.config.modules.configuration.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix);
+    return super._toMessagePath(input, version, endpointPrefix);
   }
 }

@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { IFileStorage, SystemConfig } from '@citrineos/base';
+import { faker } from '@faker-js/faker';
+import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { faker } from '@faker-js/faker';
+import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import * as CertificateUtil from '../../../certificate/CertificateUtil.js';
 import { Acme } from '../../../certificate/client/acme.js';
 import { aValidSignedCertificate } from '../../providers/ACME.js';
-import * as CertificateUtil from '../../../certificate/CertificateUtil.js';
-import { Client } from 'acme-client';
-import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
 
 vi.mock('../../../certificate/CertificateUtil');
 
@@ -94,7 +94,8 @@ describe('ACME', () => {
   });
 
   describe('signCertificateByExternalCA', () => {
-    const folderPath = '/usr/local/apps/citrineos/Server/src/assets/.well-known/acme-challenge';
+    const folderPath =
+      '/usr/local/apps/citrineos/apps/ocpp-server/src/assets/.well-known/acme-challenge';
 
     it('creates directory, saves challenge file, and removes on cleanup when directory does not exist', async () => {
       const mockCert = faker.lorem.word();

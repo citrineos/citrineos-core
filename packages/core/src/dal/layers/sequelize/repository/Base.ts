@@ -16,17 +16,27 @@ import { type Model, type Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { DefaultSequelizeInstance } from '../util.js';
 
+/**
+ * Dependencies every Sequelize repository takes. `logger` and `sequelizeInstance`
+ * are optional — the base falls back to a default logger and the shared instance.
+ */
+export interface SequelizeRepositoryDependencies {
+  config: BootstrapConfig;
+  logger?: Logger<ILogObj>;
+  sequelizeInstance?: Sequelize;
+}
+
 export class SequelizeRepository<T extends Model<any, any>> extends CrudRepository<T> {
   protected s: Sequelize;
   protected namespace: string;
   protected logger: Logger<ILogObj>;
 
-  constructor(
-    config: BootstrapConfig,
-    namespace: string,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-  ) {
+  constructor({
+    config,
+    namespace,
+    logger,
+    sequelizeInstance,
+  }: SequelizeRepositoryDependencies & { namespace: string }) {
     super();
     this.s = sequelizeInstance ?? DefaultSequelizeInstance.getInstance(config, logger);
     this.namespace = namespace;

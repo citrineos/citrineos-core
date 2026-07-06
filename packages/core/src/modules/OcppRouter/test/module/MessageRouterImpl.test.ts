@@ -33,6 +33,7 @@ import type { ILocationRepository } from '@citrineos/core';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { MessageRouterImpl } from '../../src/module/router.js';
 import { WebhookDispatcher } from '../../src/module/webhook.dispatcher.js';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function buildMockDispatcher(): Mocked<WebhookDispatcher> {
     dispatchMessageReceivedUnparsed: vi.fn().mockResolvedValue(undefined),
     dispatchMessageReceived: vi.fn().mockResolvedValue(undefined),
     dispatchMessageSent: vi.fn().mockResolvedValue(undefined),
+    dispatchCallbackUrl: vi.fn().mockResolvedValue(undefined),
   } as unknown as Mocked<WebhookDispatcher>;
 }
 
@@ -105,6 +107,7 @@ function buildMockLocationRepository(): Mocked<ILocationRepository> {
 // ─── Test Suite ────────────────────────────────────────────────────────────────
 
 describe('MessageRouterImpl', () => {
+  const { container } = createTestContainer();
   let config: any;
   let cache: Mocked<ICache>;
   let sender: Mocked<IMessageSender>;
@@ -123,17 +126,16 @@ describe('MessageRouterImpl', () => {
     networkHook = vi.fn().mockResolvedValue(undefined);
     locationRepository = buildMockLocationRepository();
 
-    router = new MessageRouterImpl(
+    router = getTestInstance(container, MessageRouterImpl, {
       config,
       cache,
-      sender,
-      handler,
-      dispatcher,
+      routerSender: sender,
+      routerHandler: handler,
+      webhookDispatcher: dispatcher,
       networkHook,
-      undefined, // logger
-      undefined, // ajv
+      ocppValidator: undefined,
       locationRepository,
-    );
+    });
   });
 
   afterEach(() => {
@@ -944,58 +946,6 @@ describe('MessageRouterImpl', () => {
     });
   });
 
-  // ─── _handleMessageApiCallback (tested indirectly via onMessage) ───────────
-
-  describe('_handleMessageApiCallback', () => {
-    beforeEach(() => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('should POST to callback URL when one exists in cache', async () => {
-      const callbackUrl = 'http://localhost:3000/callback';
-      // _handleMessageApiCallback calls cache.get with correlationId + CALLBACK_URL_ prefix namespace
-      cache.get.mockResolvedValueOnce(callbackUrl);
-
-      const message: any = {
-        context: {
-          correlationId: CORRELATION_ID,
-          ocppConnectionName: STATION_ID,
-          tenantId: TENANT_ID,
-        },
-        payload: new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'test', {}),
-      };
-
-      await (router as any)._handleMessageApiCallback(message);
-
-      expect(global.fetch).toHaveBeenCalledWith(callbackUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.any(String),
-      });
-    });
-
-    it('should not call fetch when no callback URL is cached', async () => {
-      cache.get.mockResolvedValue(null);
-
-      const message: any = {
-        context: {
-          correlationId: CORRELATION_ID,
-          ocppConnectionName: STATION_ID,
-          tenantId: TENANT_ID,
-        },
-        payload: new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'test', {}),
-      };
-
-      await (router as any)._handleMessageApiCallback(message);
-
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-  });
-
   // ─── _routeCall ────────────────────────────────────────────────────────────
 
   describe('_routeCall', () => {
@@ -1085,12 +1035,7 @@ describe('MessageRouterImpl', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should call _handleMessageApiCallback', async () => {
-      const callbackSpy = vi
-        .spyOn(router as any, '_handleMessageApiCallback')
-        .mockResolvedValue(undefined);
-      cache.get.mockResolvedValue(null);
-
+    it('should call dispatchCallbackUrl on the webhook dispatcher', async () => {
       const message: CallError = [
         MessageTypeId.CallError,
         CORRELATION_ID,
@@ -1103,7 +1048,11 @@ describe('MessageRouterImpl', () => {
 
       await (router as any)._routeCallError(IDENTIFIER, message, action, timestamp, PROTOCOL);
 
-      expect(callbackSpy).toHaveBeenCalled();
+      expect(dispatcher.dispatchCallbackUrl).toHaveBeenCalledWith(
+        CORRELATION_ID,
+        STATION_ID,
+        expect.any(OcppError),
+      );
     });
   });
 

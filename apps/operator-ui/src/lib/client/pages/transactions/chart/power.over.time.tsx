@@ -8,11 +8,10 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import {
   chartMargin,
   chartSize,
-  elapsedTimeAxisLabel,
   formatTimeLabel,
   generateTimeTicks,
+  getXAxisLabelConfig,
   getYAxisLabelConfig,
-  xAxisLabelConfig,
 } from '@lib/client/pages/transactions/chart/util';
 import { getTimestampToMeasurandArray } from '@lib/cls/meter.value.dto';
 import { useMemo } from 'react';
@@ -25,24 +24,26 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@lib/client/components/ui/chart';
+import { useTranslate } from '@refinedev/core';
 
 export interface PowerOverTimeProps {
   meterValues: MeterValueDto[];
   validContexts: OCPP2_0_1.ReadingContextEnumType[];
 }
 
-const powerAxisLabel = 'Power (kW)';
-
-const chartConfig = {
-  elapsedTime: {
-    label: elapsedTimeAxisLabel,
-  },
-  kw: {
-    label: powerAxisLabel,
-  },
-} satisfies ChartConfig;
-
 export const PowerOverTime = ({ meterValues, validContexts }: PowerOverTimeProps) => {
+  const translate = useTranslate();
+  const powerAxisLabel = translate('Transactions.charts.powerLabel');
+
+  const chartConfig = {
+    elapsedTime: {
+      label: translate('Transactions.charts.timeElapsed'),
+    },
+    kw: {
+      label: powerAxisLabel,
+    },
+  } satisfies ChartConfig;
+
   const buffer = 1;
 
   const { chartData, minValue, maxValue } = useMemo(() => {
@@ -66,11 +67,11 @@ export const PowerOverTime = ({ meterValues, validContexts }: PowerOverTimeProps
   return (
     <Card>
       <CardHeader>
-        <h3 className={heading3Style}>Power Over Time</h3>
+        <h3 className={heading3Style}>{translate('Transactions.charts.powerTitle')}</h3>
       </CardHeader>
       <CardContent>
         {!chartData || chartData.length === 0 ? (
-          <div>No Power data available</div>
+          <div>{translate('Transactions.charts.noPowerData')}</div>
         ) : (
           <ChartContainer config={chartConfig} className={chartSize}>
             <LineChart data={chartData} margin={chartMargin}>
@@ -80,7 +81,7 @@ export const PowerOverTime = ({ meterValues, validContexts }: PowerOverTimeProps
                 type="number"
                 ticks={generateTimeTicks(chartData)}
                 tickFormatter={formatTimeLabel}
-                label={xAxisLabelConfig}
+                label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
                 domain={[minValue - buffer, maxValue + buffer]}

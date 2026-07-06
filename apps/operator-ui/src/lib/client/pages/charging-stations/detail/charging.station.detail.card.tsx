@@ -48,8 +48,6 @@ import { Skeleton } from '@lib/client/components/ui/skeleton';
 import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 import { isEmpty } from '@lib/utils/assertion';
 
-const UNKNOWN_TEXT = 'Unknown';
-
 export interface ChargingStationDetailCardContentProps {
   id: number;
   transaction?: TransactionClass;
@@ -176,6 +174,8 @@ export const ChargingStationDetailCard = ({
     latestTimestamp = formatDate(latestLog.timestamp);
   }
 
+  const unknownText = translate('Common.unknown');
+
   return (
     <Card>
       <CardHeader>
@@ -192,7 +192,7 @@ export const ChargingStationDetailCard = ({
           />
           <h2 className={heading2Style}>{station.ocppConnectionName}</h2>
           <span className={station.isOnline ? 'text-success' : 'text-destructive'}>
-            {station.isOnline ? 'Online' : 'Offline'}
+            {station.isOnline ? translate('Common.online') : translate('Common.offline')}
           </span>
           <CanAccess
             resource={ResourceType.CHARGING_STATIONS}
@@ -248,12 +248,12 @@ export const ChargingStationDetailCard = ({
           <div className="flex-1">
             <div className={cardGridStyle}>
               <KeyValueDisplay
-                keyLabel="Protocol"
+                keyLabel={translate('ChargingStations.columns.protocol')}
                 value={station[ChargingStationProps.protocol]}
                 valueRender={(protocol: any) => <ProtocolTag protocol={protocol} />}
               />
               <KeyValueDisplay
-                keyLabel="Location"
+                keyLabel={translate('ChargingStations.columns.location')}
                 value={station?.location?.name}
                 valueRender={(locationName: any) =>
                   locationName ? (
@@ -270,7 +270,7 @@ export const ChargingStationDetailCard = ({
                 }
               />
               <KeyValueDisplay
-                keyLabel="Latitude"
+                keyLabel={translate('ChargingStations.upsert.latitude')}
                 value={
                   station.coordinates
                     ? station.coordinates.coordinates[1].toFixed(4)
@@ -281,7 +281,7 @@ export const ChargingStationDetailCard = ({
               />
 
               <KeyValueDisplay
-                keyLabel="Longitude"
+                keyLabel={translate('ChargingStations.upsert.longitude')}
                 value={
                   station.coordinates
                     ? station.coordinates.coordinates[0].toFixed(4)
@@ -292,7 +292,7 @@ export const ChargingStationDetailCard = ({
               />
 
               <KeyValueDisplay
-                keyLabel="Status"
+                keyLabel={translate('Common.status')}
                 value={''}
                 valueRender={() =>
                   (station.evses?.length ?? 0) > 0 ? (
@@ -303,20 +303,23 @@ export const ChargingStationDetailCard = ({
                 }
               />
 
-              <KeyValueDisplay keyLabel="Last OCPP Message" value={latestTimestamp} />
-
               <KeyValueDisplay
-                keyLabel="Vendor / Model"
-                value={`${station.chargePointVendor ?? UNKNOWN_TEXT} / ${station.chargePointModel ?? UNKNOWN_TEXT}`}
+                keyLabel={translate('ChargingStations.detailCard.lastOcppMessage')}
+                value={latestTimestamp}
               />
 
               <KeyValueDisplay
-                keyLabel="Floor Level"
+                keyLabel={translate('ChargingStations.columns.vendorModel')}
+                value={`${station.chargePointVendor ?? unknownText} / ${station.chargePointModel ?? unknownText}`}
+              />
+
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.floorLevel')}
                 value={station.floorLevel || NOT_APPLICABLE}
               />
 
               <KeyValueDisplay
-                keyLabel="Parking Restrictions"
+                keyLabel={translate('ChargingStations.columns.parkingRestrictions')}
                 value={station.parkingRestrictions}
                 valueRender={(parkingRestrictions) => (
                   <div className={badgeListStyle}>
@@ -334,7 +337,7 @@ export const ChargingStationDetailCard = ({
               />
 
               <KeyValueDisplay
-                keyLabel="Capabilities"
+                keyLabel={translate('ChargingStations.columns.capabilities')}
                 value={station.capabilities}
                 valueRender={(capabilities) => (
                   <div className={badgeListStyle}>
@@ -351,7 +354,10 @@ export const ChargingStationDetailCard = ({
                 )}
               />
 
-              <KeyValueDisplay keyLabel="Firmware Version" value={station.firmwareVersion} />
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.firmwareVersion')}
+                value={station.firmwareVersion}
+              />
 
               <KeyValueDisplay
                 keyLabel={
@@ -374,11 +380,15 @@ export const ChargingStationDetailCard = ({
                     )}
                   </div>
                 }
-                value={station.use16StatusNotification0 ? 'Enabled' : 'Disabled'}
+                value={
+                  station.use16StatusNotification0
+                    ? translate('Common.enabled')
+                    : translate('Common.disabled')
+                }
               />
 
               <KeyValueDisplay
-                keyLabel="Connector Types"
+                keyLabel={translate('ChargingStations.detailCard.connectorTypes')}
                 value={
                   isEmpty(station.connectors)
                     ? NOT_APPLICABLE
@@ -389,7 +399,10 @@ export const ChargingStationDetailCard = ({
                 }
               />
 
-              <KeyValueDisplay keyLabel="Total EVSEs" value={station.evses?.length ?? 0} />
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.detailCard.totalEvses')}
+                value={station.evses?.length ?? 0}
+              />
             </div>
           </div>
 

@@ -65,14 +65,20 @@ export class CertificatesDataApi
    * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    certificatesModule: CertificatesModule,
-    server: FastifyInstance,
-    fileStorage: IFileStorage,
-    websocketServersConfig: WebsocketServerConfig[],
-    logger?: Logger<ILogObj>,
-  ) {
-    super(certificatesModule, server, OCPPVersion.OCPP2_0_1, logger);
+  constructor({
+    certificatesModule,
+    server,
+    fileStorage,
+    websocketServersConfig,
+    logger,
+  }: {
+    certificatesModule: CertificatesModule;
+    server: FastifyInstance;
+    fileStorage: IFileStorage;
+    websocketServersConfig: WebsocketServerConfig[];
+    logger?: Logger<ILogObj>;
+  }) {
+    super(certificatesModule, server, logger);
     this._fileStorage = fileStorage;
     this._websocketServersConfig = websocketServersConfig;
   }

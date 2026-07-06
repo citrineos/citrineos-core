@@ -14,6 +14,7 @@ import {
 } from '@lib/client/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@lib/client/components/ui/popover';
 import { cn } from '@lib/utils/cn';
+import { useTranslate } from '@refinedev/core';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import React, { type JSX } from 'react';
 import { buttonIconSize } from '@lib/client/styles/icon';
@@ -33,6 +34,7 @@ export function MultiSelect<T extends string>({
   placeholder,
   searchPlaceholder,
 }: MultiSelectProps<T>): JSX.Element {
+  const translate = useTranslate();
   // Handle null, undefined and single value
   const selectedArray = Array.isArray(selectedValues)
     ? selectedValues
@@ -46,8 +48,8 @@ export function MultiSelect<T extends string>({
         <div className="relative flex gap-2 items-center h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
           <span>
             {selectedArray.length > 0
-              ? `${selectedArray.length} selected`
-              : placeholder || 'Select options...'}
+              ? `${selectedArray.length} ${translate('Common.selected')}`
+              : placeholder || translate('Common.selectOptions')}
           </span>
           <div className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-0.5">
             {selectedArray.length > 0 && (
@@ -62,9 +64,9 @@ export function MultiSelect<T extends string>({
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder ?? 'Search Options'} />
+          <CommandInput placeholder={searchPlaceholder ?? translate('Common.searchOptions')} />
           <CommandList>
-            <CommandEmpty>Nothing found.</CommandEmpty>
+            <CommandEmpty>{translate('Common.nothingFound')}</CommandEmpty>
             <CommandGroup>
               {options.map((context) => (
                 <CommandItem

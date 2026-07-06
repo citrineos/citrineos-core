@@ -5,6 +5,7 @@ import { cn } from '@lib/utils/cn';
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, Clock2Icon, X } from 'lucide-react';
 import * as React from 'react';
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
+import { useTranslation } from '@refinedev/core';
 import { Card, CardContent, CardFooter } from '@lib/client/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@lib/client/components/ui/field';
 import {
@@ -193,6 +194,7 @@ function CalendarDayButton({
 
 // With time-syncing from https://daypicker.dev/guides/timepicker
 function CalendarWithTime({ date, onSelectDateAction }: CalendarWithTimeProps) {
+  const { translate } = useTranslation();
   const [timeValue, setTimeValue] = useState<string>('00:00:00');
 
   // Keep the time input in sync when the selected date changes elsewhere.
@@ -245,7 +247,7 @@ function CalendarWithTime({ date, onSelectDateAction }: CalendarWithTimeProps) {
       <Separator className="h-1 " />
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="time">Time</FieldLabel>
+          <FieldLabel htmlFor="time">{translate('Common.time')}</FieldLabel>
           <InputGroup>
             <InputGroupInput
               id="time"

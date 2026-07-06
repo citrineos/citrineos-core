@@ -10,15 +10,17 @@ import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
 import { ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
-import { authorizationsColumns } from '@lib/client/pages/authorizations/columns';
+import { getAuthorizationsColumns } from '@lib/client/pages/authorizations/columns';
+import { useTranslate } from '@refinedev/core';
 
 interface PartnerAuthorizationsProps {
   partnerId: number;
 }
 
 export const PartnerAuthorizations: React.FC<PartnerAuthorizationsProps> = ({ partnerId }) => {
+  const translate = useTranslate();
   const { renderedVisibleColumns } = useColumnPreferences(
-    authorizationsColumns,
+    getAuthorizationsColumns(translate),
     ResourceType.AUTHORIZATIONS,
   );
 

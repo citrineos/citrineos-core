@@ -22,6 +22,7 @@ import { RemoveArrayItemButton } from '@lib/client/components/form/remove-array-
 import { useFieldArray } from 'react-hook-form';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { useTranslate } from '@refinedev/core';
 
 export interface GetConfigurationModalProps {
   station: any;
@@ -41,6 +42,7 @@ export type GetConfigurationFormData = z.infer<typeof GetConfigurationSchema>;
 
 export const GetConfigurationModal = ({ station }: GetConfigurationModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -82,6 +84,7 @@ export const GetConfigurationModal = ({ station }: GetConfigurationModalProps) =
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/getConfiguration?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -101,8 +104,7 @@ export const GetConfigurationModal = ({ station }: GetConfigurationModalProps) =
       hideCancel
     >
       <div className="text-sm text-muted-foreground">
-        Optionally specify configuration keys to retrieve. Leave empty to get all configuration
-        values.
+        {translate('ChargingStations.getConfigurationModal.description')}
       </div>
 
       <AddArrayItemButton
@@ -111,16 +113,20 @@ export const GetConfigurationModal = ({ station }: GetConfigurationModalProps) =
             configKey: '',
           })
         }
-        itemLabel="Key"
+        itemLabel={translate('ChargingStations.getConfigurationModal.key')}
       />
       {fields.map((field, index) => (
         <div key={field.id} className={nestedFormRowFlex}>
           <FormField
             control={form.control}
-            label={`Key #${index + 1}`}
+            label={translate('ChargingStations.getConfigurationModal.keyNumber', {
+              number: index + 1,
+            })}
             name={`configurationKeys.${index}.configKey`}
           >
-            <Input placeholder="Enter configuration key" />
+            <Input
+              placeholder={translate('ChargingStations.getConfigurationModal.keyPlaceholder')}
+            />
           </FormField>
 
           <RemoveArrayItemButton onRemoveAction={() => remove(index)} />

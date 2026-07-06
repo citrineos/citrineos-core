@@ -12,8 +12,8 @@ import {
   type IMessageContext,
   type SystemConfig,
 } from '@citrineos/base';
-import type { Authorization } from '@dal/layers/sequelize/index.js';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { Authorization } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OidcTokenProvider } from '../authorization/index.js';
@@ -42,16 +42,18 @@ export class RealTimeAuthorizer implements IAuthorizer {
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
-  constructor(
-    locationRepository: ILocationRepository,
-    config: SystemConfig,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    locationRepository,
+    config,
+    logger,
+  }: {
+    locationRepository: ILocationRepository;
+    config: SystemConfig;
+    logger: Logger<ILogObj>;
+  }) {
     this._locationRepository = locationRepository;
     this._config = config;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
     if (config.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(config.oidcClient, this._logger);
     }
@@ -196,7 +198,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       }
     } catch (error) {
       this._logger.error(`Real-Time Auth failed: ${error}`);
-      if (authorization.realTimeAuth === 'AllowedOffline') {
+      if (authorization.realTimeAuth === AuthorizationWhitelistEnum.AllowedOffline) {
         result = AuthorizationStatusEnum.Accepted;
       }
     }
@@ -217,3 +219,5 @@ export class RealTimeAuthorizer implements IAuthorizer {
     return result;
   }
 }
+
+export default RealTimeAuthorizer;

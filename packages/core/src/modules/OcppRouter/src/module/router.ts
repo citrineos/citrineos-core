@@ -20,7 +20,6 @@ import type {
 } from '@citrineos/base';
 import {
   AbstractMessageRouter,
-  AbstractModule,
   BOOT_STATUS,
   CacheNamespace,
   createIdentifier,
@@ -42,8 +41,6 @@ import {
   RetryMessageError,
 } from '@citrineos/base';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
-import { sequelize } from '@dal/index.js';
-import { OidcTokenProvider } from '@util/authorization/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -63,7 +60,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _locationRepository: ILocationRepository;
-  protected readonly _oidcTokenProvider?: OidcTokenProvider;
 
   /**
    * Constructor for the class.
@@ -80,29 +76,35 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
    */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    dispatcher: WebhookDispatcher,
-    networkHook: (identifier: string, message: string) => Promise<void>,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    locationRepository?: ILocationRepository,
-  ) {
-    super(config, cache, handler, sender, networkHook, logger, ocppValidator);
+  constructor({
+    config,
+    cache,
+    routerSender,
+    routerHandler,
+    webhookDispatcher,
+    networkHook,
+    logger,
+    ocppValidator,
+    locationRepository,
+  }: {
+    config: BootstrapConfig & SystemConfig;
+    cache: ICache;
+    routerSender: IMessageSender;
+    routerHandler: IMessageHandler;
+    webhookDispatcher: WebhookDispatcher;
+    networkHook: (identifier: string, message: string) => Promise<void>;
+    logger: Logger<ILogObj>;
+    ocppValidator: OCPPValidator;
+    locationRepository: ILocationRepository;
+  }) {
+    super(config, cache, routerHandler, routerSender, networkHook, logger, ocppValidator);
 
     this._cache = cache;
-    this._sender = sender;
-    this._handler = handler;
-    this._webhookDispatcher = dispatcher;
+    this._sender = routerSender;
+    this._handler = routerHandler;
+    this._webhookDispatcher = webhookDispatcher;
     this._networkHook = networkHook;
-    this._locationRepository =
-      locationRepository || new sequelize.SequelizeLocationRepository(config, logger);
-    if (this._config.oidcClient) {
-      this._oidcTokenProvider = new OidcTokenProvider(this._config.oidcClient, this._logger);
-    }
+    this._locationRepository = locationRepository;
   }
 
   async doesChargingStationExistByStationId(
@@ -325,7 +327,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
     action: CallAction,
     payload: OcppRequest,
-    correlationId = uuidv4(),
+    correlationId: string = uuidv4(),
     _origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
@@ -452,7 +454,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param ocppConnectionName - The connection name of the charging station
    * @param {number} tenantId - The identifier of the tenant.
    * @param {OCPPVersionType} protocol The OCPP protocol version of the message.
-   * @param {CallAction} _action - The action to be called.
+   * @param {CallAction} action - The action to be called.
    * @param {OcppError} error - The error of the call.
    * @param {MessageOrigin} _origin - The origin of the message.
    * @return {Promise<boolean>} - A promise that resolves to true if the message was sent successfully.
@@ -892,6 +894,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
+    // Fire callback before broker
+    // so upstream is notified as soon as the charger responds
+    this._webhookDispatcher
+      .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
+      .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
+
     return this.emitMessage(_message, message);
   }
 
@@ -920,9 +928,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     );
 
     // Fulfill callback for api, if needed
-    this._handleMessageApiCallback(_message).catch((err) => {
-      this._logger.error('_handleMessageApiCallback failed', err);
-    });
+    this._webhookDispatcher
+      .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
+      .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
 
     return this.emitMessage(_message, message);
   }
@@ -953,34 +961,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     return confirmation;
   }
 
-  private async _handleMessageApiCallback(message: IMessage<OcppError>): Promise<void> {
-    const url: string | null = await this._cache.get(
-      message.context.correlationId,
-      AbstractModule.CALLBACK_URL_CACHE_PREFIX + message.context.ocppConnectionName,
-    );
-    if (url) {
-      const headers: { [key: string]: string } = {
-        'Content-Type': 'application/json',
-      };
-
-      if (this._oidcTokenProvider) {
-        try {
-          const token = await this._oidcTokenProvider.getToken();
-          headers['Authorization'] = `Bearer ${token}`;
-        } catch (error) {
-          this._logger.error('Failed to get OIDC token for callback:', error);
-          return;
-        }
-      }
-
-      await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(message.payload),
-      });
-    }
-  }
-
   private getActionFromIncompletelyParsedRpcMessage(
     rpcMessage: any,
     messageTypeId?: MessageTypeId,
@@ -999,3 +979,5 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     return action;
   }
 }
+
+export default MessageRouterImpl;

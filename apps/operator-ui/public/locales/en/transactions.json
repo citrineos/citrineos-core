@@ -5,6 +5,72 @@
     "toggleActiveStatus": "Toggle Active Status",
     "toggleActiveWarning": "You are about to mark this transaction as ",
     "toggleActiveCaution": "Warning: This action may cause the UI to be out of sync with the actual transaction status. Only proceed if you are certain.",
-    "noDataFound": "No transaction found with id {id}."
+    "noDataFound": "No transaction found with id {id}.",
+    "columns": {
+      "transactionId": "Transaction ID",
+      "active": "Active",
+      "stationId": "Station ID",
+      "location": "Location",
+      "idToken": "ID Token",
+      "totalKwh": "Total kWh",
+      "status": "Status",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    },
+    "detail": {
+      "stationId": "Station ID",
+      "location": "Location",
+      "totalKwh": "Total kWh",
+      "chargingState": "Charging State",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "tariff": "Tariff"
+    },
+    "tabs": {
+      "meterValueData": "Meter Value Data",
+      "events": "Events",
+      "ocppMessages": "OCPP Messages",
+      "contexts": "Contexts:",
+      "selectReadingContexts": "Select reading contexts",
+      "searchReadingContexts": "Search reading contexts"
+    },
+    "charts": {
+      "timeElapsed": "Time Elapsed",
+      "stateOfChargeLabel": "State of Charge (%)",
+      "stateOfChargeTitle": "State of Charge Over Time",
+      "noStateOfChargeData": "No State of Charge data available",
+      "energyLabel": "Energy (kWh)",
+      "energyTitle": "Energy Over Time",
+      "noEnergyData": "No Energy data available",
+      "voltageLabel": "Voltage (V)",
+      "voltageTitle": "Voltage Over Time",
+      "noVoltageData": "No Voltage data available",
+      "powerLabel": "Power (kW)",
+      "powerTitle": "Power Over Time",
+      "noPowerData": "No Power data available",
+      "currentLabel": "Current (A)",
+      "currentTitle": "Current Over Time",
+      "noCurrentData": "No Current data available"
+    },
+    "events": {
+      "eventType": "Event Type",
+      "timestamp": "Timestamp",
+      "seqNo": "Seq. #",
+      "triggerReason": "Trigger Reason",
+      "viewMeterValues": "View Meter Values"
+    },
+    "meterValues": {
+      "id": "ID",
+      "timestamp": "Timestamp",
+      "sampleValues": "Sample Values",
+      "value": "Value",
+      "context": "Context",
+      "measurand": "Measurand",
+      "phase": "Phase",
+      "location": "Location",
+      "sampledValue": "Sampled Value {index}"
+    }
   }
 }

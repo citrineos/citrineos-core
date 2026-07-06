@@ -27,7 +27,15 @@ export class Hubject implements IV2GCertificateAuthorityClient {
   private static readonly AUTH_TOKEN_CACHE_KEY = 'HUBJECT_AUTH_TOKEN';
   private static readonly AUTH_TOKEN_CACHE_NAMESPACE = 'hubject';
 
-  constructor(config: SystemConfig, cache: ICache, logger?: Logger<ILogObj>) {
+  constructor({
+    config,
+    cache,
+    logger,
+  }: {
+    config: SystemConfig;
+    cache: ICache;
+    logger?: Logger<ILogObj>;
+  }) {
     const hubjectConfig = config.util.certificateAuthority.v2gCA.hubject;
     if (!hubjectConfig) {
       throw new Error('Missing Hubject configuration');

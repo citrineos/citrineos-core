@@ -8,20 +8,22 @@ import { Table } from '@lib/client/components/table';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import { ChevronDownIcon } from 'lucide-react';
 
-export const getMeterValueColumns = () => {
+type TranslateFn = (key: string, options?: any) => string;
+
+export const getMeterValueColumns = (translate: TranslateFn) => {
   return [
     <Table.Column
       id={MeterValueProps.id}
       key={MeterValueProps.id}
       accessorKey={MeterValueProps.id}
-      header="ID"
+      header={translate('Transactions.meterValues.id')}
       enableSorting
     />,
     <Table.Column
       id={MeterValueProps.timestamp}
       key={MeterValueProps.timestamp}
       accessorKey={MeterValueProps.timestamp}
-      header="Timestamp"
+      header={translate('Transactions.meterValues.timestamp')}
       cell={({ row }) => <TimestampDisplay isoTimestamp={row.original.timestamp} />}
     />,
     <Table.Column
@@ -36,7 +38,7 @@ export const getMeterValueColumns = () => {
             row.toggleExpanded();
           }}
         >
-          <span className="text-sm">Sample Values</span>
+          <span className="text-sm">{translate('Transactions.meterValues.sampleValues')}</span>
           <ChevronDownIcon
             className={`transition-transform duration-200 ${
               row.getIsExpanded() ? 'rotate-180' : ''

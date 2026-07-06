@@ -10,8 +10,6 @@ import {
   SystemConfig,
 } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Hubject } from '../../../certificate/client/hubject.js';
 import { MemoryCache } from '../../../index.js';
@@ -20,8 +18,10 @@ import {
   aValidSignedContractData,
   HUBJECT_DEFAULT_AUTH_TOKEN,
 } from '../../providers/Hubject.js';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 describe('Hubject', () => {
+  const { container } = createTestContainer();
   const mockBaseURL = 'https://hubject.base.test';
   const mockTokenURL = 'https://hubject.token.test';
   const mockBearerToken = 'Bearer ' + HUBJECT_DEFAULT_AUTH_TOKEN;
@@ -29,13 +29,11 @@ describe('Hubject', () => {
   const mockClientSecret = 'test-client-secret';
 
   let systemConfig: SystemConfig;
-  let logger: Logger<ILogObj>;
   let cache: MemoryCache;
   let hubject: Hubject;
 
   beforeEach(() => {
     global.fetch = vi.fn();
-    logger = new Logger<ILogObj>();
     cache = new MemoryCache();
     systemConfig = {
       util: {
@@ -52,7 +50,7 @@ describe('Hubject', () => {
         },
       },
     } as any;
-    hubject = new Hubject(systemConfig, cache, logger);
+    hubject = getTestInstance(container, Hubject, { config: systemConfig, cache });
   });
 
   afterEach(() => {
@@ -89,7 +87,10 @@ describe('Hubject', () => {
         },
       } as SystemConfig;
 
-      const hubjectWithDefaults = new Hubject(defaultConfig, cache, logger);
+      const hubjectWithDefaults = getTestInstance(container, Hubject, {
+        config: defaultConfig,
+        cache,
+      });
 
       const token = await (hubjectWithDefaults as any)._getAuthorizationToken();
 

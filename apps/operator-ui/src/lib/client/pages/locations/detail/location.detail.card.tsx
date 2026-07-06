@@ -66,11 +66,13 @@ export const LocationDetailCard = ({ location, imageUrl }: LocationDetailCardPro
           <div className="flex-1">
             <div className={cardGridStyle}>
               <KeyValueDisplay
-                keyLabel="Address"
-                value={location.address ? getFullAddress(location) : 'No Address'}
+                keyLabel={translate('Locations.columns.address')}
+                value={
+                  location.address ? getFullAddress(location) : translate('Locations.noAddress')
+                }
               />
               <KeyValueDisplay
-                keyLabel="Latitude"
+                keyLabel={translate('Locations.columns.latitude')}
                 value={
                   location?.coordinates
                     ? location.coordinates.coordinates[1].toFixed(4)
@@ -78,17 +80,23 @@ export const LocationDetailCard = ({ location, imageUrl }: LocationDetailCardPro
                 }
               />
               <KeyValueDisplay
-                keyLabel="Longitude"
+                keyLabel={translate('Locations.columns.longitude')}
                 value={
                   location?.coordinates
                     ? location.coordinates.coordinates[0].toFixed(4)
                     : NOT_APPLICABLE
                 }
               />
-              <KeyValueDisplay keyLabel="Time Zone" value={location.timeZone} />
-              <KeyValueDisplay keyLabel="Parking Type" value={location.parkingType} />
               <KeyValueDisplay
-                keyLabel="Facilities"
+                keyLabel={translate('Locations.columns.timeZone')}
+                value={location.timeZone}
+              />
+              <KeyValueDisplay
+                keyLabel={translate('Locations.columns.parkingType')}
+                value={location.parkingType}
+              />
+              <KeyValueDisplay
+                keyLabel={translate('Locations.columns.facilities')}
                 value={
                   location.facilities ? (
                     <div className={badgeListStyle}>
@@ -104,7 +112,7 @@ export const LocationDetailCard = ({ location, imageUrl }: LocationDetailCardPro
                 }
               />
               <KeyValueDisplay
-                keyLabel="Total Chargers"
+                keyLabel={translate('Locations.detail.totalChargers')}
                 value={location.chargingPool?.length ?? 0}
               />
             </div>
@@ -114,7 +122,7 @@ export const LocationDetailCard = ({ location, imageUrl }: LocationDetailCardPro
             <div className="flex-shrink-0 w-64 md:w-48 sm:w-32 h-64 md:h-48 sm:h-32 flex items-center justify-center bg-gray-100 rounded-md">
               <Image
                 src={imageUrl}
-                alt={`${location.name} image`}
+                alt={translate('Locations.detail.imageAlt', { name: location.name })}
                 className="w-full h-full object-contain rounded-md bg-gray-100"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = 'none';

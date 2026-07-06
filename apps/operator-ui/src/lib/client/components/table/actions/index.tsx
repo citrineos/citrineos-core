@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@lib/client/components/ui/dropdown-menu';
+import { useTranslate } from '@refinedev/core';
 import { Ellipsis } from 'lucide-react';
 import Link from 'next/link';
 import type { FC, PropsWithChildren, ReactNode } from 'react';
@@ -55,12 +56,13 @@ export const RowAction: FC<RowActionProps> = (props) => {
 RowAction.displayName = 'RowAction';
 
 export function RowActions({ children }: RowActionsProps) {
+  const translate = useTranslate();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Ellipsis className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
+          <span className="sr-only">{translate('Common.openMenu')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">

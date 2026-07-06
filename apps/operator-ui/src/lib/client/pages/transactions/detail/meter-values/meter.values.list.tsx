@@ -15,6 +15,7 @@ import {
 } from '@lib/queries/meter.values';
 import { ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
+import { useTranslate } from '@refinedev/core';
 import type { ExpandedState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
@@ -26,7 +27,8 @@ export const MeterValuesList = ({
   meterValueTimestamps,
 }: any) => {
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const columns = useMemo(() => getMeterValueColumns(), []);
+  const translate = useTranslate();
+  const columns = useMemo(() => getMeterValueColumns(translate), [translate]);
 
   return (
     <Table

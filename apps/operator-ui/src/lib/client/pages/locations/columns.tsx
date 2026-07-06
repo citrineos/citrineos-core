@@ -17,33 +17,36 @@ import { badgeListStyle } from '@lib/client/styles/page';
 import { isEmpty } from '@lib/utils/assertion';
 import { Badge } from '@lib/client/components/ui/badge';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
+type TranslateFn = (key: string, options?: any) => string;
 
-export const locationsColumns: ColumnConfiguration[] = [
+export const getLocationsColumns = (translate: TranslateFn): ColumnConfiguration[] => [
   {
     key: LocationProps.name,
-    header: 'Name',
+    header: translate('Locations.columns.name'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <TableCellLink
         path={`/${MenuSection.LOCATIONS}/${row.original.id}`}
-        value={row.original.name ?? 'Unnamed Location'}
+        value={row.original.name ?? translate('Locations.unnamedLocation')}
       />
     ),
   },
   {
     key: LocationProps.address,
-    header: 'Address',
+    header: translate('Locations.columns.address'),
     visible: true,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <span>
-        {row.original.address ? getFullAddress(row.original as Partial<LocationDto>) : 'No address'}
+        {row.original.address
+          ? getFullAddress(row.original as Partial<LocationDto>)
+          : translate('Locations.noAddress')}
       </span>
     ),
   },
   {
     key: 'latitude',
-    header: 'Latitude',
+    header: translate('Locations.columns.latitude'),
     visible: false,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <span>
@@ -55,7 +58,7 @@ export const locationsColumns: ColumnConfiguration[] = [
   },
   {
     key: 'longitude',
-    header: 'Longitude',
+    header: translate('Locations.columns.longitude'),
     visible: false,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <span>
@@ -67,18 +70,18 @@ export const locationsColumns: ColumnConfiguration[] = [
   },
   {
     key: LocationProps.timeZone,
-    header: 'Time Zone',
+    header: translate('Locations.columns.timeZone'),
     visible: false,
     sortable: true,
   },
   {
     key: LocationProps.parkingType,
-    header: 'Parking Type',
+    header: translate('Locations.columns.parkingType'),
     visible: false,
   },
   {
     key: LocationProps.facilities,
-    header: 'Facilities',
+    header: translate('Locations.columns.facilities'),
     visible: false,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <div className={badgeListStyle}>
@@ -96,7 +99,7 @@ export const locationsColumns: ColumnConfiguration[] = [
   },
   {
     key: 'totalStations',
-    header: 'Total Stations',
+    header: translate('Locations.columns.totalStations'),
     visible: true,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) => (
       <span>{row.original.chargingPool?.length ?? 0}</span>
@@ -104,7 +107,7 @@ export const locationsColumns: ColumnConfiguration[] = [
   },
   {
     key: LocationProps.createdAt,
-    header: 'Created At',
+    header: translate('Locations.columns.createdAt'),
     visible: false,
     sortable: true,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) =>
@@ -116,7 +119,7 @@ export const locationsColumns: ColumnConfiguration[] = [
   },
   {
     key: LocationProps.updatedAt,
-    header: 'Updated At',
+    header: translate('Locations.columns.updatedAt'),
     visible: false,
     sortable: true,
     cellRender: ({ row }: CellContext<LocationDto, unknown>) =>
@@ -138,7 +141,7 @@ export const locationsColumns: ColumnConfiguration[] = [
           row.toggleExpanded();
         }}
       >
-        <span className="text-sm">View Stations</span>
+        <span className="text-sm">{translate('Locations.viewStations')}</span>
         <ChevronDownIcon
           className={`transition-transform duration-200 ${row.getIsExpanded() ? 'rotate-180' : ''}`}
         />

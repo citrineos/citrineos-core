@@ -20,7 +20,7 @@ import {
   GET_CHARGING_STATIONS_FOR_TARIFF,
   GET_TRANSACTIONS_FOR_TARIFF,
 } from '@lib/queries/tariffs';
-import { transactionsColumns } from '@lib/client/pages/transactions/columns';
+import { getTransactionsColumns } from '@lib/client/pages/transactions/columns';
 import { getChargingStationsColumns } from '@lib/client/pages/charging-stations/columns';
 import { useColumnPreferences } from '../../../hooks/useColumnPreferences';
 
@@ -28,12 +28,12 @@ export const TariffDetailTabsCard = ({ tariff }: { tariff: TariffDto }) => {
   const translate = useTranslate();
 
   const { renderedVisibleColumns: renderedChargingStationColumns } = useColumnPreferences(
-    getChargingStationsColumns(false),
+    getChargingStationsColumns(false, translate),
     ResourceType.CHARGING_STATIONS,
   );
 
   const { renderedVisibleColumns: renderedTransactionColumns } = useColumnPreferences(
-    transactionsColumns,
+    getTransactionsColumns(translate),
     ResourceType.TRANSACTIONS,
   );
 

@@ -5,7 +5,7 @@
 import type { LocationDto } from '@citrineos/base';
 import { Button } from '@lib/client/components/ui/button';
 import { ResourceType } from '@lib/utils/access.types';
-import { useNavigation } from '@refinedev/core';
+import { useNavigation, useTranslate } from '@refinedev/core';
 import React from 'react';
 
 interface LocationMarkerProps {
@@ -14,6 +14,7 @@ interface LocationMarkerProps {
 
 export const LocationMarker: React.FC<LocationMarkerProps> = ({ location }) => {
   const { show } = useNavigation();
+  const translate = useTranslate();
 
   const handleShowClick = () => {
     show(ResourceType.LOCATIONS, location.id!);
@@ -27,7 +28,7 @@ export const LocationMarker: React.FC<LocationMarkerProps> = ({ location }) => {
         {location.city}, {location.state} {location.postalCode}, {location.country}
       </p>
       <Button onClick={handleShowClick} className="mt-2">
-        View Details
+        {translate('Locations.map.viewDetails')}
       </Button>
     </div>
   );

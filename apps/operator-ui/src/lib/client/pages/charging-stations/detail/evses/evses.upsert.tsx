@@ -16,6 +16,7 @@ import { getSerializedValues } from '@lib/utils/middleware';
 import { useForm } from '@refinedev/react-hook-form';
 import { evsesFormUpsertGrid } from '@lib/client/pages/charging-stations/detail/evses/evses.list';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { useTranslate } from '@refinedev/core';
 
 interface EvseUpsertProps {
   onSubmit: () => void;
@@ -30,6 +31,7 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
   ocppConnectionName,
   evse,
 }) => {
+  const translate = useTranslate();
   const tenantId = useTenantId();
 
   const form = useForm({
@@ -86,8 +88,8 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
         <FormField
           control={form.control}
           name={EvseProps.evseTypeId}
-          label="EVSE Type ID"
-          description="The serial integers used in OCPP 2.0.1 to refer to the EVSE, unique per Charging Station."
+          label={translate('ChargingStations.evses.evseTypeId')}
+          description={translate('ChargingStations.evses.evseTypeIdDescription')}
           required
         >
           <Input type="number" />
@@ -96,8 +98,8 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
         <FormField
           control={form.control}
           name={EvseProps.evseId}
-          label="EVSE ID"
-          description="The eMI3 compliant EVSE ID, which must be globally unique."
+          label={translate('ChargingStations.evses.evseId')}
+          description={translate('ChargingStations.evses.evseIdDescription')}
           required
         >
           <Input />
@@ -106,8 +108,8 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
         <FormField
           control={form.control}
           name={EvseProps.physicalReference}
-          label="Physical Reference"
-          description="Any identifier printed on the EVSE used to identify it when physically at the location, e.g. a number or a letter."
+          label={translate('ChargingStations.evses.physicalReference')}
+          description={translate('ChargingStations.evses.physicalReferenceDescription')}
         >
           <Input />
         </FormField>
@@ -115,8 +117,8 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
         <CheckboxFormField
           control={form.control}
           name={EvseProps.removed}
-          label="Removed"
-          description="Marked as REMOVED"
+          label={translate('ChargingStations.evses.removed')}
+          description={translate('ChargingStations.evses.removedDescription')}
         />
       </div>
     </Form>

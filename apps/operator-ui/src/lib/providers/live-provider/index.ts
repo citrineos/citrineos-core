@@ -4,7 +4,6 @@
 'use client';
 
 import { authProvider } from '@lib/providers/auth-provider';
-import { ResourceType } from '@lib/utils/access.types';
 import config from '@lib/utils/config';
 import { HasuraHeader } from '@lib/utils/hasura.types';
 import {
@@ -42,10 +41,7 @@ const webSocketClient = graphqlWS.createClient({
 });
 
 const hasuraProviderOptions = {
-  idType: (resource: string) => {
-    if (resource === ResourceType.CHARGING_STATIONS) return 'String';
-    return 'Int';
-  },
+  idType: 'Int',
   namingConvention: 'hasura-default',
 };
 

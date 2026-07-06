@@ -20,8 +20,16 @@ export class TenantDataApi extends AbstractModuleApi<TenantModule> implements IT
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(tenantModule: TenantModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
-    super(tenantModule, server, null, logger);
+  constructor({
+    tenantModule,
+    server,
+    logger,
+  }: {
+    tenantModule: TenantModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(tenantModule, server, logger);
   }
 
   /**

@@ -8,6 +8,9 @@ import { MeasurandEnum, OCPP2_0_1 } from '@citrineos/base';
 export class MeterValueClass implements Partial<MeterValueDto> {}
 
 // todo share below code with @citrineos/base
+const isOverallPhase = (phase: string | undefined | null): boolean =>
+  !phase || phase === OCPP2_0_1.PhaseEnumType.N;
+
 const TWO_HOURS = 60 * 60 * 2;
 
 const validContexts = new Set([
@@ -59,6 +62,20 @@ export const getTimestampToMeasurandArray = (
   return result;
 };
 
+// Measurands that are physically additive across phases (P_total = P_L1+P_L2+P_L3,
+// E_total = E_L1+E_L2+E_L3). All other measurands (Voltage, Current.*, Frequency,
+// Temperature, Power.Factor, SoC, RPM) are per-phase or scalar quantities and must
+// be averaged across reported phases, never summed — summing per-phase voltages
+// (e.g. 230+230+230) yields meaningless inflated readings.
+const isAdditiveMeasurand = (measurand: MeasurandEnumType): boolean => {
+  if (measurand.startsWith('Energy.')) return true;
+  if (measurand === 'Power.Active.Import' || measurand === 'Power.Active.Export') return true;
+  if (measurand === 'Power.Reactive.Import' || measurand === 'Power.Reactive.Export') return true;
+  if (measurand === 'Power.Offered') return true;
+  // Power.Factor is a ratio, not additive.
+  return false;
+};
+
 export const findOverallValue = (
   sampledValues: SampledValue[],
   measurand: MeasurandEnumType,
@@ -72,28 +89,33 @@ export const findOverallValue = (
   if (measurandSampledValues.length === 0) {
     return undefined;
   }
-  let summedPhasesSampledValue = measurandSampledValues.find((sv) => !sv.phase);
-  if (!summedPhasesSampledValue) {
-    // Manually sum all phases if no summed phase is found
-    const summablePhases = new Set<string>([
+  let overallSampledValue = measurandSampledValues.find((sv) => isOverallPhase(sv.phase));
+  if (!overallSampledValue) {
+    // No overall (phase=N or no phase) reported. Aggregate per-phase rows.
+    // Accept ANY subset of L1/L2/L3: single-phase chargers report only L1, and
+    // some DC chargers (vendor quirk) tag V/A/W with bare "L1" instead of "N".
+    const perPhaseTags = new Set<string>([
       OCPP2_0_1.PhaseEnumType.L1,
       OCPP2_0_1.PhaseEnumType.L2,
       OCPP2_0_1.PhaseEnumType.L3,
     ]);
-    const summableSampledValues = measurandSampledValues.filter(
-      (sv) => sv.phase && summablePhases.has(sv.phase),
+    const perPhaseSampledValues = measurandSampledValues.filter(
+      (sv) => sv.phase && perPhaseTags.has(sv.phase),
     );
-    if (summableSampledValues.length < 3) {
-      return undefined; // Not all phases are present, cannot sum
+    if (perPhaseSampledValues.length === 0) {
+      return undefined; // No per-phase data either; nothing to aggregate.
     }
-    const summedPhasesValue = summableSampledValues.reduce((acc, sv) => acc + Number(sv.value), 0);
-    summedPhasesSampledValue = {
-      ...measurandSampledValues[0],
-      value: summedPhasesValue,
+    const sumOfPhases = perPhaseSampledValues.reduce((acc, sv) => acc + Number(sv.value), 0);
+    const aggregatedValue = isAdditiveMeasurand(measurand)
+      ? sumOfPhases
+      : sumOfPhases / perPhaseSampledValues.length;
+    overallSampledValue = {
+      ...perPhaseSampledValues[0],
+      value: aggregatedValue,
       phase: null,
     };
   }
-  return summedPhasesSampledValue;
+  return overallSampledValue;
 };
 
 export const normalizeValue = (overallValue: SampledValue): string | null => {

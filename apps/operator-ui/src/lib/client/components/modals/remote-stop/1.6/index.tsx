@@ -13,8 +13,9 @@ import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
@@ -23,17 +24,26 @@ export interface OCPP1_6_RemoteStopProps {
   station: ChargingStationWithTransactionsDto;
 }
 
-const RemoteStopSchema = z.object({
-  transactionId: z.string().min(1, 'Transaction is required'),
-});
-
-type RemoteStopFormData = z.infer<typeof RemoteStopSchema>;
+type RemoteStopFormData = {
+  transactionId: string;
+};
 
 export const OCPP1_6_RemoteStop = ({ station }: OCPP1_6_RemoteStopProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
+
+  const RemoteStopSchema = useMemo(
+    () =>
+      z.object({
+        transactionId: z
+          .string()
+          .min(1, translate('ChargingStations.remoteStopModal.transactionRequired')),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(RemoteStopSchema),
@@ -46,6 +56,7 @@ export const OCPP1_6_RemoteStop = ({ station }: OCPP1_6_RemoteStopProps) => {
     const data = { transactionId: values.transactionId };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/evdriver/remoteStopTransaction?identifier=${station.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       ocppVersion: OCPPVersion.OCPP1_6,
@@ -67,7 +78,7 @@ export const OCPP1_6_RemoteStop = ({ station }: OCPP1_6_RemoteStopProps) => {
   const hasNoActiveTransactions = station.transactions && station.transactions.length === 0;
 
   return hasNoActiveTransactions ? (
-    <div>No active transactions found for this charging station.</div>
+    <div>{translate('ChargingStations.remoteStopModal.noActiveTransactions')}</div>
   ) : (
     <Form
       {...form}
@@ -75,18 +86,18 @@ export const OCPP1_6_RemoteStop = ({ station }: OCPP1_6_RemoteStopProps) => {
       submitHandler={onFinish}
       hideCancel
       submitButtonVariant={FormButtonVariants.delete}
-      submitButtonLabel="Stop"
+      submitButtonLabel={translate('ChargingStations.remoteStopModal.stop')}
     >
       <ComboboxFormField
         control={form.control}
-        label="Active Transactions"
+        label={translate('ChargingStations.remoteStopModal.activeTransactions')}
         name="transactionId"
         options={station.transactions.map((transaction: TransactionDto) => ({
           label: transaction.transactionId,
           value: transaction.transactionId,
         }))}
-        placeholder="Select Transaction"
-        searchPlaceholder="Search Transactions"
+        placeholder={translate('ChargingStations.remoteStopModal.selectTransaction')}
+        searchPlaceholder={translate('ChargingStations.remoteStopModal.searchTransactions')}
         required
       />
     </Form>

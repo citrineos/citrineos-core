@@ -6,7 +6,7 @@
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Table } from '@lib/client/components/table';
 import { Button } from '@lib/client/components/ui/button';
-import { partnersColumns } from '@lib/client/pages/partners/columns';
+import { getPartnersColumns } from '@lib/client/pages/partners/columns';
 import { TenantPartnerClass } from '@lib/cls/tenant.partner.cls';
 import { PARTNERS_LIST_QUERY } from '@lib/queries/tenant.partners';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
@@ -30,7 +30,7 @@ export const PartnersList = () => {
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    partnersColumns,
+    getPartnersColumns(translate),
     ResourceType.PARTNERS,
   );
 

@@ -1,29 +1,50 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { OCPPVersionType } from '@citrineos/base';
 import type { ITransactionEventRepository } from '@dal/interfaces/repositories.js';
 import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
-import { AbstractModule, OCPP_CallAction, OCPPVersion } from '@citrineos/base';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './CostCalculator.js';
 import { Scheduler } from './Scheduler.js';
 
+/** The computed cost update to send to a charging station. */
+export interface CostUpdate {
+  ocppConnectionName: string;
+  tenantId: number;
+  totalCost: number;
+  transactionId: string;
+  protocol: OCPPVersionType;
+}
+
+/**
+ * Sends a computed {@link CostUpdate} to the charging station. Supplied by the
+ * Transactions module (which owns the OCPP send semantics) so that
+ * {@link CostNotifier} does not hold a back-reference to the module.
+ */
+export type CostUpdatedNotifier = (update: CostUpdate) => Promise<void>;
+
 export class CostNotifier extends Scheduler {
   private readonly _transactionEventRepository: ITransactionEventRepository;
-  private readonly _module: AbstractModule;
   private readonly _costCalculator: CostCalculator;
+  private readonly _notifyCostUpdated: CostUpdatedNotifier;
 
-  constructor(
-    module: AbstractModule,
-    transactionEventRepository: ITransactionEventRepository,
-    costCalculator: CostCalculator,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    transactionEventRepository,
+    costCalculator,
+    costUpdatedNotifier,
+    logger,
+  }: {
+    transactionEventRepository: ITransactionEventRepository;
+    costCalculator: CostCalculator;
+    costUpdatedNotifier: CostUpdatedNotifier;
+    logger: Logger<ILogObj>;
+  }) {
     super(logger);
     this._transactionEventRepository = transactionEventRepository;
-    this._module = module;
     this._costCalculator = costCalculator;
+    this._notifyCostUpdated = costUpdatedNotifier;
   }
 
   /**
@@ -41,18 +62,23 @@ export class CostNotifier extends Scheduler {
     transactionId: string,
     tenantId: number,
     intervalSeconds: number,
+    protocol: OCPPVersionType,
   ): void {
     this._logger.debug(
       `Scheduling periodic cost notifications for ${ocppConnectionName} station, ${transactionId} transaction, ${tenantId} tenant`,
     );
     this.schedule(
       this._key(ocppConnectionName, transactionId),
-      () => this._tryNotify(ocppConnectionName, transactionId, tenantId),
+      () => this._tryNotify(ocppConnectionName, transactionId, tenantId, protocol),
       intervalSeconds,
     );
   }
 
-  async calculateCostAndNotify(transaction: Transaction, tenantId: number): Promise<void> {
+  async calculateCostAndNotify(
+    transaction: Transaction,
+    tenantId: number,
+    protocol: OCPPVersionType,
+  ): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(
       tenantId,
       transaction.connectorId,
@@ -65,22 +91,24 @@ export class CostNotifier extends Scheduler {
       transaction.id,
     );
 
-    await this._module.sendCall(
-      transaction.ocppConnectionName,
+    await this._notifyCostUpdated({
+      ocppConnectionName: transaction.ocppConnectionName,
       tenantId,
-      OCPPVersion.OCPP2_0_1,
-      OCPP_CallAction.CostUpdated,
-      {
-        totalCost: cost,
-        transactionId: transaction.transactionId,
-      },
-    );
+      totalCost: cost,
+      transactionId: transaction.transactionId,
+      protocol,
+    });
     this._logger.debug(
       `Sent CostUpdated call for ${transaction.transactionId} transaction with ${cost} cost`,
     );
   }
 
-  private async _tryNotify(ocppConnectionName: string, transactionId: string, tenantId: number) {
+  private async _tryNotify(
+    ocppConnectionName: string,
+    transactionId: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+  ) {
     try {
       const transaction =
         await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
@@ -105,7 +133,7 @@ export class CostNotifier extends Scheduler {
         return;
       }
 
-      await this.calculateCostAndNotify(transaction, tenantId);
+      await this.calculateCostAndNotify(transaction, tenantId, protocol);
     } catch (error) {
       this._logger.error(`Failed to send CostUpdated call for ${transactionId} transaction`, error);
       this.unschedule(this._key(ocppConnectionName, transactionId));

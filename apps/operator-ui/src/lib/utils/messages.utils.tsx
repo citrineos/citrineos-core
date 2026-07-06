@@ -10,15 +10,24 @@ import store from '@lib/utils/store/store';
 import { Expose } from 'class-transformer';
 import { toast } from 'sonner';
 
-export const showSuccess = (payload?: string | object) => {
+/**
+ * Subset of refine's TranslateFunction. Optional so these utilities keep working
+ * (with English fallbacks) when called outside of a React component/hook.
+ */
+type TranslateFn = (key: string, options?: any, defaultMessage?: string) => string;
+
+export const showSuccess = (payload?: string | object, translate?: TranslateFn) => {
   const payloadString = payload ? JSON.stringify(payload) : '.';
-  toast.success('Success', {
-    description: `The request was successful ${payloadString}`,
+  const description = translate
+    ? translate('messages.requestSuccessful', { payload: payloadString })
+    : `The request was successful ${payloadString}`;
+  toast.success(translate ? translate('Common.success') : 'Success', {
+    description,
   });
 };
 
-export const showError = (msg: string) => {
-  toast.error('Request Failed', {
+export const showError = (msg: string, translate?: TranslateFn) => {
+  toast.error(translate ? translate('messages.requestFailed') : 'Request Failed', {
     description: msg,
   });
 };
@@ -30,6 +39,7 @@ export interface TriggerMessageAndHandleResponseProps<T> {
   method?: HttpMethod;
   setLoading?: (loading: boolean) => void;
   responseSuccessCheck?: (response: T) => boolean;
+  translate?: TranslateFn;
 }
 
 type MessageConfirmationOrArray = MessageConfirmation | MessageConfirmation[];
@@ -41,6 +51,7 @@ export const triggerMessageAndHandleResponse = async <T extends MessageConfirmat
   method = HttpMethod.Post,
   setLoading,
   responseSuccessCheck,
+  translate,
 }: TriggerMessageAndHandleResponseProps<T>) => {
   try {
     setLoading?.(true);
@@ -60,12 +71,12 @@ export const triggerMessageAndHandleResponse = async <T extends MessageConfirmat
 
     if (!response.data && response.status === 200) {
       store.dispatch(closeModal());
-      showSuccess();
+      showSuccess(undefined, translate);
       return;
     }
     if (responseSuccessCheck && responseSuccessCheck(response.data)) {
       store.dispatch(closeModal());
-      showSuccess();
+      showSuccess(undefined, translate);
     } else if (ocppResponseSuccessCheck(response.data)) {
       store.dispatch(closeModal());
       const payload = Array.isArray(response.data)
@@ -74,16 +85,23 @@ export const triggerMessageAndHandleResponse = async <T extends MessageConfirmat
           : undefined
         : response.data.payload;
 
-      showSuccess(payload);
+      showSuccess(payload, translate);
     } else {
-      let msg = 'The request did not receive a successful response.';
+      let msg = translate
+        ? translate('messages.noSuccessfulResponse')
+        : 'The request did not receive a successful response.';
       if (response instanceof MessageConfirmation || Array.isArray(response)) {
         msg += ` ${generateErrorMessageFromResponses(response)}`;
       }
-      showError(msg);
+      showError(msg, translate);
     }
   } catch (error: any) {
-    showError('The request failed with message: ' + error.message);
+    showError(
+      translate
+        ? translate('messages.requestFailedWithMessage', { message: error.message })
+        : 'The request failed with message: ' + error.message,
+      translate,
+    );
   } finally {
     setLoading?.(false);
   }

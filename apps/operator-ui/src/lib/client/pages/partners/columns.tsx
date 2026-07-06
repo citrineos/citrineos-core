@@ -10,28 +10,33 @@ import { TenantPartnerClass } from '@lib/cls/tenant.partner.cls';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import type { CellContext } from '@tanstack/react-table';
 
-export const partnersColumns = [
+type TranslateFn = (key: string, options?: any) => string;
+
+const identityTranslate: TranslateFn = (key, options) => options?.fallback ?? key;
+
+export const getPartnersColumns = (translate: TranslateFn = identityTranslate) => [
   {
     key: TenantPartnerProps.partnerProfileOCPI,
-    header: 'Name',
+    header: translate('TenantPartners.columns.name'),
     visible: true,
     cellRender: ({ row }: CellContext<TenantPartnerClass, unknown>) => (
       <TableCellLink
         path={`/${MenuSection.PARTNERS}/${row.original.id}`}
         value={
-          row.original.partnerProfileOCPI?.roles[0]?.businessDetails?.name ?? 'Unnamed Business'
+          row.original.partnerProfileOCPI?.roles[0]?.businessDetails?.name ??
+          translate('TenantPartners.unnamedBusiness')
         }
       />
     ),
   },
   {
     key: TenantPartnerProps.countryCode,
-    header: 'Country Code',
+    header: translate('TenantPartners.columns.countryCode'),
     visible: true,
   },
   {
     key: TenantPartnerProps.partyId,
-    header: 'Party ID',
+    header: translate('TenantPartners.columns.partyId'),
     visible: true,
   },
 ];

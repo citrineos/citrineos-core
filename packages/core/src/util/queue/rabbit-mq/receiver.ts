@@ -47,13 +47,19 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _instanceConsumerTags: string[] = [];
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
 
-  constructor(
-    config: SystemConfig,
-    channelManager: RabbitMQChannelManager,
-    logger?: Logger<ILogObj>,
-    module?: IModule,
-    routerMode?: boolean,
-  ) {
+  constructor({
+    config,
+    channelManager,
+    logger,
+    module,
+    routerMode,
+  }: {
+    config: SystemConfig;
+    channelManager: RabbitMQChannelManager;
+    logger?: Logger<ILogObj>;
+    module?: IModule;
+    routerMode?: boolean;
+  }) {
     super(logger, module);
     this._channelManager = channelManager;
     const exchange = config.util.messageBroker.amqp?.exchange;

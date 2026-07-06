@@ -10,10 +10,10 @@ End-to-end tests for `citrineos-operator-ui` against a real Hasura + CitrineOS C
 
 ## Prerequisites
 
-1. Backend stack running. From the `citrineos-core` repository root (full stack incl. UI), or from
-   `citrineos-core/apps/Server` (backend only):
+1. Backend stack running. From the `citrineos-core` repository root, start the full stack (Core + UI), or pass
+   `--solo` for backend only:
    ```bash
-   docker compose up -d
+   pnpm citrine
    ```
    Healthchecks: Hasura `:8090/healthz`, Citrine `:8080/health`, UI `:3000/login`.
 2. UI server running. From `apps/operator-ui`:
@@ -49,7 +49,7 @@ pnpm run test:e2e:report
 | Area              | Specs                                                                                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Auth              | `specs/auth/login.spec.ts`, `specs/auth/logout.spec.ts`                                                                                                                |
-| Overview          | `specs/overview/dashboard.spec.ts`, `welcome-modal.spec.ts`, `theme.spec.ts`                                                                                           |
+| Overview          | `specs/overview/dashboard.spec.ts`, `welcome-modal.spec.ts`                                                                                                            |
 | Locations         | `specs/locations/crud.spec.ts`, `map.spec.ts`, `form-conditional.spec.ts`                                                                                              |
 | Charging stations | `specs/charging-stations/list.spec.ts`, `crud.spec.ts`, `detail-tabs.spec.ts`, `realtime.spec.ts`, `onboarding.spec.ts`, `admin-toggles.spec.ts`, `commands-*.spec.ts` |
 | Transactions      | `specs/transactions/list.spec.ts`, `detail-charts.spec.ts`                                                                                                             |
@@ -71,7 +71,7 @@ npx tsx tests/e2e/scripts/capture-schema.ts
 Review the diff before committing — the script overwrites the JSON in place.
 
 `@everest` tagged tests need the EVerest manager image
-(`citrineos-core/apps/Server/everest`) and run on the `everest-serial` project.
+(`citrineos-core/apps/ocpp-server/everest`) and run on the `everest-serial` project.
 They are skipped automatically when the image is not running.
 
 ## Folder layout

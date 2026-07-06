@@ -56,14 +56,6 @@ const actionOptions = [
 
 const allOption = 'all';
 
-const originOptions = [
-  { label: 'All Origins', value: allOption },
-  ...Object.values(MessageOrigin).map((o) => ({
-    label: o.toUpperCase(),
-    value: o,
-  })),
-];
-
 export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   stationId,
   initialStartDate = null,
@@ -82,6 +74,17 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   const translate = useTranslate();
   const liveMode = liveLogEnabled ? 'auto' : 'off';
   const invalidate = useInvalidate();
+
+  const originOptions = useMemo(
+    () => [
+      { label: translate('ChargingStations.ocppMessages.allOrigins'), value: allOption },
+      ...Object.values(MessageOrigin).map((o) => ({
+        label: o.toUpperCase(),
+        value: o,
+      })),
+    ],
+    [translate],
+  );
 
   const [tableQueryState, _] = useQueryState(
     ResourceType.OCPP_MESSAGES,
@@ -261,19 +264,19 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
         <div className="grid grid-cols-5 gap-2 w-full">
           <DebounceSearch
             onSearch={setSearchCid}
-            placeholder="Search Correlation ID"
+            placeholder={translate('ChargingStations.ocppMessages.searchCorrelationId')}
             className="relative w-full"
           />
           <MultiSelect
             options={actionOptions}
             selectedValues={selectedActions}
             setSelectedValues={setSelectedActions}
-            placeholder="Select Actions"
-            searchPlaceholder="Search Actions"
+            placeholder={translate('ChargingStations.ocppMessages.selectActions')}
+            searchPlaceholder={translate('ChargingStations.ocppMessages.searchActions')}
           />
           <Select value={selectedOrigin ?? ''} onValueChange={setSelectedOrigin}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter Origins" />
+              <SelectValue placeholder={translate('ChargingStations.ocppMessages.filterOrigins')} />
             </SelectTrigger>
             <SelectContent>
               {originOptions.map((opt) => (
@@ -286,12 +289,12 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
           <DateTimePicker
             date={startDate ?? undefined}
             onSelectDateAction={(date) => setStartDate(date ?? null)}
-            placeholder="Pick Start Date"
+            placeholder={translate('ChargingStations.ocppMessages.pickStartDate')}
           />
           <DateTimePicker
             date={endDate ?? undefined}
             onSelectDateAction={(date) => setEndDate(date ?? null)}
-            placeholder="Pick End Date"
+            placeholder={translate('ChargingStations.ocppMessages.pickEndDate')}
           />
         </div>
 
@@ -323,7 +326,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               id="correlationId"
               key="correlationId"
               accessorKey="correlationId"
-              header="Correlation ID"
+              header={translate('ChargingStations.ocppMessages.correlationId')}
               cell={({ row }: CellContext<OCPPMessageDto, unknown>) => {
                 return (
                   <TooltipProvider>
@@ -344,7 +347,9 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
                             <Link className={buttonIconSize} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Find related message</TooltipContent>
+                        <TooltipContent>
+                          {translate('ChargingStations.ocppMessages.findRelatedMessage')}
+                        </TooltipContent>
                       </Tooltip>
                       {row.original.correlationId && (
                         <Tooltip>
@@ -354,13 +359,15 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
                               size="xs"
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                await copy(row.original.correlationId);
+                                await copy(row.original.correlationId, true, translate);
                               }}
                             >
                               <Copy className={buttonIconSize} />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Copy Correlation ID</TooltipContent>
+                          <TooltipContent>
+                            {translate('ChargingStations.ocppMessages.copyCorrelationId')}
+                          </TooltipContent>
                         </Tooltip>
                       )}
                     </div>
@@ -372,11 +379,13 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               id="action"
               key="action"
               accessorKey="action"
-              header="Action - Origin"
+              header={translate('ChargingStations.ocppMessages.actionOrigin')}
               cell={({ row }: CellContext<OCPPMessageDto, unknown>) => {
                 return (
                   <span>
-                    {row.original.action ?? 'Unknown Action'} - {row.original.origin}
+                    {row.original.action ??
+                      translate('ChargingStations.ocppMessages.unknownAction')}{' '}
+                    - {row.original.origin}
                   </span>
                 );
               }}
@@ -385,7 +394,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               id="timestamp"
               key="timestamp"
               accessorKey="timestamp"
-              header="Timestamp"
+              header={translate('ChargingStations.ocppMessages.timestamp')}
               enableSorting
               cell={({ row }: CellContext<OCPPMessageDto, unknown>) => {
                 return (
@@ -400,7 +409,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               id="message"
               key="message"
               accessorKey="message"
-              header="Content"
+              header={translate('ChargingStations.ocppMessages.content')}
               cell={({ row }: CellContext<OCPPMessageDto, unknown>) => {
                 return (
                   <CollapsibleOCPPMessageViewer

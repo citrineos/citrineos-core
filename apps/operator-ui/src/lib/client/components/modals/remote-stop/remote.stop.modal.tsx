@@ -6,6 +6,7 @@ import { ChargingStationSchema, OCPPVersion, TransactionSchema } from '@citrineo
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import { plainToInstance } from 'class-transformer';
 import { useMemo } from 'react';
+import { useTranslate } from '@refinedev/core';
 import type { z } from 'zod';
 import { OCPP1_6_RemoteStop } from './1.6';
 import { OCPP2_0_1_RemoteStop } from './2.0.1';
@@ -22,6 +23,7 @@ export interface RemoteStopTransactionModalProps {
 }
 
 export const RemoteStopTransactionModal = ({ station }: RemoteStopTransactionModalProps) => {
+  const translate = useTranslate();
   const parsedStation: ChargingStationWithTransactionsDto = useMemo(
     () => plainToInstance(ChargingStationClass, station),
     [station],
@@ -36,7 +38,13 @@ export const RemoteStopTransactionModal = ({ station }: RemoteStopTransactionMod
       case OCPPVersion.OCPP2_1:
         return <OCPP2_0_1_RemoteStop station={parsedStation} />;
       default:
-        return <div>Unsupported protocol version: {parsedStation.protocol}</div>;
+        return (
+          <div>
+            {translate('ChargingStations.unsupportedProtocol', {
+              protocol: parsedStation.protocol,
+            })}
+          </div>
+        );
     }
   };
 

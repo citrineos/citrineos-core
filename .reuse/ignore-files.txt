@@ -5,19 +5,19 @@
 .nvmrc
 .prettierignore
 .prettierrc
-apps/Server/.sequelizerc
+apps/ocpp-server/.sequelizerc
 OCPP_201_Logo_core_and_advanced_security.png
 README.md
-apps/Server/rbac-rules.json
-apps/Server/entrypoint.sh
+apps/ocpp-server/rbac-rules.json
+apps/ocpp-server/entrypoint.sh
 logo_black.png
 logo_white.png
 renovate.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
-apps/Server/tsconfig.migrations.json
-apps/Server/src/assets/logo.png
+apps/ocpp-server/tsconfig.migrations.json
+apps/ocpp-server/src/assets/logo.png
 
 # CI/CD files
 .github/workflows/tests/CI/collection.json
@@ -28,7 +28,7 @@ apps/Server/src/assets/logo.png
 # Package files
 packages/base/package.json
 packages/core/package.json
-apps/Server/package.json
+apps/ocpp-server/package.json
 package-lock.json
 
 # TypeScript config files
@@ -36,8 +36,8 @@ packages/base/tsconfig.eslint.json
 packages/base/tsconfig.json
 packages/core/tsconfig.eslint.json
 packages/core/tsconfig.json
-apps/Server/tsconfig.eslint.json
-apps/Server/tsconfig.json
+apps/ocpp-server/tsconfig.eslint.json
+apps/ocpp-server/tsconfig.json
 tsconfig.build.json
 tsconfig.eslint.json
 tsconfig.json
@@ -73,26 +73,27 @@ packages/core/src/util/test/resources/SubCACertificateSample.pem
 packages/core/src/util/test/resources/SubCAKeySample.pem
 packages/core/src/util/test/resources/V2GCACertChainSample.pem
 packages/core/src/util/test/resources/V2GLeafCertificateSample.pem
-apps/Server/src/assets/certificates/acme_account_key.pem
-apps/Server/src/assets/certificates/certChain.pem
-apps/Server/src/assets/certificates/leafKey.pem
-apps/Server/src/assets/certificates/rootCertificate.pem
-apps/Server/src/assets/certificates/rootKey.pem
-apps/Server/src/assets/certificates/subCAKey.pem
+apps/ocpp-server/src/assets/certificates/acme_account_key.pem
+apps/ocpp-server/src/assets/certificates/certChain.pem
+apps/ocpp-server/src/assets/certificates/leafKey.pem
+apps/ocpp-server/src/assets/certificates/rootCertificate.pem
+apps/ocpp-server/src/assets/certificates/rootKey.pem
+apps/ocpp-server/src/assets/certificates/subCAKey.pem
 
 # Documentation
 packages/core/src/util/test/resources/README.md
-apps/Server/everest/README.md
+apps/ocpp-server/everest/README.md
 
 # Configuration files
-apps/Server/nodemon.json
+apps/ocpp-server/nodemon.json
 
-apps/Server/everest/
+apps/ocpp-server/everest/
 
 # Operator UI files
 apps/operator-ui/config/countries/all-countries.json
 apps/operator-ui/config/countries/country-areas.json
 apps/operator-ui/config/countries/country-configs.json
+apps/operator-ui/playwright/.auth/admin.json
 apps/operator-ui/public/Citrine_Favicon_256_clear3.png
 apps/operator-ui/public/gradient-dark.svg
 apps/operator-ui/public/gradient.svg
@@ -103,6 +104,15 @@ apps/operator-ui/public/locales/en/locations.json
 apps/operator-ui/public/locales/en/tariffs.json
 apps/operator-ui/public/locales/en/tenantPartners.json
 apps/operator-ui/public/locales/en/transactions.json
+apps/operator-ui/public/locales/en/overview.json
+apps/operator-ui/public/locales/pt-BR/common.json
+apps/operator-ui/public/locales/pt-BR/authorizations.json
+apps/operator-ui/public/locales/pt-BR/chargingStations.json
+apps/operator-ui/public/locales/pt-BR/locations.json
+apps/operator-ui/public/locales/pt-BR/overview.json
+apps/operator-ui/public/locales/pt-BR/tariffs.json
+apps/operator-ui/public/locales/pt-BR/tenantPartners.json
+apps/operator-ui/public/locales/pt-BR/transactions.json
 apps/operator-ui/public/logo-black.svg
 apps/operator-ui/public/logo-collapsed.svg
 apps/operator-ui/public/logo-white.svg
@@ -149,6 +159,30 @@ apps/operator-ui/src/lib/client/components/ui/tooltip.tsx
 apps/operator-ui/src/lib/client/components/ui/undoable-notification.tsx
 apps/operator-ui/src/lib/utils/cn.ts
 apps/operator-ui/src/lib/utils/types.ts
+apps/operator-ui/playwright/.auth/admin.json
 apps/operator-ui/tsconfig.json
 apps/operator-ui/.env.local
 apps/operator-ui/.env.test
+
+# OCPI files
+
+apps/ocpi-server/.sequelizerc
+apps/ocpi-server/data/directus/uploads/444686d6-e2ae-48dd-9844-9bc40f3b83a1.png
+apps/ocpi-server/data/directus/uploads/444686d6-e2ae-48dd-9844-9bc40f3b83a1__589fd140dc03b11360453048b8c68765d61556b2.png
+apps/ocpi-server/data/directus/uploads/79611a20-d15c-472f-8a81-ba50a8d520cc.png
+apps/ocpi-server/data/directus/uploads/79611a20-d15c-472f-8a81-ba50a8d520cc__589fd140dc03b11360453048b8c68765d61556b2.png
+apps/ocpi-server/data/directus/uploads/b4f0a73e-1813-4ca4-8d76-5b7c5aed636c.png
+apps/ocpi-server/data/directus/uploads/b4f0a73e-1813-4ca4-8d76-5b7c5aed636c__589fd140dc03b11360453048b8c68765d61556b2.png
+apps/ocpi-server/data/directus/uploads/f388d2c3-bc4a-4fc6-9093-4152df0f768a.png
+apps/ocpi-server/data/directus/uploads/f388d2c3-bc4a-4fc6-9093-4152df0f768a__589fd140dc03b11360453048b8c68765d61556b2.png
+apps/ocpi-server/nodemon.json
+apps/ocpi-server/src/assets/certificates/acme_account_key.pem
+apps/ocpi-server/src/assets/certificates/certChain.pem
+apps/ocpi-server/src/assets/certificates/leafKey.pem
+apps/ocpi-server/src/assets/certificates/rootCertificate.pem
+apps/ocpi-server/src/assets/certificates/subCAKey.pem
+apps/ocpi-server/tsconfig.eslint.json
+apps/ocpi-server/tsconfig.json
+apps/ocpi-server/tsconfig.migrations.json
+packages/ocpi-base/tsconfig.eslint.json
+packages/ocpi-base/tsconfig.json

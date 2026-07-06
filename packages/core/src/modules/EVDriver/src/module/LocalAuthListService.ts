@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP2_0_1, OCPP2_request_types } from '@citrineos/base';
+import { OCPP1_6, OCPP2_0_1, OCPP2_request_types } from '@citrineos/base';
 import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
@@ -18,10 +18,13 @@ export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
 
-  constructor(
-    localAuthListRepository: ILocalAuthListRepository,
-    deviceModelRepository: IDeviceModelRepository,
-  ) {
+  constructor({
+    localAuthListRepository,
+    deviceModelRepository,
+  }: {
+    localAuthListRepository: ILocalAuthListRepository;
+    deviceModelRepository: IDeviceModelRepository;
+  }) {
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
   }
@@ -169,6 +172,52 @@ export class LocalAuthListService {
     } else {
       return Number(itemsPerMessageSendLocalList[0].value);
     }
+  }
+
+  /**
+   * OCPP 1.6 variant: validate and persist a SendLocalListRequest, returning the persisted row.
+   * Mirrors the 2.0.1 path but uses flat idTag and 1.6 update enum. Item-count limits for 1.6
+   * come from the chargepoint via `LocalAuthListMaxLength` configuration; absence is non-fatal.
+   */
+  async persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest16(
+    tenantId: number,
+    stationId: string,
+    correlationId: string,
+    sendLocalListRequest: OCPP1_6.SendLocalListRequest,
+  ): Promise<SendLocalList> {
+    const localListVersion = await this._localAuthListRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName: stationId,
+      },
+      include: [LocalListAuthorization],
+    });
+
+    if (sendLocalListRequest.listVersion <= 0) {
+      throw new Error(`listVersion ${sendLocalListRequest.listVersion} must be greater than 0`);
+    }
+
+    if (localListVersion && localListVersion.versionNumber >= sendLocalListRequest.listVersion) {
+      throw new Error(
+        `Current LocalListVersion for ${stationId} is ${localListVersion.versionNumber}, cannot send LocalListVersion ${sendLocalListRequest.listVersion} (version number must be higher)`,
+      );
+    }
+
+    const list = sendLocalListRequest.localAuthorizationList ?? [];
+    if (list.length > 1) {
+      const idTags = list.map((entry) => entry.idTag);
+      if (new Set(idTags).size !== idTags.length) {
+        throw new Error(`Duplicated idTag in SendLocalListRequest: ${JSON.stringify(idTags)}`);
+      }
+    }
+
+    return await this._localAuthListRepository.createSendLocalListFromRequestData16(
+      tenantId,
+      stationId,
+      correlationId,
+      sendLocalListRequest.updateType,
+      sendLocalListRequest.listVersion,
+      sendLocalListRequest.localAuthorizationList ?? undefined,
+    );
   }
 
   private async getMaxLocalAuthListEntries(tenantId: number): Promise<number | null> {

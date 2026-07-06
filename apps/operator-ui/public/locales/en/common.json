@@ -1,13 +1,133 @@
 {
+  "Common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "clear": "Clear",
+    "search": "Search",
+    "searchOptions": "Search Options",
+    "searchColumns": "Search Columns",
+    "export": "Export",
+    "refresh": "Refresh",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "add": "Add",
+    "remove": "Remove",
+    "ok": "OK",
+    "submit": "Submit",
+    "apply": "Apply",
+    "reset": "Reset",
+    "loading": "Loading",
+    "loadingEllipsis": "Loading...",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions",
+    "status": "Status",
+    "online": "Online",
+    "offline": "Offline",
+    "active": "Active",
+    "inactive": "Inactive",
+    "unknown": "Unknown",
+    "time": "Time",
+    "copiedToClipboard": "Copied to clipboard.",
+    "copiedValueToClipboard": "Copied {value} to clipboard.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "noResults": "No results found",
+    "noDataFound": "No Data Found",
+    "nothingFound": "Nothing found.",
+    "error": "Error",
+    "success": "Success",
+    "select": "Select",
+    "selectItem": "Select Item",
+    "selectOption": "Select an option",
+    "selectOptions": "Select options...",
+    "selected": "selected",
+    "openMenu": "Open menu",
+    "filters": "Filters",
+    "activeFilters": "Active filters",
+    "addFilter": "Add a filter",
+    "addFilterButton": "Add filter",
+    "clearAll": "Clear all",
+    "searchField": "Search {field}…",
+    "atMost": "at most {value}",
+    "after": "after {value}",
+    "rowsSelected": "{selected} of {total} row(s) selected.",
+    "pageOf": "Page {page} of {total}",
+    "pickDateRange": "Pick a date range",
+    "startTypingAddress": "Start typing an address...",
+    "useValue": "Use \"{value}\"",
+    "removeFilter": "Remove filter: {field}"
+  },
+  "filters": {
+    "valueOrLess": "{unit} or less",
+    "previewText": "\"{label}\" includes \"{value}\"",
+    "previewNumber": "\"{label}\" is at most {value}",
+    "previewDate": "\"{label}\" within {preset}",
+    "previewEnum": "\"{label}\" is {value}",
+    "previewYes": "\"{label}\" is Yes",
+    "previewNo": "\"{label}\" is No"
+  },
+  "filterPresets": {
+    "today": "Today",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last3Months": "Last 3 months",
+    "thisYear": "This year"
+  },
+  "openingHours": {
+    "title": "Opening Hours",
+    "twentyFourSeven": "24/7 Operation",
+    "twentyFourSevenDescription": "This location is open 24 hours a day, 7 days a week",
+    "regularHours": "Regular Hours",
+    "noRegularHours": "No regular hours specified",
+    "exceptionalOpenings": "Exceptional Openings",
+    "exceptionalClosings": "Exceptional Closings",
+    "specialOpening": "Special Opening",
+    "closed": "Closed",
+    "form": {
+      "addHours": "Add Hours",
+      "addOpening": "Add Opening",
+      "addClosing": "Add Closing",
+      "selectDay": "Select day",
+      "exceptionalOpeningsDescription": "Special dates when the location is open",
+      "exceptionalClosingsDescription": "Special dates when the location is closed",
+      "removeTimeSlot": "Remove time slot?",
+      "removeTimeSlotConfirm": "Are you sure you want to remove this time slot?",
+      "removeOpening": "Remove exceptional opening?",
+      "removeOpeningConfirm": "Are you sure you want to remove this exceptional opening?",
+      "removeClosing": "Remove exceptional closing?",
+      "removeClosingConfirm": "Are you sure you want to remove this exceptional closing?"
+    },
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
+  },
   "pages": {
     "login": {
       "title": "Sign in to your account",
+      "description": "Enter your credentials to access the dashboard",
       "signin": "Sign in",
+      "signingIn": "Signing in...",
       "signup": "Sign up",
       "divider": "or",
+      "invalidCredentials": "Invalid email or password",
       "fields": {
         "email": "Email",
         "password": "Password"
+      },
+      "placeholders": {
+        "email": "admin@example.com",
+        "password": "Enter your password"
       },
       "errors": {
         "validEmail": "Invalid email address",
@@ -67,12 +187,16 @@
     },
     "error": {
       "info": "You may have forgotten to add the {action} component to {resource} resource.",
+      "title": "Page not found.",
+      "description": "The page you're looking for does not exist.",
       "404": "Sorry, the page you visited does not exist.",
       "resource404": "Are you sure you have created the {resource} resource.",
-      "backHome": "Back Home"
+      "backHome": "Back to homepage"
     },
     "redirectingToLogin": "Redirecting to login...",
-    "checkingAuth": "Checking authentication..."
+    "checkingAuth": "Checking authentication...",
+    "redirectingToKeycloak": "Redirecting to Keycloak...",
+    "redirectingToKeycloakLogin": "Redirecting to Keycloak login..."
   },
   "actions": {
     "create": "Create",
@@ -120,6 +244,25 @@
     "editError": "Error when editing {resource} (status code: {statusCode})",
     "importProgress": "Importing: {processed}/{total}"
   },
+  "notificationProvider": {
+    "notAllowed": "Not allowed",
+    "missingRequiredParameter": "Missing required Parameter: {parameter}",
+    "noPermission": "You do not have permission to access this resource.",
+    "contactAdministrator": "Please contact your administrator if you believe this is a mistake."
+  },
+  "messages": {
+    "requestSuccessful": "The request was successful {payload}",
+    "requestFailed": "Request Failed",
+    "noSuccessfulResponse": "The request did not receive a successful response.",
+    "requestFailedWithMessage": "The request failed with message: {message}"
+  },
+  "auth": {
+    "loginFailed": "Login failed"
+  },
+  "confirmDialog": {
+    "title": "Are you sure?",
+    "description": "This action cannot be undone."
+  },
   "accessDenied": "Access Denied",
   "imageUploadFailed": "Image upload failed.",
   "loading": "Loading",
@@ -159,6 +302,9 @@
   "menu": {
     "overview": "Overview",
     "help": "Help",
+    "language": "Language",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
     "themes": {
       "changeTo": "Change to",
       "dark": "Dark",
@@ -171,18 +317,5 @@
     "description": "CitrineOS collects anonymous usage metrics to help us improve the product. Would you like to send these metrics?",
     "reject": "Reject",
     "accept": "Accept"
-  },
-  "overview": {
-    "activeTransactions": "Active Transactions",
-    "chargerActivity": "Charger Activity",
-    "chargerOnlineStatus": "Charger Online Status",
-    "chargers": "Chargers",
-    "errorLoadingData": "Error loading data",
-    "plugInSuccessRate": "Plug-In Success Rate",
-    "noActiveTransactions": "No active transactions.",
-    "noChargersStatus": "No chargers currently have {status} status.",
-    "viewAllChargers": "View all chargers",
-    "viewAllLocations": "View all locations",
-    "viewAllTransactions": "View all transactions"
   }
 }

@@ -15,7 +15,7 @@ import { UpgradeAuthenticationError } from './errors/AuthenticationError.js';
 export class ConnectedStationFilter extends AuthenticatorFilter {
   private _cache: ICache;
 
-  constructor(cache: ICache, logger?: Logger<ILogObj>) {
+  constructor({ cache, logger }: { cache: ICache; logger: Logger<ILogObj> }) {
     super(logger);
     this._cache = cache;
   }
@@ -40,3 +40,5 @@ export class ConnectedStationFilter extends AuthenticatorFilter {
     }
   }
 }
+
+export default ConnectedStationFilter;

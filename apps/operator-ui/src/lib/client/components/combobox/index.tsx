@@ -14,6 +14,7 @@ import {
 } from '@lib/client/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@lib/client/components/ui/popover';
 import { cn } from '@lib/utils/cn';
+import { useTranslate } from '@refinedev/core';
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -36,14 +37,18 @@ export function Combobox<T>({
   value,
   onSelect,
   onSearch,
-  placeholder = 'Select an option',
-  searchPlaceholder = 'Search',
-  emptyMessage = 'No results found.',
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   isLoading = false,
   skipValue = false,
   disabled = false,
   allowManualEntry = false,
 }: ComboboxProps<T>) {
+  const translate = useTranslate();
+  const resolvedPlaceholder = placeholder ?? translate('Common.selectOption');
+  const resolvedSearchPlaceholder = searchPlaceholder ?? translate('Common.search');
+  const resolvedEmptyMessage = emptyMessage ?? translate('Common.noResults') + '.';
   const [open, setOpen] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedOption, setSelectedOption] = useState<{ label: string; value: T } | undefined>(
@@ -87,21 +92,25 @@ export function Combobox<T>({
           className="w-full justify-between"
           disabled={isLoading || disabled}
         >
-          {isLoading ? 'Loading...' : selectedOption?.label || placeholder}
+          {isLoading
+            ? translate('Common.loadingEllipsis')
+            : selectedOption?.label || resolvedPlaceholder}
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <Command shouldFilter={!onSearch}>
           <CommandInput
-            placeholder={searchPlaceholder ?? 'Search'}
+            placeholder={resolvedSearchPlaceholder}
             onValueChange={(val) => {
               setInputValue(val);
               onSearch?.(val);
             }}
           />
           <CommandList>
-            <CommandEmpty>{isLoading ? 'Loading...' : emptyMessage}</CommandEmpty>
+            <CommandEmpty>
+              {isLoading ? translate('Common.loadingEllipsis') : resolvedEmptyMessage}
+            </CommandEmpty>
             {showManualEntry && (
               <CommandGroup>
                 <CommandItem
@@ -119,7 +128,7 @@ export function Combobox<T>({
                     setInputValue('');
                   }}
                 >
-                  Use &quot;{trimmedInput}&quot;
+                  {translate('Common.useValue', { value: trimmedInput })}
                 </CommandItem>
               </CommandGroup>
             )}

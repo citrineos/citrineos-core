@@ -3,20 +3,32 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import { IncomingMessage } from 'http';
 import { AuthenticatorFilter } from './AuthenticatorFilter.js';
 import type { AuthenticationOptions } from '@citrineos/base';
 import { UpgradeUnknownError } from './errors/UnknownError.js';
+
+interface IStationExistenceChecker {
+  doesChargingStationExistByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<boolean>;
+}
 
 /**
  * Filter used to block connections from charging stations that are not recognized in the system.
  * It only applies when unknown charging stations are not allowed.
  */
 export class UnknownStationFilter extends AuthenticatorFilter {
-  private _locationRepository: ILocationRepository;
+  private _locationRepository: IStationExistenceChecker;
 
-  constructor(locationRepository: ILocationRepository, logger?: Logger<ILogObj>) {
+  constructor({
+    locationRepository,
+    logger,
+  }: {
+    locationRepository: IStationExistenceChecker;
+    logger: Logger<ILogObj>;
+  }) {
     super(logger);
     this._locationRepository = locationRepository;
   }
@@ -39,3 +51,5 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     }
   }
 }
+
+export default UnknownStationFilter;

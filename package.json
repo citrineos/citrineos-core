@@ -5,26 +5,16 @@
   "private": false,
   "packageManager": "pnpm@10.19.0",
   "scripts": {
-    "install-all": "pnpm install",
-    "copy-assets": "pnpm --filter @citrineos/server run copy-assets",
     "build": "pnpm -r run build",
-    "clear-cache": "pnpm store prune",
-    "remove-dependencies": "rm -rf pnpm-lock.yaml node_modules **/node_modules **/**/node_modules",
-    "fresh": "pnpm run clean && pnpm run remove-dependencies && pnpm run clear-cache",
-    "clean-tsbuildinfo": "find . -name tsconfig.tsbuildinfo -not -path '*/node_modules/*' -exec rm -f {} +",
-    "clean-dist": "find . -type d -name dist -not -path '*/node_modules/*' -exec rm -rf {} +",
-    "clean": "pnpm run clean-dist && pnpm run clean-tsbuildinfo",
-    "start": "pnpm --filter @citrineos/server run start",
-    "start-docker": "pnpm --filter @citrineos/server run start-docker",
-    "start-docker-cloud": "pnpm --filter @citrineos/server run start-docker-cloud",
+    "citrine": "node scripts/stack.mjs",
     "lint": "pnpm -r run lint",
-    "lint-fix": "pnpm -r run lint-fix",
+    "lint:fix": "pnpm -r run lint:fix",
     "prettier": "prettier --write .",
-    "fi": "pnpm run fresh && pnpm run install-all",
-    "sync-db": "ts-node ./db.sync.ts",
-    "force-sync-db": "ts-node ./db.force-sync.ts",
     "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "clean": "find . -not -path '*/node_modules/*' \\( -type d \\( -name dist -o -name .next \\) -o -name tsconfig.tsbuildinfo \\) -exec rm -rf {} +",
+    "fresh": "pnpm run clean && find . -name node_modules -type d -prune -exec rm -rf {} + && rm -f pnpm-lock.yaml && pnpm store prune",
+    "fresh:install": "pnpm run fresh && pnpm install"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -39,8 +29,8 @@
     ],
     "overrides": {
       "@tanstack/react-query": "5.90.5",
-      "zod": "4.1.12",
-      "react-is": "19.1.4"
+      "zod": "catalog:",
+      "motion-dom": "12.23.21"
     }
   },
   "engines": {

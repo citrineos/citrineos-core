@@ -23,16 +23,19 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     await detail.goto(everestStation.id);
     await detail.openMessagesTab();
 
-    // UI proof the live OCPP stream reaches the table: a charging-station
-    // Heartbeat is always among the most recent rows. (BootNotification and
-    // StatusNotification are emitted once at registration and page off the
-    // desc-sorted first screen once heartbeat + command traffic accumulates on
-    // a busy run — the snapshot here is dominated by the newest messages — so
-    // their specific ingestion is confirmed via the read-only API below rather
-    // than by scrolling/filtering the table.)
-    await expect(page.getByRole('cell', { name: /Heartbeat/i }).first()).toBeVisible({
+    // UI proof the live OCPP stream reaches the table (Hasura → UI): the OCPP
+    // Messages tab for cp001 renders ingested rows. The table is timestamp-desc,
+    // and a busy serial run fills the first page with the newest command/notify
+    // traffic, so any single action type (BootNotification / StatusNotification /
+    // Heartbeat) can page off the first screen — we therefore assert the table
+    // surfaced at least one ingested message row rather than one specific action.
+    // cp001 has no seeded OCPPMessages, so a populated table can only come from
+    // the live OCPP stream. The specific Boot/Status ingestion is confirmed via
+    // the read-only API below.
+    await expect(page.getByText('Action - Origin')).toBeVisible({
       timeout: 30_000,
     });
+    await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 30_000 });
 
     // Confirm both registration messages were ingested into Hasura. The
     // fixture's online guard already waits for a fresh StatusNotification, so

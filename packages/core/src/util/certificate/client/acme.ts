@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IChargingStationCertificateAuthorityClient } from './interface.js';
-import type { IFileStorage, SystemConfig } from '@citrineos/base';
-import * as acme from 'acme-client';
 import { LocalStorage } from '@/util/files/localStorage.js';
-import { Client } from 'acme-client';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { IFileStorage, SystemConfig } from '@citrineos/base';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
 } from '@util/certificate/CertificateUtil.js';
+import * as acme from 'acme-client';
+import { Client } from 'acme-client';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import type { IChargingStationCertificateAuthorityClient } from './interface.js';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
   private readonly _email: string | undefined;
@@ -138,7 +138,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
    * @return {Promise<string>} The signed certificate.
    */
   async signCertificateByExternalCA(csrString: string): Promise<string> {
-    const folderPath = '/usr/local/apps/citrineos/Server/src/assets/.well-known/acme-challenge';
+    const folderPath =
+      '/usr/local/apps/citrineos/apps/ocpp-server/src/assets/.well-known/acme-challenge';
 
     const cert = await this._client?.auto({
       csr: csrString,

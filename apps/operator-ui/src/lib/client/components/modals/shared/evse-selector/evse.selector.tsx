@@ -8,7 +8,7 @@ import { EvseProps } from '@citrineos/base';
 import { Combobox } from '@lib/client/components/combobox';
 import { GET_EVSE_LIST_FOR_STATION } from '@lib/queries/evses';
 import { ResourceType } from '@lib/utils/access.types';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import {
   formLabelStyle,
   formLabelWrapperStyle,
@@ -41,6 +41,7 @@ export const EvseSelector = ({
   value,
   isOptional = false,
 }: EvseSelectorProps) => {
+  const translate = useTranslate();
   const { options, onSearch, query } = useSelect<EvseDto>({
     resource: ResourceType.EVSES,
     optionLabel: 'evseTypeId',
@@ -79,13 +80,15 @@ export const EvseSelector = ({
   return (
     <Field>
       <FieldLabel className={formLabelWrapperStyle}>
-        <span className={formLabelStyle}>EVSE</span>
+        <span className={formLabelStyle}>{translate('ChargingStations.evseSelector.label')}</span>
         {!isOptional && formRequiredAsterisk}
       </FieldLabel>
       {query.isLoading && (
         <div className="flex items-center gap-2 py-4">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Loading EVSEs...</span>
+          <span className="text-sm text-muted-foreground">
+            {translate('ChargingStations.evseSelector.loading')}
+          </span>
         </div>
       )}
       {!query.isLoading && (
@@ -95,11 +98,11 @@ export const EvseSelector = ({
           value={value}
           onSelect={onSelect}
           onSearch={onSearch}
-          placeholder="Search EVSE"
+          placeholder={translate('ChargingStations.evseSelector.searchPlaceholder')}
           isLoading={query.isLoading}
         />
       )}
-      <FieldDescription>EVSE IDs are serial integers starting at 1</FieldDescription>
+      <FieldDescription>{translate('ChargingStations.evseSelector.description')}</FieldDescription>
     </Field>
   );
 };

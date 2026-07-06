@@ -1,0 +1,475 @@
+{
+  "ChargingStations": {
+    "ChargingStations": "Estações de Recarga",
+    "chargingStation": "Estação de Recarga",
+    "use16StatusNotification0": "Usar Notificações de Status OCPP 1.6 com Connector Id 0",
+    "toggleOnlineStatus": "Alternar Status Online",
+    "toggleOnlineWarning": "Você está prestes a marcar esta estação de recarga como ",
+    "toggleOnlineCaution": "Atenção: esta ação pode fazer com que a interface fique dessincronizada do status real da estação. Prossiga apenas se tiver certeza.",
+    "commandsUnavailable": "Estação offline - comandos indisponíveis",
+    "forceDisconnect": "Forçar Desconexão",
+    "otherCommands": "Outros Comandos",
+    "remoteStart": "Partida Remota",
+    "remoteStop": "Parada Remota",
+    "reset": "Reiniciar",
+    "startTransaction": "Iniciar Transação",
+    "stopTransaction": "Encerrar Transação",
+    "forceDisconnectMessage": "Tem certeza de que deseja forçar a desconexão desta estação de recarga",
+    "forceDisconnectCaution": "Isso fechará imediatamente a conexão com a estação.",
+    "exportMessagesToCsvHeader": "Exportar Mensagens OCPP para CSV",
+    "downloadAllMessagesToCsv": "Você baixará todas as mensagens OCPP deste carregador.",
+    "downloadMessagesToCsvWithFilters": "Você baixará as mensagens OCPP deste carregador com os seguintes filtros:",
+    "liveLog": "Log ao vivo",
+    "liveLogDisabledInactivity": "Log ao vivo desativado por inatividade",
+    "refreshMessages": "Atualizar Mensagens",
+    "noDataFound": "Nenhuma estação de recarga encontrada com o id {id}.",
+    "unsupportedProtocol": "Versão de protocolo não suportada: {protocol}",
+    "fieldRequired": "{field} é obrigatório",
+    "exportToCsvError": "Não foi possível exportar para CSV devido a um erro: {error}",
+    "detailCard": {
+      "lastOcppMessage": "Última Mensagem OCPP",
+      "connectorTypes": "Tipos de Conector",
+      "totalEvses": "Total de EVSEs"
+    },
+    "tabs": {
+      "evses": "EVSEs",
+      "ocppMessages": "Mensagens OCPP",
+      "configuration": "Configuração",
+      "aggregatedMeterValuesData": "Dados Agregados de Medição",
+      "noEvsesPermission": "Você não tem permissão para visualizar EVSEs.",
+      "noOcppLogsPermission": "Você não tem permissão para visualizar os logs OCPP.",
+      "noConfigurationsPermission": "Você não tem permissão para visualizar as configurações da estação."
+    },
+    "columns": {
+      "name": "Nome",
+      "stationId": "ID da Estação",
+      "location": "Local",
+      "onlineStatus": "Status online",
+      "protocol": "Protocolo",
+      "vendorModel": "Fabricante / Modelo",
+      "vendor": "Fabricante",
+      "floorLevel": "Andar",
+      "parkingRestrictions": "Restrições de Estacionamento",
+      "capabilities": "Capacidades",
+      "firmwareVersion": "Versão do Firmware",
+      "createdAt": "Criado em",
+      "updatedAt": "Atualizado em"
+    },
+    "aggregatedData": {
+      "timeRange": "Intervalo de Tempo:",
+      "contexts": "Contextos:",
+      "selectReadingContexts": "Selecione os contextos de leitura"
+    },
+    "connectors": {
+      "connectorId": "ID do Conector",
+      "connectorIdDescription": "Os inteiros seriais começando em 1 usados no OCPP 1.6 para referenciar o conector, únicos por Estação de Recarga.",
+      "evseTypeConnectorId": "ID do Conector do Tipo EVSE",
+      "evseTypeConnectorIdDescription": "Os inteiros seriais começando em 1 usados no OCPP 2.0.1 para referenciar o conector, únicos por EVSE.",
+      "type": "Tipo",
+      "format": "Formato",
+      "powerType": "Tipo de Potência",
+      "maxPower": "Potência Máxima",
+      "maximumAmperage": "Amperagem Máxima",
+      "maximumVoltage": "Tensão Máxima",
+      "maximumPowerWatts": "Potência Máxima em Watts",
+      "termsAndConditionsUrl": "URL dos Termos e Condições",
+      "tariff": "Tarifa",
+      "selectType": "Selecionar Tipo",
+      "searchTypes": "Pesquisar Tipos",
+      "selectFormat": "Selecionar Formato",
+      "selectPowerType": "Selecionar Tipo de Potência",
+      "searchPowerTypes": "Pesquisar Tipos de Potência",
+      "selectTariff": "Selecionar Tarifa",
+      "searchTariffs": "Pesquisar Tarifas",
+      "noConnectors": "Nenhum conector",
+      "addConnector": "Adicionar Conector",
+      "addNewConnector": "Adicionar Novo Conector",
+      "editConnector": "Editar Conector"
+    },
+    "evses": {
+      "evseTypeId": "ID do Tipo EVSE",
+      "evseTypeIdDescription": "Os inteiros seriais usados no OCPP 2.0.1 para referenciar o EVSE, únicos por Estação de Recarga.",
+      "evseId": "ID do EVSE",
+      "evseIdDescription": "O EVSE ID compatível com eMI3, que deve ser globalmente único.",
+      "physicalReference": "Referência Física",
+      "physicalReferenceDescription": "Qualquer identificador impresso no EVSE usado para identificá-lo fisicamente no local, por exemplo, um número ou uma letra.",
+      "removed": "Removido",
+      "removedDescription": "Marcado como REMOVIDO",
+      "noEvses": "Nenhum EVSE",
+      "viewConnectors": "Ver Conectores",
+      "addNewEvse": "Adicionar Novo EVSE",
+      "editEvse": "Editar EVSE"
+    },
+    "evseSelector": {
+      "label": "EVSE",
+      "loading": "Carregando EVSEs...",
+      "searchPlaceholder": "Pesquisar EVSE",
+      "description": "IDs de EVSE são inteiros seriais começando em 1"
+    },
+    "connectorSelector": {
+      "label": "Conector",
+      "loading": "Carregando Conectores...",
+      "searchPlaceholder": "Pesquisar Conectores",
+      "selectConnector": "Selecionar Conector",
+      "selectEvse": "Selecione um EVSE",
+      "description": "IDs de conector são inteiros seriais começando em 1",
+      "descriptionForEvse": "Conectores do EVSE selecionado"
+    },
+    "requestId": {
+      "label": "ID da Requisição",
+      "placeholder": "Insira o ID da requisição",
+      "positiveError": "O ID da requisição deve ser um número positivo"
+    },
+    "firmwareDiagnostics": {
+      "locationUrl": "Localização (URL)",
+      "invalidUrl": "Deve ser uma URL válida",
+      "locationRequired": "A localização é obrigatória",
+      "retries": "Tentativas",
+      "retriesPlaceholder": "Número de tentativas",
+      "retryInterval": "Intervalo entre Tentativas",
+      "retryIntervalPlaceholder": "Intervalo entre tentativas em segundos"
+    },
+    "commands": {
+      "certificateSigned": "Certificado Assinado",
+      "changeAvailability": "Alterar Disponibilidade",
+      "changeConfiguration": "Alterar Configuração",
+      "clearCache": "Limpar Cache",
+      "customerInformation": "Informações do Cliente",
+      "dataTransfer": "Transferência de Dados",
+      "deleteCertificate": "Excluir Certificado",
+      "deleteStationNetworkProfiles": "Excluir Perfis de Rede da Estação",
+      "getBaseReport": "Obter Relatório Base",
+      "getConfiguration": "Obter Configuração",
+      "getDiagnostics": "Obter Diagnósticos",
+      "getInstalledCertificateIds": "Obter IDs de Certificados Instalados",
+      "getLogs": "Obter Logs",
+      "getTransactionStatus": "Obter Status da Transação",
+      "getVariables": "Obter Variáveis",
+      "installCertificate": "Instalar Certificado",
+      "setNetworkProfile": "Definir Perfil de Rede",
+      "setVariables": "Definir Variáveis",
+      "triggerMessage": "Disparar Mensagem",
+      "unlockConnector": "Desbloquear Conector",
+      "updateAuthPassword": "Atualizar Senha de Autenticação",
+      "updateFirmware": "Atualizar Firmware"
+    },
+    "resetModal": {
+      "resetType": "Tipo de Reinício",
+      "selectResetType": "Selecionar Tipo de Reinício",
+      "selectResetTypeError": "Selecione um tipo de reinício"
+    },
+    "remoteStartModal": {
+      "start": "Iniciar",
+      "remoteStartId": "ID da Partida Remota",
+      "remoteStartIdMin": "O ID da Partida Remota deve ser no mínimo 0",
+      "idToken": "ID Token",
+      "idTokenRequired": "O ID Token é obrigatório",
+      "searchIdToken": "Pesquisar ID Token",
+      "authorization": "Autorização",
+      "authorizationRequired": "A autorização é obrigatória",
+      "selectAuthorization": "Selecionar Autorização",
+      "searchAuthorizations": "Pesquisar Autorizações"
+    },
+    "remoteStopModal": {
+      "stop": "Parar",
+      "transactionRequired": "A transação é obrigatória",
+      "noActiveTransactions": "Nenhuma transação ativa encontrada para esta estação de recarga.",
+      "activeTransactions": "Transações Ativas",
+      "selectTransaction": "Selecionar Transação",
+      "searchTransactions": "Pesquisar Transações",
+      "unknownEvse": "Desconhecido"
+    },
+    "dataTransferModal": {
+      "vendorId": "ID do Fabricante",
+      "vendorIdRequired": "O ID do Fabricante é obrigatório",
+      "vendorIdPlaceholder": "Identificador específico da implementação do fabricante",
+      "messageId": "ID da Mensagem",
+      "messageIdPlaceholder": "Identificador específico de mensagem ou implementação",
+      "data": "Dados",
+      "dataPlaceholder": "Dados a enviar (texto livre)"
+    },
+    "changeAvailabilityModal": {
+      "availability": "Disponibilidade",
+      "selectAvailabilityError": "Selecione um tipo de disponibilidade",
+      "connectorRequired": "O conector é obrigatório",
+      "operationalStatus": "Status Operacional",
+      "selectStatus": "Selecionar Status",
+      "selectStatusError": "Selecione um status operacional"
+    },
+    "changeConfigurationModal": {
+      "key": "Chave",
+      "keyRequired": "A chave é obrigatória",
+      "keyPlaceholder": "Chave de configuração",
+      "value": "Valor",
+      "valueRequired": "O valor é obrigatório",
+      "valuePlaceholder": "Valor de configuração"
+    },
+    "getConfigurationModal": {
+      "description": "Opcionalmente, especifique chaves de configuração para recuperar. Deixe em branco para obter todos os valores de configuração.",
+      "key": "Chave",
+      "keyNumber": "Chave #{number}",
+      "keyPlaceholder": "Insira a chave de configuração"
+    },
+    "getDiagnosticsModal": {
+      "startTimestamp": "Data/Hora Inicial",
+      "stopTimestamp": "Data/Hora Final"
+    },
+    "triggerMessageModal": {
+      "requestedMessage": "Mensagem Solicitada",
+      "selectMessage": "Selecionar Mensagem",
+      "selectMessageError": "Selecione um tipo de mensagem",
+      "selectMessageType": "Selecionar Tipo de Mensagem",
+      "searchMessageTypes": "Pesquisar Tipos de Mensagem"
+    },
+    "updateFirmwareModal": {
+      "retrieveDate": "Data de Recuperação",
+      "retrieveDateRequired": "A data de recuperação é obrigatória",
+      "retrieveDateTime": "Data/Hora de Recuperação",
+      "installDateTime": "Data/Hora de Instalação",
+      "signingCertificate": "Certificado de Assinatura (PEM)",
+      "signingCertificatePlaceholder": "Cole aqui o certificado no formato PEM",
+      "signature": "Assinatura",
+      "signaturePlaceholder": "Assinatura do firmware"
+    },
+    "certificateSignedModal": {
+      "certificateFile": "Arquivo de Certificado",
+      "certificateRequired": "O arquivo de certificado é obrigatório",
+      "fileTypeError": "O arquivo deve ser um dos seguintes: {types}",
+      "fileSizeError": "O tamanho do arquivo deve ser menor que 5MB",
+      "certificateType": "Tipo de Certificado",
+      "selectCertificateType": "Selecionar Tipo de Certificado"
+    },
+    "clearCacheModal": {
+      "description": "Isso enviará uma requisição de Limpar Cache para a estação de recarga. A estação limpará seu cache de autorização.",
+      "proceed": "Deseja prosseguir?",
+      "clearing": "Limpando..."
+    },
+    "customerInformationModal": {
+      "report": "Relatório",
+      "clear": "Limpar",
+      "customerIdentifier": "Identificador do Cliente",
+      "customerIdentifierPlaceholder": "Insira o identificador do cliente"
+    },
+    "deleteCertificateModal": {
+      "certificateRequired": "O certificado é obrigatório",
+      "selectCertificateError": "Selecione um certificado",
+      "wrongStationError": "Este certificado não pertence a esta estação",
+      "hashAlgorithm": "Algoritmo de Hash:",
+      "installedCertificate": "Certificado Instalado",
+      "searchCertificates": "Pesquisar Certificados por Número de Série"
+    },
+    "deleteStationNetworkProfilesModal": {
+      "slotsRequired": "Pelo menos um slot de configuração é obrigatório",
+      "deleteProfiles": "Excluir Perfis",
+      "slot": "Slot",
+      "slotNumber": "Slot #{number}",
+      "slotPlaceholder": "Insira o número do slot"
+    },
+    "getBaseReportModal": {
+      "reportBase": "Base do Relatório",
+      "reportBaseRequired": "A Base do Relatório é obrigatória",
+      "selectReportBase": "Selecionar Base do Relatório"
+    },
+    "getInstalledCertificateIdsModal": {
+      "certificateTypes": "Tipos de Certificado",
+      "description": "Quando os tipos de certificado são omitidos, todos os tipos de certificado são solicitados.",
+      "selectCertificateTypes": "Selecionar Tipos de Certificado",
+      "searchCertificateTypes": "Pesquisar Tipos de Certificado"
+    },
+    "getLogsModal": {
+      "remoteLocationUrl": "Localização Remota (URL)",
+      "remoteLocationRequired": "A Localização Remota é obrigatória",
+      "logType": "Tipo de Log",
+      "logTypeRequired": "O Tipo de Log é obrigatório",
+      "selectLogType": "Selecionar Tipo de Log",
+      "oldestTimestamp": "Data/Hora Mais Antiga",
+      "latestTimestamp": "Data/Hora Mais Recente"
+    },
+    "getTransactionStatusModal": {
+      "transaction": "Transação",
+      "description": "Opcionalmente, selecione uma transação para obter seu status. Deixe em branco para obter o status de todas as transações."
+    },
+    "getVariablesModal": {
+      "alert": "Envie um GetBaseReport para esta Estação de Recarga para preencher Componentes e Variáveis.",
+      "atLeastOneVariable": "Pelo menos uma variável é obrigatória",
+      "componentAndVariableRequired": "Componente e Variável são obrigatórios para cada entrada",
+      "component": "Componente",
+      "variable": "Variável",
+      "componentNumber": "Componente #{number}",
+      "variableNumber": "Variável #{number}",
+      "componentInstanceNumber": "Instância do Componente #{number}",
+      "variableInstanceNumber": "Instância da Variável #{number}",
+      "attributeTypeNumber": "Tipo de Atributo #{number}",
+      "instance": "Instância",
+      "selectComponent": "Selecionar Componente",
+      "searchComponents": "Pesquisar Componentes",
+      "selectVariable": "Selecionar Variável",
+      "searchVariables": "Pesquisar Variáveis",
+      "selectAttributeType": "Selecionar Tipo de Atributo"
+    },
+    "setVariablesModal": {
+      "valueRequired": "O valor é obrigatório",
+      "allFieldsRequired": "Componente, Variável e Valor são obrigatórios para cada entrada",
+      "valueNumber": "Valor #{number}",
+      "valuePlaceholder": "Valor a Definir"
+    },
+    "installCertificateModal": {
+      "certificateRequired": "O certificado é obrigatório",
+      "certificateTooLong": "O certificado deve ter menos de 5500 caracteres",
+      "certificateTypeRequired": "O Tipo de Certificado é obrigatório",
+      "invalidPem": "Certificado PEM com formato incorreto",
+      "certificatePem": "Certificado (PEM)"
+    },
+    "setNetworkProfileModal": {
+      "apnRequired": "O APN é obrigatório",
+      "apnAuthRequired": "A Autenticação APN é obrigatória",
+      "serverRequired": "O servidor é obrigatório",
+      "userRequired": "O usuário é obrigatório",
+      "passwordRequired": "A senha é obrigatória",
+      "keyRequired": "A chave é obrigatória",
+      "vpnTypeRequired": "O Tipo de VPN é obrigatório",
+      "ocppVersionRequired": "A Versão OCPP é obrigatória",
+      "ocppTransportRequired": "O Transporte OCPP é obrigatório",
+      "csmsUrlRequired": "A URL do CSMS é obrigatória",
+      "messageTimeoutPositive": "O tempo limite da mensagem deve ser positivo",
+      "securityProfilePositive": "O perfil de segurança deve ser positivo",
+      "ocppInterfaceRequired": "A Interface OCPP é obrigatória",
+      "configurationSlotNonNegative": "O slot de configuração deve ser não-negativo",
+      "websocketServerConfig": "Configuração do Servidor Websocket",
+      "searchServerProfiles": "Pesquisar Perfis de Rede do Servidor",
+      "configurationSlot": "Slot de Configuração",
+      "ocppVersion": "Versão OCPP",
+      "selectOcppVersion": "Selecionar Versão OCPP",
+      "ocppTransport": "Transporte OCPP",
+      "selectOcppTransport": "Selecionar Transporte OCPP",
+      "ocppCsmsUrl": "URL do CSMS OCPP",
+      "messageTimeout": "Tempo Limite da Mensagem (segundos)",
+      "securityProfile": "Perfil de Segurança",
+      "ocppInterface": "Interface OCPP",
+      "selectOcppInterface": "Selecionar Interface OCPP",
+      "includeApn": "Incluir Configuração de APN",
+      "includeVpn": "Incluir Configuração de VPN",
+      "apn": "APN",
+      "apnPlaceholder": "Nome do APN",
+      "apnAuthentication": "Autenticação APN",
+      "selectAuthType": "Selecionar Tipo de Autenticação",
+      "apnUsername": "Usuário do APN",
+      "apnPassword": "Senha do APN",
+      "simPin": "PIN do SIM",
+      "preferredNetwork": "Rede Preferencial",
+      "useOnlyPreferredNetwork": "Usar Apenas Rede Preferencial",
+      "vpnType": "Tipo de VPN",
+      "selectVpnType": "Selecionar Tipo de VPN",
+      "server": "Servidor",
+      "serverPlaceholder": "Servidor VPN",
+      "user": "Usuário",
+      "userPlaceholder": "Usuário da VPN",
+      "group": "Grupo",
+      "password": "Senha",
+      "passwordPlaceholder": "Senha da VPN",
+      "key": "Chave",
+      "keyPlaceholder": "Chave da VPN"
+    },
+    "updateAuthPasswordModal": {
+      "passwordRequired": "A senha é obrigatória",
+      "updatePassword": "Atualizar Senha",
+      "password": "Senha",
+      "passwordPlaceholder": "Insira a nova senha",
+      "setOnCharger": "Definir no Carregador"
+    },
+    "upsert": {
+      "selectLocation": "Selecionar Local",
+      "selectParkingRestrictions": "Selecionar Restrições de Estacionamento",
+      "searchParkingRestrictions": "Pesquisar Restrições de Estacionamento",
+      "selectCapabilities": "Selecionar Capacidades",
+      "searchCapabilities": "Pesquisar Capacidades",
+      "useLocationCoordinates": "Usar Coordenadas do Local",
+      "latitude": "Latitude",
+      "enterLatitude": "Insira a latitude",
+      "longitude": "Longitude",
+      "enterLongitude": "Insira a longitude",
+      "image": "Imagem"
+    },
+    "ocppMessages": {
+      "searchCorrelationId": "Pesquisar Correlation ID",
+      "selectActions": "Selecionar Ações",
+      "searchActions": "Pesquisar Ações",
+      "filterOrigins": "Filtrar Origens",
+      "allOrigins": "Todas as Origens",
+      "pickStartDate": "Escolher Data Inicial",
+      "pickEndDate": "Escolher Data Final",
+      "correlationId": "Correlation ID",
+      "actionOrigin": "Ação - Origem",
+      "unknownAction": "Ação Desconhecida",
+      "timestamp": "Data/Hora",
+      "content": "Conteúdo",
+      "findRelatedMessage": "Encontrar mensagem relacionada",
+      "copyCorrelationId": "Copiar Correlation ID"
+    },
+    "configuration": {
+      "key": "Chave",
+      "value": "Valor",
+      "type": "Tipo",
+      "componentNameInstance": "Nome do Componente:Instância",
+      "variableNameInstance": "Nome da Variável:Instância",
+      "evseConnectorId": "ID do EVSE:ID do Conector",
+      "stationId": "ID da Estação",
+      "action": "Ação",
+      "noData": "Sem dados",
+      "noDataForDownload": "Nenhum dado disponível para download",
+      "loadAttributesError": "Falha ao carregar atributos de variável",
+      "loadConfigurationsError": "Falha ao carregar alterações de configuração",
+      "selectOcppVersion": "Selecionar Versão OCPP",
+      "downloadCsv": "Baixar CSV",
+      "searchPlaceholder": "Pesquisar...",
+      "addConfiguration": "Adicionar Configuração",
+      "editConfiguration": "Editar Configuração"
+    },
+    "connectionModal": {
+      "welcomeTitle": "Bem-vindo à Operator UI do CitrineOS",
+      "connectionTitle": "Conexão da Estação de Recarga",
+      "welcomeDescription": "Assista a este vídeo rápido de introdução para aprender como conectar estações de recarga. Você pode acessar estas informações a qualquer momento clicando no botão Ajuda.",
+      "connectionDescription": "Use as seguintes URLs de websocket específicas do tenant para conectar-se ao servidor. A conexão pode ser atualizada de Sem Autenticação até o Perfil de Segurança 3, uma de cada vez.",
+      "showConnectionInfo": "Mostrar Informações de Conexão",
+      "showHelpVideo": "Mostrar Vídeo de Ajuda",
+      "gettingStartedVideo": "Vídeo de Introdução",
+      "videoNotSupported": "Seu navegador não suporta a tag de vídeo.",
+      "noVideoAvailable": "Nenhum vídeo disponível",
+      "videoDescription": "Este vídeo demonstra como conectar estações de recarga à plataforma CitrineOS.",
+      "quickSteps": "Passos Rápidos",
+      "step1": "Configure sua estação de recarga com a URL de websocket apropriada",
+      "step2": "Escolha o perfil de segurança que corresponde à sua configuração",
+      "step3": "Copie a URL de conexão da seção de informações de conexão",
+      "step4": "Teste a conexão a partir da sua estação de recarga",
+      "rememberLabel": "Lembre-se:",
+      "rememberText": "Você sempre pode acessar este conteúdo de ajuda clicando no botão Ajuda na barra lateral.",
+      "copied": "Copiado!",
+      "noWebsocketServers": "Nenhum servidor de websocket disponível.",
+      "securityProfiles": {
+        "0": {
+          "label": "Sem Autenticação",
+          "description": "A estação de recarga conecta-se sem credenciais. Configure o usuário/senha usando esta conexão"
+        },
+        "1": {
+          "label": "Perfil de Segurança 1: Transporte Não Seguro com Autenticação Básica",
+          "description": "A autenticação da Estação de Recarga é feita por meio de usuário e senha. Instale o certificado CA na estação de recarga usando esta conexão"
+        },
+        "2": {
+          "label": "Perfil de Segurança 2: TLS com Autenticação Básica",
+          "description": "O CSMS autentica-se usando um certificado de servidor TLS. As Estações de Recarga autenticam-se usando Autenticação HTTP Básica. Assine o certificado da estação de recarga usando esta conexão"
+        },
+        "3": {
+          "label": "Perfil de Segurança 3: TLS com Certificados do Lado do Cliente",
+          "description": "Tanto a Estação de Recarga quanto o CSMS autenticam-se usando certificados."
+        }
+      }
+    },
+    "exportDialog": {
+      "correlationId": "ID de Correlação",
+      "actions": "Ações",
+      "origin": "Origem",
+      "startDate": "Data Inicial",
+      "endDate": "Data Final"
+    }
+  }
+}

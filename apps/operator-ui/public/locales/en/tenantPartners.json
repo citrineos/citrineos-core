@@ -2,6 +2,66 @@
   "TenantPartners": {
     "TenantPartners": "Partners",
     "tenantPartner": "Partner",
-    "noDataFound": "No partner found with id {id}."
+    "noDataFound": "No partner found with id {id}.",
+    "unnamedBusiness": "Unnamed Business",
+    "loadingPartnerData": "Loading partner data...",
+    "columns": {
+      "name": "Name",
+      "countryCode": "Country Code",
+      "partyId": "Party ID"
+    },
+    "fields": {
+      "countryCode": "Country Code",
+      "partyId": "Party ID",
+      "versionsUrl": "Versions URL",
+      "clientToken": "Client Token",
+      "ocpiVersion": "OCPI Version",
+      "versionDetailsUrl": "Version Details URL",
+      "serverCredentialsVersionsUrl": "(Server Credentials) Versions URL",
+      "serverCredentialsToken": "(Server Credentials) Token",
+      "roles": "Roles",
+      "role": "Role",
+      "businessName": "Business Name",
+      "website": "Website"
+    },
+    "placeholders": {
+      "selectVersion": "Select Version",
+      "selectRole": "Select Role",
+      "businessName": "Business Name",
+      "website": "Website"
+    },
+    "validation": {
+      "countryCodeLength": "Country Code must be exactly 2 characters.",
+      "partyIdLength": "Party ID must be exactly 3 characters."
+    },
+    "notifications": {
+      "createSuccess": "Partner created successfully",
+      "updateSuccess": "Partner updated successfully",
+      "createError": "Error creating partner: {message}",
+      "updateError": "Error updating partner: {message}"
+    },
+    "detail": {
+      "countryCode": "Country Code",
+      "partyId": "Party ID",
+      "website": "Website",
+      "roles": "Roles",
+      "ocpiVersion": "OCPI Version",
+      "versionsUrl": "Versions URL",
+      "logoAlt": "{name} logo"
+    },
+    "tabs": {
+      "endpoints": "Endpoints"
+    },
+    "endpoints": {
+      "endpoint": "Endpoint",
+      "identifier": "Identifier",
+      "url": "URL",
+      "noEndpointsFound": "No endpoints found",
+      "deleteConfirm": "Are you sure you want to delete this endpoint? This action cannot be undone.",
+      "errorIdentifierRequired": "Please input identifier",
+      "errorUrlRequired": "Please input URL",
+      "placeholderIdentifier": "Enter identifier",
+      "placeholderUrl": "Enter URL"
+    }
   }
 }

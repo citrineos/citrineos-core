@@ -193,14 +193,18 @@ export const systemConfigInputSchema = z.object({
         memory: z.boolean().optional(),
         redis: z
           .union([
-            z.object({
-              host: z.string().default('localhost').optional(),
-              port: z.number().int().min(1).default(6379).optional(),
-            }),
+            // URL form must be tried first: the host/port form has all-optional
+            // fields with defaults, so zod would parse any input (including
+            // {url: ...}) as that branch and silently drop the url, defaulting
+            // to localhost.
             z.object({
               url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
                 message: 'Redis URL must start with redis:// or rediss://',
               }),
+            }),
+            z.object({
+              host: z.string().default('localhost').optional(),
+              port: z.number().int().min(1).default(6379).optional(),
             }),
           ])
           .optional(),

@@ -92,15 +92,21 @@ export const AuthorizationDetailCard: React.FC<AuthorizationDetailCardProps> = (
       </CardHeader>
       <CardContent>
         <div className={cardGridStyle}>
-          <KeyValueDisplay keyLabel="ID Token" value={authorization.idToken} />
           <KeyValueDisplay
-            keyLabel="Type"
+            keyLabel={translate('Authorizations.fields.idToken')}
+            value={authorization.idToken}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Authorizations.columns.type')}
             value={authorization.idTokenType}
             valueRender={(type) => (type ? <Badge>{type}</Badge> : NOT_APPLICABLE)}
           />
-          <KeyValueDisplay keyLabel="Status" value={authorization.status} />
           <KeyValueDisplay
-            keyLabel="Partner"
+            keyLabel={translate('Authorizations.fields.status')}
+            value={authorization.status}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Authorizations.detail.partner')}
             value={''}
             valueRender={() =>
               !authorization.tenantPartner?.partnerProfileOCPI?.roles?.[0]?.businessDetails
@@ -121,7 +127,7 @@ export const AuthorizationDetailCard: React.FC<AuthorizationDetailCardProps> = (
             }
           />
           <KeyValueDisplay
-            keyLabel="Allowed Types"
+            keyLabel={translate('Authorizations.columns.allowedTypes')}
             value={authorization.allowedConnectorTypes}
             valueRender={(allowedTypes: string[]) =>
               allowedTypes?.length > 0 ? (
@@ -136,7 +142,7 @@ export const AuthorizationDetailCard: React.FC<AuthorizationDetailCardProps> = (
             }
           />
           <KeyValueDisplay
-            keyLabel="Disallowed Prefixes"
+            keyLabel={translate('Authorizations.columns.disallowedPrefixes')}
             value={authorization.disallowedEvseIdPrefixes}
             valueRender={(disallowedPrefixes: string[]) =>
               disallowedPrefixes?.length > 0 ? (
@@ -151,28 +157,35 @@ export const AuthorizationDetailCard: React.FC<AuthorizationDetailCardProps> = (
             }
           />
           <KeyValueDisplay
-            keyLabel="Concurrent Transactions"
+            keyLabel={translate('Authorizations.columns.concurrentTransactions')}
             value={authorization.concurrentTransaction}
             valueRender={(concurrentTransaction) => (
               <Badge variant={concurrentTransaction ? 'success' : 'destructive'}>
-                {concurrentTransaction ? 'Allowed' : 'Not Allowed'}
+                {concurrentTransaction
+                  ? translate('Authorizations.allowed')
+                  : translate('Authorizations.notAllowed')}
               </Badge>
             )}
           />
-          <KeyValueDisplay keyLabel="Real-Time Authentication" value={authorization.realTimeAuth} />
           <KeyValueDisplay
-            keyLabel="Real-Time Authentication URL"
+            keyLabel={translate('Authorizations.fields.realTimeAuth')}
+            value={authorization.realTimeAuth}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Authorizations.fields.realTimeAuthUrl')}
             value={authorization.realTimeAuthUrl}
           />
           <KeyValueDisplay
-            keyLabel="Real-Time Authentication Timeout"
+            keyLabel={translate('Authorizations.fields.realTimeAuthTimeout')}
             value={(authorization as any).realTimeAuthTimeout}
             valueRender={(timeout) =>
-              timeout !== undefined && timeout !== null ? `${timeout} seconds` : NOT_APPLICABLE
+              timeout !== undefined && timeout !== null
+                ? translate('Authorizations.detail.realTimeAuthTimeoutSeconds', { timeout })
+                : NOT_APPLICABLE
             }
           />
           <KeyValueDisplay
-            keyLabel="Additional Info"
+            keyLabel={translate('Authorizations.fields.additionalInfo')}
             value={authorization.additionalInfo}
             valueRender={(additionalInfo) =>
               additionalInfo?.length > 0 ? (

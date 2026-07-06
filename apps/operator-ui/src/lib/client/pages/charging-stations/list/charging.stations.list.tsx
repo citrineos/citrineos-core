@@ -39,12 +39,12 @@ export const ChargingStationsList = () => {
   const [searchFilters, setSearchFilters] = useState<any>(EMPTY_FILTER);
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    getChargingStationsColumns(),
+    getChargingStationsColumns(true, translate),
     ResourceType.CHARGING_STATIONS,
   );
 
   const { filterButton, filterChips, activeCrudFilters } = useTableFilters(
-    getChargingStationsColumns(),
+    getChargingStationsColumns(true, translate),
     ResourceType.CHARGING_STATIONS,
   );
 

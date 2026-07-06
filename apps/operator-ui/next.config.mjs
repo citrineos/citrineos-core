@@ -14,6 +14,7 @@ const withNextIntl = createNextIntlPlugin(resolve(__dirname, 'src/lib/i18n/reque
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  transpilePackages: ['@citrineos/base'],
   // Trace from the monorepo root so the standalone output bundles workspace
   // dependencies (@citrineos/base) correctly.
   outputFileTracingRoot: resolve(__dirname, '../..'),

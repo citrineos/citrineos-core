@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import type { FC } from 'react';
 import { type DateRange } from 'react-day-picker';
+import { useTranslate } from '@refinedev/core';
 
 export type RangePickerProps = {
   dateRange: DateRange | undefined;
@@ -17,6 +18,7 @@ export type RangePickerProps = {
 };
 
 export const RangePicker: FC<RangePickerProps> = ({ dateRange, setDateRange }) => {
+  const translate = useTranslate();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -31,7 +33,7 @@ export const RangePicker: FC<RangePickerProps> = ({ dateRange, setDateRange }) =
               format(dateRange.from, 'LLL dd, y')
             )
           ) : (
-            'Pick a date range'
+            translate('Common.pickDateRange')
           )}
         </Button>
       </PopoverTrigger>

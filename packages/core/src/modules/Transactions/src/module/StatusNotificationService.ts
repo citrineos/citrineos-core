@@ -25,13 +25,19 @@ export class StatusNotificationService {
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
-  constructor(
-    componentRepository: CrudRepository<Component>,
-    deviceModelRepository: IDeviceModelRepository,
-    locationRepository: ILocationRepository,
-    cache: ICache,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    componentRepository,
+    deviceModelRepository,
+    locationRepository,
+    cache,
+    logger,
+  }: {
+    componentRepository: CrudRepository<Component>;
+    deviceModelRepository: IDeviceModelRepository;
+    locationRepository: ILocationRepository;
+    cache: ICache;
+    logger?: Logger<ILogObj>;
+  }) {
     this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._locationRepository = locationRepository;
@@ -68,10 +74,19 @@ export class StatusNotificationService {
         statusNotification,
       );
 
+      const matchingEvse = chargingStation.evses?.find(
+        (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
+      );
+      const matchingConnector = (matchingEvse?.connectors as Connector[] | undefined)?.find(
+        (c) => c.connectorId === statusNotificationRequest.connectorId,
+      );
+
       const connector = {
         tenantId,
         connectorId: statusNotificationRequest.connectorId,
         ocppConnectionName: ocppConnectionName,
+        evseId: matchingConnector?.evseId ?? matchingEvse?.id,
+        evseTypeConnectorId: matchingConnector?.evseTypeConnectorId,
         status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
           statusNotificationRequest.connectorStatus,
         ),
@@ -98,7 +113,13 @@ export class StatusNotificationService {
         }
       }
 
-      await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      if (connector.evseId != null) {
+        await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+      } else {
+        this._logger.warn(
+          `Could not resolve evseId for connector ${statusNotificationRequest.connectorId} on EVSE ${statusNotificationRequest.evseId} at station ${ocppConnectionName}. Skipping connector update.`,
+        );
+      }
 
       let components = await this._componentRepository.readAllByQuery(tenantId, {
         where: {

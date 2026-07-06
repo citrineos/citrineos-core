@@ -1,0 +1,73 @@
+{
+  "name": "@citrineos/ocpi-base",
+  "version": "3.0.0-alpha3",
+  "description": "The base module for OCPI including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json && tsc-alias -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "ocpi"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/amqplib": "0.10.8",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/koa": "3.0.3",
+    "@types/koa-logger": "3.1.5",
+    "@types/qs": "6.15.1",
+    "@types/lodash.capitalize": "4.2.9",
+    "@types/lodash.merge": "4.6.9",
+    "@types/lodash.startcase": "4.4.9",
+    "@types/pg": "8.15.4",
+    "@types/uuid": "9.0.3",
+    "@types/validator": "13.11.1",
+    "cpy-cli": "5.0.0",
+    "json-schema-to-typescript": "12.0.0",
+    "json-schema-to-zod": "1.1.1",
+    "ts-node": "10.9.1",
+    "typescript": "^6.0.0"
+  },
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/core": "workspace:*",
+    "ajv": "8.18.0",
+    "ajv-formats": "^3.0.1",
+    "amqplib": "0.10.9",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.1",
+    "class-validator-jsonschema": "5.0.0",
+    "graphql-request": "^7.2.0",
+    "json-schema-faker": "0.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
+    "koa": "2.16.2",
+    "koa-bodyparser": "4.4.1",
+    "koa-logger": "3.2.1",
+    "koa2-swagger-ui": "5.10.0",
+    "lodash.capitalize": "4.2.1",
+    "lodash.merge": "4.6.2",
+    "lodash.startcase": "4.4.0",
+    "node-pg-migrate": "^7.9.1",
+    "openapi3-ts": "3.2.0",
+    "path-to-regexp": "6.3.0",
+    "pg": "8.11.3",
+    "qs": "6.15.2",
+    "reflect-metadata": "0.1.13",
+    "routing-controllers": "0.10.4",
+    "tslog": "4.9.2",
+    "typed-rest-client": "2.1.0",
+    "typedi": "0.10.0",
+    "uuid": "9.0.0",
+    "zod": "catalog:",
+    "zod-to-json-schema": "3.24.6"
+  }
+}

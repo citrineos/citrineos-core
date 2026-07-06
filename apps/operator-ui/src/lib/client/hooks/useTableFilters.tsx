@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import type { CrudFilter } from '@refinedev/core';
+import { type CrudFilter, useTranslate } from '@refinedev/core';
 import { parseAsJson, useQueryState } from 'nuqs';
 import {
   type FilterItem,
@@ -25,6 +25,7 @@ import { X } from 'lucide-react';
  * - `activeFilters`   – raw FilterItem[] (for inspection / testing)
  */
 export const useTableFilters = (allColumns: ColumnConfiguration[], resource: ResourceType) => {
+  const translate = useTranslate();
   const [tableQueryState, setTableQueryState] = useQueryState(
     resource,
     parseAsJson(TableQueryStateSchema.parse),
@@ -92,7 +93,7 @@ export const useTableFilters = (allColumns: ColumnConfiguration[], resource: Res
     activeFilters.length > 0 ? (
       <div className="flex flex-wrap items-center gap-2 pb-2 pt-1">
         {activeFilters.map((f, i) => {
-          const { field, value } = getFilterLabel(f, filterableColumns);
+          const { field, value } = getFilterLabel(f, filterableColumns, translate);
           return (
             <span
               key={i}
@@ -103,7 +104,7 @@ export const useTableFilters = (allColumns: ColumnConfiguration[], resource: Res
               <button
                 className="rounded-full p-0.5 hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => removeFilter(i)}
-                aria-label={`Remove filter: ${field}`}
+                aria-label={translate('Common.removeFilter', { field })}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -114,7 +115,7 @@ export const useTableFilters = (allColumns: ColumnConfiguration[], resource: Res
           className="text-xs text-muted-foreground hover:text-foreground"
           onClick={clearFilters}
         >
-          Clear all
+          {translate('Common.clearAll')}
         </button>
       </div>
     ) : null;

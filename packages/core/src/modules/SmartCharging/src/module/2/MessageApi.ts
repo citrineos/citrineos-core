@@ -44,26 +44,36 @@ export class SmartChargingOcpp2Api
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    smartChargingModule: SmartChargingModule,
-    server: FastifyInstance,
-    version: OCPPVersion = DEFAULT_VERSION,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(smartChargingModule, server, version, logger);
+  constructor({
+    smartChargingModule,
+    server,
+    logger,
+  }: {
+    smartChargingModule: SmartChargingModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(smartChargingModule, server, logger);
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.ClearChargingProfile, (instance: SmartChargingOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'ClearChargingProfileRequestSchema',
-    ),
+  protected get supportedVersions(): OCPPVersion[] {
+    return [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
+  }
+
+  @AsMessageEndpoint(
+    OCPP_CallAction.ClearChargingProfile,
+    (_instance: SmartChargingOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'ClearChargingProfileRequestSchema',
+      ),
   )
   async clearChargingProfile(
     identifier: string[],
     request: OCPP2_request_types.ClearChargingProfileRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const responses: IMessageConfirmation[] = [];
 
@@ -118,7 +128,7 @@ export class SmartChargingOcpp2Api
       const response = await this._module.sendCall(
         ocppConnectionName,
         tenantId,
-        this._ocppVersion ?? DEFAULT_VERSION,
+        version,
         OCPP_CallAction.ClearChargingProfile,
         request,
         callbackUrl,
@@ -130,17 +140,20 @@ export class SmartChargingOcpp2Api
     return responses;
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetChargingProfiles, (instance: SmartChargingOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'GetChargingProfilesRequestSchema',
-    ),
+  @AsMessageEndpoint(
+    OCPP_CallAction.GetChargingProfiles,
+    (_instance: SmartChargingOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'GetChargingProfilesRequestSchema',
+      ),
   )
   async getChargingProfiles(
     identifier: string[],
     request: OCPP2_request_types.GetChargingProfilesRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const chargingProfile = request.chargingProfile;
 
@@ -196,7 +209,7 @@ export class SmartChargingOcpp2Api
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.GetChargingProfiles,
       request,
       callbackUrl,
@@ -204,17 +217,20 @@ export class SmartChargingOcpp2Api
     return results;
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.SetChargingProfile, (instance: SmartChargingOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'SetChargingProfileRequestSchema',
-    ),
+  @AsMessageEndpoint(
+    OCPP_CallAction.SetChargingProfile,
+    (_instance: SmartChargingOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'SetChargingProfileRequestSchema',
+      ),
   )
   async setChargingProfile(
     identifier: string[],
     request: OCPP2_request_types.SetChargingProfileRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     // Process each station individually
     return Promise.all(
@@ -507,7 +523,7 @@ export class SmartChargingOcpp2Api
         return this._module.sendCall(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.SetChargingProfile,
           request,
           callbackUrl,
@@ -516,40 +532,46 @@ export class SmartChargingOcpp2Api
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.ClearedChargingLimit, (instance: SmartChargingOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'ClearedChargingLimitRequestSchema',
-    ),
+  @AsMessageEndpoint(
+    OCPP_CallAction.ClearedChargingLimit,
+    (_instance: SmartChargingOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'ClearedChargingLimitRequestSchema',
+      ),
   )
   clearedChargingLimit(
     identifier: string[],
     request: OCPP2_request_types.ClearedChargingLimitRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.ClearedChargingLimit,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetCompositeSchedule, (instance: SmartChargingOcpp2Api) =>
-    getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
-      'GetCompositeScheduleRequestSchema',
-    ),
+  @AsMessageEndpoint(
+    OCPP_CallAction.GetCompositeSchedule,
+    (_instance: SmartChargingOcpp2Api, version) =>
+      getOcpp2Schema(
+        (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+        'GetCompositeScheduleRequestSchema',
+      ),
   )
   async getCompositeSchedule(
     identifier: string[],
     request: OCPP2_request_types.GetCompositeScheduleRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return Promise.all(
       identifier.map(async (ocppConnectionName) => {
@@ -585,7 +607,7 @@ export class SmartChargingOcpp2Api
         return this._module.sendCall(
           ocppConnectionName,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.GetCompositeSchedule,
           request,
           callbackUrl,
@@ -601,9 +623,9 @@ export class SmartChargingOcpp2Api
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
    */
-  protected _toMessagePath(input: CallAction): string {
+  protected _toMessagePath(input: CallAction, version?: OCPPVersion | null): string {
     const endpointPrefix = this._module.config.modules.smartcharging?.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix);
+    return super._toMessagePath(input, version, endpointPrefix);
   }
 
   /**

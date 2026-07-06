@@ -12,7 +12,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
@@ -34,6 +34,7 @@ export type GetTransactionStatusFormData = z.infer<typeof GetTransactionStatusSc
 
 export const GetTransactionStatusModal = ({ station }: GetTransactionStatusModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -78,6 +79,7 @@ export const GetTransactionStatusModal = ({ station }: GetTransactionStatusModal
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/transactions/getTransactionStatus?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -99,12 +101,12 @@ export const GetTransactionStatusModal = ({ station }: GetTransactionStatusModal
       <ComboboxFormField
         control={form.control}
         name="transactionId"
-        label="Transaction"
-        description="Optionally select a transaction to get its status. Leave empty to get the status of all transactions."
+        label={translate('ChargingStations.getTransactionStatusModal.transaction')}
+        description={translate('ChargingStations.getTransactionStatusModal.description')}
         options={options}
         onSearch={onSearch}
-        placeholder="Select Transaction"
-        searchPlaceholder="Search Transactions"
+        placeholder={translate('ChargingStations.remoteStopModal.selectTransaction')}
+        searchPlaceholder={translate('ChargingStations.remoteStopModal.searchTransactions')}
         isLoading={query.isLoading}
       />
     </Form>

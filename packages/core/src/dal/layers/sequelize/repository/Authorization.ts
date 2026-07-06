@@ -2,21 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import { type IAuthorizationRepository } from '../../../interfaces/repositories.js';
 import { type AuthorizationQuerystring } from '../../../interfaces/queries/Authorization.js';
 import { Authorization } from '../model/Authorization/Authorization.js';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>
   implements IAuthorizationRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, Authorization.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Authorization.MODEL_NAME, logger, sequelizeInstance });
   }
 
   async readAllByQuerystring(
@@ -52,3 +48,5 @@ export class SequelizeAuthorizationRepository
     };
   }
 }
+
+export default SequelizeAuthorizationRepository;

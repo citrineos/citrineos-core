@@ -8,11 +8,10 @@ import { OCPP2_0_1 } from '@citrineos/base';
 import {
   chartMargin,
   chartSize,
-  elapsedTimeAxisLabel,
   formatTimeLabel,
   generateTimeTicks,
+  getXAxisLabelConfig,
   getYAxisLabelConfig,
-  xAxisLabelConfig,
 } from '@lib/client/pages/transactions/chart/util';
 import { getTimestampToMeasurandArray } from '@lib/cls/meter.value.dto';
 import { useMemo } from 'react';
@@ -25,24 +24,26 @@ import {
 } from '@lib/client/components/ui/chart';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { heading3Style } from '@lib/client/styles/page';
+import { useTranslate } from '@refinedev/core';
 
 interface StateOfChargeProps {
   meterValues: MeterValueDto[];
   validContexts: OCPP2_0_1.ReadingContextEnumType[];
 }
 
-const socAxisLabel = 'State of Charge (%)';
-
-const chartConfig = {
-  elapsedTime: {
-    label: elapsedTimeAxisLabel,
-  },
-  stateOfCharge: {
-    label: socAxisLabel,
-  },
-} satisfies ChartConfig;
-
 export const StateOfCharge = ({ meterValues, validContexts }: StateOfChargeProps) => {
+  const translate = useTranslate();
+  const socAxisLabel = translate('Transactions.charts.stateOfChargeLabel');
+
+  const chartConfig = {
+    elapsedTime: {
+      label: translate('Transactions.charts.timeElapsed'),
+    },
+    stateOfCharge: {
+      label: socAxisLabel,
+    },
+  } satisfies ChartConfig;
+
   const chartData = useMemo(() => {
     const rawData = getTimestampToMeasurandArray(
       meterValues,
@@ -62,11 +63,11 @@ export const StateOfCharge = ({ meterValues, validContexts }: StateOfChargeProps
   return (
     <Card>
       <CardHeader>
-        <h3 className={heading3Style}>State of Charge Over Time</h3>
+        <h3 className={heading3Style}>{translate('Transactions.charts.stateOfChargeTitle')}</h3>
       </CardHeader>
       <CardContent>
         {!chartData || chartData.length === 0 ? (
-          <div>No State of Charge data available</div>
+          <div>{translate('Transactions.charts.noStateOfChargeData')}</div>
         ) : (
           <ChartContainer config={chartConfig} className={chartSize}>
             <LineChart data={chartData} margin={chartMargin}>
@@ -76,7 +77,7 @@ export const StateOfCharge = ({ meterValues, validContexts }: StateOfChargeProps
                 type="number"
                 ticks={generateTimeTicks(chartData)}
                 tickFormatter={formatTimeLabel}
-                label={xAxisLabelConfig}
+                label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
                 domain={[0, 100]}

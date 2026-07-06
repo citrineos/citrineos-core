@@ -20,10 +20,12 @@ import { anAuthorization } from '../providers/AuthorizationProvider.js';
 import { anIdToken } from '../providers/IdTokenProvider.js';
 
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 import { aMessageContext } from '../providers/MessageContextProvider.js';
 import { aTransactionEventRequest } from '../providers/TransactionProvider.js';
 
 describe('C17 - Prepaid Card Authorization', () => {
+  const { container } = createTestContainer();
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
@@ -61,15 +63,15 @@ describe('C17 - Prepaid Card Authorization', () => {
       authorize: vi.fn().mockResolvedValue(AuthorizationStatusEnum.Accepted),
     } as Mocked<IAuthorizer>;
 
-    transactionService = new TransactionService(
+    transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
       authorizationRepository,
       locationRepository,
       reservationRepository,
       ocppMessageRepository,
       realTimeAuthorizer,
-      [authorizer],
-    );
+      authorizers: [authorizer],
+    });
   });
 
   describe('C17.FR.01 - Prepaid token with positive balance (OCPP 2.1)', () => {

@@ -8,6 +8,11 @@ import { ResourceType } from '@lib/utils/access.types';
 export const I18N_COOKIE_NAME = 'NEXT_LOCALE';
 export const DEFAULT_LOCALE = 'en';
 
+export const LOCALES = [
+  { value: 'en', label: 'English' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+];
+
 export const NEW_IDENTIFIER = 'new';
 
 export const EMPTY_FILTER: CrudFilter[] = [

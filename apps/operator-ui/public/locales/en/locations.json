@@ -2,6 +2,78 @@
   "Locations": {
     "Locations": "Locations",
     "location": "Location",
-    "noDataFound": "No location found with id {id}."
+    "noDataFound": "No location found with id {id}.",
+    "unnamedLocation": "Unnamed Location",
+    "noAddress": "No address",
+    "chargingStations": "Charging Stations",
+    "openingHours": "Opening Hours",
+    "viewStations": "View Stations",
+    "columns": {
+      "name": "Name",
+      "address": "Address",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "timeZone": "Time Zone",
+      "parkingType": "Parking Type",
+      "facilities": "Facilities",
+      "totalStations": "Total Stations",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    },
+    "detail": {
+      "totalChargers": "Total Chargers",
+      "imageAlt": "{name} image"
+    },
+    "form": {
+      "name": "Name",
+      "streetAddress": "Street Address",
+      "streetAddressRequired": "Street address is required",
+      "addressAutocompletePlaceholder": "Start typing to search, or enter manually below",
+      "city": "City",
+      "cityPlaceholder": "e.g. Berlin",
+      "stateProvinceRegion": "State / Province / Region",
+      "stateProvinceRegionPlaceholder": "e.g. California, Ontario, Bayern",
+      "postalCode": "Postal Code",
+      "postalCodePlaceholder": "e.g. 94105, SW1A 1AA, 10115",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "searchCountries": "Search countries...",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "autoFilledFromAddress": "Auto-filled from address",
+      "timeZone": "Time Zone",
+      "parkingType": "Parking Type",
+      "selectParkingType": "Select Parking Type",
+      "searchParkingTypes": "Search Parking Types",
+      "facilities": "Facilities",
+      "selectFacilities": "Select Facilities",
+      "searchFacilities": "Search Facilities",
+      "image": "Image",
+      "upload": "Upload",
+      "uploadFailedToast": "Failed to update charging stations on location due to error {error}"
+    },
+    "stations": {
+      "searchChargingStation": "Search Charging Station",
+      "noChargingStationsFound": "No Charging Stations found",
+      "noChargingStationsSelected": "No Charging Stations selected",
+      "stationId": "Station ID",
+      "configuration": "Configuration",
+      "needsConfiguration": "Needs configuration",
+      "modelVendor": "Model / Vendor",
+      "needsModel": "Needs model",
+      "needsVendor": "Needs Vendor"
+    },
+    "map": {
+      "viewDetails": "View Details",
+      "networkOverview": "Network Overview",
+      "all": "All",
+      "locations": "Locations",
+      "stations": "Stations",
+      "viewTypeDetails": "View {type} details",
+      "online": "Online",
+      "partial": "Partial",
+      "offline": "Offline",
+      "noChargers": "No chargers."
+    }
   }
 }

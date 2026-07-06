@@ -17,7 +17,7 @@ import { Label } from '@lib/client/components/ui/label';
 import { type AuthenticationContextProvider, type User } from '@lib/utils/access.types';
 import config from '@lib/utils/config';
 import { HasuraHeader, HasuraRole } from '@lib/utils/hasura.types';
-import { useLogin, type AuthProvider } from '@refinedev/core';
+import { useLogin, useTranslate, type AuthProvider } from '@refinedev/core';
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 
@@ -50,6 +50,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { mutate: login, isPending: isLoading } = useLogin();
+  const translate = useTranslate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +59,8 @@ const LoginPage: React.FC = () => {
     login(
       { email, password },
       {
-        onError: (error) => {
-          setError(error?.message || 'Invalid email or password');
+        onError: () => {
+          setError(translate('pages.login.invalidCredentials'));
         },
       },
     );
@@ -69,9 +70,11 @@ const LoginPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Sign in to your account</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            {translate('pages.login.title')}
+          </CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the dashboard
+            {translate('pages.login.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,11 +86,11 @@ const LoginPage: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{translate('pages.login.fields.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder={translate('pages.login.placeholders.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -97,11 +100,11 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{translate('pages.login.fields.password')}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={translate('pages.login.placeholders.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -111,7 +114,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? translate('pages.login.signingIn') : translate('pages.login.signin')}
             </Button>
           </form>
         </CardContent>

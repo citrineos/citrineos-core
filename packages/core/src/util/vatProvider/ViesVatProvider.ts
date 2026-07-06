@@ -28,7 +28,7 @@ interface ViesErrorResponse {
 export class ViesVatProvider implements IVatProvider {
   private readonly _logger: Logger<ILogObj>;
 
-  constructor(logger?: Logger<ILogObj>) {
+  constructor({ logger }: { logger?: Logger<ILogObj> } = {}) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

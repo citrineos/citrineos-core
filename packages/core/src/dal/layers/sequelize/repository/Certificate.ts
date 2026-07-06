@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ICertificateRepository } from '../../../interfaces/repositories.js';
 import { Certificate } from '../model/Certificate/Certificate.js';
-import type { BootstrapConfig } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 
 export class SequelizeCertificateRepository
   extends SequelizeRepository<Certificate>
   implements ICertificateRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, Certificate.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Certificate.MODEL_NAME, logger, sequelizeInstance });
   }
 
   async createOrUpdateCertificate(
@@ -49,3 +45,5 @@ export class SequelizeCertificateRepository
     });
   }
 }
+
+export default SequelizeCertificateRepository;

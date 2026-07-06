@@ -23,7 +23,7 @@ export const LocationsCard = () => {
         <div className="flex items-center justify-between">
           <h2 className={heading2Style}>{translate('Locations.Locations')}</h2>
           <div className={overviewClickableStyle} onClick={() => push(`/${MenuSection.LOCATIONS}`)}>
-            {translate('overview.viewAllLocations')} <ChevronRightIcon />
+            {translate('Overview.viewAllLocations')} <ChevronRightIcon />
           </div>
         </div>
       </CardHeader>

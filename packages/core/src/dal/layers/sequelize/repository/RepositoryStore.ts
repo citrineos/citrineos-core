@@ -43,7 +43,6 @@ import { SequelizeTransactionEventRepository } from './TransactionEvent.js';
 import { SequelizeVariableMonitoringRepository } from './VariableMonitoring.js';
 import { Sequelize } from 'sequelize-typescript';
 import { Component } from '../model/DeviceModel/Component.js';
-import { TransactionEvent } from '../model/TransactionEvent/TransactionEvent.js';
 import { SequelizeRepository } from './Base.js';
 import { SequelizeReservationRepository } from './Reservation.js';
 import { SequelizeLocalAuthListRepository } from './LocalAuthList.js';
@@ -83,111 +82,122 @@ export class RepositoryStore {
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
-  constructor(config: BootstrapConfig, logger: Logger<ILogObj>, sequelizeInstance: Sequelize) {
+  constructor({
+    config,
+    logger,
+    sequelizeInstance,
+  }: {
+    config: BootstrapConfig;
+    logger: Logger<ILogObj>;
+    sequelizeInstance: Sequelize;
+  }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.authorizationRepository = new SequelizeAuthorizationRepository(
+    this.authorizationRepository = new SequelizeAuthorizationRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.bootRepository = new SequelizeBootRepository(config, logger, sequelizeInstance);
-    this.certificateRepository = new SequelizeCertificateRepository(
+    });
+    this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
+    this.certificateRepository = new SequelizeCertificateRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository(
+    });
+    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository(
+    });
+    this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository(
+    });
+    this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository(
+    });
+    this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.chargingProfileRepository = new SequelizeChargingProfileRepository(
+    });
+    this.chargingProfileRepository = new SequelizeChargingProfileRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository(
+    });
+    this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.componentRepository = new SequelizeRepository<Component>(
+    });
+    this.componentRepository = new SequelizeRepository<Component>({
       config,
-      Component.MODEL_NAME,
+      namespace: Component.MODEL_NAME,
       logger,
-    );
-    this.deviceModelRepository = new SequelizeDeviceModelRepository(
-      config,
-      logger,
-      sequelizeInstance,
-    );
-    this.localAuthListRepository = new SequelizeLocalAuthListRepository(
+    });
+    this.deviceModelRepository = new SequelizeDeviceModelRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.locationRepository = new SequelizeLocationRepository(config, logger, sequelizeInstance);
-    this.messageInfoRepository = new SequelizeMessageInfoRepository(
+    });
+    this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.ocppMessageRepository = new SequelizeOCPPMessageRepository(
+    });
+    this.locationRepository = new SequelizeLocationRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.reservationRepository = new SequelizeReservationRepository(
+    });
+    this.messageInfoRepository = new SequelizeMessageInfoRepository({
       config,
       logger,
       sequelizeInstance,
-    );
+    });
+    this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
+      config,
+      logger,
+      sequelizeInstance,
+    });
+    this.reservationRepository = new SequelizeReservationRepository({
+      config,
+      logger,
+      sequelizeInstance,
+    });
     if (process.env.CITRINEOS_USE_DRIZZLE_SECURITY_EVENT === 'true') {
       this.securityEventRepository = new DrizzleSecurityEventRepository(config, logger);
     } else {
-      this.securityEventRepository = new SequelizeSecurityEventRepository(
+      this.securityEventRepository = new SequelizeSecurityEventRepository({
         config,
         logger,
         sequelizeInstance,
-      );
+      });
     }
-    this.subscriptionRepository = new SequelizeSubscriptionRepository(
+    this.subscriptionRepository = new SequelizeSubscriptionRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.tariffRepository = new SequelizeTariffRepository(config, logger, sequelizeInstance);
-    this.transactionEventRepository = new SequelizeTransactionEventRepository(
-      config,
-      logger,
-      TransactionEvent.MODEL_NAME,
-      sequelizeInstance,
-    );
-    this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository(
+    });
+    this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
+    this.transactionEventRepository = new SequelizeTransactionEventRepository({
       config,
       logger,
       sequelizeInstance,
-    );
-    this.tenantRepository = new SequelizeTenantRepository(config, logger, sequelizeInstance);
-    this.serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository(
+    });
+    this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository({
       config,
       logger,
       sequelizeInstance,
-    );
+    });
+    this.tenantRepository = new SequelizeTenantRepository({ config, logger, sequelizeInstance });
+    this.serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+      config,
+      logger,
+      sequelizeInstance,
+    });
   }
 }

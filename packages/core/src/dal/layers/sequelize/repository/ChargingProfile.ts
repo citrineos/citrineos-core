@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  BootstrapConfig,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
-} from '@citrineos/base';
+import type { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType } from '@citrineos/base';
 import { ChargingLimitSourceEnum, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { IChargingProfileRepository } from '../../../interfaces/repositories.js';
 import type {
   ChargingProfileInput,
@@ -22,9 +18,6 @@ import { SalesTariff } from '../model/ChargingProfile/SalesTariff.js';
 import { Evse } from '../model/Location/Evse.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';
 import { Transaction } from '../model/TransactionEvent/Transaction.js';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
@@ -37,61 +30,44 @@ export class SequelizeChargingProfileRepository
   evse: CrudRepository<EvseType>;
   compositeSchedule: CrudRepository<CompositeSchedule>;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    chargingNeeds?: CrudRepository<ChargingNeeds>,
-    chargingSchedule?: CrudRepository<ChargingSchedule>,
-    salesTariff?: CrudRepository<SalesTariff>,
-    transaction?: CrudRepository<Transaction>,
-    evse?: CrudRepository<EvseType>,
-    compositeSchedule?: CrudRepository<CompositeSchedule>,
-  ) {
-    super(config, ChargingProfile.MODEL_NAME, logger, sequelizeInstance);
-    this.chargingNeeds = chargingNeeds
-      ? chargingNeeds
-      : new SequelizeRepository<ChargingNeeds>(
-          config,
-          ChargingNeeds.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.chargingSchedule = chargingSchedule
-      ? chargingSchedule
-      : new SequelizeRepository<ChargingSchedule>(
-          config,
-          ChargingSchedule.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.evse = evse
-      ? evse
-      : new SequelizeRepository<EvseType>(config, EvseType.MODEL_NAME, logger, sequelizeInstance);
-    this.salesTariff = salesTariff
-      ? salesTariff
-      : new SequelizeRepository<SalesTariff>(
-          config,
-          SalesTariff.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.transaction = transaction
-      ? transaction
-      : new SequelizeRepository<Transaction>(
-          config,
-          Transaction.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
-    this.compositeSchedule = compositeSchedule
-      ? compositeSchedule
-      : new SequelizeRepository<CompositeSchedule>(
-          config,
-          CompositeSchedule.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: ChargingProfile.MODEL_NAME, logger, sequelizeInstance });
+    this.chargingNeeds = new SequelizeRepository<ChargingNeeds>({
+      config,
+      namespace: ChargingNeeds.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.chargingSchedule = new SequelizeRepository<ChargingSchedule>({
+      config,
+      namespace: ChargingSchedule.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.evse = new SequelizeRepository<EvseType>({
+      config,
+      namespace: EvseType.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.salesTariff = new SequelizeRepository<SalesTariff>({
+      config,
+      namespace: SalesTariff.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.transaction = new SequelizeRepository<Transaction>({
+      config,
+      namespace: Transaction.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.compositeSchedule = new SequelizeRepository<CompositeSchedule>({
+      config,
+      namespace: CompositeSchedule.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
   }
 
   async createOrUpdateChargingProfile(
@@ -278,3 +254,5 @@ export class SequelizeChargingProfileRepository
     );
   }
 }
+
+export default SequelizeChargingProfileRepository;

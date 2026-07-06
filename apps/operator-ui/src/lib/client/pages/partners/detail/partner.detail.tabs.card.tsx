@@ -19,7 +19,9 @@ export const PartnerDetailTabsCard = ({ tenantPartner }: { tenantPartner: Tenant
       <CardContent>
         <Tabs defaultValue="endpoints">
           <TabsList>
-            <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
+            <TabsTrigger value="endpoints">
+              {translate('TenantPartners.tabs.endpoints')}
+            </TabsTrigger>
             <TabsTrigger value="authorizations">
               {translate('Authorizations.Authorizations')}
             </TabsTrigger>
@@ -33,7 +35,9 @@ export const PartnerDetailTabsCard = ({ tenantPartner }: { tenantPartner: Tenant
                 partnerProfileOCPI={tenantPartner?.partnerProfileOCPI}
               />
             ) : (
-              <div className="p-8 text-center text-muted-foreground">Loading partner data...</div>
+              <div className="p-8 text-center text-muted-foreground">
+                {translate('TenantPartners.loadingPartnerData')}
+              </div>
             )}
           </TabsContent>
 

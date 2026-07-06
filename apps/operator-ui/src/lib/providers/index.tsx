@@ -9,7 +9,7 @@ import { createAccessProvider } from '@lib/providers/access-control-provider';
 import { authProvider } from '@lib/providers/auth-provider';
 import dataProvider from '@lib/providers/data-provider';
 import liveProvider from '@lib/providers/live-provider';
-import { notificationProvider } from '@lib/providers/notification-provider';
+import { createNotificationProvider } from '@lib/providers/notification-provider';
 import ReduxProvider from '@lib/providers/redux-provider';
 import { setUserLocale } from '@lib/server/hooks/getUserLocale';
 import { resources } from '@lib/utils/resources';
@@ -61,6 +61,11 @@ export function Providers({
     getLocale: useLocale,
     changeLocale: setUserLocale,
   };
+
+  const notificationProvider = useMemo(
+    () => createNotificationProvider((key, options) => t(key, options)),
+    [t],
+  );
 
   if (!mounted) return null;
 

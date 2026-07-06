@@ -34,7 +34,7 @@ export const LocationsChargingStationsTable = ({
   const stationsToDisplay = location.chargingPool ?? [];
 
   const { renderedVisibleColumns } = useColumnPreferences(
-    getChargingStationsColumns(false),
+    getChargingStationsColumns(false, translate),
     ResourceType.CHARGING_STATIONS,
   );
 

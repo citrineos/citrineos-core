@@ -14,6 +14,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { FormField } from '@lib/client/components/form/field';
@@ -25,22 +26,21 @@ interface GetLogsModalProps {
   station: any;
 }
 
-const GetLogsSchema = z.object({
-  requestId: z.coerce.number<number>().int().positive('Request ID must be a positive number'),
-  remoteLocation: z.url('Must be a valid URL').min(1, 'Remote Location is required').max(512),
-  oldestTimestamp: z.string().min(1).optional(),
-  latestTimestamp: z.string().min(1).optional(),
-  logType: z.enum(OCPP2_0_1.LogEnumType, { message: 'Log Type is required' }),
-  retries: z.coerce.number<number>().int().min(0).optional(),
-  retryInterval: z.coerce.number<number>().int().min(0).optional(),
-});
-
-type GetLogsFormData = z.infer<typeof GetLogsSchema>;
+type GetLogsFormData = {
+  requestId: number;
+  remoteLocation: string;
+  oldestTimestamp?: string;
+  latestTimestamp?: string;
+  logType: OCPP2_0_1.LogEnumType;
+  retries?: number;
+  retryInterval?: number;
+};
 
 const logTypes = Object.keys(OCPP2_0_1.LogEnumType);
 
 export const GetLogsModal = ({ station }: GetLogsModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -51,6 +51,28 @@ export const GetLogsModal = ({ station }: GetLogsModalProps) => {
   ) as ChargingStationDto;
 
   const remoteLocation = 'http://localhost:4566/citrineos-s3-bucket/';
+
+  const GetLogsSchema = useMemo(
+    () =>
+      z.object({
+        requestId: z.coerce
+          .number<number>()
+          .int()
+          .positive(translate('ChargingStations.requestId.positiveError')),
+        remoteLocation: z
+          .url(translate('ChargingStations.firmwareDiagnostics.invalidUrl'))
+          .min(1, translate('ChargingStations.getLogsModal.remoteLocationRequired'))
+          .max(512),
+        oldestTimestamp: z.string().min(1).optional(),
+        latestTimestamp: z.string().min(1).optional(),
+        logType: z.enum(OCPP2_0_1.LogEnumType, {
+          message: translate('ChargingStations.getLogsModal.logTypeRequired'),
+        }),
+        retries: z.coerce.number<number>().int().min(0).optional(),
+        retryInterval: z.coerce.number<number>().int().min(0).optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(GetLogsSchema),
@@ -85,6 +107,7 @@ export const GetLogsModal = ({ station }: GetLogsModalProps) => {
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/reporting/getLog?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -103,12 +126,17 @@ export const GetLogsModal = ({ station }: GetLogsModalProps) => {
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Request ID" name="requestId" required>
-        <Input type="number" placeholder="Enter request ID" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.requestId.label')}
+        name="requestId"
+        required
+      >
+        <Input type="number" placeholder={translate('ChargingStations.requestId.placeholder')} />
       </FormField>
       <FormField
         control={form.control}
-        label="Remote Location (URL)"
+        label={translate('ChargingStations.getLogsModal.remoteLocationUrl')}
         name="remoteLocation"
         required
       >
@@ -116,26 +144,50 @@ export const GetLogsModal = ({ station }: GetLogsModalProps) => {
       </FormField>
       <SelectFormField
         control={form.control}
-        label="Log Type"
+        label={translate('ChargingStations.getLogsModal.logType')}
         name="logType"
         options={logTypes}
-        placeholder="Select Log Type"
+        placeholder={translate('ChargingStations.getLogsModal.selectLogType')}
         required
       />
-      <FormField control={form.control} label="Oldest Timestamp" name="oldestTimestamp">
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.getLogsModal.oldestTimestamp')}
+        name="oldestTimestamp"
+      >
         <Input type="datetime-local" />
       </FormField>
 
-      <FormField control={form.control} label="Latest Timestamp" name="latestTimestamp">
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.getLogsModal.latestTimestamp')}
+        name="latestTimestamp"
+      >
         <Input type="datetime-local" />
       </FormField>
 
-      <FormField control={form.control} label="Retries" name="retries">
-        <Input type="number" placeholder="Number of retries" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retries')}
+        name="retries"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retriesPlaceholder')}
+          min="0"
+        />
       </FormField>
 
-      <FormField control={form.control} label="Retry Interval" name="retryInterval">
-        <Input type="number" placeholder="Retry interval in seconds" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retryInterval')}
+        name="retryInterval"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retryIntervalPlaceholder')}
+          min="0"
+        />
       </FormField>
     </Form>
   );

@@ -233,11 +233,11 @@ export const ChargerActivityCard: React.FC = () => {
     >
       <Card>
         <CardHeader>
-          <h2 className={heading2Style}>{translate('overview.chargerActivity')}</h2>
+          <h2 className={heading2Style}>{translate('Overview.chargerActivity')}</h2>
         </CardHeader>
         <CardContent>
           {error ? (
-            <p>{translate('overview.errorLoadingData')}</p>
+            <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
             <div className="flex gap-2">
               {[

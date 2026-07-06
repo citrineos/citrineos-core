@@ -1,39 +1,24 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootConfig,
-  BootstrapConfig,
-  OCPP2_common_types,
-  RegistrationStatusEnumType,
-} from '@citrineos/base';
+import type { BootConfig, OCPP2_common_types, RegistrationStatusEnumType } from '@citrineos/base';
 import { CrudRepository } from '@citrineos/base';
 import type { IBootRepository } from '../../../interfaces/repositories.js';
 import { Boot } from '../model/Boot.js';
 import { VariableAttribute } from '../model/DeviceModel/VariableAttribute.js';
-import { SequelizeRepository } from './Base.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Sequelize } from 'sequelize-typescript';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    sequelizeInstance?: Sequelize,
-    variableAttributes?: CrudRepository<VariableAttribute>,
-  ) {
-    super(config, Boot.MODEL_NAME, logger, sequelizeInstance);
-    this.variableAttributes = variableAttributes
-      ? variableAttributes
-      : new SequelizeRepository<VariableAttribute>(
-          config,
-          VariableAttribute.MODEL_NAME,
-          logger,
-          sequelizeInstance,
-        );
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Boot.MODEL_NAME, logger, sequelizeInstance });
+    this.variableAttributes = new SequelizeRepository<VariableAttribute>({
+      config,
+      namespace: VariableAttribute.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
   }
 
   async createOrUpdateByKey(
@@ -137,3 +122,5 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     return managedSetVariables;
   }
 }
+
+export default SequelizeBootRepository;

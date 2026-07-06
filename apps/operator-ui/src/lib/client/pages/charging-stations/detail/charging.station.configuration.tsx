@@ -63,20 +63,40 @@ interface ChargingStationConfigurationProps {
 }
 
 const CONFIG_1_6_COLUMNS = [
-  { key: 'key', header: 'Key', accessor: 'key' },
-  { key: 'value', header: 'Value', accessor: 'value' },
+  { key: 'key', headerKey: 'ChargingStations.configuration.key', accessor: 'key' },
+  {
+    key: 'value',
+    headerKey: 'ChargingStations.configuration.value',
+    accessor: 'value',
+  },
 ];
 
 const CONFIG_2_0_1_COLUMNS = [
-  { key: 'type', header: 'Type', accessor: 'type' },
-  { key: 'value', header: 'Value', accessor: 'value' },
+  {
+    key: 'type',
+    headerKey: 'ChargingStations.configuration.type',
+    accessor: 'type',
+  },
+  {
+    key: 'value',
+    headerKey: 'ChargingStations.configuration.value',
+    accessor: 'value',
+  },
   {
     key: 'component',
-    header: 'Component Name:Instance',
+    headerKey: 'ChargingStations.configuration.componentNameInstance',
     accessor: 'component',
   },
-  { key: 'variable', header: 'Variable Name:Instance', accessor: 'variable' },
-  { key: 'evse', header: 'EVSE ID:Connector ID', accessor: 'evse' },
+  {
+    key: 'variable',
+    headerKey: 'ChargingStations.configuration.variableNameInstance',
+    accessor: 'variable',
+  },
+  {
+    key: 'evse',
+    headerKey: 'ChargingStations.configuration.evseConnectorId',
+    accessor: 'evse',
+  },
 ];
 
 export const ChargingStationConfiguration: React.FC<ChargingStationConfigurationProps> = ({
@@ -222,10 +242,10 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     }
 
     if (attributesError) {
-      toast.error('Failed to load variable attributes');
+      toast.error(translate('ChargingStations.configuration.loadAttributesError'));
     }
     if (configurationsError) {
-      toast.error('Failed to load change configurations');
+      toast.error(translate('ChargingStations.configuration.loadConfigurationsError'));
     }
   }, [
     version,
@@ -233,6 +253,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     changeConfigurationsResult,
     attributesError,
     configurationsError,
+    translate,
   ]);
 
   const filteredDataSource = useMemo(() => {
@@ -250,23 +271,29 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   const handleDownloadConfigurations = () => {
     if (version === '1.6') {
       if (!changeConfigurationsForDownload?.data) {
-        toast.error('No data available for download');
+        toast.error(translate('ChargingStations.configuration.noDataForDownload'));
         return;
       }
       downloadCSV(
         `configurations_${station?.ocppConnectionName}_${version}_${new Date().toISOString()}`,
-        ['Station Id', ...CONFIG_1_6_COLUMNS.map((col) => col.header)],
+        [
+          translate('ChargingStations.configuration.stationId'),
+          ...CONFIG_1_6_COLUMNS.map((col) => translate(col.headerKey)),
+        ],
         changeConfigurationsForDownload.data,
         (item) => [item.ocppConnectionName, item.key, item.value ?? ''],
       );
     } else {
       if (!variableAttributesForDownload?.data) {
-        toast.error('No data available for download');
+        toast.error(translate('ChargingStations.configuration.noDataForDownload'));
         return;
       }
       downloadCSV(
         `configurations_${station?.ocppConnectionName}_${version}_${new Date().toISOString()}`,
-        ['Station Id', ...CONFIG_2_0_1_COLUMNS.map((col) => col.header)],
+        [
+          translate('ChargingStations.configuration.stationId'),
+          ...CONFIG_2_0_1_COLUMNS.map((col) => translate(col.headerKey)),
+        ],
         variableAttributesForDownload.data,
         (item) => [
           String(id),
@@ -347,7 +374,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
             </Select>
           </div>
           <div className="flex items-center justify-center text-sm font-medium">
-            Page {currentPage} of {totalPages}
+            {translate('Common.pageOf', { page: currentPage, total: totalPages })}
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -404,11 +431,13 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
               <tr>
                 {columns.map((col) => (
                   <th key={col.key} className="px-4 py-2 text-left text-sm font-medium">
-                    {col.header}
+                    {translate(col.headerKey)}
                   </th>
                 ))}
                 {version === '1.6' && (
-                  <th className="px-4 py-2 text-left text-sm font-medium">Action</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium">
+                    {translate('ChargingStations.configuration.action')}
+                  </th>
                 )}
               </tr>
             </thead>
@@ -419,7 +448,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                     colSpan={columns.length + (version === '1.6' ? 1 : 0)}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    Loading...
+                    {translate('Common.loadingEllipsis')}
                   </td>
                 </tr>
               ) : filteredDataSource.length === 0 ? (
@@ -428,7 +457,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                     colSpan={columns.length + (version === '1.6' ? 1 : 0)}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    No data
+                    {translate('ChargingStations.configuration.noData')}
                   </td>
                 </tr>
               ) : (
@@ -448,7 +477,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                           disabled={!isConnected}
                         >
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          {translate('Common.edit')}
                         </Button>
                       </td>
                     )}
@@ -466,7 +495,9 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Select OCPP Version</label>
+          <label className="text-sm font-medium">
+            {translate('ChargingStations.configuration.selectOcppVersion')}
+          </label>
           <div className="flex gap-2">
             <Select value={version} onValueChange={(v: '1.6' | '2.0.1') => setVersion(v)}>
               <SelectTrigger className="flex-1">
@@ -482,14 +513,14 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
               onClick={handleDownloadConfigurations}
               disabled={isDownloadChangeConfigurationsLoading && isAttributesDownloadLoading}
             >
-              Download CSV
+              {translate('ChargingStations.configuration.downloadCsv')}
             </Button>
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Search</label>
+          <label className="text-sm font-medium">{translate('Common.search')}</label>
           <Input
-            placeholder="Search..."
+            placeholder={translate('ChargingStations.configuration.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -500,7 +531,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
         <div className="flex justify-end">
           <Button onClick={handleAddConfig} disabled={!isConnected}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Configuration
+            {translate('ChargingStations.configuration.addConfiguration')}
           </Button>
         </div>
       )}
@@ -513,7 +544,9 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {changeConfigMode === 'add' ? 'Add Configuration' : 'Edit Configuration'}
+              {changeConfigMode === 'add'
+                ? translate('ChargingStations.configuration.addConfiguration')
+                : translate('ChargingStations.configuration.editConfiguration')}
             </DialogTitle>
           </DialogHeader>
           <ChangeConfigurationModal

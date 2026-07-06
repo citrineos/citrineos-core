@@ -40,18 +40,25 @@ export class ReportingOcpp2Api
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
-  constructor(
-    reportingModule: ReportingModule,
-    server: FastifyInstance,
-    version: OCPPVersion = DEFAULT_VERSION,
-    logger?: Logger<ILogObj>,
-  ) {
-    super(reportingModule, server, version, logger);
+  constructor({
+    reportingModule,
+    server,
+    logger,
+  }: {
+    reportingModule: ReportingModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(reportingModule, server, logger);
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetBaseReport, (instance: ReportingOcpp2Api) =>
+  protected get supportedVersions(): OCPPVersion[] {
+    return [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
+  }
+
+  @AsMessageEndpoint(OCPP_CallAction.GetBaseReport, (_instance: ReportingOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'GetBaseReportRequestSchema',
     ),
   )
@@ -60,21 +67,22 @@ export class ReportingOcpp2Api
     request: OCPP2_request_types.GetBaseReportRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.GetBaseReport,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetReport, (instance: ReportingOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.GetReport, (_instance: ReportingOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'GetReportRequestSchema',
     ),
   )
@@ -83,6 +91,7 @@ export class ReportingOcpp2Api
     request: OCPP2_request_types.GetReportRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetReport, return error
     const bytesPerMessageGetReport =
@@ -107,7 +116,7 @@ export class ReportingOcpp2Api
       return await this._module.sendCall(
         identifier,
         tenantId,
-        this._ocppVersion ?? DEFAULT_VERSION,
+        version,
         OCPP_CallAction.GetReport,
         request,
         callbackUrl,
@@ -135,7 +144,7 @@ export class ReportingOcpp2Api
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.GetReport,
           { ...request, componentVariable: batch } as OCPP2_request_types.GetReportRequest,
           callbackUrl,
@@ -158,9 +167,9 @@ export class ReportingOcpp2Api
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetMonitoringReport, (instance: ReportingOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.GetMonitoringReport, (_instance: ReportingOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'GetMonitoringReportRequestSchema',
     ),
   )
@@ -169,6 +178,7 @@ export class ReportingOcpp2Api
     request: OCPP2_request_types.GetMonitoringReportRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation> {
     // If monitoringCriteria & componentVariable are both empty, just call once
     const componentVariable =
@@ -179,7 +189,7 @@ export class ReportingOcpp2Api
       return await this._module.sendCall(
         identifier,
         tenantId,
-        this._ocppVersion ?? DEFAULT_VERSION,
+        version,
         OCPP_CallAction.GetMonitoringReport,
         request,
         callbackUrl,
@@ -206,7 +216,7 @@ export class ReportingOcpp2Api
         const batchResult = await this._module.sendCall(
           identifier,
           tenantId,
-          this._ocppVersion ?? DEFAULT_VERSION,
+          version,
           OCPP_CallAction.GetMonitoringReport,
           {
             ...request,
@@ -231,9 +241,9 @@ export class ReportingOcpp2Api
     return { success: true, payload: confirmations };
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.GetLog, (instance: ReportingOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.GetLog, (_instance: ReportingOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'GetLogRequestSchema',
     ),
   )
@@ -242,21 +252,22 @@ export class ReportingOcpp2Api
     request: OCPP2_request_types.GetLogRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.GetLog,
       request,
       callbackUrl,
     );
   }
 
-  @AsMessageEndpoint(OCPP_CallAction.CustomerInformation, (instance: ReportingOcpp2Api) =>
+  @AsMessageEndpoint(OCPP_CallAction.CustomerInformation, (_instance: ReportingOcpp2Api, version) =>
     getOcpp2Schema(
-      (instance._ocppVersion ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
+      (version ?? DEFAULT_VERSION) as Exclude<OCPPVersion, OCPPVersion.OCPP1_6>,
       'CustomerInformationRequestSchema',
     ),
   )
@@ -265,12 +276,13 @@ export class ReportingOcpp2Api
     request: OCPP2_request_types.CustomerInformationRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     return packageGroupCall(
       this._module,
       identifier,
       tenantId,
-      this._ocppVersion ?? DEFAULT_VERSION,
+      version,
       OCPP_CallAction.CustomerInformation,
       request,
       callbackUrl,
@@ -284,8 +296,8 @@ export class ReportingOcpp2Api
    * @param {CallAction} input - The input {@link CallAction}.
    * @return {string} - The generated URL path.
    */
-  protected _toMessagePath(input: CallAction): string {
+  protected _toMessagePath(input: CallAction, version?: OCPPVersion | null): string {
     const endpointPrefix = this._module.config.modules.reporting.endpointPrefix;
-    return super._toMessagePath(input, endpointPrefix);
+    return super._toMessagePath(input, version, endpointPrefix);
   }
 }

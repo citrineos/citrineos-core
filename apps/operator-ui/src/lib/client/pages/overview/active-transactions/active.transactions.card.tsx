@@ -103,19 +103,19 @@ export const ActiveTransactionsCard = () => {
         <CardHeader>
           <div className="flex justify-between">
             <h2 className={heading2Style}>
-              {translate('overview.activeTransactions')} ({total})
+              {translate('Overview.activeTransactions')} ({total})
             </h2>
             <div
               className={overviewClickableStyle}
               onClick={() => push(`/${MenuSection.TRANSACTIONS}`)}
             >
-              {translate('overview.viewAllTransactions')} <ChevronRightIcon />
+              {translate('Overview.viewAllTransactions')} <ChevronRightIcon />
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {isError ? (
-            <p>{translate('overview.errorLoadingData')}</p>
+            <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
             <div className="flex flex-col gap-4">
               <div className="max-w-md">
@@ -141,14 +141,28 @@ export const ActiveTransactionsCard = () => {
                         <span className="link">{transaction.transactionId}</span>
                       </div>
 
-                      <div>Station: {transaction.ocppConnectionName}</div>
-                      <div>Total kWh: {transaction.totalKwh?.toFixed(2)}</div>
-                      <div>Total Time: {transaction.timeSpentCharging}</div>
-                      <div>Status: {transaction.chargingState}</div>
+                      <div>
+                        {translate('Overview.stationLabel', {
+                          value: transaction.ocppConnectionName,
+                        })}
+                      </div>
+                      <div>
+                        {translate('Overview.totalKwh', {
+                          value: transaction.totalKwh?.toFixed(2),
+                        })}
+                      </div>
+                      <div>
+                        {translate('Overview.totalTime', { value: transaction.timeSpentCharging })}
+                      </div>
+                      <div>
+                        {translate('Overview.transactionStatus', {
+                          value: transaction.chargingState,
+                        })}
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <span>{translate('overview.noActiveTransactions')}</span>
+                  <span>{translate('Overview.noActiveTransactions')}</span>
                 )}
               </div>
             </div>

@@ -98,20 +98,24 @@ This repository is a **pnpm monorepo** with the following workspace members:
 ```
 citrineos-core/
 ├── apps/
-│   ├── Server/          # OCPP server entrypoint, Docker setup, migrations (@citrineos/server)
+│   ├── ocpp-server/          # OCPP server entrypoint, Docker setup, migrations (@citrineos/ocpp-server)
+│   ├── ocpi-server/          # OCPI server (@citrineos/ocpi-server)
 │   └── operator-ui/     # Operator web UI — Next.js + Refine (@citrineos/operator-ui)
 ├── packages/
 │   ├── base/            # Shared types, interfaces, and utilities (@citrineos/base)
 │   └── core/            # Core OCPP modules and logic (@citrineos/core)
-├── docker-compose.yml        # Full stack from published ghcr.io images (server + UI)
-├── docker-compose.local.yml  # Full stack, server built from local source
+├── scripts/
+│   └── stack.mjs             # Docker stack launcher (selects compose files + profiles)
+├── docker-compose.yml        # Base stack — published ghcr.io images, ui/ocpi profiles
+├── docker-compose.local.yml  # Override: build server + UI from local source (--local)
 ├── package.json              # Root workspace scripts
 └── pnpm-workspace.yaml        # pnpm workspace configuration
 ```
 
 Each workspace member documents itself:
 
-- **Server** — running the server, configuration, bootstrap env vars, migrations, OCPP interfaces, EVerest testing: [`apps/Server/README.md`](./apps/Server/README.md)
+- **Server** — running the server, configuration, bootstrap env vars, migrations, OCPP interfaces, EVerest testing: [`apps/ocpp-server/README.md`](./apps/ocpp-server/README.md)
+- **OCPI Server** — running the OCPI server and its configuration: [`apps/ocpi-server/README.md`](./apps/ocpi-server/README.md)
 - **Operator UI** — running and developing the web UI, bringing a station online end-to-end: [`apps/operator-ui/README.MD`](./apps/operator-ui/README.MD)
 
 ## Prerequisites
@@ -144,27 +148,28 @@ Before you begin, make sure you have the following installed on your system:
 
 ## Running the Full Stack with Docker
 
-The quickest way to get a complete environment running is via the root-level Docker Compose files, which start the
-server, the operator UI, RabbitMQ, PostgreSQL, MinIO, and Hasura together.
+The quickest way to get a complete environment running is the launcher at the repository root, which starts the
+server, the operator UI, RabbitMQ, PostgreSQL, MinIO, and Hasura together. It picks the right Compose files and
+profiles for you based on a few flags:
 
-- **From published images** (no build required) — run from the repository root:
+```shell
+pnpm citrine            # ocpp-server + operator UI, from published ghcr.io images
+pnpm citrine --local    # build the server and UI from local source instead of pulling
+pnpm citrine --solo     # ocpp-server only (no operator UI)
+pnpm citrine --ocpi     # also run the OCPI server
+pnpm citrine --local --ocpi   # flags combine freely
+pnpm citrine down       # stop the stack (pass the same flags you started it with)
+```
 
-  ```shell
-  docker compose up -d
-  ```
-
-- **With the server built from local source** — run from the repository root:
-
-  ```shell
-  docker compose -f docker-compose.local.yml up -d
-  ```
+Published images are the default because most issues users hit come from stale local builds; reach for `--local` when
+you are working on the code itself. The OCPI image is published starting with the first release tag — until that tag
+exists, run `--ocpi` together with `--local` so it builds from source instead of trying to pull.
 
 Once everything is up, the operator UI is available at [http://localhost:3000](http://localhost:3000) and the server's
 Swagger docs at [http://localhost:8080/docs](http://localhost:8080/docs).
 
-To run just the backend (no operator UI), or to run the server directly with pnpm for development, see the
-[Server README](./apps/Server/README.md). To develop the UI on its own, see the
-[Operator UI README](./apps/operator-ui/README.MD).
+To run the server directly with pnpm for development, see the [Server README](./apps/ocpp-server/README.md). To develop
+the UI on its own, see the [Operator UI README](./apps/operator-ui/README.MD).
 
 ## Information on Docker Setup
 
@@ -174,11 +179,17 @@ You need to install
 Furthermore, [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux) might be handy as a common
 integrated development environment.
 
-There are three Compose files:
+The stack is defined by two Compose files at the repository root, driven by the `scripts/stack.mjs` launcher:
 
-- `docker-compose.yml` (repository root) — full stack from published `ghcr.io` images, including the operator UI.
-- `docker-compose.local.yml` (repository root) — full stack with the server built from local source.
-- `apps/Server/docker-compose.yml` — backend only (no operator UI), server built from local source (see the [Server README](./apps/Server/README.md)).
+- `docker-compose.yml` — the base stack from published `ghcr.io` images. The operator UI (`ui`) and OCPI server
+  (`ocpi`) are gated behind [Compose profiles](https://docs.docker.com/compose/profiles/); the infrastructure and the
+  OCPP server are always on.
+- `docker-compose.local.yml` — an override (merged on top of the base) that builds the server and operator UI from
+  local source. Applied by the launcher's `--local` flag.
+
+You can call `docker compose` directly if you prefer, but the launcher saves you from remembering the file/profile
+matrix — e.g. `pnpm citrine --local --ocpi` expands to
+`docker compose -f docker-compose.yml -f docker-compose.local.yml --profile ui --profile ocpi up -d --build`.
 
 Once a stack is running, the following services should be available:
 
@@ -189,8 +200,10 @@ Once a stack is running, the following services should be available:
   - `8083`: additional websocket server
   - `8443` / `8444`: TLS websocket servers
   - `9229`: Node.js debugger
-- **Operator UI** (service name: citrine-ui) — only in the root-level Compose files
+- **Operator UI** (service name: citrine-ui) — `ui` profile, on by default (omitted with `--solo`)
   - `3000`: [Operator UI](http://localhost:3000)
+- **OCPI Server** (service name: citrineos-ocpi) — `ocpi` profile, added with `--ocpi`
+  - `8085`: OCPI HTTP API
 - **RabbitMQ Broker** (service name: amqp-broker)
   - `5672`: AMQP TCP connection
   - `15672`: RabbitMQ [management interface](http://localhost:15672)
@@ -212,7 +225,10 @@ These scripts are run from the repository root and operate across the whole work
 ### Building
 
 - `pnpm run build` - builds all packages
-- `pnpm run start` - starts the CitrineOS server (delegates to `@citrineos/server`)
+- `pnpm citrine` - brings the Docker stack up (see [Running the Full Stack with Docker](#running-the-full-stack-with-docker) above)
+
+To run an individual app directly, use its own `start` script — e.g. `pnpm --filter @citrineos/ocpp-server run start`,
+or `cd apps/ocpp-server && pnpm start`. See each app's README for details.
 
 ### Running `clean` and `fresh`
 
@@ -223,9 +239,11 @@ branches, especially when there are changes in a `package.json` — the already 
 
 To alleviate the above, we created the following commands (run from the root directory):
 
-- `pnpm run fresh` - deletes all `node_modules`, `dist`, `tsbuildinfo`, and `pnpm-lock.yaml`, then clears the pnpm cache
-- `pnpm run clean` - subset of `pnpm run fresh`; only deletes build artifacts (`dist` and `tsbuildinfo`)
-- `pnpm run fi` - convenience command that runs `fresh` followed by `pnpm install`
+- `pnpm run clean` - deletes build artifacts across the workspace (`dist`, `.next`, and `tsconfig.tsbuildinfo`)
+- `pnpm run fresh` - runs `clean`, then also removes every `node_modules` and `pnpm-lock.yaml` and clears the pnpm cache
+- `pnpm run fresh:install` - convenience command that runs `fresh` followed by `pnpm install`
+
+These operate across the whole workspace from the root, so individual packages no longer carry their own `clean` scripts.
 
 ### Linting and Prettier
 
@@ -233,21 +251,23 @@ ESLint and Prettier have been configured to help support syntactical consistency
 
 - `pnpm run prettier` - runs Prettier and formats the files
 - `pnpm run lint` - runs the linter
-- `pnpm run lint-fix` - runs Prettier and the linter with the `--fix` flag, which attempts to resolve any linting issues
+- `pnpm run lint:fix` - runs the linter with the `--fix` flag, which attempts to resolve any linting issues
 
 ### Testing
 
 - `pnpm run test` - runs the test suite with Vitest
-- `pnpm run coverage` - runs the test suite with coverage
+- `pnpm run test:coverage` - runs the test suite with coverage
 
 ## Component Documentation
 
-- [CitrineOS Server (`@citrineos/server`)](./apps/Server/README.md) — running the server, configuration, bootstrap
+- [CitrineOS Server (`@citrineos/ocpp-server`)](./apps/ocpp-server/README.md) — running the server, configuration, bootstrap
   environment variables, database migrations, OCPP interface generation, custom DataTransfer validation,
   auto-commissioning, Hasura metadata, and EVerest testing.
 - [CitrineOS Operator UI (`@citrineos/operator-ui`)](./apps/operator-ui/README.MD) — running and developing the web UI,
   and a step-by-step guide to bringing a charging station online end-to-end.
-- [Testing with EVerest](./apps/Server/everest/README.md) — running the EVerest charger simulator against CitrineOS.
+- [CitrineOS OCPI Server](./apps/ocpi-server/README.md) — running the OCPI server alongside Core, the OCPI modules and
+  endpoints it exposes, and how it connects to the OCPP server stack.
+- [Testing with EVerest](./apps/ocpp-server/everest/README.md) — running the EVerest charger simulator against CitrineOS.
 
 ## Contributing
 

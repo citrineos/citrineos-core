@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import prettierConfig from 'eslint-config-prettier';
 import pluginPrettier from 'eslint-plugin-prettier';
+import tseslint from 'typescript-eslint';
 
 export const sharedConfigs = [
   eslint.configs.recommended,

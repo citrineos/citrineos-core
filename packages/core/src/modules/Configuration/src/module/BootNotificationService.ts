@@ -31,12 +31,17 @@ export class BootNotificationService {
   protected _logger: Logger<ILogObj>;
   protected _config: Configuration;
 
-  constructor(
-    bootRepository: IBootRepository,
-    cache: ICache,
-    config: Configuration,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor({
+    bootRepository,
+    cache,
+    config,
+    logger,
+  }: {
+    bootRepository: IBootRepository;
+    cache: ICache;
+    config: Configuration;
+    logger: Logger<ILogObj>;
+  }) {
     this._bootRepository = bootRepository;
     this._cache = cache;
     this._config = config;

@@ -17,7 +17,7 @@ import {
 } from '@lib/queries/tenant.partners';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { getSerializedValues } from '@lib/utils/middleware';
-import { CanAccess, type GetOneResponse } from '@refinedev/core';
+import { CanAccess, type GetOneResponse, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { ChevronLeft } from 'lucide-react';
 import { useFieldArray } from 'react-hook-form';
@@ -36,30 +36,33 @@ type PartnersUpsertProps = {
   params: { id?: string };
 };
 
-const TenantPartnerCreateSchema = TenantPartnerSchema.pick({
-  [TenantPartnerProps.countryCode]: true,
-  [TenantPartnerProps.partyId]: true,
-  [TenantPartnerProps.partnerProfileOCPI]: true,
-}).extend({
-  countryCode: z
-    .string()
-    .min(2, {
-      message: 'Country Code must be exactly 2 characters.',
-    })
-    .max(2, {
-      message: 'Country Code must be exactly 2 characters.',
-    }),
-  partyId: z
-    .string()
-    .min(3, {
-      message: 'Party ID must be exactly 3 characters.',
-    })
-    .max(3, {
-      message: 'Party ID must be exactly 3 characters.',
-    }),
-});
+type TranslateFn = (key: string, options?: any) => string;
 
-export type TenantPartnerCreateDto = z.infer<typeof TenantPartnerCreateSchema>;
+const createTenantPartnerSchema = (translate: TranslateFn) =>
+  TenantPartnerSchema.pick({
+    [TenantPartnerProps.countryCode]: true,
+    [TenantPartnerProps.partyId]: true,
+    [TenantPartnerProps.partnerProfileOCPI]: true,
+  }).extend({
+    countryCode: z
+      .string()
+      .min(2, {
+        message: translate('TenantPartners.validation.countryCodeLength'),
+      })
+      .max(2, {
+        message: translate('TenantPartners.validation.countryCodeLength'),
+      }),
+    partyId: z
+      .string()
+      .min(3, {
+        message: translate('TenantPartners.validation.partyIdLength'),
+      })
+      .max(3, {
+        message: translate('TenantPartners.validation.partyIdLength'),
+      }),
+  });
+
+export type TenantPartnerCreateDto = z.infer<ReturnType<typeof createTenantPartnerSchema>>;
 
 const defaultValues = {
   [TenantPartnerProps.countryCode]: '',
@@ -84,6 +87,7 @@ const ocpiVersions = ['2.2.1'];
 export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
   const { id } = params;
   const { back, replace } = useRouter();
+  const translate = useTranslate();
 
   const tenantId = useTenantId();
 
@@ -99,13 +103,17 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
       action: id ? 'edit' : 'create',
       successNotification: () => {
         return {
-          message: `Partner ${id ? 'updated' : 'created'} successfully`,
+          message: id
+            ? translate('TenantPartners.notifications.updateSuccess')
+            : translate('TenantPartners.notifications.createSuccess'),
           type: 'success',
         };
       },
       errorNotification: (error) => {
         return {
-          message: `Error ${id ? 'updating' : 'creating'} partner: ${error?.message}`,
+          message: id
+            ? translate('TenantPartners.notifications.updateError', { message: error?.message })
+            : translate('TenantPartners.notifications.createError', { message: error?.message }),
           type: 'error',
         };
       },
@@ -115,7 +123,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
       },
     },
     defaultValues: { ...defaultValues },
-    resolver: zodResolver(TenantPartnerCreateSchema),
+    resolver: zodResolver(createTenantPartnerSchema(translate)),
     warnWhenUnsavedChanges: true,
   });
 
@@ -159,7 +167,10 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
         <CardHeader>
           <div className={cardHeaderFlex}>
             <ChevronLeft onClick={() => back()} className="cursor-pointer" />
-            <h2 className={heading2Style}>{id ? 'Edit' : 'Create'} Partner</h2>
+            <h2 className={heading2Style}>
+              {translate(`actions.${id ? 'edit' : 'create'}`)}{' '}
+              {translate('TenantPartners.tenantPartner')}
+            </h2>
           </div>
         </CardHeader>
         <CardContent>
@@ -168,7 +179,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
               <div className={cardGridStyle}>
                 <FormField
                   control={form.control}
-                  label="Country Code"
+                  label={translate('TenantPartners.fields.countryCode')}
                   name={TenantPartnerProps.countryCode}
                   required
                 >
@@ -176,7 +187,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
                 </FormField>
                 <FormField
                   control={form.control}
-                  label="Party ID"
+                  label={translate('TenantPartners.fields.partyId')}
                   name={TenantPartnerProps.partyId}
                   required
                 >
@@ -185,29 +196,29 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
 
                 <FormField
                   control={form.control}
-                  label="Versions URL"
+                  label={translate('TenantPartners.fields.versionsUrl')}
                   name="partnerProfileOCPI.credentials.versionsUrl"
                 >
                   <Input />
                 </FormField>
                 <FormField
                   control={form.control}
-                  label="Client Token"
+                  label={translate('TenantPartners.fields.clientToken')}
                   name="partnerProfileOCPI.credentials.token"
                 >
                   <Input />
                 </FormField>
                 <SelectFormField
                   control={form.control}
-                  label="OCPI Version"
+                  label={translate('TenantPartners.fields.ocpiVersion')}
                   name="partnerProfileOCPI.version.version"
                   options={ocpiVersions}
-                  placeholder="Select Version"
+                  placeholder={translate('TenantPartners.placeholders.selectVersion')}
                 />
 
                 <FormField
                   control={form.control}
-                  label="Version Details URL"
+                  label={translate('TenantPartners.fields.versionDetailsUrl')}
                   name="partnerProfileOCPI.version.versionDetailsUrl"
                 >
                   <Input />
@@ -215,7 +226,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
 
                 <FormField
                   control={form.control}
-                  label="(Server Credentials) Versions URL"
+                  label={translate('TenantPartners.fields.serverCredentialsVersionsUrl')}
                   name="partnerProfileOCPI.serverCredentials.versionsUrl"
                 >
                   <Input />
@@ -223,14 +234,14 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
 
                 <FormField
                   control={form.control}
-                  label="(Server Credentials) Token"
+                  label={translate('TenantPartners.fields.serverCredentialsToken')}
                   name="partnerProfileOCPI.serverCredentials.token"
                 >
                   <Input />
                 </FormField>
               </div>
               <div className="flex flex-col gap-4 items-start">
-                <h3 className={heading3Style}>Roles</h3>
+                <h3 className={heading3Style}>{translate('TenantPartners.fields.roles')}</h3>
                 <AddArrayItemButton
                   onAppendAction={() =>
                     append({
@@ -238,33 +249,35 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
                       businessDetails: { name: '', website: '' },
                     })
                   }
-                  itemLabel="Role"
+                  itemLabel={translate('TenantPartners.fields.role')}
                 />
                 <div className="flex flex-col gap-6 w-full">
                   {fields.map((field, index) => (
                     <div className={nestedFormRowFlex} key={field.id}>
                       <SelectFormField
                         control={form.control}
-                        label="Role"
+                        label={translate('TenantPartners.fields.role')}
                         name={`partnerProfileOCPI.roles.${index}.role`}
                         options={roleOptions}
-                        placeholder="Select Role"
+                        placeholder={translate('TenantPartners.placeholders.selectRole')}
                       />
 
                       <FormField
                         control={form.control}
-                        label="Business Name"
+                        label={translate('TenantPartners.fields.businessName')}
                         name={`partnerProfileOCPI.roles.${index}.businessDetails.name`}
                       >
-                        <Input placeholder="Business Name" />
+                        <Input
+                          placeholder={translate('TenantPartners.placeholders.businessName')}
+                        />
                       </FormField>
 
                       <FormField
                         control={form.control}
-                        label="Website"
+                        label={translate('TenantPartners.fields.website')}
                         name={`partnerProfileOCPI.roles.${index}.businessDetails.website`}
                       >
-                        <Input placeholder="Website" />
+                        <Input placeholder={translate('TenantPartners.placeholders.website')} />
                       </FormField>
 
                       <RemoveArrayItemButton onRemoveAction={() => remove(index)} />

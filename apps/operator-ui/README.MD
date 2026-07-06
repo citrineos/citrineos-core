@@ -45,6 +45,8 @@ full stack (server + UI + Hasura) together, see the [root README](../../README.m
 - [Working with `@citrineos/base`](#working-with-citrineosbase)
 - [Build & Development Workflow](#build--development-workflow)
 - [Running the Application](#running-the-application)
+- [Internationalization (i18n)](#internationalization-i18n)
+  - [Adding a New Language](#adding-a-new-language)
 - [Bringing a Charging Station Online (End-to-End)](#bringing-a-charging-station-online-end-to-end)
   - [Create a Location](#create-a-location)
   - [Add a Charging Station (Charge Point)](#add-a-charging-station-charge-point)
@@ -135,16 +137,17 @@ References:
 
 ### Running with Docker (Recommended)
 
-If **CitrineOS Core** is already running via Docker, the Operator UI can be started with a single command:
+The Operator UI is part of the default stack — the launcher at the repository root starts CitrineOS Core and the UI
+together (the UI is on by default; `--solo` omits it):
 
 ```bash
-docker compose up -d
+pnpm citrine            # Core + UI from published ghcr.io images
+pnpm citrine --local    # build Core + UI from local source
 ```
 
-This will:
-
-- Build the Operator UI container
-- Start the UI connected to the configured Hasura and Core service
+The UI is then available at [http://localhost:3000](http://localhost:3000), connected to the configured Hasura and
+Core services. For the full flag matrix, see the
+[root README](../../README.md#running-the-full-stack-with-docker).
 
 ### Running with pnpm (Local Development)
 
@@ -212,6 +215,51 @@ pnpm run start
 ```
 
 - Production URL: http://localhost:3000
+
+## Internationalization (i18n)
+
+The Operator UI is fully internationalized using [next-intl](https://next-intl.dev/), integrated with Refine's
+`i18nProvider`. All user-facing strings are resolved through translation keys.
+
+- **Available languages:** English (`en`, default) and Brazilian Portuguese (`pt-BR`)
+- **Language switcher:** available at the bottom of the sidebar, next to the theme toggle
+- **Persistence:** the selected language is stored in the `NEXT_LOCALE` cookie; English is used as a fallback for
+  any key missing in the selected locale
+
+Translation files live in `public/locales/<locale>/`, one JSON file per domain namespace (`common.json`,
+`chargingStations.json`, `locations.json`, `authorizations.json`, `tariffs.json`, `transactions.json`,
+`tenantPartners.json`, `overview.json`). Each file has a single PascalCase root key (e.g. `ChargingStations`)
+with camelCase sub-keys, and supports ICU parameters (e.g. `"noDataFound": "No location found with id {id}."`).
+
+In components, strings are resolved with Refine's `useTranslate` hook, using flat keys from the merged message
+tree:
+
+```tsx
+import { useTranslate } from '@refinedev/core';
+
+const translate = useTranslate();
+translate('Common.save');
+translate('Locations.noDataFound', { id });
+```
+
+### Adding a New Language
+
+1. Copy `public/locales/en/` to `public/locales/<locale>/` (e.g. `public/locales/de/`) and translate the values
+   (keep the keys and ICU parameters unchanged).
+2. Register the locale in `LOCALES` in `src/lib/utils/consts.tsx`:
+
+   ```ts
+   export const LOCALES = [
+     { value: 'en', label: 'English' },
+     { value: 'pt-BR', label: 'Português (Brasil)' },
+     { value: 'de', label: 'Deutsch' },
+   ];
+   ```
+
+3. Add the new files to `.reuse/ignore-files.txt` (repository root) so the REUSE license check passes.
+
+The language switcher picks up new locales automatically from `LOCALES`. Keys missing from the new locale fall
+back to English at runtime, so partial translations are safe to ship incrementally.
 
 ## Bringing a Charging Station Online (End-to-End)
 
@@ -331,8 +379,8 @@ Authorizations → Add Authorization
 Now that the backend configuration is complete, start the EVerest simulator:
 
 ```bash
-cd citrineos-core/apps/Server
-pnpm run start-everest
+cd citrineos-core/apps/ocpp-server
+pnpm run start:everest
 ```
 
 This will:

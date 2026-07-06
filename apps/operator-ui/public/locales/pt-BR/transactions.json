@@ -1,0 +1,76 @@
+{
+  "Transactions": {
+    "Transactions": "Transações",
+    "transaction": "Transação",
+    "toggleActiveStatus": "Alternar Status Ativo",
+    "toggleActiveWarning": "Você está prestes a marcar esta transação como ",
+    "toggleActiveCaution": "Atenção: esta ação pode fazer com que a interface fique dessincronizada do status real da transação. Prossiga apenas se tiver certeza.",
+    "noDataFound": "Nenhuma transação encontrada com o id {id}.",
+    "columns": {
+      "transactionId": "ID da Transação",
+      "active": "Ativa",
+      "stationId": "ID da Estação",
+      "location": "Localização",
+      "idToken": "idTag",
+      "totalKwh": "kWh Total",
+      "status": "Status",
+      "startTime": "Início",
+      "endTime": "Término",
+      "createdAt": "Criada em",
+      "updatedAt": "Atualizada em"
+    },
+    "detail": {
+      "stationId": "ID da Estação",
+      "location": "Localização",
+      "totalKwh": "kWh Total",
+      "chargingState": "Estado de Recarga",
+      "startTime": "Início",
+      "endTime": "Término",
+      "tariff": "Tarifa"
+    },
+    "tabs": {
+      "meterValueData": "Dados de Valores de Medição",
+      "events": "Eventos",
+      "ocppMessages": "Mensagens OCPP",
+      "contexts": "Contextos:",
+      "selectReadingContexts": "Selecione os contextos de leitura",
+      "searchReadingContexts": "Buscar contextos de leitura"
+    },
+    "charts": {
+      "timeElapsed": "Tempo Decorrido",
+      "stateOfChargeLabel": "Estado de Carga (%)",
+      "stateOfChargeTitle": "Estado de Carga ao Longo do Tempo",
+      "noStateOfChargeData": "Nenhum dado de estado de carga disponível",
+      "energyLabel": "Energia (kWh)",
+      "energyTitle": "Energia ao Longo do Tempo",
+      "noEnergyData": "Nenhum dado de energia disponível",
+      "voltageLabel": "Tensão (V)",
+      "voltageTitle": "Tensão ao Longo do Tempo",
+      "noVoltageData": "Nenhum dado de tensão disponível",
+      "powerLabel": "Potência (kW)",
+      "powerTitle": "Potência ao Longo do Tempo",
+      "noPowerData": "Nenhum dado de potência disponível",
+      "currentLabel": "Corrente (A)",
+      "currentTitle": "Corrente ao Longo do Tempo",
+      "noCurrentData": "Nenhum dado de corrente disponível"
+    },
+    "events": {
+      "eventType": "Tipo de Evento",
+      "timestamp": "Data/Hora",
+      "seqNo": "Seq. nº",
+      "triggerReason": "Motivo do Disparo",
+      "viewMeterValues": "Ver Valores de Medição"
+    },
+    "meterValues": {
+      "id": "ID",
+      "timestamp": "Data/Hora",
+      "sampleValues": "Valores Amostrados",
+      "value": "Valor",
+      "context": "Contexto",
+      "measurand": "Grandeza Medida",
+      "phase": "Fase",
+      "location": "Localização",
+      "sampledValue": "Valor Amostrado {index}"
+    }
+  }
+}

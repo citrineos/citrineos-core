@@ -48,16 +48,25 @@ export class InstallCertificateHelperService {
   protected fileStorage: IFileStorage;
   protected logger: Logger<ILogObj>;
 
-  constructor(
-    certificateRepository: ICertificateRepository,
-    installedCertificateRepository: IInstalledCertificateRepository,
-    installCertificateAttemptRepository: IInstallCertificateAttemptRepository,
-    deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository,
-    certificateAuthorityService: CertificateAuthorityService,
-    networkConnection: WebsocketNetworkConnection,
-    fileStorage: IFileStorage,
-    logger: Logger<ILogObj>,
-  ) {
+  constructor({
+    certificateRepository,
+    installedCertificateRepository,
+    installCertificateAttemptRepository,
+    deleteCertificateAttemptRepository,
+    certificateAuthorityService,
+    networkConnection,
+    fileStorage,
+    logger,
+  }: {
+    certificateRepository: ICertificateRepository;
+    installedCertificateRepository: IInstalledCertificateRepository;
+    installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
+    deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+    certificateAuthorityService: CertificateAuthorityService;
+    networkConnection: WebsocketNetworkConnection;
+    fileStorage: IFileStorage;
+    logger: Logger<ILogObj>;
+  }) {
     this.certificateRepository = certificateRepository;
     this.installedCertificateRepository = installedCertificateRepository;
     this.installCertificateAttemptRepository = installCertificateAttemptRepository;

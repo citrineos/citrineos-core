@@ -20,7 +20,10 @@
       "path": "./packages/core"
     },
     {
-      "path": "./apps/Server"
+      "path": "./packages/ocpi-base"
+    },
+    {
+      "path": "./apps/ocpp-server"
     }
   ]
 }

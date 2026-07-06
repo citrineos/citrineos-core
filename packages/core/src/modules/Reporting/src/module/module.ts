@@ -2,18 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  BootstrapConfig,
   CallAction,
   GenericDeviceModelStatusEnumType,
   HandlerProperties,
-  ICache,
   IMessage,
-  IMessageHandler,
-  IMessageSender,
+  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
-  SystemConfig,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -27,11 +23,10 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
-  OCPPValidator,
   OCPPVersion,
   SetVariableStatusEnum,
 } from '@citrineos/base';
-import { sequelize } from '@dal/index.js';
+
 import type {
   IDeviceModelRepository,
   IOCPPMessageRepository,
@@ -39,9 +34,16 @@ import type {
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
 import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { DeviceModelService } from './services.js';
+
+import type { DeviceModelService } from './services.js';
+
+export interface ReportingModuleDependencies extends OcppModuleDependencies {
+  deviceModelRepository: IDeviceModelRepository;
+  securityEventRepository: ISecurityEventRepository;
+  variableMonitoringRepository: IVariableMonitoringRepository;
+  ocppMessageRepository: IOCPPMessageRepository;
+  reportingDeviceModelService: DeviceModelService;
+}
 
 /**
  * Component that handles provisioning related messages.
@@ -69,57 +71,29 @@ export class ReportingModule extends AbstractModule {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
   protected _ocppMessageRepository: IOCPPMessageRepository;
 
-  /**
-   * This is the constructor function that initializes the {@link ReportingModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository} which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
-   *
-   * @param {ISecurityEventRepository} [securityEventRepository] - An optional parameter of type {@link ISecurityEventRepository} which represents a repository for accessing security event notification data.
-   *
-   * @param {IVariableMonitoringRepository} [variableMonitoringRepository] - An optional parameter of type {@link IVariableMonitoringRepository} which represents a repository for accessing and manipulating monitoring data.
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    deviceModelRepository?: IDeviceModelRepository,
-    securityEventRepository?: ISecurityEventRepository,
-    variableMonitoringRepository?: IVariableMonitoringRepository,
-    ocppMessageRepository?: IOCPPMessageRepository,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    deviceModelRepository,
+    securityEventRepository,
+    variableMonitoringRepository,
+    ocppMessageRepository,
+    reportingDeviceModelService,
+  }: ReportingModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.Reporting, logger, ocppValidator);
 
     this._requests = config.modules.reporting.requests;
     this._responses = config.modules.reporting.responses;
 
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
-    this._securityEventRepository =
-      securityEventRepository ||
-      new sequelize.SequelizeSecurityEventRepository(config, this._logger);
-    this._variableMonitoringRepository =
-      variableMonitoringRepository ||
-      new sequelize.SequelizeVariableMonitoringRepository(config, this._logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
-    this._deviceModelService = new DeviceModelService(this._deviceModelRepository);
+    this._deviceModelRepository = deviceModelRepository;
+    this._securityEventRepository = securityEventRepository;
+    this._variableMonitoringRepository = variableMonitoringRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._deviceModelService = reportingDeviceModelService;
   }
 
   /**
@@ -450,3 +424,5 @@ export class ReportingModule extends AbstractModule {
     this._logger.debug('GetDiagnostics response received:', message, props);
   }
 }
+
+export default ReportingModule;

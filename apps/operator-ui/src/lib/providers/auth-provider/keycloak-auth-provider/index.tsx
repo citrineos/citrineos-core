@@ -6,7 +6,7 @@
 import { type AuthenticationContextProvider, type User } from '@/lib/utils/access.types';
 import config from '@/lib/utils/config';
 import { getSession, signIn, signOut } from 'next-auth/react';
-import type { AuthProvider } from '@refinedev/core';
+import { type AuthProvider, useTranslate } from '@refinedev/core';
 import { HasuraHeader, HasuraRole } from '@lib/utils/hasura.types';
 import React, { useEffect } from 'react';
 import { parseJwt, getTokenClaim } from '@lib/utils/jwt';
@@ -37,6 +37,7 @@ const HASURA_CLAIM = config.hasuraClaim!;
  * Automatically redirects to Keycloak login
  */
 const KeycloakLoginPage: React.FC = () => {
+  const translate = useTranslate();
   useEffect(() => {
     signIn('keycloak', { callbackUrl: '/overview' });
   }, []);
@@ -44,8 +45,8 @@ const KeycloakLoginPage: React.FC = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2">Redirecting to Keycloak...</h2>
-        <p className="text-gray-600">Redirecting to Keycloak login...</p>
+        <h2 className="text-xl font-semibold mb-2">{translate('pages.redirectingToKeycloak')}</h2>
+        <p className="text-gray-600">{translate('pages.redirectingToKeycloakLogin')}</p>
       </div>
     </div>
   );

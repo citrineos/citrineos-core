@@ -24,7 +24,7 @@
 **/*.Dockerfile
 
 # Specific directories to ignore
-**/Server/data
+**/ocpp-server/data
 
 # VCS and CI/test artifacts (not needed in any image)
 .git

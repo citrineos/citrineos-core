@@ -24,8 +24,6 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { CryptoUtils } from '../../../../util/CryptoUtils.js';
-
 import { ChargingStation } from '../Location/index.js';
 
 import { Boot } from '../Boot.js';
@@ -143,22 +141,7 @@ export class VariableAttribute
   declare dataType: OCPP2_0_1.DataEnumType;
 
   @Column({
-    // TODO: Make this configurable? also used in VariableStatus model
     type: DataType.STRING(4000),
-    set(valueString: string) {
-      if (valueString) {
-        const valueType = (this as VariableAttribute).dataType;
-        switch (valueType) {
-          case OCPP2_0_1.DataEnumType.passwordString:
-            valueString = CryptoUtils.getPasswordHash(valueString);
-            break;
-          default:
-            // Do nothing
-            break;
-        }
-      }
-      this.setDataValue('value', valueString);
-    },
   })
   declare value?: string | null;
 

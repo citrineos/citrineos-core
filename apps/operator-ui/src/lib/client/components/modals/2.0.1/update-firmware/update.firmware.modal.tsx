@@ -13,7 +13,7 @@ import { CHARGING_STATION_SEQUENCES_GET_QUERY } from '@lib/queries/charging.stat
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { formatPem, triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useApiUrl, useCustom } from '@refinedev/core';
+import { useApiUrl, useCustom, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useEffect, useMemo, useState } from 'react';
@@ -28,21 +28,20 @@ export interface UpdateFirmwareModalProps {
   station: ChargingStationDto;
 }
 
-const UpdateFirmwareSchema = z.object({
-  requestId: z.coerce.number<number>().int().min(0),
-  retries: z.coerce.number<number>().int().min(0).optional(),
-  retryInterval: z.coerce.number<number>().int().min(0).optional(),
-  location: z.string().url('Must be a valid URL').min(1).max(512),
-  retrieveDateTime: z.string().min(1, 'Retrieve date is required'),
-  installDateTime: z.string().optional(),
-  signingCertificate: z.string().max(5500).optional(),
-  signature: z.string().max(800).optional(),
-});
-
-type UpdateFirmwareFormData = z.infer<typeof UpdateFirmwareSchema>;
+type UpdateFirmwareFormData = {
+  requestId: number;
+  retries?: number;
+  retryInterval?: number;
+  location: string;
+  retrieveDateTime: string;
+  installDateTime?: string;
+  signingCertificate?: string;
+  signature?: string;
+};
 
 export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
 
   const tenantId = useTenantId();
@@ -51,6 +50,27 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const UpdateFirmwareSchema = useMemo(
+    () =>
+      z.object({
+        requestId: z.coerce.number<number>().int().min(0),
+        retries: z.coerce.number<number>().int().min(0).optional(),
+        retryInterval: z.coerce.number<number>().int().min(0).optional(),
+        location: z
+          .string()
+          .url(translate('ChargingStations.firmwareDiagnostics.invalidUrl'))
+          .min(1)
+          .max(512),
+        retrieveDateTime: z
+          .string()
+          .min(1, translate('ChargingStations.updateFirmwareModal.retrieveDateRequired')),
+        installDateTime: z.string().optional(),
+        signingCertificate: z.string().max(5500).optional(),
+        signature: z.string().max(800).optional(),
+      }),
+    [translate],
+  );
 
   const apiUrl = useApiUrl();
   const {
@@ -96,7 +116,7 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
     if (values.signingCertificate && values.signingCertificate.trim()) {
       const pemString = formatPem(values.signingCertificate);
       if (!pemString) {
-        toast.error('Incorrectly formatted PEM certificate');
+        toast.error(translate('ChargingStations.installCertificateModal.invalidPem'));
         return;
       }
       signingCertificate = pemString;
@@ -120,6 +140,7 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/updateFirmware?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -136,39 +157,88 @@ export const UpdateFirmwareModal = ({ station }: UpdateFirmwareModalProps) => {
       loading={loading || isRequestIdLoading}
       submitHandler={handleSubmit}
       submitButtonVariant={FormButtonVariants.submit}
-      submitButtonLabel="Update Firmware"
+      submitButtonLabel={translate('ChargingStations.commands.updateFirmware')}
       hideCancel
     >
-      <FormField control={form.control} label="Request ID" name="requestId" required>
-        <Input type="number" placeholder="Request ID" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.requestId.label')}
+        name="requestId"
+        required
+      >
+        <Input type="number" placeholder={translate('ChargingStations.requestId.label')} min="0" />
       </FormField>
 
-      <FormField control={form.control} label="Location (URL)" name="location" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.locationUrl')}
+        name="location"
+        required
+      >
         <Input placeholder="https://example.com/firmware.bin" type="url" required />
       </FormField>
 
-      <FormField control={form.control} label="Retrieve Date/Time" name="retrieveDateTime" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.updateFirmwareModal.retrieveDateTime')}
+        name="retrieveDateTime"
+        required
+      >
         <Input type="datetime-local" />
       </FormField>
 
-      <FormField control={form.control} label="Install Date/Time" name="installDateTime">
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.updateFirmwareModal.installDateTime')}
+        name="installDateTime"
+      >
         <Input type="datetime-local" />
       </FormField>
 
-      <FormField control={form.control} label="Retries" name="retries">
-        <Input type="number" placeholder="Number of retries" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retries')}
+        name="retries"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retriesPlaceholder')}
+          min="0"
+        />
       </FormField>
 
-      <FormField control={form.control} label="Retry Interval" name="retryInterval">
-        <Input type="number" placeholder="Retry interval in seconds" min="0" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.firmwareDiagnostics.retryInterval')}
+        name="retryInterval"
+      >
+        <Input
+          type="number"
+          placeholder={translate('ChargingStations.firmwareDiagnostics.retryIntervalPlaceholder')}
+          min="0"
+        />
       </FormField>
 
-      <FormField control={form.control} label="Signing Certificate (PEM)" name="signingCertificate">
-        <Textarea placeholder="Paste PEM-formatted certificate here" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.updateFirmwareModal.signingCertificate')}
+        name="signingCertificate"
+      >
+        <Textarea
+          placeholder={translate(
+            'ChargingStations.updateFirmwareModal.signingCertificatePlaceholder',
+          )}
+        />
       </FormField>
 
-      <FormField control={form.control} label="Signature" name="signature">
-        <Input placeholder="Firmware signature" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.updateFirmwareModal.signature')}
+        name="signature"
+      >
+        <Input
+          placeholder={translate('ChargingStations.updateFirmwareModal.signaturePlaceholder')}
+        />
       </FormField>
     </Form>
   );

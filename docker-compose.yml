@@ -2,10 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Combined docker-compose for running CitrineOS server + operator UI using
-# the latest published images from ghcr.io (built by the
-# push-release-tagged-server.yml and push-release-tagged-operator-ui.yml
-# GitHub Actions workflows).
+# Base stack for CitrineOS. Do not invoke this file directly — use the launcher
+# at the repository root, which selects the right files and profiles:
+#
+#   pnpm citrine            # ocpp-server + operator UI, ghcr.io images
+#   pnpm citrine --local    # build server + UI from local source
+#   pnpm citrine --solo     # ocpp-server only (no UI)
+#   pnpm citrine --ocpi     # add the OCPI server
+#
+# Profiles: `ui` adds the operator UI, `ocpi` adds the OCPI server. The
+# infrastructure services and `citrine` (the OCPP server) are always on.
+# Published images come from ghcr.io (built by push-release-tagged-server.yml,
+# push-release-tagged-operator-ui.yml, and push-release-tagged-ocpi.yml). The
+# OCPI image is published starting with the first release tag; until then,
+# `--ocpi` without `--local` will fail to pull (use `--local` to build it).
 services:
   citrine:
     image: ghcr.io/citrineos/citrineos-server:latest
@@ -54,12 +64,36 @@ services:
   citrine-ui:
     image: ghcr.io/citrineos/citrineos-operator-ui:latest
     pull_policy: always
+    profiles:
+      - ui
     ports:
       - 3000:3000
     depends_on:
       citrine:
         condition: service_healthy
       graphql-engine:
+        condition: service_healthy
+
+  citrineos-ocpi:
+    image: ghcr.io/citrineos/citrineos-ocpi:latest
+    pull_policy: always
+    profiles:
+      - ocpi
+    environment:
+      APP_NAME: "ocpi"
+      APP_ENV: "docker"
+      DB_HOST: "ocpp-db"
+      AMQP_URL: "amqp://guest:guest@amqp-broker:5672"
+      AMQP_EXCHANGE: "citrineos"
+    ports:
+      - 8085:8085
+      # - 9229:9229
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+      amqp-broker:
+        condition: service_healthy
+      citrine:
         condition: service_healthy
 
   amqp-broker:
@@ -71,7 +105,7 @@ services:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
     volumes:
-      - ./data/rabbitmq:/var/lib/rabbitmq
+      - ./apps/ocpp-server/data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: rabbitmq-diagnostics -q check_port_connectivity
       interval: 10s
@@ -84,16 +118,18 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./data/postgresql/pgdata:/var/lib/postgresql/data
+      - ./apps/ocpp-server/data/postgresql/pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: "citrine"
     healthcheck:
-      test: "pg_isready --username=citrine"
+      test:
+        ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U citrine -d citrine"]
       interval: 5s
       timeout: 10s
       retries: 5
+      start_period: 30s
 
   minio:
     image: minio/minio
@@ -107,7 +143,7 @@ services:
       MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
       MINIO_SERVER_URL: http://localhost:9000
     volumes:
-      - ./data/minio:/data
+      - ./apps/ocpp-server/data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -130,7 +166,7 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
     volumes:
-      - ./apps/server/hasura-metadata:/hasura-metadata
+      - ./apps/ocpp-server/hasura-metadata:/hasura-metadata
     ports:
       - 8090:8080
     restart: always
@@ -156,4 +192,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 20
-      start_period: 5s
+      start_period: 15s
+
+# Name the default network `citrineos` so it is stable and project-independent.
+networks:
+  default:
+    name: citrineos

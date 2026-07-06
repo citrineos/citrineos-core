@@ -9,6 +9,7 @@ import { CertificatesDataApi, CertificatesModule } from '../../src';
 import { aUploadExistingCertificate } from '../providers/UploadExistingCertificateProvider';
 import { mockFastifyInstance, mockFileStorage } from '../../vitest.setup';
 import { MOCK_CHARGING_STATION_ID } from '../providers/ChargingStation';
+import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
 
 // Mock the decorator metadata before importing the class
 vi.mock('reflect-metadata', async (importOriginal) => {
@@ -45,6 +46,7 @@ vi.mock('@citrineos/core', async (importOriginal) => {
 });
 
 describe('CertificatesDataApi', () => {
+  const { container } = createTestContainer();
   let dataApi: CertificatesDataApi;
   let mockCertificatesModule: CertificatesModule;
 
@@ -61,12 +63,12 @@ describe('CertificatesDataApi', () => {
       },
     } as any;
 
-    dataApi = new CertificatesDataApi(
-      mockCertificatesModule,
-      mockFastifyInstance,
-      mockFileStorage,
-      [],
-    );
+    dataApi = getTestInstance(container, CertificatesDataApi, {
+      certificatesModule: mockCertificatesModule,
+      server: mockFastifyInstance,
+      fileStorage: mockFileStorage,
+      websocketServersConfig: [],
+    });
   });
 
   describe('uploadExistingCertificate', () => {

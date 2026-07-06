@@ -30,6 +30,7 @@ export const ForceDisconnectModal = ({ station }: ForceDisconnectModalProps) => 
 
   const onOkay = async () => {
     await triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/ocpprouter/connection?ocppConnectionName=${parsedStation.ocppConnectionName}&tenantId=${parsedStation.tenantId}`,
       data: undefined,
       setLoading,

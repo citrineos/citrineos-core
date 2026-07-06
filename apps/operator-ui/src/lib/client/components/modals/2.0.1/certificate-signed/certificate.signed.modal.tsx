@@ -15,6 +15,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
@@ -29,27 +30,14 @@ const ACCEPTED_FILE_TYPES = ['.pem', '.id'];
 
 const certificateSigningUses = Object.keys(OCPP2_0_1.CertificateSigningUseEnumType);
 
-export const CertificateSignedSchema = z.object({
-  certificateType: z.enum(OCPP2_0_1.CertificateSigningUseEnumType).optional(),
-  certificate: z
-    .custom<FileList>()
-    .refine((files) => files?.length === 1, 'Certificate file is required')
-    .refine(
-      (files) => {
-        const file = files?.[0];
-        if (!file) return false;
-        const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-        return ACCEPTED_FILE_TYPES.includes(extension);
-      },
-      `File must be one of: ${ACCEPTED_FILE_TYPES.join(', ')}`,
-    )
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, 'File size must be less than 5MB'),
-});
-
-export type CertificateSignedFormData = z.infer<typeof CertificateSignedSchema>;
+export type CertificateSignedFormData = {
+  certificateType?: OCPP2_0_1.CertificateSigningUseEnumType;
+  certificate: FileList;
+};
 
 export const CertificateSignedModal = ({ station }: CertificateSignedModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -58,6 +46,35 @@ export const CertificateSignedModal = ({ station }: CertificateSignedModalProps)
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const CertificateSignedSchema = useMemo(
+    () =>
+      z.object({
+        certificateType: z.enum(OCPP2_0_1.CertificateSigningUseEnumType).optional(),
+        certificate: z
+          .custom<FileList>()
+          .refine(
+            (files) => files?.length === 1,
+            translate('ChargingStations.certificateSignedModal.certificateRequired'),
+          )
+          .refine(
+            (files) => {
+              const file = files?.[0];
+              if (!file) return false;
+              const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+              return ACCEPTED_FILE_TYPES.includes(extension);
+            },
+            translate('ChargingStations.certificateSignedModal.fileTypeError', {
+              types: ACCEPTED_FILE_TYPES.join(', '),
+            }),
+          )
+          .refine(
+            (files) => files?.[0]?.size <= MAX_FILE_SIZE,
+            translate('ChargingStations.certificateSignedModal.fileSizeError'),
+          ),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(CertificateSignedSchema),
@@ -86,6 +103,7 @@ export const CertificateSignedModal = ({ station }: CertificateSignedModalProps)
         };
 
         triggerMessageAndHandleResponse<MessageConfirmation[]>({
+          translate,
           url: `/certificates/certificateSigned?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
           data,
           setLoading,
@@ -111,16 +129,21 @@ export const CertificateSignedModal = ({ station }: CertificateSignedModalProps)
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Certificate File" name="certificate" required>
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.certificateSignedModal.certificateFile')}
+        name="certificate"
+        required
+      >
         <Input type="file" accept={ACCEPTED_FILE_TYPES.join(',')} {...fileRef} />
       </FormField>
 
       <SelectFormField
         control={form.control}
-        label="Certificate Type"
+        label={translate('ChargingStations.certificateSignedModal.certificateType')}
         name="certificateType"
         options={certificateSigningUses}
-        placeholder="Select Certificate Type"
+        placeholder={translate('ChargingStations.certificateSignedModal.selectCertificateType')}
       />
     </Form>
   );

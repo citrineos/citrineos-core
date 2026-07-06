@@ -9,7 +9,7 @@ import { Combobox } from '@lib/client/components/combobox';
 import { GET_CONNECTOR_LIST_FOR_STATION_EVSE } from '@lib/queries/connectors';
 import { CONNECTOR_LIST_FOR_STATION_QUERY } from '@lib/queries/connectors';
 import { ResourceType } from '@lib/utils/access.types';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { Field, FieldDescription, FieldLabel } from '@lib/client/components/ui/field';
 import {
   formLabelStyle,
@@ -35,6 +35,7 @@ export const ConnectorSelector = ({
   isOptional = false,
   requiresEvseId = false,
 }: ConnectorSelectorProps) => {
+  const translate = useTranslate();
   // Use different query based on whether we're filtering by EVSE (2.0.1) or not (1.6)
   const gqlQuery =
     evseId !== undefined ? GET_CONNECTOR_LIST_FOR_STATION_EVSE : CONNECTOR_LIST_FOR_STATION_QUERY;
@@ -80,16 +81,22 @@ export const ConnectorSelector = ({
   return (
     <Field>
       <FieldLabel className={formLabelWrapperStyle}>
-        <span className={formLabelStyle}>Connector</span>
+        <span className={formLabelStyle}>
+          {translate('ChargingStations.connectorSelector.label')}
+        </span>
         {!isOptional && formRequiredAsterisk}
       </FieldLabel>
       {requiresEvseId && !evseId && (
-        <span className="text-sm text-muted-foreground">Select an EVSE</span>
+        <span className="text-sm text-muted-foreground">
+          {translate('ChargingStations.connectorSelector.selectEvse')}
+        </span>
       )}
       {query.isLoading && ((requiresEvseId && evseId) || !requiresEvseId) && (
         <div className="flex items-center gap-2 py-4">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Loading Connectors...</span>
+          <span className="text-sm text-muted-foreground">
+            {translate('ChargingStations.connectorSelector.loading')}
+          </span>
         </div>
       )}
       {!query.isLoading && ((requiresEvseId && evseId) || !requiresEvseId) && (
@@ -98,14 +105,14 @@ export const ConnectorSelector = ({
           onSelect={onSelect}
           value={value}
           onSearch={onSearch}
-          placeholder={'Search Connectors'}
+          placeholder={translate('ChargingStations.connectorSelector.searchPlaceholder')}
           isLoading={query.isLoading}
         />
       )}
       <FieldDescription>
         {evseId !== undefined
-          ? `Connectors for selected EVSE`
-          : 'Connector IDs are serial integers starting at 1'}
+          ? translate('ChargingStations.connectorSelector.descriptionForEvse')
+          : translate('ChargingStations.connectorSelector.description')}
       </FieldDescription>
     </Field>
   );

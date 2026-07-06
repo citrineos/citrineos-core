@@ -11,13 +11,20 @@ export class RabbitMQChannelManager {
 
   protected _logger: Logger<ILogObj>;
 
-  constructor(
-    private connectionManager: RabbitMQConnectionManager,
-    logger?: Logger<ILogObj>,
-  ) {
+  private connectionManager: RabbitMQConnectionManager;
+
+  constructor({
+    connectionManager,
+    logger,
+  }: {
+    connectionManager: RabbitMQConnectionManager;
+    logger?: Logger<ILogObj>;
+  }) {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
+
+    this.connectionManager = connectionManager;
 
     // Recreate channels on reconnection
     connectionManager.on('connected', () => {

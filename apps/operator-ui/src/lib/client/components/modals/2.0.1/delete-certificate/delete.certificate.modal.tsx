@@ -16,7 +16,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
@@ -31,14 +31,13 @@ export interface DeleteCertificateModalProps {
   station: any;
 }
 
-export const DeleteCertificateSchema = z.object({
-  certificate: z.string().min(1, 'Certificate is required'),
-});
-
-export type DeleteCertificateFormData = z.infer<typeof DeleteCertificateSchema>;
+export type DeleteCertificateFormData = {
+  certificate: string;
+};
 
 export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -47,6 +46,16 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const DeleteCertificateSchema = useMemo(
+    () =>
+      z.object({
+        certificate: z
+          .string()
+          .min(1, translate('ChargingStations.deleteCertificateModal.certificateRequired')),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(DeleteCertificateSchema),
@@ -87,14 +96,14 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
     }
 
     if (!values.certificate) {
-      toast.error('Please select a certificate');
+      toast.error(translate('ChargingStations.deleteCertificateModal.selectCertificateError'));
       return;
     }
 
     const certificate = JSON.parse(values.certificate);
 
     if (parsedStation.ocppConnectionName !== certificate.ocppConnectionName) {
-      toast.error('This certificate does not belong to this station');
+      toast.error(translate('ChargingStations.deleteCertificateModal.wrongStationError'));
       return;
     }
 
@@ -108,6 +117,7 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/certificates/deleteCertificate?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -130,7 +140,10 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
     return (
       <div className="flex flex-col gap-2 rounded-md bg-muted p-4 text-sm">
         <span>
-          <span className="font-semibold">Hash Algorithm:</span> {certificate.hashAlgorithm}
+          <span className="font-semibold">
+            {translate('ChargingStations.deleteCertificateModal.hashAlgorithm')}
+          </span>{' '}
+          {certificate.hashAlgorithm}
         </span>
       </div>
     );
@@ -142,16 +155,16 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
       submitHandler={onFinish}
       loading={loading}
       submitButtonVariant={FormButtonVariants.delete}
-      submitButtonLabel="Delete Certificate"
+      submitButtonLabel={translate('ChargingStations.commands.deleteCertificate')}
       hideCancel
     >
       <ComboboxFormField
         control={form.control}
         name="certificate"
-        label="Installed Certificate"
+        label={translate('ChargingStations.deleteCertificateModal.installedCertificate')}
         options={options}
         onSearch={onSearch}
-        placeholder="Search Certificates by Serial Number"
+        placeholder={translate('ChargingStations.deleteCertificateModal.searchCertificates')}
         isLoading={query.isLoading}
         required
       />

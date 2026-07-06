@@ -7,6 +7,7 @@ import type { ConnectorDto } from '@citrineos/base';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Button } from '@lib/client/components/ui/button';
 import { clickableLinkStyle } from '@lib/client/styles/page';
+import { useTranslate } from '@refinedev/core';
 import Link from 'next/link';
 import React from 'react';
 
@@ -17,6 +18,7 @@ interface ConnectorsTableProps {
 }
 
 export const ConnectorsTable: React.FC<ConnectorsTableProps> = ({ connectors, onEdit }) => {
+  const translate = useTranslate();
   const formatPower = (value: number | undefined) =>
     value ? (value > 10000 ? `${(value / 1000).toFixed(1)} kW` : `${value} W`) : '-';
 
@@ -25,20 +27,30 @@ export const ConnectorsTable: React.FC<ConnectorsTableProps> = ({ connectors, on
       <table className="w-full border-collapse text-sm">
         <thead className="bg-muted">
           <tr>
-            <th className="px-4 py-2 text-left font-medium">Connector ID</th>
-            <th className="px-4 py-2 text-left font-medium">EVSE Type Connector ID</th>
-            <th className="px-4 py-2 text-left font-medium">Type</th>
-            <th className="px-4 py-2 text-left font-medium">Status</th>
-            <th className="px-4 py-2 text-left font-medium">Max Power</th>
-            <th className="px-4 py-2 text-left font-medium">Tariff</th>
-            <th className="px-4 py-2 text-left font-medium">Actions</th>
+            <th className="px-4 py-2 text-left font-medium">
+              {translate('ChargingStations.connectors.connectorId')}
+            </th>
+            <th className="px-4 py-2 text-left font-medium">
+              {translate('ChargingStations.connectors.evseTypeConnectorId')}
+            </th>
+            <th className="px-4 py-2 text-left font-medium">
+              {translate('ChargingStations.connectors.type')}
+            </th>
+            <th className="px-4 py-2 text-left font-medium">{translate('Common.status')}</th>
+            <th className="px-4 py-2 text-left font-medium">
+              {translate('ChargingStations.connectors.maxPower')}
+            </th>
+            <th className="px-4 py-2 text-left font-medium">
+              {translate('ChargingStations.connectors.tariff')}
+            </th>
+            <th className="px-4 py-2 text-left font-medium">{translate('Common.actions')}</th>
           </tr>
         </thead>
         <tbody>
           {connectors.length === 0 ? (
             <tr>
               <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                No connectors
+                {translate('ChargingStations.connectors.noConnectors')}
               </td>
             </tr>
           ) : (
@@ -67,7 +79,7 @@ export const ConnectorsTable: React.FC<ConnectorsTableProps> = ({ connectors, on
                   </td>
                   <td className="px-4 py-2">
                     <Button variant="outline" size="sm" onClick={() => onEdit(connector)}>
-                      Edit
+                      {translate('Common.edit')}
                     </Button>
                   </td>
                 </tr>

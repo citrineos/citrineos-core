@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { cn } from '@lib/utils/cn';
 import { heading3Style } from '@lib/client/styles/page';
+import { useTranslate } from '@refinedev/core';
 
 interface OpeningHoursFormProps {
   value?: LocationHours;
@@ -37,16 +38,17 @@ interface OpeningHoursFormProps {
 }
 
 const WEEKDAYS = [
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
-  { value: 7, label: 'Sunday' },
+  { value: 1, labelKey: 'openingHours.weekdays.monday' },
+  { value: 2, labelKey: 'openingHours.weekdays.tuesday' },
+  { value: 3, labelKey: 'openingHours.weekdays.wednesday' },
+  { value: 4, labelKey: 'openingHours.weekdays.thursday' },
+  { value: 5, labelKey: 'openingHours.weekdays.friday' },
+  { value: 6, labelKey: 'openingHours.weekdays.saturday' },
+  { value: 7, labelKey: 'openingHours.weekdays.sunday' },
 ];
 
 export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onChange }) => {
+  const translate = useTranslate();
   const defaultValue: LocationHours = { twentyfourSeven: false };
   const [localValue, setLocalValue] = useState<LocationHours>(value || defaultValue);
 
@@ -160,23 +162,23 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
   return (
     <Card>
       <CardHeader>
-        <h3 className={heading3Style}>Opening Hours</h3>
+        <h3 className={heading3Style}>{translate('openingHours.title')}</h3>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* 24/7 Toggle */}
         <div className="flex items-center gap-3">
           <Switch checked={localValue.twentyfourSeven} onCheckedChange={toggle24Seven} />
-          <Label className="font-medium">24/7 Operation</Label>
+          <Label className="font-medium">{translate('openingHours.twentyFourSeven')}</Label>
         </div>
 
         {/* Regular Hours */}
         {!localValue.twentyfourSeven && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium">Regular Hours</h4>
+              <h4 className="font-medium">{translate('openingHours.regularHours')}</h4>
               <Button type="button" variant="outline" size="sm" onClick={addRegularHours}>
                 <Plus className="h-4 w-4 mr-1" />
-                Add Hours
+                {translate('openingHours.form.addHours')}
               </Button>
             </div>
 
@@ -188,12 +190,12 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                     onValueChange={(val) => updateRegularHours(index, 'weekday', parseInt(val, 10))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select day" />
+                      <SelectValue placeholder={translate('openingHours.form.selectDay')} />
                     </SelectTrigger>
                     <SelectContent>
                       {WEEKDAYS.map((day) => (
                         <SelectItem key={day.value} value={String(day.value)}>
-                          {day.label}
+                          {translate(day.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -216,8 +218,8 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                   </div>
 
                   <ConfirmDialog
-                    title="Remove time slot?"
-                    description="Are you sure you want to remove this time slot?"
+                    title={translate('openingHours.form.removeTimeSlot')}
+                    description={translate('openingHours.form.removeTimeSlotConfirm')}
                     onConfirm={() => removeRegularHours(index)}
                   >
                     <Button type="button" variant="ghost" size="icon">
@@ -236,9 +238,9 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium">Exceptional Openings</h4>
+              <h4 className="font-medium">{translate('openingHours.exceptionalOpenings')}</h4>
               <p className="text-sm text-muted-foreground">
-                Special dates when the location is open
+                {translate('openingHours.form.exceptionalOpeningsDescription')}
               </p>
             </div>
             <Button
@@ -248,7 +250,7 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
               onClick={() => addExceptionalPeriod('exceptionalOpenings')}
             >
               <Plus className="h-4 w-4 mr-1" />
-              Add Opening
+              {translate('openingHours.form.addOpening')}
             </Button>
           </div>
 
@@ -272,7 +274,7 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                           {format(new Date(period.periodEnd), 'LLL dd, y')}
                         </>
                       ) : (
-                        'Pick a date range'
+                        translate('Common.pickDateRange')
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -292,8 +294,8 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                 </Popover>
 
                 <ConfirmDialog
-                  title="Remove exceptional opening?"
-                  description="Are you sure you want to remove this exceptional opening?"
+                  title={translate('openingHours.form.removeOpening')}
+                  description={translate('openingHours.form.removeOpeningConfirm')}
                   onConfirm={() => removeExceptionalPeriod('exceptionalOpenings', index)}
                 >
                   <Button type="button" variant="ghost" size="icon">
@@ -311,9 +313,9 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium">Exceptional Closings</h4>
+              <h4 className="font-medium">{translate('openingHours.exceptionalClosings')}</h4>
               <p className="text-sm text-muted-foreground">
-                Special dates when the location is closed
+                {translate('openingHours.form.exceptionalClosingsDescription')}
               </p>
             </div>
             <Button
@@ -323,7 +325,7 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
               onClick={() => addExceptionalPeriod('exceptionalClosings')}
             >
               <Plus className="h-4 w-4 mr-1" />
-              Add Closing
+              {translate('openingHours.form.addClosing')}
             </Button>
           </div>
 
@@ -347,7 +349,7 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                           {format(new Date(period.periodEnd), 'LLL dd, y')}
                         </>
                       ) : (
-                        'Pick a date range'
+                        translate('Common.pickDateRange')
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -367,8 +369,8 @@ export const OpeningHoursForm: React.FC<OpeningHoursFormProps> = ({ value, onCha
                 </Popover>
 
                 <ConfirmDialog
-                  title="Remove exceptional closing?"
-                  description="Are you sure you want to remove this exceptional closing?"
+                  title={translate('openingHours.form.removeClosing')}
+                  description={translate('openingHours.form.removeClosingConfirm')}
                   onConfirm={() => removeExceptionalPeriod('exceptionalClosings', index)}
                 >
                   <Button type="button" variant="ghost" size="icon">

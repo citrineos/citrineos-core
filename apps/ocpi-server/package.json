@@ -1,0 +1,62 @@
+{
+  "name": "@citrineos/ocpi-demo",
+  "version": "3.0.0-alpha3",
+  "description": "CitrineOS OCPI server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json && tsc -p tsconfig.migrations.json && pnpm run copy-assets",
+    "copy-assets": "tsx ./copy-assets.ts ./src/assets ./dist/assets",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "db:seed": "pnpm exec sequelize-cli db:seed:all --debug",
+    "db:seed:undo": "pnpm exec sequelize-cli db:seed:undo:all --debug",
+    "start": "cross-env APP_NAME=ocpi APP_ENV=local nodemon",
+    "start:docker:cloud": "cross-env OCPI_ENV=docker pnpm run db:migrate && node --inspect=0.0.0.0:9229 dist/index.js"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@types/amqplib": "0.10.8",
+    "@types/bcrypt": "5.0.2",
+    "@types/uuid": "9.0.1",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "nodemon": "2.0.22",
+    "ts-node": "10.9.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "catalog:"
+  },
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/core": "workspace:*",
+    "@citrineos/ocpi-base": "workspace:*",
+    "@directus/extensions": "~1.0.2",
+    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
+    "cross-env": "7.0.3",
+    "fastify": "catalog:",
+    "sequelize": "^6.37.7",
+    "sqlite3": "5.1.6",
+    "tslog": "4.9.2",
+    "uuid": "9.0.0"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "4.1.0",
+    "utf-8-validate": "6.0.3"
+  }
+}

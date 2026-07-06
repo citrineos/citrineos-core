@@ -17,7 +17,7 @@ import {
 } from '@citrineos/base';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/queries/ChargingStation.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/queries/ChargingStation.js';
-import { LocalListVersion } from '@dal/index.js';
+import { LocalListAuthorization, LocalListVersion } from '@dal/index.js';
 
 export class EVDriverDataApi
   extends AbstractModuleApi<EVDriverModule>
@@ -30,8 +30,16 @@ export class EVDriverDataApi
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {Logger<ILogObj>} [logger] - The logger for logging.
    */
-  constructor(evDriverModule: EVDriverModule, server: FastifyInstance, logger?: Logger<ILogObj>) {
-    super(evDriverModule, server, null, logger);
+  constructor({
+    evDriverModule,
+    server,
+    logger,
+  }: {
+    evDriverModule: EVDriverModule;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+  }) {
+    super(evDriverModule, server, logger);
   }
 
   @AsDataEndpoint(OCPP2_Namespace.LocalListVersion, HttpMethod.Get, ChargingStationKeyQuerySchema)
@@ -40,8 +48,11 @@ export class EVDriverDataApi
   ): Promise<LocalListVersion | undefined> {
     const tenantId = request.query.tenantId;
     return await this._module.localAuthListRepository.readOnlyOneByQuery(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: request.query.ocppConnectionName,
+      where: {
+        tenantId: tenantId,
+        ocppConnectionName: request.query.ocppConnectionName,
+      },
+      include: [LocalListAuthorization],
     });
   }
 

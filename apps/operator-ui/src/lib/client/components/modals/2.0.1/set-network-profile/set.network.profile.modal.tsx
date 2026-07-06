@@ -27,7 +27,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect } from '@refinedev/core';
+import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
@@ -38,61 +38,22 @@ export interface SetNetworkProfileModalProps {
   station: any;
 }
 
-// APN Schema
-const ApnSchema = z.object({
-  apn: z.string().min(1, 'APN is required').max(512),
-  apnUserName: z.string().max(20).optional(),
-  apnPassword: z.string().max(20).optional(),
-  simPin: z.coerce.number<number>().int().optional(),
-  preferredNetwork: z.string().max(6).optional(),
-  useOnlyPreferredNetwork: z.boolean().optional(),
-  apnAuthentication: z.enum(OCPP2_0_1.APNAuthenticationEnumType, {
-    message: 'APN Authentication is required',
-  }),
-});
-
-// VPN Schema
-const VpnSchema = z.object({
-  server: z.string().min(1, 'Server is required').max(512),
-  user: z.string().min(1, 'User is required').max(20),
-  group: z.string().max(20).optional(),
-  password: z.string().min(1, 'Password is required').max(20),
-  key: z.string().min(1, 'Key is required').max(255),
-  type: z.enum(OCPP2_0_1.VPNEnumType, {
-    message: 'VPN Type is required',
-  }),
-});
-
-// Network Connection Profile Schema
-const NetworkConnectionProfileSchema = z.object({
-  ocppVersion: z.enum(OCPP2_0_1.OCPPVersionEnumType, {
-    message: 'OCPP Version is required',
-  }),
-  ocppTransport: z.enum(OCPP2_0_1.OCPPTransportEnumType, {
-    message: 'OCPP Transport is required',
-  }),
-  ocppCsmsUrl: z.string().url('Must be a valid URL').min(1, 'CSMS URL is required').max(512),
-  messageTimeout: z.coerce.number<number>().int().min(0, 'Message timeout must be positive'),
-  securityProfile: z.coerce.number<number>().int().min(0, 'Security profile must be positive'),
-  ocppInterface: z.enum(OCPP2_0_1.OCPPInterfaceEnumType, {
-    message: 'OCPP Interface is required',
-  }),
-  apn: ApnSchema.optional(),
-  vpn: VpnSchema.optional(),
-});
-
-const SetNetworkProfileSchema = z.object({
-  websocketServerConfigId: z.string().optional(),
-  configurationSlot: z.coerce
-    .number<number>()
-    .int()
-    .min(0, 'Configuration slot must be non-negative'),
-  connectionData: NetworkConnectionProfileSchema,
-  includeApn: z.boolean(),
-  includeVpn: z.boolean(),
-});
-
-type SetNetworkProfileFormData = z.infer<typeof SetNetworkProfileSchema>;
+type SetNetworkProfileFormData = {
+  websocketServerConfigId?: string;
+  configurationSlot: number;
+  connectionData: {
+    ocppVersion: OCPP2_0_1.OCPPVersionEnumType;
+    ocppTransport: OCPP2_0_1.OCPPTransportEnumType;
+    ocppCsmsUrl: string;
+    messageTimeout: number;
+    securityProfile: number;
+    ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType;
+    apn?: any;
+    vpn?: any;
+  };
+  includeApn: boolean;
+  includeVpn: boolean;
+};
 
 const fieldGrid = 'grid grid-cols-3 sm:grid-cols-2 xl:grid-cols-4 gap-6';
 
@@ -104,6 +65,7 @@ const vpnTypes = Object.keys(OCPP2_0_1.VPNEnumType);
 
 export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -112,6 +74,84 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const SetNetworkProfileSchema = useMemo(() => {
+    const ApnSchema = z.object({
+      apn: z
+        .string()
+        .min(1, translate('ChargingStations.setNetworkProfileModal.apnRequired'))
+        .max(512),
+      apnUserName: z.string().max(20).optional(),
+      apnPassword: z.string().max(20).optional(),
+      simPin: z.coerce.number<number>().int().optional(),
+      preferredNetwork: z.string().max(6).optional(),
+      useOnlyPreferredNetwork: z.boolean().optional(),
+      apnAuthentication: z.enum(OCPP2_0_1.APNAuthenticationEnumType, {
+        message: translate('ChargingStations.setNetworkProfileModal.apnAuthRequired'),
+      }),
+    });
+
+    const VpnSchema = z.object({
+      server: z
+        .string()
+        .min(1, translate('ChargingStations.setNetworkProfileModal.serverRequired'))
+        .max(512),
+      user: z
+        .string()
+        .min(1, translate('ChargingStations.setNetworkProfileModal.userRequired'))
+        .max(20),
+      group: z.string().max(20).optional(),
+      password: z
+        .string()
+        .min(1, translate('ChargingStations.setNetworkProfileModal.passwordRequired'))
+        .max(20),
+      key: z
+        .string()
+        .min(1, translate('ChargingStations.setNetworkProfileModal.keyRequired'))
+        .max(255),
+      type: z.enum(OCPP2_0_1.VPNEnumType, {
+        message: translate('ChargingStations.setNetworkProfileModal.vpnTypeRequired'),
+      }),
+    });
+
+    const NetworkConnectionProfileSchema = z.object({
+      ocppVersion: z.enum(OCPP2_0_1.OCPPVersionEnumType, {
+        message: translate('ChargingStations.setNetworkProfileModal.ocppVersionRequired'),
+      }),
+      ocppTransport: z.enum(OCPP2_0_1.OCPPTransportEnumType, {
+        message: translate('ChargingStations.setNetworkProfileModal.ocppTransportRequired'),
+      }),
+      ocppCsmsUrl: z
+        .string()
+        .url(translate('ChargingStations.firmwareDiagnostics.invalidUrl'))
+        .min(1, translate('ChargingStations.setNetworkProfileModal.csmsUrlRequired'))
+        .max(512),
+      messageTimeout: z.coerce
+        .number<number>()
+        .int()
+        .min(0, translate('ChargingStations.setNetworkProfileModal.messageTimeoutPositive')),
+      securityProfile: z.coerce
+        .number<number>()
+        .int()
+        .min(0, translate('ChargingStations.setNetworkProfileModal.securityProfilePositive')),
+      ocppInterface: z.enum(OCPP2_0_1.OCPPInterfaceEnumType, {
+        message: translate('ChargingStations.setNetworkProfileModal.ocppInterfaceRequired'),
+      }),
+      apn: ApnSchema.optional(),
+      vpn: VpnSchema.optional(),
+    });
+
+    return z.object({
+      websocketServerConfigId: z.string().optional(),
+      configurationSlot: z.coerce
+        .number<number>()
+        .int()
+        .min(0, translate('ChargingStations.setNetworkProfileModal.configurationSlotNonNegative')),
+      connectionData: NetworkConnectionProfileSchema,
+      includeApn: z.boolean(),
+      includeVpn: z.boolean(),
+    });
+  }, [translate]);
 
   const form = useForm({
     resolver: zodResolver(SetNetworkProfileSchema),
@@ -188,6 +228,7 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url,
       data,
       setLoading,
@@ -209,45 +250,49 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
       submitHandler={handleFormSubmit}
       loading={loading}
       submitButtonVariant={FormButtonVariants.submit}
-      submitButtonLabel="Set Network Profile"
+      submitButtonLabel={translate('ChargingStations.commands.setNetworkProfile')}
       hideCancel
     >
       <div className={fieldGrid}>
         <ComboboxFormField
           control={form.control}
-          label="Websocket Server Config"
+          label={translate('ChargingStations.setNetworkProfileModal.websocketServerConfig')}
           name="websocketServerConfigId"
           options={serverNetworkProfileOptions}
           onSearch={serverNetworkProfileOnSearch}
-          placeholder="Search Server Network Profiles"
+          placeholder={translate('ChargingStations.setNetworkProfileModal.searchServerProfiles')}
           isLoading={serverNetworkProfileQuery.isLoading}
         />
 
-        <FormField control={form.control} label="Configuration Slot" name="configurationSlot">
+        <FormField
+          control={form.control}
+          label={translate('ChargingStations.setNetworkProfileModal.configurationSlot')}
+          name="configurationSlot"
+        >
           <Input type="number" min="0" />
         </FormField>
 
         <SelectFormField
           control={form.control}
-          label="OCPP Version"
+          label={translate('ChargingStations.setNetworkProfileModal.ocppVersion')}
           name="connectionData.ocppVersion"
           options={ocppVersions}
-          placeholder="Select OCPP Version"
+          placeholder={translate('ChargingStations.setNetworkProfileModal.selectOcppVersion')}
           required
         />
 
         <SelectFormField
           control={form.control}
-          label="OCPP Transport"
+          label={translate('ChargingStations.setNetworkProfileModal.ocppTransport')}
           name="connectionData.ocppTransport"
           options={ocppTransports}
-          placeholder="Select OCPP Transport"
+          placeholder={translate('ChargingStations.setNetworkProfileModal.selectOcppTransport')}
           required
         />
 
         <FormField
           control={form.control}
-          label="OCPP CSMS URL"
+          label={translate('ChargingStations.setNetworkProfileModal.ocppCsmsUrl')}
           name="connectionData.ocppCsmsUrl"
           required
         >
@@ -256,7 +301,7 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
         <FormField
           control={form.control}
-          label="Message Timeout (seconds)"
+          label={translate('ChargingStations.setNetworkProfileModal.messageTimeout')}
           name="connectionData.messageTimeout"
         >
           <Input type="number" min="0" />
@@ -264,7 +309,7 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
         <FormField
           control={form.control}
-          label="Security Profile"
+          label={translate('ChargingStations.setNetworkProfileModal.securityProfile')}
           name="connectionData.securityProfile"
         >
           <Input type="number" min={0} />
@@ -272,16 +317,16 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
         <SelectFormField
           control={form.control}
-          label="OCPP Interface"
+          label={translate('ChargingStations.setNetworkProfileModal.ocppInterface')}
           name="connectionData.ocppInterface"
           options={ocppInterfaces}
-          placeholder="Select OCPP Interface"
+          placeholder={translate('ChargingStations.setNetworkProfileModal.selectOcppInterface')}
           required
         />
 
         <FormField
           control={form.control}
-          label="Security Profile"
+          label={translate('ChargingStations.setNetworkProfileModal.securityProfile')}
           name="connectionData.securityProfile"
         >
           <Input type="number" min={0} />
@@ -292,7 +337,9 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
         {/* Checkbox to show/hide APN section */}
         <Field>
           <FieldLabel className={formLabelWrapperStyle}>
-            <span className={formLabelStyle}>Include APN Configuration</span>
+            <span className={formLabelStyle}>
+              {translate('ChargingStations.setNetworkProfileModal.includeApn')}
+            </span>
           </FieldLabel>
           <Checkbox
             className={formCheckboxStyle}
@@ -313,22 +360,29 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
         {includeApn && (
           <>
-            <FormField control={form.control} label="APN" name="connectionData.apn.apn" required>
-              <Input placeholder="APN name" />
+            <FormField
+              control={form.control}
+              label={translate('ChargingStations.setNetworkProfileModal.apn')}
+              name="connectionData.apn.apn"
+              required
+            >
+              <Input
+                placeholder={translate('ChargingStations.setNetworkProfileModal.apnPlaceholder')}
+              />
             </FormField>
 
             <SelectFormField
               control={form.control}
-              label="APN Authentication"
+              label={translate('ChargingStations.setNetworkProfileModal.apnAuthentication')}
               name="connectionData.apn.apnAuthentication"
               options={apnAuthenticationTypes}
-              placeholder="Select Authentication Type"
+              placeholder={translate('ChargingStations.setNetworkProfileModal.selectAuthType')}
               required
             />
 
             <FormField
               control={form.control}
-              label="APN Username"
+              label={translate('ChargingStations.setNetworkProfileModal.apnUsername')}
               name="connectionData.apn.apnUserName"
             >
               <Input />
@@ -336,19 +390,23 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
             <FormField
               control={form.control}
-              label="APN Password"
+              label={translate('ChargingStations.setNetworkProfileModal.apnPassword')}
               name="connectionData.apn.apnPassword"
             >
               <Input type="password" />
             </FormField>
 
-            <FormField control={form.control} label="SIM PIN" name="connectionData.apn.simPin">
+            <FormField
+              control={form.control}
+              label={translate('ChargingStations.setNetworkProfileModal.simPin')}
+              name="connectionData.apn.simPin"
+            >
               <Input type="number" />
             </FormField>
 
             <FormField
               control={form.control}
-              label="Preferred Network"
+              label={translate('ChargingStations.setNetworkProfileModal.preferredNetwork')}
               name="connectionData.apn.preferredNetwork"
             >
               <Input />
@@ -356,7 +414,7 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
 
             <CheckboxFormField
               control={form.control}
-              label="Use Only Preferred Network"
+              label={translate('ChargingStations.setNetworkProfileModal.useOnlyPreferredNetwork')}
               name="connectionData.apn.useOnlyPreferredNetwork"
             />
           </>
@@ -367,7 +425,9 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
         {/* Checkbox to show/hide VPN section */}
         <Field>
           <FieldLabel className={formLabelWrapperStyle}>
-            <span className={formLabelStyle}>Include VPN Configuration</span>
+            <span className={formLabelStyle}>
+              {translate('ChargingStations.setNetworkProfileModal.includeVpn')}
+            </span>
           </FieldLabel>
           <Checkbox
             className={formCheckboxStyle}
@@ -393,41 +453,67 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
           <>
             <SelectFormField
               control={form.control}
-              label="VPN Type"
+              label={translate('ChargingStations.setNetworkProfileModal.vpnType')}
               name="connectionData.vpn.type"
               options={vpnTypes}
-              placeholder="Select VPN Type"
+              placeholder={translate('ChargingStations.setNetworkProfileModal.selectVpnType')}
               required
             />
 
             <FormField
               control={form.control}
-              label="Server"
+              label={translate('ChargingStations.setNetworkProfileModal.server')}
               name="connectionData.vpn.server"
               required
             >
-              <Input placeholder="VPN server" />
+              <Input
+                placeholder={translate('ChargingStations.setNetworkProfileModal.serverPlaceholder')}
+              />
             </FormField>
 
-            <FormField control={form.control} label="User" name="connectionData.vpn.user" required>
-              <Input placeholder="VPN username" />
+            <FormField
+              control={form.control}
+              label={translate('ChargingStations.setNetworkProfileModal.user')}
+              name="connectionData.vpn.user"
+              required
+            >
+              <Input
+                placeholder={translate('ChargingStations.setNetworkProfileModal.userPlaceholder')}
+              />
             </FormField>
 
-            <FormField control={form.control} label="Group" name="connectionData.vpn.group">
+            <FormField
+              control={form.control}
+              label={translate('ChargingStations.setNetworkProfileModal.group')}
+              name="connectionData.vpn.group"
+            >
               <Input />
             </FormField>
 
             <FormField
               control={form.control}
-              label="Password"
+              label={translate('ChargingStations.setNetworkProfileModal.password')}
               name="connectionData.vpn.password"
               required
             >
-              <Input type="password" placeholder="VPN password" />
+              <Input
+                type="password"
+                placeholder={translate(
+                  'ChargingStations.setNetworkProfileModal.passwordPlaceholder',
+                )}
+              />
             </FormField>
 
-            <FormField control={form.control} label="Key" name="connectionData.vpn.key" required>
-              <Textarea placeholder="VPN key" rows={3} />
+            <FormField
+              control={form.control}
+              label={translate('ChargingStations.setNetworkProfileModal.key')}
+              name="connectionData.vpn.key"
+              required
+            >
+              <Textarea
+                placeholder={translate('ChargingStations.setNetworkProfileModal.keyPlaceholder')}
+                rows={3}
+              />
             </FormField>
           </>
         )}

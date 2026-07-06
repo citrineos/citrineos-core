@@ -1,13 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  IMessageRouter,
-  INetworkConnection,
-  SystemConfig,
-  WebsocketServerConfig,
-} from '@citrineos/base';
+import type { IMessageRouter, INetworkConnection, WebsocketServerConfig } from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -22,7 +16,6 @@ import {
   OCPP1_6_Namespace,
   OCPP2_Namespace,
 } from '@citrineos/base';
-import { sequelize } from '@dal/index.js';
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,
@@ -62,32 +55,35 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   /**
-   * Constructs a new instance of the class.
+   * Constructs a new instance of the class. Resolved by the container (PROXY
+   * injection) — `router` is the OcppRouter module this API is bound to.
    *
-   * @param {IMessageRouter} ocppRouter - The OcppRouter module.
+   * @param {IMessageRouter} router - The OcppRouter module.
    * @param {INetworkConnection} networkConnection - The network connection instance.
    * @param {FastifyInstance} server - The Fastify server instance.
-   * @param {BootstrapConfig & SystemConfig} config - The configuration instance.
    * @param {Logger<ILogObj>} [logger] - The logger instance.
-   * @param {ISubscriptionRepository} [subscriptionRepository] - The subscription repository instance.
-   * @param {IServerNetworkProfileRepository} [serverNetworkProfileRepository] - The server network profile repository instance.
+   * @param {ISubscriptionRepository} subscriptionRepository - The subscription repository instance.
+   * @param {IServerNetworkProfileRepository} serverNetworkProfileRepository - The server network profile repository instance.
    */
-  constructor(
-    ocppRouter: IMessageRouter,
-    networkConnection: INetworkConnection,
-    server: FastifyInstance,
-    config: BootstrapConfig & SystemConfig,
-    logger?: Logger<ILogObj>,
-    subscriptionRepository?: ISubscriptionRepository,
-    serverNetworkProfileRepository?: IServerNetworkProfileRepository,
-  ) {
-    super(ocppRouter, server, null, logger);
+  constructor({
+    router,
+    networkConnection,
+    server,
+    logger,
+    subscriptionRepository,
+    serverNetworkProfileRepository,
+  }: {
+    router: IMessageRouter;
+    networkConnection: INetworkConnection;
+    server: FastifyInstance;
+    logger?: Logger<ILogObj>;
+    subscriptionRepository: ISubscriptionRepository;
+    serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  }) {
+    super(router, server, logger);
     this._networkConnection = networkConnection;
-    this._subscriptionRepository =
-      subscriptionRepository || new sequelize.SequelizeSubscriptionRepository(config, this._logger);
-    this._serverNetworkProfileRepository =
-      serverNetworkProfileRepository ||
-      new sequelize.SequelizeServerNetworkProfileRepository(config, this._logger);
+    this._subscriptionRepository = subscriptionRepository;
+    this._serverNetworkProfileRepository = serverNetworkProfileRepository;
   }
 
   @AsDataEndpoint(Namespace.TlsReload, HttpMethod.Post, TlsReloadQuerySchema)

@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Sequelize } from 'sequelize-typescript';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { Subscription } from '../model/Subscription/Subscription.js';
 import type { ISubscriptionRepository } from '../../../interfaces/repositories.js';
-import type { BootstrapConfig } from '@citrineos/base';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 
 export class SequelizeSubscriptionRepository
   extends SequelizeRepository<Subscription>
   implements ISubscriptionRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, Subscription.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: Subscription.MODEL_NAME, logger, sequelizeInstance });
   }
 
   /**
@@ -41,3 +37,5 @@ export class SequelizeSubscriptionRepository
     return super.deleteByKey(tenantId, key);
   }
 }
+
+export default SequelizeSubscriptionRepository;

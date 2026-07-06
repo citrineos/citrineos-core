@@ -83,25 +83,40 @@ export const OCPPMessagesExportDialog = ({
     );
 
     if (correlationIdFilter) {
-      messageItems.push(createFilterListItem('Correlation ID', correlationIdFilter.value));
+      messageItems.push(
+        createFilterListItem(
+          translate('ChargingStations.exportDialog.correlationId'),
+          correlationIdFilter.value,
+        ),
+      );
     }
     if (actionsFilter && actionsFilter.value.length > 0) {
-      messageItems.push(createFilterListItem('Actions', actionsFilter.value.join(', ')));
+      messageItems.push(
+        createFilterListItem(
+          translate('ChargingStations.exportDialog.actions'),
+          actionsFilter.value.join(', '),
+        ),
+      );
     }
     if (originFilter) {
-      messageItems.push(createFilterListItem('Origin', originFilter.value));
+      messageItems.push(
+        createFilterListItem(translate('ChargingStations.exportDialog.origin'), originFilter.value),
+      );
     }
     if (startDateFilter) {
       messageItems.push(
         createFilterListItem(
-          'Start Date',
+          translate('ChargingStations.exportDialog.startDate'),
           formatDate(startDateFilter.value, dateTimePickerDateFormat),
         ),
       );
     }
     if (endDateFilter) {
       messageItems.push(
-        createFilterListItem('End Date', formatDate(endDateFilter.value, dateTimePickerDateFormat)),
+        createFilterListItem(
+          translate('ChargingStations.exportDialog.endDate'),
+          formatDate(endDateFilter.value, dateTimePickerDateFormat),
+        ),
       );
     }
 
@@ -119,7 +134,7 @@ export const OCPPMessagesExportDialog = ({
         onOpenChangeAction(false);
       })
       .catch((err) => {
-        toast.error(`Could export to CSV due to error: ${JSON.stringify(err)}`);
+        toast.error(translate('ChargingStations.exportToCsvError', { error: JSON.stringify(err) }));
       });
   };
 

@@ -28,27 +28,9 @@ export interface OperatorConfig {
   defaultTenantId: number;
 }
 
-export const SecurityProfiles: Record<number, { label: string; description: string }> = {
-  0: {
-    label: 'No Authentication',
-    description:
-      'The charging station connects without credentials. Set up the username/password using this connection',
-  },
-  1: {
-    label: 'Security Profile 1: Unsecured Transport with Basic Authentication',
-    description:
-      'Charging Station authentication is done through a username and password. Install CA certificate in the charging station using this connection',
-  },
-  2: {
-    label: 'Security Profile 2: TLS with Basic Authentication',
-    description:
-      'The CSMS authenticates itself using a TLS server certificate. The Charging Stations authenticate themselves using HTTP Basic Authentication. Sign charging station certificate using this connection',
-  },
-  3: {
-    label: 'Security Profile 3: TLS with Client Side Certificates',
-    description: 'Both the Charging Station and CSMS authenticate themselves using certificates.',
-  },
-};
+// Security profile identifiers. Labels and descriptions are translated via
+// the `ChargingStations.connectionModal.securityProfiles.*` i18n keys.
+export const SecurityProfiles: number[] = [0, 1, 2, 3];
 
 interface ConnectionModalProps {
   open: boolean;
@@ -255,8 +237,7 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
           </div>
         ) : hasConnections ? (
           <div className="space-y-6">
-            {Object.keys(SecurityProfiles).map((key) => {
-              const profile = Number(key);
+            {SecurityProfiles.map((profile) => {
               const servers = groupedServers[profile];
               if (!servers?.length) return null;
 

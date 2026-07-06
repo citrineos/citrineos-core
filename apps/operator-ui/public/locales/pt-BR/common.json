@@ -1,0 +1,321 @@
+{
+  "Common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "create": "Criar",
+    "edit": "Editar",
+    "clear": "Limpar",
+    "search": "Buscar",
+    "searchOptions": "Buscar Opções",
+    "searchColumns": "Buscar Colunas",
+    "export": "Exportar",
+    "refresh": "Atualizar",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "add": "Adicionar",
+    "remove": "Remover",
+    "ok": "OK",
+    "submit": "Enviar",
+    "apply": "Aplicar",
+    "reset": "Redefinir",
+    "loading": "Carregando",
+    "loadingEllipsis": "Carregando...",
+    "yes": "Sim",
+    "no": "Não",
+    "actions": "Ações",
+    "status": "Status",
+    "online": "Online",
+    "offline": "Offline",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "unknown": "Desconhecido",
+    "time": "Hora",
+    "copiedToClipboard": "Copiado para a área de transferência.",
+    "copiedValueToClipboard": "{value} copiado para a área de transferência.",
+    "enabled": "Habilitado",
+    "disabled": "Desabilitado",
+    "noResults": "Nenhum resultado encontrado",
+    "noDataFound": "Nenhum Dado Encontrado",
+    "nothingFound": "Nada encontrado.",
+    "error": "Erro",
+    "success": "Sucesso",
+    "select": "Selecionar",
+    "selectItem": "Selecionar Item",
+    "selectOption": "Selecione uma opção",
+    "selectOptions": "Selecione opções...",
+    "selected": "selecionado(s)",
+    "openMenu": "Abrir menu",
+    "filters": "Filtros",
+    "activeFilters": "Filtros ativos",
+    "addFilter": "Adicionar um filtro",
+    "addFilterButton": "Adicionar filtro",
+    "clearAll": "Limpar tudo",
+    "searchField": "Buscar {field}…",
+    "atMost": "no máximo {value}",
+    "after": "após {value}",
+    "rowsSelected": "{selected} de {total} linha(s) selecionada(s).",
+    "pageOf": "Página {page} de {total}",
+    "pickDateRange": "Selecione um período",
+    "startTypingAddress": "Comece a digitar um endereço...",
+    "useValue": "Usar \"{value}\"",
+    "removeFilter": "Remover filtro: {field}"
+  },
+  "filters": {
+    "valueOrLess": "{unit} ou menos",
+    "previewText": "\"{label}\" contém \"{value}\"",
+    "previewNumber": "\"{label}\" é no máximo {value}",
+    "previewDate": "\"{label}\" em {preset}",
+    "previewEnum": "\"{label}\" é {value}",
+    "previewYes": "\"{label}\" é Sim",
+    "previewNo": "\"{label}\" é Não"
+  },
+  "filterPresets": {
+    "today": "Hoje",
+    "last7Days": "Últimos 7 dias",
+    "last30Days": "Últimos 30 dias",
+    "last3Months": "Últimos 3 meses",
+    "thisYear": "Este ano"
+  },
+  "openingHours": {
+    "title": "Horário de Funcionamento",
+    "twentyFourSeven": "Funcionamento 24/7",
+    "twentyFourSevenDescription": "Este local está aberto 24 horas por dia, 7 dias por semana",
+    "regularHours": "Horário Regular",
+    "noRegularHours": "Nenhum horário regular especificado",
+    "exceptionalOpenings": "Aberturas Excepcionais",
+    "exceptionalClosings": "Fechamentos Excepcionais",
+    "specialOpening": "Abertura Especial",
+    "closed": "Fechado",
+    "form": {
+      "addHours": "Adicionar Horário",
+      "addOpening": "Adicionar Abertura",
+      "addClosing": "Adicionar Fechamento",
+      "selectDay": "Selecione o dia",
+      "exceptionalOpeningsDescription": "Datas especiais em que o local está aberto",
+      "exceptionalClosingsDescription": "Datas especiais em que o local está fechado",
+      "removeTimeSlot": "Remover faixa de horário?",
+      "removeTimeSlotConfirm": "Tem certeza de que deseja remover esta faixa de horário?",
+      "removeOpening": "Remover abertura excepcional?",
+      "removeOpeningConfirm": "Tem certeza de que deseja remover esta abertura excepcional?",
+      "removeClosing": "Remover fechamento excepcional?",
+      "removeClosingConfirm": "Tem certeza de que deseja remover este fechamento excepcional?"
+    },
+    "weekdays": {
+      "monday": "Segunda-feira",
+      "tuesday": "Terça-feira",
+      "wednesday": "Quarta-feira",
+      "thursday": "Quinta-feira",
+      "friday": "Sexta-feira",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    }
+  },
+  "pages": {
+    "login": {
+      "title": "Entre na sua conta",
+      "description": "Insira suas credenciais para acessar o painel",
+      "signin": "Entrar",
+      "signingIn": "Entrando...",
+      "signup": "Cadastrar-se",
+      "divider": "ou",
+      "invalidCredentials": "E-mail ou senha inválidos",
+      "fields": {
+        "email": "E-mail",
+        "password": "Senha"
+      },
+      "placeholders": {
+        "email": "admin@exemplo.com",
+        "password": "Digite sua senha"
+      },
+      "errors": {
+        "validEmail": "Endereço de e-mail inválido",
+        "requiredEmail": "O e-mail é obrigatório",
+        "requiredPassword": "A senha é obrigatória"
+      },
+      "buttons": {
+        "submit": "Entrar",
+        "forgotPassword": "Esqueceu a senha?",
+        "noAccount": "Não tem uma conta?",
+        "rememberMe": "Lembrar de mim"
+      }
+    },
+    "forgotPassword": {
+      "title": "Esqueceu sua senha?",
+      "fields": {
+        "email": "E-mail"
+      },
+      "errors": {
+        "validEmail": "Endereço de e-mail inválido",
+        "requiredEmail": "O e-mail é obrigatório"
+      },
+      "buttons": {
+        "submit": "Enviar instruções de redefinição"
+      }
+    },
+    "register": {
+      "title": "Cadastre-se na sua conta",
+      "fields": {
+        "email": "E-mail",
+        "password": "Senha"
+      },
+      "errors": {
+        "validEmail": "Endereço de e-mail inválido",
+        "requiredEmail": "O e-mail é obrigatório",
+        "requiredPassword": "A senha é obrigatória"
+      },
+      "buttons": {
+        "submit": "Cadastrar",
+        "haveAccount": "Já tem uma conta?"
+      }
+    },
+    "updatePassword": {
+      "title": "Atualizar senha",
+      "fields": {
+        "password": "Nova Senha",
+        "confirmPassword": "Confirmar nova senha"
+      },
+      "errors": {
+        "confirmPasswordNotMatch": "As senhas não coincidem",
+        "requiredPassword": "Senha obrigatória",
+        "requiredConfirmPassword": "A confirmação de senha é obrigatória"
+      },
+      "buttons": {
+        "submit": "Atualizar"
+      }
+    },
+    "error": {
+      "info": "Talvez você tenha esquecido de adicionar o componente {action} ao recurso {resource}.",
+      "title": "Página não encontrada.",
+      "description": "A página que você está procurando não existe.",
+      "404": "Desculpe, a página que você visitou não existe.",
+      "resource404": "Tem certeza de que criou o recurso {resource}.",
+      "backHome": "Voltar à página inicial"
+    },
+    "redirectingToLogin": "Redirecionando para o login...",
+    "checkingAuth": "Verificando autenticação...",
+    "redirectingToKeycloak": "Redirecionando para o Keycloak...",
+    "redirectingToKeycloakLogin": "Redirecionando para o login do Keycloak..."
+  },
+  "actions": {
+    "create": "Criar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "list": "Listar",
+    "show": "Exibir"
+  },
+  "buttons": {
+    "add": "Adicionar",
+    "cancel": "Cancelar",
+    "clear": "Limpar",
+    "clone": "Clonar",
+    "columns": "Colunas",
+    "confirm": "Tem certeza?",
+    "confirmText": "Confirmar",
+    "create": "Criar",
+    "delete": "Excluir",
+    "download": "Baixar",
+    "edit": "Editar",
+    "exportToCsv": "Exportar para CSV",
+    "filter": "Filtrar",
+    "import": "Importar",
+    "logout": "Sair",
+    "notAccessTitle": "Você não tem permissão para acessar este recurso.",
+    "ok": "OK",
+    "refresh": "Atualizar",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "show": "Exibir",
+    "submit": "Enviar",
+    "undo": "Desfazer",
+    "upload": "Enviar"
+  },
+  "warnWhenUnsavedChanges": "Tem certeza de que deseja sair? Você tem alterações não salvas.",
+  "notifications": {
+    "success": "Sucesso",
+    "error": "Erro (código de status: {statusCode})",
+    "undoable": "Você tem {seconds} segundos para desfazer",
+    "createSuccess": "{resource} criado com sucesso",
+    "createError": "Houve um erro ao criar {resource} (código de status: {statusCode})",
+    "deleteSuccess": "{resource} excluído com sucesso",
+    "deleteError": "Erro ao excluir {resource} (código de status: {statusCode})",
+    "editSuccess": "{resource} editado com sucesso",
+    "editError": "Erro ao editar {resource} (código de status: {statusCode})",
+    "importProgress": "Importando: {processed}/{total}"
+  },
+  "notificationProvider": {
+    "notAllowed": "Não permitido",
+    "missingRequiredParameter": "Parâmetro obrigatório ausente: {parameter}",
+    "noPermission": "Você não tem permissão para acessar este recurso.",
+    "contactAdministrator": "Entre em contato com seu administrador se acreditar que isso é um engano."
+  },
+  "messages": {
+    "requestSuccessful": "A requisição foi bem-sucedida {payload}",
+    "requestFailed": "Falha na Requisição",
+    "noSuccessfulResponse": "A requisição não recebeu uma resposta bem-sucedida.",
+    "requestFailedWithMessage": "A requisição falhou com a mensagem: {message}"
+  },
+  "auth": {
+    "loginFailed": "Falha no login"
+  },
+  "confirmDialog": {
+    "title": "Tem certeza?",
+    "description": "Esta ação não pode ser desfeita."
+  },
+  "accessDenied": "Acesso Negado",
+  "imageUploadFailed": "Falha ao enviar a imagem.",
+  "loading": "Carregando",
+  "noDataFound": "Nenhum Dado Encontrado",
+  "somethingWentWrong": "Algo deu errado.",
+  "loggedOut": "Sessão encerrada! Redirecionando para o login...",
+  "tags": {
+    "clone": "Clonar"
+  },
+  "table": {
+    "actions": "Ações",
+    "bulkActions": "Ações em Massa",
+    "clearFilters": "Limpar filtros",
+    "noResultsFound": "Nenhum resultado encontrado",
+    "selectAll": "Selecionar todos",
+    "selected": "selecionado(s)",
+    "toggleColumns": "Alternar colunas",
+    "resetColumns": "Redefinir Colunas"
+  },
+  "dialogs": {
+    "areYouSure": "Tem certeza?",
+    "thisActionCannotBeUndone": "Esta ação não pode ser desfeita."
+  },
+  "placeholders": {
+    "search": "Buscar",
+    "select": "Selecionar"
+  },
+  "pagination": {
+    "buttons": {
+      "goToFirstPage": "Ir para a primeira página",
+      "goToNextPage": "Ir para a próxima página",
+      "goToPreviousPage": "Ir para a página anterior",
+      "goToLastPage": "Ir para a última página"
+    },
+    "rowsPerPage": "Linhas por página"
+  },
+  "menu": {
+    "overview": "Visão Geral",
+    "help": "Ajuda",
+    "language": "Idioma",
+    "expandSidebar": "Expandir barra lateral",
+    "collapseSidebar": "Recolher barra lateral",
+    "themes": {
+      "changeTo": "Mudar para",
+      "dark": "Escuro",
+      "light": "Claro",
+      "mode": "Modo"
+    }
+  },
+  "telemetryConsentModal": {
+    "title": "Consentimento de Métricas Anônimas",
+    "description": "O CitrineOS coleta métricas de uso anônimas para nos ajudar a melhorar o produto. Você gostaria de enviar essas métricas?",
+    "reject": "Recusar",
+    "accept": "Aceitar"
+  }
+}

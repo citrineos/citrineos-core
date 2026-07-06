@@ -62,8 +62,9 @@ describe('ConfigurationOcpp2Api', () => {
         [MOCK_STATION_ID_1],
         mockRequest,
         undefined,
-        extraQueries,
         MOCK_TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
+        extraQueries,
       );
 
       expect(SetNetworkProfile.build).toHaveBeenCalledTimes(1);
@@ -87,8 +88,9 @@ describe('ConfigurationOcpp2Api', () => {
         [MOCK_STATION_ID_1, MOCK_STATION_ID_2],
         mockRequest,
         undefined,
-        extraQueries,
         MOCK_TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
+        extraQueries,
       );
 
       expect(SetNetworkProfile.build).toHaveBeenCalledTimes(2);
@@ -107,8 +109,8 @@ describe('ConfigurationOcpp2Api', () => {
         [MOCK_STATION_ID_1],
         mockRequest,
         undefined,
-        undefined,
         MOCK_TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
       );
 
       expect(SetNetworkProfile.build).not.toHaveBeenCalled();
@@ -121,8 +123,8 @@ describe('ConfigurationOcpp2Api', () => {
         [MOCK_STATION_ID_1, MOCK_STATION_ID_2],
         mockRequest,
         undefined,
-        undefined,
         MOCK_TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
       );
 
       expect(mockSendCall).toHaveBeenCalledTimes(2);

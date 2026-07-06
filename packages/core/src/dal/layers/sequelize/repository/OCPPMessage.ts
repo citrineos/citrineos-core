@@ -2,20 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MessageState, type BootstrapConfig, type OCPPMessageDto } from '@citrineos/base';
-import { Sequelize } from 'sequelize-typescript';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { MessageState, type OCPPMessageDto } from '@citrineos/base';
 import type { IOCPPMessageRepository } from '../../../interfaces/repositories.js';
 import { OCPPMessage } from '../model/OCPPMessage.js';
-import { SequelizeRepository } from './Base.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
 export class SequelizeOCPPMessageRepository
   extends SequelizeRepository<OCPPMessage>
   implements IOCPPMessageRepository
 {
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, sequelizeInstance?: Sequelize) {
-    super(config, OCPPMessage.MODEL_NAME, logger, sequelizeInstance);
+  constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
+    super({ config, namespace: OCPPMessage.MODEL_NAME, logger, sequelizeInstance });
   }
 
   public async createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage> {
@@ -84,3 +81,5 @@ export class SequelizeOCPPMessageRepository
     });
   }
 }
+
+export default SequelizeOCPPMessageRepository;

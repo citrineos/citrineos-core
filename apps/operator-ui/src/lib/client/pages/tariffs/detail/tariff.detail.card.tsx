@@ -85,23 +85,26 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
       </CardHeader>
       <CardContent>
         <div className={cardGridStyle}>
-          <KeyValueDisplay keyLabel="Currency" value={tariff.currency} />
           <KeyValueDisplay
-            keyLabel="Price / kWh"
+            keyLabel={translate('Tariffs.detail.currency')}
+            value={tariff.currency}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Tariffs.detail.pricePerKwh')}
             value={tariff.pricePerKwh?.toFixed(2) ?? NOT_APPLICABLE}
           />
           <KeyValueDisplay
-            keyLabel="Price / min"
+            keyLabel={translate('Tariffs.detail.pricePerMin')}
             value={tariff.pricePerMin != null ? tariff.pricePerMin.toFixed(2) : NOT_APPLICABLE}
           />
           <KeyValueDisplay
-            keyLabel="Price / session"
+            keyLabel={translate('Tariffs.detail.pricePerSession')}
             value={
               tariff.pricePerSession != null ? tariff.pricePerSession.toFixed(2) : NOT_APPLICABLE
             }
           />
           <KeyValueDisplay
-            keyLabel="Authorization Amount"
+            keyLabel={translate('Tariffs.detail.authorizationAmount')}
             value={
               tariff.authorizationAmount != null
                 ? tariff.authorizationAmount.toFixed(2)
@@ -109,11 +112,11 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
             }
           />
           <KeyValueDisplay
-            keyLabel="Payment Fee"
+            keyLabel={translate('Tariffs.detail.paymentFee')}
             value={tariff.paymentFee != null ? tariff.paymentFee.toFixed(2) : NOT_APPLICABLE}
           />
           <KeyValueDisplay
-            keyLabel="Tax Rate (%)"
+            keyLabel={translate('Tariffs.detail.taxRate')}
             value={tariff.taxRate != null ? tariff.taxRate.toFixed(4) : NOT_APPLICABLE}
           />
         </div>

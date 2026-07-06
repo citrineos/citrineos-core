@@ -12,7 +12,7 @@ import { Button } from '@lib/client/components/ui/button';
 import type { ListCanReturnType } from '@lib/utils/access.types';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { closeModal, openModal } from '@lib/utils/store/modal.slice';
-import { useCan } from '@refinedev/core';
+import { useCan, useTranslate } from '@refinedev/core';
 import { instanceToPlain } from 'class-transformer';
 import { useDispatch } from 'react-redux';
 
@@ -22,11 +22,12 @@ export interface OCPP1_6_CommandsProps {
 
 export const OCPP1_6_Commands = ({ station }: OCPP1_6_CommandsProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
 
   const handleCommandClick = (commandDef: CommandDefinition) => {
     dispatch(
       openModal({
-        title: commandDef.displayName,
+        title: translate(commandDef.displayNameKey),
         modalComponentType: commandDef.modalType,
         modalComponentProps: { station: instanceToPlain(station) },
       }),
@@ -64,7 +65,7 @@ export const OCPP1_6_Commands = ({ station }: OCPP1_6_CommandsProps) => {
           className="w-full"
           onClick={() => handleCommandClick(commandDef)}
         >
-          {commandDef.displayName}
+          {translate(commandDef.displayNameKey)}
         </Button>
       ))}
     </div>

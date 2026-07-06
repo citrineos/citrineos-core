@@ -2,19 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  BootstrapConfig,
   CallAction,
   ChargingRateUnitEnumType,
   HandlerProperties,
-  ICache,
   IMessage,
-  IMessageHandler,
-  IMessageSender,
-  SystemConfig,
+  OcppModuleDependencies,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP2_common_types,
-  OCPPValidator,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -43,15 +38,21 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
-import { sequelize } from '@dal/index.js';
-import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/index.js';
+
 import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import { IdGenerator } from '@util/util/idGenerator.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+
 import type { ISmartCharging } from './smartCharging/SmartCharging.js';
-import { InternalSmartCharging } from './smartCharging/InternalSmartCharging.js';
 import type { CompositeScheduleInput } from '@/dal/layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
+
+export interface SmartChargingModuleDependencies extends OcppModuleDependencies {
+  transactionEventRepository: ITransactionEventRepository;
+  deviceModelRepository: IDeviceModelRepository;
+  chargingProfileRepository: IChargingProfileRepository;
+  smartChargingService: ISmartCharging;
+  idGenerator: IdGenerator;
+  ocppMessageRepository: IOCPPMessageRepository;
+}
 
 /**
  * Component that handles provisioning related messages.
@@ -74,80 +75,31 @@ export class SmartChargingModule extends AbstractModule {
 
   private _idGenerator: IdGenerator;
 
-  /**
-   * Constructor
-   */
-
-  /**
-   * This is the constructor function that initializes the {@link SmartChargingModule}.
-   *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains configuration settings for the module.
-   *
-   * @param {ICache} [cache] - The cache instance which is shared among the modules & Central System to pass information such as blacklisted actions or boot status.
-   *
-   * @param {IMessageSender} [sender] - The `sender` parameter is an optional parameter that represents an instance of the {@link IMessageSender} interface.
-   * It is used to send messages from the central system to external systems or devices. If no `sender` is provided, a default {@link RabbitMqSender} instance is created and used.
-   *
-   * @param {IMessageHandler} [handler] - The `handler` parameter is an optional parameter that represents an instance of the {@link IMessageHandler} interface.
-   * It is used to handle incoming messages and dispatch them to the appropriate methods or functions. If no `handler` is provided, a default {@link RabbitMqReceiver} instance is created and used.
-   *
-   * @param {Logger<ILogObj>} [logger] - The `logger` parameter is an optional parameter that represents an instance of {@link Logger<ILogObj>}.
-   * It is used to propagate system wide logger settings and will serve as the parent logger for any sub-component logging. If no `logger` is provided, a default {@link Logger<ILogObj>} instance is created and used.
-   *
-   * @param {ITransactionEventRepository} [transactionEventRepository] - An optional parameter of type {@link ITransactionEventRepository}
-   * which represents a repository for accessing and manipulating transaction data.
-   * If no `transactionEventRepository` is provided, a default {@link sequelize:transactionEventRepository} instance is created and used.
-   *
-   * @param {IDeviceModelRepository} [deviceModelRepository] - An optional parameter of type {@link IDeviceModelRepository}
-   * which represents a repository for accessing and manipulating variable data.
-   * If no `deviceModelRepository` is provided, a default {@link sequelize:deviceModelRepository} instance is created and used.
-   *
-   * @param {IChargingProfileRepository} [chargingProfileRepository] - An optional parameter of type {@link IChargingProfileRepository}
-   * which represents a repository for accessing and manipulating charging profile data.
-   * If no `chargingProfileRepository` is provided, a default {@link sequelize:chargingProfileRepository} instance is created and used.
-   *
-   * @param {ISmartCharging} [smartChargingService] - An optional parameter of type {@link ISmartCharging} which
-   * provides smart charging functionalities, e.g., calculation and validation.
-   *
-   * @param {IdGenerator} [idGenerator] - An optional parameter of type {@link IdGenerator} which
-   * represents a generator for ids.
-   */
-  constructor(
-    config: BootstrapConfig & SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    handler: IMessageHandler,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-    transactionEventRepository?: ITransactionEventRepository,
-    deviceModelRepository?: IDeviceModelRepository,
-    chargingProfileRepository?: IChargingProfileRepository,
-    smartChargingService?: ISmartCharging,
-    idGenerator?: IdGenerator,
-    ocppMessageRepository?: IOCPPMessageRepository,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    handler,
+    logger,
+    ocppValidator,
+    transactionEventRepository,
+    deviceModelRepository,
+    chargingProfileRepository,
+    smartChargingService,
+    idGenerator,
+    ocppMessageRepository,
+  }: SmartChargingModuleDependencies) {
     super(config, cache, handler, sender, EventGroup.SmartCharging, logger, ocppValidator);
 
     this._requests = config.modules.smartcharging?.requests ?? [];
     this._responses = config.modules.smartcharging?.responses ?? [];
 
-    this._transactionEventRepository =
-      transactionEventRepository ||
-      new sequelize.SequelizeTransactionEventRepository(config, this._logger);
-    this._deviceModelRepository =
-      deviceModelRepository || new sequelize.SequelizeDeviceModelRepository(config, this._logger);
-    this._chargingProfileRepository =
-      chargingProfileRepository ||
-      new sequelize.SequelizeChargingProfileRepository(config, this._logger);
-    this._ocppMessageRepository =
-      ocppMessageRepository || new sequelize.SequelizeOCPPMessageRepository(config, this._logger);
-
-    this._smartChargingService =
-      smartChargingService || new InternalSmartCharging(this._chargingProfileRepository);
-
-    this._idGenerator =
-      idGenerator ||
-      new IdGenerator(new SequelizeChargingStationSequenceRepository(config, this._logger));
+    this._transactionEventRepository = transactionEventRepository;
+    this._deviceModelRepository = deviceModelRepository;
+    this._chargingProfileRepository = chargingProfileRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
+    this._smartChargingService = smartChargingService;
+    this._idGenerator = idGenerator;
   }
 
   get transactionEventRepository(): ITransactionEventRepository {
@@ -685,3 +637,5 @@ export class SmartChargingModule extends AbstractModule {
     }
   }
 }
+
+export default SmartChargingModule;

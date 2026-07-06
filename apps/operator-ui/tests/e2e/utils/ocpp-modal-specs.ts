@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Single source of truth for the OCPP modal inventory. 44 total entries: 32
-// are dispatchable (have a UI component, a ModalComponentType, a registry
-// entry, and are reachable via a command-bar button or the OtherCommandsModal
-// dispatcher) and 12 are non-dispatchable OCPP-spec placeholders with no UI
-// implementation. The parametric harness
+// Single source of truth for the OCPP modal inventory. 31 entries, all
+// dispatchable (each has a UI component, a ModalComponentType, a registry
+// entry, and is reachable via a command-bar button or the OtherCommandsModal
+// dispatcher). The parametric harness
 // (tests/e2e/specs/charging-stations/commands.parametric.spec.ts) smoke-tests
-// the 32 dispatchable modals and explicitly skips the 12 placeholders.
+// every entry.
 //
 // Each entry maps a modal to:
 //   - the OCPP version(s) it serves
@@ -38,9 +37,10 @@ export interface ModalSpec {
 }
 
 // Total entries in the table.
-export const OCPP_MODAL_COUNT = 44;
+export const OCPP_MODAL_COUNT = 31;
 // Entries that can actually be opened from the UI (dispatchable === true).
-export const DISPATCHABLE_MODAL_COUNT = 32;
+// Every entry is dispatchable, so this matches OCPP_MODAL_COUNT.
+export const DISPATCHABLE_MODAL_COUNT = 31;
 
 export const OCPP_MODAL_SPECS: ReadonlyArray<ModalSpec> = [
   // Shared (5)
@@ -368,7 +368,7 @@ export const OCPP_MODAL_SPECS: ReadonlyArray<ModalSpec> = [
     titlePattern: /update firmware/i,
   },
 
-  // Admin + status toggles (3)
+  // Admin + status toggles (2)
   {
     name: 'ForceDisconnectModal',
     versions: ['admin'],
@@ -390,154 +390,6 @@ export const OCPP_MODAL_SPECS: ReadonlyArray<ModalSpec> = [
     dispatchable: true,
     openButtonNamePattern: /toggle (station )?online/i,
     titlePattern: /online/i,
-  },
-  {
-    name: 'ToggleTransactionActiveModal',
-    versions: ['admin'],
-    category: 'toggle-status',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: true,
-    openButtonNamePattern: /toggle transaction/i,
-    titlePattern: /transaction/i,
-  },
-
-  // Non-dispatchable OCPP-spec placeholders (12). These have NO UI component,
-  // no ModalComponentType, and no command-registry entry — they cannot be
-  // opened from the UI. Kept for OCPP-spec traceability; the parametric harness
-  // skips them with a documented reason. dispatchable: false.
-  {
-    name: 'CancelReservationModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /cancel reservation/i,
-    titlePattern: /cancel reservation/i,
-  },
-  {
-    name: 'ClearChargingProfileModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /clear charging profile/i,
-    titlePattern: /clear charging profile/i,
-  },
-  {
-    name: 'GetChargingProfilesModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /get charging profiles?/i,
-    titlePattern: /get charging profiles?/i,
-  },
-  {
-    name: 'GetCompositeScheduleModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /get composite schedule/i,
-    titlePattern: /get composite schedule/i,
-  },
-  {
-    name: 'GetLocalListVersionModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /get local list version/i,
-    titlePattern: /get local list version/i,
-  },
-  {
-    name: 'ReserveNowModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /reserve now/i,
-    titlePattern: /reserve now/i,
-  },
-  {
-    name: 'SendLocalListModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /send local list/i,
-    titlePattern: /send local list/i,
-  },
-  {
-    name: 'SetChargingProfileModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /set charging profile/i,
-    titlePattern: /set charging profile/i,
-  },
-  {
-    name: 'SetDisplayMessageModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /set display message/i,
-    titlePattern: /set display message/i,
-  },
-  {
-    name: 'SetMonitoringBaseModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /set monitoring base/i,
-    titlePattern: /set monitoring base/i,
-  },
-  {
-    name: 'SetMonitoringLevelModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /set monitoring level/i,
-    titlePattern: /set monitoring level/i,
-  },
-  {
-    name: 'SetVariableMonitoringModal',
-    versions: ['2.0.1'],
-    category: 'ocpp2.0.1',
-    priority: 'P2',
-    bespokeScenarios: [],
-    parametricOnly: true,
-    dispatchable: false,
-    openButtonNamePattern: /set variable monitoring/i,
-    titlePattern: /set variable monitoring/i,
   },
 ];
 

@@ -28,7 +28,7 @@ import { MeterValueClass } from '@lib/cls/meter.value.dto';
 import { useState } from 'react';
 import { AuthorizationClass } from '@lib/cls/authorization.dto';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
-import { authorizationsColumns } from '@lib/client/pages/authorizations/columns';
+import { getAuthorizationsColumns } from '@lib/client/pages/authorizations/columns';
 import { useQueryState } from 'nuqs';
 import { DETAIL_TAB_STATE } from '@lib/utils/consts';
 
@@ -69,7 +69,7 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
   const authorization = transaction?.authorization;
 
   const { renderedVisibleColumns } = useColumnPreferences(
-    authorizationsColumns,
+    getAuthorizationsColumns(translate),
     ResourceType.AUTHORIZATIONS,
   );
 
@@ -88,9 +88,15 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
             <TabsTrigger value={TransactionDetailTabType.authorizations}>
               {translate('Authorizations.Authorizations')}
             </TabsTrigger>
-            <TabsTrigger value={TransactionDetailTabType.meterValues}>Meter Value Data</TabsTrigger>
-            <TabsTrigger value={TransactionDetailTabType.events}>Events</TabsTrigger>
-            <TabsTrigger value={TransactionDetailTabType.ocppMessages}>OCPP Messages</TabsTrigger>
+            <TabsTrigger value={TransactionDetailTabType.meterValues}>
+              {translate('Transactions.tabs.meterValueData')}
+            </TabsTrigger>
+            <TabsTrigger value={TransactionDetailTabType.events}>
+              {translate('Transactions.tabs.events')}
+            </TabsTrigger>
+            <TabsTrigger value={TransactionDetailTabType.ocppMessages}>
+              {translate('Transactions.tabs.ocppMessages')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={TransactionDetailTabType.authorizations} className={cardTabsStyle}>
@@ -140,13 +146,15 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
             >
               <div className={pageFlex}>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">Contexts:</label>
+                  <label className="text-sm font-semibold">
+                    {translate('Transactions.tabs.contexts')}
+                  </label>
                   <MultiSelect<OCPP2_0_1.ReadingContextEnumType>
                     options={Object.values(OCPP2_0_1.ReadingContextEnumType)}
                     selectedValues={validContexts}
                     setSelectedValues={setValidContexts}
-                    placeholder="Select reading contexts"
-                    searchPlaceholder="Search reading contexts"
+                    placeholder={translate('Transactions.tabs.selectReadingContexts')}
+                    searchPlaceholder={translate('Transactions.tabs.searchReadingContexts')}
                   />
                 </div>
 

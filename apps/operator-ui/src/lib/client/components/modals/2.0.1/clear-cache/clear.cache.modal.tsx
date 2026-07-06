@@ -12,6 +12,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface ClearCacheModalProps {
@@ -20,6 +21,7 @@ export interface ClearCacheModalProps {
 
 export const ClearCacheModal = ({ station }: ClearCacheModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -36,6 +38,7 @@ export const ClearCacheModal = ({ station }: ClearCacheModalProps) => {
     }
 
     await triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/evdriver/clearCache?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data: {},
       setLoading,
@@ -48,19 +51,18 @@ export const ClearCacheModal = ({ station }: ClearCacheModalProps) => {
   return (
     <div className="space-y-6">
       <div className="text-sm text-muted-foreground">
-        <p>
-          This will send a Clear Cache request to the charging station. The station will clear its
-          authorization cache.
-        </p>
-        <p className="mt-2">Do you want to proceed?</p>
+        <p>{translate('ChargingStations.clearCacheModal.description')}</p>
+        <p className="mt-2">{translate('ChargingStations.clearCacheModal.proceed')}</p>
       </div>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => dispatch(closeModal())}>
-          Cancel
+          {translate('Common.cancel')}
         </Button>
         <Button variant="secondary" onClick={handleSubmit} disabled={loading}>
-          {loading ? 'Clearing...' : 'Clear Cache'}
+          {loading
+            ? translate('ChargingStations.clearCacheModal.clearing')
+            : translate('ChargingStations.commands.clearCache')}
         </Button>
       </div>
     </div>

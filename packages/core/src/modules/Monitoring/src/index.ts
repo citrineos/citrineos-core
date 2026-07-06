@@ -6,3 +6,4 @@ export { MonitoringOcpp2Api } from './module/2/MessageApi.js';
 export { MonitoringDataApi } from './module/DataApi.js';
 export type { IMonitoringModuleApi } from './module/interface.js';
 export { MonitoringModule } from './module/module.js';
+export { registerMonitoringServices } from './register.js';

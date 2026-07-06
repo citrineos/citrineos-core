@@ -15,6 +15,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { Controller } from 'react-hook-form';
@@ -25,19 +26,14 @@ interface UnlockConnectorModalProps {
   station: any;
 }
 
-const UnlockConnectorSchema = z.object({
-  evse: z.string({
-    message: 'EVSE is required',
-  }), // { id, evseTypeId }
-  connectorId: z.number({
-    message: 'Connector is required',
-  }),
-});
-
-type UnlockConnectorFormData = z.infer<typeof UnlockConnectorSchema>;
+type UnlockConnectorFormData = {
+  evse: string;
+  connectorId: number;
+};
 
 export const UnlockConnectorModal = ({ station }: UnlockConnectorModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -46,6 +42,23 @@ export const UnlockConnectorModal = ({ station }: UnlockConnectorModalProps) => 
     () => plainToInstance(ChargingStationClass, station),
     [station],
   ) as ChargingStationDto;
+
+  const UnlockConnectorSchema = useMemo(
+    () =>
+      z.object({
+        evse: z.string({
+          message: translate('ChargingStations.fieldRequired', {
+            field: translate('ChargingStations.evseSelector.label'),
+          }),
+        }), // { id, evseTypeId }
+        connectorId: z.number({
+          message: translate('ChargingStations.fieldRequired', {
+            field: translate('ChargingStations.connectorSelector.label'),
+          }),
+        }),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(UnlockConnectorSchema),
@@ -69,6 +82,7 @@ export const UnlockConnectorModal = ({ station }: UnlockConnectorModalProps) => 
     };
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/evdriver/unlockConnector?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -96,7 +110,7 @@ export const UnlockConnectorModal = ({ station }: UnlockConnectorModalProps) => 
       loading={loading}
       submitHandler={onFinish}
       submitButtonVariant={FormButtonVariants.submit}
-      submitButtonLabel="Unlock Connector"
+      submitButtonLabel={translate('ChargingStations.commands.unlockConnector')}
       hideCancel
     >
       <Controller

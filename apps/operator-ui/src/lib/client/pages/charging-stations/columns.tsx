@@ -27,14 +27,22 @@ import { badgeListStyle } from '@lib/client/styles/page';
 import { Badge } from '@lib/client/components/ui/badge';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 
-export const getChargingStationsColumns = (includeLocation = true): ColumnConfiguration[] => {
+type TranslateFn = (key: string, options?: any) => string;
+
+export const getChargingStationsColumns = (
+  includeLocation = true,
+  translate?: TranslateFn,
+): ColumnConfiguration[] => {
+  // Falls back to the English string when no translate function is provided
+  // (e.g. when invoked from areas that have not yet wired up i18n).
+  const t = (key: string, fallback: string) => (translate ? translate(key) : fallback);
   return [
     {
       key: ChargingStationProps.id,
-      header: 'Name',
+      header: t('ChargingStations.columns.name', 'Name'),
       visible: true,
       sortable: true,
-      filterConfig: { type: 'text', label: 'Station ID' },
+      filterConfig: { type: 'text', label: t('ChargingStations.columns.stationId', 'Station ID') },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <TableCellLink
           path={`/${MenuSection.CHARGING_STATIONS}/${row.original.id}`}
@@ -46,7 +54,7 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
       ? [
           {
             key: ChargingStationDetailsProps.location,
-            header: 'Location',
+            header: t('ChargingStations.columns.location', 'Location'),
             visible: true,
             cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
               <TableCellLink
@@ -59,26 +67,26 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
       : []),
     {
       key: ChargingStationDetailsProps.statusNotifications,
-      header: 'Status',
+      header: t('Common.status', 'Status'),
       visible: true,
       filterConfig: {
         type: 'yesno',
         field: 'isOnline',
-        label: 'Online status',
+        label: t('ChargingStations.columns.onlineStatus', 'Online status'),
       },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <span className={row.original.isOnline ? 'text-success' : 'text-destructive'}>
-          {row.original.isOnline ? 'Online' : 'Offline'}
+          {row.original.isOnline ? t('Common.online', 'Online') : t('Common.offline', 'Offline')}
         </span>
       ),
     },
     {
       key: ChargingStationDetailsProps.protocol,
-      header: 'Protocol',
+      header: t('ChargingStations.columns.protocol', 'Protocol'),
       visible: true,
       filterConfig: {
         type: 'enum',
-        label: 'Protocol',
+        label: t('ChargingStations.columns.protocol', 'Protocol'),
         enumOptions: [
           { label: 'OCPP 1.6', value: 'ocpp1.6' },
           { label: 'OCPP 2.0.1', value: 'ocpp2.0.1' },
@@ -91,12 +99,12 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: 'vendorModel',
-      header: 'Vendor / Model',
+      header: t('ChargingStations.columns.vendorModel', 'Vendor / Model'),
       visible: false,
       filterConfig: {
         type: 'text',
         field: 'chargePointVendor',
-        label: 'Vendor',
+        label: t('ChargingStations.columns.vendor', 'Vendor'),
       },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <span>{`${row.original.chargePointVendor ?? EMPTY_VALUE} / ${row.original.chargePointModel ?? EMPTY_VALUE}`}</span>
@@ -104,13 +112,16 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: ChargingStationDetailsProps.floorLevel,
-      header: 'Floor Level',
+      header: t('ChargingStations.columns.floorLevel', 'Floor Level'),
       visible: false,
-      filterConfig: { type: 'text', label: 'Floor Level' },
+      filterConfig: {
+        type: 'text',
+        label: t('ChargingStations.columns.floorLevel', 'Floor Level'),
+      },
     },
     {
       key: ChargingStationDetailsProps.parkingRestrictions,
-      header: 'Parking Restrictions',
+      header: t('ChargingStations.columns.parkingRestrictions', 'Parking Restrictions'),
       visible: false,
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <div className={badgeListStyle}>
@@ -128,7 +139,7 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: ChargingStationDetailsProps.capabilities,
-      header: 'Capabilities',
+      header: t('ChargingStations.columns.capabilities', 'Capabilities'),
       visible: false,
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <div className={badgeListStyle}>
@@ -146,16 +157,19 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: ChargingStationDetailsProps.firmwareVersion,
-      header: 'Firmware Version',
+      header: t('ChargingStations.columns.firmwareVersion', 'Firmware Version'),
       visible: false,
-      filterConfig: { type: 'text', label: 'Firmware Version' },
+      filterConfig: {
+        type: 'text',
+        label: t('ChargingStations.columns.firmwareVersion', 'Firmware Version'),
+      },
     },
     {
       key: ChargingStationDetailsProps.createdAt,
-      header: 'Created At',
+      header: t('ChargingStations.columns.createdAt', 'Created At'),
       visible: false,
       sortable: true,
-      filterConfig: { type: 'date', label: 'Created At' },
+      filterConfig: { type: 'date', label: t('ChargingStations.columns.createdAt', 'Created At') },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) =>
         row.original.createdAt ? (
           <TimestampDisplay isoTimestamp={row.original.createdAt} />
@@ -165,10 +179,10 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: ChargingStationDetailsProps.updatedAt,
-      header: 'Updated At',
+      header: t('ChargingStations.columns.updatedAt', 'Updated At'),
       visible: false,
       sortable: true,
-      filterConfig: { type: 'date', label: 'Updated At' },
+      filterConfig: { type: 'date', label: t('ChargingStations.columns.updatedAt', 'Updated At') },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) =>
         row.original.updatedAt ? (
           <TimestampDisplay isoTimestamp={row.original.updatedAt} />
@@ -178,7 +192,7 @@ export const getChargingStationsColumns = (includeLocation = true): ColumnConfig
     },
     {
       key: ACTIONS_COLUMN,
-      header: 'Actions',
+      header: t('Common.actions', 'Actions'),
       visible: true,
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => {
         const hasActiveTransactions = !isEmpty(row.original.transactions);

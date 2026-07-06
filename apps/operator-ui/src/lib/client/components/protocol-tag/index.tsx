@@ -5,8 +5,10 @@
 import { OCPPVersion } from '@citrineos/base';
 import { Badge } from '@lib/client/components/ui/badge';
 import { cn } from '@lib/utils/cn';
+import { useTranslate } from '@refinedev/core';
 
 const ProtocolTag = ({ protocol }: { protocol: string | null | undefined }) => {
+  const translate = useTranslate();
   let colorClass: string;
   let protocolName: string;
 
@@ -25,7 +27,7 @@ const ProtocolTag = ({ protocol }: { protocol: string | null | undefined }) => {
       break;
     default:
       colorClass = 'bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200';
-      protocolName = 'Unknown';
+      protocolName = translate('Common.unknown');
       break;
   }
 

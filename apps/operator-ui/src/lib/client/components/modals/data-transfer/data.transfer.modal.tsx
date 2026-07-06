@@ -17,6 +17,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
@@ -25,16 +26,15 @@ export interface DataTransferModalProps {
   station: any;
 }
 
-const DataTransferSchema = z.object({
-  vendorId: z.string().min(1, 'Vendor ID is required'),
-  messageId: z.string().optional(),
-  data: z.string().optional(),
-});
-
-type DataTransferFormData = z.infer<typeof DataTransferSchema>;
+type DataTransferFormData = {
+  vendorId: string;
+  messageId?: string;
+  data?: string;
+};
 
 export const DataTransferModal = ({ station }: DataTransferModalProps) => {
   const dispatch = useDispatch();
+  const translate = useTranslate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -45,6 +45,18 @@ export const DataTransferModal = ({ station }: DataTransferModalProps) => {
   ) as ChargingStationDto;
 
   const ocppVersion = parsedStation.protocol;
+
+  const DataTransferSchema = useMemo(
+    () =>
+      z.object({
+        vendorId: z
+          .string()
+          .min(1, translate('ChargingStations.dataTransferModal.vendorIdRequired')),
+        messageId: z.string().optional(),
+        data: z.string().optional(),
+      }),
+    [translate],
+  );
 
   const form = useForm({
     resolver: zodResolver(DataTransferSchema),
@@ -74,6 +86,7 @@ export const DataTransferModal = ({ station }: DataTransferModalProps) => {
     }
 
     triggerMessageAndHandleResponse<MessageConfirmation[]>({
+      translate,
       url: `/configuration/dataTransfer?identifier=${parsedStation.ocppConnectionName}&tenantId=${tenantId}`,
       data,
       setLoading,
@@ -97,16 +110,29 @@ export const DataTransferModal = ({ station }: DataTransferModalProps) => {
       submitButtonVariant={FormButtonVariants.submit}
       hideCancel
     >
-      <FormField control={form.control} label="Vendor ID" name="vendorId" required>
-        <Input placeholder="Vendor specific implementation identifier" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.dataTransferModal.vendorId')}
+        name="vendorId"
+        required
+      >
+        <Input placeholder={translate('ChargingStations.dataTransferModal.vendorIdPlaceholder')} />
       </FormField>
 
-      <FormField control={form.control} label="Message ID" name="messageId">
-        <Input placeholder="Specific message or implementation identifier" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.dataTransferModal.messageId')}
+        name="messageId"
+      >
+        <Input placeholder={translate('ChargingStations.dataTransferModal.messageIdPlaceholder')} />
       </FormField>
 
-      <FormField control={form.control} label="Data" name="data">
-        <Textarea placeholder="Data to send (freeform text)" />
+      <FormField
+        control={form.control}
+        label={translate('ChargingStations.dataTransferModal.data')}
+        name="data"
+      >
+        <Textarea placeholder={translate('ChargingStations.dataTransferModal.dataPlaceholder')} />
       </FormField>
     </Form>
   );

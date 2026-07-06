@@ -16,7 +16,7 @@
  * CITRINEOS_USE_DRIZZLE_SECURITY_EVENT=true — confirming both write the same record.
  *
  * Prerequisites: run `pnpm run test:e2e` (which builds first) rather than
- * `pnpm test`, since the server child process needs Server/dist/index.js to be
+ * `pnpm test`, since the server child process needs ocpp-server/dist/index.js to be
  * current and sequelize-cli needs dist/migrations/*.
  *
  * Why no manual Tenant seed?
@@ -33,14 +33,14 @@ import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainer
 import { fileURLToPath } from 'url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
-import { createLocalConfig } from '../../../../../../apps/Server/src/config/envs/local.js';
+import { createLocalConfig } from '../../../../../../apps/ocpp-server/src/config/envs/local.js';
 import { aSecurityEventNotificationRequest } from '../providers/SecurityEvent.js';
 
 // ─── Paths (resolved relative to this file) ───────────────────────────────────
 
-const SERVER_ROOT = fileURLToPath(new URL('../../../../../../apps/Server/', import.meta.url));
+const SERVER_ROOT = fileURLToPath(new URL('../../../../../../apps/ocpp-server/', import.meta.url));
 const SERVER_DIST = fileURLToPath(
-  new URL('../../../../../../apps/Server/dist/index.js', import.meta.url),
+  new URL('../../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
 );
 
 // ─── Ports used by the server under test ─────────────────────────────────────
@@ -184,7 +184,7 @@ beforeAll(async () => {
   // sequelize.bridge.config.ts reads BOOTSTRAP_CITRINEOS_DATABASE_* env vars,
   // so the same vars we use to start the server point migrations at test PG.
   // This also runs 20250430110000-create-default-tenant which seeds Tenant id=1.
-  execSync('pnpm run migrate', {
+  execSync('pnpm run db:migrate', {
     cwd: SERVER_ROOT,
     env: buildTestEnv(),
     stdio: 'inherit',

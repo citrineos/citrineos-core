@@ -7,10 +7,17 @@ import { HasuraClaimType } from '@lib/utils/hasura.types';
 import type { NotificationProvider } from '@refinedev/core';
 import { toast } from 'sonner';
 
+/**
+ * Subset of refine's TranslateFunction. Optional so the provider keeps working
+ * (with English fallbacks) when created without an i18n translate function.
+ */
+type TranslateFn = (key: string, options?: any, defaultMessage?: string) => string;
+
 const getNotificationMessageDescriptionAndType = (
   message: string,
   type: 'success' | 'error' | 'progress',
   description: string | undefined,
+  translate?: TranslateFn,
 ): {
   message: string;
   type: 'success' | 'error' | 'progress';
@@ -23,8 +30,12 @@ const getNotificationMessageDescriptionAndType = (
 
     if (missingRequiredTenantId) {
       return {
-        message: 'Not allowed',
-        description: `Missing required Parameter: ${HasuraClaimType.X_HASURA_TENANT_ID}`,
+        message: translate ? translate('notificationProvider.notAllowed') : 'Not allowed',
+        description: translate
+          ? translate('notificationProvider.missingRequiredParameter', {
+              parameter: HasuraClaimType.X_HASURA_TENANT_ID,
+            })
+          : `Missing required Parameter: ${HasuraClaimType.X_HASURA_TENANT_ID}`,
         type: 'error',
       };
     }
@@ -42,8 +53,12 @@ const getNotificationMessageDescriptionAndType = (
 
     if (isPermissionError) {
       return {
-        message: 'You do not have permission to access this resource.',
-        description: 'Please contact your administrator if you believe this is a mistake.',
+        message: translate
+          ? translate('notificationProvider.noPermission')
+          : 'You do not have permission to access this resource.',
+        description: translate
+          ? translate('notificationProvider.contactAdministrator')
+          : 'Please contact your administrator if you believe this is a mistake.',
         type: 'error',
       };
     }
@@ -56,13 +71,13 @@ const getNotificationMessageDescriptionAndType = (
   };
 };
 
-export const notificationProvider: NotificationProvider = {
+export const createNotificationProvider = (translate?: TranslateFn): NotificationProvider => ({
   open: ({ key, message, type, description, undoableTimeout, cancelMutation }) => {
     const {
       message: mappedMessage,
       type: mappedType,
       description: mappedDescription,
-    } = getNotificationMessageDescriptionAndType(message, type, description);
+    } = getNotificationMessageDescriptionAndType(message, type, description, translate);
 
     switch (mappedType) {
       case 'success':
@@ -110,4 +125,10 @@ export const notificationProvider: NotificationProvider = {
   close: (id) => {
     toast.dismiss(id);
   },
-};
+});
+
+/**
+ * Default notification provider without i18n translation. Prefer
+ * {@link createNotificationProvider} with a translate function when available.
+ */
+export const notificationProvider: NotificationProvider = createNotificationProvider();

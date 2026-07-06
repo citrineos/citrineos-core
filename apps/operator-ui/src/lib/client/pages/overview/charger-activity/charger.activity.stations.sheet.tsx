@@ -27,7 +27,7 @@ export const ChargerActivityStationsSheet = ({
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {status} {translate('overview.chargers')}
+            {status} {translate('Overview.chargers')}
           </SheetTitle>
         </SheetHeader>
         <ScrollArea className="overflow-hidden">
@@ -43,7 +43,7 @@ export const ChargerActivityStationsSheet = ({
                 />
               ))
             ) : (
-              <span>{translate('overview.noChargersStatus', { status })}</span>
+              <span>{translate('Overview.noChargersStatus', { status })}</span>
             )}
           </div>
         </ScrollArea>

@@ -16,22 +16,45 @@ import { EMPTY_VALUE } from '@lib/utils/consts';
 import { badgeListStyle } from '@lib/client/styles/page';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 
-export const authorizationsColumns: ColumnConfiguration[] = [
+type TranslateFn = (key: string, options?: any) => string;
+
+// English fallbacks used when the columns are built without a translator
+// (e.g. shared usage from areas that have not been wired to useTranslate yet).
+const englishFallbacks: Record<string, string> = {
+  'Authorizations.columns.authorizationId': 'Authorization ID',
+  'Authorizations.columns.type': 'Type',
+  'Authorizations.columns.status': 'Status',
+  'Authorizations.columns.concurrentTransactions': 'Concurrent Transactions',
+  'Authorizations.columns.allowedTypes': 'Allowed Types',
+  'Authorizations.columns.disallowedPrefixes': 'Disallowed Prefixes',
+  'Authorizations.columns.createdAt': 'Created At',
+  'Authorizations.columns.updatedAt': 'Updated At',
+  'Authorizations.noId': 'No ID',
+  'Authorizations.allowed': 'Allowed',
+  'Authorizations.notAllowed': 'Not Allowed',
+};
+
+const identityTranslate: TranslateFn = (key, options) =>
+  options?.fallback ?? englishFallbacks[key] ?? key;
+
+export const getAuthorizationsColumns = (
+  translate: TranslateFn = identityTranslate,
+): ColumnConfiguration[] => [
   {
     key: AuthorizationProps.idToken,
-    header: 'Authorization ID',
+    header: translate('Authorizations.columns.authorizationId'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) => (
       <TableCellLink
         path={`/${MenuSection.AUTHORIZATIONS}/${row.original.id}`}
-        value={row.original.idToken?.trim() ?? 'No ID'}
+        value={row.original.idToken?.trim() ?? translate('Authorizations.noId')}
       />
     ),
   },
   {
     key: AuthorizationProps.idTokenType,
-    header: 'Type',
+    header: translate('Authorizations.columns.type'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) => (
@@ -40,7 +63,7 @@ export const authorizationsColumns: ColumnConfiguration[] = [
   },
   {
     key: AuthorizationProps.status,
-    header: 'Status',
+    header: translate('Authorizations.columns.status'),
     visible: true,
     sortable: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) => (
@@ -49,20 +72,22 @@ export const authorizationsColumns: ColumnConfiguration[] = [
   },
   {
     key: AuthorizationProps.concurrentTransaction,
-    header: 'Concurrent Transactions',
+    header: translate('Authorizations.columns.concurrentTransactions'),
     visible: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) => {
       const concurrentTransaction = row.original.concurrentTransaction;
       return (
         <Badge variant={concurrentTransaction ? 'success' : 'destructive'}>
-          {concurrentTransaction ? 'Allowed' : 'Not Allowed'}
+          {concurrentTransaction
+            ? translate('Authorizations.allowed')
+            : translate('Authorizations.notAllowed')}
         </Badge>
       );
     },
   },
   {
     key: AuthorizationProps.allowedConnectorTypes,
-    header: 'Allowed Types',
+    header: translate('Authorizations.columns.allowedTypes'),
     visible: false,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) =>
       !isEmpty(row.original.allowedConnectorTypes) ? (
@@ -79,7 +104,7 @@ export const authorizationsColumns: ColumnConfiguration[] = [
   },
   {
     key: AuthorizationProps.disallowedEvseIdPrefixes,
-    header: 'Disallowed Prefixes',
+    header: translate('Authorizations.columns.disallowedPrefixes'),
     visible: false,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) =>
       !isEmpty(row.original.disallowedEvseIdPrefixes) ? (
@@ -96,7 +121,7 @@ export const authorizationsColumns: ColumnConfiguration[] = [
   },
   {
     key: AuthorizationProps.createdAt,
-    header: 'Created At',
+    header: translate('Authorizations.columns.createdAt'),
     visible: false,
     sortable: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) =>
@@ -108,7 +133,7 @@ export const authorizationsColumns: ColumnConfiguration[] = [
   },
   {
     key: AuthorizationProps.updatedAt,
-    header: 'Updated At',
+    header: translate('Authorizations.columns.updatedAt'),
     visible: false,
     sortable: true,
     cellRender: ({ row }: CellContext<AuthorizationDto, unknown>) =>

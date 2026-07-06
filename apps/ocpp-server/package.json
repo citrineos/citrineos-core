@@ -1,0 +1,57 @@
+{
+  "name": "@citrineos/ocpp-server",
+  "version": "2.0.0-alpha2",
+  "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json && tsc -p tsconfig.migrations.json && pnpm run copy-assets",
+    "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "start": "cross-env APP_NAME=all APP_ENV=local BOOTSTRAP_CITRINEOS_CONFIG_FILENAME=config.json BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data nodemon",
+    "start:everest": "cd ./everest && cross-env OCPP_VERSION=2.1 EVEREST_IMAGE_TAG=2025.6.1-dt-esdp docker compose up -d",
+    "start:everest:16": "cd ./everest && cross-env OCPP_VERSION=1.6 EVEREST_IMAGE_TAG=2025.6.1-dt-esdp docker compose up -d"
+  },
+  "keywords": [
+    "ocpp",
+    "ocpp_v201"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
+    "@graphql-eslint/eslint-plugin": "^4.4.0",
+    "@types/amqplib": "0.10.1",
+    "@types/ws": "8.5.4",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "nodemon": "3.1.14",
+    "sequelize": "^6.37.0",
+    "sequelize-typescript": "2.1.6",
+    "ts-node": "10.9.2",
+    "typescript-eslint": "catalog:"
+  },
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/core": "workspace:*",
+    "@fastify/cors": "10.1.0",
+    "awilix": "^13.0.3",
+    "cross-env": "7.0.3",
+    "fastify": "catalog:",
+    "sqlite3": "5.1.7",
+    "tslog": "^4.9.2",
+    "ws": "8.20.1"
+  },
+  "optionalDependencies": {
+    "bufferutil": "4.0.8",
+    "utf-8-validate": "6.0.6"
+  }
+}

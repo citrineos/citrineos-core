@@ -284,7 +284,7 @@ export const ChargingStationUpsert = ({
             <div className={cardGridStyle}>
               <FormField
                 control={form.control}
-                label="Name"
+                label={translate('ChargingStations.columns.name')}
                 name={ChargingStationProps.ocppConnectionName}
                 required
               >
@@ -293,17 +293,17 @@ export const ChargingStationUpsert = ({
               <ComboboxFormField<number, ChargingStationCreateDto>
                 control={form.control}
                 name={ChargingStationProps.locationId}
-                label="Location"
+                label={translate('ChargingStations.columns.location')}
                 options={locationOptions}
                 onSearch={onSearch}
-                placeholder="Select Location"
+                placeholder={translate('ChargingStations.upsert.selectLocation')}
                 isLoading={locationQuery.isLoading}
                 required
                 disabled={!!locationId}
               />
               <FormField
                 control={form.control}
-                label="Floor Level"
+                label={translate('ChargingStations.columns.floorLevel')}
                 name={ChargingStationProps.floorLevel}
               >
                 <Input />
@@ -315,19 +315,19 @@ export const ChargingStationUpsert = ({
               >
                 control={form.control}
                 name={ChargingStationProps.parkingRestrictions}
-                label="Parking Restrictions"
+                label={translate('ChargingStations.columns.parkingRestrictions')}
                 options={parkingRestrictions}
-                placeholder="Select Parking Restrictions"
-                searchPlaceholder="Search Parking Restrictions"
+                placeholder={translate('ChargingStations.upsert.selectParkingRestrictions')}
+                searchPlaceholder={translate('ChargingStations.upsert.searchParkingRestrictions')}
               />
 
               <MultiSelectFormField<ChargingStationCapabilityEnumType, ChargingStationCreateDto>
                 control={form.control}
                 name={ChargingStationProps.capabilities}
-                label="Capabilities"
+                label={translate('ChargingStations.columns.capabilities')}
                 options={capabilities}
-                placeholder="Select Capabilities"
-                searchPlaceholder="Search Capabilities"
+                placeholder={translate('ChargingStations.upsert.selectCapabilities')}
+                searchPlaceholder={translate('ChargingStations.upsert.searchCapabilities')}
               />
 
               <CheckboxFormField
@@ -357,13 +357,17 @@ export const ChargingStationUpsert = ({
                       }
                     }}
                   />
-                  <Label htmlFor="useLocationCoordinates">Use Location Coordinates</Label>
+                  <Label htmlFor="useLocationCoordinates">
+                    {translate('ChargingStations.upsert.useLocationCoordinates')}
+                  </Label>
                 </div>
               </Field>
 
               <Field>
                 <FieldLabel>
-                  <span className={formLabelStyle}>Latitude</span>
+                  <span className={formLabelStyle}>
+                    {translate('ChargingStations.upsert.latitude')}
+                  </span>
                 </FieldLabel>
                 <Input
                   type="number"
@@ -373,13 +377,15 @@ export const ChargingStationUpsert = ({
                     setLatitude(e.target.value ? parseFloat(e.target.value) : undefined)
                   }
                   disabled={useLocationCoordinates}
-                  placeholder="Enter latitude"
+                  placeholder={translate('ChargingStations.upsert.enterLatitude')}
                 />
               </Field>
 
               <Field>
                 <FieldLabel>
-                  <span className={formLabelStyle}>Longitude</span>
+                  <span className={formLabelStyle}>
+                    {translate('ChargingStations.upsert.longitude')}
+                  </span>
                 </FieldLabel>
                 <Input
                   type="number"
@@ -389,14 +395,16 @@ export const ChargingStationUpsert = ({
                     setLongitude(e.target.value ? parseFloat(e.target.value) : undefined)
                   }
                   disabled={useLocationCoordinates}
-                  placeholder="Enter longitude"
+                  placeholder={translate('ChargingStations.upsert.enterLongitude')}
                 />
               </Field>
 
               {allowImageUpload && (
                 <Field>
                   <FieldLabel>
-                    <span className={formLabelStyle}>Image</span>
+                    <span className={formLabelStyle}>
+                      {translate('ChargingStations.upsert.image')}
+                    </span>
                   </FieldLabel>
                   <Input
                     type="file"
