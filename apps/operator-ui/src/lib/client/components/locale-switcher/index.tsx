@@ -35,10 +35,9 @@ export const LocaleSwitcher = ({ expanded }: { expanded: boolean }) => {
 
   const onSelectLocale = (nextLocale: string) => {
     if (nextLocale === locale) return;
-    startTransition(() => {
-      setUserLocale(nextLocale).then(() => {
-        router.refresh();
-      });
+    startTransition(async () => {
+      await setUserLocale(nextLocale);
+      router.refresh();
     });
   };
 

@@ -66,6 +66,8 @@ services:
     pull_policy: always
     profiles:
       - ui
+    env_file:
+      - ./apps/operator-ui/.env.local
     ports:
       - 3000:3000
     depends_on:

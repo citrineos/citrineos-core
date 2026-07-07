@@ -11,7 +11,9 @@ import { getGoogleMapsApiKey, setGoogleMapsApiKey } from '@lib/utils/store/maps.
 import { getGoogleMapsApiKeyAction } from '@lib/server/actions/map/getGoogleMapsApiKeyAction';
 import type { LocationDto } from '@citrineos/base';
 import { ClusteredLocationMarkers } from '@lib/client/components/map/map.clusters';
+import { MapErrorBoundary } from '@lib/client/components/map/map.error-boundary';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 
 const defaultCenter = {
@@ -24,6 +26,7 @@ export const LocationMapV2 = ({ locations }: { locations: LocationDto[] }) => {
   const apiKey = useSelector(getGoogleMapsApiKey);
 
   const { theme } = useTheme();
+  const locale = useLocale();
 
   useEffect(() => {
     if (apiKey === undefined) {
@@ -37,21 +40,23 @@ export const LocationMapV2 = ({ locations }: { locations: LocationDto[] }) => {
     <Skeleton className="size=full" />
   ) : (
     <div className="size-full">
-      <APIProvider apiKey={apiKey ?? ''}>
-        <Map
-          mapId={config.googleMapsOverviewMapId}
-          defaultZoom={4}
-          defaultCenter={defaultCenter}
-          gestureHandling="cooperative"
-          disableDefaultUI
-          zoomControl
-          colorScheme={theme === 'dark' ? ColorScheme.DARK : ColorScheme.LIGHT}
-        >
-          <ClusteredLocationMarkers
-            locations={locations.filter((location) => location.coordinates)}
-          />
-        </Map>
-      </APIProvider>
+      <MapErrorBoundary resetKeys={[locale]} fallback={<Skeleton className="size-full" />}>
+        <APIProvider apiKey={apiKey ?? ''}>
+          <Map
+            mapId={config.googleMapsOverviewMapId}
+            defaultZoom={4}
+            defaultCenter={defaultCenter}
+            gestureHandling="cooperative"
+            disableDefaultUI
+            zoomControl
+            colorScheme={theme === 'dark' ? ColorScheme.DARK : ColorScheme.LIGHT}
+          >
+            <ClusteredLocationMarkers
+              locations={locations.filter((location) => location.coordinates)}
+            />
+          </Map>
+        </APIProvider>
+      </MapErrorBoundary>
     </div>
   );
 };

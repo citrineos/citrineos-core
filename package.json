@@ -30,7 +30,8 @@
     "overrides": {
       "@tanstack/react-query": "5.90.5",
       "zod": "catalog:",
-      "motion-dom": "12.23.21"
+      "motion-dom": "12.23.21",
+      "graphql": "15.6.1"
     }
   },
   "engines": {
