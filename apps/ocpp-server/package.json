@@ -47,7 +47,7 @@
     "fastify": "catalog:",
     "sqlite3": "5.1.7",
     "tslog": "^4.9.2",
-    "ws": "8.20.1"
+    "ws": "8.21.0"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.8",
