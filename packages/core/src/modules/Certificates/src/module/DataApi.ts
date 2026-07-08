@@ -276,6 +276,7 @@ export class CertificatesDataApi
       leafKeyPem,
       subCAKeyPem,
       rootCACertPem,
+      certRequest.filePath,
     );
 
     return responseBody;

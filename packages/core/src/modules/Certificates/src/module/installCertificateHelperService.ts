@@ -38,6 +38,9 @@ export const enum PemType {
   Leaf = 'Leaf',
 }
 
+// Default file name used to persist the generated certificate chain
+const DEFAULT_CERT_CHAIN_FILENAME = 'certChain.pem';
+
 export class InstallCertificateHelperService {
   protected certificateRepository: ICertificateRepository;
   protected installedCertificateRepository: IInstalledCertificateRepository;
@@ -386,6 +389,7 @@ export class InstallCertificateHelperService {
    * @param leafKeyPem - Leaf certificate private key PEM string.
    * @param subCAKeyPem - Sub CA private key PEM string.
    * @param rootCACertPem - Root CA certificate PEM string. Only present for self-signed certificate chains.
+   * @param filePath - Optional prefix under which the default (non-TLS-server-scoped) files are stored.
    */
   async saveCertificatesToServerConfigs(
     websocketServersConfig: WebsocketServerConfig[],
@@ -393,14 +397,18 @@ export class InstallCertificateHelperService {
     leafKeyPem: string,
     subCAKeyPem: string,
     rootCACertPem?: string,
+    filePath?: string,
   ): Promise<void> {
     const tlsServers = websocketServersConfig.filter((c) => c.securityProfile >= 2);
+    let chainSavedToServerPath = false;
+
     for (const serverConfig of tlsServers) {
       if (serverConfig.tlsCertificateChainFilePath) {
         await this.fileStorage.saveFile(
           serverConfig.tlsCertificateChainFilePath,
           Buffer.from(certificateChainPem),
         );
+        chainSavedToServerPath = true;
       }
       if (serverConfig.tlsKeyFilePath) {
         await this.fileStorage.saveFile(serverConfig.tlsKeyFilePath, Buffer.from(leafKeyPem));
@@ -418,6 +426,17 @@ export class InstallCertificateHelperService {
         );
       }
       this.logger.info(`Saved TLS certificate files for server ${serverConfig.id}`);
+    }
+
+    // The certificate chain must always be persisted somewhere,
+    // even when no TLS server config claims it,
+    // stored alongside the config file based on configBucketName and filePath if exists.
+    const keyPrefix = filePath ? `${filePath}/` : '';
+    if (!chainSavedToServerPath) {
+      await this.fileStorage.saveFile(
+        `${keyPrefix}${DEFAULT_CERT_CHAIN_FILENAME}`,
+        Buffer.from(certificateChainPem),
+      );
     }
   }
 
