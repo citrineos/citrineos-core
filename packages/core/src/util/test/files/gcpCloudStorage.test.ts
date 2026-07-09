@@ -11,10 +11,12 @@ vi.mock('@google-cloud/storage', () => {
     save: vi.fn(),
     exists: vi.fn(),
     download: vi.fn(),
+    delete: vi.fn(),
   };
 
   const mockBucket = {
     file: vi.fn(() => mockFile),
+    deleteFiles: vi.fn(),
   };
 
   const mockStorage = {
@@ -182,6 +184,111 @@ describe('GcpCloudStorage', () => {
       mockFile.exists.mockRejectedValue(error);
 
       await expect(gcpStorage.getFile(fileId)).rejects.toThrow('Permission denied');
+    });
+  });
+
+  describe('exists', () => {
+    const key = 'test-file.txt';
+
+    it('should return true if the object exists', async () => {
+      mockFile.exists.mockResolvedValue([true]);
+
+      const result = await gcpStorage.exists(key);
+
+      expect(result).toBe(true);
+      expect(mockStorageInstance.bucket).toHaveBeenCalledWith('test-bucket');
+      expect(mockBucket.file).toHaveBeenCalledWith(key);
+    });
+
+    it('should return false if the object does not exist', async () => {
+      mockFile.exists.mockResolvedValue([false]);
+
+      const result = await gcpStorage.exists(key);
+
+      expect(result).toBe(false);
+    });
+
+    it('should use custom bucket if provided', async () => {
+      mockFile.exists.mockResolvedValue([true]);
+
+      await gcpStorage.exists(key, 'custom-bucket');
+
+      expect(mockStorageInstance.bucket).toHaveBeenCalledWith('custom-bucket');
+    });
+
+    it('should return false on a not-found error', async () => {
+      mockFile.exists.mockRejectedValue({ code: 404 });
+
+      const result = await gcpStorage.exists(key);
+
+      expect(result).toBe(false);
+    });
+
+    it('should rethrow non-404 errors', async () => {
+      mockFile.exists.mockRejectedValue(new Error('Permission denied'));
+
+      await expect(gcpStorage.exists(key)).rejects.toThrow('Permission denied');
+    });
+  });
+
+  describe('createDirectory', () => {
+    it('should be a no-op without reading, writing, or deleting any object', async () => {
+      await gcpStorage.createDirectory('some/path');
+
+      expect(mockFile.save).not.toHaveBeenCalled();
+      expect(mockFile.delete).not.toHaveBeenCalled();
+      expect(mockBucket.deleteFiles).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteFile', () => {
+    const key = 'test-file.txt';
+
+    it('should delete a single object', async () => {
+      mockFile.delete.mockResolvedValue(undefined);
+
+      await gcpStorage.deleteFile(key);
+
+      expect(mockBucket.file).toHaveBeenCalledWith(key);
+      expect(mockFile.delete).toHaveBeenCalled();
+    });
+
+    it('should use custom bucket if provided', async () => {
+      mockFile.delete.mockResolvedValue(undefined);
+
+      await gcpStorage.deleteFile(key, 'custom-bucket');
+
+      expect(mockStorageInstance.bucket).toHaveBeenCalledWith('custom-bucket');
+    });
+
+    it('should delete all objects by prefix when recursive is true', async () => {
+      mockBucket.deleteFiles.mockResolvedValue(undefined);
+
+      await gcpStorage.deleteFile('prefix/', undefined, { recursive: true });
+
+      expect(mockBucket.deleteFiles).toHaveBeenCalledWith({ prefix: 'prefix/' });
+      expect(mockFile.delete).not.toHaveBeenCalled();
+    });
+
+    it('should suppress not-found errors when force is true', async () => {
+      mockFile.delete.mockRejectedValue({ code: 404 });
+
+      await expect(gcpStorage.deleteFile(key, undefined, { force: true })).resolves.toBeUndefined();
+    });
+
+    it('should rethrow not-found errors when force is false', async () => {
+      const notFoundError = { code: 404, message: 'Not Found' };
+      mockFile.delete.mockRejectedValue(notFoundError);
+
+      await expect(gcpStorage.deleteFile(key)).rejects.toEqual(notFoundError);
+    });
+
+    it('should rethrow non-404 errors regardless of force', async () => {
+      mockFile.delete.mockRejectedValue(new Error('Network error'));
+
+      await expect(gcpStorage.deleteFile(key, undefined, { force: true })).rejects.toThrow(
+        'Network error',
+      );
     });
   });
 

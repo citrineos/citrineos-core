@@ -70,8 +70,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         'Not all certificate files found in configured file storage, falling back to direct path lookup',
       );
     }
-    const storage: IFileStorage = allExistInFileStorage ? fileStorage : new LocalStorage('', '');
     const diskStorage = new LocalStorage('', '');
+    const storage: IFileStorage = allExistInFileStorage ? fileStorage : diskStorage;
 
     const securityCertChainKeyMap = new Map<string, [string, string]>();
     for (const server of securityProfile3Servers) {
@@ -152,7 +152,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         this._logger.debug('Triggered challengeCreateFn()');
         const filePath = `${folderPath}/${challenge.token}`;
         if (!(await this._fileStorage.exists(folderPath))) {
-          await this._fileStorage.createDirectory(folderPath, { recursive: true });
+          await this._fileStorage.createDirectory(folderPath, undefined, { recursive: true });
           this._logger.debug(`Directory created: ${folderPath}`);
         } else {
           this._logger.debug(`Directory already exists: ${folderPath}`);
@@ -164,7 +164,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       },
       challengeRemoveFn: async (_authz, _challenge, _keyAuthorization) => {
         this._logger.debug(`Triggered challengeRemoveFn(). Would remove "${folderPath}`);
-        await this._fileStorage.deleteFile(folderPath, { recursive: true, force: true });
+        await this._fileStorage.deleteFile(folderPath, undefined, { recursive: true, force: true });
       },
     });
 

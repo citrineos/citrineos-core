@@ -144,7 +144,7 @@ configuration):
 ### Basic Bootstrap Configuration
 
 - `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
-- `BOOTSTRAP_CITRINEOS_CONFIG_DIR` - Directory containing the config file (optional)
+- `BOOTSTRAP_CITRINEOS_CONFIG_BUCKET` - Bucket contains the config file (optional)
 - `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `gcp`
 
 ### Database Configuration

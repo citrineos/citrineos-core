@@ -14,19 +14,19 @@ function createConfigStore(bootstrapConfig: BootstrapConfig): ConfigStore {
       return new LocalStorage(
         bootstrapConfig.fileAccess.local!.defaultFilePath,
         bootstrapConfig.configFileName,
-        bootstrapConfig.configDir,
+        bootstrapConfig.configBucket,
       );
     case 's3':
       return new S3Storage(
         bootstrapConfig.fileAccess.s3!,
         bootstrapConfig.configFileName,
-        bootstrapConfig.configDir,
+        bootstrapConfig.configBucket,
       );
     case 'gcp':
       return new GcpCloudStorage(
         bootstrapConfig.fileAccess.gcp!,
         bootstrapConfig.configFileName,
-        bootstrapConfig.configDir!,
+        bootstrapConfig.configBucket!,
       );
     default:
       throw new Error(`Unsupported file access type: ${bootstrapConfig.fileAccess.type}`);

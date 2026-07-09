@@ -115,12 +115,14 @@ describe('ACME', () => {
 
       expect(actualResult).toBe(mockCert);
       expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
-      expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, { recursive: true });
+      expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, undefined, {
+        recursive: true,
+      });
       expect(mockFileStorage.saveFile).toHaveBeenCalledWith(
         `${folderPath}/${mockToken}`,
         Buffer.from(mockKeyAuth),
       );
-      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, {
+      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
       });
@@ -148,7 +150,7 @@ describe('ACME', () => {
       expect(actualResult).toBe(mockCert);
       expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
       expect(mockFileStorage.createDirectory).not.toHaveBeenCalled();
-      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, {
+      expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
       });

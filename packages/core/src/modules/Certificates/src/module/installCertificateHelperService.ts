@@ -265,9 +265,10 @@ export class InstallCertificateHelperService {
       } else if (existingCertificate && !existingCertificate.certificateFileId) {
         // set file where previously undefined
         existingCertificate.certificateFileId = await this.fileStorage.saveFile(
-          `Existing_Key_${serialNumber}.pem`,
+          filePath
+            ? `${filePath}/Existing_Key_${serialNumber}.pem`
+            : `Existing_Key_${serialNumber}.pem`,
           Buffer.from(certificate),
-          filePath,
         );
         await Certificate.create({
           ...existingCertificate,
@@ -359,15 +360,14 @@ export class InstallCertificateHelperService {
   ): Promise<Certificate> {
     const certificateHash = this.getCertificateHash(certPem);
     // Store certificate and private key in file storage
+    const keyPrefix = filePath ? `${filePath}/` : '';
     certificateEntity.privateKeyFileId = await this.fileStorage.saveFile(
-      `${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
+      `${keyPrefix}${filePrefix}_Key_${certificateEntity.serialNumber}.pem`,
       Buffer.from(keyPem),
-      filePath,
     );
     certificateEntity.certificateFileId = await this.fileStorage.saveFile(
-      `${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`,
+      `${keyPrefix}${filePrefix}_Certificate_${certificateEntity.serialNumber}.pem`,
       Buffer.from(certPem),
-      filePath,
     );
     certificateEntity.certificateFileHash = certificateHash;
     // Store certificate in db
@@ -396,8 +396,6 @@ export class InstallCertificateHelperService {
   ): Promise<void> {
     const tlsServers = websocketServersConfig.filter((c) => c.securityProfile >= 2);
     for (const serverConfig of tlsServers) {
-      // use path basename and dirname is to get rid of the default path in file storage
-      // this makes sure the path is consist with reloading
       if (serverConfig.tlsCertificateChainFilePath) {
         await this.fileStorage.saveFile(
           serverConfig.tlsCertificateChainFilePath,

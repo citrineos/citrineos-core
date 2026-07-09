@@ -624,9 +624,8 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(mockFileStorageSaveFile).toHaveBeenCalledWith(
-        `Existing_Key_${mockCertDetails.serialNumber}.pem`,
+        `/custom/path/Existing_Key_${mockCertDetails.serialNumber}.pem`,
         Buffer.from(MOCK_CERTIFICATE),
-        '/custom/path',
       );
       expect(mockExistingCert.certificateFileId).toBe('newFileId');
       expect(Certificate.create).toHaveBeenCalledWith(

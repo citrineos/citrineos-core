@@ -26,7 +26,7 @@ export class S3Storage implements ConfigStore {
   constructor(
     config: BootstrapConfig['fileAccess']['s3'],
     configFileName: string,
-    configDir?: string,
+    configBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
     this.s3Client = new S3Client({
@@ -48,56 +48,86 @@ export class S3Storage implements ConfigStore {
     });
     this.defaultBucketName = config!.defaultBucketName!;
     this.configFileName = configFileName!;
-    this.configBucketName = configDir;
+    this.configBucketName = configBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
-  async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const bucketName = filePath ? filePath : this.defaultBucketName;
+
+  /**
+   * Uploads content to S3. Creates the bucket on demand if it does not exist.
+   * @param key S3 object key.
+   * @param content File content as a Buffer.
+   * @param bucket Optional bucket override; defaults to `defaultBucketName`.
+   *
+   * @returns The key used to store the object.
+   */
+  async saveFile(key: string, content: Buffer, bucket?: string): Promise<string> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Saving file to ${bucketName}/${key}`);
     const command = new PutObjectCommand({
       Bucket: bucketName,
-      Key: fileName,
+      Key: key,
       Body: content,
       ContentType: 'application/octet-stream',
     });
     try {
       const result = await this.s3Client.send(command);
-
       if (result.$metadata.httpStatusCode !== 200) {
-        throw new Error(`Failed to upload file ${fileName}: ${result.$metadata.httpStatusCode}`);
-      } else {
-        return fileName;
+        throw new Error(`Failed to upload file ${key}: ${result.$metadata.httpStatusCode}`);
       }
+      return key;
     } catch (error: any) {
       if (error.name === 'NoSuchBucket' || error.$metadata?.httpStatusCode === 404) {
         this._logger.warn(`Bucket "${bucketName}" not found. Creating it...`);
         await this.createBucket(bucketName);
-        this._logger.info(`Bucket "${bucketName}" created. Retrying config save...`);
-        return await this.saveFile(fileName, content, filePath);
-      } else {
-        this._logger.error('Error saving config to S3:', error);
-        throw error;
+        this._logger.info(`Bucket "${bucketName}" created. Retrying file save...`);
+        return await this.saveFile(key, content, bucket);
       }
+      this._logger.error('Error saving file to S3:', error);
+      throw error;
     }
   }
 
-  async getFile(id: string, filePath?: string): Promise<string | undefined> {
+  /**
+   * Downloads an S3 object and returns its content as a UTF-8 string.
+   * @param key S3 object key.
+   * @param bucket Optional bucket override; defaults to `defaultBucketName`.
+   *
+   * @returns Object content, or undefined if the key does not exist.
+   */
+  async getFile(key: string, bucket?: string): Promise<string | undefined> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Getting file from ${bucketName}/${key}`);
     const command = new GetObjectCommand({
-      Bucket: filePath ? filePath : this.defaultBucketName,
-      Key: id,
+      Bucket: bucketName,
+      Key: key,
     });
-    const { Body } = await this.s3Client.send(command);
-
-    if (!Body) return;
-
-    return await S3Storage.streamToString(Body as Readable);
+    try {
+      const { Body } = await this.s3Client.send(command);
+      if (!Body) return;
+      return await S3Storage.streamToString(Body as Readable);
+    } catch (error: any) {
+      if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+        return;
+      }
+      throw error;
+    }
   }
 
-  async exists(path: string): Promise<boolean> {
+  /**
+   * Checks whether an object exists in S3 using a HeadObject request.
+   * @param key S3 object key.
+   * @param bucket Optional bucket override; defaults to `defaultBucketName`.
+   *
+   * @returns True if the object exists.
+   */
+  async exists(key: string, bucket?: string): Promise<boolean> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Checking existence of ${bucketName}/${key}`);
     const command = new HeadObjectCommand({
-      Bucket: this.defaultBucketName,
-      Key: path,
+      Bucket: bucketName,
+      Key: key,
     });
     try {
       await this.s3Client.send(command);
@@ -110,30 +140,47 @@ export class S3Storage implements ConfigStore {
       ) {
         return false;
       }
-      this._logger.error(`Error checking existence of "${path}" in S3:`, error);
+      this._logger.error(`Error checking existence of "${key}" in S3:`, error);
       throw error;
     }
   }
 
-  // S3 has no concept of directories; object keys with "/" separators are
-  // implicit, so a key can be written without first creating its prefix.
-  // This is intentionally a no-op to satisfy the IFileStorage contract.
-  async createDirectory(_path: string, _options?: { recursive?: boolean }): Promise<void> {
+  /**
+   * No-op — S3 has no concept of directories; use "/" separators in keys instead.
+   * @param _key Ignored.
+   * @param _bucket Ignored.
+   * @param _options Ignored.
+   */
+  async createDirectory(
+    _key: string,
+    _bucket?: string,
+    _options?: { recursive?: boolean },
+  ): Promise<void> {
+    this._logger.debug(`Creating directory ${_bucket ?? this.defaultBucketName}/${_key}`);
     return;
   }
 
+  /**
+   * Deletes an S3 object. With `recursive`, removes all objects whose key starts with the given prefix, paged in batches of 1000.
+   * @param key S3 object key or key prefix.
+   * @param bucket Optional bucket override; defaults to `defaultBucketName`.
+   * @param options Pass `{ recursive: true }` to delete by prefix; `{ force: true }` to suppress not-found errors.
+   */
   async deleteFile(
-    path: string,
+    key: string,
+    bucket?: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
+    const bucketName = bucket ?? this.defaultBucketName;
+    this._logger.debug(`Deleting ${bucketName}/${key}`);
     try {
       if (options?.recursive) {
-        await this.deletePrefix(path);
+        await this.deletePrefix(bucketName, key);
       } else {
         await this.s3Client.send(
           new DeleteObjectCommand({
-            Bucket: this.defaultBucketName,
-            Key: path,
+            Bucket: bucketName,
+            Key: key,
           }),
         );
       }
@@ -145,7 +192,7 @@ export class S3Storage implements ConfigStore {
       if (notFound && options?.force) {
         return;
       }
-      this._logger.error(`Error deleting "${path}" from S3:`, error);
+      this._logger.error(`Error deleting "${key}" from S3:`, error);
       throw error;
     }
   }
@@ -179,7 +226,11 @@ export class S3Storage implements ConfigStore {
       const command = new CreateBucketCommand({ Bucket: bucket });
       await this.s3Client.send(command);
       this._logger.info(`Bucket "${bucket}" created successfully.`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'BucketAlreadyOwnedByYou' || error.name === 'BucketAlreadyExists') {
+        this._logger.debug(`Bucket "${bucket}" already exists.`);
+        return;
+      }
       this._logger.error(`Failed to create bucket "${bucket}":`, error);
       throw error;
     }
@@ -196,12 +247,12 @@ export class S3Storage implements ConfigStore {
 
   // Deletes every object whose key starts with the given prefix, paging through
   // the listing in batches of up to 1000 (the S3 DeleteObjects limit).
-  private async deletePrefix(prefix: string): Promise<void> {
+  private async deletePrefix(bucketName: string, prefix: string): Promise<void> {
     let continuationToken: string | undefined;
     do {
       const listed = await this.s3Client.send(
         new ListObjectsV2Command({
-          Bucket: this.defaultBucketName,
+          Bucket: bucketName,
           Prefix: prefix,
           ContinuationToken: continuationToken,
         }),
@@ -214,7 +265,7 @@ export class S3Storage implements ConfigStore {
       if (keys.length > 0) {
         await this.s3Client.send(
           new DeleteObjectsCommand({
-            Bucket: this.defaultBucketName,
+            Bucket: bucketName,
             Delete: { Objects: keys.map((Key) => ({ Key })) },
           }),
         );

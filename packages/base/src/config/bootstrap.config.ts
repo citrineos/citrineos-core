@@ -8,7 +8,7 @@ import { BOOTSTRAP_CONFIG_ENV_VAR_PREFIX } from './defineConfig.js';
 // Bootstrap schema contains what's needed to start the application
 export const bootstrapConfigSchema = z.object({
   configFileName: z.string().default('config.json'),
-  configDir: z.string().optional(),
+  configBucket: z.string().optional(),
 
   // Database configuration
   database: z.object({
@@ -113,7 +113,7 @@ function parseEnvValue(value: string): any {
 export function loadBootstrapConfig(): BootstrapConfig {
   const config: Record<string, any> = {
     configFileName: getEnvVarValue('config_filename') || 'config.json',
-    configDir: getEnvVarValue('config_dir'),
+    configBucket: getEnvVarValue('config_bucket'),
 
     // Database configuration
     database: {
