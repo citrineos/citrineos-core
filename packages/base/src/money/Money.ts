@@ -5,7 +5,7 @@
 import type { CurrencyCode } from './Currency.js';
 import { Currency } from './Currency.js';
 import { Big } from 'big.js';
-import { assert, notNull } from '../assertion/assertion.js';
+import { assert, notNull } from '../util/assertion.js';
 
 export type CurrencySource = string | CurrencyCode | Currency;
 

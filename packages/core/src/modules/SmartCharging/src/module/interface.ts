@@ -3,6 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Interface for the authorization module.
+ * Interface for the SmartCharging module.
  */
 export interface ISmartChargingModuleApi {}
