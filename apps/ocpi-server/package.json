@@ -48,7 +48,7 @@
     "cross-env": "7.0.3",
     "fastify": "catalog:",
     "sequelize": "^6.37.7",
-    "sqlite3": "5.1.6",
+    "sqlite3": "5.1.7",
     "tslog": "4.9.2",
     "uuid": "9.0.0"
   },
