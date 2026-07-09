@@ -6,8 +6,8 @@ import { AbstractConnectionManager } from '@citrineos/base';
 import amqp from 'amqplib';
 import { type ILogObj, Logger } from 'tslog';
 
-export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Connection> {
-  private connection: amqp.Connection | null = null;
+export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.ChannelModel> {
+  private connection: amqp.ChannelModel | null = null;
   private isConnecting = false;
   private reconnectAttempts = 0;
   private reconnectDelay = 1000; // Start with 1 second
@@ -30,7 +30,7 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Co
     this.url = amqpUrl;
   }
 
-  async connect(): Promise<amqp.Connection> {
+  async connect(): Promise<amqp.ChannelModel> {
     if (this.connection) {
       return this.connection;
     }
