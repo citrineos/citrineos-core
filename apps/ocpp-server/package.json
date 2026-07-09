@@ -27,8 +27,8 @@
   "devDependencies": {
     "@eslint/js": "catalog:",
     "@fastify/type-provider-json-schema-to-ts": "4.0.1",
-    "@types/amqplib": "0.10.1",
-    "@types/ws": "8.5.4",
+    "@types/amqplib": "0.10.8",
+    "@types/ws": "8.18.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
