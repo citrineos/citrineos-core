@@ -49,7 +49,7 @@
     "json-schema-faker": "0.6.2",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
-    "koa": "2.16.2",
+    "koa": "2.16.4",
     "koa-bodyparser": "4.4.1",
     "koa-logger": "3.2.1",
     "koa2-swagger-ui": "5.10.0",
