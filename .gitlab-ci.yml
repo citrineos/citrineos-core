@@ -1,0 +1,19 @@
+---
+include:
+  - project: wirelane/emc/gitlab-ci-template
+    ref: feature/SWPROD-8303 # TODO: switch back to master after template MR is merged
+    file: Docker.gitlab-ci.yml
+  - project: wirelane/emc/gitlab-ci-template
+    ref: feature/SWPROD-8303 # TODO: switch back to master after template MR is merged
+    file: AWS-deployment.gitlab-ci.yml
+
+stages:
+  - build
+  - publish
+  - announce_deployment
+  - deploy
+
+variables:
+  DEVELOP_BRANCH: main
+  RELEASE_BRANCH: main
+  DOCKERFILE: ./apps/ocpp-server/deploy.Dockerfile
