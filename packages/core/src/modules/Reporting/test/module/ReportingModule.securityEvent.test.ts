@@ -61,7 +61,7 @@ describe('ReportingModule - SecurityEventNotification handling', () => {
       handler: asValue({
         subscribe: vi.fn().mockResolvedValue(true),
         shutdown: vi.fn(),
-        set module(_: unknown) { },
+        set module(_: unknown) {},
       }),
       // undefined lets AbstractModule build a real OCPPValidator, so handle() runs genuine schema validation
       ocppValidator: asValue(undefined),
