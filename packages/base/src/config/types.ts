@@ -306,6 +306,7 @@ export const systemConfigInputSchema = z.object({
   logLevel: z.number().min(0).max(6).default(0).optional(),
   maxCallLengthSeconds: z.number().int().min(1).default(20).optional(),
   maxCachingSeconds: z.number().int().min(1).default(30).optional(),
+  staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
   maxReconnectDelay: z.number().int().min(1).default(30).optional(),
   shutdownGracePeriodSeconds: z.number().int().min(1).default(30).optional(),
   ocpiServer: z.object({
@@ -632,6 +633,7 @@ export const systemConfigSchema = z
     logLevel: z.number().min(0).max(6),
     maxCallLengthSeconds: z.number().int().min(1),
     maxCachingSeconds: z.number().int().min(1),
+    staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
     maxReconnectDelay: z.number().int().min(1).default(30),
     shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
     ocpiServer: z.object({

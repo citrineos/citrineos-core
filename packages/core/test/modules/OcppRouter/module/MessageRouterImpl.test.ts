@@ -646,6 +646,71 @@ describe('MessageRouterImpl', () => {
     });
   });
 
+  // ─── handle (stale Call TTL) ─────────────────────────────────────────────────
+
+  describe('handle stale Call TTL', () => {
+    const action = OCPP_CallAction.GetBaseReport;
+    const payload = { requestId: 1, reportBase: 'FullInventory' } as unknown as OcppRequest;
+
+    function buildRequestMessage(ageMs: number) {
+      return RequestBuilder.buildCall(
+        STATION_ID,
+        CORRELATION_ID,
+        TENANT_ID,
+        action,
+        payload,
+        EventGroup.General,
+        MessageOrigin.ChargingStationManagementSystem,
+        PROTOCOL,
+        new Date(Date.now() - ageMs),
+      );
+    }
+
+    function buildRouterWithStaleGuard(staleCallMaxAgeSeconds?: number) {
+      return getTestInstance(container, MessageRouterImpl, {
+        config: buildConfig({ staleCallMaxAgeSeconds }),
+        cache,
+        routerSender: sender,
+        routerHandler: handler,
+        webhookDispatcher: dispatcher,
+        networkHook,
+        ocppValidator: undefined,
+        locationRepository,
+      });
+    }
+
+    it('should drop a Call older than staleCallMaxAgeSeconds when the guard is enabled', async () => {
+      const guardedRouter = buildRouterWithStaleGuard(30);
+      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+
+      // guard is 30s; 60s old ⇒ stale
+      await guardedRouter.handle(buildRequestMessage(60_000));
+
+      expect(sendCallSpy).not.toHaveBeenCalled();
+      expect(networkHook).not.toHaveBeenCalled();
+    });
+
+    it('should route a Call still within staleCallMaxAgeSeconds when the guard is enabled', async () => {
+      cache.get.mockResolvedValue(null);
+      const guardedRouter = buildRouterWithStaleGuard(30);
+      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+
+      await guardedRouter.handle(buildRequestMessage(0));
+
+      expect(sendCallSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should route an aged Call when the guard is disabled (default)', async () => {
+      cache.get.mockResolvedValue(null);
+      // default router has no staleCallMaxAgeSeconds ⇒ opt-in guard off, delivery unchanged
+      const sendCallSpy = vi.spyOn(router, 'sendCall');
+
+      await router.handle(buildRequestMessage(60_000));
+
+      expect(sendCallSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   // ─── sendCallResult ────────────────────────────────────────────────────────
 
   describe('sendCallResult', () => {
