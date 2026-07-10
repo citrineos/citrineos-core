@@ -187,26 +187,6 @@ export class OCPPValidator {
   }
 
   /**
-   * Whether the only validation failure is an unlisted SecurityEventNotification `type`
-   * (free-form per OCPP, not an enum), which callers should tolerate rather than reject.
-   *
-   * @param {CallAction} action - The CallAction of the message being validated.
-   * @param {ErrorObject[] | null} [errors] - The validation errors from validateOCPPRequest.
-   * @return {boolean} - True when every error is the enum check on `/type` of a SecurityEventNotification.
-   */
-  public isUnknownSecurityEventTypeOnly(
-    action: CallAction,
-    errors?: ErrorObject[] | null,
-  ): boolean {
-    return (
-      action === OCPP_CallAction.SecurityEventNotification &&
-      !!errors &&
-      errors.length > 0 &&
-      errors.every((e) => e.keyword === 'enum' && e.schemaPath === '#/properties/type/enum')
-    );
-  }
-
-  /**
    * Validates an OCPP Response against its schema.
    *
    * @param {CallAction} action - The original CallAction.

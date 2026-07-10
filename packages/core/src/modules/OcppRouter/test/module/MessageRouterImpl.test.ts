@@ -107,7 +107,7 @@ function buildMockLocationRepository(): Mocked<ILocationRepository> {
 // ─── Test Suite ────────────────────────────────────────────────────────────────
 
 describe('MessageRouterImpl', () => {
-  const { container, logger } = createTestContainer();
+  const { container } = createTestContainer();
   let config: any;
   let cache: Mocked<ICache>;
   let sender: Mocked<IMessageSender>;
@@ -529,76 +529,6 @@ describe('MessageRouterImpl', () => {
       // The error is handled asynchronously via sendCallError, so success is still true from onMessage
       // but the call itself will trigger sendCallError
       expect(sender.send).toHaveBeenCalled();
-    });
-
-    it('should acknowledge SecurityEventNotification with an unlisted type instead of rejecting', async () => {
-      cache.exists.mockResolvedValue(false);
-      sender.send.mockResolvedValue({ success: true, payload: {} });
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.SecurityEventNotification,
-        { type: 'InvalidCentralSystemCertificate', timestamp: '2026-06-10T13:42:56.340Z' },
-      ]);
-
-      await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-
-      expect(networkHook).not.toHaveBeenCalled();
-      expect(sender.send).toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('unknown security event type'),
-        IDENTIFIER,
-        'InvalidCentralSystemCertificate',
-        expect.anything(),
-      );
-    });
-
-    it('should still reject a SecurityEventNotification with other validation errors', async () => {
-      cache.exists.mockResolvedValue(false);
-      vi.spyOn(router as any, '_validateCall').mockReturnValue({
-        isValid: false,
-        errors: [
-          { keyword: 'enum', instancePath: '/type', schemaPath: '#/properties/type/enum' },
-          { keyword: 'required', instancePath: '', schemaPath: '#/required' },
-        ],
-      });
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.SecurityEventNotification,
-        { type: 'InvalidCentralSystemCertificate' },
-      ]);
-
-      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-
-      expect(result).toBe(false);
-      expect(networkHook).toHaveBeenCalled();
-      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
-      expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
-    });
-
-    it('should still reject an enum violation on a non-SecurityEventNotification action', async () => {
-      cache.exists.mockResolvedValue(false);
-      vi.spyOn(router as any, '_validateCall').mockReturnValue({
-        isValid: false,
-        errors: [{ keyword: 'enum', instancePath: '/type', schemaPath: '#/properties/type/enum' }],
-      });
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.BootNotification,
-        {},
-      ]);
-
-      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-
-      expect(result).toBe(false);
-      expect(networkHook).toHaveBeenCalled();
-      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
-      expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
     });
   });
 

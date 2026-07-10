@@ -24,6 +24,7 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
+  SecurityEventNotificationTypeEnumSchema,
   SetVariableStatusEnum,
 } from '@citrineos/base';
 
@@ -313,6 +314,15 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
+
+    // Warn if there is a mismatch against the standard security event list
+    if (!SecurityEventNotificationTypeEnumSchema.safeParse(message.payload.type).success) {
+      this._logger.warn(
+        'SecurityEventNotification reported an unknown security event type',
+        message.payload.type,
+      );
+    }
+
     await this._securityEventRepository.createByStationId(
       message.context.tenantId,
       message.payload,
