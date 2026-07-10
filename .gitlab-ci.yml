@@ -1,10 +1,10 @@
 ---
 include:
   - project: wirelane/emc/gitlab-ci-template
-    ref: feature/SWPROD-8303 # TODO: switch back to master after template MR is merged
+    ref: master
     file: Docker.gitlab-ci.yml
   - project: wirelane/emc/gitlab-ci-template
-    ref: feature/SWPROD-8303 # TODO: switch back to master after template MR is merged
+    ref: master
     file: AWS-deployment.gitlab-ci.yml
 
 stages:
@@ -17,3 +17,20 @@ variables:
   DEVELOP_BRANCH: main
   RELEASE_BRANCH: main
   DOCKERFILE: ./apps/ocpp-server/deploy.Dockerfile
+
+# Allow manual staging deploys from any mirrored branch without MR on GitLab.
+push-build-aws-staging:
+  rules:
+    - if: '$AWS_DEFAULT_REGION && $STAGING_AWS_ACCOUNT_ID && $STAGING_AWS_ECR_REPOSITORY_NAME && $STAGING_AWS_DEPLOYMENT_ROLE_ARN && ($STAGING_AWS_DEPLOYMENT_LAMBDA_FUNCTION_NAME == null || $AWS_USE_FIXED_DEPLOYMENT_TAG)'
+      variables:
+        DEPLOYMENT_VERSION_URL: ${CI_PROJECT_URL}/-/commit/${CI_COMMIT_SHA}
+      when: manual
+      allow_failure: true
+
+deploy-build-aws-staging:
+  rules:
+    - if: '$AWS_DEFAULT_REGION && $STAGING_AWS_ACCOUNT_ID && $STAGING_AWS_ECR_REPOSITORY_NAME && $STAGING_AWS_DEPLOYMENT_ROLE_ARN && $STAGING_AWS_DEPLOYMENT_LAMBDA_FUNCTION_NAME'
+      variables:
+        DEPLOYMENT_VERSION_URL: ${CI_PROJECT_URL}/-/commit/${CI_COMMIT_SHA}
+      when: manual
+      allow_failure: true
