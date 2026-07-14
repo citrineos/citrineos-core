@@ -7,10 +7,8 @@ import { metrics } from '@opentelemetry/api';
 /**
  * Application-level authorization outcome counter. A *denied* authorization
  * comes back as a valid CallResult with status = Blocked/Invalid/Expired — NOT
- * an OCPP CallError — so transport-level metrics can't see it. This is the
- * highest-value canary signal: a rollout that starts returning
+ * an OCPP CallError — so transport-level metrics can't see it.
  * `Invalid`/`Blocked` for tokens that should be `Accepted` is silently broken.
- * Feeds the process-global MeterProvider (no-op if none is registered).
  */
 const authorizeResultTotal = metrics
   .getMeter('citrineos.ocpp')
