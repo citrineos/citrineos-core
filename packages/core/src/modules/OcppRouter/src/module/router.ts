@@ -394,8 +394,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         }
         return { success: !!successTimestamp };
       } else {
-        // In-flight Call with the same identifier; this is a re-send, not a new
-        // Call, so it is deliberately not counted in ocppCallSentTotal.
         this._logger.info(
           'Call already in progress, throwing retry exception',
           identifier,
@@ -646,10 +644,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           details: confirmation.payload,
         });
       }
-      // Station-initiated Call was successfully routed to the broker for a module
-      // to handle. This is NOT the CallResult reply — that is sent later,
-      // asynchronously, by the handling module via sendCallResult
-      // (tracked separately by ocppCallResultSentTotal).
       ocppCallHandledTotal.add(1, { action: String(action), outcome: 'result' });
     } catch (error) {
       const callError =
@@ -659,7 +653,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               details: error,
             });
 
-      // CSMS replied to the station with a CallError; error_code is the OCPP code.
       ocppCallHandledTotal.add(1, {
         action: String(action),
         outcome: 'error',
@@ -706,7 +699,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     });
 
     if (!cachedActionTimestamp) {
-      // No pending request cached: the Call likely already expired (timed out).
       ocppCallResponseTotal.add(1, { action: 'unknown', outcome: 'orphan_or_timeout' });
       throw new OcppError(
         messageId,
@@ -804,7 +796,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
       { action: String(action) },
     );
-    // The station rejected the CSMS-initiated Call; message[2] is the OCPP error code.
     ocppCallResponseTotal.add(1, {
       action: String(action),
       outcome: 'error',
