@@ -31,6 +31,7 @@ import {
 } from '@citrineos/base';
 import * as http from 'http';
 import * as https from 'https';
+import { performance } from 'node:perf_hooks';
 import { Duplex } from 'stream';
 import type { SecureContextOptions } from 'tls';
 import * as tls from 'tls';
@@ -38,6 +39,15 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
+import {
+  wsActiveConnections,
+  wsConnectionClosedTotal,
+  wsConnectionEstablishedTotal,
+  wsConnectionRejectedTotal,
+  wsConnectionSetupDuration,
+  wsSendFailureTotal,
+  wsUpgradeTotal,
+} from '../metrics.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 import { TlsCredentialManager } from './TlsCertificateManager.js';
@@ -86,7 +96,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router: IMessageRouter;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
-    doesChargingStationExistByStationId: (tenantId: number, ocppConnectionName: string) => Promise<boolean>;
+    doesChargingStationExistByStationId: (
+      tenantId: number,
+      ocppConnectionName: string,
+    ) => Promise<boolean>;
     getMaxChargingStationsForTenant: (tenantId: number) => Promise<number | null>;
     connectionManager: IConnectionManager;
   }) {
@@ -139,33 +152,38 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @return {void} rejects the promise if message fails to send, otherwise returns void.
    */
   async sendMessage(identifier: string, message: string): Promise<void> {
+    const connLogger = this._connLogger(identifier);
     const clientConnection = await this._cache.get(identifier, CacheNamespace.Connections);
     if (!clientConnection) {
       const errorMsg = 'Cannot identify client connection for ' + identifier;
       // This can happen when a charging station disconnects in the moment a message is trying to send.
       // Retry logic on the message sender might not suffice as charging station might connect to different instance.
-      this._logger.error(errorMsg);
+      connLogger.error(errorMsg);
       this._identifierConnections.get(identifier)?.terminate();
+      wsSendFailureTotal.add(1, { reason: 'no_cache' });
       throw new Error(errorMsg);
     }
 
     const websocketConnection = this._identifierConnections.get(identifier);
     if (!websocketConnection) {
       const errorMsg = 'Websocket connection not found for ' + identifier;
-      this._logger.fatal(errorMsg);
+      connLogger.fatal(errorMsg);
+      wsSendFailureTotal.add(1, { reason: 'no_socket' });
       throw new Error(errorMsg);
     }
 
     if (websocketConnection.readyState !== WebSocket.OPEN) {
       const errorMsg = 'Websocket connection is not ready - ' + identifier;
-      this._logger.fatal(errorMsg);
+      connLogger.fatal(errorMsg);
       websocketConnection.terminate();
+      wsSendFailureTotal.add(1, { reason: 'not_open' });
       throw new Error(errorMsg);
     }
 
     return new Promise<void>((resolve, reject) => {
       websocketConnection.send(message, (error) => {
         if (error) {
+          wsSendFailureTotal.add(1, { reason: 'send_error' });
           reject(error);
         } else {
           resolve();
@@ -178,13 +196,24 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     return (identifier: string, message: string) => this.sendMessage(identifier, message);
   }
 
+  /**
+   * Creates a per-connection sub-logger scoped to the identifier
+   * (`${tenantId}:${ocppConnectionName}`). Used by entry points that only have
+   * an identifier; the connection lifecycle otherwise threads a single logger
+   * through {@link _registerWebsocketEvents}, {@link _ping} and
+   * {@link _handleWebsocketClose}.
+   */
+  private _connLogger(identifier: string): Logger<ILogObj> {
+    return this._logger.getSubLogger({ name: identifier });
+  }
+
   async disconnect(tenantId: number, ocppConnectionName: string): Promise<boolean> {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const websocketConnection = this._identifierConnections.get(identifier);
 
     if (!websocketConnection) {
-      this._logger.warn(
+      this._connLogger(identifier).warn(
         `No websocket connection found for tenantId ${tenantId} and ocppConnectionName ${ocppConnectionName}, will still deregister from router.`,
       );
     }
@@ -302,6 +331,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     if (this._connectionManager && !this._connectionManager.isConnected()) {
       this._logger.warn('Rejecting websocket upgrade: message broker is not connected.');
+      wsUpgradeTotal.add(1, { result: 'broker_unavailable' });
       this._terminateConnectionServiceUnavailable(socket);
       return;
     }
@@ -328,12 +358,19 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         ignoreAuthenticationHeaders: websocketServerConfig.ignoreAuthenticationHeaders || false,
       });
 
-      this._logger.debug('Successfully registered websocket client', identifier);
+      this._connLogger(createIdentifier(resolvedTenantId, identifier)).debug(
+        'Successfully registered websocket client',
+        identifier,
+      );
 
+      wsUpgradeTotal.add(1, { result: 'upgraded' });
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
     } catch (error: any) {
+      wsUpgradeTotal.add(1, {
+        result: error instanceof UpgradeAuthenticationError ? 'auth_failed' : 'internal_error',
+      });
       /**
        * See {@link IUpgradeError.terminateConnection}
        **/
@@ -418,8 +455,12 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
+    // Measures the full "all the way" establishment: station check -> tenant
+    // limit -> cache slot claim -> router register -> broker subscribe.
+    const setupStart = performance.now();
     if (!ws.protocol) {
       this._logger.warn('Websocket connection without protocol');
+      wsConnectionRejectedTotal.add(1, { reason: 'no_protocol' });
       ws.close(1002, 'Protocol not specified');
       return;
     } else {
@@ -429,6 +470,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const ocppConnectionName = getClientIdFromUrl(req.url as string);
       // Prefer tenant resolved during upgrade; fallback to server-configured tenant.
       const tenantId = (req as any).__resolvedTenantId ?? websocketServerConfig.tenantId;
+      const identifier = createIdentifier(tenantId, ocppConnectionName);
+      const connLogger = this._connLogger(identifier);
 
       const checker =
         this._doesChargingStationExistByStationId ??
@@ -441,16 +484,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const exists = await checker(tenantId, ocppConnectionName);
 
       if (!exists && !websocketServerConfig.allowUnknownChargingStations) {
-        this._logger.error(
-          'Rejecting connection: station %s not found in tenant %s',
-          ocppConnectionName,
-          tenantId,
-        );
+        connLogger.error('Rejecting connection: station not found in tenant');
+        wsConnectionRejectedTotal.add(1, { reason: 'unknown_station' });
         ws.close(1011, 'Unknown charging station');
         return;
       }
-
-      const identifier = createIdentifier(tenantId, ocppConnectionName);
 
       // Enforce per-tenant connection limit from the tenant's maxChargingStations field
       if (this._getMaxChargingStationsForTenant) {
@@ -458,9 +496,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         if (typeof maxConnections === 'number' && maxConnections > 0) {
           const currentCount = this._tenantConnectionCounts.get(tenantId) ?? 0;
           if (currentCount >= maxConnections) {
-            this._logger.warn(
-              `Tenant ${tenantId} exceeded max connections (${maxConnections}), rejecting ${identifier}`,
-            );
+            connLogger.warn(`Tenant exceeded max connections (${maxConnections}), rejecting`);
+            wsConnectionRejectedTotal.add(1, { reason: 'tenant_limit' });
             ws.close(1013, 'Tenant connection limit exceeded');
             return;
           }
@@ -477,8 +514,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           this._closeHandlers.delete(identifier);
         }
         staleWs.terminate();
-        await this._handleWebsocketClose(identifier, 1006, 'Replaced by new connection');
-        this._logger.warn(`Terminated stale websocket connection for ${identifier}`);
+        await this._handleWebsocketClose(identifier, 1006, 'Replaced by new connection', connLogger);
+        connLogger.warn(`Terminated stale websocket connection`);
       }
 
       try {
@@ -488,15 +525,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           req.socket.remoteAddress ||
           'N/A';
         const port = req.socket.remotePort as number;
-        const connLogger = this._logger.getSubLogger({
-          name: `T${tenantId}:${ocppConnectionName}`,
-        });
         connLogger.info('Client websocket connected', identifier, ip, port, ws.protocol);
 
-        // Register client. Use atomic SET NX so that if another instance
-        // (sharing the same Redis cache) already holds the slot for this
-        // identifier, we lose the race deterministically and reject here
-        // rather than silently overwriting a peer's claim.
         const websocketConnection: IWebsocketConnection = {
           id: websocketServerConfig.id,
           timeConnected: new Date().toISOString(),
@@ -513,6 +543,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           connLogger.warn(
             `Connection slot already held for ${identifier}, rejecting new connection`,
           );
+          wsConnectionRejectedTotal.add(1, { reason: 'slot_taken' });
           ws.close(1013, 'Already connected on another instance');
           return;
         }
@@ -525,8 +556,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         if (!registered) {
           connLogger.fatal('Failed to register websocket client', identifier);
           await this._cache.remove(identifier, CacheNamespace.Connections).catch((err) => {
-            this._logger.error(`Failed to remove connection string ${identifier} from cache`, err);
+            connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
           });
+          wsConnectionRejectedTotal.add(1, { reason: 'register_failed' });
           ws.close(1011, 'Failed to register connection in message router');
           return;
         }
@@ -538,15 +570,23 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         );
 
         // Register all websocket events
-        this._registerWebsocketEvents(identifier, ws, pingInterval);
+        this._registerWebsocketEvents(identifier, ws, pingInterval, connLogger);
+
+        // Connection is now fully established "all the way".
+        wsConnectionEstablishedTotal.add(1, { ocpp_version: ws.protocol });
+        wsActiveConnections.add(1);
+        wsConnectionSetupDuration.record((performance.now() - setupStart) / 1000, {
+          ocpp_version: ws.protocol,
+        });
 
         connLogger.info(
-          `Successfully connected new charging station: ${identifier} live connections: ${this._identifierConnections.size}`,
+          `Successfully connected new charging station, live connections: ${this._identifierConnections.size}`,
         );
         // Resume the WebSocket event emitter after events have been subscribed to
         ws.resume();
       } catch (error) {
-        this._logger.fatal('Failed to subscribe to message broker for ', identifier);
+        connLogger.fatal('Failed to connect', error);
+        wsConnectionRejectedTotal.add(1, { reason: 'connection_failed' });
         ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
       }
     }
@@ -558,11 +598,17 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @param {string} identifier - The unique identifier of the connection, i.e. the combination of tenantId and ocppConnectionName.
    * @param {WebSocket} ws - The WebSocket object representing the connection.
    * @param {number} pingInterval - The ping interval in seconds.
+   * @param {Logger<ILogObj>} connLogger - The per-connection sub-logger.
    * @return {void} This function does not return anything.
    */
-  private _registerWebsocketEvents(identifier: string, ws: WebSocket, pingInterval: number): void {
+  private _registerWebsocketEvents(
+    identifier: string,
+    ws: WebSocket,
+    pingInterval: number,
+    connLogger: Logger<ILogObj>,
+  ): void {
     ws.onerror = (event: ErrorEvent) => {
-      this._logger.error(
+      connLogger.error(
         'Connection error encountered for',
         identifier,
         event.error,
@@ -576,18 +622,18 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     };
 
     const closeHandler = (code: number, reason: Buffer<ArrayBufferLike>) => {
-      this._handleWebsocketClose(identifier, code, reason.toString());
+      this._handleWebsocketClose(identifier, code, reason.toString(), connLogger);
     };
     ws.once('close', closeHandler);
     this._closeHandlers.set(identifier, closeHandler);
 
     ws.on('ping', (message) => {
-      this._logger.debug('Ping received for', identifier, 'with message', message);
+      connLogger.debug('Ping received for', identifier, 'with message', message);
       ws.pong(message);
     });
 
     ws.on('pong', () => {
-      this._logger.debug('Pong received for', identifier);
+      connLogger.debug('Pong received for', identifier);
 
       // Disarm the pong-timeout — the client is alive.
       const pongTimeout = this._pongTimeouts.get(identifier);
@@ -596,10 +642,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         this._pongTimeouts.delete(identifier);
       }
 
-      this._ping(identifier, ws, pingInterval, false);
+      this._ping(identifier, ws, pingInterval, false, connLogger);
     });
 
-    this._ping(identifier, ws, pingInterval, true);
+    this._ping(identifier, ws, pingInterval, true, connLogger);
   }
 
   /**
@@ -618,6 +664,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     identifier: string,
     code: number,
     reason: string,
+    connLogger: Logger<ILogObj> = this._connLogger(identifier),
   ): Promise<void> {
     this._closeHandlers.delete(identifier);
     // Cancel any pending ping timer so it doesn't fire against a closed socket
@@ -636,7 +683,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     const prevCount = this._tenantConnectionCounts.get(closedTenantId);
     if (prevCount === undefined) {
-      this._logger.warn(
+      connLogger.warn(
         `No previous connection count found for tenant ${closedTenantId} when closing connection ${identifier}`,
       );
     } else if (prevCount <= 1) {
@@ -644,32 +691,38 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     } else {
       this._tenantConnectionCounts.set(closedTenantId, prevCount - 1);
     }
-    this._identifierConnections.delete(identifier);
+    // Only decrement the active gauge for connections that were actually counted
+    // (i.e. that reached full establishment and live in _identifierConnections).
+    const wasActive = this._identifierConnections.delete(identifier);
+    if (wasActive) {
+      wsActiveConnections.add(-1);
+    }
+    wsConnectionClosedTotal.add(1, { code: String(code) });
 
     // Unregister client
     const connectionStringPromise = this._cache
       .remove<string>(identifier, CacheNamespace.Connections)
       .catch((err) => {
-        this._logger.error(`Failed to remove connection string ${identifier} from cache`, err);
+        connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
       });
     const deregisterPromise = this._router
       .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
       .catch((err) => {
-        this._logger.error(`Failed to deregister connection ${identifier} from router`, err);
+        connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
       });
 
     const connectionString = await connectionStringPromise;
     if (connectionString) {
       const connection: IWebsocketConnection = JSON.parse(connectionString);
       const timeConnected = new Date().getTime() - new Date(connection.timeConnected).getTime();
-      this._logger.info(
+      connLogger.info(
         `Connection ${identifier} closed after being connected for ${timeConnected} ms with code ${code} and reason ${reason}`,
       );
     }
 
     await deregisterPromise;
 
-    this._logger.info(
+    connLogger.info(
       `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,
     );
   }
@@ -704,6 +757,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @param {WebSocket} ws - The WebSocket connection to ping.
    * @param {number} pingInterval - The ping interval in seconds.
    * @param {boolean} applyJitter - Whether to apply jitter to the ping interval.
+   * @param {Logger<ILogObj>} connLogger - The per-connection sub-logger.
    * @return {void} This function does not return anything.
    */
   private _ping(
@@ -711,6 +765,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     ws: WebSocket,
     pingInterval: number,
     applyJitter: boolean,
+    connLogger: Logger<ILogObj>,
   ): void {
     if (this._pingTimers.has(identifier)) {
       // Ping already scheduled, do not schedule another one
@@ -723,14 +778,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         this._pingTimers.delete(identifier);
 
         const pongTimeout = setTimeout(() => {
-          this._logger.debug('Pong timeout for', identifier, '— terminating');
+          connLogger.debug('Pong timeout for', identifier, '— terminating');
           this._pongTimeouts.delete(identifier);
           ws.terminate();
         }, pingInterval * 1000);
 
         this._pongTimeouts.set(identifier, pongTimeout);
 
-        this._logger.debug('Pinging client', identifier);
+        connLogger.debug('Pinging client', identifier);
         ws.ping();
       },
       pingInterval * 1000 + jitter,
@@ -740,7 +795,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._cache
       .updateExpiration(identifier, pingInterval * 3, CacheNamespace.Connections)
       .catch((error) => {
-        this._logger.error(
+        connLogger.error(
           'Failed to update cache expiration - will close websocket for',
           identifier,
           error,

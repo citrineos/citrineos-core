@@ -605,6 +605,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1057.0
         version: 3.1057.0
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       '@types/big.js':
         specifier: 6.2.2
         version: 6.2.2
@@ -708,6 +711,9 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.0.0
         version: 7.21.0(encoding@0.1.13)
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       '@peculiar/webcrypto':
         specifier: ^1.4.6
         version: 1.7.1
@@ -728,10 +734,10 @@ importers:
         version: 0.5.1
       drizzle-orm:
         specifier: ^0.45.0
-        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
+        version: 0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
       fastify:
         specifier: 'catalog:'
         version: 5.8.5
@@ -2422,6 +2428,10 @@ packages:
   '@opentelemetry/api-logs@0.57.0':
     resolution: {integrity: sha512-l1aJ30CXeauVYaI+btiynHpw341LthkMTv3omi1VJDX14werY2Wmv9n1yudMsq9HuY0m8PvXEVX4d8zxEb+WRg==}
     engines: {node: '>=14'}
+
+  '@opentelemetry/api@1.9.0':
+    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
+    engines: {node: '>=8.0.0'}
 
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
@@ -11903,7 +11913,9 @@ snapshots:
 
   '@opentelemetry/api-logs@0.57.0':
     dependencies:
-      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api': 1.9.0
+
+  '@opentelemetry/api@1.9.0': {}
 
   '@opentelemetry/api@1.9.1': {}
 
@@ -15414,17 +15426,17 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.0
 
-  drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7):
+  drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7):
     optionalDependencies:
-      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api': 1.9.0
       '@types/pg': 8.20.0
       knex: 3.1.0(pg@8.11.3)(sqlite3@5.1.7)
       pg: 8.11.3
       sqlite3: 5.1.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12):
+  drizzle-zod@0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12):
     dependencies:
-      drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
+      drizzle-orm: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
       zod: 4.1.12
 
   dunder-proto@1.0.1:

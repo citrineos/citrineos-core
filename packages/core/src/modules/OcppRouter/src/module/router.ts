@@ -41,6 +41,15 @@ import {
   RetryMessageError,
 } from '@citrineos/base';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import {
+  ocppCallHandledTotal,
+  ocppCallResponseTotal,
+  ocppCallResultSentTotal,
+  ocppCallRoundtripDuration,
+  ocppCallSentTotal,
+  ocppMessageReceivedTotal,
+  ocppMessageRoutedTotal,
+} from '@util/metrics.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -297,6 +306,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         action,
         state,
       );
+    } finally {
+      ocppMessageReceivedTotal.add(1, {
+        message_type: (messageTypeId !== undefined && MessageTypeId[messageTypeId]) || 'unknown',
+        ocpp_version: protocol,
+      });
     }
 
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
@@ -353,6 +367,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           message,
         );
         if (successTimestamp != undefined) {
+          ocppCallSentTotal.add(1, {
+            action: String(action),
+            ocpp_version: protocol,
+            outcome: 'sent',
+          });
           this._logger.debug(
             `Call sent successfully with ${
               successTimestamp.getTime() - cacheTimestamp.getTime()
@@ -361,6 +380,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             message,
           );
         } else {
+          ocppCallSentTotal.add(1, {
+            action: String(action),
+            ocpp_version: protocol,
+            outcome: 'send_failed',
+          });
           const removed = await this._cache.remove(correlationId, transactionNamespace);
           this._logger.warn(
             `Failed to send call, removed from cache: ${removed}`,
@@ -370,6 +394,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         }
         return { success: !!successTimestamp };
       } else {
+        // In-flight Call with the same identifier; this is a re-send, not a new
+        // Call, so it is deliberately not counted in ocppCallSentTotal.
         this._logger.info(
           'Call already in progress, throwing retry exception',
           identifier,
@@ -378,6 +404,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         throw new RetryMessageError('Call already in progress');
       }
     } else {
+      ocppCallSentTotal.add(1, {
+        action: String(action),
+        ocpp_version: protocol,
+        outcome: 'rejected',
+      });
       this._logger.info('RegistrationStatus Rejected, unable to send', identifier, message);
       return { success: false };
     }
@@ -412,6 +443,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       CacheNamespace.Transactions + identifier,
     );
     if (!cachedActionTimestamp) {
+      ocppCallResultSentTotal.add(1, {
+        action: String(action),
+        ocpp_version: protocol,
+        outcome: 'no_pending_request',
+      });
       this._logger.error(
         'Failed to send callResult due to missing message id',
         identifier,
@@ -434,9 +470,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
       ]).then((successes) => successes.every(Boolean));
+      ocppCallResultSentTotal.add(1, {
+        action: String(action),
+        ocpp_version: protocol,
+        outcome: success ? 'sent' : 'send_failed',
+      });
       this._logger.debug(`CallResult sent successfully ${correlationId}`, identifier, message);
       return { success };
     } else {
+      ocppCallResultSentTotal.add(1, {
+        action: String(action),
+        ocpp_version: protocol,
+        outcome: 'action_mismatch',
+      });
       this._logger.error(
         'Failed to send callResult due to mismatched action',
         identifier,
@@ -600,6 +646,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           details: confirmation.payload,
         });
       }
+      // Station-initiated Call was successfully routed to the broker for a module
+      // to handle. This is NOT the CallResult reply — that is sent later,
+      // asynchronously, by the handling module via sendCallResult
+      // (tracked separately by ocppCallResultSentTotal).
+      ocppCallHandledTotal.add(1, { action: String(action), outcome: 'result' });
     } catch (error) {
       const callError =
         error instanceof OcppError
@@ -607,6 +658,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
               details: error,
             });
+
+      // CSMS replied to the station with a CallError; error_code is the OCPP code.
+      ocppCallHandledTotal.add(1, {
+        action: String(action),
+        outcome: 'error',
+        error_code: String(callError.asCallError()[2]),
+      });
 
       this.sendCallError(messageId, ocppConnectionName, tenantId, protocol, action, callError)
         .catch((err) => {
@@ -648,6 +706,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     });
 
     if (!cachedActionTimestamp) {
+      // No pending request cached: the Call likely already expired (timed out).
+      ocppCallResponseTotal.add(1, { action: 'unknown', outcome: 'orphan_or_timeout' });
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -657,6 +717,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    ocppCallRoundtripDuration.record(
+      (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
+      { action: String(action) },
+    );
+    ocppCallResponseTotal.add(1, { action: String(action), outcome: 'result' });
     this._logger.debug(
       `Message received. Time taken since sent: ${
         timestamp.getTime() - new Date(cachedTimestamp).getTime()
@@ -724,6 +789,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     });
 
     if (!cachedActionTimestamp) {
+      // No pending request cached: the Call likely already expired (timed out).
+      ocppCallResponseTotal.add(1, { action: 'unknown', outcome: 'orphan_or_timeout' });
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -733,6 +800,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    ocppCallRoundtripDuration.record(
+      (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
+      { action: String(action) },
+    );
+    // The station rejected the CSMS-initiated Call; message[2] is the OCPP error code.
+    ocppCallResponseTotal.add(1, {
+      action: String(action),
+      outcome: 'error',
+      error_code: String(message[2]),
+    });
     this._logger.debug(
       `Message received. Time taken since sent: ${
         timestamp.getTime() - new Date(cachedTimestamp).getTime()
@@ -946,6 +1023,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       confirmation = { success: false };
     } else {
       confirmation = await this._sender.send(message);
+    }
+
+    if (confirmation.success) {
+      // The "handled" leg of the funnel. Counting only on a successful send (not
+      // mere arrival here) means the not-implemented CallError path and broker
+      // send failures stay in the received-minus-routed delta.
+      ocppMessageRoutedTotal.add(1, {
+        action: message.action ?? 'unknown',
+        ocpp_version: message.protocol,
+      });
     }
 
     await this._webhookDispatcher.dispatchMessageReceived(
