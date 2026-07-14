@@ -6,9 +6,9 @@ import type {
   HandlerProperties,
   IMessage,
   MeterValueDto,
-  OcppModuleDependencies,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -25,6 +25,7 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
+  recordAuthorizeResult,
   TariffSetStatusEnum,
   TransactionEventEnum,
 } from '@citrineos/base';
@@ -191,6 +192,12 @@ export class TransactionsModule extends AbstractModule {
           message.context,
         );
       }
+
+      recordAuthorizeResult({
+        status: response.idTokenInfo?.status,
+        ocppVersion: String(message.protocol),
+        action: 'TransactionEvent',
+      });
     }
     if (transactionEvent.eventType !== TransactionEventEnum.Started) {
       const existingTransaction =
@@ -1091,6 +1098,11 @@ export class TransactionsModule extends AbstractModule {
       request.idTag,
       request.connectorId,
     );
+    recordAuthorizeResult({
+      status: response.idTagInfo.status,
+      ocppVersion: String(message.protocol),
+      action: 'StartTransaction',
+    });
 
     // Send response to charger
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {

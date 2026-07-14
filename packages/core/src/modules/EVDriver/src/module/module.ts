@@ -7,12 +7,15 @@ import type {
   HandlerProperties,
   IAuthorizer,
   IMessage,
+  IMessageConfirmation,
   IMessageContext,
   IVatProvider,
-  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
+  OcppRequest,
+  OcppResponse,
   ReservationUpdateStatusEnumType,
   ReserveNowStatusEnumType,
 } from '@citrineos/base';
@@ -37,6 +40,7 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
+  recordAuthorizeResult,
   RequestStartStopStatusEnum,
   ReservationUpdateStatusEnum,
   ReserveNowStatusEnum,
@@ -203,6 +207,24 @@ export class EVDriverModule extends AbstractModule {
    * Handle OCPP 2.x requests
    */
 
+  /**
+   * Records the Authorize decision, then sends the CallResult.
+   */
+  private _sendAuthorizeResult(
+    message: IMessage<OcppRequest>,
+    response: OcppResponse,
+  ): Promise<IMessageConfirmation> {
+    const status =
+      (response as { idTokenInfo?: { status?: unknown } }).idTokenInfo?.status ??
+      (response as { idTagInfo?: { status?: unknown } }).idTagInfo?.status;
+    recordAuthorizeResult({
+      status,
+      ocppVersion: String(message.protocol),
+      action: 'Authorize',
+    });
+    return this.sendCallResultWithMessage(message, response);
+  }
+
   @AsHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.Authorize)
   protected async _handleAuthorize(
     message: IMessage<OCPP2_request_types.AuthorizeRequest>,
@@ -252,7 +274,7 @@ export class EVDriverModule extends AbstractModule {
           status: AuthorizationStatusEnum.Accepted,
         },
       } as OCPP2_response_types.AuthorizeResponse;
-      await this.sendCallResultWithMessage(message, response);
+      await this._sendAuthorizeResult(message, response);
       return;
     }
 
@@ -279,7 +301,7 @@ export class EVDriverModule extends AbstractModule {
             status: AuthorizationStatusEnum.Invalid,
           },
         } as OCPP2_response_types.AuthorizeResponse;
-        const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+        const messageConfirmation = await this._sendAuthorizeResult(message, response);
         this._logger.debug('Authorize response sent:', messageConfirmation);
         return;
       }
@@ -403,7 +425,7 @@ export class EVDriverModule extends AbstractModule {
       }
     } else {
       // Status is Unknown if no authorization found
-      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+      const messageConfirmation = await this._sendAuthorizeResult(message, response);
       this._logger.debug('Authorize response sent:', messageConfirmation);
       return;
     }
@@ -437,7 +459,7 @@ export class EVDriverModule extends AbstractModule {
       }
     }
 
-    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    const messageConfirmation = await this._sendAuthorizeResult(message, response);
     this._logger.debug('Authorize response sent:', messageConfirmation);
   }
 
@@ -484,7 +506,7 @@ export class EVDriverModule extends AbstractModule {
           status: AuthorizationStatusEnum.Accepted,
         },
       } as OCPP2_response_types.AuthorizeResponse;
-      await this.sendCallResultWithMessage(message, response);
+      await this._sendAuthorizeResult(message, response);
       return;
     }
 
@@ -511,7 +533,7 @@ export class EVDriverModule extends AbstractModule {
             status: AuthorizationStatusEnum.Invalid,
           },
         } as OCPP2_response_types.AuthorizeResponse;
-        const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+        const messageConfirmation = await this._sendAuthorizeResult(message, response);
         this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
         return;
       }
@@ -654,7 +676,7 @@ export class EVDriverModule extends AbstractModule {
       }
     } else {
       // Status is Unknown if no authorization found
-      const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+      const messageConfirmation = await this._sendAuthorizeResult(message, response);
       this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
       return;
     }
@@ -687,7 +709,7 @@ export class EVDriverModule extends AbstractModule {
       }
     }
 
-    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
+    const messageConfirmation = await this._sendAuthorizeResult(message, response);
     this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
   }
 
@@ -1043,7 +1065,7 @@ export class EVDriverModule extends AbstractModule {
         this._logger.error(`No authorization found for idToken: ${request.idTag}`);
         //below line is just to make it more explicit. Default status is already invalid.
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
-        await this.sendCallResultWithMessage(message, response);
+        await this._sendAuthorizeResult(message, response);
         this._logger.debug('Authorize response sent:', response);
         return;
       }
@@ -1052,7 +1074,7 @@ export class EVDriverModule extends AbstractModule {
       if (authorizations.length > 1) {
         this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
-        await this.sendCallResultWithMessage(message, response);
+        await this._sendAuthorizeResult(message, response);
         this._logger.debug('Authorize response sent:', response);
         return;
       }
@@ -1095,7 +1117,7 @@ export class EVDriverModule extends AbstractModule {
       // response remains "Invalid" by default
     }
 
-    await this.sendCallResultWithMessage(message, response).then((messageConfirmation) => {
+    await this._sendAuthorizeResult(message, response).then((messageConfirmation) => {
       this._logger.debug('Authorize response sent:', messageConfirmation);
     });
     return;

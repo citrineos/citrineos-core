@@ -108,6 +108,7 @@ export type { RbacRules, SystemConfig, WebsocketServerConfig } from './src/confi
 
 // Utils
 
+export { recordAuthorizeResult } from './src/util/AuthorizationMetrics.js';
 export { MeterValueUtils } from './src/util/MeterValueUtils.js';
 export { RequestBuilder } from './src/util/request.js';
 
