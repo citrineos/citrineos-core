@@ -7,7 +7,8 @@ import type { BootstrapConfig } from '@config/bootstrap.config.js';
 import type { SystemConfig } from '@config/types.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { IWebsocketConnection } from '@interfaces/cache/types.js';
-import { CacheNamespace, createIdentifier } from '@interfaces/cache/types.js';
+import { CacheNamespace } from '@interfaces/cache/types.js';
+import { createIdentifier } from '@base-util/identifiers.js';
 import type {
   IMessage,
   IMessageConfirmation,

@@ -4,7 +4,7 @@
 
 import type { BootstrapConfig, SystemConfig } from '@citrineos/base';
 import { loadBootstrapConfig } from '@citrineos/base';
-import { loadSystemConfig } from './config.loader.js';
+import { loadSystemConfig } from '@citrineos/core';
 import { createLocalConfig } from './envs/local.js';
 import { createDockerConfig } from './envs/docker.js';
 

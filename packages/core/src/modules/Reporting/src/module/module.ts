@@ -35,6 +35,7 @@ import type {
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
 import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
+import { isForeignKeyConstraintError } from '@util/errors.js';
 
 import type { DeviceModelService } from './services.js';
 
@@ -267,7 +268,7 @@ export class ReportingModule extends AbstractModule {
         }
       }
     } catch (error) {
-      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+      if (isForeignKeyConstraintError(error)) {
         await this.sendCallErrorWithMessage(
           message,
           new OcppError(

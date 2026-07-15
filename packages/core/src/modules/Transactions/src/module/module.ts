@@ -49,6 +49,7 @@ import {
   Transaction,
 } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import type { SignedMeterValuesUtil } from '@util/security/SignedMeterValuesUtil.js';
+import { isForeignKeyConstraintError } from '@util/errors.js';
 import { Op } from 'sequelize';
 
 import type { CostCalculator } from './CostCalculator.js';
@@ -223,7 +224,7 @@ export class TransactionsModule extends AbstractModule {
           ocppConnectionName,
         );
     } catch (error) {
-      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+      if (isForeignKeyConstraintError(error)) {
         await this.sendCallErrorWithMessage(
           message,
           new OcppError(

@@ -3,6 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Interface for the transaction module.
+ * Interface for the Monitoring module.
  */
 export interface IMonitoringModuleApi {}
