@@ -12,7 +12,4 @@ export {
   SecurityEventEntityInsertSchema,
   type SecurityEventEntity,
   type SecurityEventEntityInsert,
-  // Legacy TypeScript-only types
-  type SecurityEventSelect,
-  type SecurityEventInsert,
 } from './schema/SecurityEvent.js';

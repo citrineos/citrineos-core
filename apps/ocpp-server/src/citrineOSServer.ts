@@ -49,7 +49,7 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
-import { type HealthCheckResult, HealthCheckService } from './health/HealthCheckService.js';
+import { type HealthCheckResult, HealthCheckService } from '@citrineos/core';
 
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {

@@ -14,7 +14,8 @@ import { ErrorCode, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
 import { RequestBuilder } from '@base-util/request.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { IWebsocketConnection } from '@interfaces/cache/types.js';
-import { CacheNamespace, createIdentifier } from '@interfaces/cache/types.js';
+import { CacheNamespace } from '@interfaces/cache/types.js';
+import { createIdentifier } from '@base-util/identifiers.js';
 import type {
   IMessage,
   IMessageConfirmation,
