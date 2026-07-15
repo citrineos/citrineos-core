@@ -485,6 +485,29 @@ export const ReserveNowStatusEnumSchema = z.enum([
 
 export const ResetEnumSchema = z.enum(['Immediate', 'OnIdle', 'ImmediateAndResume']);
 
+export const SecurityEventNotificationTypeEnumSchema = z.enum([
+  'FirmwareUpdated',
+  'FailedToAuthenticateAtCsms',
+  'CsmsFailedToAuthenticate',
+  'SettingSystemTime',
+  'StartupOfTheDevice',
+  'ResetOrReboot',
+  'SecurityLogWasCleared',
+  'ReconfigurationOfSecurityParameters',
+  'MemoryExhaustion',
+  'InvalidMessages',
+  'AttemptedReplayAttacks',
+  'TamperDetectionActivated',
+  'InvalidFirmwareSignature',
+  'InvalidFirmwareSigningCertificate',
+  'InvalidCsmsCertificate',
+  'InvalidChargingStationCertificate',
+  'InvalidTLSVersion',
+  'InvalidTLSCipherSuite',
+  'MaintenanceLoginAccepted',
+  'MaintenanceLoginFailed',
+]);
+
 export const SendLocalListStatusEnumSchema = z.enum(['Accepted', 'Failed', 'VersionMismatch']);
 
 export const SetMonitoringStatusEnumSchema = z.enum([
@@ -614,6 +637,7 @@ export const RequestStartStopStatusEnum = RequestStartStopStatusEnumSchema.enum;
 export const ReservationUpdateStatusEnum = ReservationUpdateStatusEnumSchema.enum;
 export const ReserveNowStatusEnum = ReserveNowStatusEnumSchema.enum;
 export const ResetEnum = ResetEnumSchema.enum;
+export const SecurityEventNotificationTypeEnum = SecurityEventNotificationTypeEnumSchema.enum;
 export const SendLocalListStatusEnum = SendLocalListStatusEnumSchema.enum;
 export const SetMonitoringStatusEnum = SetMonitoringStatusEnumSchema.enum;
 export const SetNetworkProfileStatusEnum = SetNetworkProfileStatusEnumSchema.enum;
@@ -706,6 +730,9 @@ export type RequestStartStopStatusEnumType = z.infer<typeof RequestStartStopStat
 export type ReservationUpdateStatusEnumType = z.infer<typeof ReservationUpdateStatusEnumSchema>;
 export type ReserveNowStatusEnumType = z.infer<typeof ReserveNowStatusEnumSchema>;
 export type ResetEnumType = z.infer<typeof ResetEnumSchema>;
+export type SecurityEventNotificationTypeEnumType = z.infer<
+  typeof SecurityEventNotificationTypeEnumSchema
+>;
 export type SendLocalListStatusEnumType = z.infer<typeof SendLocalListStatusEnumSchema>;
 export type SetMonitoringStatusEnumType = z.infer<typeof SetMonitoringStatusEnumSchema>;
 export type SetNetworkProfileStatusEnumType = z.infer<typeof SetNetworkProfileStatusEnumSchema>;

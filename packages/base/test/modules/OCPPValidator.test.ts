@@ -193,6 +193,51 @@ describe('OCPPValidator', () => {
       });
     });
 
+    describe('SecurityEventNotification (free-form type)', () => {
+      it('accepts an unlisted security event type', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate', timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(true);
+        expect(result.errors).toBeUndefined();
+      });
+
+      it('accepts an unlisted security event type on OCPP 2.1', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate', timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_1,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+
+      it('rejects when the required timestamp is missing', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+
+      it('rejects a type longer than 50 characters', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'x'.repeat(51), timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+    });
+
     describe('OCPP 2.0.1', () => {
       it('should validate a valid RequestStartTransaction request', () => {
         const result = validator.validateOCPPRequest(
