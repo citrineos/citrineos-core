@@ -9,6 +9,7 @@ import type {
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
+import path from 'node:path';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaidCheckDigitCalculator.js';
@@ -59,7 +60,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose ===
-      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
+    OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
     evseId !== 0
   ) {
     throw new Error('When chargingProfilePurpose is ChargingStationMaxProfile, evseId SHALL be 0');
@@ -67,7 +68,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose !==
-      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
+    OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
     chargingProfileType.transactionId
   ) {
     throw new Error(
@@ -156,7 +157,7 @@ export async function validateChargingProfileType(
         receivedChargingNeeds &&
         receivedChargingNeeds.maxScheduleTuples &&
         chargingSchedule.salesTariff.salesTariffEntry.length >
-          receivedChargingNeeds.maxScheduleTuples
+        receivedChargingNeeds.maxScheduleTuples
       ) {
         throw new Error(
           `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
@@ -822,4 +823,37 @@ export function validatePEMEncodedCSR(csr: string): ValidationResult {
   }
 
   return { isValid: true };
+}
+
+/**
+ * Validate that a caller-supplied file path is a safe path.
+ *
+ * Certificate endpoints accept a filePath that is used to build the on-disk destination for
+ * generated/uploaded certificate files. This guard must be applied to untrusted, user-supplied paths
+ * before they reach storage. It intentionally does not apply to trusted, config-driven
+ * paths, which may legitimately be absolute or outside the storage root.
+ *
+ * @param filePath The untrusted relative path to validate.
+ */
+export function validateSafeFilePath(filePath: string): void {
+  // NUL bytes can truncate a path string in lower-level layers letting a value that passed our checks resolve to a different file than intended. 
+  // Technically this is guarded against by Node but the storage backends could be vulnerable. 
+  // Rejecting this at the boundary so every storage backend fails predictably instead of relying on each one to handle NUL safely
+  if (filePath.includes('\0')) {
+    throw new Error('Invalid filePath: contains a NUL byte');
+  }
+  // Reject Windows drive-letter and network ("\\host") absolute paths
+  if (/^[a-zA-Z]:[\\/]/.test(filePath) || filePath.startsWith('\\\\')) {
+    throw new Error(`Invalid filePath "${filePath}": absolute paths are not allowed`);
+  }
+  // Reject Linux style absolute paths and any leading separator.
+  if (path.isAbsolute(filePath) || filePath.startsWith('/') || filePath.startsWith('\\')) {
+    throw new Error(`Invalid filePath "${filePath}": absolute paths are not allowed`);
+  }
+  // Reject any parent-directory traversal, splitting on both separators.
+  if (filePath.split(/[\\/]+/).some((segment) => segment === '..')) {
+    throw new Error(
+      `Invalid filePath "${filePath}": parent directory traversal ("..") is not allowed`,
+    );
+  }
 }
