@@ -12,10 +12,10 @@ import {
   OCPP_CallAction,
 } from '@citrineos/base';
 import { asValue } from 'awilix';
-import { ReportingModule } from '../../src/module/module.js';
-import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
-import { aSecurityEventNotificationRequest } from '../../../../dal/test/providers/SecurityEvent.js';
-import { aSystemConfig } from '../../../Certificates/test/providers/SystemConfig.js';
+import { ReportingModule } from '@modules/Reporting/src/module/module.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { aSecurityEventNotificationRequest } from '@test/dal/providers/SecurityEvent.js';
+import { aSystemConfig } from '@test/modules/Certificates/providers/SystemConfig.js';
 
 const STATION_ID = 'station-001';
 
