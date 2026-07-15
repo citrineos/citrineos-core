@@ -260,13 +260,13 @@ describe.each([
     if (server) await killServer(server);
   }, 30_000);
 
-  it('returns a CallResult and persists the SecurityEvent record', async () => {
-    const msgId = crypto.randomUUID();
-    const payload = aSecurityEventNotificationRequest({ type: 'SecurityLogWasCleared' });
-
+  it('acknowledges and persists both listed and unlisted security event types', async () => {
     const ws = await connectOcpp(stationId);
 
     try {
+      const msgId = crypto.randomUUID();
+      const payload = aSecurityEventNotificationRequest({ type: 'SecurityLogWasCleared' });
+
       // OCPP 2.0.1 Call:   [2, uniqueId, action, payload]
       // OCPP 2.0.1 Result: [3, uniqueId, payload]
       const response = await sendCall(ws, msgId, 'SecurityEventNotification', payload);
@@ -288,6 +288,34 @@ describe.each([
       expect(rows).toHaveLength(1);
       expect(rows[0].ocppConnectionName).toBe(stationId);
       expect(rows[0].type).toBe(payload.type);
+
+      const unlistedMsgId = crypto.randomUUID();
+      const unlistedPayload = aSecurityEventNotificationRequest({
+        type: 'InvalidCentralSystemCertificate',
+      });
+
+      const unlistedResponse = await sendCall(
+        ws,
+        unlistedMsgId,
+        'SecurityEventNotification',
+        unlistedPayload,
+      );
+
+      console.log(`[${label}] OCPP response (unlisted type):`, unlistedResponse);
+      expect(unlistedResponse[0]).toBe(3);
+      expect(unlistedResponse[1]).toBe(unlistedMsgId);
+      expect(unlistedResponse[2]).toEqual({});
+
+      const { rows: unlistedRows } = await db.query<{ type: string }>(
+        `SELECT "type"
+           FROM "SecurityEvents"
+          WHERE "ocppConnectionName" = $1
+          ORDER BY id DESC
+          LIMIT 1`,
+        [stationId],
+      );
+
+      expect(unlistedRows[0].type).toBe(unlistedPayload.type);
     } finally {
       ws.close();
     }
