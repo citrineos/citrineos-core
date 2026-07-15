@@ -60,7 +60,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose ===
-    OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
+      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
     evseId !== 0
   ) {
     throw new Error('When chargingProfilePurpose is ChargingStationMaxProfile, evseId SHALL be 0');
@@ -68,7 +68,7 @@ export async function validateChargingProfileType(
 
   if (
     chargingProfileType.chargingProfilePurpose !==
-    OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
+      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
     chargingProfileType.transactionId
   ) {
     throw new Error(
@@ -157,7 +157,7 @@ export async function validateChargingProfileType(
         receivedChargingNeeds &&
         receivedChargingNeeds.maxScheduleTuples &&
         chargingSchedule.salesTariff.salesTariffEntry.length >
-        receivedChargingNeeds.maxScheduleTuples
+          receivedChargingNeeds.maxScheduleTuples
       ) {
         throw new Error(
           `ChargingSchedule ${chargingSchedule.id}: The number of SalesTariffEntry elements (${chargingSchedule.salesTariff.salesTariffEntry.length}) SHALL not exceed maxScheduleTuples (${receivedChargingNeeds.maxScheduleTuples}).`,
@@ -836,8 +836,8 @@ export function validatePEMEncodedCSR(csr: string): ValidationResult {
  * @param filePath The untrusted relative path to validate.
  */
 export function validateSafeFilePath(filePath: string): void {
-  // NUL bytes can truncate a path string in lower-level layers letting a value that passed our checks resolve to a different file than intended. 
-  // Technically this is guarded against by Node but the storage backends could be vulnerable. 
+  // NUL bytes can truncate a path string in lower-level layers letting a value that passed our checks resolve to a different file than intended.
+  // Technically this is guarded against by Node but the storage backends could be vulnerable.
   // Rejecting this at the boundary so every storage backend fails predictably instead of relying on each one to handle NUL safely
   if (filePath.includes('\0')) {
     throw new Error('Invalid filePath: contains a NUL byte');

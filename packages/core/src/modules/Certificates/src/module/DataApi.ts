@@ -51,7 +51,8 @@ import { PemType } from './installCertificateHelperService.js';
  */
 export class CertificatesDataApi
   extends AbstractModuleApi<CertificatesModule>
-  implements ICertificatesModuleApi {
+  implements ICertificatesModuleApi
+{
   private readonly _websocketServersConfig: WebsocketServerConfig[];
   private readonly _fileStorage: IFileStorage;
 
