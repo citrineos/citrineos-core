@@ -5,7 +5,9 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 export interface GenerateCertificateChainQueryString {
   tenantId: number;
-  serverId: string | string[];
+  // Optional: when omitted, a standalone full chain is generated and persisted to storage
+  // without being attached (reloaded) to any websocket server
+  serverId?: string | string[];
 }
 
 export const GenerateCertificateChainQuerySchema = {
@@ -17,5 +19,5 @@ export const GenerateCertificateChainQuerySchema = {
       anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' }, minItems: 1 }],
     },
   },
-  required: ['tenantId', 'serverId'],
+  required: ['tenantId'],
 };

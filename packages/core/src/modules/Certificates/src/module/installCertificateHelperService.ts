@@ -470,6 +470,25 @@ export class InstallCertificateHelperService {
     }
   }
 
+  /**
+   * Generates a brand-new full certificate chain (root + subCA + leaf) that is not tied to
+   * any websocket server.
+   */
+  async generateStandaloneFullChain(
+    tenantId: number,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath: string;
+      rootCACertificateFilePath?: string;
+    };
+  }> {
+    return this._generateFullChain(tenantId, certRequest);
+  }
+
   private async _generateLeafOnly(
     tenantId: number,
     websocketConfig: WebsocketServerConfig,

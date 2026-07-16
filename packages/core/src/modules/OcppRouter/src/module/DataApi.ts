@@ -110,6 +110,9 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   /**
    * Generates TLS certificates for one or more websocket servers, updates their config
    * with the new file paths, persists the config, and reloads the live TLS listener(s).
+   *
+   * When `serverId` is omitted, a standalone full chain is generated and persisted to
+   * storage without being attached to (or reloading) any server.
    */
   @AsDataEndpoint(
     OCPP2_Namespace.CertificateChain,
@@ -122,8 +125,37 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
       Body: GenerateCertificateChainRequest;
       Querystring: GenerateCertificateChainQueryString;
     }>,
-  ): Promise<{ serverId: string[]; certificates: Certificate[] }[]> {
+  ): Promise<
+    | { serverIds: string[]; certificates: Certificate[] }[]
+    | {
+        filePaths: {
+          tlsKeyFilePath: string;
+          tlsCertificateChainFilePath: string;
+          mtlsCertificateAuthorityKeyFilePath: string;
+          rootCACertificateFilePath?: string;
+        };
+        certificates: Certificate[];
+      }
+  > {
     const tenantId = request.query.tenantId;
+
+    // No serverId: generate a standalone full chain not tied to any server. Return the
+    // generated file paths so the caller can wire them into a new server config by hand.
+    if (request.query.serverId === undefined) {
+      const scope = request.body.generationScope ?? CertificateGenerationScope.FullChain;
+      if (scope !== CertificateGenerationScope.FullChain) {
+        throw new BadRequestError(
+          `generationScope ${scope} requires a serverId (it reuses an existing server's root/subCA). Omit generationScope or set it to FullChain to generate a standalone chain.`,
+        );
+      }
+      const { certificates, filePaths } =
+        await this._installCertificateHelperService.generateStandaloneFullChain(
+          tenantId,
+          request.body,
+        );
+      return { filePaths, certificates };
+    }
+
     const serverIds = Array.isArray(request.query.serverId)
       ? request.query.serverId
       : [request.query.serverId];
@@ -154,7 +186,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
       generationScope,
     );
 
-    const results: { serverId: string[]; certificates: Certificate[] }[] = [];
+    const results: { serverIds: string[]; certificates: Certificate[] }[] = [];
     for (const group of groups) {
       const [representative] = group;
       const { certificates, filePaths } =
@@ -181,7 +213,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
         await this._networkConnection.reloadTlsCertificates?.(websocketConfig.id);
       }
 
-      results.push({ serverId: group.map((ws) => ws.id), certificates });
+      results.push({ serverIds: group.map((ws) => ws.id), certificates });
     }
 
     return results;

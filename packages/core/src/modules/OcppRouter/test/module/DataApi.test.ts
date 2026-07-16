@@ -75,6 +75,7 @@ describe('AdminApi.generateCertificateChain', () => {
 
     mockInstallCertificateHelperService = {
       generateCertificateChain: vi.fn(),
+      generateStandaloneFullChain: vi.fn(),
       // Default: each requested server ends up in its own singleton group (today's
       // "independent" behavior). Tests that care about shared-chain grouping override this.
       groupServersForGeneration: vi
@@ -140,7 +141,7 @@ describe('AdminApi.generateCertificateChain', () => {
       30,
     );
     expect(mockNetworkConnection.reloadTlsCertificates).toHaveBeenCalledWith('server-1');
-    expect(result).toEqual([{ serverId: ['server-1'], certificates }]);
+    expect(result).toEqual([{ serverIds: ['server-1'], certificates }]);
 
     const updatedConfig = websocketServers.find((ws) => ws.id === 'server-1')!;
     expect(updatedConfig.tlsKeyFilePath).toBe('Leaf_Key_1.pem');
@@ -169,8 +170,8 @@ describe('AdminApi.generateCertificateChain', () => {
     expect(mockNetworkConnection.reloadTlsCertificates).toHaveBeenCalledWith('server-1');
     expect(mockNetworkConnection.reloadTlsCertificates).toHaveBeenCalledWith('server-2');
     expect(result).toEqual([
-      { serverId: ['server-1'], certificates: [{ id: 1 }] },
-      { serverId: ['server-2'], certificates: [{ id: 2 }] },
+      { serverIds: ['server-1'], certificates: [{ id: 1 }] },
+      { serverIds: ['server-2'], certificates: [{ id: 2 }] },
     ]);
   });
 
@@ -206,7 +207,7 @@ describe('AdminApi.generateCertificateChain', () => {
     expect(mockServerNetworkProfileRepository.upsertServerNetworkProfile).toHaveBeenCalledTimes(2);
     expect(mockNetworkConnection.reloadTlsCertificates).toHaveBeenCalledWith('server-1');
     expect(mockNetworkConnection.reloadTlsCertificates).toHaveBeenCalledWith('server-2');
-    expect(result).toEqual([{ serverId: ['server-1', 'server-2'], certificates }]);
+    expect(result).toEqual([{ serverIds: ['server-1', 'server-2'], certificates }]);
   });
 
   it("only writes fields required for each group member's own securityProfile", async () => {
@@ -288,5 +289,72 @@ describe('AdminApi.generateCertificateChain', () => {
       BadRequestError,
     );
     expect(mockNetworkConnection.reloadTlsCertificates).not.toHaveBeenCalled();
+  });
+
+  describe('standalone (no serverId)', () => {
+    const serverlessRequest = (body: any = {}): any => ({
+      query: { tenantId: TENANT_ID },
+      body,
+    });
+
+    it('generates a standalone full chain without touching config or reloading', async () => {
+      const certificates = [{ id: 1 }, { id: 2 }, { id: 3 }] as any;
+      const filePaths = {
+        tlsKeyFilePath: 'Leaf_Key_1.pem',
+        tlsCertificateChainFilePath: 'Cert_Chain_1.pem',
+        mtlsCertificateAuthorityKeyFilePath: 'SubCA_Key_1.pem',
+        rootCACertificateFilePath: 'Root_Certificate_1.pem',
+      };
+      mockInstallCertificateHelperService.generateStandaloneFullChain.mockResolvedValue({
+        certificates,
+        filePaths,
+      });
+
+      const result = await adminApi.generateCertificateChain(serverlessRequest());
+
+      expect(mockInstallCertificateHelperService.generateStandaloneFullChain).toHaveBeenCalledWith(
+        TENANT_ID,
+        expect.anything(),
+      );
+      // No server-scoped work: no grouping, no per-server generation, no persist, no reload.
+      expect(mockInstallCertificateHelperService.groupServersForGeneration).not.toHaveBeenCalled();
+      expect(mockInstallCertificateHelperService.generateCertificateChain).not.toHaveBeenCalled();
+      expect(mockConfigStore.saveConfig).not.toHaveBeenCalled();
+      expect(mockServerNetworkProfileRepository.upsertServerNetworkProfile).not.toHaveBeenCalled();
+      expect(mockNetworkConnection.reloadTlsCertificates).not.toHaveBeenCalled();
+      // Standalone response: certificates + filePaths, no serverId.
+      expect(result).toEqual({ certificates, filePaths });
+    });
+
+    it('throws BadRequestError if a non-FullChain scope is requested without a serverId', async () => {
+      await expect(
+        adminApi.generateCertificateChain(serverlessRequest({ generationScope: 'Leaf' })),
+      ).rejects.toThrow(BadRequestError);
+      expect(
+        mockInstallCertificateHelperService.generateStandaloneFullChain,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('allows an explicit FullChain scope without a serverId', async () => {
+      const filePaths = {
+        tlsKeyFilePath: 'Leaf_Key_1.pem',
+        tlsCertificateChainFilePath: 'Cert_Chain_1.pem',
+        mtlsCertificateAuthorityKeyFilePath: 'SubCA_Key_1.pem',
+        rootCACertificateFilePath: 'Root_Certificate_1.pem',
+      };
+      mockInstallCertificateHelperService.generateStandaloneFullChain.mockResolvedValue({
+        certificates: [{ id: 1 }],
+        filePaths,
+      });
+
+      const result = await adminApi.generateCertificateChain(
+        serverlessRequest({ generationScope: 'FullChain' }),
+      );
+
+      expect(mockInstallCertificateHelperService.generateStandaloneFullChain).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(result).toEqual({ certificates: [{ id: 1 }], filePaths });
+    });
   });
 });

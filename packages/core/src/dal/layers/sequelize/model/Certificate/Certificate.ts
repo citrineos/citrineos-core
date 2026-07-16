@@ -78,12 +78,14 @@ export class Certificate extends Model implements CertificateDto {
   @Column(DataType.INTEGER)
   declare pathLen?: number | null;
 
+  // File path of certificate
   @Column(DataType.STRING)
   declare certificateFileId?: string | null;
 
   @Column(DataType.STRING)
   declare certificateFileHash?: string | null;
 
+  // File path of private key
   @Column(DataType.STRING)
   declare privateKeyFileId?: string | null;
 
