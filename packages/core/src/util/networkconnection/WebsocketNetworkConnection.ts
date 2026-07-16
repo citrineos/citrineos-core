@@ -40,13 +40,16 @@ import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
 import {
-  wsActiveConnections,
-  wsConnectionClosedTotal,
-  wsConnectionEstablishedTotal,
-  wsConnectionRejectedTotal,
-  wsConnectionSetupDuration,
-  wsSendFailureTotal,
-  wsUpgradeTotal,
+  recordWsActiveConnectionsDelta,
+  recordWsConnectionClosed,
+  recordWsConnectionEstablished,
+  recordWsConnectionRejected,
+  recordWsConnectionSetupDuration,
+  recordWsSendFailure,
+  recordWsUpgrade,
+  WsRejectReason,
+  WsSendFailureReason,
+  WsUpgradeResult,
 } from '../metrics.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
@@ -160,7 +163,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       // Retry logic on the message sender might not suffice as charging station might connect to different instance.
       connLogger.error(errorMsg);
       this._identifierConnections.get(identifier)?.terminate();
-      wsSendFailureTotal.add(1, { reason: 'no_cache' });
+      recordWsSendFailure(WsSendFailureReason.NoCache);
       throw new Error(errorMsg);
     }
 
@@ -168,7 +171,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     if (!websocketConnection) {
       const errorMsg = 'Websocket connection not found for ' + identifier;
       connLogger.fatal(errorMsg);
-      wsSendFailureTotal.add(1, { reason: 'no_socket' });
+      recordWsSendFailure(WsSendFailureReason.NoSocket);
       throw new Error(errorMsg);
     }
 
@@ -176,14 +179,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const errorMsg = 'Websocket connection is not ready - ' + identifier;
       connLogger.fatal(errorMsg);
       websocketConnection.terminate();
-      wsSendFailureTotal.add(1, { reason: 'not_open' });
+      recordWsSendFailure(WsSendFailureReason.NotOpen);
       throw new Error(errorMsg);
     }
 
     return new Promise<void>((resolve, reject) => {
       websocketConnection.send(message, (error) => {
         if (error) {
-          wsSendFailureTotal.add(1, { reason: 'send_error' });
+          recordWsSendFailure(WsSendFailureReason.SendError);
           reject(error);
         } else {
           resolve();
@@ -331,7 +334,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     if (this._connectionManager && !this._connectionManager.isConnected()) {
       this._logger.warn('Rejecting websocket upgrade: message broker is not connected.');
-      wsUpgradeTotal.add(1, { result: 'broker_unavailable' });
+      recordWsUpgrade(WsUpgradeResult.BrokerUnavailable);
       this._terminateConnectionServiceUnavailable(socket);
       return;
     }
@@ -363,14 +366,16 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         identifier,
       );
 
-      wsUpgradeTotal.add(1, { result: 'upgraded' });
+      recordWsUpgrade(WsUpgradeResult.Upgraded);
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
     } catch (error: any) {
-      wsUpgradeTotal.add(1, {
-        result: error instanceof UpgradeAuthenticationError ? 'auth_failed' : 'internal_error',
-      });
+      recordWsUpgrade(
+        error instanceof UpgradeAuthenticationError
+          ? WsUpgradeResult.AuthFailed
+          : WsUpgradeResult.InternalError,
+      );
       /**
        * See {@link IUpgradeError.terminateConnection}
        **/
@@ -460,7 +465,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     const setupStart = performance.now();
     if (!ws.protocol) {
       this._logger.warn('Websocket connection without protocol');
-      wsConnectionRejectedTotal.add(1, { reason: 'no_protocol' });
+      recordWsConnectionRejected(WsRejectReason.NoProtocol);
       ws.close(1002, 'Protocol not specified');
       return;
     } else {
@@ -485,7 +490,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
       if (!exists && !websocketServerConfig.allowUnknownChargingStations) {
         connLogger.error('Rejecting connection: station not found in tenant');
-        wsConnectionRejectedTotal.add(1, { reason: 'unknown_station' });
+        recordWsConnectionRejected(WsRejectReason.UnknownStation);
         ws.close(1011, 'Unknown charging station');
         return;
       }
@@ -497,7 +502,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           const currentCount = this._tenantConnectionCounts.get(tenantId) ?? 0;
           if (currentCount >= maxConnections) {
             connLogger.warn(`Tenant exceeded max connections (${maxConnections}), rejecting`);
-            wsConnectionRejectedTotal.add(1, { reason: 'tenant_limit' });
+            recordWsConnectionRejected(WsRejectReason.TenantLimit);
             ws.close(1013, 'Tenant connection limit exceeded');
             return;
           }
@@ -514,7 +519,12 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           this._closeHandlers.delete(identifier);
         }
         staleWs.terminate();
-        await this._handleWebsocketClose(identifier, 1006, 'Replaced by new connection', connLogger);
+        await this._handleWebsocketClose(
+          identifier,
+          1006,
+          'Replaced by new connection',
+          connLogger,
+        );
         connLogger.warn(`Terminated stale websocket connection`);
       }
 
@@ -543,7 +553,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           connLogger.warn(
             `Connection slot already held for ${identifier}, rejecting new connection`,
           );
-          wsConnectionRejectedTotal.add(1, { reason: 'slot_taken' });
+          recordWsConnectionRejected(WsRejectReason.SlotTaken);
           ws.close(1013, 'Already connected on another instance');
           return;
         }
@@ -558,7 +568,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           await this._cache.remove(identifier, CacheNamespace.Connections).catch((err) => {
             connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
           });
-          wsConnectionRejectedTotal.add(1, { reason: 'register_failed' });
+          recordWsConnectionRejected(WsRejectReason.RegisterFailed);
           ws.close(1011, 'Failed to register connection in message router');
           return;
         }
@@ -573,11 +583,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         this._registerWebsocketEvents(identifier, ws, pingInterval, connLogger);
 
         // Connection is now fully established "all the way".
-        wsConnectionEstablishedTotal.add(1, { ocpp_version: ws.protocol });
-        wsActiveConnections.add(1);
-        wsConnectionSetupDuration.record((performance.now() - setupStart) / 1000, {
-          ocpp_version: ws.protocol,
-        });
+        recordWsConnectionEstablished(ws.protocol);
+        recordWsActiveConnectionsDelta(1);
+        recordWsConnectionSetupDuration((performance.now() - setupStart) / 1000, ws.protocol);
 
         connLogger.info(
           `Successfully connected new charging station, live connections: ${this._identifierConnections.size}`,
@@ -586,7 +594,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         ws.resume();
       } catch (error) {
         connLogger.fatal('Failed to connect', error);
-        wsConnectionRejectedTotal.add(1, { reason: 'connection_failed' });
+        recordWsConnectionRejected(WsRejectReason.ConnectionFailed);
         ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
       }
     }
@@ -695,9 +703,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     // (i.e. that reached full establishment and live in _identifierConnections).
     const wasActive = this._identifierConnections.delete(identifier);
     if (wasActive) {
-      wsActiveConnections.add(-1);
+      recordWsActiveConnectionsDelta(-1);
     }
-    wsConnectionClosedTotal.add(1, { code: String(code) });
+    recordWsConnectionClosed(code);
 
     // Unregister client
     const connectionStringPromise = this._cache
