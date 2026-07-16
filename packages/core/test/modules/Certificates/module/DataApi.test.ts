@@ -7,7 +7,7 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CertificatesDataApi, CertificatesModule } from '@modules/Certificates/src';
 import { aUploadExistingCertificate } from '../providers/UploadExistingCertificateProvider';
-import { mockFastifyInstance, mockFileStorage, mockFileStorageGetFile } from '../vitest.setup';
+import { mockFastifyInstance, mockFileStorage } from '../vitest.setup';
 import { MOCK_CHARGING_STATION_ID } from '../providers/ChargingStation';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
@@ -187,25 +187,6 @@ describe('CertificatesDataApi', () => {
       );
     });
 
-    it.each(['../../../../tmp/citrineos-poc', '/tmp/citrineos-poc', '..\\..\\evil'])(
-      'should reject a traversing/absolute filePath %j and never call the helper',
-      async (filePath) => {
-        const request = {
-          body: {
-            ...mockUploadRequest,
-            filePath,
-          },
-          query: {
-            identifier: MOCK_CHARGING_STATION_ID,
-            tenantId: DEFAULT_TENANT_ID,
-          },
-        } as any;
-
-        await expect(dataApi.uploadExistingCertificate(request)).rejects.toThrow(/filePath/);
-        expect(mockHandleUploadExistingCertificate).not.toHaveBeenCalled();
-      },
-    );
-
     it('should handle Promise.all correctly for array of identifiers', async () => {
       const mockInstalledCert1 = { id: 100 } as InstalledCertificate;
       const mockInstalledCert2 = { id: 101 } as InstalledCertificate;
@@ -228,24 +209,5 @@ describe('CertificatesDataApi', () => {
       expect(result[0]).toBe(mockInstalledCert1);
       expect(result[1]).toBe(mockInstalledCert2);
     });
-  });
-
-  describe('installRootCertificate', () => {
-    it.each(['../../../../etc/passwd', '/etc/passwd', '..\\..\\secret'])(
-      'should reject a traversing/absolute fileId %j and never read the file',
-      async (fileId) => {
-        const request = {
-          body: {
-            certificateType: 'V2GRootCertificate',
-            ocppConnectionName: MOCK_CHARGING_STATION_ID,
-            tenantId: DEFAULT_TENANT_ID,
-            fileId,
-          },
-        } as any;
-
-        await expect(dataApi.installRootCertificate(request)).rejects.toThrow(/filePath/);
-        expect(mockFileStorageGetFile).not.toHaveBeenCalled();
-      },
-    );
   });
 });

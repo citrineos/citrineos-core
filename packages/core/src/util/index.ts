@@ -42,7 +42,6 @@ export {
   validateMessageContentType,
   validatePEMEncodedCSR,
   validateTariffConditionsTimeFields,
-  validateSafeFilePath,
 } from './util/validator.js';
 export { IdGenerator } from './util/idGenerator.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';

@@ -407,22 +407,33 @@ export class InstallCertificateHelperService {
         await this.fileStorage.saveFile(
           serverConfig.tlsCertificateChainFilePath,
           Buffer.from(certificateChainPem),
+          undefined,
+          { trusted: true },
         );
         chainSavedToServerPath = true;
       }
       if (serverConfig.tlsKeyFilePath) {
-        await this.fileStorage.saveFile(serverConfig.tlsKeyFilePath, Buffer.from(leafKeyPem));
+        await this.fileStorage.saveFile(
+          serverConfig.tlsKeyFilePath,
+          Buffer.from(leafKeyPem),
+          undefined,
+          { trusted: true },
+        );
       }
       if (serverConfig.mtlsCertificateAuthorityKeyFilePath) {
         await this.fileStorage.saveFile(
           serverConfig.mtlsCertificateAuthorityKeyFilePath,
           Buffer.from(subCAKeyPem),
+          undefined,
+          { trusted: true },
         );
       }
       if (rootCACertPem && serverConfig.rootCACertificateFilePath) {
         await this.fileStorage.saveFile(
           serverConfig.rootCACertificateFilePath,
           Buffer.from(rootCACertPem),
+          undefined,
+          { trusted: true },
         );
       }
       this.logger.info(`Saved TLS certificate files for server ${serverConfig.id}`);

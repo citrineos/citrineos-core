@@ -36,7 +36,7 @@ import {
   UploadExistingCertificate,
   UploadExistingCertificateSchema,
 } from '@dal/interfaces/index.js';
-import { generateCertificate, validateSafeFilePath } from '@util/index.js';
+import { generateCertificate } from '@util/index.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';
@@ -111,10 +111,6 @@ export class CertificatesDataApi
 
     const tenantId = request.query.tenantId;
     const certRequest = request.body as GenerateCertificateChainRequest;
-
-    if (certRequest.filePath) {
-      validateSafeFilePath(certRequest.filePath);
-    }
 
     let certificateFromReq = new Certificate();
     certificateFromReq.serialNumber = moment().valueOf();
@@ -304,7 +300,6 @@ export class CertificatesDataApi
 
     let rootCAPem: string;
     if (installReq.fileId) {
-      validateSafeFilePath(installReq.fileId);
       rootCAPem = (await this._fileStorage.getFile(installReq.fileId))!.toString();
     } else {
       rootCAPem = await this._module.certificateAuthorityService.getRootCACertificateFromExternalCA(
@@ -354,9 +349,6 @@ export class CertificatesDataApi
     }>,
   ): Promise<InstalledCertificate[]> {
     const uploadExistingCertificate = request.body as UploadExistingCertificate;
-    if (uploadExistingCertificate.filePath) {
-      validateSafeFilePath(uploadExistingCertificate.filePath);
-    }
     const messageQuerystring = request.query as IMessageQuerystring;
     const tenantId = messageQuerystring.tenantId || DEFAULT_TENANT_ID;
     const identifier = messageQuerystring.identifier;
@@ -434,9 +426,6 @@ export class CertificatesDataApi
     if (!privateKeyFileId) {
       throw new Error('Certificate privateKeyFileId not found');
     }
-    // re-validate on read to account for any legacy rows persisted before filePath validation existed
-    validateSafeFilePath(fileId);
-    validateSafeFilePath(privateKeyFileId);
     const existingCertificateBuffer = await this._fileStorage.getFile(fileId);
     const existingPrivateKeyBuffer = await this._fileStorage.getFile(privateKeyFileId);
     if (!existingCertificateBuffer || !existingPrivateKeyBuffer) {

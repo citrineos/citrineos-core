@@ -18,7 +18,6 @@ import {
   validateMessageContentType,
   validateNoAuthorizationIdToken,
   validatePEMEncodedCSR,
-  validateSafeFilePath,
   validateURIContent,
   validateUTF8Content,
 } from '@util/index.js';
@@ -1068,45 +1067,5 @@ MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3Q
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe('CSR content is empty');
     });
-  });
-});
-
-describe('validateSafeFilePath', () => {
-  describe('safe relative paths', () => {
-    it.each(['certs', 'sub/dir', 'a/b/c', 'tenant_1/leaf', './certs', 'file.pem'])(
-      'accepts %j',
-      (filePath) => {
-        expect(() => validateSafeFilePath(filePath)).not.toThrow();
-      },
-    );
-  });
-
-  describe('parent-directory traversal', () => {
-    it.each([
-      '../../../tmp/x',
-      '../../../../../../tmp/citrineos-poc',
-      'a/../../b',
-      '..',
-      'foo/..',
-      '..\\..\\x',
-    ])('rejects %j', (filePath) => {
-      expect(() => validateSafeFilePath(filePath)).toThrow(/traversal/);
-    });
-  });
-
-  describe('absolute paths', () => {
-    it.each([
-      '/tmp/x',
-      '/etc/cron.d/poc',
-      'C:\\Windows\\Temp',
-      'c:/windows/temp',
-      '\\\\host\\share',
-    ])('rejects %j', (filePath) => {
-      expect(() => validateSafeFilePath(filePath)).toThrow(/absolute paths are not allowed/);
-    });
-  });
-
-  it('rejects paths containing a NUL byte', () => {
-    expect(() => validateSafeFilePath('certs/leaf\0.pem')).toThrow(/NUL byte/);
   });
 });
