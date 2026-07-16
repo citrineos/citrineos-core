@@ -19,6 +19,8 @@ import {
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,
+  GenerateCertificateChainQueryString,
+  GenerateCertificateChainRequest,
   IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ModelKeyQuerystring,
@@ -29,9 +31,12 @@ import type {
   WebsocketMappingQuerystring,
 } from '@dal/interfaces/index.js';
 import {
+  CertificateGenerationScope,
   ChargingStationKeyQuerySchema,
   ConnectionDeleteQuerySchema,
   CreateSubscriptionSchema,
+  GenerateCertificateChainQuerySchema,
+  GenerateCertificateChainSchema,
   ModelKeyQuerystringSchema,
   TenantQuerySchema,
   TlsReloadQuerySchema,
@@ -40,7 +45,8 @@ import {
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from '@dal/interfaces/index.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
+import { Certificate, Subscription } from '@dal/layers/sequelize/index.js';
+import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -53,6 +59,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   private _networkConnection: INetworkConnection;
   private _subscriptionRepository: ISubscriptionRepository;
   private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  private _installCertificateHelperService: InstallCertificateHelperService;
 
   /**
    * Constructs a new instance of the class. Resolved by the container (PROXY
@@ -64,6 +71,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    * @param {ISubscriptionRepository} subscriptionRepository - The subscription repository instance.
    * @param {IServerNetworkProfileRepository} serverNetworkProfileRepository - The server network profile repository instance.
+   * @param {InstallCertificateHelperService} installCertificateHelperService - Certificate generation/storage helper.
    */
   constructor({
     router,
@@ -72,6 +80,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     logger,
     subscriptionRepository,
     serverNetworkProfileRepository,
+    installCertificateHelperService,
   }: {
     router: IMessageRouter;
     networkConnection: INetworkConnection;
@@ -79,11 +88,13 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     logger?: Logger<ILogObj>;
     subscriptionRepository: ISubscriptionRepository;
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    installCertificateHelperService: InstallCertificateHelperService;
   }) {
     super(router, server, logger);
     this._networkConnection = networkConnection;
     this._subscriptionRepository = subscriptionRepository;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._installCertificateHelperService = installCertificateHelperService;
   }
 
   @AsDataEndpoint(Namespace.TlsReload, HttpMethod.Post, TlsReloadQuerySchema)
@@ -94,6 +105,109 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
       throw new Error('Tls certificate reloading is not implemented');
     }
     await this._networkConnection.reloadTlsCertificates(request.query.serverId);
+  }
+
+  /**
+   * Generates TLS certificates for one or more websocket servers, updates their config
+   * with the new file paths, persists the config, and reloads the live TLS listener(s).
+   */
+  @AsDataEndpoint(
+    OCPP2_Namespace.CertificateChain,
+    HttpMethod.Post,
+    GenerateCertificateChainQuerySchema,
+    GenerateCertificateChainSchema,
+  )
+  async generateCertificateChain(
+    request: FastifyRequest<{
+      Body: GenerateCertificateChainRequest;
+      Querystring: GenerateCertificateChainQueryString;
+    }>,
+  ): Promise<{ serverId: string[]; certificates: Certificate[] }[]> {
+    const tenantId = request.query.tenantId;
+    const serverIds = Array.isArray(request.query.serverId)
+      ? request.query.serverId
+      : [request.query.serverId];
+
+    // Validate every requested server up front so a bad serverId in a multiserver
+    // request fails before any certificates are generated or written for the others.
+    const websocketConfigs = serverIds.map((serverId) => {
+      const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
+        (ws) => ws.id === serverId,
+      );
+      if (!websocketConfig) {
+        throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+      }
+      if (websocketConfig.securityProfile < 2) {
+        throw new BadRequestError(
+          `Websocket configuration with id ${serverId} is not TLS-enabled (securityProfile ${websocketConfig.securityProfile}); nothing to regenerate.`,
+        );
+      }
+      return websocketConfig;
+    });
+
+    const generationScope = request.body.generationScope ?? CertificateGenerationScope.Leaf;
+    // When generating sub CA/leaf cert for multiple servers,
+    // we group them by parent cert
+    const groups = await this._installCertificateHelperService.groupServersForGeneration(
+      tenantId,
+      websocketConfigs,
+      generationScope,
+    );
+
+    const results: { serverId: string[]; certificates: Certificate[] }[] = [];
+    for (const group of groups) {
+      const [representative] = group;
+      const { certificates, filePaths } =
+        await this._installCertificateHelperService.generateCertificateChain(
+          tenantId,
+          representative,
+          request.body,
+        );
+
+      // Update config file
+      for (const websocketConfig of group) {
+        Object.assign(
+          websocketConfig,
+          this._filePathsForSecurityProfile(filePaths, websocketConfig.securityProfile),
+        );
+      }
+      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
+      // Update ServerNetworkProfile table
+      for (const websocketConfig of group) {
+        await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
+          { ...websocketConfig, ...filePaths },
+          this._module.config.maxCallLengthSeconds,
+        );
+        await this._networkConnection.reloadTlsCertificates?.(websocketConfig.id);
+      }
+
+      results.push({ serverId: group.map((ws) => ws.id), certificates });
+    }
+
+    return results;
+  }
+
+  private _filePathsForSecurityProfile(
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath?: string;
+      rootCACertificateFilePath?: string;
+    },
+    securityProfile: number,
+  ): Partial<typeof filePaths> {
+    const result: Partial<typeof filePaths> = {
+      tlsKeyFilePath: filePaths.tlsKeyFilePath,
+      tlsCertificateChainFilePath: filePaths.tlsCertificateChainFilePath,
+    };
+    // avoid to overwrite existing file path when it is not regenerated
+    if (filePaths.rootCACertificateFilePath !== undefined) {
+      result.rootCACertificateFilePath = filePaths.rootCACertificateFilePath;
+    }
+    if (securityProfile >= 3 && filePaths.mtlsCertificateAuthorityKeyFilePath !== undefined) {
+      result.mtlsCertificateAuthorityKeyFilePath = filePaths.mtlsCertificateAuthorityKeyFilePath;
+    }
+    return result;
   }
 
   // N.B.: When adding subscriptions, chargers may be connected to a different instance of Citrine.

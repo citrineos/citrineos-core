@@ -3,12 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type CertificateAuthorityService,
+  CertificateGenerationScope,
+  type GenerateCertificateChainRequest,
   type ICertificateRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { BadRequestError, type WebsocketServerConfig } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Certificate } from '../../../../dal/layers/sequelize/index.js';
 import { InstallCertificateHelperService } from '../../src/module/installCertificateHelperService';
@@ -28,6 +31,8 @@ const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.ho
 }));
 
 const mockExtractCertificateDetails = vi.hoisted(() => vi.fn());
+const mockGenerateCertificate = vi.hoisted(() => vi.fn());
+const mockParseCertificateChainPem = vi.hoisted(() => vi.fn());
 
 let createdCertificateInstances: any[] = [];
 let createdInstallCertificateAttemptInstances: any[] = [];
@@ -37,6 +42,7 @@ vi.mock('jsrsasign', async (importOriginal) => {
   const actual = await importOriginal<typeof import('jsrsasign')>();
   const MockX509 = class {
     readCertPEM = vi.fn();
+    getIssuerString = vi.fn().mockReturnValue('mock-issuer');
   };
   return {
     ...actual,
@@ -52,6 +58,8 @@ vi.mock('../../../../util/index.js', async (importOriginal) => {
   return {
     ...actual,
     extractCertificateDetails: mockExtractCertificateDetails,
+    generateCertificate: mockGenerateCertificate,
+    parseCertificateChainPem: mockParseCertificateChainPem,
   };
 });
 
@@ -722,6 +730,416 @@ describe('InstallCertificateHelperService', () => {
 
       const savedInstalledCert = createdInstalledCertificateInstances[0];
       expect(savedInstalledCert.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('generateCertificateChain', () => {
+    const baseCertRequest = {
+      organizationName: 'Test Org',
+      commonName: 'localhost',
+    } as GenerateCertificateChainRequest;
+
+    const baseWebsocketConfig = {
+      id: 'server-1',
+      securityProfile: 2,
+    } as WebsocketServerConfig;
+
+    beforeEach(() => {
+      mockFileStorageSaveFile.mockImplementation((key: string) => Promise.resolve(key));
+      (mockCertificateRepository.createOrUpdateCertificate as any).mockImplementation(
+        (_tenantId: number, cert: any) =>
+          Promise.resolve(Object.assign(cert, { id: cert.id ?? 999 })),
+      );
+    });
+
+    describe('Leaf scope (default)', () => {
+      const websocketConfig: WebsocketServerConfig = {
+        ...baseWebsocketConfig,
+        tlsCertificateChainFilePath: 'chain.pem',
+      };
+      const certRequest = {
+        ...baseCertRequest,
+        generationScope: CertificateGenerationScope.Leaf,
+      } as GenerateCertificateChainRequest;
+
+      it('is used when generationScope is omitted, throwing if root+subCA do not already exist', async () => {
+        // baseCertRequest has no generationScope set — Leaf is the default, so omitting
+        // it against a server with no existing chain should throw, not silently succeed.
+        await expect(
+          service.generateCertificateChain(tenantId, baseWebsocketConfig, baseCertRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if the certificate chain path is not configured', async () => {
+        const incompleteConfig = { ...websocketConfig, tlsCertificateChainFilePath: undefined };
+
+        await expect(
+          service.generateCertificateChain(tenantId, incompleteConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if chain file cannot be read', async () => {
+        mockFileStorageGetFile.mockResolvedValueOnce(null);
+
+        await expect(
+          service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if the subCA record has no private key on file', async () => {
+        mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('oldLeafPem+subCACertPem'));
+        mockParseCertificateChainPem.mockReturnValue(['oldLeafPem', 'subCACertPem']);
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+          id: 55,
+          privateKeyFileId: undefined,
+        });
+
+        await expect(
+          service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('regenerates only the leaf, reusing the existing subCA', async () => {
+        mockFileStorageGetFile
+          .mockResolvedValueOnce(Buffer.from('oldLeafPem+subCACertPem'))
+          .mockResolvedValueOnce(Buffer.from('subCAKeyPem'));
+        mockParseCertificateChainPem.mockReturnValue(['oldLeafPem', 'subCACertPem']);
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+          id: 55,
+          privateKeyFileId: 'SubCA_Key_existing.pem',
+        });
+        mockGenerateCertificate.mockReturnValue(['newLeafPem', 'newLeafKeyPem']);
+
+        const result = await service.generateCertificateChain(
+          tenantId,
+          websocketConfig,
+          certRequest,
+        );
+
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('SubCA_Key_existing.pem');
+        expect(mockParseCertificateChainPem).toHaveBeenCalledWith('oldLeafPem+subCACertPem');
+        expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
+          where: { certificateFileHash: mockHash },
+        });
+        expect(mockGenerateCertificate).toHaveBeenCalledWith(
+          expect.objectContaining({ signedBy: 55, commonName: 'localhost' }),
+          logger,
+          'subCAKeyPem',
+          'subCACertPem',
+        );
+        expect(result.certificates).toHaveLength(1);
+        expect(result.filePaths.tlsKeyFilePath).toMatch(/^Leaf_Key_\d+\.pem$/);
+        expect(result.filePaths.tlsCertificateChainFilePath).toMatch(/^Cert_Chain_\d+\.pem$/);
+        expect(result.filePaths.mtlsCertificateAuthorityKeyFilePath).toBeUndefined();
+        expect(result.filePaths.rootCACertificateFilePath).toBeUndefined();
+      });
+    });
+
+    describe('SubCAAndLeaf scope', () => {
+      const websocketConfig: WebsocketServerConfig = {
+        ...baseWebsocketConfig,
+        tlsCertificateChainFilePath: 'chain.pem',
+      };
+      const certRequest = {
+        ...baseCertRequest,
+        generationScope: CertificateGenerationScope.SubCAAndLeaf,
+      } as GenerateCertificateChainRequest;
+
+      it('throws BadRequestError if the certificate chain path is not configured', async () => {
+        const incompleteConfig = { ...websocketConfig, tlsCertificateChainFilePath: undefined };
+
+        await expect(
+          service.generateCertificateChain(tenantId, incompleteConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if the current subCA has no locally-generated root to reuse', async () => {
+        mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('leafPem+subCACertPem'));
+        mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 20, signedBy: null });
+
+        await expect(
+          service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if the root record is missing its certificate or private key', async () => {
+        mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('leafPem+subCACertPem'));
+        mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
+        mockCertificateReadOnlyOneByQuery
+          .mockResolvedValueOnce({ id: 20, signedBy: 10 })
+          .mockResolvedValueOnce({
+            id: 10,
+            certificateFileId: undefined,
+            privateKeyFileId: undefined,
+          });
+
+        await expect(
+          service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('regenerates subCA and leaf, reusing the existing root', async () => {
+        mockFileStorageGetFile
+          .mockResolvedValueOnce(Buffer.from('leafPem+subCACertPem'))
+          .mockResolvedValueOnce(Buffer.from('rootCertPem'))
+          .mockResolvedValueOnce(Buffer.from('rootKeyPem'));
+        mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
+        mockCertificateReadOnlyOneByQuery
+          .mockResolvedValueOnce({ id: 20, signedBy: 10 })
+          .mockResolvedValueOnce({
+            id: 10,
+            certificateFileId: 'Root_Certificate_existing.pem',
+            privateKeyFileId: 'Root_Key_existing.pem',
+          });
+        mockGenerateCertificate
+          .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+          .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+        const result = await service.generateCertificateChain(
+          tenantId,
+          websocketConfig,
+          certRequest,
+        );
+
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_existing.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Key_existing.pem');
+        expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({ signedBy: 10, commonName: 'localhost SubCA' }),
+          logger,
+          'rootKeyPem',
+          'rootCertPem',
+        );
+        expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({ signedBy: 999, commonName: 'localhost' }),
+          logger,
+          'newSubCAKeyPem',
+          'newSubCACertPem',
+        );
+        expect(result.certificates).toHaveLength(2);
+        expect(result.filePaths.tlsKeyFilePath).toMatch(/^Leaf_Key_\d+\.pem$/);
+        expect(result.filePaths.mtlsCertificateAuthorityKeyFilePath).toMatch(
+          /^SubCA_Key_\d+\.pem$/,
+        );
+        expect(result.filePaths.rootCACertificateFilePath).toBeUndefined();
+      });
+    });
+
+    describe('FullChain scope', () => {
+      it('defaults to a self-signed root when selfSigned is not specified', async () => {
+        const certRequest = {
+          ...baseCertRequest,
+          generationScope: CertificateGenerationScope.FullChain,
+        } as GenerateCertificateChainRequest;
+
+        mockGenerateCertificate
+          .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+          .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+          .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+        const result = await service.generateCertificateChain(
+          tenantId,
+          baseWebsocketConfig,
+          certRequest,
+        );
+
+        expect(result.certificates).toHaveLength(3);
+        expect(result.filePaths.rootCACertificateFilePath).toMatch(/^Root_Certificate_\d+\.pem$/);
+      });
+
+      it('generates a new self-signed root, subCA, and leaf when selfSigned is true', async () => {
+        const certRequest = {
+          ...baseCertRequest,
+          selfSigned: true,
+          generationScope: CertificateGenerationScope.FullChain,
+        } as GenerateCertificateChainRequest;
+
+        mockGenerateCertificate
+          .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+          .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+          .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+        const result = await service.generateCertificateChain(
+          tenantId,
+          baseWebsocketConfig,
+          certRequest,
+        );
+
+        expect(mockGenerateCertificate).toHaveBeenCalledTimes(3);
+        expect(result.certificates).toHaveLength(3);
+        expect(result.filePaths.tlsKeyFilePath).toMatch(/^Leaf_Key_\d+\.pem$/);
+        expect(result.filePaths.mtlsCertificateAuthorityKeyFilePath).toMatch(
+          /^SubCA_Key_\d+\.pem$/,
+        );
+        expect(result.filePaths.rootCACertificateFilePath).toMatch(/^Root_Certificate_\d+\.pem$/);
+      });
+
+      it('generates a subCA signed by an external CA and a leaf when selfSigned is false', async () => {
+        const certRequest = {
+          ...baseCertRequest,
+          selfSigned: false,
+          generationScope: CertificateGenerationScope.FullChain,
+        } as GenerateCertificateChainRequest;
+
+        vi.spyOn(service, 'generateSubCACertificateSignedByCAServer').mockResolvedValue([
+          'externalSubCACertPem',
+          'externalSubCAKeyPem',
+        ]);
+        mockGenerateCertificate.mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+        const result = await service.generateCertificateChain(
+          tenantId,
+          baseWebsocketConfig,
+          certRequest,
+        );
+
+        expect(service.generateSubCACertificateSignedByCAServer).toHaveBeenCalled();
+        expect(mockGenerateCertificate).toHaveBeenCalledTimes(1);
+        expect(result.certificates).toHaveLength(2);
+        expect(result.filePaths.rootCACertificateFilePath).toBeUndefined();
+      });
+    });
+  });
+
+  describe('groupServersForGeneration', () => {
+    beforeEach(() => {
+      // The outer beforeEach pins getCertificateHash to a single constant, which would
+      // make every server look like it shares a lineage. These tests need distinct
+      // hashes per distinct PEM content to distinguish "shared" from "different".
+      vi.spyOn(service, 'getCertificateHash').mockImplementation((pem: string) => pem);
+    });
+
+    it('returns one group containing every server for FullChain, without reading any files', async () => {
+      const configA = { id: 'a' } as any;
+      const configB = { id: 'b' } as any;
+
+      const groups = await service.groupServersForGeneration(
+        tenantId,
+        [configA, configB],
+        CertificateGenerationScope.FullChain,
+      );
+
+      expect(groups).toEqual([[configA, configB]]);
+      expect(mockFileStorageGetFile).not.toHaveBeenCalled();
+    });
+
+    describe('SubCAAndLeaf scope', () => {
+      const configA = { id: 'a', tlsCertificateChainFilePath: 'chain-a.pem' } as any;
+      const configB = { id: 'b', tlsCertificateChainFilePath: 'chain-b.pem' } as any;
+
+      beforeEach(() => {
+        mockFileStorageGetFile.mockImplementation((path: string) =>
+          Promise.resolve(Buffer.from(path)),
+        );
+        // Each config's chain resolves to its own distinct subCA cert (never the same
+        // subCA reused across servers) — grouping instead hinges on the DB's signedBy.
+        mockParseCertificateChainPem.mockImplementation((pem: string) => ['leaf', `subCA-${pem}`]);
+      });
+
+      it('groups servers whose current (distinct) subCAs were signed by the same root', async () => {
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1, signedBy: 100 });
+
+        const groups = await service.groupServersForGeneration(
+          tenantId,
+          [configA, configB],
+          CertificateGenerationScope.SubCAAndLeaf,
+        );
+
+        expect(groups).toEqual([[configA, configB]]);
+      });
+
+      it('splits servers into separate groups when their subCAs were signed by different roots', async () => {
+        mockCertificateReadOnlyOneByQuery.mockImplementation((_tenantId: number, query: any) =>
+          Promise.resolve(
+            query.where.certificateFileHash === 'subCA-chain-a.pem'
+              ? { id: 1, signedBy: 100 }
+              : { id: 2, signedBy: 200 },
+          ),
+        );
+
+        const groups = await service.groupServersForGeneration(
+          tenantId,
+          [configA, configB],
+          CertificateGenerationScope.SubCAAndLeaf,
+        );
+
+        expect(groups).toEqual([[configA], [configB]]);
+      });
+
+      it('throws BadRequestError if the current subCA has no locally-generated root to reuse', async () => {
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1, signedBy: null });
+
+        await expect(
+          service.groupServersForGeneration(
+            tenantId,
+            [configA],
+            CertificateGenerationScope.SubCAAndLeaf,
+          ),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError if a server has no certificate chain configured', async () => {
+        const configWithoutChain = { id: 'a' } as any;
+
+        await expect(
+          service.groupServersForGeneration(
+            tenantId,
+            [configWithoutChain],
+            CertificateGenerationScope.SubCAAndLeaf,
+          ),
+        ).rejects.toThrow(BadRequestError);
+      });
+    });
+
+    describe('Leaf scope', () => {
+      it('groups servers that currently share the same subCA certificate', async () => {
+        const configA = { id: 'a', tlsCertificateChainFilePath: 'chain-a.pem' } as any;
+        const configB = { id: 'b', tlsCertificateChainFilePath: 'chain-b.pem' } as any;
+        mockFileStorageGetFile.mockImplementation((path: string) =>
+          Promise.resolve(Buffer.from(path)),
+        );
+        mockParseCertificateChainPem.mockImplementation((pem: string) => [
+          `leafOf-${pem}`,
+          'sharedSubCAPem',
+        ]);
+
+        const groups = await service.groupServersForGeneration(
+          tenantId,
+          [configA, configB],
+          CertificateGenerationScope.Leaf,
+        );
+
+        expect(groups).toEqual([[configA, configB]]);
+      });
+
+      it('splits servers into separate groups when their subCA certificates differ', async () => {
+        const configA = { id: 'a', tlsCertificateChainFilePath: 'chain-a.pem' } as any;
+        const configB = { id: 'b', tlsCertificateChainFilePath: 'chain-b.pem' } as any;
+        mockFileStorageGetFile.mockImplementation((path: string) =>
+          Promise.resolve(Buffer.from(path)),
+        );
+        mockParseCertificateChainPem.mockImplementation((pem: string) => ['leaf', `subCA-${pem}`]);
+
+        const groups = await service.groupServersForGeneration(
+          tenantId,
+          [configA, configB],
+          CertificateGenerationScope.Leaf,
+        );
+
+        expect(groups).toEqual([[configA], [configB]]);
+      });
+
+      it('throws BadRequestError if a server has no certificate chain configured', async () => {
+        const configA = { id: 'a' } as any;
+
+        await expect(
+          service.groupServersForGeneration(tenantId, [configA], CertificateGenerationScope.Leaf),
+        ).rejects.toThrow(BadRequestError);
+      });
     });
   });
 });

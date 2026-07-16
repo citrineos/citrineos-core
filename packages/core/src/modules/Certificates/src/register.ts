@@ -6,10 +6,13 @@ import { asClass, type AwilixContainer } from 'awilix';
 import { InstallCertificateHelperService } from './module/installCertificateHelperService.js';
 
 /**
- * Registers the Certificates module's internal services as scoped dependencies.
+ * Registers the Certificates module's internal services.
+ *
+ * Registered as a singleton: it's consumed both by the per-module-scoped
+ * CertificatesModule and by the root-level singleton OcppRouter AdminApi as well.
  */
 export function registerCertificatesServices(container: AwilixContainer): void {
   container.register({
-    installCertificateHelperService: asClass(InstallCertificateHelperService).scoped(),
+    installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
   });
 }

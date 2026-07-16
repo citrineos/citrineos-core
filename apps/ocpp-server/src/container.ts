@@ -203,8 +203,6 @@ function registerPrimitives(
     amqpUrl: asValue(config.util.messageBroker.amqp!.url),
     maxCallLengthSeconds: asValue(config.maxCallLengthSeconds),
     maxReconnectDelay: asValue(config.maxReconnectDelay),
-    // Consumed by CertificatesDataApi for certificate-chain generation.
-    websocketServersConfig: asValue(config.util.networkConnection.websocketServers),
     logger: asValue(logger),
     ocppValidator: asValue(ocppValidator),
     cache: asValue(cache),
