@@ -41,6 +41,20 @@ import {
   RetryMessageError,
 } from '@citrineos/base';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import {
+  CallHandledOutcome,
+  CallResponseOutcome,
+  CallResultSentOutcome,
+  CallSentOutcome,
+  recordOcppCallHandled,
+  recordOcppCallResponse,
+  recordOcppCallResultSent,
+  recordOcppCallRoundtripDuration,
+  recordOcppCallSent,
+  recordOcppMessageReceived,
+  recordOcppMessageRouted,
+  UNKNOWN_ACTION,
+} from '@util/metrics.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -297,6 +311,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         action,
         state,
       );
+    } finally {
+      recordOcppMessageReceived(messageTypeId, protocol);
     }
 
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
@@ -353,6 +369,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           message,
         );
         if (successTimestamp != undefined) {
+          recordOcppCallSent(String(action), protocol, CallSentOutcome.Sent);
           this._logger.debug(
             `Call sent successfully with ${
               successTimestamp.getTime() - cacheTimestamp.getTime()
@@ -361,6 +378,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             message,
           );
         } else {
+          recordOcppCallSent(String(action), protocol, CallSentOutcome.SendFailed);
           const removed = await this._cache.remove(correlationId, transactionNamespace);
           this._logger.warn(
             `Failed to send call, removed from cache: ${removed}`,
@@ -378,6 +396,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         throw new RetryMessageError('Call already in progress');
       }
     } else {
+      recordOcppCallSent(String(action), protocol, CallSentOutcome.Rejected);
       this._logger.info('RegistrationStatus Rejected, unable to send', identifier, message);
       return { success: false };
     }
@@ -412,6 +431,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       CacheNamespace.Transactions + identifier,
     );
     if (!cachedActionTimestamp) {
+      recordOcppCallResultSent(String(action), protocol, CallResultSentOutcome.NoPendingRequest);
       this._logger.error(
         'Failed to send callResult due to missing message id',
         identifier,
@@ -434,9 +454,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
       ]).then((successes) => successes.every(Boolean));
+      recordOcppCallResultSent(
+        String(action),
+        protocol,
+        success ? CallResultSentOutcome.Sent : CallResultSentOutcome.SendFailed,
+      );
       this._logger.debug(`CallResult sent successfully ${correlationId}`, identifier, message);
       return { success };
     } else {
+      recordOcppCallResultSent(String(action), protocol, CallResultSentOutcome.ActionMismatch);
       this._logger.error(
         'Failed to send callResult due to mismatched action',
         identifier,
@@ -600,6 +626,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           details: confirmation.payload,
         });
       }
+      recordOcppCallHandled(String(action), CallHandledOutcome.Result);
     } catch (error) {
       const callError =
         error instanceof OcppError
@@ -607,6 +634,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           : new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
               details: error,
             });
+
+      recordOcppCallHandled(
+        String(action),
+        CallHandledOutcome.Error,
+        String(callError.asCallError()[2]),
+      );
 
       this.sendCallError(messageId, ocppConnectionName, tenantId, protocol, action, callError)
         .catch((err) => {
@@ -648,6 +681,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     });
 
     if (!cachedActionTimestamp) {
+      recordOcppCallResponse(UNKNOWN_ACTION, CallResponseOutcome.OrphanOrTimeout);
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -657,6 +691,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    recordOcppCallRoundtripDuration(
+      (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
+      String(action),
+    );
+    recordOcppCallResponse(String(action), CallResponseOutcome.Result);
     this._logger.debug(
       `Message received. Time taken since sent: ${
         timestamp.getTime() - new Date(cachedTimestamp).getTime()
@@ -724,6 +763,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     });
 
     if (!cachedActionTimestamp) {
+      // No pending request cached: the Call likely already expired (timed out).
+      recordOcppCallResponse(UNKNOWN_ACTION, CallResponseOutcome.OrphanOrTimeout);
       throw new OcppError(
         messageId,
         ErrorCode.InternalError,
@@ -733,6 +774,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
+    recordOcppCallRoundtripDuration(
+      (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
+      String(action),
+    );
+    recordOcppCallResponse(String(action), CallResponseOutcome.Error, String(message[2]));
     this._logger.debug(
       `Message received. Time taken since sent: ${
         timestamp.getTime() - new Date(cachedTimestamp).getTime()
@@ -946,6 +992,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       confirmation = { success: false };
     } else {
       confirmation = await this._sender.send(message);
+    }
+
+    if (confirmation.success) {
+      // The "handled" leg of the funnel. Counting only on a successful send (not
+      // mere arrival here) means the not-implemented CallError path and broker
+      // send failures stay in the received-minus-routed delta.
+      recordOcppMessageRouted(message.action ?? UNKNOWN_ACTION, message.protocol);
     }
 
     await this._webhookDispatcher.dispatchMessageReceived(
