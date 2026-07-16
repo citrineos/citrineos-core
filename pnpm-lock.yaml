@@ -711,6 +711,9 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.0.0
         version: 7.21.0(encoding@0.1.13)
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       '@peculiar/webcrypto':
         specifier: ^1.4.6
         version: 1.7.1
