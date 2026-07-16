@@ -13,3 +13,33 @@ export {
   type SecurityEventEntity,
   type SecurityEventEntityInsert,
 } from './schema/SecurityEvent.js';
+export { DrizzleSubscriptionRepository, toSubscriptionDto } from './repository/Subscription.js';
+export {
+  subscriptionTable,
+  tenantSubscriptionTable,
+  SubscriptionEntitySchema,
+  SubscriptionEntityInsertSchema,
+  type SubscriptionEntity,
+  type SubscriptionEntityInsert,
+} from './schema/Subscription.js';
+export {
+  DrizzleServerNetworkProfileRepository,
+  toServerNetworkProfileDto,
+} from './repository/ServerNetworkProfile.js';
+export {
+  serverNetworkProfileTable,
+  tenantServerNetworkProfileTable,
+  ServerNetworkProfileEntitySchema,
+  ServerNetworkProfileEntityInsertSchema,
+  type ServerNetworkProfileEntity,
+  type ServerNetworkProfileEntityInsert,
+} from './schema/ServerNetworkProfile.js';
+export { DrizzleTenantRepository, toTenantDto } from './repository/Tenant.js';
+export {
+  tenantTable,
+  tenantTenantTable,
+  TenantEntitySchema,
+  TenantEntityInsertSchema,
+  type TenantEntity,
+  type TenantEntityInsert,
+} from './schema/Tenant.js';

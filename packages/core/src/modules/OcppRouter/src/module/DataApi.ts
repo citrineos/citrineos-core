@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IMessageRouter, INetworkConnection, WebsocketServerConfig } from '@citrineos/base';
+import type {
+  IMessageRouter,
+  INetworkConnection,
+  SubscriptionDto,
+  WebsocketServerConfig,
+} from '@citrineos/base';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
@@ -40,7 +45,6 @@ import {
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from '@dal/interfaces/index.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -112,7 +116,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     CreateSubscriptionSchema,
   )
   async postSubscription(
-    request: FastifyRequest<{ Body: Subscription; Querystring: TenantQueryString }>,
+    request: FastifyRequest<{ Body: SubscriptionDto; Querystring: TenantQueryString }>,
   ): Promise<number> {
     const tenantId = request.query.tenantId;
     request.body.tenantId = tenantId;
@@ -127,14 +131,14 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
       );
     }
     return this._subscriptionRepository
-      .create(tenantId, request.body as Subscription)
-      .then((subscription) => subscription?.id);
+      .create(tenantId, request.body as SubscriptionDto)
+      .then((subscription) => subscription.id!);
   }
 
   @AsDataEndpoint(OCPP2_Namespace.Subscription, HttpMethod.Get, ChargingStationKeyQuerySchema)
   async getSubscriptionsByChargingStation(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<Subscription[]> {
+  ): Promise<SubscriptionDto[]> {
     return this._subscriptionRepository.readAllByStationId(
       request.query.tenantId,
       request.query.ocppConnectionName,
