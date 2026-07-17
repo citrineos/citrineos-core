@@ -20,13 +20,7 @@ export type { IModuleApi } from './src/interfaces/api/ModuleApi.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
 export type { IVatProvider } from './src/interfaces/vat/index.js';
 export type { ICache } from './src/interfaces/cache/cache.js';
-export {
-  CacheNamespace,
-  createIdentifier,
-  getCacheTenantPathMappingKey,
-  getStationIdFromIdentifier,
-  getTenantIdFromIdentifier,
-} from './src/interfaces/cache/types.js';
+export { CacheNamespace } from './src/interfaces/cache/types.js';
 export type { IWebsocketConnection } from './src/interfaces/cache/types.js';
 export type { IFileAccess } from './src/interfaces/files/fileAccess.js';
 export type { IFileStorage } from './src/interfaces/files/fileStorage.js';
@@ -108,10 +102,16 @@ export type { RbacRules, SystemConfig, WebsocketServerConfig } from './src/confi
 
 // Utils
 
-export { MeterValueUtils } from './src/util/MeterValueUtils.js';
-export { RequestBuilder } from './src/util/request.js';
-
-export const LOG_LEVEL_OCPP = 10;
+export {
+  MeterValueUtils,
+  RequestBuilder,
+  assert,
+  notNull,
+  createIdentifier,
+  getCacheTenantPathMappingKey,
+  getTenantIdFromIdentifier,
+  getStationIdFromIdentifier,
+} from './src/util/index.js';
 
 // OCPP 2.0.1 Interfaces
 
@@ -119,9 +119,7 @@ export * from './src/ocpp/model/index.js';
 
 export type { UpdateChargingStationPasswordRequest } from './src/ocpp/model/UpdateChargingStationPasswordRequest.js';
 
-export interface OcppRequest {}
-
-export interface OcppResponse {}
+export type { OcppRequest, OcppResponse } from './src/ocpp/internal-types.js';
 
 export {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,
@@ -132,7 +130,6 @@ export {
   OCPP2_1_CALL_SCHEMA_RECORD,
 } from './src/interfaces/schema/MappingSchema.js';
 
-export { assert, deepDirectionalEqual, notNull } from './src/assertion/assertion.js';
 export { AuthorizationSecurity } from './src/interfaces/api/AuthorizationSecurity.js';
 export { UnauthorizedError } from './src/interfaces/api/exception/UnauthorizedError.js';
 export { UnauthorizedException } from './src/interfaces/api/exceptions/unauthorized.exception.js';

@@ -24,6 +24,7 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
+  SecurityEventNotificationTypeEnumSchema,
   SetVariableStatusEnum,
 } from '@citrineos/base';
 
@@ -34,6 +35,7 @@ import type {
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
 import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
+import { isForeignKeyConstraintError } from '@util/errors.js';
 
 import type { DeviceModelService } from './services.js';
 
@@ -266,7 +268,7 @@ export class ReportingModule extends AbstractModule {
         }
       }
     } catch (error) {
-      if ((error as any).name === 'SequelizeForeignKeyConstraintError') {
+      if (isForeignKeyConstraintError(error)) {
         await this.sendCallErrorWithMessage(
           message,
           new OcppError(
@@ -313,6 +315,15 @@ export class ReportingModule extends AbstractModule {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug('SecurityEventNotification request received:', message, props);
+
+    // Warn if there is a mismatch against the standard security event list
+    if (!SecurityEventNotificationTypeEnumSchema.safeParse(message.payload.type).success) {
+      this._logger.warn(
+        'SecurityEventNotification reported an unknown security event type',
+        message.payload.type,
+      );
+    }
+
     await this._securityEventRepository.createByStationId(
       message.context.tenantId,
       message.payload,

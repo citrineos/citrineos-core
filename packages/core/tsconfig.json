@@ -8,7 +8,8 @@
       "@/*": ["./src/*"],
       "@dal/*": ["./src/dal/*"],
       "@modules/*": ["./src/modules/*"],
-      "@util/*": ["./src/util/*"]
+      "@util/*": ["./src/util/*"],
+      "@test/*": ["./test/*"]
     }
   },
   "include": ["**/*", "**/*.json"],
