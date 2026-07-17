@@ -10,8 +10,8 @@ import {
   type WebsocketServerConfig,
 } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdminApi } from '../../src/module/DataApi.js';
-import { createTestContainer, getTestInstance } from '../../../../test/testContainer.js';
+import { AdminApi } from '@modules/OcppRouter/src/module/DataApi.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 // Prevent the AbstractModuleApi constructor from registering real routes against a fake server.
 vi.spyOn(Reflect, 'getMetadata').mockReturnValue([]);
