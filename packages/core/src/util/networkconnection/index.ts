@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+export { AmqpNetworkConnection } from './AmqpNetworkConnection.js';
 export { Authenticator } from './authenticator/Authenticator.js';
 export { WebsocketNetworkConnection } from './WebsocketNetworkConnection.js';
 export { BasicAuthenticationFilter } from './authenticator/BasicAuthenticationFilter.js';

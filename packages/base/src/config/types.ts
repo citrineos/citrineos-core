@@ -54,6 +54,27 @@ export const websocketServerInputSchema = z.object({
   forceProtocol: z.enum(OCPP_VERSION_LIST).optional(),
 });
 
+// Configuration for consuming charging station traffic from a broker-terminated
+// websocket gateway (the rabbitmq_web_ocpp plugin) instead of running a
+// websocket server in-process. Stations connect to the broker; the plugin
+// publishes raw OCPP-J frames to a topic exchange with routing key
+// `<protocol>.<action>.<req|conf|error>` and reply_to = the station id, and
+// delivers CSMS frames published with routing key = the station id.
+export const ocppGatewayInputSchema = z.object({
+  // Topic exchange the plugin publishes to and per-station queues bind on.
+  // Must match the plugin's web_ocpp.exchange setting.
+  exchange: z.string().default('amq.topic'),
+  // Shared inbound queue for station->CSMS traffic; instances are competing consumers.
+  queue: z.string().default('rabbit_queue_ocpp_gateway'),
+  // Tenant that stations connecting through the broker vhost belong to.
+  tenantId: z.number().optional(),
+  allowUnknownChargingStations: z.boolean().default(false),
+  // Backstop TTL for connection presence; refreshed by any inbound traffic.
+  // Offline is normally detected via the plugin's synthetic StatusNotification.
+  presenceTimeoutSeconds: z.number().int().min(60).default(3600),
+  prefetch: z.number().int().min(1).default(50),
+});
+
 export const HUBJECT_DEFAULT_BASEURL = 'https://open.plugncharge-test.hubject.com';
 export const HUBJECT_DEFAULT_TOKENURL =
   'https://hubject.stoplight.io/api/v1/projects/cHJqOjk0NTg5/nodes/6bb8b3bc79c2e-authorization-token';
@@ -251,6 +272,7 @@ export const systemConfigInputSchema = z.object({
       .optional(),
     networkConnection: z.object({
       websocketServers: z.array(websocketServerInputSchema.optional()),
+      ocppGateway: ocppGatewayInputSchema.optional(),
     }),
     certificateAuthority: z.object({
       v2gCA: z
@@ -566,6 +588,7 @@ export const systemConfigSchema = z
         })
         .optional(),
       networkConnection: z.object({
+        ocppGateway: ocppGatewayInputSchema.optional(),
         websocketServers: z.array(websocketServerSchema).refine((array) => {
           const idsSeen = new Set<string>();
           return array.filter((obj) => {
@@ -671,4 +694,5 @@ export const RbacRulesSchema = TenantSchema;
 export type RbacRules = z.infer<typeof RbacRulesSchema>;
 
 export type WebsocketServerConfig = z.infer<typeof websocketServerSchema>;
+export type OcppGatewayConfig = z.infer<typeof ocppGatewayInputSchema>;
 export type SystemConfig = z.infer<typeof systemConfigSchema>;

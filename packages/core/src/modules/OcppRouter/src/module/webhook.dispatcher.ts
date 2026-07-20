@@ -74,6 +74,12 @@ export class WebhookDispatcher {
 
   async register(tenantId: number, ocppConnectionName: string) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
+    if (this._identifiers.has(identifier)) {
+      // Idempotent re-register: subscriptions are kept fresh by
+      // _refreshSubscriptions, and onConnect callbacks must not re-fire
+      // for a connection that never closed.
+      return;
+    }
     try {
       await this._loadSubscriptionsForConnection(tenantId, ocppConnectionName);
       await Promise.all(
@@ -157,19 +163,28 @@ export class WebhookDispatcher {
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStation;
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: ocppConnectionName,
-      correlationId: messageId,
-      origin: origin,
-      state: state,
-      action: action,
-      protocol: protocol as OCPPVersion,
-      message: rpcMessage,
-      timestamp: timestamp,
-    });
+    // Message auditing must not fail the OCPP call itself: the insert can be
+    // rejected e.g. for a station whose very first BootNotification is still
+    // being provisioned (the populate_station_id trigger raises when no
+    // ChargingStations row exists yet).
+    let messageRecord;
+    try {
+      messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        correlationId: messageId,
+        origin: origin,
+        state: state,
+        action: action,
+        protocol: protocol as OCPPVersion,
+        message: rpcMessage,
+        timestamp: timestamp,
+      });
+    } catch (error) {
+      this._logger.error(`Failed to persist OCPP message for ${identifier}`, error);
+    }
 
-    if (action === undefined) {
+    if (action === undefined && messageRecord) {
       this._logger.debug(
         `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
       );

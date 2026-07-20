@@ -70,6 +70,7 @@ import type { IApiAuthProvider } from '@citrineos/base';
 
 // -- Network Connection --
 import {
+  AmqpNetworkConnection,
   Authenticator,
   UnknownStationFilter,
   ConnectedStationFilter,
@@ -163,7 +164,7 @@ export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt:
   registerRepositories(container);
   registerServices(container);
   registerModuleServices(container);
-  registerNetwork(container);
+  registerNetwork(container, config);
   registerModules(container);
   registerModuleApis(container);
 
@@ -255,9 +256,17 @@ function registerMessaging(container: AwilixContainer): void {
           logger,
         ),
     ).singleton(),
+    // Router mode (single shared queue, per-charger bindings, constant consumer
+    // count) fits the gateway transport, where station registrations would
+    // otherwise create per-station queues and consumers.
     routerHandler: asFunction(
       ({ config, channelManager, logger }) =>
-        new RabbitMqReceiver({ config, channelManager, logger }),
+        new RabbitMqReceiver({
+          config,
+          channelManager,
+          logger,
+          routerMode: !!config.util.networkConnection.ocppGateway,
+        }),
     ).singleton(),
   });
 }
@@ -343,7 +352,7 @@ function registerServices(container: AwilixContainer): void {
 // ============================================================
 // Network connection
 // ============================================================
-function registerNetwork(container: AwilixContainer): void {
+function registerNetwork(container: AwilixContainer, config: SystemConfig): void {
   container.register({
     networkHook: asValue(async (_identifier: string, _message: string) => {}),
 
@@ -367,7 +376,11 @@ function registerNetwork(container: AwilixContainer): void {
     authenticator: asClass(Authenticator).singleton(),
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
-    networkConnection: asClass(WebsocketNetworkConnection).singleton(),
+    // Station traffic transport: in-process websocket servers by default, or the
+    // broker-terminated rabbitmq_web_ocpp gateway when ocppGateway is configured.
+    networkConnection: config.util.networkConnection.ocppGateway
+      ? asClass(AmqpNetworkConnection).singleton()
+      : asClass(WebsocketNetworkConnection).singleton(),
     adminApi: asClass(AdminApi).singleton(),
   });
 }

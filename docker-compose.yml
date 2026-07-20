@@ -99,13 +99,17 @@ services:
         condition: service_healthy
 
   amqp-broker:
-    image: rabbitmq:3-management
+    image: ghcr.io/vampirebyte/rabbitmq-web-ocpp:4.3.1-ocpp
     ports:
       - 15672:15672
       - 5672:5672
+      - 19520:19520
     environment:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
+    configs:
+      - source: rabbitmq-conf
+        target: /etc/rabbitmq/conf.d/20-web-ocpp.conf
     volumes:
       - ./apps/ocpp-server/data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
@@ -195,6 +199,12 @@ services:
       timeout: 10s
       retries: 20
       start_period: 15s
+
+configs:
+  rabbitmq-conf:
+    content: |
+      # Let EVSEs connect without HTTP basic auth credentials.
+      web_ocpp.allow_anonymous = true
 
 # Name the default network `citrineos` so it is stable and project-independent.
 networks:

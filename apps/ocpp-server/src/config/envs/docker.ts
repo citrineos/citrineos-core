@@ -190,6 +190,18 @@ export function createDockerConfig() {
         exposeMessage: true,
       },
       networkConnection: {
+        // Station traffic is consumed from the rabbitmq_web_ocpp broker gateway
+        // (the amqp-broker compose service ships the plugin). Stations connect to
+        // ws://amqp-broker:19520/ocpp/%2F/<stationId>. Remove this block to fall
+        // back to the in-process websocket servers below.
+        ocppGateway: {
+          exchange: 'amq.topic',
+          queue: 'rabbit_queue_ocpp_gateway',
+          tenantId: DEFAULT_TENANT_ID,
+          allowUnknownChargingStations: true,
+          presenceTimeoutSeconds: 3600,
+          prefetch: 50,
+        },
         websocketServers: [
           {
             id: '0',

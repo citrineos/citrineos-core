@@ -192,6 +192,17 @@ export function createLocalConfig() {
         exposeMessage: true,
       },
       networkConnection: {
+        // Uncomment to consume station traffic from the rabbitmq_web_ocpp
+        // broker gateway instead of the in-process websocket servers below.
+        // Stations then connect to the broker (default ws://<broker>:19520/ocpp/<vhost>/<stationId>).
+        // ocppGateway: {
+        //   exchange: 'amq.topic',
+        //   queue: 'rabbit_queue_ocpp_gateway',
+        //   tenantId: DEFAULT_TENANT_ID,
+        //   allowUnknownChargingStations: true,
+        //   presenceTimeoutSeconds: 3600,
+        //   prefetch: 50,
+        // },
         websocketServers: [
           {
             id: '0',
