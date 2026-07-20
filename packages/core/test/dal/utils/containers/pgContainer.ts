@@ -2,13 +2,13 @@ import { GenericContainer, Wait } from 'testcontainers';
 
 const DEFAULT_PG_CREDS = 'postgres';
 export const DEFAULT_PG_PORT = 5432;
-export const DEFAULT_PG_CLIENT_CONFIG = {
+export const getDefaultPgClientConfig = (port: number) => ({
   host: 'localhost',
-  port: DEFAULT_PG_PORT,
+  port: port,
   database: DEFAULT_PG_CREDS,
-  user: DEFAULT_PG_CREDS,
+  username: DEFAULT_PG_CREDS,
   password: DEFAULT_PG_CREDS,
-};
+});
 
 export const getPgContainer = () =>
   new GenericContainer('postgis/postgis:16-3.5')

@@ -27,12 +27,7 @@ import { type StartedTestContainer } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { aSecurityEventNotificationRequest } from '../providers/SecurityEvent.js';
-import {
-  DEFAULT_PG_CLIENT_CONFIG,
-  DEFAULT_PG_PORT,
-  getPgContainer,
-} from '../utils/containers/pgContainer';
-import { DEFAULT_RABBITMQ_PORT, getRabbitmqContainer } from '../utils/containers/rabbitmqContainer';
+import { DEFAULT_PG_PORT, getDefaultPgClientConfig } from '../utils/containers/pgContainer';
 import { buildTestEnv, SERVER_DIST, setup } from '../utils/containers/e2e';
 
 // ─── Ports used by the server under test ─────────────────────────────────────
@@ -42,14 +37,14 @@ const WS_PORT = 8081; // OCPP WebSocket (allowUnknownChargingStations: true)
 
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
-let pgContainer: StartedTestContainer;
-let rabbitContainer: StartedTestContainer;
+let containers: StartedTestContainer[];
+let mappedPgPort: number;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function spawnServer(extraEnv: Record<string, string> = {}): ChildProcess {
   return spawn('node', [SERVER_DIST], {
-    env: buildTestEnv(extraEnv),
+    env: buildTestEnv(mappedPgPort, extraEnv),
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
@@ -113,11 +108,12 @@ function sendCall(ws: WebSocket, msgId: string, action: string, payload: object)
 // ─── Shared lifecycle: containers + migrations ────────────────────────────────
 
 beforeAll(async () => {
-  [pgContainer, rabbitContainer] = await setup(getPgContainer(), getRabbitmqContainer());
+  containers = await setup();
+  mappedPgPort = containers[0].getMappedPort(DEFAULT_PG_PORT);
 }, 120_000);
 
 afterAll(async () => {
-  await Promise.allSettled([pgContainer?.stop(), rabbitContainer?.stop()]);
+  await Promise.allSettled(containers.map((c) => c.stop()));
 });
 
 // ─── Test scenarios ───────────────────────────────────────────────────────────
@@ -136,9 +132,7 @@ describe.each([
   const stationId = `E2E-CP-${label.toUpperCase()}`;
 
   beforeAll(async () => {
-    console.log(
-      `Starting server for scenario "${label}" with ports PG:${DEFAULT_PG_PORT} RMQ:${DEFAULT_RABBITMQ_PORT}...`,
-    );
+    console.log(`Starting server for scenario "${label}"...`);
     server = spawnServer(extraEnv);
 
     // Surface server output so failures are debuggable without digging into logs.
@@ -150,7 +144,7 @@ describe.each([
     await waitForHealth(45_000);
 
     // Open a direct pg connection for the DB assertion step.
-    db = new Client(DEFAULT_PG_CLIENT_CONFIG);
+    db = new Client(getDefaultPgClientConfig(mappedPgPort));
     await db.connect();
   }, 60_000);
 
