@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "2.0.0-alpha1",
+  "version": "2.0.0-alpha3",
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.19.0",
