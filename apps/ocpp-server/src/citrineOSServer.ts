@@ -13,6 +13,7 @@ import type {
   IMessageRouter,
   IModule,
   IModuleApi,
+  INetworkConnection,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -36,7 +37,6 @@ import {
   RedisCache,
   sequelize,
   Sequelize,
-  WebsocketNetworkConnection,
 } from '@citrineos/core';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
@@ -77,7 +77,7 @@ export class CitrineOSServer {
   protected eventGroup?: EventGroup;
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
-  protected _networkConnection?: WebsocketNetworkConnection;
+  protected _networkConnection?: INetworkConnection;
 
   protected readonly appName: string;
   protected _isShuttingDown = false;

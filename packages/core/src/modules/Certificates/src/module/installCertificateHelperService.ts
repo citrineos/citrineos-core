@@ -5,6 +5,7 @@ import {
   type CertificateDto,
   type CertificateUseEnumType,
   type IFileStorage,
+  type INetworkConnection,
   type InstallCertificateStatusEnumType,
   OCPP2_0_1,
   type WebsocketServerConfig,
@@ -27,7 +28,6 @@ import {
   type CertificateAuthorityService,
   extractCertificateDetails,
   generateCSR,
-  WebsocketNetworkConnection,
 } from '@util/index.js';
 import jsrsasign from 'jsrsasign';
 import { type ILogObj, Logger } from 'tslog';
@@ -44,7 +44,7 @@ export class InstallCertificateHelperService {
   protected installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
-  protected networkConnection: WebsocketNetworkConnection;
+  protected networkConnection: INetworkConnection;
   protected fileStorage: IFileStorage;
   protected logger: Logger<ILogObj>;
 
@@ -63,7 +63,7 @@ export class InstallCertificateHelperService {
     installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
     certificateAuthorityService: CertificateAuthorityService;
-    networkConnection: WebsocketNetworkConnection;
+    networkConnection: INetworkConnection;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
   }) {

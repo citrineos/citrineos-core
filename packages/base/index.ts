@@ -104,7 +104,12 @@ export {
   systemConfigInputSchema,
   systemConfigSchema,
 } from './src/config/types.js';
-export type { RbacRules, SystemConfig, WebsocketServerConfig } from './src/config/types.js';
+export type {
+  OcppGatewayConfig,
+  RbacRules,
+  SystemConfig,
+  WebsocketServerConfig,
+} from './src/config/types.js';
 
 // Utils
 

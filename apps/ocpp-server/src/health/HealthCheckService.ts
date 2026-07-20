@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '@citrineos/base';
+import type { ICache, INetworkConnection } from '@citrineos/base';
 import type { Sequelize } from '@citrineos/core';
-import { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@citrineos/core';
+import {
+  AmqpNetworkConnection,
+  RabbitMQConnectionManager,
+  WebsocketNetworkConnection,
+} from '@citrineos/core';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -19,7 +23,7 @@ export class HealthCheckService {
   private readonly _logger: Logger<ILogObj>;
 
   constructor(
-    private readonly _networkConnection: WebsocketNetworkConnection | null | undefined,
+    private readonly _networkConnection: INetworkConnection | null | undefined,
     private readonly _connectionManager: RabbitMQConnectionManager | null | undefined,
     private readonly _cache: ICache,
     private readonly _sequelizeInstance: Sequelize,
@@ -82,7 +86,7 @@ export class HealthCheckService {
     const checks: Record<string, CheckResult> = {};
     let pass = true;
 
-    if (this._networkConnection) {
+    if (this._networkConnection instanceof WebsocketNetworkConnection) {
       for (const [id, server] of this._networkConnection.getHttpServers()) {
         if (server.listening) {
           checks[`websocket:${id}`] = { status: 'pass' };
@@ -90,6 +94,16 @@ export class HealthCheckService {
           checks[`websocket:${id}`] = { status: 'fail', error: 'server not listening' };
           pass = false;
         }
+      }
+    } else if (this._networkConnection instanceof AmqpNetworkConnection) {
+      // The broker connectivity check below only proves the AMQP connection is
+      // up; the gateway consumer can be dead on a live connection (e.g. after
+      // a channel-level error), so probe the consumer itself.
+      if (this._networkConnection.isConsuming()) {
+        checks['ocppGateway'] = { status: 'pass' };
+      } else {
+        checks['ocppGateway'] = { status: 'fail', error: 'gateway consumer not active' };
+        pass = false;
       }
     }
 
