@@ -40,7 +40,7 @@ const flags = new Set(argv.filter((a) => a.startsWith('-')));
 const positionals = argv.filter((a) => !a.startsWith('-'));
 
 function usage() {
-  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi]
+  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi] [--everest] [--everest16]
 
   (no flags)   ocpp-server + operator UI using ghcr.io images
   --local      build the server and UI from local source instead of pulling
