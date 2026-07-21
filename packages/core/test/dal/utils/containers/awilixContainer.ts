@@ -3,12 +3,12 @@
 import {
   asClass,
   asValue,
-  createContainer,
-  InjectionMode,
   type AwilixContainer,
   type Constructor,
+  createContainer,
+  InjectionMode,
 } from 'awilix';
-import { vi, type Mock } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 type AnyClass = Constructor<object>;
 
@@ -54,9 +54,9 @@ function toValueResolvers(deps: Record<string, unknown>) {
  * can assert on log calls without any type cast.
  *
  * Usage (top of describe block):
- *   const { container, logger } = createTestContainer();
+ *   const { container, logger } = getAwilixContainer();
  */
-export function createTestContainer(): { container: AwilixContainer; logger: MockLogger } {
+export function getAwilixContainer(): { container: AwilixContainer; logger: MockLogger } {
   const container = createContainer({ injectionMode: InjectionMode.PROXY, strict: true });
   const logger = makeDefaultLogger();
   container.register({ logger: asValue(logger) });
