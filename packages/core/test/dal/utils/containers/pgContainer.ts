@@ -6,7 +6,7 @@ export const getDefaultPgClientConfig = (port: number) => ({
   host: 'localhost',
   port: port,
   database: DEFAULT_PG_CREDS,
-  username: DEFAULT_PG_CREDS,
+  user: DEFAULT_PG_CREDS,
   password: DEFAULT_PG_CREDS,
 });
 

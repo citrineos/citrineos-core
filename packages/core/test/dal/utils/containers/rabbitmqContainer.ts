@@ -1,6 +1,6 @@
 import { GenericContainer, Wait } from 'testcontainers';
 
-export const DEFAULT_RABBITMQ_PORT = 5432;
+export const DEFAULT_RABBITMQ_PORT = 5672;
 export const DEFAULT_RABBITMQ_API_PORT = 15672;
 
 export const getRabbitmqContainer = () =>

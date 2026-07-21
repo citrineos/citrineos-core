@@ -20,90 +20,21 @@
  *   automatically, so we rely on the real migration path here.
  */
 
-import { type ChildProcess, spawn } from 'child_process';
+import { type ChildProcess } from 'child_process';
 
 import { Client } from 'pg';
 import { type StartedTestContainer } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import WebSocket from 'ws';
 import { aSecurityEventNotificationRequest } from '../providers/SecurityEvent.js';
 import { DEFAULT_PG_PORT, getDefaultPgClientConfig } from '../utils/containers/pgContainer';
-import { buildTestEnv, SERVER_DIST, setup } from '../utils/containers/e2e';
-
-// ─── Ports used by the server under test ─────────────────────────────────────
-
-const HTTP_PORT = 8080; // Fastify API + /health endpoint
-const WS_PORT = 8081; // OCPP WebSocket (allowUnknownChargingStations: true)
+import { buildTestEnv, setup } from '../utils/containers/setup';
+import { connectOcpp, sendCall } from '../utils/containers/ocppWebsocket';
+import { killServer, spawnServer } from '../utils/containers/server';
 
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
 let containers: StartedTestContainer[];
 let mappedPgPort: number;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function spawnServer(extraEnv: Record<string, string> = {}): ChildProcess {
-  return spawn('node', [SERVER_DIST], {
-    env: buildTestEnv(mappedPgPort, extraEnv),
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-}
-
-async function waitForHealth(timeoutMs = 45_000): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(`http://localhost:${HTTP_PORT}/health/ready`);
-      if (res.ok) return;
-    } catch {
-      // server not up yet
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error(`Server did not become healthy within ${timeoutMs}ms`);
-}
-
-async function killServer(proc: ChildProcess): Promise<void> {
-  if (proc.exitCode !== null || proc.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => proc.once('exit', () => resolve()));
-  proc.kill('SIGTERM');
-  const timeout = new Promise<void>((resolve) =>
-    setTimeout(() => {
-      if (proc.exitCode === null && proc.signalCode === null) proc.kill('SIGKILL');
-      resolve();
-    }, 10_000),
-  );
-  await Promise.race([exited, timeout]);
-  await exited; // ensure we don't return until the OS has reaped the process
-}
-
-// ─── OCPP WebSocket helpers ───────────────────────────────────────────────────
-
-function connectOcpp(stationId: string): Promise<WebSocket> {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://localhost:${WS_PORT}/${stationId}`, ['ocpp2.0.1']);
-    ws.once('open', () => resolve(ws));
-    ws.once('error', reject);
-  });
-}
-
-function sendCall(ws: WebSocket, msgId: string, action: string, payload: object): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error(`No OCPP response for ${action} within 10 s`)),
-      10_000,
-    );
-    ws.once('message', (data) => {
-      clearTimeout(timeout);
-      try {
-        resolve(JSON.parse(data.toString()) as any[]);
-      } catch (e) {
-        reject(e);
-      }
-    });
-    ws.send(JSON.stringify([2, msgId, action, payload]));
-  });
-}
 
 // ─── Shared lifecycle: containers + migrations ────────────────────────────────
 
@@ -133,15 +64,7 @@ describe.each([
 
   beforeAll(async () => {
     console.log(`Starting server for scenario "${label}"...`);
-    server = spawnServer(extraEnv);
-
-    // Surface server output so failures are debuggable without digging into logs.
-    server.stdout?.on('data', (c: Buffer) => process.stdout.write(`[server:${label}] ${c}`));
-    server.stderr?.on('data', (chunk: Buffer) => {
-      process.stderr.write(`[server:${label}] ${chunk}`);
-    });
-
-    await waitForHealth(45_000);
+    server = await spawnServer(buildTestEnv(mappedPgPort, extraEnv), label);
 
     // Open a direct pg connection for the DB assertion step.
     db = new Client(getDefaultPgClientConfig(mappedPgPort));

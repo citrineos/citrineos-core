@@ -15,9 +15,6 @@ export const TEMP_DIR = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
 export const SERVER_ROOT = fileURLToPath(
   new URL('../../../../../../apps/ocpp-server/', import.meta.url),
 );
-export const SERVER_DIST = fileURLToPath(
-  new URL('../../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
-);
 
 export function buildTestEnv(
   databasePort: number,
@@ -31,7 +28,7 @@ export function buildTestEnv(
     BOOTSTRAP_CITRINEOS_DATABASE_HOST: defaultPgConfig.host,
     BOOTSTRAP_CITRINEOS_DATABASE_PORT: String(defaultPgConfig.port),
     BOOTSTRAP_CITRINEOS_DATABASE_NAME: defaultPgConfig.database,
-    BOOTSTRAP_CITRINEOS_DATABASE_USERNAME: defaultPgConfig.username,
+    BOOTSTRAP_CITRINEOS_DATABASE_USERNAME: defaultPgConfig.user,
     BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD: defaultPgConfig.password,
     // System config file — points at our pre-written config.json in tempDir.
     BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local',
@@ -54,7 +51,7 @@ export const setup = async () => {
   ]);
 
   const pgPort = pgContainer.getMappedPort(DEFAULT_PG_PORT);
-  const rabbitmqPort = pgContainer.getMappedPort(DEFAULT_RABBITMQ_PORT);
+  const rabbitmqPort = rabbitmqContainer.getMappedPort(DEFAULT_RABBITMQ_PORT);
 
   console.log(`Mapped ports PG:${pgPort} RMQ:${rabbitmqPort}`);
   // Build the system config by reusing the real local.ts config function, then
