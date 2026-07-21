@@ -43,7 +43,11 @@ import { Facilities } from '../model/Facilities.js';
 import type { Hours } from '../model/Hours.js';
 
 export function formatCoordinate(value: number | string): string {
-  return Number(value).toFixed(5);
+  const str = String(value).trim();
+  const [integerPart, decimalPart = ''] = str.split('.');
+  if (decimalPart.length < 5) return `${integerPart}.${decimalPart.padEnd(5, '0')}`;
+  if (decimalPart.length <= 6) return str;
+  return `${integerPart}.${decimalPart.slice(0, 6)}`;
 }
 
 export class LocationMapper {
