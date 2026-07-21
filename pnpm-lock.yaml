@@ -605,6 +605,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1087.0
         version: 3.1087.0
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       '@types/big.js':
         specifier: 6.2.2
         version: 6.2.2
