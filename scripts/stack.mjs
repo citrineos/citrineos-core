@@ -127,7 +127,7 @@ if (everestPnpmScript) {
   console.log(`> pnpm ${everestPnpmScript}`);
   const everestResult = spawnSync('pnpm', [everestPnpmScript], { stdio: 'inherit', cwd: repoRoot });
   if (everestResult.error) {
-    console.error(`Failed to run pnpm: ${everestResult.error.message}`);
+    console.error(`Failed to start EVerest: ${everestResult.error.message}`);
     process.exit(1);
   }
   process.exit(everestResult.status ?? 1);
