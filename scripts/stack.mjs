@@ -46,8 +46,8 @@ function usage() {
   --local      build the server and UI from local source instead of pulling
   --solo       ocpp-server only (no operator UI)
   --ocpi       also run the OCPI server
-  --everest    also run EVerest with OCPP 2.x
-  --everest16  also run EVerest with OCPP 1.6
+  --everest    also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
+  --everest16  also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
   up | down    start (default) or stop the stack — pass the same flags both times
 `);
 }
