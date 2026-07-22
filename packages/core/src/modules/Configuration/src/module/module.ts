@@ -8,10 +8,10 @@ import type {
   IMessage,
   IMessageConfirmation,
   IWebsocketConnection,
-  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
   RegistrationStatusEnumType,
 } from '@citrineos/base';
 import {
@@ -28,7 +28,6 @@ import {
   EventGroup,
   MessageOrigin,
   MessageState,
-  Namespace,
   OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
@@ -454,7 +453,6 @@ export class ConfigurationModule extends AbstractModule {
         },
         limit: 1,
       },
-      Namespace.OCPPMessage,
     );
 
     if (!previousRequest || previousRequest.length === 0) {

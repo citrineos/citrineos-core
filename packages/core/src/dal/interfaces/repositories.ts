@@ -56,7 +56,6 @@ import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
-import type { OCPPMessage } from '../layers/sequelize/model/OCPPMessage.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
 import type { Tariff } from '../layers/sequelize/model/Tariff/Tariffs.js';
 import type {
@@ -514,12 +513,14 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
-  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage>;
+export interface IOCPPMessageRepository {
+  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessageDto>;
   getRequestByCorrelationId(
     tenantId: number,
     correlationId: string,
-  ): Promise<OCPPMessage | undefined>;
+  ): Promise<OCPPMessageDto | undefined>;
+  readOnlyOneByQuery(tenantId: number, query: object): Promise<OCPPMessageDto | undefined>;
+  readAllByQuery(tenantId: number, query: object): Promise<OCPPMessageDto[]>;
 }
 
 export interface IChargingStationSecurityInfoRepository
