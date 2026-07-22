@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import config from '@lib/utils/config';
-import { motion } from 'framer-motion';
-import React from 'react';
+import { motion } from 'motion/react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import React from 'react';
 
 export interface LogoProps {
   collapsed?: boolean;
