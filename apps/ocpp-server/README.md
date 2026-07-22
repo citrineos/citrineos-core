@@ -230,6 +230,12 @@ concept of 'evses'. This will lead to improper behavior if a 1.6 station with mu
 CitrineOS will assume each new transaction is on the same evse and will automatically mark older transactions on that
 evse as inactive, leading to an inconsistent state with the charging station.
 
+> [!WARNING]
+> **`allowUnknownChargingStations` is a development/testing-only setting. Do not enable it in production.**
+> In the default configuration it is enabled only on the websocket server at port `8081`, which also has **no security** (no authentication). It is dangerous for several reasons for example, a brand-new station's first-ever connection can leave its `isOnline` and `protocol` unset until it reconnects.
+>
+> For production, disable `allowUnknownChargingStations` and commission charging stations through a controlled provisioning process on an authenticated, secured websocket server (e.g. a security-profile-enabled server).
+
 ## Hasura Metadata
 
 In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata
