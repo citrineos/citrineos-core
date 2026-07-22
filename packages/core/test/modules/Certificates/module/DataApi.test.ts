@@ -168,7 +168,7 @@ describe('CertificatesDataApi', () => {
       const requestWithFilePath = {
         body: {
           ...mockUploadRequest,
-          filePath: '/custom/path',
+          filePath: 'custom/path',
         },
         query: {
           identifier: MOCK_CHARGING_STATION_ID,
@@ -182,7 +182,7 @@ describe('CertificatesDataApi', () => {
         1,
         MOCK_CHARGING_STATION_ID,
         requestWithFilePath.body,
-        '/custom/path',
+        'custom/path',
       );
     });
 

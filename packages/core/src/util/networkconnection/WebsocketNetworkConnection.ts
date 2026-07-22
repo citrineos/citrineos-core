@@ -860,7 +860,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           : undefined,
       ca:
         config.securityProfile > 2 && config.rootCACertificateFilePath
-          ? (await this._fileStorage.getFile(config.rootCACertificateFilePath))!
+          ? (await this._fileStorage.getFile(config.rootCACertificateFilePath, undefined, {
+              trusted: true,
+            }))!
           : undefined,
       requestCert: config.securityProfile > 2,
       rejectUnauthorized: config.securityProfile > 2,

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1087.0",
+    "@opentelemetry/api": "1.9.0",
     "@types/big.js": "6.2.2",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",

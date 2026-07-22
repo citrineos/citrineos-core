@@ -100,11 +100,11 @@ beforeAll(async () => {
 afterAll(async () => {
   await sequelizeInstance.close();
   await pgContainer.stop();
-});
+}, 30_000);
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-});
+}, 30_000);
 
 // ---------------------------------------------------------------------------
 // Repository / module factory

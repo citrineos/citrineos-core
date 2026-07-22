@@ -114,17 +114,21 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath, undefined, { trusted: true });
       expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
+        trusted: true,
       });
       expect(mockFileStorage.saveFile).toHaveBeenCalledWith(
         `${folderPath}/${mockToken}`,
         Buffer.from(mockKeyAuth),
+        undefined,
+        { trusted: true },
       );
       expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
+        trusted: true,
       });
     });
 
@@ -148,11 +152,12 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath, undefined, { trusted: true });
       expect(mockFileStorage.createDirectory).not.toHaveBeenCalled();
       expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
+        trusted: true,
       });
     });
 

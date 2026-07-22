@@ -168,7 +168,11 @@ export class SignedMeterValuesUtil {
     }
 
     const configuredPublicKey = this.formatKey(
-      await this._fileStorage.getFile(this._signedMeterValuesConfiguration.publicKeyFileId),
+      await this._fileStorage.getFile(
+        this._signedMeterValuesConfiguration.publicKeyFileId,
+        undefined,
+        { trusted: true },
+      ),
     );
 
     if (

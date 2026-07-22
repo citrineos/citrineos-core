@@ -23,7 +23,7 @@
     "@citrineos/base": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
     "@google-cloud/storage": "7.21.0",
-    "@googlemaps/markerclusterer": "2.5.3",
+    "@googlemaps/markerclusterer": "2.6.2",
     "@hookform/resolvers": "5.2.2",
     "@opentelemetry/exporter-metrics-otlp-http": "0.57.0",
     "@opentelemetry/resources": "^1.30.0",
