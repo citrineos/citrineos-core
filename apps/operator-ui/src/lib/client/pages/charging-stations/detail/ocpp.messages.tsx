@@ -72,11 +72,8 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   const [selectedOrigin, setSelectedOrigin] = useState<string>(allOption);
   const [filters, setFilters] = useState<LogicalFilter[]>([]);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [internalLiveLogEnabled, setInternalLiveLogEnabled] = useState(false);
-  const liveLogEnabled = liveLogEnabledProp ?? internalLiveLogEnabled;
-  const setLiveLogEnabled: (enabled: boolean) => void =
-    onLiveLogEnabledChange ?? setInternalLiveLogEnabled;
   const [sinceTimestamp, setSinceTimestamp] = useState<string | null>(null);
+  const liveLogEnabled = liveLogEnabledProp ?? false;
 
   const translate = useTranslate();
   const liveMode = liveLogEnabled ? 'auto' : 'off';
@@ -160,7 +157,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
       clearTimeout(timer);
       timer = setTimeout(
         () => {
-          setLiveLogEnabled(false);
+          onLiveLogEnabledChange?.(false);
           toast.info(
             translate(
               'ChargingStations.liveLogDisabledInactivity',
@@ -264,7 +261,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
                 <RefreshCw className={buttonIconSize} />
               </Button>
             )}
-            <Switch checked={liveLogEnabled} onCheckedChange={setLiveLogEnabled} />
+            <Switch checked={liveLogEnabled} onCheckedChange={onLiveLogEnabledChange} />
             <Label className="font-medium">{translate('ChargingStations.liveLog')}</Label>
           </div>
         </div>
