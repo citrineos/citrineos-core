@@ -62,7 +62,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   stationId,
   initialStartDate = null,
   initialEndDate = null,
-  liveLogEnabled= false,
+  liveLogEnabled = false,
   onLiveLogEnabledChange,
 }) => {
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
