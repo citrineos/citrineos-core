@@ -48,6 +48,8 @@ export interface OCPPMessagesProps {
   stationId: number;
   initialStartDate?: Date | null;
   initialEndDate?: Date | null;
+  liveLogEnabled?: boolean;
+  onLiveLogEnabledChange?: (enabled: boolean) => void;
 }
 
 const actionOptions = [
@@ -60,6 +62,8 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   stationId,
   initialStartDate = null,
   initialEndDate = null,
+  liveLogEnabled: liveLogEnabledProp,
+  onLiveLogEnabledChange,
 }) => {
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
   const [endDate, setEndDate] = useState<Date | null>(initialEndDate);
@@ -68,7 +72,10 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   const [selectedOrigin, setSelectedOrigin] = useState<string>(allOption);
   const [filters, setFilters] = useState<LogicalFilter[]>([]);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [liveLogEnabled, setLiveLogEnabled] = useState(false);
+  const [internalLiveLogEnabled, setInternalLiveLogEnabled] = useState(false);
+  const liveLogEnabled = liveLogEnabledProp ?? internalLiveLogEnabled;
+  const setLiveLogEnabled: (enabled: boolean) => void =
+    onLiveLogEnabledChange ?? setInternalLiveLogEnabled;
   const [sinceTimestamp, setSinceTimestamp] = useState<string | null>(null);
 
   const translate = useTranslate();
