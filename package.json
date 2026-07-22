@@ -14,7 +14,10 @@
     "test:coverage": "vitest run --coverage",
     "clean": "find . -not -path '*/node_modules/*' \\( -type d \\( -name dist -o -name .next \\) -o -name tsconfig.tsbuildinfo \\) -exec rm -rf {} +",
     "fresh": "pnpm run clean && find . -name node_modules -type d -prune -exec rm -rf {} + && rm -f pnpm-lock.yaml && pnpm store prune",
-    "fresh:install": "pnpm run fresh && pnpm install"
+    "fresh:install": "pnpm run fresh && pnpm install",
+    "start:everest": "cd ./apps/ocpp-server && pnpm start:everest",
+    "start:everest:16": "cd ./apps/ocpp-server && pnpm start:everest:16",
+    "stop:everest": "cd ./apps/ocpp-server/everest && docker compose down"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
