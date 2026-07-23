@@ -953,8 +953,14 @@ describe('InstallCertificateHelperService', () => {
           certRequest,
         );
 
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('SubCA_Key_existing.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem', undefined, {
+          trusted: true,
+        });
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'SubCA_Key_existing.pem',
+          undefined,
+          undefined,
+        );
         expect(mockParseCertificateChainPem).toHaveBeenCalledWith('oldLeafPem+subCACertPem');
         expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
           where: { certificateFileHash: mockHash },
@@ -1040,9 +1046,19 @@ describe('InstallCertificateHelperService', () => {
           certRequest,
         );
 
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_existing.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Key_existing.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem', undefined, {
+          trusted: true,
+        });
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'Root_Certificate_existing.pem',
+          undefined,
+          undefined,
+        );
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'Root_Key_existing.pem',
+          undefined,
+          undefined,
+        );
         expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
           1,
           expect.objectContaining({ signedBy: 10, commonName: 'localhost SubCA' }),
@@ -1169,8 +1185,16 @@ describe('InstallCertificateHelperService', () => {
             certRequest,
           );
 
-          expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_existing.pem');
-          expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Key_existing.pem');
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Certificate_existing.pem',
+            undefined,
+            { trusted: true },
+          );
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Key_existing.pem',
+            undefined,
+            undefined,
+          );
           expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
             1,
             expect.objectContaining({ signedBy: 77 }),
@@ -1206,8 +1230,16 @@ describe('InstallCertificateHelperService', () => {
 
           await service.generateCertificateChain(tenantId, websocketConfig, certRequest);
 
-          expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_other.pem');
-          expect(mockFileStorageGetFile).not.toHaveBeenCalledWith('Root_Certificate_current.pem');
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Certificate_other.pem',
+            undefined,
+            undefined,
+          );
+          expect(mockFileStorageGetFile).not.toHaveBeenCalledWith(
+            'Root_Certificate_current.pem',
+            expect.anything(),
+            expect.anything(),
+          );
         });
 
         it('self-signs when signWithPreviousRoot is false, even if a previous root exists', async () => {
@@ -1338,19 +1370,15 @@ describe('InstallCertificateHelperService', () => {
       expect(result.certificates).toHaveLength(3);
     });
 
-    it('signs the new root with overridePreviousRoot when provided', async () => {
+    it('ignores overridePreviousRoot and signWithPreviousRoot, always self-signing', async () => {
+      // A standalone chain isn't tied to any server's previous root, so both fields are
+      // ignored even when explicitly set — it must not attempt to read or sign with them.
       const certRequest = {
         ...baseCertRequest,
         overridePreviousRoot: 'Root_Certificate_other.pem',
+        signWithPreviousRoot: true,
       } as GenerateCertificateChainRequest;
 
-      mockFileStorageGetFile
-        .mockResolvedValueOnce(Buffer.from('otherRootCertPem'))
-        .mockResolvedValueOnce(Buffer.from('otherRootKeyPem'));
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue({
-        id: 88,
-        privateKeyFileId: 'Root_Key_other.pem',
-      });
       mockGenerateCertificate
         .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
         .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
@@ -1358,13 +1386,11 @@ describe('InstallCertificateHelperService', () => {
 
       const result = await service.generateStandaloneFullChain(tenantId, certRequest);
 
-      expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_other.pem');
+      expect(mockFileStorageGetFile).not.toHaveBeenCalled();
       expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ signedBy: 88 }),
+        expect.objectContaining({ commonName: 'localhost Root' }),
         logger,
-        'otherRootKeyPem',
-        'otherRootCertPem',
       );
       expect(result.certificates).toHaveLength(3);
     });
