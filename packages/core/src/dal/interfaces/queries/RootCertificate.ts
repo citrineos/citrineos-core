@@ -47,6 +47,14 @@ export const GenerateCertificateChainSchema = QuerySchema('GenerateCertificateCh
     key: 'generationScope',
     type: 'string',
   },
+  {
+    key: 'signWithPreviousRoot',
+    type: 'boolean',
+  },
+  {
+    key: 'overridePreviousRoot',
+    type: 'string',
+  },
 ]);
 
 export const InstallRootCertificateSchema = QuerySchema('InstallRootCertificateSchema', [
