@@ -230,10 +230,8 @@ CitrineOS will assume each new transaction is on the same evse and will automati
 evse as inactive, leading to an inconsistent state with the charging station.
 
 > [!WARNING]
-> **`allowUnknownChargingStations` is intended for development and testing only.**
-> When enabled (as it is by default on the unsecured websocket server at port `8081`), CitrineOS automatically creates a `ChargingStations` record for **any** client that connects, without requiring authentication or a `BootNotification`. On an exposed endpoint, this allows stray, misconfigured, or malicious clients to create persistent station records and pollute your data.
-> Prior to this fix, a brand-new station's first connection could leave its `isOnline` and `protocol` fields unset until the station reconnected. This has now been corrected so those fields are populated when the station is first auto-commissioned.
-> Disable this option in production and commission charging stations through a controlled process on a secured, authenticated websocket server.
+> **`allowUnknownChargingStations` is intended for development and testing only. DO NOT USE IN PRODUCTION ENVIRONMENTS.**
+> When enabled, CitrineOS automatically creates a `ChargingStations` record immediately upon websocket connection.
 
 ## Hasura Metadata
 
