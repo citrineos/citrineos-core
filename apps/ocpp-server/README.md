@@ -220,8 +220,7 @@ before validation. Other approaches to custom DataTransfer message types are not
 
 The System Configuration defines websocket servers with certain properties, one of which is 'Allow Unknown Charging
 Stations', a boolean that permits charging stations which are not commissioned to connect to CitrineOS.
-This triggers an auto-commissioning flow which creates the station on its first connection, and creates evses and
-connectors for that station in response to StatusNotifications.
+This triggers an auto-commissioning flow: the moment any client connects to such a websocket server, a `ChargingStations` row is created for it (recording its online state and OCPP protocol), and evses and connectors are created for that station in response to StatusNotifications.
 This is not recommended for production; it is exclusively for testing and is enabled by the default configuration only
 on the websocket server at port 8081 — which also has no security.
 Since not all information on the charger is necessarily available in the OCPP messages, commissioning may be wrong and
@@ -231,10 +230,10 @@ CitrineOS will assume each new transaction is on the same evse and will automati
 evse as inactive, leading to an inconsistent state with the charging station.
 
 > [!WARNING]
-> **`allowUnknownChargingStations` is a development/testing-only setting. Do not enable it in production.**
-> In the default configuration it is enabled only on the websocket server at port `8081`, which also has **no security** (no authentication). It is dangerous for several reasons for example, a brand-new station's first-ever connection can leave its `isOnline` and `protocol` unset until it reconnects.
->
-> For production, disable `allowUnknownChargingStations` and commission charging stations through a controlled provisioning process on an authenticated, secured websocket server (e.g. a security-profile-enabled server).
+> **`allowUnknownChargingStations` is intended for development and testing only.**
+> When enabled (as it is by default on the unsecured websocket server at port `8081`), CitrineOS automatically creates a `ChargingStations` record for **any** client that connects, without requiring authentication or a `BootNotification`. On an exposed endpoint, this allows stray, misconfigured, or malicious clients to create persistent station records and pollute your data.
+> Prior to this fix, a brand-new station's first connection could leave its `isOnline` and `protocol` fields unset until the station reconnected. This has now been corrected so those fields are populated when the station is first auto-commissioned.
+> Disable this option in production and commission charging stations through a controlled process on a secured, authenticated websocket server.
 
 ## Hasura Metadata
 

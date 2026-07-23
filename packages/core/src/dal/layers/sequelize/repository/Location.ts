@@ -85,10 +85,18 @@ export class SequelizeLocationRepository
     });
 
     if (!station) {
-      this.logger.error(
-        `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with ocppConnectionName ${ocppConnectionName}. Update skipped to prevent modifying a station from a different tenant.`,
-      );
-      return undefined;
+      if (!isOnline) {
+        this.logger.debug(
+          `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with ocppConnectionName ${ocppConnectionName} while going offline; skipping.`,
+        );
+        return undefined;
+      }
+      return await ChargingStation.create({
+        ocppConnectionName,
+        tenantId,
+        isOnline,
+        protocol: ocppVersion,
+      });
     }
 
     await station.update({ isOnline, protocol: ocppVersion });
