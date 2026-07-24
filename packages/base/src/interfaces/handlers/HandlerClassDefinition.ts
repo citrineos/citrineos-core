@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { CallAction, OCPPVersion } from '@ocpp/rpc/message.js';
-
-export type HandlerMessageType = 'request' | 'response';
+import { MessageState } from '@interfaces/messages/index.js';
 
 /**
  * Interface for usage in {@link AsHandlerClass} decorator.
@@ -11,5 +10,5 @@ export type HandlerMessageType = 'request' | 'response';
 export interface IHandlerClassDefinition {
   protocol: OCPPVersion;
   action: CallAction;
-  type: HandlerMessageType;
+  type: MessageState;
 }

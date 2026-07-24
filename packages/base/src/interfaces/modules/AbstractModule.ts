@@ -30,6 +30,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { OCPPValidator } from './OCPPValidator.js';
 import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
 import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
 
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
@@ -59,6 +60,8 @@ export abstract class AbstractModule implements IModule {
   protected _responses: CallAction[] = [];
   private startTime = Date.now();
 
+  private readonly _handlerInstancesByKey = new Map<string, AbstractHandler>();
+
   constructor(
     config: SystemConfig,
     cache: ICache,
@@ -67,6 +70,7 @@ export abstract class AbstractModule implements IModule {
     eventGroup: EventGroup,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
+    handlers: AbstractHandler[] = [],
   ) {
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
@@ -79,6 +83,30 @@ export abstract class AbstractModule implements IModule {
 
     // Set module for proper message flow.
     this.handler.module = this;
+
+    for (const instance of handlers) {
+      const definitions = (Reflect.getMetadata(AS_HANDLER_CLASS_METADATA, instance.constructor) ??
+        []) as IHandlerClassDefinition[];
+      for (const definition of definitions) {
+        this._handlerInstancesByKey.set(
+          AbstractModule._handlerKey(definition.protocol, definition.action, definition.type),
+          instance,
+        );
+      }
+    }
+  }
+
+  /**
+   * Builds the lookup key used by {@link _handlerInstancesByKey}, keyed on protocol, action,
+   * and request/response type so a module can't accidentally dispatch a response to a
+   * handler registered for the request side of the same action (or vice versa).
+   */
+  private static _handlerKey(
+    protocol: OCPPVersion,
+    action: CallAction,
+    type: MessageState,
+  ): string {
+    return `${protocol}:${action}:${type}`;
   }
 
   /**
@@ -194,17 +222,16 @@ export abstract class AbstractModule implements IModule {
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
       } else {
-        const handlerClassDefinition = (
-          Reflect.getMetadata(
-            AS_HANDLER_CLASS_METADATA,
-            this.constructor,
-          ) as Array<IHandlerClassDefinition>
-        )
-          .filter((h) => h.protocol === message.protocol && h.action === message.action)
-          .pop();
+        const handlerInstance = this._handlerInstancesByKey.get(
+          AbstractModule._handlerKey(
+            message.protocol as OCPPVersion,
+            message.action,
+            message.state,
+          ),
+        );
 
-        if (handlerClassDefinition) {
-          await handlerClassDefinition.handler(this, message, props);
+        if (handlerInstance) {
+          await handlerInstance.handle(message, props);
         } else {
           throw new OcppError(
             message.context.correlationId,

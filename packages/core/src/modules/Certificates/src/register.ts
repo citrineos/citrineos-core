@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asClass, type AwilixContainer } from 'awilix';
+import { asClass, asFunction, type AwilixContainer } from 'awilix';
+import type { AbstractHandler } from '@citrineos/base';
 import { InstallCertificateHelperService } from './module/installCertificateHelperService.js';
+import { GetCertificateStatusRequestHandler } from '@/handlers/requests/GetCertificateStatusRequestHandler.js';
 
 /**
  * Registers the Certificates module's internal services as scoped dependencies.
@@ -11,5 +13,11 @@ import { InstallCertificateHelperService } from './module/installCertificateHelp
 export function registerCertificatesServices(container: AwilixContainer): void {
   container.register({
     installCertificateHelperService: asClass(InstallCertificateHelperService).scoped(),
+    getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestHandler).scoped(),
+    certificatesHandlers: asFunction(
+      ({ getCertificateStatusRequestHandler }): AbstractHandler[] => [
+        getCertificateStatusRequestHandler,
+      ],
+    ).scoped(),
   });
 }

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractHandler,
   AbstractModule,
   AsHandler,
   AttributeEnum,
@@ -69,12 +70,9 @@ export interface CertificatesModuleDependencies extends OcppModuleDependencies {
   ocppMessageRepository: IOCPPMessageRepository;
   certificateAuthorityService: CertificateAuthorityService;
   installCertificateHelperService: InstallCertificateHelperService;
+  certificatesHandlers?: AbstractHandler[];
 }
 
-// TODO remove all @AsHandler methods
-// replace with calls to @AsHandlerClass, somehow?
-// module still needs to exist purely for making sure messages are handled properly
-// and the requests/responses should be able to figure out which handler to go for
 /**
  * Component that handles provisioning related messages.
  */
@@ -113,9 +111,20 @@ export class CertificatesModule extends AbstractModule {
     ocppMessageRepository,
     certificateAuthorityService,
     installCertificateHelperService,
+    certificatesHandlers,
   }: CertificatesModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Certificates, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.Certificates,
+      logger,
+      ocppValidator,
+      certificatesHandlers,
+    );
 
+    // TODO potentially deprecated _requests and _responses
     this._requests = config.modules.certificates?.requests ?? [];
     this._responses = config.modules.certificates?.responses ?? [];
     this._fileStorage = fileStorage;
