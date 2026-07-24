@@ -12,5 +12,4 @@ export interface IHandlerClassDefinition {
   protocol: OCPPVersion;
   action: CallAction;
   type: HandlerMessageType;
-  handler: (...args: any[]) => any;
 }

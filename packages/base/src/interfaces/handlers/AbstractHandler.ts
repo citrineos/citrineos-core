@@ -18,14 +18,6 @@ export abstract class AbstractHandler implements IHandler {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  /**
-   * Getters & Setters
-   */
-
-  get logger(): Logger<ILogObj> {
-    return this._logger;
-  }
-
   public abstract handle(
     message: IMessage<OcppRequest | OcppResponse>,
     props?: HandlerProperties,

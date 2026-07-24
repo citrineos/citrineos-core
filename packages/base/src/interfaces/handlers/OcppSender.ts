@@ -37,13 +37,19 @@ export class OcppSender implements IOcppSender {
   protected readonly _sender: IMessageSender;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(
-    config: SystemConfig,
-    cache: ICache,
-    sender: IMessageSender,
-    logger?: Logger<ILogObj>,
-    ocppValidator?: OCPPValidator,
-  ) {
+  constructor({
+    config,
+    cache,
+    sender,
+    logger,
+    ocppValidator,
+  }: {
+    config: SystemConfig;
+    cache: ICache;
+    sender: IMessageSender;
+    logger?: Logger<ILogObj>;
+    ocppValidator?: OCPPValidator;
+  }) {
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
     this._logger.info('Initializing OcppSender...');

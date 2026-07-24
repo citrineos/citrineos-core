@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IOcppSender } from '@citrineos/base';
 import {
   AbstractHandler,
   AsHandlerClass,
@@ -16,14 +15,9 @@ import {
 } from '@citrineos/base';
 import jsrsasign from 'jsrsasign';
 import { sendOCSPRequest } from '@/util/index.js';
-import { type ILogObj, Logger } from 'tslog';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus, 'request')
 export class GetCertificateStatusRequestHandler extends AbstractHandler {
-  constructor(ocppSender: IOcppSender, logger: Logger<ILogObj>) {
-    super(ocppSender, logger);
-  }
-
   async handle(
     message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
     props?: HandlerProperties,
