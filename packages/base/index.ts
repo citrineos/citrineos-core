@@ -77,6 +77,11 @@ export type {
   OCPPVersionType,
 } from './src/ocpp/rpc/message.js';
 
+export { AsHandlerClass } from './src/interfaces/handlers/AsHandlerClass.js';
+export { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
+export { OcppSender } from '@interfaces/handlers/OcppSender.js';
+export type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
+
 // Persistence Interfaces
 
 export { CrudRepository } from './src/interfaces/repository.js';

@@ -28,6 +28,8 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { OCPPValidator } from './OCPPValidator.js';
+import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
+import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
 
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
@@ -183,6 +185,7 @@ export abstract class AbstractModule implements IModule {
         throw new Error('Unknown message state: ' + message.state);
     }
     try {
+      // TODO ONLY do the class definition if we're committed to replacing everything in one go
       const handlerDefinition = (
         Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>
       )
@@ -191,11 +194,24 @@ export abstract class AbstractModule implements IModule {
       if (handlerDefinition) {
         await handlerDefinition.method.call(this, message, props);
       } else {
-        throw new OcppError(
-          message.context.correlationId,
-          ErrorCode.NotSupported,
-          'No handler found for action: ' + message.action + ' at module ' + this._eventGroup,
-        );
+        const handlerClassDefinition = (
+          Reflect.getMetadata(
+            AS_HANDLER_CLASS_METADATA,
+            this.constructor,
+          ) as Array<IHandlerClassDefinition>
+        )
+          .filter((h) => h.protocol === message.protocol && h.action === message.action)
+          .pop();
+
+        if (handlerClassDefinition) {
+          await handlerClassDefinition.handler(this, message, props);
+        } else {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.NotSupported,
+            'No handler found for action: ' + message.action + ' at module ' + this._eventGroup,
+          );
+        }
       }
     } catch (error) {
       this._logger.error('Failed handling message: ', error, message);

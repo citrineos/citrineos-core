@@ -4,32 +4,32 @@
 import {
   AbstractModule,
   AsHandler,
+  AttributeEnum,
   type CallAction,
+  CertificateSigningUseEnum,
+  type CertificateSigningUseEnumType,
+  type CertificateUseEnumType,
+  DeleteCertificateStatusEnum,
   ErrorCode,
   EventGroup,
+  GenericStatusEnum,
+  GetCertificateStatusEnum,
+  GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type IFileStorage,
   type IMessage,
-  type OcppModuleDependencies,
-  MessageOrigin,
-  OCPP_CallAction,
-  OCPP_2_VER_LIST,
-  OcppError,
-  OCPP2_response_types,
-  OCPP2_request_types,
-  OCPP2_common_types,
-  type CertificateUseEnumType,
-  type CertificateSigningUseEnumType,
   type InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnum,
-  GetCertificateStatusEnum,
-  GenericStatusEnum,
-  GetInstalledCertificateStatusEnum,
-  DeleteCertificateStatusEnum,
-  CertificateSigningUseEnum,
-  AttributeEnum,
-  OCPPVersion,
+  MessageOrigin,
   OCPP2_1,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  OcppError,
+  type OcppModuleDependencies,
+  OCPPVersion,
 } from '@citrineos/base';
 import type {
   ICertificateRepository,
@@ -42,10 +42,10 @@ import type {
 import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 
 import {
+  CertificateAuthorityService,
   parseCSRForVerification,
   sendOCSPRequest,
   validatePEMEncodedCSR,
-  CertificateAuthorityService,
 } from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
@@ -71,6 +71,10 @@ export interface CertificatesModuleDependencies extends OcppModuleDependencies {
   installCertificateHelperService: InstallCertificateHelperService;
 }
 
+// TODO remove all @AsHandler methods
+// replace with calls to @AsHandlerClass, somehow?
+// module still needs to exist purely for making sure messages are handled properly
+// and the requests/responses should be able to figure out which handler to go for
 /**
  * Component that handles provisioning related messages.
  */
@@ -180,7 +184,7 @@ export class CertificatesModule extends AbstractModule {
     }
   }
 
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
+  // @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
   protected async _handleGetCertificateStatus(
     message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
     props?: HandlerProperties,
