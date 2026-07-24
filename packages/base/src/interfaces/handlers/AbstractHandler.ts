@@ -11,7 +11,7 @@ export abstract class AbstractHandler implements IHandler {
   protected readonly _ocppSender: IOcppSender;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(ocppSender: IOcppSender, logger: Logger<ILogObj>) {
+  constructor({ ocppSender, logger }: { ocppSender: IOcppSender; logger: Logger<ILogObj> }) {
     this._ocppSender = ocppSender;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })

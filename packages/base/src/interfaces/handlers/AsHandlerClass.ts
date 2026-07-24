@@ -21,17 +21,12 @@ export const AsHandlerClass = function (
     }
     const handlers = Reflect.getMetadata(
       AS_HANDLER_CLASS_METADATA,
-      target.constructor,
+      target,
     ) as Array<IHandlerClassDefinition>;
     protocols.forEach((protocol) => {
-      handlers.push({
-        action,
-        protocol,
-        type,
-        handler: target.prototype.handle,
-      });
+      handlers.push({ action, protocol, type });
     });
-    Reflect.defineMetadata(AS_HANDLER_CLASS_METADATA, handlers, target.constructor);
+    Reflect.defineMetadata(AS_HANDLER_CLASS_METADATA, handlers, target);
 
     return target;
   };
