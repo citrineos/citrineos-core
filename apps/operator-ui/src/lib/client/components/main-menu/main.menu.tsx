@@ -14,8 +14,10 @@ import {
   HelpCircle,
   Home,
   MapPin,
+  Puzzle,
   Receipt,
   Users,
+  Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -26,6 +28,7 @@ import { LocaleSwitcher } from '@lib/client/components/locale-switcher';
 import { ConnectionModal } from '@lib/client/components/modals/shared/connection-modal/connection.modal';
 import { LogoutButton } from '@lib/client/components/logout-button';
 import { useTranslate } from '@refinedev/core';
+import type { PublicExtension } from '@lib/server/extensions';
 
 export enum MenuSection {
   OVERVIEW = 'overview',
@@ -47,11 +50,25 @@ interface MenuItem {
   icon: React.ReactNode;
 }
 
+// built-in icon names a manifest can reference; or set "icon" to an https:// image URL
+const extensionIconMap: Record<string, React.ReactNode> = {
+  Wrench: <Wrench className={sidebarIconSize} />,
+  Puzzle: <Puzzle className={sidebarIconSize} />,
+};
+
 export const MainMenu = ({ activeSection }: MainMenuProps) => {
   const [collapsed, setCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [extensions, setExtensions] = useState<PublicExtension[]>([]);
   const menuRef = useRef<HTMLElement>(null);
   const translate = useTranslate();
+
+  useEffect(() => {
+    fetch('/api/extensions')
+      .then((res) => res.json())
+      .then(setExtensions)
+      .catch(() => setExtensions([]));
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -99,6 +116,17 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
       label: translate('TenantPartners.TenantPartners'),
       icon: <Users className={sidebarIconSize} />,
     },
+    // public/extensions/*.json drives this loop; add or remove a manifest file there
+    ...extensions.map((ext) => ({
+      key: `/extensions/${ext.id}`,
+      label: ext.label,
+      icon: ext.icon.startsWith('http') ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={ext.icon} alt="" className={sidebarIconSize} />
+      ) : (
+        (extensionIconMap[ext.icon] ?? <Puzzle className={sidebarIconSize} />)
+      ),
+    })),
   ];
 
   return (
@@ -119,7 +147,7 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
         <nav className="flex-1 overflow-y-auto py-2">
           <ul className="space-y-1 px-3">
             {mainMenuItems.map((item) => {
-              const isActive = `/${activeSection}` === item.key;
+              const isActive = item.key.split('/')[1] === activeSection;
               return (
                 <li key={item.key}>
                   <Link
