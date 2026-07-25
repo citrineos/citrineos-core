@@ -4,18 +4,9 @@
 import type { NextRequest } from 'next/server';
 import { proxyToExtension } from '@lib/server/extension-proxy';
 
-async function handler(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+async function handler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return proxyToExtension(req, id);
 }
 
-export {
-  handler as GET,
-  handler as POST,
-  handler as PUT,
-  handler as DELETE,
-  handler as PATCH,
-};
+export { handler as GET, handler as POST, handler as PUT, handler as DELETE, handler as PATCH };

@@ -18,11 +18,7 @@ interface ExtensionMountProps {
 // The extension bundle expects `window.React` / `window.ReactDOM` to be the
 // host's own instances, which we set below, so there is exactly one React
 // in the page and hooks/context behave normally.
-export const ExtensionFrame = ({
-  bundleUrl,
-  apiBase,
-  title,
-}: ExtensionMountProps) => {
+export const ExtensionFrame = ({ bundleUrl, apiBase, title }: ExtensionMountProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

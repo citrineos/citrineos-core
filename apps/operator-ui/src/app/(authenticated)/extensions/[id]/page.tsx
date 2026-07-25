@@ -4,11 +4,7 @@
 import { getExtension } from '@lib/server/extensions';
 import { ExtensionFrame } from '@lib/client/components/extension-frame/extension-frame';
 
-export default async function ExtensionPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ExtensionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const extension = getExtension(id);
 

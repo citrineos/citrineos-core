@@ -18,7 +18,10 @@ export async function GET() {
 
   const maxAge = 5 * 60;
   const token = await encode({
-    token: { email: session.user?.email || session.user?.name || 'operator', purpose: 'extension-handoff' },
+    token: {
+      email: session.user?.email || session.user?.name || 'operator',
+      purpose: 'extension-handoff',
+    },
     secret: process.env.NEXTAUTH_SECRET as string,
     maxAge,
   });
