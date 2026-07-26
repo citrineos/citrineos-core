@@ -10,3 +10,4 @@ export { SignCertificateRequestHandler } from './requests/SignCertificateRequest
 // Response handlers
 export { CertificateSignedResponseHandler } from './responses/CertificateSignedResponseHandler.js';
 export { DeleteCertificateResponseHandler } from './responses/DeleteCertificateResponseHandler.js';
+export { GetInstalledCertificateIdsResponseHandler } from './responses/GetInstalledCertificateIdsResponseHandler.js';

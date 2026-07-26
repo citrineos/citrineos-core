@@ -6,16 +6,10 @@ import {
   AbstractModule,
   AsHandler,
   type CallAction,
-  type CertificateUseEnumType,
-  DeleteCertificateStatusEnum,
   EventGroup,
-  GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type IFileStorage,
   type IMessage,
-  MessageOrigin,
-  OCPP2_common_types,
-  OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
@@ -29,7 +23,6 @@ import type {
   IInstalledCertificateRepository,
   IOCPPMessageRepository,
 } from '@dal/interfaces/repositories.js';
-import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 
 import { CertificateAuthorityService } from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
@@ -141,136 +134,6 @@ export class CertificatesModule extends AbstractModule {
   /**
    * Handle responses
    */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
-  protected async _handleDeleteCertificate(
-    message: IMessage<OCPP2_response_types.DeleteCertificateResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('DeleteCertificate received:', message, props);
-    const tenantId = message.context.tenantId;
-    const ocppConnectionName = message.context.ocppConnectionName;
-    const existingPendingDeleteCertificateAttempt =
-      await this.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          status: null,
-        },
-      });
-    // should always be true
-    if (existingPendingDeleteCertificateAttempt) {
-      existingPendingDeleteCertificateAttempt.status = message.payload.status;
-      await existingPendingDeleteCertificateAttempt.save();
-      if (existingPendingDeleteCertificateAttempt.status === DeleteCertificateStatusEnum.Accepted) {
-        const existingInstalledCertificates =
-          await this.installedCertificateRepository.readAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
-              issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
-              issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
-              serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
-            },
-          });
-        // should always be true
-        if (existingInstalledCertificates) {
-          for (const existingInstalledCertificate of existingInstalledCertificates) {
-            await existingInstalledCertificate.destroy();
-          }
-        }
-      }
-    }
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
-  protected async _handleGetInstalledCertificateIds(
-    message: IMessage<OCPP2_response_types.GetInstalledCertificateIdsResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('GetInstalledCertificateIds received:', message, props);
-    const tenantId = message.context.tenantId;
-    const ocppConnectionName = message.context.ocppConnectionName;
-    const correlationId = message.context.correlationId;
-    const certificateHashDataList: OCPP2_common_types.CertificateHashDataChainType[] =
-      message.payload.certificateHashDataChain!;
-    if (message.payload.status === GetInstalledCertificateStatusEnum.NotFound) {
-      const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
-      if (request) {
-        // should always be true
-        const getInstalledCertificateIdsRequest = request
-          .message[3] as OCPP2_request_types.GetInstalledCertificateIdsRequest;
-        let certificateType;
-        if (
-          getInstalledCertificateIdsRequest &&
-          getInstalledCertificateIdsRequest.certificateType
-        ) {
-          certificateType = getInstalledCertificateIdsRequest.certificateType;
-        }
-        if (certificateType) {
-          this._logger.debug(
-            `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had certificateType: ${certificateType}. Cleaning up installed certificates of this type in DB if any.`,
-          );
-          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType,
-            },
-          });
-        } else {
-          this._logger.debug(
-            `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had no certificateType. Cleaning up all installed certificates in DB if any.`,
-          );
-          await this.installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-            },
-          });
-        }
-      }
-      return;
-    }
-    if (certificateHashDataList && certificateHashDataList.length > 0) {
-      for (const certificateHashDataWrap of certificateHashDataList) {
-        const certificateHashData = certificateHashDataWrap.certificateHashData;
-        const certificateType =
-          certificateHashDataWrap.certificateType as unknown as CertificateUseEnumType;
-        let existingInstalledCertificate =
-          await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType: certificateType,
-            },
-          });
-        if (existingInstalledCertificate) {
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          await existingInstalledCertificate.save();
-          this._logger.debug('Updated installed certificate record', existingInstalledCertificate);
-        } else {
-          existingInstalledCertificate = new InstalledCertificate();
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          existingInstalledCertificate.ocppConnectionName = ocppConnectionName;
-          existingInstalledCertificate.certificateType = certificateType;
-          await existingInstalledCertificate.save();
-          this._logger.debug(
-            'Created new installed certificate record',
-            existingInstalledCertificate,
-          );
-        }
-      }
-    }
-  }
 
   @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate)
   protected async _handleInstallCertificate(

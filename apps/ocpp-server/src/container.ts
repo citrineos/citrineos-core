@@ -114,7 +114,10 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
-import { DeleteCertificateResponseHandler } from '@citrineos/core/dist/src/handlers/index.js';
+import {
+  DeleteCertificateResponseHandler,
+  GetInstalledCertificateIdsResponseHandler,
+} from '@citrineos/core/dist/src/handlers/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -419,5 +422,8 @@ function registerHandlers(container: AwilixContainer): void {
     //responses
     certificateSignedResponseHandler: asClass(CertificateSignedResponseHandler).scoped(),
     deleteCertificateResponseHandler: asClass(DeleteCertificateResponseHandler).scoped(),
+    getInstalledCertificateIdsResponseHandler: asClass(
+      GetInstalledCertificateIdsResponseHandler,
+    ).scoped(),
   });
 }
