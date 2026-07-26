@@ -8,3 +8,4 @@ export { Get15118EVCertificateRequestHandler } from './requests/Get15118EVCertif
 export { SignCertificateRequestHandler } from './requests/SignCertificateRequestHandler.js';
 
 // Response handlers
+export { CertificateSignedResponseHandler } from './responses/CertificateSignedResponseHandler.js';

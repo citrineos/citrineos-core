@@ -36,6 +36,7 @@ import {
   BrokerAwareMessageSender,
   CertificateAuthorityService,
   CertificatesDataApi,
+  CertificateSignedResponseHandler,
   CertificatesModule,
   CertificatesOcpp2Api,
   Component,
@@ -413,5 +414,6 @@ function registerHandlers(container: AwilixContainer): void {
     getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestHandler).scoped(),
     get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestHandler).scoped(),
     signCertificateRequestHandler: asClass(SignCertificateRequestHandler).scoped(),
+    certificateSignedResponseHandler: asClass(CertificateSignedResponseHandler).scoped(),
   });
 }
