@@ -5,10 +5,7 @@ import {
   AbstractHandler,
   AbstractModule,
   AsHandler,
-  AttributeEnum,
   type CallAction,
-  CertificateSigningUseEnum,
-  type CertificateSigningUseEnumType,
   type CertificateUseEnumType,
   DeleteCertificateStatusEnum,
   EventGroup,
@@ -16,16 +13,13 @@ import {
   type HandlerProperties,
   type IFileStorage,
   type IMessage,
-  type InstallCertificateStatusEnumType,
   MessageOrigin,
-  OCPP2_1,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   type OcppModuleDependencies,
-  OCPPVersion,
 } from '@citrineos/base';
 import type {
   ICertificateRepository,
@@ -37,10 +31,9 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 
-import { CertificateAuthorityService, parseCSRForVerification } from '@util/index.js';
+import { CertificateAuthorityService } from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
 import * as pkijs from 'pkijs';
-import { CertificationRequest } from 'pkijs';
 
 import type { InstallCertificateHelperService } from './installCertificateHelperService.js';
 
@@ -133,10 +126,6 @@ export class CertificatesModule extends AbstractModule {
     return this._certificateAuthorityService;
   }
 
-  get certificateRepository(): ICertificateRepository {
-    return this._certificateRepository;
-  }
-
   get installedCertificateRepository(): IInstalledCertificateRepository {
     return this._installedCertificateRepository;
   }
@@ -152,40 +141,6 @@ export class CertificatesModule extends AbstractModule {
   /**
    * Handle responses
    */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned)
-  protected async _handleCertificateSigned(
-    message: IMessage<OCPP2_response_types.CertificateSignedResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('CertificateSigned received:', message, props);
-    const tenantId = message.context.tenantId;
-    const ocppConnectionName = message.context.ocppConnectionName;
-
-    let requestId: number | undefined;
-    if (message.protocol === OCPPVersion.OCPP2_1) {
-      const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-          correlationId: message.context.correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
-      if (originalRequest) {
-        const certSignedPayload = originalRequest.message[3] as OCPP2_1.CertificateSignedRequest;
-        requestId = certSignedPayload?.requestId ?? undefined;
-      }
-    }
-
-    await this.installCertificateHelperService.finalizeInstalledCertificate(
-      tenantId,
-      ocppConnectionName,
-      message.payload.status as unknown as InstallCertificateStatusEnumType,
-      requestId,
-    );
-    // TODO: If rejected, retry and/or send to callbackUrl if originally part of a triggered refresh
-    // TODO: If accepted, revoke old certificate
-  }
 
   @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
   protected async _handleDeleteCertificate(
@@ -328,59 +283,6 @@ export class CertificatesModule extends AbstractModule {
       message.context.ocppConnectionName,
       message.payload.status,
     );
-  }
-
-  private async _verifySignCertRequest(
-    csrString: string,
-    tenantId: number,
-    ocppConnectionName: string,
-    certificateType?: CertificateSigningUseEnumType | null,
-  ): Promise<void> {
-    // Verify certificate type
-    if (
-      !certificateType ||
-      (certificateType !== CertificateSigningUseEnum.V2GCertificate &&
-        certificateType !== CertificateSigningUseEnum.V2G20Certificate &&
-        certificateType !== CertificateSigningUseEnum.ChargingStationCertificate)
-    ) {
-      throw new Error(`Unsupported certificate type: ${certificateType}`);
-    }
-
-    // Verify CSR
-    const csr: CertificationRequest = parseCSRForVerification(csrString);
-    this._logger.info(`Verifying CSR: ${JSON.stringify(csr)}`);
-
-    if (!(await csr.verify())) {
-      throw new Error('Verify the signature on this csr using its public key failed');
-    }
-
-    if (certificateType === CertificateSigningUseEnum.ChargingStationCertificate) {
-      // Verify organization name match the one stored in the device model
-      const organizationName = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-        tenantId: tenantId,
-        ocppConnectionName: ocppConnectionName,
-        component_name: 'SecurityCtrlr',
-        variable_name: 'OrganizationName',
-        type: AttributeEnum.Actual,
-      });
-      if (!organizationName || organizationName.length < 1) {
-        throw new Error('Expected organizationName not found in DB');
-      }
-      // Find organizationName (its key is '2.5.4.10') attribute in CSR
-      const organizationNameAttr = csr.subject.typesAndValues.find(
-        (attr) => attr.type === '2.5.4.10',
-      );
-      if (!organizationNameAttr) {
-        throw new Error('organizationName attribute not found in CSR');
-      }
-      if (organizationName[0].value !== organizationNameAttr.value.valueBlock.value) {
-        throw new Error(
-          `Expect organizationName ${organizationName[0].value} but get ${organizationNameAttr.value} from the csr`,
-        );
-      }
-    }
-
-    this._logger.info(`Verified SignCertRequest for station ${ocppConnectionName} successfully.`);
   }
 }
 
