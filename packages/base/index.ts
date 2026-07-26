@@ -78,11 +78,11 @@ export type {
 } from './src/ocpp/rpc/message.js';
 
 export { AsHandlerClass } from './src/interfaces/handlers/AsHandlerClass.js';
-export { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
-export { OcppSender } from '@interfaces/handlers/OcppSender.js';
-export type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
-export type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
-export { getHandlersByConfig } from '@interfaces/handlers/getHandlersByConfig.js';
+export { AbstractHandler } from './src/interfaces/handlers/AbstractHandler.js';
+export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
+export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
+export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';
+export { getHandlersByConfig } from './src/interfaces/handlers/getHandlersByConfig.js';
 
 // Persistence Interfaces
 
