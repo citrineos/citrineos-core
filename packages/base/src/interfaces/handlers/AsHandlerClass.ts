@@ -22,7 +22,7 @@ export const AsHandlerClass = function (
   action: CallAction,
   type: MessageState,
 ) {
-  return (target: new (...args: any[]) => AbstractHandler) => {
+  return <T extends new (...args: any[]) => AbstractHandler>(target: T): T => {
     if (!Reflect.hasMetadata(AS_HANDLER_CLASS_METADATA, target)) {
       Reflect.defineMetadata(AS_HANDLER_CLASS_METADATA, [], target);
     }

@@ -164,7 +164,7 @@ export class CertificatesModule extends AbstractModule {
    * Handle requests
    */
 
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
+  // @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
   protected async _handleGet15118EVCertificate(
     message: IMessage<OCPP2_request_types.Get15118EVCertificateRequest>,
     props?: HandlerProperties,

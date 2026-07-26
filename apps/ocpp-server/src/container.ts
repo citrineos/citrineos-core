@@ -50,6 +50,7 @@ import {
   EVDriverModule,
   EVDriverOcpp16Api,
   EVDriverOcpp2Api,
+  Get15118EVCertificateRequestHandler,
   GetCertificateStatusRequestHandler,
   IdGenerator,
   InternalSmartCharging,
@@ -409,5 +410,6 @@ function registerHandlers(container: AwilixContainer): void {
   container.register({
     ocppSender: asClass(OcppSender).scoped(),
     getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestHandler).scoped(),
+    get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestHandler).scoped(),
   });
 }

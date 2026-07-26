@@ -4,5 +4,6 @@
 
 // Request handlers
 export { GetCertificateStatusRequestHandler } from './requests/GetCertificateStatusRequestHandler.js';
+export { Get15118EVCertificateRequestHandler } from './requests/Get15118EVCertificateRequestHandler.js';
 
 // Response handlers
