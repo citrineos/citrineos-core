@@ -100,6 +100,7 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
+  SignCertificateRequestHandler,
   SmartChargingModule,
   SmartChargingOcpp16Api,
   SmartChargingOcpp2Api,
@@ -411,5 +412,6 @@ function registerHandlers(container: AwilixContainer): void {
     ocppSender: asClass(OcppSender).scoped(),
     getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestHandler).scoped(),
     get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestHandler).scoped(),
+    signCertificateRequestHandler: asClass(SignCertificateRequestHandler).scoped(),
   });
 }

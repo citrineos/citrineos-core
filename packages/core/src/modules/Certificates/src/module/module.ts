@@ -11,16 +11,12 @@ import {
   type CertificateSigningUseEnumType,
   type CertificateUseEnumType,
   DeleteCertificateStatusEnum,
-  ErrorCode,
   EventGroup,
-  GenericStatusEnum,
-  GetCertificateStatusEnum,
   GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type IFileStorage,
   type IMessage,
   type InstallCertificateStatusEnumType,
-  Iso15118EVCertificateStatusEnum,
   MessageOrigin,
   OCPP2_1,
   OCPP2_common_types,
@@ -28,7 +24,6 @@ import {
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   type OcppModuleDependencies,
   OCPPVersion,
 } from '@citrineos/base';
@@ -42,14 +37,8 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 
-import {
-  CertificateAuthorityService,
-  parseCSRForVerification,
-  sendOCSPRequest,
-  validatePEMEncodedCSR,
-} from '@util/index.js';
+import { CertificateAuthorityService, parseCSRForVerification } from '@util/index.js';
 import { Crypto } from '@peculiar/webcrypto';
-import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
 
@@ -158,162 +147,6 @@ export class CertificatesModule extends AbstractModule {
 
   get installCertificateHelperService(): InstallCertificateHelperService {
     return this._installCertificateHelperService;
-  }
-
-  /**
-   * Handle requests
-   */
-
-  // @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
-  protected async _handleGet15118EVCertificate(
-    message: IMessage<OCPP2_request_types.Get15118EVCertificateRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('Get15118EVCertificate received:', message, props);
-    const request: OCPP2_request_types.Get15118EVCertificateRequest = message.payload;
-
-    try {
-      const exiResponse = await this._certificateAuthorityService.getSignedContractData(
-        request.iso15118SchemaVersion,
-        request.exiRequest,
-      );
-      await this.sendCallResultWithMessage(message, {
-        status: Iso15118EVCertificateStatusEnum.Accepted,
-        exiResponse: exiResponse,
-      } as OCPP2_response_types.Get15118EVCertificateResponse);
-    } catch (error) {
-      await this.sendCallResultWithMessage(message, {
-        status: Iso15118EVCertificateStatusEnum.Failed,
-        statusInfo: {
-          reasonCode: ErrorCode.GenericError,
-          additionalInfo: error instanceof Error ? error.message : undefined,
-        },
-        exiResponse: '',
-      } as OCPP2_response_types.Get15118EVCertificateResponse);
-    }
-  }
-
-  // @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
-  protected async _handleGetCertificateStatus(
-    message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('GetCertificateStatusRequest received:', message, props);
-    const reqData = message.payload.ocspRequestData;
-    try {
-      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
-        alg: reqData.hashAlgorithm,
-        keyhash: reqData.issuerKeyHash,
-        namehash: reqData.issuerNameHash,
-        serial: reqData.serialNumber,
-      });
-      const ocspResponse = await sendOCSPRequest(ocspRequest, reqData.responderURL);
-      await this.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnum.Accepted,
-        ocspResponse: ocspResponse,
-      } as OCPP2_response_types.GetCertificateStatusResponse);
-    } catch (error) {
-      this._logger.error(`GetCertificateStatus failed: ${error}`);
-      await this.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnum.Failed,
-        statusInfo: { reasonCode: ErrorCode.GenericError },
-      } as OCPP2_response_types.GetCertificateStatusResponse);
-    }
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate)
-  protected async _handleSignCertificate(
-    message: IMessage<OCPP2_request_types.SignCertificateRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('Sign certificate request received:', message, props);
-    const tenantId = message.context.tenantId;
-    const ocppConnectionName: string = message.context.ocppConnectionName;
-    const csrString: string = message.payload.csr.replace(/\n/g, '');
-    const certificateType: CertificateSigningUseEnumType | undefined | null =
-      message.payload.certificateType;
-    let requestId: number | undefined | null;
-    if (message.protocol === OCPPVersion.OCPP2_1) {
-      const payload21 = message.payload as OCPP2_1.SignCertificateRequest;
-      requestId = payload21.requestId;
-    }
-
-    // Validate PEM format
-    const validationResult = validatePEMEncodedCSR(message.payload.csr);
-    if (!validationResult.isValid) {
-      this._logger.warn(`Invalid CSR format: ${validationResult.errorMessage}`);
-      await this.sendCallErrorWithMessage(
-        message,
-        new OcppError(
-          message.context.correlationId,
-          ErrorCode.FormatViolation,
-          'Invalid CSR format.',
-        ),
-      );
-      return;
-    }
-
-    // TODO OCTT Currently fails the CSMS on test case TC_A_14_CSMS if an invalid csr is rejected
-    //  Despite explicitly saying in the protocol "The CSMS may do some checks on the CSR"
-    //  So it is necessary to accept before checking the csr. when this is fixed, this line can be removed
-    //  And the other sendCallResultWithMessage for SignCertificateResponse can be uncommented
-    await this.sendCallResultWithMessage(message, {
-      status: GenericStatusEnum.Accepted,
-    } as OCPP2_response_types.SignCertificateResponse);
-
-    let certificateChainPem: string;
-    try {
-      await this._verifySignCertRequest(csrString, tenantId, ocppConnectionName, certificateType);
-
-      certificateChainPem = await this._certificateAuthorityService.getCertificateChain(
-        csrString,
-        ocppConnectionName,
-        certificateType,
-      );
-    } catch (error) {
-      this._logger.error('Sign certificate failed:', error);
-
-      // TODO uncomment after OCTT issue is fixed
-      // this.sendCallResultWithMessage(message, {
-      //   status: GenericStatusEnumType.Rejected,
-      //   statusInfo: {
-      //     reasonCode: ErrorCode.GenericError,
-      //     additionalInfo: error instanceof Error ? error.message : undefined,
-      //   },
-      // } as SignCertificateResponse);
-
-      return;
-    }
-
-    // TODO uncomment after OCTT issue is fixed
-    // this.sendCallResultWithMessage(message, {
-    //   status: GenericStatusEnumType.Accepted,
-    // } as SignCertificateResponse);
-
-    await this.installCertificateHelperService.prepareToInstallCertificate(
-      tenantId,
-      ocppConnectionName,
-      certificateChainPem,
-      certificateType as unknown as CertificateUseEnumType,
-      requestId,
-    );
-
-    const certSignedRequest = {
-      certificateChain: certificateChainPem,
-      certificateType: certificateType,
-    } as OCPP2_request_types.CertificateSignedRequest;
-
-    if (message.protocol === OCPPVersion.OCPP2_1 && requestId != null) {
-      (certSignedRequest as OCPP2_1.CertificateSignedRequest).requestId = requestId;
-    }
-
-    await this.sendCall(
-      ocppConnectionName,
-      tenantId,
-      message.protocol,
-      OCPP_CallAction.CertificateSigned,
-      certSignedRequest,
-    );
   }
 
   /**
