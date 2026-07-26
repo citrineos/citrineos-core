@@ -4,45 +4,21 @@
 import {
   AbstractHandler,
   AbstractModule,
-  AsHandler,
-  type CallAction,
   EventGroup,
-  type HandlerProperties,
-  type IFileStorage,
-  type IMessage,
-  OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
   type OcppModuleDependencies,
 } from '@citrineos/base';
 import type {
-  ICertificateRepository,
   IDeleteCertificateAttemptRepository,
-  IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
-  IOCPPMessageRepository,
 } from '@dal/interfaces/repositories.js';
-
 import { CertificateAuthorityService } from '@util/index.js';
-import { Crypto } from '@peculiar/webcrypto';
-import * as pkijs from 'pkijs';
-
 import type { InstallCertificateHelperService } from './installCertificateHelperService.js';
 
-const cryptoEngine = new pkijs.CryptoEngine({
-  crypto: new Crypto(),
-});
-pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
-
 export interface CertificatesModuleDependencies extends OcppModuleDependencies {
-  fileStorage: IFileStorage;
-  deviceModelRepository: IDeviceModelRepository;
-  certificateRepository: ICertificateRepository;
   installedCertificateRepository: IInstalledCertificateRepository;
   installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  ocppMessageRepository: IOCPPMessageRepository;
   certificateAuthorityService: CertificateAuthorityService;
   installCertificateHelperService: InstallCertificateHelperService;
   certificatesHandlers?: AbstractHandler[];
@@ -56,18 +32,10 @@ export class CertificatesModule extends AbstractModule {
    * Fields
    */
 
-  _requests: CallAction[] = [];
-
-  _responses: CallAction[] = [];
-
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _certificateRepository: ICertificateRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
   protected _installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _certificateAuthorityService: CertificateAuthorityService;
-  protected _fileStorage: IFileStorage;
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
@@ -75,15 +43,11 @@ export class CertificatesModule extends AbstractModule {
     cache,
     sender,
     handler,
-    fileStorage,
     logger,
     ocppValidator,
-    deviceModelRepository,
-    certificateRepository,
     installedCertificateRepository,
     installCertificateAttemptRepository,
     deleteCertificateAttemptRepository,
-    ocppMessageRepository,
     certificateAuthorityService,
     installCertificateHelperService,
     certificatesHandlers,
@@ -99,19 +63,10 @@ export class CertificatesModule extends AbstractModule {
       certificatesHandlers,
     );
 
-    // TODO potentially deprecated _requests and _responses
-    this._requests = config.modules.certificates?.requests ?? [];
-    this._responses = config.modules.certificates?.responses ?? [];
-    this._fileStorage = fileStorage;
-
-    this._deviceModelRepository = deviceModelRepository;
-    this._certificateRepository = certificateRepository;
     this._installedCertificateRepository = installedCertificateRepository;
     this._installCertificateAttemptRepository = installCertificateAttemptRepository;
     this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
     this._certificateAuthorityService = certificateAuthorityService;
-
     this._installCertificateHelperService = installCertificateHelperService;
   }
 
@@ -129,23 +84,6 @@ export class CertificatesModule extends AbstractModule {
 
   get installCertificateHelperService(): InstallCertificateHelperService {
     return this._installCertificateHelperService;
-  }
-
-  /**
-   * Handle responses
-   */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate)
-  protected async _handleInstallCertificate(
-    message: IMessage<OCPP2_response_types.InstallCertificateResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('InstallCertificate received:', message, props);
-    await this.installCertificateHelperService.finalizeInstalledCertificate(
-      message.context.tenantId,
-      message.context.ocppConnectionName,
-      message.payload.status,
-    );
   }
 }
 
