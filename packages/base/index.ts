@@ -81,6 +81,8 @@ export { AsHandlerClass } from './src/interfaces/handlers/AsHandlerClass.js';
 export { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
 export { OcppSender } from '@interfaces/handlers/OcppSender.js';
 export type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
+export type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+export { getHandlersByConfig } from '@interfaces/handlers/getHandlersByConfig.js';
 
 // Persistence Interfaces
 
