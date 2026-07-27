@@ -6,10 +6,10 @@ import type {
   ChargingRateUnitEnumType,
   HandlerProperties,
   IMessage,
-  OcppModuleDependencies,
+  OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
-  OCPP2_common_types,
+  OcppModuleDependencies,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -23,12 +23,12 @@ import {
   EnergyTransferModeEnum,
   EventGroup,
   GenericStatusEnum,
+  MessageOrigin,
   NotifyEVChargingNeedsStatusEnum,
   OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
-  MessageOrigin,
 } from '@citrineos/base';
 import type {
   IChargingProfileRepository,
@@ -82,6 +82,7 @@ export class SmartChargingModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     transactionEventRepository,
     deviceModelRepository,
     chargingProfileRepository,
@@ -89,7 +90,16 @@ export class SmartChargingModule extends AbstractModule {
     idGenerator,
     ocppMessageRepository,
   }: SmartChargingModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.SmartCharging, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.SmartCharging,
+      ocppSender,
+      logger,
+      ocppValidator,
+    );
 
     this._requests = config.modules.smartcharging?.requests ?? [];
     this._responses = config.modules.smartcharging?.responses ?? [];

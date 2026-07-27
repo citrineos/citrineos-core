@@ -104,6 +104,7 @@ export class TransactionsModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     transactionEventRepository,
     authorizationRepository,
     deviceModelRepository,
@@ -117,7 +118,16 @@ export class TransactionsModule extends AbstractModule {
     costNotifier,
     signedMeterValuesUtil,
   }: TransactionsModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Transactions, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.Transactions,
+      ocppSender,
+      logger,
+      ocppValidator,
+    );
 
     this._requests = config.modules.transactions.requests;
     this._responses = config.modules.transactions.responses;

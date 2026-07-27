@@ -8,10 +8,10 @@ import type {
   IMessage,
   IMessageConfirmation,
   IWebsocketConnection,
-  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
   RegistrationStatusEnumType,
 } from '@citrineos/base';
 import {
@@ -24,6 +24,7 @@ import {
   createIdentifier,
   DataTransferStatusEnum,
   DisplayMessageStatusEnum,
+  type DisplayMessageStatusEnumType,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -38,7 +39,6 @@ import {
   ResetEnum,
   SetNetworkProfileStatusEnum,
   SetVariableStatusEnum,
-  type DisplayMessageStatusEnumType,
 } from '@citrineos/base';
 
 import type {
@@ -97,6 +97,7 @@ export class ConfigurationModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     bootRepository,
     deviceModelRepository,
     messageInfoRepository,
@@ -108,7 +109,16 @@ export class ConfigurationModule extends AbstractModule {
     configurationDeviceModelService,
     bootNotificationService,
   }: ConfigurationModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Configuration, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.Configuration,
+      ocppSender,
+      logger,
+      ocppValidator,
+    );
 
     this._requests = config.modules.configuration.requests;
     this._responses = config.modules.configuration.responses;

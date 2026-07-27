@@ -116,6 +116,7 @@ export class EVDriverModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     authorizationRepository,
     localAuthListRepository,
     deviceModelRepository,
@@ -132,7 +133,7 @@ export class EVDriverModule extends AbstractModule {
     localAuthListService,
     viesVatProvider,
   }: EVDriverModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.EVDriver, logger, ocppValidator);
+    super(config, cache, handler, sender, EventGroup.EVDriver, ocppSender, logger, ocppValidator);
 
     this._requests = config.modules.evdriver.requests;
     this._responses = config.modules.evdriver.responses;

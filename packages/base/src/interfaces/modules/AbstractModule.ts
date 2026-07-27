@@ -26,7 +26,7 @@ import { OCPPValidator } from './OCPPValidator.js';
 import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
 import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
 import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
-import { OcppSender } from '@interfaces/handlers/OcppSender.js';
+import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
@@ -39,6 +39,7 @@ export interface OcppModuleDependencies {
   handler: IMessageHandler;
   logger: Logger<ILogObj>;
   ocppValidator: OCPPValidator;
+  ocppSender: IOcppSender;
 }
 
 export abstract class AbstractModule implements IModule {
@@ -51,7 +52,7 @@ export abstract class AbstractModule implements IModule {
   protected readonly _sender: IMessageSender;
   protected readonly _eventGroup: EventGroup;
   protected readonly _logger: Logger<ILogObj>;
-  protected readonly _ocppSender: OcppSender;
+  protected readonly _ocppSender: IOcppSender;
 
   protected _requests: CallAction[] = [];
   protected _responses: CallAction[] = [];
@@ -65,6 +66,7 @@ export abstract class AbstractModule implements IModule {
     handler: IMessageHandler,
     sender: IMessageSender,
     eventGroup: EventGroup,
+    ocppSender: IOcppSender,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     handlers: AbstractHandler[] = [],
@@ -77,13 +79,7 @@ export abstract class AbstractModule implements IModule {
     this._sender = sender;
     this._eventGroup = eventGroup;
     this._cache = cache;
-    this._ocppSender = new OcppSender({
-      config: this._config,
-      cache: this._cache,
-      sender: this._sender,
-      logger: this._logger,
-      ocppValidator: this._ocppValidator,
-    });
+    this._ocppSender = ocppSender;
 
     // Set module for proper message flow.
     this.handler.module = this;

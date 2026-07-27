@@ -15,13 +15,13 @@ import {
   type GenericStatusEnumType,
   type HandlerProperties,
   type IMessage,
-  type OcppModuleDependencies,
   MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  type OcppModuleDependencies,
   SetVariableStatusEnum,
 } from '@citrineos/base';
 import {
@@ -71,6 +71,7 @@ export class MonitoringModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     deviceModelRepository,
     variableMonitoringRepository,
     ocppMessageRepository,
@@ -78,7 +79,7 @@ export class MonitoringModule extends AbstractModule {
     monitoringDeviceModelService,
     monitoringService,
   }: MonitoringModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Monitoring, logger, ocppValidator);
+    super(config, cache, handler, sender, EventGroup.Monitoring, ocppSender, logger, ocppValidator);
 
     this._requests = config.modules.monitoring.requests;
     this._responses = config.modules.monitoring.responses;

@@ -6,10 +6,10 @@ import type {
   GenericDeviceModelStatusEnumType,
   HandlerProperties,
   IMessage,
-  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -80,13 +80,14 @@ export class ReportingModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     deviceModelRepository,
     securityEventRepository,
     variableMonitoringRepository,
     ocppMessageRepository,
     reportingDeviceModelService,
   }: ReportingModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Reporting, logger, ocppValidator);
+    super(config, cache, handler, sender, EventGroup.Reporting, ocppSender, logger, ocppValidator);
 
     this._requests = config.modules.reporting.requests;
     this._responses = config.modules.reporting.responses;

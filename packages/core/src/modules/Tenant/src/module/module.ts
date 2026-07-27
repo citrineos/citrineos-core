@@ -24,9 +24,10 @@ export class TenantModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     tenantRepository,
   }: TenantModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Tenant, logger, ocppValidator);
+    super(config, cache, handler, sender, EventGroup.Tenant, ocppSender, logger, ocppValidator);
     this._requests = config.modules.tenant.requests;
     this._responses = config.modules.tenant.responses;
     this._tenantRepository = tenantRepository;
