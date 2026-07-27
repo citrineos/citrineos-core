@@ -35,10 +35,20 @@
       "evses": "EVSEs",
       "ocppMessages": "OCPP Messages",
       "configuration": "Configuration",
+      "networkProfiles": "Network Profiles",
       "aggregatedMeterValuesData": "Aggregated Meter Values Data",
       "noEvsesPermission": "You don't have permission to view EVSEs.",
       "noOcppLogsPermission": "You don't have permission to view OCPP logs.",
       "noConfigurationsPermission": "You don't have permission to view station configurations."
+    },
+    "networkProfiles": {
+      "empty": "No network profiles have been configured for this station yet.",
+      "slot": "Slot",
+      "ocppVersion": "OCPP Version",
+      "csmsUrl": "CSMS URL",
+      "securityProfile": "Security Profile",
+      "serverId": "Server ID",
+      "delete": "Delete Network Profiles"
     },
     "columns": {
       "name": "Name",
@@ -46,6 +56,8 @@
       "location": "Location",
       "onlineStatus": "Online status",
       "protocol": "Protocol",
+      "securityProfile": "Security Profile",
+      "serverId": "Server ID",
       "vendorModel": "Vendor / Model",
       "vendor": "Vendor",
       "floorLevel": "Floor Level",

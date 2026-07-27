@@ -163,6 +163,13 @@ export class ChargingStation extends Model implements ChargingStationDto {
 
   @BelongsToMany(() => ServerNetworkProfile, () => ChargingStationNetworkProfile)
   declare networkProfiles?: ServerNetworkProfileDto[] | null;
+  
+  @ForeignKey(() => ServerNetworkProfile)
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare connectedWebsocketServerConfigId?: string | null;
+
+  @BelongsTo(() => ServerNetworkProfile, 'connectedWebsocketServerConfigId')
+  declare connectedWebsocketServerConfig?: ServerNetworkProfileDto | null;
 
   @HasMany(() => Evse, 'stationId')
   declare evses?: EvseDto[] | null;

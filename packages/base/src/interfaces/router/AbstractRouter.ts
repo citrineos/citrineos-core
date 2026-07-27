@@ -302,6 +302,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     tenantId: number,
     ocppConnectionName: string,
     protocol: string,
+    connectedWebsocketServerConfigId?: string,
   ): Promise<boolean>;
   abstract deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean>;
 
