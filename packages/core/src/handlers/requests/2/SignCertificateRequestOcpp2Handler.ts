@@ -41,7 +41,7 @@ const cryptoEngine = new pkijs.CryptoEngine({
 pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate, MessageState.Request)
-export class SignCertificateRequestHandler extends AbstractHandler {
+export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _installCertificateHelperService: InstallCertificateHelperService;
   protected _deviceModelRepository: IDeviceModelRepository;

@@ -16,7 +16,7 @@ import type { InstallCertificateHelperService } from '@modules/Certificates/src/
 import { type ILogObj, Logger } from 'tslog';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate, MessageState.Response)
-export class InstallCertificateResponseHandler extends AbstractHandler {
+export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({

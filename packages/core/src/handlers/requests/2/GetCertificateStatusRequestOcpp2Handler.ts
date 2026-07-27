@@ -18,7 +18,7 @@ import jsrsasign from 'jsrsasign';
 import { sendOCSPRequest } from '@util/index.js';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus, MessageState.Request)
-export class GetCertificateStatusRequestHandler extends AbstractHandler {
+export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
   async handle(
     message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
     props?: HandlerProperties,

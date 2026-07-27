@@ -20,7 +20,7 @@ import type {
 import { type ILogObj, Logger } from 'tslog';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate, MessageState.Response)
-export class DeleteCertificateResponseHandler extends AbstractHandler {
+export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
 

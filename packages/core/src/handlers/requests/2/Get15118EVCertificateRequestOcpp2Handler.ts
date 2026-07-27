@@ -19,7 +19,7 @@ import {
 import { CertificateAuthorityService } from '@util/index.js';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate, MessageState.Request)
-export class Get15118EVCertificateRequestHandler extends AbstractHandler {
+export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
 
   constructor({

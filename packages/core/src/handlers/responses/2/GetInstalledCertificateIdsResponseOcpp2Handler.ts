@@ -25,7 +25,7 @@ import {
 import { type ILogObj, Logger } from 'tslog';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds, MessageState.Response)
-export class GetInstalledCertificateIdsResponseHandler extends AbstractHandler {
+export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {
   protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
 

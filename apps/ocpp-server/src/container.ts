@@ -29,6 +29,7 @@ import { type ILogObj, Logger } from 'tslog';
 // -- Modules --
 // -- Module-internal services (registered by each module package's own registrar) --
 // -- Module APIs --
+// -- Handlers --
 import {
   AdminApi,
   Authenticator,
@@ -36,7 +37,7 @@ import {
   BrokerAwareMessageSender,
   CertificateAuthorityService,
   CertificatesDataApi,
-  CertificateSignedResponseHandler,
+  CertificateSignedResponseOcpp2Handler,
   CertificatesModule,
   CertificatesOcpp2Api,
   Component,
@@ -46,17 +47,17 @@ import {
   ConfigurationOcpp2Api,
   ConnectedStationFilter,
   DefaultSequelizeInstance,
-  DeleteCertificateResponseHandler,
+  DeleteCertificateResponseOcpp2Handler,
   DrizzleSecurityEventRepository,
   EVDriverDataApi,
   EVDriverModule,
   EVDriverOcpp16Api,
   EVDriverOcpp2Api,
-  Get15118EVCertificateRequestHandler,
-  GetCertificateStatusRequestHandler,
-  GetInstalledCertificateIdsResponseHandler,
+  Get15118EVCertificateRequestOcpp2Handler,
+  GetCertificateStatusRequestOcpp2Handler,
+  GetInstalledCertificateIdsResponseOcpp2Handler,
   IdGenerator,
-  InstallCertificateResponseHandler,
+  InstallCertificateResponseOcpp2Handler,
   InternalSmartCharging,
   LocalBypassAuthProvider,
   MessageRouterImpl,
@@ -104,7 +105,7 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  SignCertificateRequestHandler,
+  SignCertificateRequestOcpp2Handler,
   SmartChargingModule,
   SmartChargingOcpp16Api,
   SmartChargingOcpp2Api,
@@ -158,7 +159,7 @@ export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt:
   registerServices(container);
   registerModuleServices(container);
   registerNetwork(container);
-  registerModules(container); // TODO don't do this anymore?
+  registerModules(container);
   registerModuleApis(container);
   registerHandlers(container);
 
@@ -415,15 +416,15 @@ function registerHandlers(container: AwilixContainer): void {
   container.register({
     ocppSender: asClass(OcppSender).scoped(),
     // requests
-    getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestHandler).scoped(),
-    get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestHandler).scoped(),
-    signCertificateRequestHandler: asClass(SignCertificateRequestHandler).scoped(),
-    //responses
-    certificateSignedResponseHandler: asClass(CertificateSignedResponseHandler).scoped(),
-    deleteCertificateResponseHandler: asClass(DeleteCertificateResponseHandler).scoped(),
+    getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestOcpp2Handler).scoped(),
+    get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestOcpp2Handler).scoped(),
+    signCertificateRequestHandler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
+    // responses
+    certificateSignedResponseHandler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
+    deleteCertificateResponseHandler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
     getInstalledCertificateIdsResponseHandler: asClass(
-      GetInstalledCertificateIdsResponseHandler,
+      GetInstalledCertificateIdsResponseOcpp2Handler,
     ).scoped(),
-    installCertificateResponseHandler: asClass(InstallCertificateResponseHandler).scoped(),
+    installCertificateResponseHandler: asClass(InstallCertificateResponseOcpp2Handler).scoped(),
   });
 }
