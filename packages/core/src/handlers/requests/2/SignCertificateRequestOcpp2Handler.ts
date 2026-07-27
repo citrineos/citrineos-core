@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
+  type AbstractHandlerDependencies,
   AsRequestHandler,
   AttributeEnum,
   CertificateSigningUseEnum,
@@ -13,7 +14,6 @@ import {
   GenericStatusEnum,
   type HandlerProperties,
   type IMessage,
-  type IOcppSender,
   OCPP2_1,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -32,7 +32,6 @@ import type { InstallCertificateHelperService } from '@modules/Certificates/src/
 import { Crypto } from '@peculiar/webcrypto';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
-import { type ILogObj, Logger } from 'tslog';
 
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
@@ -51,14 +50,12 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
     certificateAuthorityService,
     installCertificateHelperService,
     deviceModelRepository,
-  }: {
-    ocppSender: IOcppSender;
-    logger: Logger<ILogObj>;
+  }: AbstractHandlerDependencies & {
     certificateAuthorityService: CertificateAuthorityService;
     installCertificateHelperService: InstallCertificateHelperService;
     deviceModelRepository: IDeviceModelRepository;
   }) {
-    super({ ocppSender, logger });
+    super(ocppSender, logger);
 
     this._certificateAuthorityService = certificateAuthorityService;
     this._installCertificateHelperService = installCertificateHelperService;

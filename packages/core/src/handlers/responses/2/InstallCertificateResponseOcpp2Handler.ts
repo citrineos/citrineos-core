@@ -3,16 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
+  type AbstractHandlerDependencies,
   AsResponseHandler,
   type HandlerProperties,
   type IMessage,
-  type IOcppSender,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
 } from '@citrineos/base';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
-import { type ILogObj, Logger } from 'tslog';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate)
 export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
@@ -22,12 +21,10 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
     ocppSender,
     logger,
     installCertificateHelperService,
-  }: {
-    ocppSender: IOcppSender;
-    logger: Logger<ILogObj>;
+  }: AbstractHandlerDependencies & {
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
-    super({ ocppSender, logger });
+    super(ocppSender, logger);
 
     this._installCertificateHelperService = installCertificateHelperService;
   }

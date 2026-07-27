@@ -78,7 +78,10 @@ export type {
 } from './src/ocpp/rpc/message.js';
 
 export { AsRequestHandler, AsResponseHandler } from './src/interfaces/handlers/AsHandlerClass.js';
-export { AbstractHandler } from './src/interfaces/handlers/AbstractHandler.js';
+export {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+} from './src/interfaces/handlers/AbstractHandler.js';
 export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
 export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
 export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';

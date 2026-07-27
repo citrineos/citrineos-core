@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type ILogObj, Logger } from 'tslog';
 import {
   AbstractHandler,
+  type AbstractHandlerDependencies,
   AsRequestHandler,
   ErrorCode,
   type HandlerProperties,
   type IMessage,
-  type IOcppSender,
   Iso15118EVCertificateStatusEnum,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -25,12 +24,10 @@ export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {
     ocppSender,
     logger,
     certificateAuthorityService,
-  }: {
-    ocppSender: IOcppSender;
-    logger: Logger<ILogObj>;
+  }: AbstractHandlerDependencies & {
     certificateAuthorityService: CertificateAuthorityService;
   }) {
-    super({ ocppSender, logger });
+    super(ocppSender, logger);
 
     this._certificateAuthorityService = certificateAuthorityService;
   }

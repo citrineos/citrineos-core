@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
+  type AbstractHandlerDependencies,
   AsRequestHandler,
   ErrorCode,
   GetCertificateStatusEnum,
@@ -18,6 +19,10 @@ import { sendOCSPRequest } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
+  constructor({ ocppSender, logger }: AbstractHandlerDependencies) {
+    super(ocppSender, logger);
+  }
+
   async handle(
     message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
     props?: HandlerProperties,

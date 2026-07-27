@@ -7,11 +7,16 @@ import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
 import type { IHandler } from '@interfaces/handlers/Handler.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 
+export interface AbstractHandlerDependencies {
+  ocppSender: IOcppSender;
+  logger: Logger<ILogObj>;
+}
+
 export abstract class AbstractHandler implements IHandler {
   protected readonly _ocppSender: IOcppSender;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor({ ocppSender, logger }: { ocppSender: IOcppSender; logger: Logger<ILogObj> }) {
+  constructor(ocppSender: IOcppSender, logger: Logger<ILogObj>) {
     this._ocppSender = ocppSender;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
