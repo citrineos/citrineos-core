@@ -51,10 +51,7 @@ export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
 
 export const VARIABLE_ATTRIBUTE_DOWNLOAD_QUERY = gql`
   query DownloadVariableAttributes($stationId: Int!) {
-    VariableAttributes(
-      where: { stationId: { _eq: $stationId } }
-      order_by: { createdAt: desc }
-    ) {
+    VariableAttributes(where: { stationId: { _eq: $stationId } }, order_by: { createdAt: desc }) {
       id
       ocppConnectionName
       type
