@@ -411,14 +411,14 @@ export const ChargingStationDetailCard = ({
                 value={station.evses?.length ?? 0}
               />
 
-               <KeyValueDisplay
-                  keyLabel={translate('ChargingStations.columns.securityProfile')}
-                  value={connectedSecurityProfile}
-                  valueRender={(securityProfile: any) => (
-                    <span>{securityProfile ?? NOT_APPLICABLE}</span>
-                  )}
-                />
-                
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.securityProfile')}
+                value={connectedSecurityProfile}
+                valueRender={(securityProfile: any) => (
+                  <span>{securityProfile ?? NOT_APPLICABLE}</span>
+                )}
+              />
+
               <KeyValueDisplay
                 keyLabel={translate('ChargingStations.columns.serverId')}
                 value={station.connectedWebsocketServerConfigId}
