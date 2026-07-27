@@ -1,18 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsRequestHandler,
-  type HandlerProperties,
-  type IMessage,
-  type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IMessage, type IOcppSender, OCPP2_request_types, OCPP2_response_types } from '@citrineos/base';
+import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.Heartbeat)
 export class HeartbeatRequestOcpp2Handler extends AbstractHandler {

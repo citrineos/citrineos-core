@@ -39,6 +39,7 @@
   "dependencies": {
     "@citrineos/base": "workspace:*",
     "@citrineos/core": "workspace:*",
+    "@citrineos/types": "workspace:*",
     "ajv": "8.18.0",
     "ajv-formats": "^3.0.1",
     "amqplib": "0.10.9",

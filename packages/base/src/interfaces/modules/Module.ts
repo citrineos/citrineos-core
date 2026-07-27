@@ -2,18 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SystemConfig } from '@config/types.js';
+import {
+  type SystemConfig,
+  type HandlerProperties,
+  MessageOrigin,
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type OCPPVersionType,
+  OcppError,
+} from '@citrineos/types';
 import type { ICache } from '@interfaces/cache/cache.js';
-import type { HandlerProperties } from '@interfaces/messages/internal-types.js';
-import { MessageOrigin } from '@interfaces/messages/internal-types.js';
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
 import type { IMessageHandler } from '@interfaces/messages/MessageHandler.js';
 import type { IMessageSender } from '@interfaces/messages/MessageSender.js';
 import type { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
-import { OcppError } from '@ocpp/rpc/message.js';
 
 /**
  * Base interface for all OCPP modules.

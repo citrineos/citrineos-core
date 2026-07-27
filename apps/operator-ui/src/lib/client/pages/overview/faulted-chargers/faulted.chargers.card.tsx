@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { ChargingStationDto } from '@citrineos/base';
-import { BaseProps } from '@citrineos/base';
+import { type ChargingStationDto, BaseProps } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { ChargerRow } from '@lib/client/pages/overview/charger.row';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';

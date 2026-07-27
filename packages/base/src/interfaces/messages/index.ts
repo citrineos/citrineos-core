@@ -2,10 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Re-export internal types and enums
-export * from './internal-types.js';
+export {
+  EventGroup,
+  eventGroupFromString,
+  MessageOrigin,
+  MessageState,
+  RetryMessageError,
+} from '@citrineos/types';
+export type { HandlerProperties } from '@citrineos/types';
 
-// Export interfaces - these can import from other modules but won't create circular deps
 export { AbstractConnectionManager } from './AbstractConnectionManager.js';
 export { AbstractMessageHandler } from './AbstractMessageHandler.js';
 export { AbstractMessageSender } from './AbstractMessageSender.js';

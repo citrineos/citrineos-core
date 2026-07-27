@@ -10,7 +10,7 @@ name: Renew Certificates
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 1 * *" # Runs on the 1st of every month
+    - cron: '0 0 1 * *' # Runs on the 1st of every month
 
 env:
   TARGET_BRANCH: main
@@ -33,7 +33,7 @@ jobs:
       - name: Set up OpenSSL + Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24.16.0"
+          node-version: '24.16.0'
 
       - name: Check certificate validity
         id: check_cert

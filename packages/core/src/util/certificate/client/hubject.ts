@@ -2,16 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { HttpStatus, type ICache } from '@citrineos/base';
 import {
   HttpMethod,
-  HttpStatus,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
-  type ICache,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { createPemBlock } from '@util/certificate/CertificateUtil.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

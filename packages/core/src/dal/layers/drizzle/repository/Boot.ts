@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto } from '@citrineos/base';
+import type { BootDto } from '@citrineos/types';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

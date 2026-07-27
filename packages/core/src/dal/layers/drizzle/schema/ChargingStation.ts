@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  ChargingStationCapabilityEnumType,
-  ChargingStationParkingRestrictionEnumType,
-} from '@citrineos/base';
+import type { ChargingStationCapabilityEnumType, ChargingStationParkingRestrictionEnumType } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   boolean,

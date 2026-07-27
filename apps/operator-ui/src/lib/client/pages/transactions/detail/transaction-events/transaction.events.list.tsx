@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { TransactionEventDto } from '@citrineos/base';
-import { TransactionEventEnum, TransactionEventProps } from '@citrineos/base';
+import {
+  type TransactionEventDto,
+  TransactionEventEnum,
+  TransactionEventProps,
+} from '@citrineos/types';
 import { Table } from '@lib/client/components/table';
 import { MeterValuesList } from '@lib/client/pages/transactions/detail/meter-values/meter.values.list';
 import { getTransactionEventColumns } from '@lib/client/pages/transactions/detail/transaction-events/columns';

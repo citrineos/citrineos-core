@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StatusInfo } from '@citrineos/base';
+import type { StatusInfo } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';

@@ -1,20 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsResponseHandler,
-  type HandlerProperties,
-  type IMessage,
-  type InstallCertificateStatusEnumType,
-  MessageOrigin,
-  OCPP2_1,
-  OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage, OCPP2_response_types } from '@citrineos/base';
+import { type HandlerProperties, type InstallCertificateStatusEnumType, MessageOrigin, OCPP2_1, OCPP_2_VER_LIST, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@dal/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
 

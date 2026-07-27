@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableMonitoringStatusDto } from '@citrineos/base';
+import type { VariableMonitoringStatusDto } from '@citrineos/types';
 import {
   type VariableMonitoringStatusEntity,
   variableMonitoringStatusTable,

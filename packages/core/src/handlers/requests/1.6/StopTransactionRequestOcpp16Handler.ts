@@ -1,18 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsRequestHandler,
-  AuthorizationStatusEnum,
-  type HandlerProperties,
-  type IMessage,
-  type IOcppSender,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IMessage, type IOcppSender } from '@citrineos/base';
+import { AuthorizationStatusEnum, type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import {
   Authorization,
   type IAuthorizationRepository,

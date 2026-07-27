@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingNeedsDto, EnergyTransferModeEnumType } from '@citrineos/base';
+import type { ChargingNeedsDto, EnergyTransferModeEnumType } from '@citrineos/types';
 import {
   type ChargingNeedsEntity,
   chargingNeedsTable,

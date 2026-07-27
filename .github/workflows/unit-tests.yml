@@ -62,8 +62,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.16.0"
-          cache: "pnpm"
+          node-version: '24.16.0'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
@@ -73,7 +73,7 @@ jobs:
 
       - name: Run tests
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          NODE_OPTIONS: '--max_old_space_size=4096'
         run: pnpm test
 
   operator-ui-e2e:
@@ -94,8 +94,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.16.0"
-          cache: "pnpm"
+          node-version: '24.16.0'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
@@ -154,8 +154,8 @@ jobs:
 
       - name: Run operator-ui Playwright tests
         env:
-          CI: "true"
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          CI: 'true'
+          NODE_OPTIONS: '--max_old_space_size=4096'
           NEXT_PUBLIC_ADMIN_EMAIL: admin@citrineos.com
           ADMIN_PASSWORD: CitrineOS!
           NEXTAUTH_URL: http://localhost:3000
@@ -165,7 +165,7 @@ jobs:
           NEXT_PUBLIC_WS_URL: ws://localhost:8090/v1/graphql
           NEXT_PUBLIC_CITRINE_CORE_URL: http://localhost:8080
           NEXT_PUBLIC_FILE_SERVER_URL: http://localhost:8050
-          ALLOW_IMAGE_UPLOAD: "false"
+          ALLOW_IMAGE_UPLOAD: 'false'
         working-directory: apps/operator-ui
         run: pnpm exec playwright test --project=chromium-desktop
 
@@ -208,8 +208,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.16.0"
-          cache: "pnpm"
+          node-version: '24.16.0'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
@@ -288,7 +288,7 @@ jobs:
         # fresh one. The fixture's cold boot also lets libocpp create the
         # device-model DB clean from start.sh's already-URL-corrected JSON.
         env:
-          OCPP_VERSION: "2.1"
+          OCPP_VERSION: '2.1'
           EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
         working-directory: apps/ocpp-server/everest
         # Retry: Docker Hub / ghcr pulls intermittently fail with a transient
@@ -304,8 +304,8 @@ jobs:
 
       - name: Run operator-ui Playwright EVerest lane
         env:
-          CI: "true"
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          CI: 'true'
+          NODE_OPTIONS: '--max_old_space_size=4096'
           NEXT_PUBLIC_ADMIN_EMAIL: admin@citrineos.com
           ADMIN_PASSWORD: CitrineOS!
           NEXTAUTH_URL: http://localhost:3000
@@ -315,8 +315,8 @@ jobs:
           NEXT_PUBLIC_WS_URL: ws://localhost:8090/v1/graphql
           NEXT_PUBLIC_CITRINE_CORE_URL: http://localhost:8080
           NEXT_PUBLIC_FILE_SERVER_URL: http://localhost:8050
-          ALLOW_IMAGE_UPLOAD: "false"
-          OCPP_VERSION: "2.1"
+          ALLOW_IMAGE_UPLOAD: 'false'
+          OCPP_VERSION: '2.1'
           EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
           CITRINE_CORE_PATH: ${{ github.workspace }}/apps/ocpp-server
         working-directory: apps/operator-ui

@@ -2,15 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OcppRequest } from '@citrineos/base';
-import {
-  DEFAULT_TENANT_ID,
-  EventGroup,
-  Message,
-  MessageOrigin,
-  MessageState,
-  OCPP_CallAction,
-} from '@citrineos/base';
+import { type OcppRequest, EventGroup, MessageOrigin, MessageState, OCPP_CallAction } from '@citrineos/types';
+import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import { SecurityEventNotificationRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
 import { aSecurityEventNotificationRequest } from '@test/dal/providers/SecurityEvent.js';

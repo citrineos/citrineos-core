@@ -6,8 +6,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import fp from 'fastify-plugin';
-import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
-import { HttpStatus } from '@citrineos/base';
+import { type IApiAuthProvider, type UserInfo, HttpStatus } from '@citrineos/base';
 
 /**
  * Options for the authentication plugin

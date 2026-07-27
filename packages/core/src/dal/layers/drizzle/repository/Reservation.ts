@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ReservationDto } from '@citrineos/base';
+import type { ReservationDto } from '@citrineos/types';
 import {
   type ReservationEntity,
   reservationTable,

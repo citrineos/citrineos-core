@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { SecurityEvent } from '../model/SecurityEvent.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { Op } from 'sequelize';

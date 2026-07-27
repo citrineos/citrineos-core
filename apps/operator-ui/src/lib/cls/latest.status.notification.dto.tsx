@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LatestStatusNotificationDto, StatusNotificationDto } from '@citrineos/base';
+import type { LatestStatusNotificationDto, StatusNotificationDto } from '@citrineos/types';
 import { Expose } from 'class-transformer';
 
 export class LatestStatusNotificationClass implements Partial<LatestStatusNotificationDto> {

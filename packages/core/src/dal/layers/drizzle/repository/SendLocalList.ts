@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SendLocalListDto } from '@citrineos/base';
+import type { SendLocalListDto } from '@citrineos/types';
 import {
   type SendLocalListEntity,
   sendLocalListTable,

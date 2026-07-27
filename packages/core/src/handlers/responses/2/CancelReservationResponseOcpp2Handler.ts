@@ -1,18 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsResponseHandler,
-  CancelReservationStatusEnum,
-  type HandlerProperties,
-  type IMessage,
-  MessageOrigin,
-  OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage, OCPP2_response_types } from '@citrineos/base';
+import { CancelReservationStatusEnum, type HandlerProperties, MessageOrigin, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 import type {
   IOCPPMessageRepository,
   IReservationRepository,

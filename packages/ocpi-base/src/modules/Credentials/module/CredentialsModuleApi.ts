@@ -36,7 +36,7 @@ import {
   VersionNumber,
   VersionNumberParam,
 } from '../../../index.js';
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import { HttpStatus } from '@citrineos/base';
 import { Service } from 'typedi';
 import type { ICredentialsModuleApi } from './ICredentialsModuleApi.js';

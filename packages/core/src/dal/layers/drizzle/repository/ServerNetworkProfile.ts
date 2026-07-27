@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IServerNetworkProfileRepository } from '@/dal/index.js';
-import type { ServerNetworkProfileDto } from '@citrineos/base';
+import type { ServerNetworkProfileDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type ServerNetworkProfileEntity,

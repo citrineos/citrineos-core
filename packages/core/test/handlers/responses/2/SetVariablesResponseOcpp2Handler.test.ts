@@ -5,14 +5,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
-import {
-  DEFAULT_TENANT_ID,
-  MessageOrigin,
-  MessageState,
-  OCPP2_0_1,
-  OCPPVersion,
-} from '@citrineos/base';
+import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { MessageOrigin, MessageState, OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import {
   ChargingStation,
   Component,

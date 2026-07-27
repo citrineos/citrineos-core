@@ -1,17 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AttributeEnum,
-  BadRequestError,
-  CertificateUseEnum,
-  type CertificateDto,
-  type CertificateUseEnumType,
-  type IFileStorage,
-  type InstallCertificateStatusEnumType,
-  OCPP2_0_1,
-  type WebsocketServerConfig,
-} from '@citrineos/base';
+import { BadRequestError, type IFileStorage } from '@citrineos/base';
+import { AttributeEnum, CertificateUseEnum, type CertificateDto, type CertificateUseEnumType, type InstallCertificateStatusEnumType, OCPP2_0_1, type WebsocketServerConfig } from '@citrineos/types';
 import {
   CertificateGenerationScope,
   type GenerateCertificateChainRequest,

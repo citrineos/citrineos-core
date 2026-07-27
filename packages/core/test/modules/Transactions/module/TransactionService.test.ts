@@ -1,13 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AuthorizationStatusEnum,
-  DEFAULT_TENANT_ID,
-  IAuthorizer,
-  OCPP1_6,
-  OCPP2_0_1,
-} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, IAuthorizer } from '@citrineos/base';
+import { AuthorizationStatusEnum, OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
 import {
   IAuthorizationRepository,
   ILocationRepository,

@@ -4,16 +4,18 @@
 
 import type {
   BootConfig,
+  CrudRepository,
+  OCPP2_common_types,
+  OCPP2_request_types,
+} from '@citrineos/base';
+import type {
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationSequenceTypeEnumType,
-  CrudRepository,
   MeterValueDto,
   OCPP1_6,
-  OCPP2_common_types,
-  OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -22,7 +24,7 @@ import type {
   SubscriptionDto,
   TenantDto,
   UpdateEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,

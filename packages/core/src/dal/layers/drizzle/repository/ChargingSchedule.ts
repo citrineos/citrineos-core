@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingRateUnitEnumType, ChargingScheduleDto } from '@citrineos/base';
+import type { ChargingRateUnitEnumType, ChargingScheduleDto } from '@citrineos/types';
 import {
   type ChargingScheduleEntity,
   chargingScheduleTable,

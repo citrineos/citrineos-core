@@ -1,22 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractModuleApi,
-  AsDataEndpoint,
-  DEFAULT_TENANT_ID,
-  HttpMethod,
-  type IFileStorage,
-  type IMessageConfirmation,
-  type IMessageQuerystring,
-  IMessageQuerystringSchema,
-  Namespace,
-  OCPP1_6_Namespace,
-  OCPP2_0_1,
-  OCPP_CallAction,
-  OCPP2_Namespace,
-  OCPPVersion,
-} from '@citrineos/base';
+import { AbstractModuleApi, AsDataEndpoint, DEFAULT_TENANT_ID, type IFileStorage, type IMessageConfirmation, type IMessageQuerystring, IMessageQuerystringSchema, Namespace, OCPP1_6_Namespace, OCPP2_Namespace } from '@citrineos/base';
+import { HttpMethod, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { Certificate, InstalledCertificate } from '@dal/layers/sequelize/index.js';
 import {
   InstallRootCertificateRequest,

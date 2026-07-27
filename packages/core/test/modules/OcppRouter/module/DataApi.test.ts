@@ -1,14 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  BadRequestError,
-  ConfigStoreFactory,
-  NotFoundError,
-  type ConfigStore,
-  type INetworkConnection,
-  type WebsocketServerConfig,
-} from '@citrineos/base';
+import { BadRequestError, ConfigStoreFactory, NotFoundError, type ConfigStore, type INetworkConnection } from '@citrineos/base';
+import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminApi } from '@modules/OcppRouter/src/module/DataApi.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';

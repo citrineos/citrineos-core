@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ServerProfile, TenantDto } from '@citrineos/base';
+import type { ServerProfile, TenantDto } from '@citrineos/types';
 import type { Optional } from 'sequelize';
 import { Column, DataType, HasMany, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { AsyncJobStatus } from './AsyncJob/AsyncJobStatus.js';

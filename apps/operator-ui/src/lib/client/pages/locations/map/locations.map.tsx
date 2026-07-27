@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { Input } from '@lib/client/components/ui/input';
 import { LocationClass } from '@lib/cls/location.dto';
 import { LOCATIONS_LIST_QUERY } from '@lib/queries/locations';

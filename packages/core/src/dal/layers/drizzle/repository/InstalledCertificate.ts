@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  CertificateUseEnumType,
-  HashAlgorithmEnumType,
-  InstalledCertificateDto,
-} from '@citrineos/base';
+import type { CertificateUseEnumType, HashAlgorithmEnumType, InstalledCertificateDto } from '@citrineos/types';
 import {
   type InstalledCertificateEntity,
   installedCertificateTable,

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChargingStationSchema, OCPPVersion, TransactionSchema } from '@citrineos/base';
+import { ChargingStationSchema, OCPPVersion, TransactionSchema } from '@citrineos/types';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import { plainToInstance } from 'class-transformer';
 import { useMemo } from 'react';

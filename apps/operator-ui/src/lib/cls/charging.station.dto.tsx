@@ -2,24 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  ChargingStationCapabilityEnumType,
-  ChargingStationDto,
-  ChargingStationParkingRestrictionEnumType,
-  ConnectorDto,
-  ConnectorStatusEnumType,
-  EvseDto,
-  LatestStatusNotificationDto,
-  LocationDto,
-  StatusNotificationDto,
-} from '@citrineos/base';
 import {
+  type ChargingStationCapabilityEnumType,
+  type ChargingStationDto,
+  type ChargingStationParkingRestrictionEnumType,
+  type ConnectorDto,
+  type ConnectorStatusEnumType,
+  type EvseDto,
+  type LatestStatusNotificationDto,
+  type LocationDto,
+  type StatusNotificationDto,
   ChargingStationSchema,
   LatestStatusNotificationSchema,
   LocationSchema,
   OCPP2_0_1,
   TransactionSchema,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Expose } from 'class-transformer';
 import { IsBoolean } from 'class-validator';
 import type { Point } from 'geojson';

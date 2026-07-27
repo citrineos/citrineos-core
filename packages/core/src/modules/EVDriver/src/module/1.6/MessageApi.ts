@@ -7,15 +7,13 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IEVDriverModuleApi } from '../interface.js';
 import { EVDriverModule } from '../module.js';
-import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
+  type IMessageConfirmation,
   AbstractModuleApi,
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
-  OCPP1_6,
-  OCPPVersion,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { type CallAction, OCPP1_6, OCPPVersion, OCPP_CallAction } from '@citrineos/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class EVDriverOcpp16Api

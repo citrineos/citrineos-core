@@ -4,13 +4,13 @@
 
 import { Service } from 'typedi';
 import type { Session } from '../model/Session.js';
-import type {
-  MeterValueDto,
-  TariffDto,
-  TransactionDto,
-  TransactionEventDto,
-} from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/base';
+import {
+  type MeterValueDto,
+  type TariffDto,
+  type TransactionDto,
+  type TransactionEventDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
 import { AuthMethod } from '../model/AuthMethod.js';
 import type { ChargingPeriod } from '../model/ChargingPeriod.js';
 import { CdrDimensionType } from '../model/CdrDimensionType.js';

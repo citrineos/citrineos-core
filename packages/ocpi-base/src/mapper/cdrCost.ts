@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { Money } from '@citrineos/base';
 import type { Price } from '../model/Price.js';
 import type { Session } from '../model/Session.js';

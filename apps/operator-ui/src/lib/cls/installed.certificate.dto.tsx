@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { InstalledCertificateDto } from '@citrineos/base';
+import type { InstalledCertificateDto } from '@citrineos/types';
 
 export class InstalledCertificateClass implements Partial<InstalledCertificateDto> {
   id?: number;

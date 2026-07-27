@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { HttpStatus } from '@citrineos/base';
 import {
-  HttpStatus,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
   SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Hubject } from '@util/certificate/client/hubject.js';

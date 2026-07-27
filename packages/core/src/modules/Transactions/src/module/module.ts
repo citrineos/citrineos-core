@@ -1,12 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  AbstractModule,
-  EventGroup,
-  type OcppModuleDependencies,
-} from '@citrineos/base';
+import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
+import { EventGroup } from '@citrineos/types';
 import type {
   ITariffRepository,
   ITransactionEventRepository,

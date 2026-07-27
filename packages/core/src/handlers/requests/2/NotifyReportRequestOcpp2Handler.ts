@@ -1,26 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsRequestHandler,
-  type BootstrapConfig,
-  ErrorCode,
-  type HandlerProperties,
-  type ICache,
-  type IMessage,
-  type IOcppSender,
-  MutabilityEnum,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
-  OcppError,
-  SetVariableStatusEnum,
-  type SystemConfig,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type BootstrapConfig, type ICache, type IMessage, type IOcppSender, OCPP2_common_types, OCPP2_request_types, OCPP2_response_types } from '@citrineos/base';
+import { ErrorCode, type HandlerProperties, MutabilityEnum, OCPP_2_VER_LIST, OCPP_CallAction, OcppError, SetVariableStatusEnum, type SystemConfig } from '@citrineos/types';
 import { Component, type IDeviceModelRepository, Variable } from '@dal/index.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 

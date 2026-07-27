@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ITenantRepository } from '@/dal/index.js';
-import type { TenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/types';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import EventEmitter from 'events';

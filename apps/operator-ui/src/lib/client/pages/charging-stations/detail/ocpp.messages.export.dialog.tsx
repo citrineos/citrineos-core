@@ -13,7 +13,7 @@ import {
 } from '@lib/client/components/ui/dialog';
 import { Button } from '@lib/client/components/ui/button';
 import { type LogicalFilter, useExport, useTranslate } from '@refinedev/core';
-import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/base';
+import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/types';
 import { ResourceType } from '@lib/utils/access.types';
 import { GET_OCPP_MESSAGES_LIST_FOR_STATION } from '@lib/queries/ocpp.messages';
 import { toast } from 'sonner';

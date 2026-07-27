@@ -37,7 +37,7 @@ import {
   OcpiGraphqlClient,
 } from '../graphql/index.js';
 import { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/index.js';
-import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/base';
+import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/types';
 
 @Service()
 export class LocationsService {

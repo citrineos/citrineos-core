@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableDto } from '@citrineos/base';
+import type { VariableDto } from '@citrineos/types';
 import { type VariableEntity, variableTable, tenantVariableTable } from '../schema/Variable.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

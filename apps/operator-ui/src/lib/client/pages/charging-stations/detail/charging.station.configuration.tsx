@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AttributeEnum, OCPPVersion } from '@citrineos/base';
+import { AttributeEnum, OCPPVersion } from '@citrineos/types';
 import { ChangeConfigurationModal } from '@lib/client/components/modals/1.6/change-configuration/change.configuration.modal';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';

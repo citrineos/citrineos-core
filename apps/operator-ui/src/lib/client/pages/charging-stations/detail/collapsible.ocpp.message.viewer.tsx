@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Copy, Plus } from 'lucide-react';
-import { MessageTypeId, type OCPPMessageDto } from '@citrineos/base';
+import { MessageTypeId, type OCPPMessageDto } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
 import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';

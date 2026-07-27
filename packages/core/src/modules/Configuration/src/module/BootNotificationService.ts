@@ -3,23 +3,23 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { IBootRepository } from '@dal/interfaces/repositories.js';
 import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
-import type {
-  BootConfig,
-  ICache,
-  IMessageConfirmation,
-  OCPP2_response_types,
-  RegistrationStatusEnumType,
-  SystemConfig,
+import {
+  type BootConfig,
+  type ICache,
+  type IMessageConfirmation,
+  type OCPP2_response_types,
+  BOOT_STATUS,
+  OCPP1_6_CALL_SCHEMA_RECORD,
+  OCPP2_0_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
-  BOOT_STATUS,
+  type RegistrationStatusEnumType,
+  type SystemConfig,
   OCPP1_6,
-  OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1,
-  OCPP2_0_1_CALL_SCHEMA_RECORD,
   OCPP_CallAction,
   RegistrationStatusEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

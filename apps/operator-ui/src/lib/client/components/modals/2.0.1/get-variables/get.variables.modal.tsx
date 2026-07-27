@@ -9,7 +9,7 @@ import {
   type ComponentDto,
   ComponentProps,
   OCPP2_0_1,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import {

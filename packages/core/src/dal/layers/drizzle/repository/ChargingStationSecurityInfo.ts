@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationSecurityInfoDto } from '@citrineos/base';
+import type { ChargingStationSecurityInfoDto } from '@citrineos/types';
 import {
   type ChargingStationSecurityInfoEntity,
   chargingStationSecurityInfoTable,

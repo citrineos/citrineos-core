@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { TenantPartnerProps, TenantPartnerSchema } from '@citrineos/base';
+import { TenantPartnerProps, TenantPartnerSchema } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { FormField, nestedFormRowFlex, SelectFormField } from '@lib/client/components/form/field';

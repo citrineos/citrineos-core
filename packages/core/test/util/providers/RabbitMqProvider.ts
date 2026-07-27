@@ -10,7 +10,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { vi } from 'vitest';
 import type { RabbitMQChannelManager } from '@util/queue/rabbit-mq/ChannelManager.js';
 

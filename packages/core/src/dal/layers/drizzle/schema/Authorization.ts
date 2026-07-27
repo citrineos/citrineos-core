@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AdditionalInfo, RealTimeAuthLastAttempt } from '@citrineos/base';
+import type { AdditionalInfo, RealTimeAuthLastAttempt } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   boolean,

@@ -9,7 +9,7 @@ import type { VersionDetailsResponseDTO } from '../model/DTO/VersionDetailsRespo
 import { VersionDetailsResponseDTOSchema } from '../model/DTO/VersionDetailsResponseDTO.js';
 import { VersionListResponseDTOSchema } from '../model/DTO/VersionListResponseDTO.js';
 import type { VersionListResponseDTO } from '../model/DTO/VersionListResponseDTO.js';
-import { HttpMethod, type PartnerProfile } from '@citrineos/base';
+import { HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { VersionsInterface } from '../model/EndpointIdentifier.js';
 
 @Service()

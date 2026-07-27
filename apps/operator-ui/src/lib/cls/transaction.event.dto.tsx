@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type MeterValueDto, type TransactionEventDto, OCPP2_0_1 } from '@citrineos/base';
+import { type MeterValueDto, type TransactionEventDto, OCPP2_0_1 } from '@citrineos/types';
 
 export class TransactionEventClass implements Partial<TransactionEventDto> {
   id?: number;

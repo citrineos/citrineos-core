@@ -5,7 +5,7 @@
 import type {
   ChargingStationSequenceDto,
   ChargingStationSequenceTypeEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class ChargingStationSequenceClass implements Partial<ChargingStationSequenceDto> {
   type!: ChargingStationSequenceTypeEnumType;

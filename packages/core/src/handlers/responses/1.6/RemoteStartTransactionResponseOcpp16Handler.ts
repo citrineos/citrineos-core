@@ -1,18 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractHandler,
-  type AbstractHandlerDependencies,
-  AsResponseHandler,
-  ChargingLimitSourceEnum,
-  type HandlerProperties,
-  type IMessage,
-  MessageOrigin,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage } from '@citrineos/base';
+import { ChargingLimitSourceEnum, type HandlerProperties, MessageOrigin, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { OCPP1_6_Mapper } from '@/dal/index.js';
 import type {
   IChargingProfileRepository,

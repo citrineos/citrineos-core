@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  DEFAULT_TENANT_ID,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
@@ -12,7 +12,7 @@ import {
   OCPP2_0_1,
   SystemConfig,
   OCPP2_1,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import path from 'node:path';
 
 export function aSystemConfig(override?: Partial<SystemConfig>): SystemConfig {

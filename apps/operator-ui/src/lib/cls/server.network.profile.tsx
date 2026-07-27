@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ServerNetworkProfileDto } from '@citrineos/base';
+import type { ServerNetworkProfileDto } from '@citrineos/types';
 
 export class ServerNetworkProfileClass implements Partial<ServerNetworkProfileDto> {
   id?: string;

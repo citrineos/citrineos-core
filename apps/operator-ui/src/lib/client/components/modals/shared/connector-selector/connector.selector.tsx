@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React from 'react';
-import type { ChargingStationDto, ConnectorDto } from '@citrineos/base';
-import { ConnectorProps } from '@citrineos/base';
+import { type ChargingStationDto, type ConnectorDto, ConnectorProps } from '@citrineos/types';
 import { Combobox } from '@lib/client/components/combobox';
 import { GET_CONNECTOR_LIST_FOR_STATION_EVSE } from '@lib/queries/connectors';
 import { CONNECTOR_LIST_FOR_STATION_QUERY } from '@lib/queries/connectors';

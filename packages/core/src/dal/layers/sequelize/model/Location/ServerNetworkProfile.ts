@@ -7,7 +7,7 @@ import type {
   ServerNetworkProfileDto,
   TenantDto,
   WebsocketServerConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

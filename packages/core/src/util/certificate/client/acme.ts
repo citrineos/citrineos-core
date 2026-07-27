@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { LocalStorage } from '@/util/files/localStorage.js';
-import type { IFileStorage, SystemConfig } from '@citrineos/base';
+import type { IFileStorage } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,

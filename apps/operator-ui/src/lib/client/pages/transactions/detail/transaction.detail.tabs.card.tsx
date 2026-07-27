@@ -15,7 +15,7 @@ import {
   MeterValueProps,
   OCPP2_0_1,
   type TransactionDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { GET_AUTHORIZATIONS_BY_TRANSACTION } from '@lib/queries/authorizations';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { pageFlex } from '@lib/client/styles/page';

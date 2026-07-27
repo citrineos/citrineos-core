@@ -1,21 +1,22 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  Call,
-  CallError,
-  CallResult,
-  ICache,
-  IMessageHandler,
-  IMessageSender,
-  OcppRequest,
-  OcppResponse,
-  SystemConfig,
-} from '@citrineos/base';
 import {
+  type BootstrapConfig,
+  type ICache,
+  type IMessageHandler,
+  type IMessageSender,
   CacheNamespace,
   createIdentifier,
+  RequestBuilder,
+} from '@citrineos/base';
+import {
+  type Call,
+  type CallError,
+  type CallResult,
+  type OcppRequest,
+  type OcppResponse,
+  type SystemConfig,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -26,9 +27,8 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
-  RequestBuilder,
   RetryMessageError,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ILocationRepository } from '@citrineos/core';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { MessageRouterImpl } from '@modules/OcppRouter/src/module/router.js';

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OcppModuleDependencies } from '@citrineos/base';
-import { AbstractModule, EventGroup } from '@citrineos/base';
+import { type OcppModuleDependencies, AbstractModule } from '@citrineos/base';
+import { EventGroup } from '@citrineos/types';
 import type { ITenantRepository } from '@dal/interfaces/repositories.js';
 
 export interface TenantModuleDependencies extends OcppModuleDependencies {
