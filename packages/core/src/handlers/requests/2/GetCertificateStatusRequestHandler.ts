@@ -13,9 +13,9 @@ import {
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '../../../../../base/dist/index.js';
 import jsrsasign from 'jsrsasign';
-import { sendOCSPRequest } from '@/util/index.js';
+import { sendOCSPRequest } from '@util/index.js';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus, MessageState.Request)
 export class GetCertificateStatusRequestHandler extends AbstractHandler {

@@ -22,14 +22,14 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
-} from '@citrineos/base';
+} from '../../../../../base/dist/index.js';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import {
   CertificateAuthorityService,
   parseCSRForVerification,
   validatePEMEncodedCSR,
-} from '@/util/index.js';
-import type { InstallCertificateHelperService } from '@/modules/Certificates/src/module/installCertificateHelperService.js';
+} from '@util/index.js';
+import type { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import { Crypto } from '@peculiar/webcrypto';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';

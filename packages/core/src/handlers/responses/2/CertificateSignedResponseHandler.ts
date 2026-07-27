@@ -14,10 +14,10 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
-import type { IOCPPMessageRepository } from '@/dal/index.js';
+} from '../../../../../base/dist';
+import type { IOCPPMessageRepository } from '@dal/index.js';
 import { type ILogObj, Logger } from 'tslog';
-import type { IOcppSender } from '@citrineos/base/dist/src/interfaces/handlers/IOcppSender.js';
+import type { IOcppSender } from '../../../../../base/dist/src/interfaces/handlers/IOcppSender.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned, MessageState.Response)

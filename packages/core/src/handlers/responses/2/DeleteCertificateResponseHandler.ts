@@ -12,11 +12,11 @@ import {
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '../../../../../base/dist/index.js';
 import type {
   IDeleteCertificateAttemptRepository,
   IInstalledCertificateRepository,
-} from '@/dal/index.js';
+} from '@dal/index.js';
 import { type ILogObj, Logger } from 'tslog';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate, MessageState.Response)
