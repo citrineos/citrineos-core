@@ -63,6 +63,9 @@ export class CertificatesModule extends AbstractModule {
       certificatesHandlers,
     );
 
+    this._requests = config.modules.certificates?.requests ?? [];
+    this._responses = config.modules.certificates?.responses ?? [];
+
     this._installedCertificateRepository = installedCertificateRepository;
     this._installCertificateAttemptRepository = installCertificateAttemptRepository;
     this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
