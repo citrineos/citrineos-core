@@ -12,7 +12,7 @@ import {
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '../../../../../base/dist/index.js';
+} from '@citrineos/base';
 import type {
   IDeleteCertificateAttemptRepository,
   IInstalledCertificateRepository,

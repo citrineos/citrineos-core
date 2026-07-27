@@ -7,6 +7,7 @@ import {
   type HandlerProperties,
   type IMessage,
   type InstallCertificateStatusEnumType,
+  type IOcppSender,
   MessageOrigin,
   MessageState,
   OCPP2_1,
@@ -14,10 +15,9 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
-} from '../../../../../base/dist';
+} from '@citrineos/base';
 import type { IOCPPMessageRepository } from '@dal/index.js';
 import { type ILogObj, Logger } from 'tslog';
-import type { IOcppSender } from '../../../../../base/dist/src/interfaces/handlers/IOcppSender.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
 
 @AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned, MessageState.Response)

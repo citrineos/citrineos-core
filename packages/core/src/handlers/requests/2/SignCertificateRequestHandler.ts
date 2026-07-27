@@ -22,7 +22,7 @@ import {
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
-} from '../../../../../base/dist/index.js';
+} from '@citrineos/base';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import {
   CertificateAuthorityService,
