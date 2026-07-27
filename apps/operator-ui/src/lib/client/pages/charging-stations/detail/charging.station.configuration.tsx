@@ -137,12 +137,12 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   const configFilters = useMemo<CrudFilter[]>(
     () => [
       {
-        field: 'id',
+        field: 'ocppConnectionName',
         operator: 'eq',
-        value: station?.id ?? -1,
+        value: station?.ocppConnectionName ?? '',
       },
     ],
-    [station?.id],
+    [station?.ocppConnectionName],
   );
 
   const {
@@ -185,7 +185,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     resource: 'VariableAttributes',
     meta: {
       gqlQuery: VARIABLE_ATTRIBUTE_DOWNLOAD_QUERY,
-      gqlVariables: { id },
+      gqlVariables: { stationId: id },
     },
     pagination: {
       mode: 'off',
