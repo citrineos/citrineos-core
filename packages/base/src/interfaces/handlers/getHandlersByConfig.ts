@@ -17,11 +17,11 @@ function tokenFor(ctor: new (...args: any[]) => AbstractHandler): string {
 }
 
 /**
- * Resolves every {@link AsHandlerClass}-decorated handler whose configured action is present
- * in `requests`/`responses`, off the container cradle. A module's config is the only thing
- * that decides which handlers it wires up — there's no separate per-module handler list to
- * keep in sync with config, since the actions a handler serves are already declared once, on
- * the handler class itself via {@link AsHandlerClass}.
+ * Resolves every {@link AsRequestHandler}/{@link AsResponseHandler}-decorated handler whose
+ * configured action is present in `requests`/`responses`, off the container cradle. A module's
+ * config is the only thing that decides which handlers it wires up — there's no separate
+ * per-module handler list to keep in sync with config, since the actions a handler serves are
+ * already declared once, on the handler class itself via those decorators.
  *
  * Relies on every handler class having already been imported somewhere (as the app's
  * composition root must do anyway, to register each one for DI) so its decorator has run and

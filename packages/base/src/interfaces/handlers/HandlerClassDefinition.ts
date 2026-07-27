@@ -5,7 +5,7 @@ import type { CallAction, OCPPVersion } from '@ocpp/rpc/message.js';
 import { MessageState } from '@interfaces/messages/index.js';
 
 /**
- * Interface for usage in {@link AsHandlerClass} decorator.
+ * Interface for usage in the {@link AsRequestHandler} and {@link AsResponseHandler} decorators.
  */
 export interface IHandlerClassDefinition {
   protocol: OCPPVersion;

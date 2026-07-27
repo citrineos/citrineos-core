@@ -416,15 +416,21 @@ function registerHandlers(container: AwilixContainer): void {
   container.register({
     ocppSender: asClass(OcppSender).scoped(),
     // requests
-    getCertificateStatusRequestHandler: asClass(GetCertificateStatusRequestOcpp2Handler).scoped(),
-    get15118EVCertificateRequestHandler: asClass(Get15118EVCertificateRequestOcpp2Handler).scoped(),
-    signCertificateRequestHandler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
+    getCertificateStatusRequestOcpp2Handler: asClass(
+      GetCertificateStatusRequestOcpp2Handler,
+    ).scoped(),
+    get15118EVCertificateRequestOcpp2Handler: asClass(
+      Get15118EVCertificateRequestOcpp2Handler,
+    ).scoped(),
+    signCertificateRequestOcpp2Handler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
     // responses
-    certificateSignedResponseHandler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
-    deleteCertificateResponseHandler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
-    getInstalledCertificateIdsResponseHandler: asClass(
+    certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
+    deleteCertificateResponseOcpp2Handler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
+    getInstalledCertificateIdsResponseOcpp2Handler: asClass(
       GetInstalledCertificateIdsResponseOcpp2Handler,
     ).scoped(),
-    installCertificateResponseHandler: asClass(InstallCertificateResponseOcpp2Handler).scoped(),
+    installCertificateResponseOcpp2Handler: asClass(
+      InstallCertificateResponseOcpp2Handler,
+    ).scoped(),
   });
 }

@@ -3,12 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
-  AsHandlerClass,
+  AsResponseHandler,
   DeleteCertificateStatusEnum,
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  MessageState,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
@@ -19,7 +18,7 @@ import type {
 } from '@dal/index.js';
 import { type ILogObj, Logger } from 'tslog';
 
-@AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate, MessageState.Response)
+@AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
 export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;

@@ -9,19 +9,16 @@ import { MessageState } from '@interfaces/messages/index.js';
 export const AS_HANDLER_CLASS_METADATA = 'AS_HANDLER_CLASS_METADATA';
 
 /**
- * Every class decorated with {@link AsHandlerClass}, in decoration order. Populated as a
- * side effect of importing the handler's module (the same import every composition root
+ * Every class decorated with {@link AsRequestHandler} or {@link AsResponseHandler}, in
+ * decoration order. Populated as a side effect of importing the handler's module (the same
+ * import every composition root
  * already needs to do to register the class for DI), so config-driven handler resolution
  * (see {@link getHandlersByConfig}) can discover the full set of known handlers without a
  * hand-maintained list.
  */
 export const HANDLER_CLASS_REGISTRY: Array<new (...args: any[]) => AbstractHandler> = [];
 
-export const AsHandlerClass = function (
-  protocols: OCPPVersion[],
-  action: CallAction,
-  type: MessageState,
-) {
+const asHandlerClass = function (protocols: OCPPVersion[], action: CallAction, type: MessageState) {
   return <T extends new (...args: any[]) => AbstractHandler>(target: T): T => {
     if (!Reflect.hasMetadata(AS_HANDLER_CLASS_METADATA, target)) {
       Reflect.defineMetadata(AS_HANDLER_CLASS_METADATA, [], target);
@@ -42,3 +39,11 @@ export const AsHandlerClass = function (
     return target;
   };
 };
+
+/** Decorates a handler class that handles a Call (request) for the given actions/protocols. */
+export const AsRequestHandler = (protocols: OCPPVersion[], action: CallAction) =>
+  asHandlerClass(protocols, action, MessageState.Request);
+
+/** Decorates a handler class that handles a CallResult (response) for the given actions/protocols. */
+export const AsResponseHandler = (protocols: OCPPVersion[], action: CallAction) =>
+  asHandlerClass(protocols, action, MessageState.Response);

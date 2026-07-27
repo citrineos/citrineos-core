@@ -3,14 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
-  AsHandlerClass,
+  AsResponseHandler,
   type CertificateUseEnumType,
   GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
   MessageOrigin,
-  MessageState,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -24,7 +23,7 @@ import {
 } from '@dal/index.js';
 import { type ILogObj, Logger } from 'tslog';
 
-@AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds, MessageState.Response)
+@AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
 export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {
   protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;

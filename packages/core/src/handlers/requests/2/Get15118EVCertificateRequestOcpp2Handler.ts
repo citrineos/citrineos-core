@@ -4,13 +4,12 @@
 import { type ILogObj, Logger } from 'tslog';
 import {
   AbstractHandler,
-  AsHandlerClass,
+  AsRequestHandler,
   ErrorCode,
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
   Iso15118EVCertificateStatusEnum,
-  MessageState,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
@@ -18,7 +17,7 @@ import {
 } from '@citrineos/base';
 import { CertificateAuthorityService } from '@util/index.js';
 
-@AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate, MessageState.Request)
+@AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
 export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AbstractHandler,
-  AsHandlerClass,
+  AsRequestHandler,
   AttributeEnum,
   CertificateSigningUseEnum,
   type CertificateSigningUseEnumType,
@@ -14,7 +14,6 @@ import {
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  MessageState,
   OCPP2_1,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -40,7 +39,7 @@ const cryptoEngine = new pkijs.CryptoEngine({
 });
 pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
-@AsHandlerClass(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate, MessageState.Request)
+@AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate)
 export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _installCertificateHelperService: InstallCertificateHelperService;
