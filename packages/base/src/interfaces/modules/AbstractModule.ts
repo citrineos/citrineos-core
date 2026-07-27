@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RequestBuilder } from '@base-util/request.js';
 import type { BootstrapConfig } from '@config/bootstrap.config.js';
 import type { SystemConfig } from '@config/types.js';
 import type { ICache } from '@interfaces/cache/cache.js';
-import type { IWebsocketConnection } from '@interfaces/cache/types.js';
-import { CacheNamespace } from '@interfaces/cache/types.js';
-import { createIdentifier } from '@base-util/identifiers.js';
 import type {
   IMessage,
   IMessageConfirmation,
@@ -26,11 +22,11 @@ import { ErrorCode, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { v4 as uuidv4 } from 'uuid';
 import { OCPPValidator } from './OCPPValidator.js';
 import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
 import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
 import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
+import { OcppSender } from '@interfaces/handlers/OcppSender.js';
 
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
@@ -55,6 +51,7 @@ export abstract class AbstractModule implements IModule {
   protected readonly _sender: IMessageSender;
   protected readonly _eventGroup: EventGroup;
   protected readonly _logger: Logger<ILogObj>;
+  protected readonly _ocppSender: OcppSender;
 
   protected _requests: CallAction[] = [];
   protected _responses: CallAction[] = [];
@@ -80,6 +77,13 @@ export abstract class AbstractModule implements IModule {
     this._sender = sender;
     this._eventGroup = eventGroup;
     this._cache = cache;
+    this._ocppSender = new OcppSender({
+      config: this._config,
+      cache: this._cache,
+      sender: this._sender,
+      logger: this._logger,
+      ocppValidator: this._ocppValidator,
+    });
 
     // Set module for proper message flow.
     this.handler.module = this;
@@ -146,7 +150,7 @@ export abstract class AbstractModule implements IModule {
   }
 
   /**
-   * Methods
+   * Interface methods.
    */
 
   /**
@@ -265,30 +269,15 @@ export abstract class AbstractModule implements IModule {
   }
 
   /**
-   * Interface methods.
-   */
-
-  /**
-   * Method to handle incoming {@link IMessage}.
-   *
-   * @param message The {@link IMessage} to handle. Can contain either a {@link OcppRequest} or a {@link OcppResponse} as payload.
-   * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
-   */
-
-  /**
    * Calls shutdown on the handler and sender.
    *
    * Note: To be overwritten by subclass if other logic is necessary.
-   *
+   * TODO shutdown necessary for AbstractHandlers?
    */
   async shutdown(): Promise<void> {
     await this._handler.shutdown();
     await this._sender.shutdown();
   }
-
-  /**
-   * Default implementation
-   */
 
   /**
    * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
@@ -303,7 +292,7 @@ export abstract class AbstractModule implements IModule {
    * @param {MessageOrigin} [origin] - The origin of the call.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
-  public async sendCall(
+  public sendCall(
     ocppConnectionName: string,
     tenantId: number,
     protocol: OCPPVersionType,
@@ -313,76 +302,16 @@ export abstract class AbstractModule implements IModule {
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    const identifier = createIdentifier(tenantId, ocppConnectionName);
-    const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
-
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+    return this._ocppSender.sendCall({
+      ocppConnectionName,
+      tenantId,
+      protocol,
       action,
+      eventGroup: this._eventGroup,
       payload,
-      protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(_correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
-    }
-
-    if (callbackUrl) {
-      // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-      this._logger.debug(
-        `Setting callback URL: ${callbackUrl} for correlationId: ${_correlationId}`,
-      );
-      this._cache
-        .set(
-          _correlationId,
-          callbackUrl,
-          AbstractModule.CALLBACK_URL_CACHE_PREFIX + ocppConnectionName,
-          this._config.maxCachingSeconds,
-        )
-        .then((value) => {
-          if (value) {
-            this._logger.debug(`Successfully set cache for correlationId: ${_correlationId}`);
-          } else {
-            this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
-          }
-        })
-        .catch((error) => this._logger.error('Error setting cache: ', error));
-    }
-    // TODO: Future - Compound key with tenantId
-    return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
-      if (connection) {
-        const websocketConnection: IWebsocketConnection = JSON.parse(connection);
-        if (websocketConnection.protocol !== protocol) {
-          this._logger.error(
-            `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
-            identifier,
-          );
-          return Promise.resolve({
-            success: false,
-            payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
-          });
-        }
-        return this._sender.sendRequest(
-          RequestBuilder.buildCall(
-            ocppConnectionName,
-            _correlationId,
-            tenantId,
-            action,
-            payload,
-            this._eventGroup,
-            origin,
-            protocol,
-          ),
-        );
-      } else {
-        this._logger.error('Failed sending call. No connection found for identifier: ', identifier);
-        return Promise.resolve({
-          success: false,
-          payload: 'No connection found for identifier: ' + identifier,
-        });
-      }
+      callbackUrl,
+      correlationId,
+      origin,
     });
   }
 
@@ -407,31 +336,16 @@ export abstract class AbstractModule implements IModule {
     payload: OcppResponse,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+    return this._ocppSender.sendCallResult({
+      correlationId,
+      ocppConnectionName,
+      tenantId,
+      protocol,
       action,
+      eventGroup: this._eventGroup,
       payload,
-      protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
-    }
-
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallResult(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        this._eventGroup,
-        origin,
-        protocol,
-      ),
-    );
+      origin,
+    });
   }
 
   /**
@@ -446,26 +360,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation> {
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
-      message.action,
-      payload,
-      message.protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(
-        message.context.correlationId,
-        ErrorCode.FormatViolation,
-        'Invalid message format',
-        {
-          errors: errors,
-        },
-      );
-    }
-
-    message.origin = MessageOrigin.ChargingStationManagementSystem;
-    return this._sender.sendResponse(message, payload);
+    return this._ocppSender.sendCallResultWithMessage(message, payload);
   }
 
   /**
@@ -489,18 +384,16 @@ export abstract class AbstractModule implements IModule {
     payload: OcppError,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallError(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        this._eventGroup,
-        origin,
-        protocol,
-      ),
-    );
+    return this._ocppSender.sendCallError({
+      correlationId,
+      ocppConnectionName,
+      tenantId,
+      protocol,
+      action,
+      eventGroup: this._eventGroup,
+      payload,
+      origin,
+    });
   }
 
   /**
@@ -515,8 +408,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
-    message.origin = MessageOrigin.ChargingStationManagementSystem;
-    return this._sender.sendResponse(message, payload);
+    return this._ocppSender.sendCallErrorWithMessage(message, payload);
   }
 
   /**
