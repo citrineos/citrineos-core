@@ -11,7 +11,9 @@ import {
 import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
 import { MessageState } from '@interfaces/messages/index.js';
 
-/** Derives a handler's DI token from its class name, e.g. `GetCertificateStatusRequestHandler` -> `GetCertificateStatusRequestHandler`. */
+/** Derives a handler's DI token from its class name,
+ * e.g. `GetCertificateStatusRequestOcpp2Handler` -> `getCertificateStatusRequestOcpp2Handler`.
+ */
 function tokenFor(ctor: new (...args: any[]) => AbstractHandler): string {
   return ctor.name.charAt(0).toLowerCase() + ctor.name.slice(1);
 }
@@ -23,10 +25,8 @@ function tokenFor(ctor: new (...args: any[]) => AbstractHandler): string {
  * per-module handler list to keep in sync with config, since the actions a handler serves are
  * already declared once, on the handler class itself via those decorators.
  *
- * Relies on every handler class having already been imported somewhere (as the app's
- * composition root must do anyway, to register each one for DI) so its decorator has run and
- * registered it in {@link HANDLER_CLASS_REGISTRY}, and on each handler being registered in the
- * container under its class name (PascalCase).
+ * Each handler class should be registered in `apps/ocpp-server/src/container.ts`'s `registerHandlers`
+ * function, or else it will not be found here.
  */
 export function getHandlersByConfig(
   cradle: Record<string, unknown>,
