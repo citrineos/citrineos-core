@@ -46,6 +46,7 @@ import {
   ConfigurationOcpp2Api,
   ConnectedStationFilter,
   DefaultSequelizeInstance,
+  DeleteCertificateResponseHandler,
   DrizzleSecurityEventRepository,
   EVDriverDataApi,
   EVDriverModule,
@@ -53,7 +54,9 @@ import {
   EVDriverOcpp2Api,
   Get15118EVCertificateRequestHandler,
   GetCertificateStatusRequestHandler,
+  GetInstalledCertificateIdsResponseHandler,
   IdGenerator,
+  InstallCertificateResponseHandler,
   InternalSmartCharging,
   LocalBypassAuthProvider,
   MessageRouterImpl,
@@ -114,10 +117,6 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
-import {
-  DeleteCertificateResponseHandler,
-  GetInstalledCertificateIdsResponseHandler,
-} from '@citrineos/core/dist/src/handlers/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -425,5 +424,6 @@ function registerHandlers(container: AwilixContainer): void {
     getInstalledCertificateIdsResponseHandler: asClass(
       GetInstalledCertificateIdsResponseHandler,
     ).scoped(),
+    installCertificateResponseHandler: asClass(InstallCertificateResponseHandler).scoped(),
   });
 }

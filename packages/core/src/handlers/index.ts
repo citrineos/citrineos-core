@@ -11,3 +11,4 @@ export { SignCertificateRequestHandler } from './requests/2/SignCertificateReque
 export { CertificateSignedResponseHandler } from './responses/2/CertificateSignedResponseHandler.js';
 export { DeleteCertificateResponseHandler } from './responses/2/DeleteCertificateResponseHandler.js';
 export { GetInstalledCertificateIdsResponseHandler } from './responses/2/GetInstalledCertificateIdsResponseHandler.js';
+export { InstallCertificateResponseHandler } from './responses/2/InstallCertificateResponseHandler.js';
