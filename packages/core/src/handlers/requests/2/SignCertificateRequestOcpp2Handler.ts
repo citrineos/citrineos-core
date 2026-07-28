@@ -66,7 +66,11 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
     message: IMessage<OCPP2_request_types.SignCertificateRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('Handler for SignCertificateRequest received message:', message, props);
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('SignCertificateRequest'),
+      message,
+      props,
+    );
     const tenantId = message.context.tenantId;
     const ocppConnectionName: string = message.context.ocppConnectionName;
     const csrString: string = message.payload.csr.replace(/\n/g, '');

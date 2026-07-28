@@ -15,6 +15,8 @@ export interface AbstractHandlerDependencies {
 export abstract class AbstractHandler implements IHandler {
   protected readonly _ocppSender: IOcppSender;
   protected readonly _logger: Logger<ILogObj>;
+  protected readonly createHandlerReceivedMessageLog = (messageType: string) =>
+    `Handler for ${messageType} received message`;
 
   constructor(ocppSender: IOcppSender, logger: Logger<ILogObj>) {
     this._ocppSender = ocppSender;

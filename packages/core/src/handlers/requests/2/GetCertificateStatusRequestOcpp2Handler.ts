@@ -27,7 +27,11 @@ export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
     message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
     props?: HandlerProperties,
   ) {
-    this._logger.debug('Handler for GetCertificateStatusRequest received message:', message, props);
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('GetCertificateStatusRequest'),
+      message,
+      props,
+    );
 
     const reqData = message.payload.ocspRequestData;
     try {

@@ -41,7 +41,11 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
     message: IMessage<OCPP2_response_types.DeleteCertificateResponse>,
     props?: HandlerProperties,
   ) {
-    this._logger.debug('Handler for DeleteCertificateResponse received message:', message, props);
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('DeleteCertificateResponse'),
+      message,
+      props,
+    );
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
     const existingPendingDeleteCertificateAttempt =

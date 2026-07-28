@@ -47,7 +47,7 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
     props?: HandlerProperties,
   ) {
     this._logger.debug(
-      'Handler for GetInstalledCertificateIdsResponse received message:',
+      this.createHandlerReceivedMessageLog('GetInstalledCertificateIdsResponse'),
       message,
       props,
     );

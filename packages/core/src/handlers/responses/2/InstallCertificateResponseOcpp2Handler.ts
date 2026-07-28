@@ -33,7 +33,11 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
     message: IMessage<OCPP2_response_types.InstallCertificateResponse>,
     props?: HandlerProperties,
   ) {
-    this._logger.debug('Handler for InstallCertificateResponse received message:', message, props);
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('InstallCertificateResponse'),
+      message,
+      props,
+    );
     await this._installCertificateHelperService.finalizeInstalledCertificate(
       message.context.tenantId,
       message.context.ocppConnectionName,

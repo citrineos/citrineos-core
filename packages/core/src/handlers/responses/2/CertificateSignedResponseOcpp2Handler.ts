@@ -42,7 +42,11 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
     message: IMessage<OCPP2_response_types.CertificateSignedResponse>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.debug('Handler for CertificateSignedResponse received message:', message, props);
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('CertificateSignedResponse'),
+      message,
+      props,
+    );
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 

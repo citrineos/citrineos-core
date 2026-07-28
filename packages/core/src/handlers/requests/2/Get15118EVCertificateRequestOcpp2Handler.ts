@@ -37,7 +37,7 @@ export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
-      'Handler for Get15118EVCertificateRequest received message:',
+      this.createHandlerReceivedMessageLog('Get15118EVCertificateRequest'),
       message,
       props,
     );
