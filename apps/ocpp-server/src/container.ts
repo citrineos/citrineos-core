@@ -53,6 +53,7 @@ import {
   ConfigurationOcpp16Api,
   ConfigurationOcpp2Api,
   ConnectedStationFilter,
+  CustomerInformationResponseOcpp2Handler,
   DefaultSequelizeInstance,
   DeleteCertificateResponseOcpp2Handler,
   DrizzleSecurityEventRepository,
@@ -61,9 +62,12 @@ import {
   EVDriverOcpp16Api,
   EVDriverOcpp2Api,
   Get15118EVCertificateRequestOcpp2Handler,
+  GetBaseReportResponseOcpp2Handler,
   GetCertificateStatusRequestOcpp2Handler,
   GetInstalledCertificateIdsResponseOcpp2Handler,
+  GetLogResponseOcpp2Handler,
   GetMonitoringReportResponseOcpp2Handler,
+  GetReportResponseOcpp2Handler,
   GetVariablesResponseOcpp2Handler,
   GetLocalListVersionResponseOcpp16Handler,
   GetLocalListVersionResponseOcpp2Handler,
@@ -486,7 +490,11 @@ function registerHandlers(container: AwilixContainer): void {
     ).scoped(),
     clearCacheResponseOcpp16Handler: asClass(ClearCacheResponseOcpp16Handler).scoped(),
     clearCacheResponseOcpp2Handler: asClass(ClearCacheResponseOcpp2Handler).scoped(),
+    customerInformationResponseOcpp2Handler: asClass(
+      CustomerInformationResponseOcpp2Handler,
+    ).scoped(),
     deleteCertificateResponseOcpp2Handler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
+    getBaseReportResponseOcpp2Handler: asClass(GetBaseReportResponseOcpp2Handler).scoped(),
     getInstalledCertificateIdsResponseOcpp2Handler: asClass(
       GetInstalledCertificateIdsResponseOcpp2Handler,
     ).scoped(),
@@ -496,9 +504,11 @@ function registerHandlers(container: AwilixContainer): void {
     getLocalListVersionResponseOcpp2Handler: asClass(
       GetLocalListVersionResponseOcpp2Handler,
     ).scoped(),
+    getLogResponseOcpp2Handler: asClass(GetLogResponseOcpp2Handler).scoped(),
     getMonitoringReportResponseOcpp2Handler: asClass(
       GetMonitoringReportResponseOcpp2Handler,
     ).scoped(),
+    getReportResponseOcpp2Handler: asClass(GetReportResponseOcpp2Handler).scoped(),
     getVariablesResponseOcpp2Handler: asClass(GetVariablesResponseOcpp2Handler).scoped(),
     installCertificateResponseOcpp2Handler: asClass(
       InstallCertificateResponseOcpp2Handler,
