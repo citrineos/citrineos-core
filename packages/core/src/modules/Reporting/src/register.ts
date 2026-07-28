@@ -2,8 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asClass, type AwilixContainer } from 'awilix';
+import { asClass, asFunction, type AwilixContainer } from 'awilix';
 import { DeviceModelService } from './module/services.js';
+import {
+  AbstractHandler,
+  type BootstrapConfig,
+  getHandlersByConfig,
+  type SystemConfig,
+} from '@citrineos/base';
 
 /**
  * Registers the Reporting module's internal services as scoped dependencies.
@@ -12,5 +18,15 @@ import { DeviceModelService } from './module/services.js';
 export function registerReportingServices(container: AwilixContainer): void {
   container.register({
     reportingDeviceModelService: asClass(DeviceModelService).scoped(),
+    reportingHandlers: asFunction(
+      (
+        cradle: { config: BootstrapConfig & SystemConfig } & Record<string, unknown>,
+      ): AbstractHandler[] =>
+        getHandlersByConfig(
+          cradle,
+          cradle.config.modules.reporting?.requests ?? [],
+          cradle.config.modules.reporting?.responses ?? [],
+        ),
+    ).scoped(),
   });
 }
