@@ -59,6 +59,7 @@ import {
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@dal/layers/sequelize/index.js';
+import { literal, Op } from 'sequelize';
 import { IdGenerator, validateMessageContentType } from '@util/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -439,7 +440,10 @@ export class ConfigurationModule extends AbstractModule {
     message: IMessage<OCPP2_request_types.NotifyDisplayMessagesRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    // Validate requestId was provided in a previous GetDisplayMessagesRequest
+    // Validate requestId was provided in a previous GetDisplayMessagesRequest.
+    // OCPPMessages.message holds the raw OCPP frame [messageTypeId, correlationId,
+    // action, payload], so the requestId lives under element 3 of a Call (type 2)
+    // rather than at the top level.
     const requestId = message.payload.requestId;
     const previousRequest = await this._ocppMessageRepository.readAllByQuery(
       message.context.tenantId,
@@ -448,10 +452,9 @@ export class ConfigurationModule extends AbstractModule {
           tenantId: message.context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           action: OCPP_CallAction.GetDisplayMessages,
-          message: {
-            requestId: requestId,
-          },
+          [Op.and]: literal(`"message"->>0 = '2' AND "message"->3->>'requestId' = :requestId`),
         },
+        replacements: { requestId: String(requestId) },
         limit: 1,
       },
       Namespace.OCPPMessage,

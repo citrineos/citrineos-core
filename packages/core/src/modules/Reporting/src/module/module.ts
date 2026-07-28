@@ -35,6 +35,7 @@ import type {
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
 import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
+import { literal, Op } from 'sequelize';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 
 import type { DeviceModelService } from './services.js';
@@ -148,7 +149,10 @@ export class ReportingModule extends AbstractModule {
   ): Promise<void> {
     this._logger.debug('NotifyCustomerInformation request received:', message, props);
 
-    // Validate requestId was provided in a previous CustomerInformationRequest
+    // Validate requestId was provided in a previous CustomerInformationRequest.
+    // OCPPMessages.message holds the raw OCPP frame [messageTypeId, correlationId,
+    // action, payload], so the requestId lives under element 3 of a Call (type 2)
+    // rather than at the top level.
     const requestId = message.payload.requestId;
     const previousRequest = await this._ocppMessageRepository.readAllByQuery(
       message.context.tenantId,
@@ -157,10 +161,9 @@ export class ReportingModule extends AbstractModule {
           tenantId: message.context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           action: OCPP_CallAction.CustomerInformation,
-          message: {
-            requestId: requestId,
-          },
+          [Op.and]: literal(`"message"->>0 = '2' AND "message"->3->>'requestId' = :requestId`),
         },
+        replacements: { requestId: String(requestId) },
         limit: 1,
       },
       Namespace.OCPPMessage,
