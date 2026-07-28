@@ -423,7 +423,9 @@
       "downloadCsv": "Download CSV",
       "searchPlaceholder": "Search...",
       "addConfiguration": "Add Configuration",
-      "editConfiguration": "Edit Configuration"
+      "editConfiguration": "Edit Configuration",
+      "filterByType": "Filter by type",
+      "searchTypes": "Search types"
     },
     "connectionModal": {
       "welcomeTitle": "Welcome to CitrineOS Operator UI",

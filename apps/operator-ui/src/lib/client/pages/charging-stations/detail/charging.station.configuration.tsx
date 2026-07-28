@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPPVersion } from '@citrineos/base';
+import { OCPP2_0_1, OCPPVersion } from '@citrineos/base';
 import { ChangeConfigurationModal } from '@lib/client/components/modals/1.6/change-configuration/change.configuration.modal';
+import { DebounceSearch } from '@lib/client/components/debounce-search';
+import { MultiSelect } from '@lib/client/components/multi-select';
 import { Button } from '@lib/client/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@lib/client/components/ui/dialog';
-import { Input } from '@lib/client/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -28,7 +29,19 @@ import { ResourceType } from '@lib/utils/access.types';
 import { downloadCSV } from '@lib/utils/download';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { type CrudFilter, useList, useOne, useTranslate } from '@refinedev/core';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Edit, Plus } from 'lucide-react';
+import { keepPreviousData } from '@tanstack/react-query';
+import { Skeleton } from '@lib/client/components/ui/skeleton';
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUpDown,
+  Edit,
+  Plus,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -76,21 +89,25 @@ const CONFIG_2_0_1_COLUMNS = [
     key: 'type',
     headerKey: 'ChargingStations.configuration.type',
     accessor: 'type',
+    sortField: 'type',
   },
   {
     key: 'value',
     headerKey: 'ChargingStations.configuration.value',
     accessor: 'value',
+    sortField: 'value',
   },
   {
     key: 'component',
     headerKey: 'ChargingStations.configuration.componentNameInstance',
     accessor: 'component',
+    sortField: 'Component.name',
   },
   {
     key: 'variable',
     headerKey: 'ChargingStations.configuration.variableNameInstance',
     accessor: 'variable',
+    sortField: 'Variable.name',
   },
   {
     key: 'evse',
@@ -99,12 +116,16 @@ const CONFIG_2_0_1_COLUMNS = [
   },
 ];
 
+const ATTRIBUTE_TYPE_OPTIONS = Object.values(OCPP2_0_1.AttributeEnumType);
+
 export const ChargingStationConfiguration: React.FC<ChargingStationConfigurationProps> = ({
   id,
 }) => {
   const translate = useTranslate();
   const [version, setVersion] = useState<'1.6' | '2.0.1'>('1.6');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [sort, setSort] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null);
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [currentVariableAttributes, setCurrentVariableAttributes] = useState(1);
   const [pageSizeVariableAttributes, setPageSizeVariableAttributes] = useState(20);
@@ -129,10 +150,28 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   const station = data?.data;
   const isConnected = !!station?.isOnline;
 
-  const attributeFilters = useMemo<CrudFilter[]>(
-    () => [{ field: 'stationId', operator: 'eq', value: id }],
-    [id],
-  );
+  const attributeFilters = useMemo<CrudFilter[]>(() => {
+    const filters: CrudFilter[] = [{ field: 'stationId', operator: 'eq', value: id }];
+    if (version === '2.0.1') {
+      if (searchTerm) {
+        filters.push({
+          operator: 'or',
+          value: [
+            { field: 'value', operator: 'contains', value: searchTerm },
+            { field: 'type', operator: 'contains', value: searchTerm },
+            { field: 'Component.name', operator: 'contains', value: searchTerm },
+            { field: 'Component.instance', operator: 'contains', value: searchTerm },
+            { field: 'Variable.name', operator: 'contains', value: searchTerm },
+            { field: 'Variable.instance', operator: 'contains', value: searchTerm },
+          ],
+        });
+      }
+      if (selectedTypes.length > 0) {
+        filters.push({ field: 'type', operator: 'in', value: selectedTypes });
+      }
+    }
+    return filters;
+  }, [id, version, searchTerm, selectedTypes]);
 
   const configFilters = useMemo<CrudFilter[]>(
     () => [
@@ -149,23 +188,30 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     query: {
       data: variableAttributesResult,
       isLoading: isAttributesLoading,
+      isFetching: isAttributesFetching,
       error: attributesError,
     },
   } = useList<VariableAttribute>({
     resource: 'VariableAttributes',
     meta: { gqlQuery: VARIABLE_ATTRIBUTE_LIST_QUERY },
     filters: attributeFilters,
-    sorters: [{ field: 'createdAt', order: 'desc' }],
+    sorters: sort
+      ? [{ field: sort.field, order: sort.order }]
+      : [{ field: 'createdAt', order: 'desc' }],
     pagination: {
       currentPage: currentVariableAttributes,
       pageSize: pageSizeVariableAttributes,
     },
+    // Keep the current rows visible while a sort/filter/page change refetches, so the table
+    // doesn't collapse to a loading row (which caused the visible "jerk").
+    queryOptions: { placeholderData: keepPreviousData },
   });
 
   const {
     query: {
       data: changeConfigurationsResult,
       isLoading: isConfigurationsLoading,
+      isFetching: isConfigurationsFetching,
       error: configurationsError,
     },
   } = useList<ChangeConfiguration>({
@@ -256,17 +302,26 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     translate,
   ]);
 
-  const filteredDataSource = useMemo(() => {
-    if (!searchTerm) return dataSource;
+  const displayedDataSource = useMemo(() => {
+    if (version !== '1.6' || !searchTerm) return dataSource;
     const term = searchTerm.toLowerCase();
-    return dataSource.filter((item) => {
-      const valuesToCheck =
-        version === '1.6'
-          ? [item.key, item.value]
-          : [item.type, item.value, item.component, item.variable, item.evse];
-      return valuesToCheck.some((val) => val?.toString().toLowerCase().includes(term));
-    });
+    return dataSource.filter((item) =>
+      [item.key, item.value].some((val) => val?.toString().toLowerCase().includes(term)),
+    );
   }, [dataSource, searchTerm, version]);
+
+  useEffect(() => {
+    setCurrentVariableAttributes(1);
+  }, [searchTerm, selectedTypes, sort]);
+
+  const handleSort = (field?: string) => {
+    if (!field) return;
+    setSort((prev) => {
+      if (prev?.field !== field) return { field, order: 'asc' };
+      if (prev.order === 'asc') return { field, order: 'desc' };
+      return null;
+    });
+  };
 
   const handleDownloadConfigurations = () => {
     if (version === '1.6') {
@@ -422,18 +477,47 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   const renderTable = () => {
     const columns = version === '1.6' ? CONFIG_1_6_COLUMNS : CONFIG_2_0_1_COLUMNS;
     const isLoading = version === '2.0.1' ? isAttributesLoading : isConfigurationsLoading;
+    const isFetching = version === '2.0.1' ? isAttributesFetching : isConfigurationsFetching;
+    const colCount = columns.length + (version === '1.6' ? 1 : 0);
 
     return (
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table
+            className={`w-full border-collapse transition-opacity ${
+              isFetching && !isLoading ? 'opacity-60' : ''
+            }`}
+          >
             <thead className="bg-muted">
               <tr>
-                {columns.map((col) => (
-                  <th key={col.key} className="px-4 py-2 text-left text-sm font-medium">
-                    {translate(col.headerKey)}
-                  </th>
-                ))}
+                {columns.map((col) => {
+                  const sortField = (col as { sortField?: string }).sortField;
+                  const isSorted = !!sortField && sort?.field === sortField;
+                  return (
+                    <th key={col.key} className="px-4 py-2 text-left text-sm font-medium">
+                      {sortField ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSort(sortField)}
+                          className="inline-flex items-center gap-1 select-none hover:text-foreground"
+                        >
+                          {translate(col.headerKey)}
+                          {isSorted ? (
+                            sort?.order === 'asc' ? (
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            ) : (
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            )
+                          ) : (
+                            <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                          )}
+                        </button>
+                      ) : (
+                        translate(col.headerKey)
+                      )}
+                    </th>
+                  );
+                })}
                 {version === '1.6' && (
                   <th className="px-4 py-2 text-left text-sm font-medium">
                     {translate('ChargingStations.configuration.action')}
@@ -443,25 +527,23 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
             </thead>
             <tbody>
               {isLoading ? (
+                Array.from({ length: 8 }).map((_, rowIdx) => (
+                  <tr key={`skeleton-${rowIdx}`} className="border-t">
+                    {Array.from({ length: colCount }).map((_, colIdx) => (
+                      <td key={colIdx} className="px-4 py-2">
+                        <Skeleton className="h-4 w-full" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : displayedDataSource.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={columns.length + (version === '1.6' ? 1 : 0)}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    {translate('Common.loadingEllipsis')}
-                  </td>
-                </tr>
-              ) : filteredDataSource.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length + (version === '1.6' ? 1 : 0)}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={colCount} className="px-4 py-8 text-center text-muted-foreground">
                     {translate('ChargingStations.configuration.noData')}
                   </td>
                 </tr>
               ) : (
-                filteredDataSource.map((row, idx) => (
+                displayedDataSource.map((row, idx) => (
                   <tr key={row.key || idx} className="border-t hover:bg-muted/50">
                     {columns.map((col) => (
                       <td key={col.key} className="px-4 py-2 text-sm wrap-break-word">
@@ -499,15 +581,28 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
             {translate('ChargingStations.configuration.selectOcppVersion')}
           </label>
           <div className="flex gap-2">
-            <Select value={version} onValueChange={(v: '1.6' | '2.0.1') => setVersion(v)}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1.6">OCPP 1.6</SelectItem>
-                <SelectItem value="2.0.1">OCPP 2.0.1</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-full">
+              <Select value={version} onValueChange={(v: '1.6' | '2.0.1') => setVersion(v)}>
+                <SelectTrigger className="flex-1 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1.6">OCPP 1.6</SelectItem>
+                  <SelectItem value="2.0.1">OCPP 2.0.1</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {version === '2.0.1' && (
+              <MultiSelect
+                options={ATTRIBUTE_TYPE_OPTIONS}
+                selectedValues={selectedTypes}
+                setSelectedValues={setSelectedTypes}
+                placeholder={translate('ChargingStations.configuration.filterByType')}
+                searchPlaceholder={translate('ChargingStations.configuration.searchTypes')}
+              />
+            )}
+
             <Button
               variant="outline"
               onClick={handleDownloadConfigurations}
@@ -519,11 +614,13 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">{translate('Common.search')}</label>
-          <Input
-            placeholder={translate('ChargingStations.configuration.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <DebounceSearch
+              onSearch={setSearchTerm}
+              placeholder={translate('ChargingStations.configuration.searchPlaceholder')}
+              className="relative flex-1"
+            />
+          </div>
         </div>
       </div>
 
