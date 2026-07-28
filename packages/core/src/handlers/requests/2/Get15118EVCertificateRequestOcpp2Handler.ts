@@ -8,6 +8,7 @@ import {
   ErrorCode,
   type HandlerProperties,
   type IMessage,
+  type IOcppSender,
   Iso15118EVCertificateStatusEnum,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -18,17 +19,20 @@ import { CertificateAuthorityService } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
 export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {
+  protected _ocppSender: IOcppSender;
   protected _certificateAuthorityService: CertificateAuthorityService;
 
   constructor({
-    ocppSender,
     logger,
+    ocppSender,
     certificateAuthorityService,
   }: AbstractHandlerDependencies & {
+    ocppSender: IOcppSender;
     certificateAuthorityService: CertificateAuthorityService;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
+    this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
   }
 

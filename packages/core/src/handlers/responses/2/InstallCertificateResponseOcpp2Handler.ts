@@ -18,13 +18,12 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
-    ocppSender,
     logger,
     installCertificateHelperService,
   }: AbstractHandlerDependencies & {
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._installCertificateHelperService = installCertificateHelperService;
   }

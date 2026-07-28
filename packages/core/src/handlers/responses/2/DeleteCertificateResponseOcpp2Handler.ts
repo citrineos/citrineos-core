@@ -23,7 +23,6 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _installedCertificateRepository: IInstalledCertificateRepository;
 
   constructor({
-    ocppSender,
     logger,
     deleteCertificateAttemptRepository,
     installedCertificateRepository,
@@ -31,7 +30,7 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
     installedCertificateRepository: IInstalledCertificateRepository;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
     this._installedCertificateRepository = installedCertificateRepository;

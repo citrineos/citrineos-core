@@ -24,7 +24,6 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
-    ocppSender,
     logger,
     ocppMessageRepository,
     installCertificateHelperService,
@@ -32,7 +31,7 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
     ocppMessageRepository: IOCPPMessageRepository;
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._ocppMessageRepository = ocppMessageRepository;
     this._installCertificateHelperService = installCertificateHelperService;

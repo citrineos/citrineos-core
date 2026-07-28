@@ -14,6 +14,7 @@ import {
   GenericStatusEnum,
   type HandlerProperties,
   type IMessage,
+  type IOcppSender,
   OCPP2_1,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -40,23 +41,26 @@ pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.SignCertificate)
 export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
+  protected _ocppSender: IOcppSender;
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _installCertificateHelperService: InstallCertificateHelperService;
   protected _deviceModelRepository: IDeviceModelRepository;
 
   constructor({
-    ocppSender,
     logger,
+    ocppSender,
     certificateAuthorityService,
     installCertificateHelperService,
     deviceModelRepository,
   }: AbstractHandlerDependencies & {
+    ocppSender: IOcppSender;
     certificateAuthorityService: CertificateAuthorityService;
     installCertificateHelperService: InstallCertificateHelperService;
     deviceModelRepository: IDeviceModelRepository;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
+    this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
     this._installCertificateHelperService = installCertificateHelperService;
     this._deviceModelRepository = deviceModelRepository;

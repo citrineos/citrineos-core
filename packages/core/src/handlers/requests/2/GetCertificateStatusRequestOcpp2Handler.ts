@@ -9,6 +9,7 @@ import {
   GetCertificateStatusEnum,
   type HandlerProperties,
   type IMessage,
+  type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
@@ -19,8 +20,17 @@ import { sendOCSPRequest } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
-  constructor({ ocppSender, logger }: AbstractHandlerDependencies) {
-    super(ocppSender, logger);
+  protected _ocppSender: IOcppSender;
+
+  constructor({
+    logger,
+    ocppSender,
+  }: AbstractHandlerDependencies & {
+    ocppSender: IOcppSender;
+  }) {
+    super(logger);
+
+    this._ocppSender = ocppSender;
   }
 
   async handle(

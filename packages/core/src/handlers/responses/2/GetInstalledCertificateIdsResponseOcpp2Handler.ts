@@ -28,7 +28,6 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
   protected _installedCertificateRepository: IInstalledCertificateRepository;
 
   constructor({
-    ocppSender,
     logger,
     ocppMessageRepository,
     installedCertificateRepository,
@@ -36,7 +35,7 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
     ocppMessageRepository: IOCPPMessageRepository;
     installedCertificateRepository: IInstalledCertificateRepository;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._ocppMessageRepository = ocppMessageRepository;
     this._installedCertificateRepository = installedCertificateRepository;
