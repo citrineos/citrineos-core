@@ -65,6 +65,7 @@ import {
   MonitoringModule,
   MonitoringOcpp2Api,
   NetworkProfileFilter,
+  NotifyEventRequestOcpp2Handler,
   OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
@@ -422,6 +423,7 @@ function registerHandlers(container: AwilixContainer): void {
     get15118EVCertificateRequestOcpp2Handler: asClass(
       Get15118EVCertificateRequestOcpp2Handler,
     ).scoped(),
+    notifyEventRequestOcpp2Handler: asClass(NotifyEventRequestOcpp2Handler).scoped(),
     signCertificateRequestOcpp2Handler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
     // responses
     certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
