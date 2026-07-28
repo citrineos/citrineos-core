@@ -1,28 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  CallAction,
-  GenericDeviceModelStatusEnumType,
-  HandlerProperties,
-  IMessage,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
-  OcppModuleDependencies,
-} from '@citrineos/base';
 import {
+  AbstractHandler,
   AbstractModule,
   AsHandler,
+  type CallAction,
   ErrorCode,
   EventGroup,
   GenericDeviceModelStatusEnum,
+  type GenericDeviceModelStatusEnumType,
+  type HandlerProperties,
+  type IMessage,
   MutabilityEnum,
   Namespace,
   OCPP1_6,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
+  type OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
+  type OcppModuleDependencies,
   OCPPVersion,
   SecurityEventNotificationTypeEnumSchema,
   SetVariableStatusEnum,
@@ -45,6 +44,7 @@ export interface ReportingModuleDependencies extends OcppModuleDependencies {
   variableMonitoringRepository: IVariableMonitoringRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   reportingDeviceModelService: DeviceModelService;
+  reportingHandlers: AbstractHandler[];
 }
 
 /**
@@ -86,8 +86,19 @@ export class ReportingModule extends AbstractModule {
     variableMonitoringRepository,
     ocppMessageRepository,
     reportingDeviceModelService,
+    reportingHandlers,
   }: ReportingModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Reporting, ocppSender, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.Reporting,
+      ocppSender,
+      logger,
+      ocppValidator,
+      reportingHandlers,
+    );
 
     this._requests = config.modules.reporting.requests;
     this._responses = config.modules.reporting.responses;
@@ -112,35 +123,6 @@ export class ReportingModule extends AbstractModule {
   /**
    * Handle Requests
    */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.LogStatusNotification)
-  protected async _handleLogStatusNotification(
-    message: IMessage<OCPP2_request_types.LogStatusNotificationRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('LogStatusNotification received:', message, props);
-
-    // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
-
-    // Validate requestId requirement
-    // requestId is mandatory unless message was triggered by TriggerMessageRequest AND no log upload ongoing
-    if (!message.payload.requestId) {
-      await this.sendCallErrorWithMessage(
-        message,
-        new OcppError(
-          message.context.correlationId,
-          ErrorCode.OccurrenceConstraintViolation,
-          'RequestId is required.',
-        ),
-      );
-      return;
-    }
-    // Create response
-    const response: OCPP2_response_types.LogStatusNotificationResponse = {};
-
-    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
-    this._logger.debug('LogStatusNotification response sent: ', messageConfirmation);
-  }
 
   @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
   protected async _handleNotifyCustomerInformation(

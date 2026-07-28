@@ -71,6 +71,7 @@ import {
   InstallCertificateResponseOcpp2Handler,
   InternalSmartCharging,
   LocalBypassAuthProvider,
+  LogStatusNotificationRequestOcpp2Handler,
   MessageRouterImpl,
   MonitoringDataApi,
   MonitoringModule,
@@ -451,6 +452,9 @@ function registerHandlers(container: AwilixContainer): void {
     ).scoped(),
     get15118EVCertificateRequestOcpp2Handler: asClass(
       Get15118EVCertificateRequestOcpp2Handler,
+    ).scoped(),
+    logStatusNotificationRequestOcpp2Handler: asClass(
+      LogStatusNotificationRequestOcpp2Handler,
     ).scoped(),
     notifyEventRequestOcpp2Handler: asClass(NotifyEventRequestOcpp2Handler).scoped(),
     reservationStatusUpdateRequestOcpp2Handler: asClass(

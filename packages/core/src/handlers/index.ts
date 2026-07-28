@@ -5,6 +5,7 @@
 // Request handlers
 export { GetCertificateStatusRequestOcpp2Handler } from './requests/2/GetCertificateStatusRequestOcpp2Handler.js';
 export { Get15118EVCertificateRequestOcpp2Handler } from './requests/2/Get15118EVCertificateRequestOcpp2Handler.js';
+export { LogStatusNotificationRequestOcpp2Handler } from './requests/2/LogStatusNotificationRequestOcpp2Handler.js';
 export { NotifyEventRequestOcpp2Handler } from './requests/2/NotifyEventRequestOcpp2Handler.js';
 export { SignCertificateRequestOcpp2Handler } from './requests/2/SignCertificateRequestOcpp2Handler.js';
 export { AuthorizeRequestOcpp201Handler } from './requests/2/AuthorizeRequestOcpp201Handler.js';
