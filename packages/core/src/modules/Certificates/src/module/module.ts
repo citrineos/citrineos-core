@@ -91,3 +91,5 @@ export class CertificatesModule extends AbstractModule {
     return this._installCertificateHelperService;
   }
 }
+
+export default CertificatesModule;
