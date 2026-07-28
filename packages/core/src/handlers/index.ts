@@ -16,9 +16,13 @@ export { SignCertificateRequestOcpp2Handler } from './requests/2/SignCertificate
 // Response handlers
 export { CertificateSignedResponseOcpp2Handler } from './responses/2/CertificateSignedResponseOcpp2Handler.js';
 export { ClearVariableMonitoringResponseOcpp2Handler } from './responses/2/ClearVariableMonitoringResponseOcpp2Handler.js';
+export { CustomerInformationResponseOcpp2Handler } from './responses/2/CustomerInformationResponseOcpp2Handler.js';
 export { DeleteCertificateResponseOcpp2Handler } from './responses/2/DeleteCertificateResponseOcpp2Handler.js';
+export { GetBaseReportResponseOcpp2Handler } from './responses/2/GetBaseReportResponseOcpp2Handler.js';
 export { GetInstalledCertificateIdsResponseOcpp2Handler } from './responses/2/GetInstalledCertificateIdsResponseOcpp2Handler.js';
+export { GetLogResponseOcpp2Handler } from './responses/2/GetLogResponseOcpp2Handler.js';
 export { GetMonitoringReportResponseOcpp2Handler } from './responses/2/GetMonitoringReportResponseOcpp2Handler.js';
+export { GetReportResponseOcpp2Handler } from './responses/2/GetReportResponseOcpp2Handler.js';
 export { GetVariablesResponseOcpp2Handler } from './responses/2/GetVariablesResponseOcpp2Handler.js';
 export { InstallCertificateResponseOcpp2Handler } from './responses/2/InstallCertificateResponseOcpp2Handler.js';
 export { SetMonitoringBaseResponseOcpp2Handler } from './responses/2/SetMonitoringBaseResponseOcpp2Handler.js';

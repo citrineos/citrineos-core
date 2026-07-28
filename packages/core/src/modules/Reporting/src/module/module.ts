@@ -7,19 +7,12 @@ import {
   AsHandler,
   type CallAction,
   EventGroup,
-  GenericDeviceModelStatusEnum,
-  type GenericDeviceModelStatusEnumType,
   type HandlerProperties,
   type IMessage,
   OCPP1_6,
-  type OCPP2_common_types,
-  type OCPP2_request_types,
-  type OCPP2_response_types,
-  OCPP_2_VER_LIST,
   OCPP_CallAction,
   type OcppModuleDependencies,
   OCPPVersion,
-  SecurityEventNotificationTypeEnumSchema,
 } from '@citrineos/base';
 
 import type {
@@ -108,106 +101,6 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _deviceModelRepository: IDeviceModelRepository;
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SecurityEventNotification)
-  protected async _handleSecurityEventNotification(
-    message: IMessage<OCPP2_request_types.SecurityEventNotificationRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('SecurityEventNotification request received:', message, props);
-
-    // Warn if there is a mismatch against the standard security event list
-    if (!SecurityEventNotificationTypeEnumSchema.safeParse(message.payload.type).success) {
-      this._logger.warn(
-        'SecurityEventNotification reported an unknown security event type',
-        message.payload.type,
-      );
-    }
-
-    await this._securityEventRepository.createByStationId(
-      message.context.tenantId,
-      message.payload,
-      message.context.ocppConnectionName,
-    );
-    await this.sendCallResultWithMessage(
-      message,
-      {} as OCPP2_response_types.SecurityEventNotificationResponse,
-    );
-  }
-
-  /**
-   * Handle responses
-   */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetBaseReport)
-  protected _handleGetBaseReport(
-    message: IMessage<OCPP2_response_types.GetBaseReportResponse>,
-    props?: HandlerProperties,
-  ): void {
-    this._logger.debug('GetBaseReport response received:', message, props);
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetReport)
-  protected _handleGetReport(
-    message: IMessage<OCPP2_response_types.GetReportResponse>,
-    props?: HandlerProperties,
-  ): void {
-    this._logger.debug('GetReport response received:', message, props);
-
-    const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_common_types.StatusInfoType | undefined | null =
-      message.payload.statusInfo;
-    if (
-      status === GenericDeviceModelStatusEnum.Rejected ||
-      status === GenericDeviceModelStatusEnum.NotSupported
-    ) {
-      this._logger.error(
-        'Failed to get report.',
-        status,
-        statusInfo?.reasonCode,
-        statusInfo?.additionalInfo,
-      );
-    }
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
-  protected async _handleGetMonitoringReport(
-    message: IMessage<OCPP2_response_types.GetMonitoringReportResponse>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('GetMonitoringReport response received:', message, props);
-
-    const status: GenericDeviceModelStatusEnumType = message.payload.status;
-    const statusInfo: OCPP2_common_types.StatusInfoType | undefined | null =
-      message.payload.statusInfo;
-    if (
-      status === GenericDeviceModelStatusEnum.Rejected ||
-      status === GenericDeviceModelStatusEnum.NotSupported
-    ) {
-      this._logger.error(
-        'Failed to get monitoring report.',
-        status,
-        statusInfo?.reasonCode,
-        statusInfo?.additionalInfo,
-      );
-    }
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetLog)
-  protected _handleGetLog(
-    message: IMessage<OCPP2_response_types.GetLogResponse>,
-    props?: HandlerProperties,
-  ): void {
-    this._logger.debug('GetLog response received:', message, props);
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.CustomerInformation)
-  protected _handleCustomerInformation(
-    message: IMessage<OCPP2_response_types.CustomerInformationResponse>,
-    props?: HandlerProperties,
-  ): void {
-    this._logger.debug('CustomerInformation response received:', message, props);
-  }
 
   /**
    * OCPP 1.6 Handlers
