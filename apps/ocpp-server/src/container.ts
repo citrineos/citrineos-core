@@ -33,14 +33,20 @@ import { type ILogObj, Logger } from 'tslog';
 import {
   AdminApi,
   Authenticator,
+  AuthorizeRequestOcpp16Handler,
+  AuthorizeRequestOcpp201Handler,
+  AuthorizeRequestOcpp21Handler,
   BasicAuthenticationFilter,
   BrokerAwareMessageSender,
+  CancelReservationResponseOcpp2Handler,
   CertificateAuthorityService,
   CertificatesDataApi,
   CertificateSignedResponseOcpp2Handler,
   CertificatesModule,
   CertificatesOcpp2Api,
   ClearVariableMonitoringResponseOcpp2Handler,
+  ClearCacheResponseOcpp16Handler,
+  ClearCacheResponseOcpp2Handler,
   Component,
   ConfigurationDataApi,
   ConfigurationModule,
@@ -59,6 +65,8 @@ import {
   GetInstalledCertificateIdsResponseOcpp2Handler,
   GetMonitoringReportResponseOcpp2Handler,
   GetVariablesResponseOcpp2Handler,
+  GetLocalListVersionResponseOcpp16Handler,
+  GetLocalListVersionResponseOcpp2Handler,
   IdGenerator,
   InstallCertificateResponseOcpp2Handler,
   InternalSmartCharging,
@@ -69,6 +77,7 @@ import {
   MonitoringOcpp2Api,
   NetworkProfileFilter,
   NotifyEventRequestOcpp2Handler,
+  NotifyWebPaymentStartedResponseOcpp21Handler,
   OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
@@ -81,9 +90,17 @@ import {
   registerMonitoringServices,
   registerReportingServices,
   registerTransactionsServices,
+  RemoteStartTransactionResponseOcpp16Handler,
+  RemoteStopTransactionResponseOcpp16Handler,
   ReportingModule,
   ReportingOcpp16Api,
   ReportingOcpp2Api,
+  RequestStartTransactionResponseOcpp2Handler,
+  RequestStopTransactionResponseOcpp2Handler,
+  ReservationStatusUpdateRequestOcpp2Handler,
+  ReserveNowResponseOcpp2Handler,
+  SendLocalListResponseOcpp16Handler,
+  SendLocalListResponseOcpp2Handler,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -123,6 +140,8 @@ import {
   TransactionsModule,
   TransactionsOcpp2Api,
   UnknownStationFilter,
+  UnlockConnectorResponseOcpp2Handler,
+  VatNumberValidationRequestOcpp21Handler,
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
@@ -424,6 +443,9 @@ function registerHandlers(container: AwilixContainer): void {
   container.register({
     ocppSender: asClass(OcppSender).scoped(),
     // requests
+    authorizeRequestOcpp201Handler: asClass(AuthorizeRequestOcpp201Handler).scoped(),
+    authorizeRequestOcpp21Handler: asClass(AuthorizeRequestOcpp21Handler).scoped(),
+    authorizeRequestOcpp16Handler: asClass(AuthorizeRequestOcpp16Handler).scoped(),
     getCertificateStatusRequestOcpp2Handler: asClass(
       GetCertificateStatusRequestOcpp2Handler,
     ).scoped(),
@@ -431,15 +453,30 @@ function registerHandlers(container: AwilixContainer): void {
       Get15118EVCertificateRequestOcpp2Handler,
     ).scoped(),
     notifyEventRequestOcpp2Handler: asClass(NotifyEventRequestOcpp2Handler).scoped(),
+    reservationStatusUpdateRequestOcpp2Handler: asClass(
+      ReservationStatusUpdateRequestOcpp2Handler,
+    ).scoped(),
     signCertificateRequestOcpp2Handler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
+    vatNumberValidationRequestOcpp21Handler: asClass(
+      VatNumberValidationRequestOcpp21Handler,
+    ).scoped(),
     // responses
+    cancelReservationResponseOcpp2Handler: asClass(CancelReservationResponseOcpp2Handler).scoped(),
     certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
     clearVariableMonitoringResponseOcpp2Handler: asClass(
       ClearVariableMonitoringResponseOcpp2Handler,
     ).scoped(),
+    clearCacheResponseOcpp16Handler: asClass(ClearCacheResponseOcpp16Handler).scoped(),
+    clearCacheResponseOcpp2Handler: asClass(ClearCacheResponseOcpp2Handler).scoped(),
     deleteCertificateResponseOcpp2Handler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
     getInstalledCertificateIdsResponseOcpp2Handler: asClass(
       GetInstalledCertificateIdsResponseOcpp2Handler,
+    ).scoped(),
+    getLocalListVersionResponseOcpp16Handler: asClass(
+      GetLocalListVersionResponseOcpp16Handler,
+    ).scoped(),
+    getLocalListVersionResponseOcpp2Handler: asClass(
+      GetLocalListVersionResponseOcpp2Handler,
     ).scoped(),
     getMonitoringReportResponseOcpp2Handler: asClass(
       GetMonitoringReportResponseOcpp2Handler,
@@ -448,6 +485,24 @@ function registerHandlers(container: AwilixContainer): void {
     installCertificateResponseOcpp2Handler: asClass(
       InstallCertificateResponseOcpp2Handler,
     ).scoped(),
+    notifyWebPaymentStartedResponseOcpp21Handler: asClass(
+      NotifyWebPaymentStartedResponseOcpp21Handler,
+    ).scoped(),
+    remoteStopTransactionResponseOcpp16Handler: asClass(
+      RemoteStopTransactionResponseOcpp16Handler,
+    ).scoped(),
+    remoteStartTransactionResponseOcpp16Handler: asClass(
+      RemoteStartTransactionResponseOcpp16Handler,
+    ).scoped(),
+    requestStartTransactionResponseOcpp2Handler: asClass(
+      RequestStartTransactionResponseOcpp2Handler,
+    ).scoped(),
+    requestStopTransactionResponseOcpp2Handler: asClass(
+      RequestStopTransactionResponseOcpp2Handler,
+    ).scoped(),
+    reserveNowResponseOcpp2Handler: asClass(ReserveNowResponseOcpp2Handler).scoped(),
+    sendLocalListResponseOcpp16Handler: asClass(SendLocalListResponseOcpp16Handler).scoped(),
+    sendLocalListResponseOcpp2Handler: asClass(SendLocalListResponseOcpp2Handler).scoped(),
     setMonitoringBaseResponseOcpp2Handler: asClass(SetMonitoringBaseResponseOcpp2Handler).scoped(),
     setMonitoringLevelResponseOcpp2Handler: asClass(
       SetMonitoringLevelResponseOcpp2Handler,
@@ -456,5 +511,6 @@ function registerHandlers(container: AwilixContainer): void {
       SetVariableMonitoringResponseOcpp2Handler,
     ).scoped(),
     setVariablesResponseOcpp2Handler: asClass(SetVariablesResponseOcpp2Handler).scoped(),
+    unlockConnectorResponseOcpp2Handler: asClass(UnlockConnectorResponseOcpp2Handler).scoped(),
   });
 }
