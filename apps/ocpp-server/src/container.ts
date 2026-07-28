@@ -112,6 +112,7 @@ import {
   SetMonitoringBaseResponseOcpp2Handler,
   SetMonitoringLevelResponseOcpp2Handler,
   SetVariableMonitoringResponseOcpp2Handler,
+  SetVariablesResponseOcpp2Handler,
   SignCertificateRequestOcpp2Handler,
   SmartChargingModule,
   SmartChargingOcpp16Api,
@@ -125,7 +126,6 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
-import { SetVariablesResponseOcpp2Handler } from '@citrineos/core/dist/src/handlers/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
