@@ -40,6 +40,7 @@ import {
   CertificateSignedResponseOcpp2Handler,
   CertificatesModule,
   CertificatesOcpp2Api,
+  ClearVariableMonitoringResponseOcpp2Handler,
   Component,
   ConfigurationDataApi,
   ConfigurationModule,
@@ -56,6 +57,7 @@ import {
   Get15118EVCertificateRequestOcpp2Handler,
   GetCertificateStatusRequestOcpp2Handler,
   GetInstalledCertificateIdsResponseOcpp2Handler,
+  GetMonitoringReportResponseOcpp2Handler,
   IdGenerator,
   InstallCertificateResponseOcpp2Handler,
   InternalSmartCharging,
@@ -106,6 +108,8 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
+  SetMonitoringLevelResponseOcpp2Handler,
+  SetVariableMonitoringResponseOcpp2Handler,
   SignCertificateRequestOcpp2Handler,
   SmartChargingModule,
   SmartChargingOcpp16Api,
@@ -427,12 +431,24 @@ function registerHandlers(container: AwilixContainer): void {
     signCertificateRequestOcpp2Handler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
     // responses
     certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
+    clearVariableMonitoringResponseOcpp2Handler: asClass(
+      ClearVariableMonitoringResponseOcpp2Handler,
+    ).scoped(),
     deleteCertificateResponseOcpp2Handler: asClass(DeleteCertificateResponseOcpp2Handler).scoped(),
     getInstalledCertificateIdsResponseOcpp2Handler: asClass(
       GetInstalledCertificateIdsResponseOcpp2Handler,
     ).scoped(),
+    getMonitoringReportResponseOcpp2Handler: asClass(
+      GetMonitoringReportResponseOcpp2Handler,
+    ).scoped(),
     installCertificateResponseOcpp2Handler: asClass(
       InstallCertificateResponseOcpp2Handler,
+    ).scoped(),
+    setMonitoringLevelResponseOcpp2Handler: asClass(
+      SetMonitoringLevelResponseOcpp2Handler,
+    ).scoped(),
+    setVariableMonitoringResponseOcpp2Handler: asClass(
+      SetVariableMonitoringResponseOcpp2Handler,
     ).scoped(),
   });
 }

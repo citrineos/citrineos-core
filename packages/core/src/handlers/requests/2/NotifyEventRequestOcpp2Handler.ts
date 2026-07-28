@@ -38,7 +38,7 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
   async handle(
     message: IMessage<OCPP2_request_types.NotifyEventRequest>,
     props?: HandlerProperties,
-  ) {
+  ): Promise<void> {
     this._logger.debug('Handler for NotifyEventRequest received message:', message, props);
     const ocppConnectionName = message.context.ocppConnectionName;
 
