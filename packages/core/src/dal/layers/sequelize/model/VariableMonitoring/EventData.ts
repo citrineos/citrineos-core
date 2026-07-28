@@ -39,16 +39,12 @@ export class EventData extends Model implements EventDataDto {
   declare stationId?: number;
 
   @Index
-  @Column({
-    type: DataType.STRING,
-    unique: 'stationName_tenantId_eventId',
-  })
+  @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'stationName_eventId',
-  })
+  // Not unique per station: eventId is assigned by the charging station and
+  // restarts from zero on reboot, so ids are reused across boots.
+  @Column(DataType.INTEGER)
   declare eventId: number;
 
   @Column(DataType.STRING)
@@ -120,7 +116,6 @@ export class EventData extends Model implements EventDataDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationName_tenantId_eventId',
   })
   declare tenantId: number;
 
