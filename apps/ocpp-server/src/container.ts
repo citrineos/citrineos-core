@@ -58,6 +58,7 @@ import {
   GetCertificateStatusRequestOcpp2Handler,
   GetInstalledCertificateIdsResponseOcpp2Handler,
   GetMonitoringReportResponseOcpp2Handler,
+  GetVariablesResponseOcpp2Handler,
   IdGenerator,
   InstallCertificateResponseOcpp2Handler,
   InternalSmartCharging,
@@ -108,6 +109,7 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
+  SetMonitoringBaseResponseOcpp2Handler,
   SetMonitoringLevelResponseOcpp2Handler,
   SetVariableMonitoringResponseOcpp2Handler,
   SignCertificateRequestOcpp2Handler,
@@ -123,6 +125,7 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { SetVariablesResponseOcpp2Handler } from '@citrineos/core/dist/src/handlers/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -441,14 +444,17 @@ function registerHandlers(container: AwilixContainer): void {
     getMonitoringReportResponseOcpp2Handler: asClass(
       GetMonitoringReportResponseOcpp2Handler,
     ).scoped(),
+    getVariablesResponseOcpp2Handler: asClass(GetVariablesResponseOcpp2Handler).scoped(),
     installCertificateResponseOcpp2Handler: asClass(
       InstallCertificateResponseOcpp2Handler,
     ).scoped(),
+    setMonitoringBaseResponseOcpp2Handler: asClass(SetMonitoringBaseResponseOcpp2Handler).scoped(),
     setMonitoringLevelResponseOcpp2Handler: asClass(
       SetMonitoringLevelResponseOcpp2Handler,
     ).scoped(),
     setVariableMonitoringResponseOcpp2Handler: asClass(
       SetVariableMonitoringResponseOcpp2Handler,
     ).scoped(),
+    setVariablesResponseOcpp2Handler: asClass(SetVariablesResponseOcpp2Handler).scoped(),
   });
 }

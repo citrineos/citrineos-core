@@ -14,6 +14,9 @@ export { ClearVariableMonitoringResponseOcpp2Handler } from './responses/2/Clear
 export { DeleteCertificateResponseOcpp2Handler } from './responses/2/DeleteCertificateResponseOcpp2Handler.js';
 export { GetInstalledCertificateIdsResponseOcpp2Handler } from './responses/2/GetInstalledCertificateIdsResponseOcpp2Handler.js';
 export { GetMonitoringReportResponseOcpp2Handler } from './responses/2/GetMonitoringReportResponseOcpp2Handler.js';
+export { GetVariablesResponseOcpp2Handler } from './responses/2/GetVariablesResponseOcpp2Handler.js';
 export { InstallCertificateResponseOcpp2Handler } from './responses/2/InstallCertificateResponseOcpp2Handler.js';
+export { SetMonitoringBaseResponseOcpp2Handler } from './responses/2/SetMonitoringBaseResponseOcpp2Handler.js';
 export { SetMonitoringLevelResponseOcpp2Handler } from './responses/2/SetMonitoringLevelResponseOcpp2Handler.js';
 export { SetVariableMonitoringResponseOcpp2Handler } from './responses/2/SetVariableMonitoringResponseOcpp2Handler.js';
+export { SetVariablesResponseOcpp2Handler } from './responses/2/SetVariablesResponseOcpp2Handler.js';
