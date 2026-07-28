@@ -36,14 +36,32 @@ To register a handler to a particular module:
 a request or response).
    1. Ensure that the correct protocols and call action are passed as arguments to the decorator.
 4. Export your handler from `handlers/index.ts` so it's part of `@citrineos/core`'s public API.
-5. Register the handler in `apps/ocpp-server/src/container.ts`'s `registerHandlers` function.
-   1. This allows the handler to be dependency-injected into the relevant modules.
-6. Ensure your module's config includes the request/response that matches with the handler.
-   1. i.e. `config.modules.certificates.requests = [CallAction.YOUR_ACTION]`
+5. Add the handler class to your module's handler list in `modules/<Module>/src/register.ts`.
+   1. i.e. `CERTIFICATES_HANDLERS` in `modules/Certificates/src/register.ts`.
+   2. This is what gets the handler dependency-injected into that module, and what makes the module
+      subscribe to its action. Otherwise, nothing catches a handler left out of every list — it compiles, and
+      simply never runs — so this is the step to double-check. The reverse is caught: renaming or
+      deleting a class that a list references fails the build.
+
+With these changes, there is no longer a config step: adding the class to the module's list is what makes the module
+subscribe to that action.
+
+## Excluding an action a module has a handler for
+
+To keep a handler in the codebase but stop a deployment from receiving its action, list the action in
+that module's `excludedRequests` or `excludedResponses` in config, e.g.
+`config.modules.certificates.excludedRequests`. The handler is still constructed; the module simply
+does not subscribe, so nothing is routed to it.
 
 ## How do `@AsRequestHandler` and `@AsResponseHandler` work?
 
 The `@AsRequestHandler` and `@AsResponseHandler` decorators build on top of the underlying `asHandlerClass`
-to record the protocol, action, and type as reflect-metadata on the class for every protocol passed in. Then it
-pushes the class into the module-level `HANDLER_CLASS_REGISTRY` array so that when the module's config is resolved by
-`getHandlersByConfig`, it knows which handlers to inject.
+to record the protocol, action, and type as reflect-metadata on the class for every protocol passed in.
+
+Each module's registrar declares the handler classes it owns and passes them to `buildHandlers`, which
+constructs each one from the module's own container scope (`moduleScope`). `AbstractModule` then reads that
+metadata back off each instance twice over: to key its `protocol:action:type` dispatch map, and to derive
+the requests and responses it subscribes to, minus anything config excludes.
+
+So a handler declares *what it serves* once, on itself; its module declares *that it owns it*; and those
+two facts alone decide what the module receives.

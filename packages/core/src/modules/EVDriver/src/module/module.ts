@@ -66,9 +66,6 @@ export class EVDriverModule extends AbstractModule {
       evDriverHandlers,
     );
 
-    this._requests = config.modules.evdriver.requests;
-    this._responses = config.modules.evdriver.responses;
-
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._transactionEventRepository = transactionEventRepository;

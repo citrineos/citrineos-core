@@ -85,7 +85,12 @@ export {
 export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
 export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
 export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';
-export { getHandlersByConfig } from './src/interfaces/handlers/getHandlersByConfig.js';
+export { buildHandlers } from './src/interfaces/handlers/buildHandlers.js';
+export type {
+  HandlerClass,
+  HandlerResolverCradle,
+  IHandlerBuilder,
+} from './src/interfaces/handlers/buildHandlers.js';
 
 // Persistence Interfaces
 

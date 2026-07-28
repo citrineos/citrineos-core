@@ -63,8 +63,8 @@ export function createDockerConfig() {
           OCPP_CallAction.FirmwareStatusNotification,
           OCPP_CallAction.Heartbeat,
           OCPP_CallAction.NotifyDisplayMessages,
-          OCPP_CallAction.PublishFirmwareStatusNotification,
         ],
+        excludedRequests: [OCPP_CallAction.PublishFirmwareStatusNotification],
         heartbeatInterval: 60,
         bootRetryInterval: 15,
         ocpp2_0_1: {

@@ -4,7 +4,6 @@
 import {
   AbstractHandler,
   AbstractModule,
-  type CallAction,
   EventGroup,
   type OcppModuleDependencies,
 } from '@citrineos/base';
@@ -20,22 +19,11 @@ export interface ReportingModuleDependencies extends OcppModuleDependencies {
  * Component that handles provisioning related messages.
  */
 export class ReportingModule extends AbstractModule {
-  /**
-   * Get Base Report variables. While NotifyReport requests correlated with a GetBaseReport's requestId
-   * are still being sent, cache value is 'ongoing'. Once a NotifyReport with tbc === false (or undefined)
-   * is received, cache value is 'complete'.
-   */
   static readonly GET_BASE_REPORT_REQUEST_ID_MAX = 10000000; // 10,000,000
-  static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
-  static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
 
   /**
    * Fields
    */
-
-  _requests: CallAction[] = [];
-
-  _responses: CallAction[] = [];
 
   protected _deviceModelService: DeviceModelService;
 
@@ -61,9 +49,6 @@ export class ReportingModule extends AbstractModule {
       ocppValidator,
       reportingHandlers,
     );
-
-    this._requests = config.modules.reporting.requests;
-    this._responses = config.modules.reporting.responses;
 
     this._deviceModelService = reportingDeviceModelService;
   }

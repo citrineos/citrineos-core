@@ -4,7 +4,6 @@
 import {
   AbstractHandler,
   AbstractModule,
-  type CallAction,
   EventGroup,
   type OcppModuleDependencies,
 } from '@citrineos/base';
@@ -22,10 +21,6 @@ export interface MonitoringModuleDependencies extends OcppModuleDependencies {
  * Component that handles monitoring related messages.
  */
 export class MonitoringModule extends AbstractModule {
-  _requests: CallAction[] = [];
-
-  _responses: CallAction[] = [];
-
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
   protected _deviceModelService: DeviceModelService;
@@ -54,9 +49,6 @@ export class MonitoringModule extends AbstractModule {
       ocppValidator,
       monitoringHandlers,
     );
-
-    this._requests = config.modules.monitoring.requests;
-    this._responses = config.modules.monitoring.responses;
 
     this._deviceModelRepository = deviceModelRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;

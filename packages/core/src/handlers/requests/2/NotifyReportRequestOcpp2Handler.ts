@@ -23,10 +23,12 @@ import {
 } from '@citrineos/base';
 import { Component, type IDeviceModelRepository, Variable } from '@dal/index.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
-import { ReportingModule } from '@modules/Reporting/src/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
 export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
+  static readonly GET_BASE_REPORT_ONGOING_CACHE_VALUE = 'ongoing';
+  static readonly GET_BASE_REPORT_COMPLETE_CACHE_VALUE = 'complete';
+
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
   protected _config: BootstrapConfig & SystemConfig;
@@ -119,7 +121,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       // Default if omitted is false
       const success = await this._cache.set(
         message.payload.requestId.toString(),
-        ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE,
+        NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_COMPLETE_CACHE_VALUE,
         ocppConnectionName,
       );
       this._logger.info('GetBaseReport Completed', success, message.payload.requestId);
@@ -128,7 +130,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       // Continue to set get base report ongoing. Will extend the timeout.
       const success = await this._cache.set(
         message.payload.requestId.toString(),
-        ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
+        NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
         ocppConnectionName,
         this._config.maxCachingSeconds,
       );

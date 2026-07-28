@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AwilixContainer } from 'awilix';
+import { asValue, type AwilixContainer } from 'awilix';
 import { buildContainer } from './container.js';
 import type {
   AbstractModule,
@@ -424,6 +424,7 @@ export class CitrineOSServer {
    */
   private async initModuleInScope(moduleToken: string, routeApis: string[]): Promise<void> {
     const scope = this._container.createScope();
+    scope.register({ moduleScope: asValue(scope) });
     const module = scope.resolve<AbstractModule>(moduleToken);
     await this.initHandlersAndAddModule(module);
     for (const routeApi of routeApis) {

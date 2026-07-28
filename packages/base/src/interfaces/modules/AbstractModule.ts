@@ -28,6 +28,22 @@ import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassD
 import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 
+/** Two handler classes claiming one action and direction within the same module. */
+interface IHandlerConflict {
+  action: CallAction;
+  type: MessageState;
+  claimedBy: string;
+  alsoClaimedBy: string;
+}
+
+/** Renders one indented line per conflict for the wire-up error. */
+function describeConflicts(conflicts: Iterable<IHandlerConflict>): string[] {
+  return [...conflicts].map(
+    ({ action, type, claimedBy, alsoClaimedBy }) =>
+      `  ${action} (${MessageState[type]}) — ${claimedBy} and ${alsoClaimedBy}`,
+  );
+}
+
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
  * module extends this with its own repositories and internal services.
@@ -59,6 +75,8 @@ export abstract class AbstractModule implements IModule {
   private startTime = Date.now();
 
   private readonly _handlerInstancesByKey = new Map<string, AbstractHandler>();
+  private readonly _declaredRequests = new Set<CallAction>();
+  private readonly _declaredResponses = new Set<CallAction>();
 
   constructor(
     config: SystemConfig,
@@ -84,15 +102,51 @@ export abstract class AbstractModule implements IModule {
     // Set module for proper message flow.
     this.handler.module = this;
 
+    const conflicts = new Map<string, IHandlerConflict>();
+
     for (const instance of handlers) {
       const definitions = (Reflect.getMetadata(AS_HANDLER_CLASS_METADATA, instance.constructor) ??
         []) as IHandlerClassDefinition[];
       for (const definition of definitions) {
-        this._handlerInstancesByKey.set(
-          AbstractModule._handlerKey(definition.protocol, definition.action, definition.type),
-          instance,
+        const key = AbstractModule._handlerKey(
+          definition.protocol,
+          definition.action,
+          definition.type,
         );
+        const claimed = this._handlerInstancesByKey.get(key);
+        if (claimed && claimed !== instance) {
+          conflicts.set(`${definition.action}:${definition.type}`, {
+            action: definition.action,
+            type: definition.type,
+            claimedBy: claimed.constructor.name,
+            alsoClaimedBy: instance.constructor.name,
+          });
+          continue;
+        }
+        this._handlerInstancesByKey.set(key, instance);
+        this._declaredActions(definition.type).add(definition.action);
       }
+    }
+
+    const excluded = this._excludedActions();
+    this._requests = [...this._declaredRequests].filter(
+      (action) => !excluded.requests?.includes(action),
+    );
+    this._responses = [...this._declaredResponses].filter(
+      (action) => !excluded.responses?.includes(action),
+    );
+
+    if (conflicts.size > 0) {
+      throw new Error(
+        [
+          `Module '${eventGroup}' cannot start: two handlers are registered for the same message.`,
+          ``,
+          ...describeConflicts(conflicts.values()),
+          ``,
+          `Dispatch can only route a message to one handler, so the other would never run. ` +
+          `Remove one from this module's handler list.`,
+        ].join('\n'),
+      );
     }
   }
 
@@ -107,6 +161,27 @@ export abstract class AbstractModule implements IModule {
     type: MessageState,
   ): string {
     return `${protocol}:${action}:${type}`;
+  }
+
+  /**
+   * The actions this module's handlers declare for one direction. Protocol agnostic
+   */
+  private _declaredActions(type: MessageState): Set<CallAction> {
+    return type === MessageState.Request ? this._declaredRequests : this._declaredResponses;
+  }
+
+  /**
+   * The actions this module's config asks it not to subscribe to
+   */
+  private _excludedActions(): { requests?: CallAction[]; responses?: CallAction[] } {
+    const modules: Partial<
+      Record<EventGroup, { excludedRequests?: CallAction[]; excludedResponses?: CallAction[] }>
+    > = this._config.modules;
+    const moduleConfig = modules[this._eventGroup];
+    return {
+      requests: moduleConfig?.excludedRequests,
+      responses: moduleConfig?.excludedResponses,
+    };
   }
 
   /**
@@ -418,21 +493,98 @@ export abstract class AbstractModule implements IModule {
     return baseLogger
       ? baseLogger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({
-          name: this.constructor.name,
-          minLevel: this._config.logLevel,
-          hideLogPositionForProduction: this._config.env === 'production',
-        });
+        name: this.constructor.name,
+        minLevel: this._config.logLevel,
+        hideLogPositionForProduction: this._config.env === 'production',
+      });
   }
 
   /**
    * Initializes the handler for handling requests and responses.
    */
   public async initHandlers(): Promise<void> {
+    this._assertConfiguredActionsAreHandled();
     const result = await this._initHandler(this._requests, this._responses);
     if (!result) {
       throw new Error('Could not initialize module due to failure in handler initialization.');
     }
     this._logger.info(`Initialized in ${Date.now() - this.startTime}ms...`);
+  }
+
+  /**
+   * Refuses to subscribe a module to an action it has no handler for
+   */
+  private _assertConfiguredActionsAreHandled(): void {
+    const legacyActions = this._legacyMethodActions();
+
+    const shadowed = [...legacyActions].filter(
+      (action) => this._declaredRequests.has(action) || this._declaredResponses.has(action),
+    );
+    if (shadowed.length > 0) {
+      this._logger.warn(
+        `${this._eventGroup} has both an @AsHandler method and a handler class for ` +
+        `${shadowed.join(', ')}. The method wins at dispatch, so the handler class will not ` +
+        `run. Delete the method.`,
+      );
+    }
+
+    const unhandled = [
+      ...this._requests.map((action) => ({ action, type: MessageState.Request })),
+      ...this._responses.map((action) => ({ action, type: MessageState.Response })),
+    ].filter(
+      ({ action, type }) => !legacyActions.has(action) && !this._declaredActions(type).has(action),
+    );
+
+    if (unhandled.length === 0) {
+      return;
+    }
+
+    const describe = (action: CallAction, type: MessageState) =>
+      `${action} (${MessageState[type]})`;
+    const registered = [
+      ...[...this._declaredRequests].map((action) => describe(action, MessageState.Request)),
+      ...[...this._declaredResponses].map((action) => describe(action, MessageState.Response)),
+    ].sort();
+
+    throw new Error(
+      [
+        `Module '${this._eventGroup}' cannot start: it is configured to receive messages it has ` +
+        `no handler for.`,
+        ``,
+        `Unhandled: ${unhandled.map(({ action, type }) => describe(action, type)).join(', ')}`,
+        `Registered: ${registered.length > 0 ? registered.join(', ') : '(none)'}`,
+        ``,
+        `Fix either side:`,
+        `  - register a handler: add the class that declares @AsRequestHandler/@AsResponseHandler ` +
+        `for each unhandled action to this module's handler list in its register.ts, and export ` +
+        `it from handlers/index.ts`,
+        `  - or narrow the config: remove those actions from ` +
+        `config.modules.${this._eventGroup}.requests / .responses`,
+        ``,
+        `Until one of those is done, a charging station sending these messages would be answered ` +
+        `with a NotSupported CallError.`,
+      ].join('\n'),
+    );
+  }
+
+  /**
+   * TEMPORARY BRIDGE. Actions a module still serves through {@link AsHandler} methods rather than
+   * handler classes, so coverage isn't demanded for them while the migration is in progress. Legacy
+   * metadata records no request/response type, and dispatch resolves it the same way, so an action
+   * is exempted in both directions.
+   *
+   * Delete this method, its single call site in {@link _assertConfiguredActionsAreHandled}, the
+   * shadowing warning there, and AsHandler.ts once no module uses {@link AsHandler} — at which point
+   * coverage becomes unconditional.
+   */
+  private _legacyMethodActions(): Set<CallAction> {
+    return new Set(
+      (
+        (Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as
+          | Array<IHandlerDefinition>
+          | undefined) ?? []
+      ).map((definition) => definition.action),
+    );
   }
 
   /**
