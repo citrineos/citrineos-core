@@ -478,8 +478,8 @@ importers:
         specifier: 2.8.8
         version: 2.8.8(next@15.5.20(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.61.1)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.93.2))(react@19.1.4)
       postcss:
-        specifier: 8.5.16
-        version: 8.5.16
+        specifier: 8.5.18
+        version: 8.5.18
       react:
         specifier: 19.1.4
         version: 19.1.4
@@ -8663,8 +8663,8 @@ packages:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.16:
-    resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
+  postcss@8.5.18:
+    resolution: {integrity: sha512-xdB1oSLHbz1vRWgCDalrCqEFTWzFlhqFC5tIHLMOSUIjhm3XXQ1qrFy8S/ESr1JYRRXqM3c1QFiMZUJdUTqyMQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   postcss@8.5.22:
@@ -13513,7 +13513,7 @@ snapshots:
       '@alloc/quick-lru': 5.2.0
       '@tailwindcss/node': 4.3.3
       '@tailwindcss/oxide': 4.3.3
-      postcss: 8.5.16
+      postcss: 8.5.18
       tailwindcss: 4.3.3
 
   '@tanstack/query-core@5.90.5': {}
@@ -15401,11 +15401,11 @@ snapshots:
     dependencies:
       node-source-walk: 7.0.2
 
-  detective-postcss@8.0.4(postcss@8.5.16):
+  detective-postcss@8.0.4(postcss@8.5.18):
     dependencies:
       is-url-superb: 4.0.0
-      postcss: 8.5.16
-      postcss-values-parser: 6.0.2(postcss@8.5.16)
+      postcss: 8.5.18
+      postcss-values-parser: 6.0.2(postcss@8.5.18)
 
   detective-sass@6.0.2:
     dependencies:
@@ -18751,11 +18751,11 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-values-parser@6.0.2(postcss@8.5.16):
+  postcss-values-parser@6.0.2(postcss@8.5.18):
     dependencies:
       color-name: 1.1.4
       is-url-superb: 4.0.0
-      postcss: 8.5.16
+      postcss: 8.5.18
       quote-unquote: 1.0.0
 
   postcss@8.4.31:
@@ -18764,7 +18764,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.16:
+  postcss@8.5.18:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -18817,7 +18817,7 @@ snapshots:
       detective-amd: 6.1.0
       detective-cjs: 6.1.1
       detective-es6: 5.0.2
-      detective-postcss: 8.0.4(postcss@8.5.16)
+      detective-postcss: 8.0.4(postcss@8.5.18)
       detective-sass: 6.0.2
       detective-scss: 5.0.2
       detective-stylus: 5.0.1
@@ -18825,7 +18825,7 @@ snapshots:
       detective-vue2: 2.3.0(typescript@5.9.3)
       module-definition: 6.0.2
       node-source-walk: 7.0.2
-      postcss: 8.5.16
+      postcss: 8.5.18
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -19419,7 +19419,7 @@ snapshots:
       is-plain-object: 5.0.0
       launder: 1.7.1
       parse-srcset: 1.0.2
-      postcss: 8.5.16
+      postcss: 8.5.18
 
   sass-lookup@6.1.2:
     dependencies:
@@ -19588,7 +19588,7 @@ snapshots:
       msw: 2.15.0(@types/node@20.19.43)(typescript@6.0.3)
       node-fetch: 3.3.2
       ora: 6.3.1
-      postcss: 8.5.16
+      postcss: 8.5.18
       prompts: 2.4.2
       recast: 0.23.12
       stringify-object: 5.0.0
@@ -20596,7 +20596,7 @@ snapshots:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
-      postcss: 8.5.16
+      postcss: 8.5.18
       rollup: 4.62.2
       tinyglobby: 0.2.17
     optionalDependencies:
