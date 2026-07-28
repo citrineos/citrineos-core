@@ -17,8 +17,8 @@ import {
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetMonitoringLevel)
 export class SetMonitoringLevelResponseOcpp2Handler extends AbstractHandler {
-  constructor({ ocppSender, logger }: AbstractHandlerDependencies) {
-    super(ocppSender, logger);
+  constructor({ logger }: AbstractHandlerDependencies) {
+    super(logger);
   }
 
   async handle(

@@ -18,13 +18,12 @@ export class ClearVariableMonitoringResponseOcpp2Handler extends AbstractHandler
   protected _monitoringService: MonitoringService;
 
   constructor({
-    ocppSender,
     logger,
     monitoringService,
   }: AbstractHandlerDependencies & {
     monitoringService: MonitoringService;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._monitoringService = monitoringService;
   }

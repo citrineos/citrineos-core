@@ -7,6 +7,7 @@ import {
   AsRequestHandler,
   type HandlerProperties,
   type IMessage,
+  type IOcppSender,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -17,20 +18,23 @@ import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@dal
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEvent)
 export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
+  protected _ocppSender: IOcppSender;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
-    ocppSender,
     logger,
+    ocppSender,
     deviceModelRepository,
     variableMonitoringRepository,
   }: AbstractHandlerDependencies & {
+    ocppSender: IOcppSender;
     deviceModelRepository: IDeviceModelRepository;
     variableMonitoringRepository: IVariableMonitoringRepository;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
+    this._ocppSender = ocppSender;
     this._deviceModelRepository = deviceModelRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
   }

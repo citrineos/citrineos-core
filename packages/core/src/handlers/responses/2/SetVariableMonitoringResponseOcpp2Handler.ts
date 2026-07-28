@@ -18,13 +18,12 @@ export class SetVariableMonitoringResponseOcpp2Handler extends AbstractHandler {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
-    ocppSender,
     logger,
     variableMonitoringRepository,
   }: AbstractHandlerDependencies & {
     variableMonitoringRepository: IVariableMonitoringRepository;
   }) {
-    super(ocppSender, logger);
+    super(logger);
 
     this._variableMonitoringRepository = variableMonitoringRepository;
   }
