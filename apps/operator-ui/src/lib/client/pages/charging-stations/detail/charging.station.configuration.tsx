@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPPVersion } from '@citrineos/base';
+import { AttributeEnum, OCPPVersion } from '@citrineos/base';
 import { ChangeConfigurationModal } from '@lib/client/components/modals/1.6/change-configuration/change.configuration.modal';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { MultiSelect } from '@lib/client/components/multi-select';
@@ -75,6 +75,9 @@ interface ChargingStationConfigurationProps {
   id: number;
 }
 
+// Which config view is shown. '1.6' -> ChangeConfigurations; '2.0.1'/'2.1' -> VariableAttributes.
+type ConfigVersion = '1.6' | '2.0.1' | '2.1';
+
 const CONFIG_1_6_COLUMNS = [
   { key: 'key', headerKey: 'ChargingStations.configuration.key', accessor: 'key' },
   {
@@ -116,13 +119,13 @@ const CONFIG_2_0_1_COLUMNS = [
   },
 ];
 
-const ATTRIBUTE_TYPE_OPTIONS = Object.values(OCPP2_0_1.AttributeEnumType);
+const ATTRIBUTE_TYPE_OPTIONS = Object.values(AttributeEnum);
 
 export const ChargingStationConfiguration: React.FC<ChargingStationConfigurationProps> = ({
   id,
 }) => {
   const translate = useTranslate();
-  const [version, setVersion] = useState<'1.6' | '2.0.1'>('1.6');
+  const [version, setVersion] = useState<ConfigVersion>('1.6');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [sort, setSort] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null);
@@ -152,7 +155,8 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
 
   const attributeFilters = useMemo<CrudFilter[]>(() => {
     const filters: CrudFilter[] = [{ field: 'stationId', operator: 'eq', value: id }];
-    if (version === '2.0.1') {
+    // Non-1.6 == the OCPP 2.x device-model view (VariableAttributes), covering 2.0.1 and 2.1.
+    if (version !== '1.6') {
       if (searchTerm) {
         filters.push({
           operator: 'or',
@@ -176,12 +180,12 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   const configFilters = useMemo<CrudFilter[]>(
     () => [
       {
-        field: 'id',
+        field: 'ocppConnectionName',
         operator: 'eq',
-        value: station?.id ?? -1,
+        value: station?.ocppConnectionName ?? '',
       },
     ],
-    [station?.id],
+    [station?.ocppConnectionName],
   );
 
   const {
@@ -258,7 +262,9 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   useEffect(() => {
     if (station?.protocol && !versionInitialized.current) {
       versionInitialized.current = true;
-      if (station.protocol === OCPPVersion.OCPP2_0_1) {
+      if (station.protocol === OCPPVersion.OCPP2_1) {
+        setVersion('2.1');
+      } else if (station.protocol === OCPPVersion.OCPP2_0_1) {
         setVersion('2.0.1');
       } else {
         setVersion('1.6');
@@ -267,7 +273,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   }, [station?.protocol]);
 
   useEffect(() => {
-    if (version === '2.0.1' && variableAttributesResult?.data) {
+    if (version !== '1.6' && variableAttributesResult?.data) {
       setDataSource(
         variableAttributesResult.data.map((attribute) => ({
           key: attribute.id,
@@ -476,8 +482,8 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
 
   const renderTable = () => {
     const columns = version === '1.6' ? CONFIG_1_6_COLUMNS : CONFIG_2_0_1_COLUMNS;
-    const isLoading = version === '2.0.1' ? isAttributesLoading : isConfigurationsLoading;
-    const isFetching = version === '2.0.1' ? isAttributesFetching : isConfigurationsFetching;
+    const isLoading = version !== '1.6' ? isAttributesLoading : isConfigurationsLoading;
+    const isFetching = version !== '1.6' ? isAttributesFetching : isConfigurationsFetching;
     const colCount = columns.length + (version === '1.6' ? 1 : 0);
 
     return (
@@ -582,18 +588,19 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           </label>
           <div className="flex gap-2">
             <div className="w-full">
-              <Select value={version} onValueChange={(v: '1.6' | '2.0.1') => setVersion(v)}>
+              <Select value={version} onValueChange={(v: ConfigVersion) => setVersion(v)}>
                 <SelectTrigger className="flex-1 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1.6">OCPP 1.6</SelectItem>
                   <SelectItem value="2.0.1">OCPP 2.0.1</SelectItem>
+                  <SelectItem value="2.1">OCPP 2.1</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {version === '2.0.1' && (
+            {version !== '1.6' && (
               <MultiSelect
                 options={ATTRIBUTE_TYPE_OPTIONS}
                 selectedValues={selectedTypes}
