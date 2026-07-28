@@ -29,6 +29,6 @@ export function registerMonitoringServices(container: AwilixContainer): void {
           cradle.config.modules.monitoring?.requests ?? [],
           cradle.config.modules.monitoring?.responses ?? [],
         ),
-    ),
+    ).scoped(),
   });
 }

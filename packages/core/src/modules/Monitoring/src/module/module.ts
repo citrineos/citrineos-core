@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractHandler,
   AbstractModule,
   AsHandler,
   AttributeEnum,
@@ -46,6 +47,7 @@ export interface MonitoringModuleDependencies extends OcppModuleDependencies {
   idGenerator: IdGenerator;
   monitoringDeviceModelService: DeviceModelService;
   monitoringService: MonitoringService;
+  monitoringHandlers?: AbstractHandler[];
 }
 
 /**
@@ -78,8 +80,19 @@ export class MonitoringModule extends AbstractModule {
     idGenerator,
     monitoringDeviceModelService,
     monitoringService,
+    monitoringHandlers,
   }: MonitoringModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Monitoring, ocppSender, logger, ocppValidator);
+    super(
+      config,
+      cache,
+      handler,
+      sender,
+      EventGroup.Monitoring,
+      ocppSender,
+      logger,
+      ocppValidator,
+      monitoringHandlers,
+    );
 
     this._requests = config.modules.monitoring.requests;
     this._responses = config.modules.monitoring.responses;
