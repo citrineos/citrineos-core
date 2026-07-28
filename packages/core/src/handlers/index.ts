@@ -6,7 +6,11 @@
 export { GetCertificateStatusRequestOcpp2Handler } from './requests/2/GetCertificateStatusRequestOcpp2Handler.js';
 export { Get15118EVCertificateRequestOcpp2Handler } from './requests/2/Get15118EVCertificateRequestOcpp2Handler.js';
 export { LogStatusNotificationRequestOcpp2Handler } from './requests/2/LogStatusNotificationRequestOcpp2Handler.js';
+export { NotifyCustomerInformationRequestOcpp2Handler } from './requests/2/NotifyCustomerInformationRequestOcpp2Handler.js';
 export { NotifyEventRequestOcpp2Handler } from './requests/2/NotifyEventRequestOcpp2Handler.js';
+export { NotifyMonitoringReportRequestOcpp2Handler } from './requests/2/NotifyMonitoringReportRequestOcpp2Handler.js';
+export { NotifyReportRequestOcpp2Handler } from './requests/2/NotifyReportRequestOcpp2Handler.js';
+export { SecurityEventNotificationRequestOcpp2Handler } from './requests/2/SecurityEventNotificationRequestOcpp2Handler.js';
 export { SignCertificateRequestOcpp2Handler } from './requests/2/SignCertificateRequestOcpp2Handler.js';
 
 // Response handlers

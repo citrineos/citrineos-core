@@ -69,7 +69,10 @@ import {
   MonitoringModule,
   MonitoringOcpp2Api,
   NetworkProfileFilter,
+  NotifyCustomerInformationRequestOcpp2Handler,
   NotifyEventRequestOcpp2Handler,
+  NotifyMonitoringReportRequestOcpp2Handler,
+  NotifyReportRequestOcpp2Handler,
   OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
@@ -85,6 +88,7 @@ import {
   ReportingModule,
   ReportingOcpp16Api,
   ReportingOcpp2Api,
+  SecurityEventNotificationRequestOcpp2Handler,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -434,8 +438,18 @@ function registerHandlers(container: AwilixContainer): void {
     logStatusNotificationRequestOcpp2Handler: asClass(
       LogStatusNotificationRequestOcpp2Handler,
     ).scoped(),
+    notifyCustomerInformationRequestOcpp2Handler: asClass(
+      NotifyCustomerInformationRequestOcpp2Handler,
+    ).scoped(),
     notifyEventRequestOcpp2Handler: asClass(NotifyEventRequestOcpp2Handler).scoped(),
+    notifyMonitoringReportRequestOcpp2Handler: asClass(
+      NotifyMonitoringReportRequestOcpp2Handler,
+    ).scoped(),
+    notifyReportRequestOcpp2Handler: asClass(NotifyReportRequestOcpp2Handler).scoped(),
     signCertificateRequestOcpp2Handler: asClass(SignCertificateRequestOcpp2Handler).scoped(),
+    securityEventNotificationRequestOcpp2Handler: asClass(
+      SecurityEventNotificationRequestOcpp2Handler,
+    ).scoped(),
     // responses
     certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
     clearVariableMonitoringResponseOcpp2Handler: asClass(

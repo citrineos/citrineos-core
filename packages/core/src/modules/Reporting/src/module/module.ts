@@ -6,25 +6,20 @@ import {
   AbstractModule,
   AsHandler,
   type CallAction,
-  ErrorCode,
   EventGroup,
   GenericDeviceModelStatusEnum,
   type GenericDeviceModelStatusEnumType,
   type HandlerProperties,
   type IMessage,
-  MutabilityEnum,
-  Namespace,
   OCPP1_6,
   type OCPP2_common_types,
   type OCPP2_request_types,
   type OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   type OcppModuleDependencies,
   OCPPVersion,
   SecurityEventNotificationTypeEnumSchema,
-  SetVariableStatusEnum,
 } from '@citrineos/base';
 
 import type {
@@ -33,8 +28,6 @@ import type {
   ISecurityEventRepository,
   IVariableMonitoringRepository,
 } from '@dal/interfaces/repositories.js';
-import { Component, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
-import { isForeignKeyConstraintError } from '@util/errors.js';
 
 import type { DeviceModelService } from './services.js';
 
@@ -115,182 +108,6 @@ export class ReportingModule extends AbstractModule {
    */
 
   protected _deviceModelRepository: IDeviceModelRepository;
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
-  /**
-   * Handle Requests
-   */
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
-  protected async _handleNotifyCustomerInformation(
-    message: IMessage<OCPP2_request_types.NotifyCustomerInformationRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug('NotifyCustomerInformation request received:', message, props);
-
-    // Validate requestId was provided in a previous CustomerInformationRequest
-    const requestId = message.payload.requestId;
-    const previousRequest = await this._ocppMessageRepository.readAllByQuery(
-      message.context.tenantId,
-      {
-        where: {
-          tenantId: message.context.tenantId,
-          ocppConnectionName: message.context.ocppConnectionName,
-          action: OCPP_CallAction.CustomerInformation,
-          message: {
-            requestId: requestId,
-          },
-        },
-        limit: 1,
-      },
-      Namespace.OCPPMessage,
-    );
-
-    if (!previousRequest || previousRequest.length === 0) {
-      await this.sendCallErrorWithMessage(
-        message,
-        new OcppError(
-          message.context.correlationId,
-          ErrorCode.PropertyConstraintViolation,
-          'RequestId was not provided in a CustomerInformationRequest.',
-        ),
-      );
-      return;
-    }
-
-    // Create response
-    const response: OCPP2_response_types.NotifyCustomerInformationResponse = {};
-
-    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
-    this._logger.debug('NotifyCustomerInformation response sent: ', messageConfirmation);
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyMonitoringReport)
-  protected async _handleNotifyMonitoringReport(
-    message: IMessage<OCPP2_request_types.NotifyMonitoringReportRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.debug(
-      '${message.protocol} NotifyMonitoringReport request received:',
-      message,
-      props,
-    );
-
-    for (const monitorType of message.payload.monitor ? message.payload.monitor : []) {
-      const ocppConnectionName: string = message.context.ocppConnectionName;
-      const [component, variable] =
-        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
-          message.context.tenantId,
-          monitorType.component,
-          monitorType.variable,
-        );
-      await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(
-        message.context.tenantId,
-        monitorType,
-        component ? component.id : null,
-        variable ? variable.id : null,
-        ocppConnectionName,
-      );
-    }
-
-    // Create response
-    const response: OCPP2_response_types.NotifyMonitoringReportResponse = {};
-
-    const messageConfirmation = await this.sendCallResultWithMessage(message, response);
-    this._logger.debug('NotifyMonitoringReport response sent: ', messageConfirmation);
-  }
-
-  @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
-  protected async _handleNotifyReport(
-    message: IMessage<OCPP2_request_types.NotifyReportRequest>,
-    props?: HandlerProperties,
-  ): Promise<void> {
-    this._logger.info('NotifyReport received:', message, props);
-    const timestamp = message.payload.generatedAt;
-
-    try {
-      for (const reportDataType of message.payload.reportData ? message.payload.reportData : []) {
-        // To keep consistency with VariableAttributeType defined in OCPP 2.0.1:
-        // mutability: Default is ReadWrite when omitted.
-        // if it is not present, we set it to ReadWrite
-        for (let variableAttr of reportDataType.variableAttribute) {
-          if (!variableAttr.mutability) {
-            variableAttr = {
-              ...variableAttr,
-              mutability: MutabilityEnum.ReadWrite,
-            } as OCPP2_common_types.VariableAttributeType;
-          }
-        }
-        const variableAttributes =
-          await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-            message.context.tenantId,
-            reportDataType,
-            message.context.ocppConnectionName,
-            timestamp,
-          );
-        for (const variableAttribute of variableAttributes) {
-          // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
-          await variableAttribute.reload({
-            include: [Component, Variable],
-          });
-          await this._deviceModelRepository.updateResultByStationId(
-            message.context.tenantId,
-            {
-              attributeType: variableAttribute.type,
-              attributeStatus: SetVariableStatusEnum.Accepted,
-              attributeStatusInfo: { reasonCode: message.action },
-              component: variableAttribute.component,
-              variable: variableAttribute.variable,
-            } as OCPP2_common_types.SetVariableResultType,
-            message.context.ocppConnectionName,
-            timestamp,
-          );
-        }
-      }
-    } catch (error) {
-      if (isForeignKeyConstraintError(error)) {
-        await this.sendCallErrorWithMessage(
-          message,
-          new OcppError(
-            message.context.correlationId,
-            ErrorCode.PropertyConstraintViolation,
-            'Referenced entity does not exist.',
-          ),
-        );
-        return;
-      }
-      throw error;
-    }
-
-    if (!message.payload.tbc) {
-      // Default if omitted is false
-      const success = await this._cache.set(
-        message.payload.requestId.toString(),
-        ReportingModule.GET_BASE_REPORT_COMPLETE_CACHE_VALUE,
-        message.context.ocppConnectionName,
-      );
-      this._logger.info('Completed', success, message.payload.requestId);
-    } else {
-      // tbc (to be continued) is true
-      // Continue to set get base report ongoing. Will extend the timeout.
-      const success = await this._cache.set(
-        message.payload.requestId.toString(),
-        ReportingModule.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
-        message.context.ocppConnectionName,
-        this.config.maxCachingSeconds,
-      );
-      this._logger.info('Ongoing', success, message.payload.requestId);
-    }
-
-    // Create response
-    const response: OCPP2_response_types.NotifyReportResponse = {};
-
-    await this.sendCallResultWithMessage(message, response);
-    this._logger.debug('NotifyReport response sent:', message, props);
-  }
 
   @AsHandler(OCPP_2_VER_LIST, OCPP_CallAction.SecurityEventNotification)
   protected async _handleSecurityEventNotification(
