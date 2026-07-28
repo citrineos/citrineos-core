@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Request handlers
+export { DiagnosticsStatusNotificationRequestOcpp16Handler } from './requests/1.6/DiagnosticsStatusNotificationRequestOcpp16Handler.js';
 export { GetCertificateStatusRequestOcpp2Handler } from './requests/2/GetCertificateStatusRequestOcpp2Handler.js';
 export { Get15118EVCertificateRequestOcpp2Handler } from './requests/2/Get15118EVCertificateRequestOcpp2Handler.js';
 export { LogStatusNotificationRequestOcpp2Handler } from './requests/2/LogStatusNotificationRequestOcpp2Handler.js';
@@ -14,6 +15,7 @@ export { SecurityEventNotificationRequestOcpp2Handler } from './requests/2/Secur
 export { SignCertificateRequestOcpp2Handler } from './requests/2/SignCertificateRequestOcpp2Handler.js';
 
 // Response handlers
+export { GetDiagnosticsResponseOcpp16Handler } from './responses/1.6/GetDiagnosticsResponseOcpp16Handler.js';
 export { CertificateSignedResponseOcpp2Handler } from './responses/2/CertificateSignedResponseOcpp2Handler.js';
 export { ClearVariableMonitoringResponseOcpp2Handler } from './responses/2/ClearVariableMonitoringResponseOcpp2Handler.js';
 export { CustomerInformationResponseOcpp2Handler } from './responses/2/CustomerInformationResponseOcpp2Handler.js';

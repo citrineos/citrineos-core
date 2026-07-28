@@ -50,6 +50,7 @@ import {
   CustomerInformationResponseOcpp2Handler,
   DefaultSequelizeInstance,
   DeleteCertificateResponseOcpp2Handler,
+  DiagnosticsStatusNotificationRequestOcpp16Handler,
   DrizzleSecurityEventRepository,
   EVDriverDataApi,
   EVDriverModule,
@@ -58,6 +59,7 @@ import {
   Get15118EVCertificateRequestOcpp2Handler,
   GetBaseReportResponseOcpp2Handler,
   GetCertificateStatusRequestOcpp2Handler,
+  GetDiagnosticsResponseOcpp16Handler,
   GetInstalledCertificateIdsResponseOcpp2Handler,
   GetLogResponseOcpp2Handler,
   GetMonitoringReportResponseOcpp2Handler,
@@ -433,6 +435,9 @@ function registerHandlers(container: AwilixContainer): void {
   container.register({
     ocppSender: asClass(OcppSender).scoped(),
     // requests
+    diagnosticsStatusNotificationRequestOcpp16Handler: asClass(
+      DiagnosticsStatusNotificationRequestOcpp16Handler,
+    ).scoped(),
     getCertificateStatusRequestOcpp2Handler: asClass(
       GetCertificateStatusRequestOcpp2Handler,
     ).scoped(),
@@ -455,6 +460,7 @@ function registerHandlers(container: AwilixContainer): void {
       SecurityEventNotificationRequestOcpp2Handler,
     ).scoped(),
     // responses
+    getDiagnosticsResponseOcpp16Handler: asClass(GetDiagnosticsResponseOcpp16Handler).scoped(),
     certificateSignedResponseOcpp2Handler: asClass(CertificateSignedResponseOcpp2Handler).scoped(),
     clearVariableMonitoringResponseOcpp2Handler: asClass(
       ClearVariableMonitoringResponseOcpp2Handler,
