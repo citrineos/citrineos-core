@@ -180,6 +180,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         true,
         PROTOCOL,
+        undefined,
       );
 
       expect(result).toBe(true);
@@ -232,6 +233,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         false,
         PROTOCOL,
+        null,
       );
       expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
       expect(result).toBe(true);
@@ -247,6 +249,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         false,
         null,
+        null,
       );
     });
 
@@ -259,6 +262,7 @@ describe('MessageRouterImpl', () => {
         TENANT_ID,
         STATION_ID,
         false,
+        null,
         null,
       );
     });

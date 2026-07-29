@@ -27,7 +27,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useSelect, useTranslate } from '@refinedev/core';
+import { useInvalidate, useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import { useMemo, useState } from 'react';
@@ -66,6 +66,7 @@ const vpnTypes = Object.keys(OCPP2_0_1.VPNEnumType);
 export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
+  const invalidate = useInvalidate();
   const [loading, setLoading] = useState(false);
 
   const tenantId = useTenantId();
@@ -236,6 +237,9 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
     }).then(() => {
       form.reset();
       dispatch(closeModal());
+      // Refresh the detail card + Network Profiles tab so the newly pushed profile shows without a
+      // manual page reload. The SetNetworkProfiles row is persisted server-side before this resolves.
+      invalidate({ invalidates: ['all'] });
     });
   };
 

@@ -79,6 +79,7 @@ export class SequelizeLocationRepository
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
+    connectedWebsocketServerConfigId?: string | null,
   ): Promise<ChargingStation | undefined> {
     const station = await ChargingStation.findOne({
       where: { ocppConnectionName: ocppConnectionName, tenantId },
@@ -99,7 +100,11 @@ export class SequelizeLocationRepository
       });
     }
 
-    await station.update({ isOnline, protocol: ocppVersion });
+    await station.update({
+      isOnline,
+      protocol: ocppVersion,
+      connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+    });
     return station;
   }
 

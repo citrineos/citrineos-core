@@ -263,6 +263,7 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
+    connectedWebsocketServerConfigId?: string | null,
   ) => Promise<ChargingStation | undefined>;
   doesChargingStationExistByStationId: (
     tenantId: number,
