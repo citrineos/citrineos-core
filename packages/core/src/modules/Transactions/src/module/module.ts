@@ -35,6 +35,7 @@ export class TransactionsModule extends AbstractModule {
     ocppSender,
     transactionEventRepository,
     tariffRepository,
+    transactionsHandlers,
   }: TransactionsModuleDependencies) {
     super(
       config,
@@ -45,6 +46,7 @@ export class TransactionsModule extends AbstractModule {
       ocppSender,
       logger,
       ocppValidator,
+      transactionsHandlers,
     );
     this._transactionEventRepository = transactionEventRepository;
     this._tariffRepository = tariffRepository;

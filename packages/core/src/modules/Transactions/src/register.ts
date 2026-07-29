@@ -29,7 +29,7 @@ import {
   StatusNotificationRequestOcpp2Handler,
   StopTransactionRequestOcpp16Handler,
   TransactionEventRequestOcpp2Handler,
-} from '@/handlers/index.js';
+} from '@handlers/index.js';
 
 const TRANSACTIONS_HANDLERS = [
   CostUpdatedResponseOcpp2Handler,
@@ -73,6 +73,6 @@ export function registerTransactionsServices(container: AwilixContainer): void {
     ).scoped(),
     transactionsHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, TRANSACTIONS_HANDLERS),
-    ),
+    ).scoped(),
   });
 }

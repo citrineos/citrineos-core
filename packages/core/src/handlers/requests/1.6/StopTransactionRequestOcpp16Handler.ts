@@ -31,17 +31,17 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   constructor({
     logger,
     ocppSender,
-    authorizeRepository,
+    authorizationRepository,
     transactionEventRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    authorizeRepository: IAuthorizationRepository;
+    authorizationRepository: IAuthorizationRepository;
     transactionEventRepository: ITransactionEventRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
-    this._authorizeRepository = authorizeRepository;
+    this._authorizeRepository = authorizationRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
 
