@@ -4,6 +4,7 @@
 import type {
   BootstrapConfig,
   ICache,
+  MessageTypeId,
   OCPPVersion,
   OCPPVersionType,
   SystemConfig,
@@ -108,7 +109,7 @@ export class WebhookDispatcher {
     timestamp: string,
     protocol: OCPPVersionType,
     action: string,
-    state: MessageState,
+    type: MessageTypeId,
   ) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     try {
@@ -129,10 +130,10 @@ export class WebhookDispatcher {
         ocppConnectionName: ocppConnectionName,
         correlationId: messageId,
         origin: origin,
-        state: state,
+        type: type,
         protocol: protocol as OCPPVersion,
         action: action,
-        message: message,
+        raw: message,
         timestamp: timestamp,
       });
       const promises: Promise<any>[] =
