@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { BootstrapConfig, IMessage, OcppRequest, SystemConfig } from '@citrineos/base';
+import type { IMessage, OcppRequest } from '@citrineos/base';
 import {
   DEFAULT_TENANT_ID,
   EventGroup,
@@ -15,22 +13,9 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/base';
-import { asValue } from 'awilix';
-import type { ILocationRepository } from '@citrineos/core';
-import { TransactionsModule } from '@modules/Transactions/src/module/module.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
-
-vi.mock('@util/security/SignedMeterValuesUtil.js', () => ({
-  SignedMeterValuesUtil: vi.fn().mockImplementation(() => ({
-    validateMeterValues: vi.fn().mockResolvedValue(true),
-  })),
-}));
-
-vi.mock('@util/authorizer/RealTimeAuthorizer.js', () => ({
-  RealTimeAuthorizer: vi.fn().mockImplementation(() => ({
-    authorize: vi.fn().mockResolvedValue('Accepted'),
-  })),
-}));
+import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
+import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
 
 // Mock sequelize models
 vi.mock('@dal/layers/sequelize/model/Location/Connector.js', () => ({
@@ -51,62 +36,7 @@ vi.mock('@dal/layers/sequelize/model/TransactionEvent/Transaction.js', () => ({
   },
 }));
 
-vi.mock('@dal/index.js', async () => {
-  const actual = await vi.importActual('@dal/index.js');
-  return {
-    ...actual,
-    sequelize: {
-      ...(actual as any).sequelize,
-      Connector: {
-        findAll: vi.fn(),
-      },
-      Evse: {},
-      Op: {
-        ne: Symbol('ne'),
-      },
-    },
-  };
-});
-
-function makeConfig(): BootstrapConfig & SystemConfig {
-  return {
-    env: 'test',
-    logLevel: 6,
-    maxCallLengthSeconds: 30,
-    maxCachingSeconds: 30,
-    centralSystem: { host: '0.0.0.0', port: 8080 },
-    modules: {
-      transactions: {
-        requests: [],
-        responses: [],
-        sendCostUpdatedOnMeterValue: false,
-      },
-    },
-    util: {
-      cache: { memory: true },
-      messageBroker: { amqp: { url: 'amqp://localhost', exchange: 'x' } },
-      authProvider: { localByPass: true },
-      swagger: { path: '/docs', logoPath: '', exposeData: false, exposeMessage: false },
-      networkConnection: { websocketServers: [] },
-      certificateAuthority: {
-        v2gCA: {
-          name: 'hubject',
-          hubject: { baseUrl: '', tokenUrl: '', clientId: '', clientSecret: '' },
-        },
-        chargingStationCA: {
-          name: 'acme',
-          acme: { env: 'staging', accountKeyFilePath: '', email: '' },
-        },
-      },
-    },
-  } as unknown as BootstrapConfig & SystemConfig;
-}
-
-function makeMessage<T extends OcppRequest>(
-  payload: T,
-  action: string,
-  protocol: OCPPVersion,
-): IMessage<T> {
+function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -117,23 +47,23 @@ function makeMessage<T extends OcppRequest>(
     payload,
     origin: MessageOrigin.ChargingStationManagementSystem,
     eventGroup: EventGroup.Transactions,
-    action,
+    action: OCPP_CallAction.GetTariffs,
     state: MessageState.Request,
-    protocol,
+    protocol: OCPPVersion.OCPP2_1,
   } as unknown as IMessage<T>;
 }
 
-describe('I09 - Local Cost Calculation - Get Tariffs', () => {
-  const { container } = createTestContainer();
-  let module: TransactionsModule;
+describe('GetTariffsRequestOcpp21Handler', () => {
+  let handler: GetTariffsRequestOcpp21Handler;
+  let ocppSender: ReturnType<typeof makeMockOcppSender>;
   let mockLocationRepository: Partial<ILocationRepository>;
   let mockConnectorFindAll: any;
   let mockAuthorizationFindAll: any;
   let mockTransactionFindAll: any;
 
   beforeEach(async () => {
-    // Import mocked modules - need to get sequelize from @dal/index.js
-    const { sequelize } = await import('@dal/index.js');
+    // Import the mocked models - these are what the handler actually calls directly.
+    const { Connector } = await import('@dal/layers/sequelize/model/Location/Connector.js');
     const { Authorization } = await import(
       '@dal/layers/sequelize/model/Authorization/Authorization.js'
     );
@@ -142,7 +72,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
     );
 
     // Mock the sequelize.Connector.findAll which is what the handler actually uses
-    mockConnectorFindAll = vi.mocked(sequelize.Connector.findAll);
+    mockConnectorFindAll = vi.mocked(Connector.findAll);
     mockAuthorizationFindAll = vi.mocked(Authorization.findAll);
     mockTransactionFindAll = vi.mocked(Transaction.findAll);
 
@@ -153,41 +83,22 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       }),
     };
 
-    const config = makeConfig();
-    const logger = new Logger<ILogObj>({ name: 'test', minLevel: 6 });
+    const { logger } = createTestContainer();
+    ocppSender = makeMockOcppSender();
 
-    // Register the module's dependencies as untyped values (asValue needs no casts).
-    // Repos carry only the methods the handler touches; the module's injected
-    // services are mocked at the boundary.
-    container.register({
-      config: asValue(config),
-      logger: asValue(logger),
-      cache: asValue({}),
-      sender: asValue({ sendResponse: vi.fn().mockResolvedValue({ success: true }) }),
-      handler: asValue({ subscribe: vi.fn().mockResolvedValue(true), set module(_: unknown) {} }),
-      ocppValidator: asValue(undefined),
-      transactionEventRepository: asValue({
-        createOrUpdateTransactionByTransactionEventAndStationId: vi.fn(),
-      }),
-      authorizationRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
-      deviceModelRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
-      locationRepository: asValue(mockLocationRepository),
-      tariffRepository: asValue({ readAllByQuerystring: vi.fn().mockResolvedValue([]) }),
-      ocppMessageRepository: asValue({ readOnlyOneByQuery: vi.fn().mockResolvedValue(null) }),
-      chargingProfileRepository: asValue({ readAllByQuery: vi.fn().mockResolvedValue([]) }),
-      transactionService: asValue({
-        authorizeOcpp21IdToken: vi.fn().mockResolvedValue({}),
-        authorizeOcpp201IdToken: vi.fn().mockResolvedValue({}),
-        deactivateReservation: vi.fn().mockResolvedValue(undefined),
-      }),
-      statusNotificationService: asValue({}),
-      costCalculator: asValue({}),
-      costNotifier: asValue({}),
-      signedMeterValuesUtil: asValue({ validateMeterValues: vi.fn().mockResolvedValue(true) }),
+    handler = new GetTariffsRequestOcpp21Handler({
+      logger,
+      ocppSender,
+      locationRepository: mockLocationRepository as unknown as ILocationRepository,
     });
-
-    module = getTestInstance(container, TransactionsModule, {});
   });
+
+  async function handleAndGetResponse(
+    payload: OCPP2_1.GetTariffsRequest,
+  ): Promise<OCPP2_1.GetTariffsResponse> {
+    await handler.handle(makeMessage(payload));
+    return ocppSender.sendCallResultWithMessage.mock.calls[0][1] as OCPP2_1.GetTariffsResponse;
+  }
 
   describe('I09.FR.03 - No tariffs returns NoTariff status', () => {
     it('should return NoTariff status when no tariffs exist', async () => {
@@ -195,13 +106,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       mockAuthorizationFindAll.mockResolvedValue([]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.NoTariff);
       expect(response.tariffAssignments).toBeUndefined();
@@ -235,13 +140,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       mockAuthorizationFindAll.mockResolvedValue([]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments).toHaveLength(1);
@@ -271,13 +170,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       mockAuthorizationFindAll.mockResolvedValue([]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 1,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 1 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments).toHaveLength(1);
@@ -312,13 +205,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       ]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments).toHaveLength(2);
@@ -374,13 +261,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
         },
       ]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments).toHaveLength(1);
@@ -410,13 +291,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       mockAuthorizationFindAll.mockResolvedValue([]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments![0].validFrom).toBe('2024-01-01T00:00:00Z');
@@ -438,13 +313,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
       ]);
       mockTransactionFindAll.mockResolvedValue([]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments![0].validFrom).toBeUndefined();
@@ -523,13 +392,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
         },
       ]);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
       expect(response.tariffAssignments).toHaveLength(3);
@@ -566,13 +429,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
     it('should return Rejected status when charging station not found', async () => {
       (mockLocationRepository.readChargingStationByStationId as any).mockResolvedValue(null);
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Rejected);
       expect(response.statusInfo?.reasonCode).toBe('StationNotFound');
@@ -581,13 +438,7 @@ describe('I09 - Local Cost Calculation - Get Tariffs', () => {
     it('should return Rejected status when database query fails', async () => {
       mockConnectorFindAll.mockRejectedValue(new Error('Database connection failed'));
 
-      const payload: OCPP2_1.GetTariffsRequest = {
-        evseId: 0,
-      };
-
-      const response = await (module as any)._handleGetTariffs(
-        makeMessage(payload, OCPP_CallAction.GetTariffs, OCPPVersion.OCPP2_1),
-      );
+      const response = await handleAndGetResponse({ evseId: 0 });
 
       expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Rejected);
       expect(response.statusInfo?.reasonCode).toBe('InternalError');

@@ -11,11 +11,9 @@ import {
   MessageState,
   OCPP_CallAction,
 } from '@citrineos/base';
-import { asValue } from 'awilix';
-import { ReportingModule } from '@modules/Reporting/src/module/module.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { SecurityEventNotificationRequestOcpp2Handler } from '@handlers/index.js';
+import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
 import { aSecurityEventNotificationRequest } from '@test/dal/providers/SecurityEvent.js';
-import { aSystemConfig } from '@test/modules/Certificates/providers/SystemConfig.js';
 
 const STATION_ID = 'station-001';
 
@@ -36,63 +34,43 @@ function aSecurityEventMessage<T extends OcppRequest>(payload: T): Message<T> {
   );
 }
 
-describe('ReportingModule - SecurityEventNotification handling', () => {
-  const { container, logger } = createTestContainer();
-  let module: ReportingModule;
+describe('SecurityEventNotificationRequestOcpp2Handler', () => {
+  const { logger } = createTestContainer();
+  let handler: SecurityEventNotificationRequestOcpp2Handler;
   let securityEventRepository: { createByStationId: ReturnType<typeof vi.fn> };
-  let sender: { sendResponse: ReturnType<typeof vi.fn>; sendRequest: ReturnType<typeof vi.fn> };
+  let ocppSender: ReturnType<typeof makeMockOcppSender>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     securityEventRepository = { createByStationId: vi.fn().mockResolvedValue({ id: 1 }) };
-    sender = {
-      sendResponse: vi.fn().mockResolvedValue({ success: true }),
-      sendRequest: vi.fn().mockResolvedValue({ success: true }),
-    };
+    ocppSender = makeMockOcppSender();
 
-    container.register({
-      config: asValue(aSystemConfig()),
-      cache: asValue({
-        get: vi.fn().mockResolvedValue(null),
-        set: vi.fn().mockResolvedValue(true),
-      }),
-      sender: asValue({ ...sender, shutdown: vi.fn() }),
-      handler: asValue({
-        subscribe: vi.fn().mockResolvedValue(true),
-        shutdown: vi.fn(),
-        set module(_: unknown) {},
-      }),
-      // undefined lets AbstractModule build a real OCPPValidator, so handle() runs genuine schema validation
-      ocppValidator: asValue(undefined),
-      deviceModelRepository: asValue({}),
-      securityEventRepository: asValue(securityEventRepository),
-      variableMonitoringRepository: asValue({}),
-      ocppMessageRepository: asValue({}),
-      reportingDeviceModelService: asValue({}),
+    handler = new SecurityEventNotificationRequestOcpp2Handler({
+      logger,
+      ocppSender,
+      securityEventRepository,
     });
-
-    module = getTestInstance(container, ReportingModule, {});
   });
 
   it('persists and acknowledges a standard (listed) security event type without logging a warning', async () => {
     const payload = aSecurityEventNotificationRequest({ type: 'SecurityLogWasCleared' });
 
-    await module.handle(aSecurityEventMessage(payload));
+    await handler.handle(aSecurityEventMessage(payload));
 
     expect(securityEventRepository.createByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       payload,
       STATION_ID,
     );
-    expect(sender.sendResponse).toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('warns but still persists and acknowledges an unlisted security event type', async () => {
     const payload = aSecurityEventNotificationRequest({ type: 'InvalidCentralSystemCertificate' });
 
-    await module.handle(aSecurityEventMessage(payload));
+    await handler.handle(aSecurityEventMessage(payload));
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('unknown security event type'),
@@ -103,6 +81,6 @@ describe('ReportingModule - SecurityEventNotification handling', () => {
       payload,
       STATION_ID,
     );
-    expect(sender.sendResponse).toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
   });
 });

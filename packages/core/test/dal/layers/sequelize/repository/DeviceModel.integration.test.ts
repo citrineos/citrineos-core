@@ -17,7 +17,7 @@ import {
   VariableAttribute,
   VariableStatus,
 } from '@dal/index.js';
-import { aGetVariableResult } from '../providers/Monitoring.js';
+import { aGetVariableResult } from '@test/modules/Monitoring/providers/Monitoring.js';
 
 // ---------------------------------------------------------------------------
 // Constants
