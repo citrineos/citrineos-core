@@ -542,8 +542,6 @@ export interface IChargingStationSequenceRepository
   ): Promise<number>;
 }
 
-// ORM-agnostic contract: returns ServerNetworkProfileDto so both the Sequelize
-// (model implements ServerNetworkProfileDto) and Drizzle implementations satisfy it.
 export interface IServerNetworkProfileRepository {
   upsertServerNetworkProfile(
     websocketServerConfig: any,
@@ -557,9 +555,6 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
     configuration: ChangeConfiguration,
   ): Promise<ChangeConfiguration | undefined>;
 }
-
-// ORM-agnostic contract: returns TenantDto so both the Sequelize
-// (model implements TenantDto) and Drizzle implementations satisfy it.
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
   readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
