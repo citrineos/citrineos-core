@@ -18,7 +18,6 @@ export const GenerateCertificateChainSchema = QuerySchema('GenerateCertificateCh
   {
     key: 'selfSigned',
     type: 'boolean',
-    required: true,
   },
   {
     key: 'countryName',
@@ -42,6 +41,10 @@ export const GenerateCertificateChainSchema = QuerySchema('GenerateCertificateCh
   },
   {
     key: 'validBefore',
+    type: 'string',
+  },
+  {
+    key: 'generationScope',
     type: 'string',
   },
 ]);
