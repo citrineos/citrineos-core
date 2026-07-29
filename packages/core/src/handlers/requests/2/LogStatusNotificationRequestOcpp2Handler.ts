@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  ErrorCode,
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
@@ -13,7 +12,6 @@ import {
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
 } from '@citrineos/base';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.LogStatusNotification)
@@ -38,20 +36,10 @@ export class LogStatusNotificationRequestOcpp2Handler extends AbstractHandler {
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
-    // Validate requestId requirement
-    // requestId is mandatory unless message was triggered by TriggerMessageRequest AND no log upload ongoing
-    if (!message.payload.requestId) {
-      await this._ocppSender.sendCallErrorWithMessage(
-        message,
-        new OcppError(
-          message.context.correlationId,
-          ErrorCode.OccurrenceConstraintViolation,
-          'RequestId is required.',
-        ),
-      );
-      return;
-    }
-    // Create response
+    // requestId is optional (see the request schema): it is absent when the message was
+    // triggered by a TriggerMessageRequest and there is no log upload ongoing. Acknowledge
+    // the notification regardless of whether requestId is present.
+
     const response: OCPP2_response_types.LogStatusNotificationResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
