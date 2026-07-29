@@ -50,7 +50,6 @@ export type {
 } from './src/interfaces/messages/index.js';
 export { AbstractModule } from './src/interfaces/modules/AbstractModule.js';
 export type { OcppModuleDependencies } from './src/interfaces/modules/AbstractModule.js';
-export { AsHandler } from './src/interfaces/modules/AsHandler.js';
 export type { IModule } from './src/interfaces/modules/Module.js';
 export { OCPPValidator } from './src/interfaces/modules/OCPPValidator.js';
 export { AbstractMessageRouter } from './src/interfaces/router/AbstractRouter.js';
