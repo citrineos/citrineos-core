@@ -16,7 +16,7 @@ import { DEFAULT_SORTERS, DETAIL_TAB_STATE } from '@lib/utils/consts';
 import { GET_TRANSACTION_LIST_FOR_STATION } from '@lib/queries/transactions';
 import { TransactionClass } from '@lib/cls/transaction.dto';
 import { AggregatedMeterValuesData } from '@lib/client/pages/charging-stations/detail/charging.station.aggregated.data';
-import React from 'react';
+import React, { useState } from 'react';
 import ChargingStationConfiguration from '@lib/client/pages/charging-stations/detail/charging.station.configuration';
 import {
   getTransactionsColumns,
@@ -48,6 +48,7 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
   );
 
   const [tab, setTab] = useQueryState(DETAIL_TAB_STATE);
+  const [liveLogEnabled, setLiveLogEnabled] = useState(false);
 
   return (
     <Card>
@@ -108,7 +109,11 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
                 </p>
               }
             >
-              <OCPPMessages stationId={id} />
+              <OCPPMessages
+                stationId={id}
+                liveLogEnabled={liveLogEnabled}
+                onLiveLogEnabledChange={setLiveLogEnabled}
+              />
             </CanAccess>
           </TabsContent>
 
