@@ -83,6 +83,7 @@ apps/ocpp-server/src/assets/certificates/subCAKey.pem
 # Documentation
 packages/core/test/util/resources/README.md
 apps/ocpp-server/everest/README.md
+packages/core/src/handlers/HANDLERS.md
 
 # Configuration files
 apps/ocpp-server/nodemon.json
