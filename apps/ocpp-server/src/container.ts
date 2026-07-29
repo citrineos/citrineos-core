@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asClass, asFunction, asValue, createContainer, InjectionMode } from 'awilix';
 import type { AwilixContainer } from 'awilix';
+import { asClass, asFunction, asValue, createContainer, InjectionMode } from 'awilix';
 import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
@@ -18,18 +18,20 @@ import { DefaultSequelizeInstance } from '@citrineos/core';
 
 // -- RabbitMQ --
 import {
-  RabbitMQConnectionManager,
-  RabbitMQChannelManager,
-  RabbitMqSender,
-  RabbitMqReceiver,
   BrokerAwareMessageSender,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
 } from '@citrineos/core';
 
 // -- Repositories --
 import {
   Component,
   DrizzleSecurityEventRepository,
-  SequelizeRepository,
+  DrizzleServerNetworkProfileRepository,
+  DrizzleSubscriptionRepository,
+  DrizzleTenantRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -46,6 +48,7 @@ import {
   SequelizeLocationRepository,
   SequelizeMessageInfoRepository,
   SequelizeOCPPMessageRepository,
+  SequelizeRepository,
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
   SequelizeServerNetworkProfileRepository,
@@ -59,26 +62,26 @@ import {
 // -- Services --
 import {
   CertificateAuthorityService,
+  IdGenerator,
   InternalSmartCharging,
   RealTimeAuthorizer,
-  IdGenerator,
 } from '@citrineos/core';
 
 // -- API authentication --
-import { LocalBypassAuthProvider, OIDCAuthProvider } from '@citrineos/core';
 import type { IApiAuthProvider } from '@citrineos/base';
+import { LocalBypassAuthProvider, OIDCAuthProvider } from '@citrineos/core';
 
 // -- Network Connection --
 import {
-  Authenticator,
-  UnknownStationFilter,
-  ConnectedStationFilter,
-  NetworkProfileFilter,
-  BasicAuthenticationFilter,
-  MessageRouterImpl,
-  WebsocketNetworkConnection,
-  WebhookDispatcher,
   AdminApi,
+  Authenticator,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
+  MessageRouterImpl,
+  NetworkProfileFilter,
+  UnknownStationFilter,
+  WebhookDispatcher,
+  WebsocketNetworkConnection,
 } from '@citrineos/core';
 
 // -- Modules --
@@ -89,8 +92,8 @@ import {
   MonitoringModule,
   ReportingModule,
   SmartChargingModule,
-  TransactionsModule,
   TenantModule,
+  TransactionsModule,
 } from '@citrineos/core';
 
 // -- Module-internal services (registered by each module package's own registrar) --
@@ -105,23 +108,23 @@ import {
 
 // -- Module APIs --
 import {
-  CertificatesOcpp2Api,
   CertificatesDataApi,
-  ConfigurationOcpp2Api,
-  ConfigurationOcpp16Api,
+  CertificatesOcpp2Api,
   ConfigurationDataApi,
-  EVDriverOcpp2Api,
-  EVDriverOcpp16Api,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp2Api,
   EVDriverDataApi,
-  MonitoringOcpp2Api,
+  EVDriverOcpp16Api,
+  EVDriverOcpp2Api,
   MonitoringDataApi,
-  ReportingOcpp2Api,
+  MonitoringOcpp2Api,
   ReportingOcpp16Api,
-  SmartChargingOcpp2Api,
+  ReportingOcpp2Api,
   SmartChargingOcpp16Api,
-  TransactionsOcpp2Api,
-  TransactionsDataApi,
+  SmartChargingOcpp2Api,
   TenantDataApi,
+  TransactionsDataApi,
+  TransactionsOcpp2Api,
 } from '@citrineos/core';
 
 type Prebuilt = {
@@ -305,10 +308,19 @@ function registerRepositories(container: AwilixContainer): void {
     ).singleton(),
   });
 
-  if (process.env.CITRINEOS_USE_DRIZZLE_SECURITY_EVENT === 'true') {
+  if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
     container.register({
       securityEventRepository: asFunction(
         ({ config, logger }) => new DrizzleSecurityEventRepository(config, logger),
+      ).singleton(),
+      subscriptionRepository: asFunction(
+        ({ config, logger }) => new DrizzleSubscriptionRepository(config, logger),
+      ).singleton(),
+      serverNetworkProfileRepository: asFunction(
+        ({ config, logger }) => new DrizzleServerNetworkProfileRepository(config, logger),
+      ).singleton(),
+      tenantRepository: asFunction(
+        ({ config, logger }) => new DrizzleTenantRepository(config, logger),
       ).singleton(),
     });
   }

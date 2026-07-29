@@ -85,4 +85,10 @@ export {
   OCPP1_6_Mapper,
 } from './layers/sequelize/index.js'; // TODO ensure all needed modules are properly exported
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore.js';
-export { DefaultDrizzleInstance, DrizzleSecurityEventRepository } from './layers/drizzle/index.js';
+export {
+  DefaultDrizzleInstance,
+  DrizzleSecurityEventRepository,
+  DrizzleServerNetworkProfileRepository,
+  DrizzleSubscriptionRepository,
+  DrizzleTenantRepository,
+} from './layers/drizzle/index.js';

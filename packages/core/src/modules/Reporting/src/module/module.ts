@@ -6,10 +6,10 @@ import type {
   GenericDeviceModelStatusEnumType,
   HandlerProperties,
   IMessage,
-  OcppModuleDependencies,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppModuleDependencies,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -18,7 +18,6 @@ import {
   EventGroup,
   GenericDeviceModelStatusEnum,
   MutabilityEnum,
-  Namespace,
   OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
@@ -154,7 +153,6 @@ export class ReportingModule extends AbstractModule {
         },
         limit: 1,
       },
-      Namespace.OCPPMessage,
     );
 
     if (!previousRequest || previousRequest.length === 0) {
