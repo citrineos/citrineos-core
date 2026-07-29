@@ -81,6 +81,9 @@ export class ReservationStatusUpdateRequestOcpp2Handler extends AbstractHandler 
     const response: OCPP2_response_types.ReservationStatusUpdateResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('ReservationStatusUpdate response sent: ', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('ReservationStatusUpdateResponse'),
+      messageConfirmation,
+    );
   }
 }

@@ -70,6 +70,7 @@ import {
   registerEVDriverServices,
   registerMonitoringServices,
   registerReportingServices,
+  registerSmartChargingServices,
   registerTransactionsServices,
   ReportingModule,
   ReportingOcpp16Api,
@@ -171,6 +172,7 @@ function registerModuleServices(container: AwilixContainer): void {
   registerEVDriverServices(container);
   registerMonitoringServices(container);
   registerReportingServices(container);
+  registerSmartChargingServices(container);
   registerTransactionsServices(container);
 }
 
