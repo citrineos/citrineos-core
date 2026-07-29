@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // ============================================================================
 // FILE: apps/mock-msp/test/actor.command.test.ts
 // (bonus) The Actor's full Command flow, Citrine-free: OcpiClient.sendCommand

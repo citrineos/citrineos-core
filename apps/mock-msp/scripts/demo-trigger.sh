@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # ============================================================================
 # demo-trigger.sh — make LIVE CitrineOS push real OCPI traffic to the mock eMSP.
 #

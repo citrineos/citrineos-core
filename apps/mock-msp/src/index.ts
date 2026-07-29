@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // ============================================================================
 // FILE: apps/mock-msp/src/index.ts   (integrate owner)
 // Entrypoint: loadConfig -> buildContext -> buildServer -> listen(:8083).

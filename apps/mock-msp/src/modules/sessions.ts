@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // ============================================================================
 // FILE: apps/mock-msp/src/modules/sessions.ts   (owner: build:sessions)
 // ----------------------------------------------------------------------------

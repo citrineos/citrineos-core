@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Mock eMSP dashboard — walkthrough for Mason
 
 **Runtime: ~18 min.** Left column = what to do, right = what to say.

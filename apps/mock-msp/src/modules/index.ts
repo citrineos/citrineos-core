@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // ============================================================================
 // FILE: apps/mock-msp/src/modules/index.ts   (integrate owner)
 // Barrel of every ModuleDef the registry mounts. The order here is the order the

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // ============================================================================
 // FILE: apps/mock-msp/test/credentials.handshake.test.ts
 // (1) Credentials handshake happy path, exercised in-process. The CPO (Citrine)
