@@ -43,7 +43,7 @@ export class NotifyMonitoringReportRequestOcpp2Handler extends AbstractHandler {
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
-      this.createHandlerReceivedMessageLog(`NotifyMonitoringReportRequest (${message.protocol})`),
+      this.createHandlerReceivedMessageLog(`NotifyMonitoringReportRequest ${message.protocol}`),
       message,
       props,
     );
