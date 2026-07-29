@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import type { BootstrapConfig } from '@citrineos/base';
@@ -20,22 +20,19 @@ import {
   OCPPMessage,
   SequelizeDeviceModelRepository,
   SequelizeOCPPMessageRepository,
-  SequelizeVariableMonitoringRepository,
   Tenant,
   Variable,
   VariableAttribute,
   VariableStatus,
 } from '@dal/index.js';
-import { asValue } from 'awilix';
-import { MonitoringModule } from '@modules/Monitoring/src/module/module.js';
-import { registerMonitoringServices } from '@modules/Monitoring/src/register.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { SetVariablesResponseOcpp2Handler } from '@handlers/index.js';
+import { createTestContainer } from '@test/testContainer.js';
 import {
   aSetVariableData,
   aSetVariableResult,
   aSetVariablesResponse,
   aSetVariablesResponseMessage,
-} from '../providers/Monitoring.js';
+} from '@test/modules/Monitoring/providers/Monitoring.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -51,7 +48,7 @@ const CORRELATION_ID = 'corr-abc-123';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let module: MonitoringModule;
+let handler: SetVariablesResponseOcpp2Handler;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -92,9 +89,9 @@ beforeAll(async () => {
   VariableStatus.belongsTo(VariableAttribute, { foreignKey: 'variableAttributeId' });
   await sequelizeInstance.sync({ force: true });
 
-  // The module is stateless across tests (each test truncates + seeds the DB and
+  // The handler is stateless across tests (each test truncates + seeds the DB and
   // asserts on return values / DB state, not on mocks), so build it once.
-  module = makeModule();
+  handler = makeHandler();
 }, 90_000);
 
 afterAll(async () => {
@@ -115,33 +112,20 @@ function makeRepos() {
   return {
     deviceModelRepo: new SequelizeDeviceModelRepository({ config, sequelizeInstance }),
     ocppMessageRepo: new SequelizeOCPPMessageRepository({ config, sequelizeInstance }),
-    variableMonitoringRepo: new SequelizeVariableMonitoringRepository({
-      config,
-      sequelizeInstance,
-    }),
   };
 }
 
-function makeModule(): MonitoringModule {
-  const { deviceModelRepo, ocppMessageRepo, variableMonitoringRepo } = makeRepos();
+function makeHandler(): SetVariablesResponseOcpp2Handler {
+  // SetVariables response handling now lives in SetVariablesResponseOcpp2Handler, not
+  // MonitoringModule, so construct that handler directly against the real repos.
+  const { deviceModelRepo, ocppMessageRepo } = makeRepos();
+  const { logger } = createTestContainer();
 
-  // Build the module through the container so its internal services resolve via
-  // registerMonitoringServices (the production DI wiring) from the real repos.
-  // asValue is untyped, so the infra mocks need no casts.
-  const { container } = createTestContainer();
-  container.register({
-    config: asValue({ modules: { monitoring: { requests: [], responses: [] } } }),
-    cache: asValue({}),
-    sender: asValue({}),
-    handler: asValue({ module: null }),
-    ocppValidator: asValue({ validate: vi.fn().mockResolvedValue(undefined) }),
-    deviceModelRepository: asValue(deviceModelRepo),
-    variableMonitoringRepository: asValue(variableMonitoringRepo),
-    ocppMessageRepository: asValue(ocppMessageRepo),
-    idGenerator: asValue({ generateRequestId: vi.fn().mockResolvedValue(1) }),
+  return new SetVariablesResponseOcpp2Handler({
+    logger,
+    deviceModelRepository: deviceModelRepo,
+    ocppMessageRepository: ocppMessageRepo,
   });
-  registerMonitoringServices(container);
-  return getTestInstance(container, MonitoringModule, {});
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +203,7 @@ async function seedSetVariablesRequest(
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('MonitoringModule – SetVariables response handling', () => {
+describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', () => {
   // -------------------------------------------------------------------------
   // getSetVariablesDataMapFromOriginalSetVariablesRequest
   // -------------------------------------------------------------------------
@@ -229,7 +213,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       await seedBase();
       // No OCPPMessage seeded
 
-      const map = await (module as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         CORRELATION_ID,
@@ -254,7 +238,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       });
       await seedSetVariablesRequest([data1, data2]);
 
-      const map = await (module as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         CORRELATION_ID,
@@ -274,7 +258,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       });
       await seedSetVariablesRequest([data]);
 
-      const map = await (module as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         CORRELATION_ID,
@@ -294,7 +278,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       await seedSetVariablesRequest([data], 'other-corr-id');
       // No message seeded for CORRELATION_ID
 
-      const map = await (module as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         CORRELATION_ID, // different from 'other-corr-id'
@@ -315,7 +299,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       const variable = await seedVariable('MaxVoltage');
       const seeded = await seedVariableAttribute(component.id, variable.id, '120');
 
-      const result = await (module as any).getExistingOrCreateVariableAttribute(
+      const result = await (handler as any).getExistingOrCreateVariableAttribute(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         'Connector',
@@ -338,7 +322,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       await seedBase();
       // No Component, Variable, or VariableAttribute seeded
 
-      const result = await (module as any).getExistingOrCreateVariableAttribute(
+      const result = await (handler as any).getExistingOrCreateVariableAttribute(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         'Connector',
@@ -374,7 +358,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         OCPP2_0_1.AttributeEnumType.Actual,
       );
 
-      const result = await (module as any).getExistingOrCreateVariableAttribute(
+      const result = await (handler as any).getExistingOrCreateVariableAttribute(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         'EVSE',
@@ -415,7 +399,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         r.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
       });
 
-      await (module as any).handleSetVariableResultType(
+      await (handler as any).handleSetVariableResultType(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         result,
@@ -455,7 +439,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         r.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
       });
 
-      await (module as any).handleSetVariableResultType(
+      await (handler as any).handleSetVariableResultType(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         result,
@@ -494,7 +478,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         r.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
       });
 
-      await (module as any).handleSetVariableResultType(
+      await (handler as any).handleSetVariableResultType(
         TENANT_ID,
         OCPP_CONNECTION_NAME,
         result,
@@ -511,10 +495,10 @@ describe('MonitoringModule – SetVariables response handling', () => {
   });
 
   // -------------------------------------------------------------------------
-  // _handleSetVariables (full end-to-end with real DB)
+  // handle (full end-to-end with real DB)
   // -------------------------------------------------------------------------
 
-  describe('_handleSetVariables', () => {
+  describe('handle', () => {
     it('updates VariableAttribute.value in the DB when the response status is Accepted', async () => {
       await seedBase();
       const component = await seedComponent('Connector');
@@ -530,7 +514,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         }),
       ]);
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -569,7 +553,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         }),
       ]);
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -611,7 +595,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         }),
       ]);
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -650,7 +634,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
       const varAttr = await seedVariableAttribute(component.id, variable.id, '120');
       // Intentionally do NOT seed an OCPPMessage
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -689,7 +673,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         }),
       ]);
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -750,7 +734,7 @@ describe('MonitoringModule – SetVariables response handling', () => {
         }),
       ]);
 
-      await (module as any)._handleSetVariables(
+      await (handler as any).handle(
         aSetVariablesResponseMessage(
           aSetVariablesResponse((r) => {
             r.setVariableResult = [
@@ -790,19 +774,19 @@ describe('MonitoringModule – SetVariables response handling', () => {
 
   describe('getSetVariableDataMapKey', () => {
     it('produces consistent keys for the same inputs', () => {
-      const key1 = (module as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
-      const key2 = (module as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
+      const key1 = (handler as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
+      const key2 = (handler as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
       expect(key1).toBe(key2);
     });
 
     it('differentiates keys by instance value', () => {
-      const keyNoInstance = (module as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
-      const keyWithInstance = (module as any).getSetVariableDataMapKey('Comp', '1', 'Var', null);
+      const keyNoInstance = (handler as any).getSetVariableDataMapKey('Comp', null, 'Var', null);
+      const keyWithInstance = (handler as any).getSetVariableDataMapKey('Comp', '1', 'Var', null);
       expect(keyNoInstance).not.toBe(keyWithInstance);
     });
 
     it('returns a string in the expected format', () => {
-      const key = (module as any).getSetVariableDataMapKey(
+      const key = (handler as any).getSetVariableDataMapKey(
         'MyComponent',
         'inst',
         'MyVariable',
