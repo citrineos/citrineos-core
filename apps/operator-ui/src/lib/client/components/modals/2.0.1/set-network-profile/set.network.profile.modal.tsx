@@ -323,14 +323,6 @@ export const SetNetworkProfileModal = ({ station }: SetNetworkProfileModalProps)
           placeholder={translate('ChargingStations.setNetworkProfileModal.selectOcppInterface')}
           required
         />
-
-        <FormField
-          control={form.control}
-          label={translate('ChargingStations.setNetworkProfileModal.securityProfile')}
-          name="connectionData.securityProfile"
-        >
-          <Input type="number" min={0} />
-        </FormField>
       </div>
       <div className={fieldGrid}>
         {/* APN Section */}
