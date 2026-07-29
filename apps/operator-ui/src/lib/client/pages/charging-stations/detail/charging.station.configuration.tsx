@@ -4,6 +4,7 @@
 
 import { AttributeEnum, OCPPVersion } from '@citrineos/base';
 import { ChangeConfigurationModal } from '@lib/client/components/modals/1.6/change-configuration/change.configuration.modal';
+import { ModalComponentType } from '@lib/client/components/modals/modal.types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { MultiSelect } from '@lib/client/components/multi-select';
 import { Button } from '@lib/client/components/ui/button';
@@ -27,9 +28,12 @@ import {
 } from '@lib/queries/variable.attributes';
 import { ResourceType } from '@lib/utils/access.types';
 import { downloadCSV } from '@lib/utils/download';
+import { openModal } from '@lib/utils/store/modal.slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { type CrudFilter, useList, useOne, useTranslate } from '@refinedev/core';
 import { keepPreviousData } from '@tanstack/react-query';
+import { instanceToPlain } from 'class-transformer';
+import { useDispatch } from 'react-redux';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 import {
   ArrowDown,
@@ -125,6 +129,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
   id,
 }) => {
   const translate = useTranslate();
+  const dispatch = useDispatch();
   const [version, setVersion] = useState<ConfigVersion>('1.6');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -282,6 +287,10 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           component: `${attribute.Component?.name ?? '-'}:${attribute.Component?.instance ?? '-'}`,
           variable: `${attribute.Variable?.name ?? '-'}:${attribute.Variable?.instance ?? '-'}`,
           evse: `${attribute.Evse?.id ?? '-'}:${attribute.Evse?.connectorId ?? '-'}`,
+          componentName: attribute.Component?.name ?? '',
+          componentInstance: attribute.Component?.instance ?? null,
+          variableName: attribute.Variable?.name ?? '',
+          variableInstance: attribute.Variable?.instance ?? null,
         })),
       );
     } else if (version === '1.6' && changeConfigurationsResult?.data) {
@@ -385,6 +394,34 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     setIsChangeConfigModalOpen(false);
   };
 
+  const handleEditVariable = (row: {
+    componentName?: string;
+    componentInstance?: string | null;
+    variableName?: string;
+    variableInstance?: string | null;
+    value?: string;
+    type?: string;
+  }) => {
+    if (!station) return;
+    dispatch(
+      openModal({
+        title: translate('ChargingStations.commands.setVariables'),
+        modalComponentType: ModalComponentType.setVariables,
+        modalComponentProps: {
+          station: instanceToPlain(station),
+          defaultSetVariable: {
+            componentName: row.componentName,
+            componentInstance: row.componentInstance,
+            variableName: row.variableName,
+            variableInstance: row.variableInstance,
+            value: row.value,
+            attributeType: row.type,
+          },
+        },
+      }),
+    );
+  };
+
   const currentPage = version === '1.6' ? currentChangeConfigurations : currentVariableAttributes;
   const pageSize = version === '1.6' ? pageSizeChangeConfigurations : pageSizeVariableAttributes;
   const totalRecords =
@@ -484,7 +521,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
     const columns = version === '1.6' ? CONFIG_1_6_COLUMNS : CONFIG_2_0_1_COLUMNS;
     const isLoading = version !== '1.6' ? isAttributesLoading : isConfigurationsLoading;
     const isFetching = version !== '1.6' ? isAttributesFetching : isConfigurationsFetching;
-    const colCount = columns.length + (version === '1.6' ? 1 : 0);
+    const colCount = columns.length + 1;
 
     return (
       <div className="border rounded-lg overflow-hidden">
@@ -524,11 +561,9 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                     </th>
                   );
                 })}
-                {version === '1.6' && (
-                  <th className="px-4 py-2 text-left text-sm font-medium">
-                    {translate('ChargingStations.configuration.action')}
-                  </th>
-                )}
+                <th className="px-4 py-2 text-left text-sm font-medium">
+                  {translate('ChargingStations.configuration.action')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -556,19 +591,21 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                         {row[col.accessor]}
                       </td>
                     ))}
-                    {version === '1.6' && (
-                      <td className="px-4 py-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditConfig(row.key, row.value)}
-                          disabled={!isConnected}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          {translate('Common.edit')}
-                        </Button>
-                      </td>
-                    )}
+                    <td className="px-4 py-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          version === '1.6'
+                            ? handleEditConfig(row.key, row.value)
+                            : handleEditVariable(row)
+                        }
+                        disabled={!isConnected}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        {translate('Common.edit')}
+                      </Button>
+                    </td>
                   </tr>
                 ))
               )}
