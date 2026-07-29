@@ -39,7 +39,7 @@ const CERTIFICATES_HANDLERS = [
  */
 export function registerCertificatesServices(container: AwilixContainer): void {
   container.register({
-    installCertificateHelperService: asClass(InstallCertificateHelperService).scoped(),
+    installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     certificatesHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, CERTIFICATES_HANDLERS),
     ).scoped(),

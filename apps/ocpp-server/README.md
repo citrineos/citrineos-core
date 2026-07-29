@@ -220,8 +220,7 @@ before validation. Other approaches to custom DataTransfer message types are not
 
 The System Configuration defines websocket servers with certain properties, one of which is 'Allow Unknown Charging
 Stations', a boolean that permits charging stations which are not commissioned to connect to CitrineOS.
-This triggers an auto-commissioning flow which creates the station on its first connection, and creates evses and
-connectors for that station in response to StatusNotifications.
+This triggers an auto-commissioning flow: the moment any client connects to such a websocket server, a `ChargingStations` row is created for it (recording its online state and OCPP protocol), and evses and connectors are created for that station in response to StatusNotifications.
 This is not recommended for production; it is exclusively for testing and is enabled by the default configuration only
 on the websocket server at port 8081 — which also has no security.
 Since not all information on the charger is necessarily available in the OCPP messages, commissioning may be wrong and
@@ -229,6 +228,10 @@ will be incomplete. In 1.6 in particular, multi-evse stations will not commissio
 concept of 'evses'. This will lead to improper behavior if a 1.6 station with multiple evses is auto-commissioned:
 CitrineOS will assume each new transaction is on the same evse and will automatically mark older transactions on that
 evse as inactive, leading to an inconsistent state with the charging station.
+
+> [!WARNING]
+> **`allowUnknownChargingStations` is intended for development and testing only. DO NOT USE IN PRODUCTION ENVIRONMENTS.**
+> When enabled, CitrineOS automatically creates a `ChargingStations` record immediately upon websocket connection.
 
 ## Hasura Metadata
 

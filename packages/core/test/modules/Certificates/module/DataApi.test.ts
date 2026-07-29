@@ -67,7 +67,6 @@ describe('CertificatesDataApi', () => {
       certificatesModule: mockCertificatesModule,
       server: mockFastifyInstance,
       fileStorage: mockFileStorage,
-      websocketServersConfig: [],
     });
   });
 

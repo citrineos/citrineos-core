@@ -306,6 +306,7 @@ export class EVDriverOcpp2Api
     request: OCPP2_request_types.ReserveNowRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
@@ -331,7 +332,7 @@ export class EVDriverOcpp2Api
         const confirmation = await this._module.sendCall(
           i,
           tenantId,
-          OCPPVersion.OCPP2_0_1,
+          version,
           OCPP_CallAction.ReserveNow,
           request,
           callbackUrl,

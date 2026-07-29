@@ -562,6 +562,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           tenantId,
           ocppConnectionName,
           ws.protocol,
+          websocketServerConfig.id,
         );
         if (!registered) {
           connLogger.fatal('Failed to register websocket client', identifier);
