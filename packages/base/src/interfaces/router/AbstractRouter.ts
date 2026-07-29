@@ -125,6 +125,28 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
           );
         }
 
+        // Optionally drop Calls that have aged past `staleCallMaxAgeSeconds` while queued. A
+        // Call can sit in the broker (e.g. requeued during websocket churn while the station
+        // has no live or valid connection) and then be delivered to a later, different
+        // connection — acting on a runtime state the caller never saw (a stale Reset killing a
+        // fresh session, a stale RemoteStop closing someone else's transaction, etc.). This
+        // guard is opt-in: it only drops when `staleCallMaxAgeSeconds` is configured, since some
+        // deployments prefer late delivery over none, and fine-grained per-action staleness
+        // handling is left as future work.
+        const staleCallMaxAgeSeconds = this._config.staleCallMaxAgeSeconds;
+        if (staleCallMaxAgeSeconds !== undefined) {
+          const callAgeMs = Date.now() - new Date(message.context.timestamp).getTime();
+          const maxCallAgeMs = staleCallMaxAgeSeconds * 1000;
+          if (callAgeMs > maxCallAgeMs) {
+            this._logger.error(
+              `Dropping stale ${message.action} Call for ${message.context.ocppConnectionName}: ` +
+                `queued ${callAgeMs} ms ago, exceeds staleCallMaxAgeSeconds (${maxCallAgeMs} ms). ` +
+                `correlationId=${message.context.correlationId}`,
+            );
+            break;
+          }
+        }
+
         await this.sendCall(
           message.context.ocppConnectionName,
           message.context.tenantId,
@@ -280,6 +302,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     tenantId: number,
     ocppConnectionName: string,
     protocol: string,
+    connectedWebsocketServerConfigId?: string,
   ): Promise<boolean>;
   abstract deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean>;
 

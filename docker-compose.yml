@@ -31,7 +31,7 @@ services:
       BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
       BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
       BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
-      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "true"
+      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "false"
     depends_on:
       ocpp-db:
         condition: service_healthy

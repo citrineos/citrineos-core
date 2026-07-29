@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AttributeEnum,
+  BadRequestError,
+  CertificateUseEnum,
   type CertificateDto,
   type CertificateUseEnumType,
   type IFileStorage,
@@ -9,10 +12,15 @@ import {
   OCPP2_0_1,
   type WebsocketServerConfig,
 } from '@citrineos/base';
-import { UploadExistingCertificate } from '@dal/interfaces/index.js';
+import {
+  CertificateGenerationScope,
+  type GenerateCertificateChainRequest,
+  UploadExistingCertificate,
+} from '@dal/interfaces/index.js';
 import type {
   ICertificateRepository,
   IDeleteCertificateAttemptRepository,
+  IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
@@ -26,10 +34,14 @@ import {
 import {
   type CertificateAuthorityService,
   extractCertificateDetails,
+  generateCertificate,
   generateCSR,
+  isSignedBy,
+  parseCertificateChainPem,
   WebsocketNetworkConnection,
 } from '@util/index.js';
 import jsrsasign from 'jsrsasign';
+import moment from 'moment';
 import { type ILogObj, Logger } from 'tslog';
 
 export const enum PemType {
@@ -38,14 +50,12 @@ export const enum PemType {
   Leaf = 'Leaf',
 }
 
-// Default file name used to persist the generated certificate chain
-const DEFAULT_CERT_CHAIN_FILENAME = 'certChain.pem';
-
 export class InstallCertificateHelperService {
   protected certificateRepository: ICertificateRepository;
   protected installedCertificateRepository: IInstalledCertificateRepository;
   protected installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+  protected deviceModelRepository: IDeviceModelRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
   protected networkConnection: WebsocketNetworkConnection;
   protected fileStorage: IFileStorage;
@@ -56,6 +66,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository,
     installCertificateAttemptRepository,
     deleteCertificateAttemptRepository,
+    deviceModelRepository,
     certificateAuthorityService,
     networkConnection,
     fileStorage,
@@ -65,6 +76,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository: IInstalledCertificateRepository;
     installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+    deviceModelRepository: IDeviceModelRepository;
     certificateAuthorityService: CertificateAuthorityService;
     networkConnection: WebsocketNetworkConnection;
     fileStorage: IFileStorage;
@@ -74,6 +86,7 @@ export class InstallCertificateHelperService {
     this.installedCertificateRepository = installedCertificateRepository;
     this.installCertificateAttemptRepository = installCertificateAttemptRepository;
     this.deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
+    this.deviceModelRepository = deviceModelRepository;
     this.certificateAuthorityService = certificateAuthorityService;
     this.networkConnection = networkConnection;
     this.fileStorage = fileStorage;
@@ -87,6 +100,13 @@ export class InstallCertificateHelperService {
     certificateType: CertificateUseEnumType,
     requestId?: number | null,
   ) {
+    await this._verifyAdditionalRootCertificateCheck(
+      tenantId,
+      ocppConnectionName,
+      certificateType,
+      certificate,
+    );
+
     const hash = this.getCertificateHash(certificate);
     const existingPendingInstallCertificateAttempt =
       await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
@@ -140,6 +160,65 @@ export class InstallCertificateHelperService {
         installCertificateAttempt.requestId = requestId;
       }
       await installCertificateAttempt.save();
+    }
+  }
+
+  /**
+   * OCPP 2.0.1 M05.FR.10: when SecurityCtrlr.AdditionalRootCertificateCheck is true and
+   * the certificate being installed is a CSMSRootCertificate, the new root MUST be
+   * signed by the CSMS root certificate it is replacing. Throws if that's not the case.
+   */
+  private async _verifyAdditionalRootCertificateCheck(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+    newCertificatePem: string,
+  ): Promise<void> {
+    if (certificateType !== CertificateUseEnum.CSMSRootCertificate) {
+      return;
+    }
+
+    const [additionalRootCertificateCheckAttribute] =
+      await this.deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId,
+        ocppConnectionName,
+        component_name: 'SecurityCtrlr',
+        variable_name: 'AdditionalRootCertificateCheck',
+        type: AttributeEnum.Actual,
+      });
+    if (additionalRootCertificateCheckAttribute?.value !== 'true') {
+      return;
+    }
+
+    const previouslyInstalledRoot = await this.installedCertificateRepository.readOnlyOneByQuery(
+      tenantId,
+      {
+        where: {
+          ocppConnectionName,
+          certificateType: CertificateUseEnum.CSMSRootCertificate,
+        },
+      },
+    );
+    if (!previouslyInstalledRoot) {
+      // Nothing installed yet to replace
+      return;
+    }
+    const previousRootCertificate = await previouslyInstalledRoot.$get('certificate');
+    if (!previousRootCertificate?.certificateFileId) {
+      throw new BadRequestError(
+        `Cannot verify AdditionalRootCertificateCheck for ${ocppConnectionName}: the currently installed CSMS root certificate has no certificate file on record to verify the new one against.`,
+      );
+    }
+    const previousRootPem = await this._readPemFile(
+      previousRootCertificate.certificateFileId,
+      'previously installed CSMS root certificate',
+      ocppConnectionName,
+    );
+
+    if (!isSignedBy(newCertificatePem, previousRootPem)) {
+      throw new BadRequestError(
+        `Cannot install new CSMS root certificate for ${ocppConnectionName}: SecurityCtrlr.AdditionalRootCertificateCheck is enabled, so the new root certificate must be signed by the CSMS root certificate it is replacing.`,
+      );
     }
   }
 
@@ -382,62 +461,592 @@ export class InstallCertificateHelperService {
   }
 
   /**
-   * Saves generated TLS certificate files to the configured file paths of all TLS-enabled websocket servers.
+   * Groups websocket servers that should share a single regenerated chain rather than
+   * each getting an independent one.
    *
-   * @param websocketServersConfig - List of websocket server configurations to save certificates for.
-   * @param certificateChainPem - Certificate chain PEM string (leaf + subCA concatenated).
-   * @param leafKeyPem - Leaf certificate private key PEM string.
-   * @param subCAKeyPem - Sub CA private key PEM string.
-   * @param rootCACertPem - Root CA certificate PEM string. Only present for self-signed certificate chains.
-   * @param filePath - Optional prefix under which the default (non-TLS-server-scoped) files are stored.
+   * For `FullChain`, a new root/subCA/leaf is always independent of prior state, so all
+   * requested servers unconditionally share one freshly generated chain.
+   *
+   * For `Leaf`/`SubCAAndLeaf`, servers are grouped by whether they currently share the
+   * same identifying certificate: the subCA cert for `Leaf` (since that's what's reused
+   * to sign the new leaf), or the root that signed that subCA for `SubCAAndLeaf` (since
+   * that's what's reused to sign the new subCA).
    */
-  async saveCertificatesToServerConfigs(
-    websocketServersConfig: WebsocketServerConfig[],
-    certificateChainPem: string,
-    leafKeyPem: string,
-    subCAKeyPem: string,
-    rootCACertPem?: string,
-    filePath?: string,
-  ): Promise<void> {
-    const tlsServers = websocketServersConfig.filter((c) => c.securityProfile >= 2);
-    let chainSavedToServerPath = false;
-
-    for (const serverConfig of tlsServers) {
-      if (serverConfig.tlsCertificateChainFilePath) {
-        await this.fileStorage.saveFile(
-          serverConfig.tlsCertificateChainFilePath,
-          Buffer.from(certificateChainPem),
-        );
-        chainSavedToServerPath = true;
-      }
-      if (serverConfig.tlsKeyFilePath) {
-        await this.fileStorage.saveFile(serverConfig.tlsKeyFilePath, Buffer.from(leafKeyPem));
-      }
-      if (serverConfig.mtlsCertificateAuthorityKeyFilePath) {
-        await this.fileStorage.saveFile(
-          serverConfig.mtlsCertificateAuthorityKeyFilePath,
-          Buffer.from(subCAKeyPem),
-        );
-      }
-      if (rootCACertPem && serverConfig.rootCACertificateFilePath) {
-        await this.fileStorage.saveFile(
-          serverConfig.rootCACertificateFilePath,
-          Buffer.from(rootCACertPem),
-        );
-      }
-      this.logger.info(`Saved TLS certificate files for server ${serverConfig.id}`);
+  async groupServersForGeneration(
+    tenantId: number,
+    websocketConfigs: WebsocketServerConfig[],
+    generationScope: CertificateGenerationScope,
+  ): Promise<WebsocketServerConfig[][]> {
+    if (generationScope === CertificateGenerationScope.FullChain) {
+      return [websocketConfigs];
     }
 
-    // The certificate chain must always be persisted somewhere,
-    // even when no TLS server config claims it,
-    // stored alongside the config file based on configBucketName and filePath if exists.
-    const keyPrefix = filePath ? `${filePath}/` : '';
-    if (!chainSavedToServerPath) {
-      await this.fileStorage.saveFile(
-        `${keyPrefix}${DEFAULT_CERT_CHAIN_FILENAME}`,
-        Buffer.from(certificateChainPem),
+    const lineageKeyOf = async (config: WebsocketServerConfig): Promise<string> => {
+      const subCACertPem = await this._readCurrentSubCACertPem(config);
+      if (generationScope === CertificateGenerationScope.Leaf) {
+        return `subCA:${this.getCertificateHash(subCACertPem)}`;
+      }
+      // SubCAAndLeaf: group by the root that signed the current subCA, not the subCA
+      // itself, since a new subCA (and leaf) will be minted from that root for the group.
+      const subCARecord = await this._findCertificateByPem(tenantId, subCACertPem, config.id);
+      if (subCARecord.signedBy == null) {
+        throw new BadRequestError(
+          `Cannot regenerate subCA and leaf certificates for server ${config.id}: the current subCA has no locally-generated root to reuse.`,
+        );
+      }
+      return `root:${subCARecord.signedBy}`;
+    };
+
+    const groupsByLineageKey = new Map<string, WebsocketServerConfig[]>();
+    for (const config of websocketConfigs) {
+      const key = await lineageKeyOf(config);
+      const group = groupsByLineageKey.get(key);
+      if (group) {
+        group.push(config);
+      } else {
+        groupsByLineageKey.set(key, [config]);
+      }
+    }
+    return [...groupsByLineageKey.values()];
+  }
+
+  /**
+   * Generates some or all of a websocket server's TLS certificate chain, scoped by
+   * `certRequest.generationScope`. Reuses the server's
+   * currently-configured cert/key files to identify and re-sign against the existing
+   * root/subCA when not regenerating them. Returns the new cert/key file paths to be
+   * written onto the server's config (the caller is responsible for persisting the
+   * config and reloading the live TLS listener).
+   */
+  async generateCertificateChain(
+    tenantId: number,
+    websocketConfig: WebsocketServerConfig,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath?: string;
+      rootCACertificateFilePath?: string;
+    };
+  }> {
+    const scope = certRequest.generationScope ?? CertificateGenerationScope.Leaf;
+    switch (scope) {
+      case CertificateGenerationScope.Leaf:
+        return this._generateLeafOnly(tenantId, websocketConfig, certRequest);
+      case CertificateGenerationScope.SubCAAndLeaf:
+        return this._generateSubCAAndLeaf(tenantId, websocketConfig, certRequest);
+      case CertificateGenerationScope.FullChain:
+        return this._generateFullChain(tenantId, websocketConfig, certRequest);
+      default:
+        throw new BadRequestError(`Unknown generationScope: ${scope}`);
+    }
+  }
+
+  /**
+   * Generates a brand-new full certificate chain (root + subCA + leaf) that is not tied to
+   * any websocket server.
+   */
+  async generateStandaloneFullChain(
+    tenantId: number,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath: string;
+      rootCACertificateFilePath?: string;
+    };
+  }> {
+    return this._generateFullChain(tenantId, undefined, certRequest);
+  }
+
+  private async _generateLeafOnly(
+    tenantId: number,
+    websocketConfig: WebsocketServerConfig,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: { tlsKeyFilePath: string; tlsCertificateChainFilePath: string };
+  }> {
+    const subCACertPem = await this._readCurrentSubCACertPem(websocketConfig);
+    const subCARecord = await this._findCertificateByPem(
+      tenantId,
+      subCACertPem,
+      websocketConfig.id,
+    );
+    if (!subCARecord.privateKeyFileId) {
+      throw new BadRequestError(
+        `Cannot regenerate leaf certificate for server ${websocketConfig.id}: subCA certificate record is missing its private key.`,
       );
     }
+    const subCAKeyPem = await this._readPemFile(
+      subCARecord.privateKeyFileId,
+      'subCA private key',
+      websocketConfig.id,
+    );
+
+    const leafEntity = this._buildLeafEntity(certRequest, subCARecord.id, moment().valueOf());
+    const [leafCertPem, leafKeyPem] = generateCertificate(
+      leafEntity,
+      this.logger,
+      subCAKeyPem,
+      subCACertPem,
+    );
+    const storedLeaf = await this.storeCertificateAndKey(
+      tenantId,
+      leafEntity,
+      leafCertPem,
+      leafKeyPem,
+      PemType.Leaf,
+      certRequest.filePath,
+    );
+    const tlsCertificateChainFilePath = await this._saveChainFile(
+      leafCertPem + subCACertPem,
+      storedLeaf.serialNumber,
+      certRequest.filePath,
+    );
+
+    return {
+      certificates: [storedLeaf],
+      filePaths: {
+        tlsKeyFilePath: storedLeaf.privateKeyFileId!,
+        tlsCertificateChainFilePath,
+      },
+    };
+  }
+
+  private async _generateSubCAAndLeaf(
+    tenantId: number,
+    websocketConfig: WebsocketServerConfig,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath: string;
+    };
+  }> {
+    const currentSubCACertPem = await this._readCurrentSubCACertPem(websocketConfig);
+    const currentSubCARecord = await this._findCertificateByPem(
+      tenantId,
+      currentSubCACertPem,
+      websocketConfig.id,
+    );
+    if (currentSubCARecord.signedBy == null) {
+      throw new BadRequestError(
+        `Cannot regenerate subCA and leaf certificates for server ${websocketConfig.id}: the current subCA has no locally-generated root to reuse.`,
+      );
+    }
+    const rootRecord = await this._findCertificateById(tenantId, currentSubCARecord.signedBy);
+    if (!rootRecord.certificateFileId || !rootRecord.privateKeyFileId) {
+      throw new BadRequestError(
+        `Cannot regenerate subCA for server ${websocketConfig.id}: root certificate record is missing its certificate or private key.`,
+      );
+    }
+    const rootCertPem = await this._readPemFile(
+      rootRecord.certificateFileId,
+      'root certificate',
+      websocketConfig.id,
+    );
+    const rootKeyPem = await this._readPemFile(
+      rootRecord.privateKeyFileId,
+      'root private key',
+      websocketConfig.id,
+    );
+
+    const subCASerialNumber = moment().valueOf();
+    const subCAEntity = this._buildSubCAEntity(certRequest, rootRecord.id, subCASerialNumber);
+    const [subCACertPem, subCAKeyPem] = generateCertificate(
+      subCAEntity,
+      this.logger,
+      rootKeyPem,
+      rootCertPem,
+    );
+    const storedSubCA = await this.storeCertificateAndKey(
+      tenantId,
+      subCAEntity,
+      subCACertPem,
+      subCAKeyPem,
+      PemType.SubCA,
+      certRequest.filePath,
+    );
+
+    const leafEntity = this._buildLeafEntity(certRequest, storedSubCA.id, subCASerialNumber + 1);
+    const [leafCertPem, leafKeyPem] = generateCertificate(
+      leafEntity,
+      this.logger,
+      subCAKeyPem,
+      subCACertPem,
+    );
+    const storedLeaf = await this.storeCertificateAndKey(
+      tenantId,
+      leafEntity,
+      leafCertPem,
+      leafKeyPem,
+      PemType.Leaf,
+      certRequest.filePath,
+    );
+    const tlsCertificateChainFilePath = await this._saveChainFile(
+      leafCertPem + subCACertPem,
+      storedLeaf.serialNumber,
+      certRequest.filePath,
+    );
+
+    return {
+      certificates: [storedLeaf, storedSubCA],
+      filePaths: {
+        tlsKeyFilePath: storedLeaf.privateKeyFileId!,
+        tlsCertificateChainFilePath,
+        mtlsCertificateAuthorityKeyFilePath: storedSubCA.privateKeyFileId!,
+      },
+    };
+  }
+
+  private async _generateFullChain(
+    tenantId: number,
+    websocketConfig: WebsocketServerConfig | undefined,
+    certRequest: GenerateCertificateChainRequest,
+  ): Promise<{
+    certificates: Certificate[];
+    filePaths: {
+      tlsKeyFilePath: string;
+      tlsCertificateChainFilePath: string;
+      mtlsCertificateAuthorityKeyFilePath: string;
+      rootCACertificateFilePath?: string;
+    };
+  }> {
+    // External-CA-signed subCAs aren't functional in most deployments today (they depend
+    // on a charging-station CA client being configured), so default to self-signed rather
+    // than requiring every caller to specify it.
+    const selfSigned = certRequest.selfSigned ?? true;
+
+    let subCACertPem: string;
+    let subCAKeyPem: string;
+    let storedSubCA: Certificate;
+    let storedRoot: Certificate | undefined;
+
+    if (selfSigned) {
+      // OCPP 2.0.1 M05.FR.11: sign the new root with the previous root, so charging stations
+      // with SecurityCtrlr.AdditionalRootCertificateCheck enabled accept it as a valid replacement.
+      // signWithPreviousRoot/overridePreviousRoot only applies to a server-scoped chain; a standalone chain
+      // isn't tied to any server's previous root, so both params are ignored
+      const signWithPreviousRoot = !!websocketConfig && (certRequest.signWithPreviousRoot ?? true);
+      const previousRoot = signWithPreviousRoot
+        ? await this._resolvePreviousRoot(
+            tenantId,
+            certRequest,
+            websocketConfig!.id,
+            websocketConfig,
+          )
+        : undefined;
+
+      const rootSerialNumber = moment().valueOf();
+      const rootEntity = this._buildRootEntity(certRequest, rootSerialNumber);
+      if (previousRoot) {
+        rootEntity.signedBy = previousRoot.certificateId;
+      }
+      const [rootCertPem, rootKeyPem] = previousRoot
+        ? generateCertificate(rootEntity, this.logger, previousRoot.keyPem, previousRoot.certPem)
+        : generateCertificate(rootEntity, this.logger);
+      storedRoot = await this.storeCertificateAndKey(
+        tenantId,
+        rootEntity,
+        rootCertPem,
+        rootKeyPem,
+        PemType.Root,
+        certRequest.filePath,
+      );
+
+      const subCAEntity = this._buildSubCAEntity(certRequest, storedRoot.id, rootSerialNumber + 1);
+      const [subCertPem, subKeyPem] = generateCertificate(
+        subCAEntity,
+        this.logger,
+        rootKeyPem,
+        rootCertPem,
+      );
+      storedSubCA = await this.storeCertificateAndKey(
+        tenantId,
+        subCAEntity,
+        subCertPem,
+        subKeyPem,
+        PemType.SubCA,
+        certRequest.filePath,
+      );
+      subCACertPem = subCertPem;
+      subCAKeyPem = subKeyPem;
+    } else {
+      const defaults = this._buildCertificateDefaults(certRequest);
+      const subCAEntity = new Certificate();
+      subCAEntity.serialNumber = moment().valueOf();
+      subCAEntity.keyLength = defaults.keyLength;
+      subCAEntity.organizationName = certRequest.organizationName;
+      // Must be a valid domain name, unlike the self-signed branch's suffixed commonName.
+      subCAEntity.commonName = certRequest.commonName;
+      subCAEntity.validBefore = defaults.validBefore;
+      subCAEntity.countryName = defaults.countryName;
+      subCAEntity.signatureAlgorithm = defaults.signatureAlgorithm;
+      subCAEntity.isCA = true;
+      subCAEntity.pathLen = 0;
+      const [certPem, keyPem] = await this.generateSubCACertificateSignedByCAServer(subCAEntity);
+      storedSubCA = await this.storeCertificateAndKey(
+        tenantId,
+        subCAEntity,
+        certPem,
+        keyPem,
+        PemType.SubCA,
+        certRequest.filePath,
+      );
+      subCACertPem = certPem;
+      subCAKeyPem = keyPem;
+    }
+
+    const leafEntity = this._buildLeafEntity(
+      certRequest,
+      storedSubCA.id,
+      storedSubCA.serialNumber + 1,
+    );
+    const [leafCertPem, leafKeyPem] = generateCertificate(
+      leafEntity,
+      this.logger,
+      subCAKeyPem,
+      subCACertPem,
+    );
+    const storedLeaf = await this.storeCertificateAndKey(
+      tenantId,
+      leafEntity,
+      leafCertPem,
+      leafKeyPem,
+      PemType.Leaf,
+      certRequest.filePath,
+    );
+    const tlsCertificateChainFilePath = await this._saveChainFile(
+      leafCertPem + subCACertPem,
+      storedLeaf.serialNumber,
+      certRequest.filePath,
+    );
+
+    return {
+      certificates: storedRoot ? [storedLeaf, storedSubCA, storedRoot] : [storedLeaf, storedSubCA],
+      filePaths: {
+        tlsKeyFilePath: storedLeaf.privateKeyFileId!,
+        tlsCertificateChainFilePath,
+        mtlsCertificateAuthorityKeyFilePath: storedSubCA.privateKeyFileId!,
+        ...(storedRoot ? { rootCACertificateFilePath: storedRoot.certificateFileId! } : {}),
+      },
+    };
+  }
+
+  private _buildCertificateDefaults(certRequest: GenerateCertificateChainRequest): {
+    keyLength: number;
+    validBefore: string;
+    countryName: CountryNameEnumType;
+    signatureAlgorithm: SignatureAlgorithmEnumType;
+  } {
+    let validBefore: string;
+    if (certRequest.validBefore) {
+      validBefore = certRequest.validBefore;
+    } else {
+      const defaultValidityDate = new Date();
+      defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
+      validBefore = defaultValidityDate.toISOString();
+    }
+    return {
+      keyLength: certRequest.keyLength ? certRequest.keyLength : 2048,
+      validBefore,
+      countryName: certRequest.countryName ? certRequest.countryName : CountryNameEnumType.US,
+      signatureAlgorithm: certRequest.signatureAlgorithm
+        ? certRequest.signatureAlgorithm
+        : SignatureAlgorithmEnumType.ECDSA,
+    };
+  }
+
+  private _buildRootEntity(
+    certRequest: GenerateCertificateChainRequest,
+    serialNumber: number,
+  ): Certificate {
+    const defaults = this._buildCertificateDefaults(certRequest);
+    const root = new Certificate();
+    root.serialNumber = serialNumber;
+    root.keyLength = defaults.keyLength;
+    root.organizationName = certRequest.organizationName;
+    root.commonName = `${certRequest.commonName} ${PemType.Root}`;
+    root.validBefore = defaults.validBefore;
+    root.countryName = defaults.countryName;
+    root.signatureAlgorithm = defaults.signatureAlgorithm;
+    root.isCA = true;
+    root.pathLen = certRequest.pathLen ? certRequest.pathLen : 1;
+    return root;
+  }
+
+  private _buildSubCAEntity(
+    certRequest: GenerateCertificateChainRequest,
+    signedByCertificateId: number,
+    serialNumber: number,
+  ): Certificate {
+    const defaults = this._buildCertificateDefaults(certRequest);
+    const subCA = new Certificate();
+    subCA.serialNumber = serialNumber;
+    subCA.keyLength = defaults.keyLength;
+    subCA.organizationName = certRequest.organizationName;
+    subCA.commonName = `${certRequest.commonName} ${PemType.SubCA}`;
+    subCA.validBefore = defaults.validBefore;
+    subCA.countryName = defaults.countryName;
+    subCA.signatureAlgorithm = defaults.signatureAlgorithm;
+    subCA.isCA = true;
+    subCA.pathLen = 0;
+    subCA.signedBy = signedByCertificateId;
+    return subCA;
+  }
+
+  private _buildLeafEntity(
+    certRequest: GenerateCertificateChainRequest,
+    signedByCertificateId: number,
+    serialNumber: number,
+  ): Certificate {
+    const defaults = this._buildCertificateDefaults(certRequest);
+    const leaf = new Certificate();
+    leaf.serialNumber = serialNumber;
+    leaf.keyLength = defaults.keyLength;
+    leaf.organizationName = certRequest.organizationName;
+    leaf.commonName = certRequest.commonName;
+    leaf.validBefore = defaults.validBefore;
+    leaf.countryName = defaults.countryName;
+    leaf.signatureAlgorithm = defaults.signatureAlgorithm;
+    leaf.isCA = false;
+    leaf.signedBy = signedByCertificateId;
+    return leaf;
+  }
+
+  private async _findCertificateByPem(
+    tenantId: number,
+    certPem: string,
+    serverId: string,
+  ): Promise<Certificate> {
+    const hash = this.getCertificateHash(certPem);
+    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
+      where: { certificateFileHash: hash },
+    });
+    if (!record) {
+      throw new BadRequestError(
+        `Could not find a certificate record matching the currently configured certificate for server ${serverId}: run a FullChain generation first to establish a trackable certificate lineage.`,
+      );
+    }
+    return record;
+  }
+
+  private async _findCertificateById(tenantId: number, id: number): Promise<Certificate> {
+    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
+      where: { id },
+    });
+    if (!record) {
+      throw new BadRequestError(`Could not find a certificate record with id ${id}.`);
+    }
+    return record;
+  }
+
+  /**
+   * Resolves the "previous root". A newly-generated root should be signed by:
+   * `certRequest.overridePreviousRoot` if given, else `websocketConfig`'s currently
+   * configured root. Returns `undefined` if neither is available.
+   */
+  private async _resolvePreviousRoot(
+    tenantId: number,
+    certRequest: GenerateCertificateChainRequest,
+    contextId: string,
+    websocketConfig?: WebsocketServerConfig,
+  ): Promise<{ certPem: string; keyPem: string; certificateId: number } | undefined> {
+    // `overridePreviousRoot` is caller-supplied over the API, so it stays path-validated;
+    // `rootCACertificateFilePath` is config-driven and may be an
+    // absolute path, so it's read as trusted.
+    const previousRootFilePath = certRequest.overridePreviousRoot;
+    const trustedRootFilePath = websocketConfig?.rootCACertificateFilePath;
+    const resolvedFilePath = previousRootFilePath ?? trustedRootFilePath;
+    if (!resolvedFilePath) {
+      return undefined;
+    }
+
+    const certPem = previousRootFilePath
+      ? await this._readPemFile(previousRootFilePath, 'previous root certificate', contextId)
+      : await this._readPemFile(trustedRootFilePath!, 'previous root certificate', contextId, {
+          trusted: true,
+        });
+    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
+      where: { certificateFileHash: this.getCertificateHash(certPem) },
+    });
+    if (!record) {
+      throw new BadRequestError(
+        `Cannot sign the new root certificate for ${contextId} with the previous root at ${resolvedFilePath}: cannot find record from db.`,
+      );
+    }
+    if (!record.privateKeyFileId) {
+      throw new BadRequestError(
+        `Cannot sign the new root certificate for ${contextId} with the previous root at ${resolvedFilePath}: private key cannot be located from db.`,
+      );
+    }
+    const keyPem = await this._readPemFile(
+      record.privateKeyFileId,
+      'previous root private key',
+      contextId,
+    );
+    return { certPem, keyPem, certificateId: record.id };
+  }
+
+  /**
+   * Reads and extracts the subCA certificate from a server's currently-configured
+   * certificate chain file (chain = leaf + subCA concatenation). This is the only
+   * config field relied on to identify a server's current lineage — the optional
+   * `rootCACertificateFilePath`/`mtlsCertificateAuthorityKeyFilePath` fields are not
+   * used, since they may not be set (e.g. typically absent for securityProfile 2).
+   */
+  private async _readCurrentSubCACertPem(config: WebsocketServerConfig): Promise<string> {
+    if (!config.tlsCertificateChainFilePath) {
+      throw new BadRequestError(
+        `Cannot regenerate certificates for server ${config.id}: an existing certificate chain is required but is not configured.`,
+      );
+    }
+    const currentChainPem = await this._readPemFile(
+      config.tlsCertificateChainFilePath,
+      'certificate chain',
+      config.id,
+      { trusted: true },
+    );
+    const [, subCACertPem] = parseCertificateChainPem(currentChainPem);
+    if (!subCACertPem) {
+      throw new BadRequestError(
+        `Cannot regenerate certificates for server ${config.id}: existing certificate chain does not contain a subCA certificate.`,
+      );
+    }
+    return subCACertPem;
+  }
+
+  private async _readPemFile(
+    filePath: string,
+    description: string,
+    serverId: string,
+    options?: { trusted?: boolean },
+  ): Promise<string> {
+    const buffer = await this.fileStorage.getFile(filePath, undefined, options);
+    if (!buffer) {
+      throw new BadRequestError(
+        `Could not read ${description} for server ${serverId} at ${filePath}`,
+      );
+    }
+    return buffer.toString();
+  }
+
+  private async _saveChainFile(
+    chainPem: string,
+    serialNumber: number,
+    filePath?: string,
+  ): Promise<string> {
+    const keyPrefix = filePath ? `${filePath}/` : '';
+    const chainFilePath = `${keyPrefix}Cert_Chain_${serialNumber}.pem`;
+    await this.fileStorage.saveFile(chainFilePath, Buffer.from(chainPem));
+    return chainFilePath;
   }
 
   /**

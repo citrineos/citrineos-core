@@ -136,6 +136,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     tenantId: number,
     ocppConnectionName: string,
     protocol: OCPPVersion,
+    connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
     const dispatcherRegistration = this._webhookDispatcher.register(tenantId, ocppConnectionName);
 
@@ -159,6 +160,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       ocppConnectionName,
       true,
       protocol,
+      connectedWebsocketServerConfigId,
     );
 
     return Promise.all([
@@ -199,6 +201,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       ocppConnectionName,
       false,
       protocol,
+      null, // clear the connected server on disconnect
     );
 
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);

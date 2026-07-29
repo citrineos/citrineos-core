@@ -40,7 +40,9 @@ export class RbacRulesLoader {
   private async loadRules(filePath: string): Promise<void> {
     const absoluteFilePath = path.resolve(process.cwd(), filePath);
     try {
-      const rulesContent = await this._storage.getFile(absoluteFilePath);
+      const rulesContent = await this._storage.getFile(absoluteFilePath, undefined, {
+        trusted: true,
+      });
       if (rulesContent === undefined) {
         this._logger.warn(`Rules file not found at ${absoluteFilePath}, using empty rules`);
         return;

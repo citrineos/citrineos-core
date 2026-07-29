@@ -11,8 +11,8 @@ CitrineOS is an open-source project aimed at providing a modular server runtime 
 charging infrastructure. This repository (`citrineos-core`) is a **pnpm monorepo** containing the charging station
 management logic, OCPP message routing, the related services, and the operator-facing web UI.
 
-This README covers the repository as a whole: how it is structured, how to install and build it, and how to run the
-full stack. Each application and package also has its own README with deeper, component-specific documentation —
+This README covers the repository as a whole: how it is structured, how to install and build it, and how to run the full
+stack. Each application and package also has its own README with deeper, component-specific documentation —
 see [Repository Structure](#repository-structure) and [Component Documentation](#component-documentation).
 
 All other documentation and the issue tracking can be found in our main repository
@@ -153,12 +153,14 @@ server, the operator UI, RabbitMQ, PostgreSQL, MinIO, and Hasura together. It pi
 profiles for you based on a few flags:
 
 ```shell
-pnpm citrine            # ocpp-server + operator UI, from published ghcr.io images
-pnpm citrine --local    # build the server and UI from local source instead of pulling
-pnpm citrine --solo     # ocpp-server only (no operator UI)
-pnpm citrine --ocpi     # also run the OCPI server
+pnpm citrine                  # ocpp-server + operator UI, from published ghcr.io images
+pnpm citrine --local          # build the server and UI from local source instead of pulling
+pnpm citrine --solo           # ocpp-server only (no operator UI)
+pnpm citrine --ocpi           # also run the OCPI server
+pnpm citrine --everest        # also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
+pnpm citrine --everest16      # also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
 pnpm citrine --local --ocpi   # flags combine freely
-pnpm citrine down       # stop the stack (pass the same flags you started it with)
+pnpm citrine down             # stop the stack (pass the same flags you started it with)
 ```
 
 Published images are the default because most issues users hit come from stale local builds; reach for `--local` when

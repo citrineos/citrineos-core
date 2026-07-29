@@ -58,10 +58,17 @@ describe('LocalStorage', () => {
       );
     });
 
-    it('should use an absolute key as-is without joining with root', async () => {
+    it('should reject an absolute key by default', async () => {
+      await expect(storage.saveFile('/absolute/path/file.txt', content)).rejects.toThrow(
+        /absolute paths are not allowed/,
+      );
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('should use an absolute key as-is when trusted', async () => {
       const absoluteKey = '/absolute/path/file.txt';
 
-      await storage.saveFile(absoluteKey, content);
+      await storage.saveFile(absoluteKey, content, undefined, { trusted: true });
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(absoluteKey, content, 'utf-8');
     });
@@ -98,12 +105,19 @@ describe('LocalStorage', () => {
       expect(fs.readFileSync).not.toHaveBeenCalled();
     });
 
-    it('should use an absolute key as-is', async () => {
+    it('should reject an absolute key by default', async () => {
+      await expect(storage.getFile('/absolute/path/file.txt')).rejects.toThrow(
+        /absolute paths are not allowed/,
+      );
+      expect(fs.readFileSync).not.toHaveBeenCalled();
+    });
+
+    it('should use an absolute key as-is when trusted', async () => {
       const absoluteKey = '/absolute/path/file.txt';
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue('content' as any);
 
-      await storage.getFile(absoluteKey);
+      await storage.getFile(absoluteKey, undefined, { trusted: true });
 
       expect(fs.readFileSync).toHaveBeenCalledWith(absoluteKey, 'utf-8');
     });
@@ -144,7 +158,7 @@ describe('LocalStorage', () => {
     it('should create a directory at the resolved path', async () => {
       await storage.createDirectory(key);
 
-      expect(fs.mkdirSync).toHaveBeenCalledWith(resolvedPath(key), undefined);
+      expect(fs.mkdirSync).toHaveBeenCalledWith(resolvedPath(key), { recursive: undefined });
     });
 
     it('should pass options to mkdirSync', async () => {
@@ -156,7 +170,9 @@ describe('LocalStorage', () => {
     it('should use custom bucket as the directory when provided', async () => {
       await storage.createDirectory(key, 'custom-dir');
 
-      expect(fs.mkdirSync).toHaveBeenCalledWith(resolvedPath(key, 'custom-dir'), undefined);
+      expect(fs.mkdirSync).toHaveBeenCalledWith(resolvedPath(key, 'custom-dir'), {
+        recursive: undefined,
+      });
     });
   });
 
@@ -166,7 +182,10 @@ describe('LocalStorage', () => {
     it('should delete the file at the resolved path', async () => {
       await storage.deleteFile(key);
 
-      expect(fs.rmSync).toHaveBeenCalledWith(resolvedPath(key), undefined);
+      expect(fs.rmSync).toHaveBeenCalledWith(resolvedPath(key), {
+        recursive: undefined,
+        force: undefined,
+      });
     });
 
     it('should pass options to rmSync', async () => {
@@ -178,7 +197,54 @@ describe('LocalStorage', () => {
     it('should use custom bucket as the directory when provided', async () => {
       await storage.deleteFile(key, 'custom-dir');
 
-      expect(fs.rmSync).toHaveBeenCalledWith(resolvedPath(key, 'custom-dir'), undefined);
+      expect(fs.rmSync).toHaveBeenCalledWith(resolvedPath(key, 'custom-dir'), {
+        recursive: undefined,
+        force: undefined,
+      });
+    });
+  });
+
+  describe('path validation (default, untrusted)', () => {
+    const content = Buffer.from('x');
+
+    it.each(['../../../tmp/x', 'a/../../b', 'foo/..', '..', '..\\..\\x'])(
+      'rejects parent-directory traversal %j',
+      async (key) => {
+        await expect(storage.saveFile(key, content)).rejects.toThrow(/traversal/);
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['/tmp/x', 'C:\\Windows\\Temp', 'c:/windows/temp', '\\\\host\\share'])(
+      'rejects absolute path %j',
+      async (key) => {
+        await expect(storage.saveFile(key, content)).rejects.toThrow(
+          /absolute paths are not allowed/,
+        );
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects a key containing a NUL byte', async () => {
+      await expect(storage.saveFile('certs/leaf\0.pem', content)).rejects.toThrow(/NUL byte/);
+    });
+
+    it.each(['certs', 'sub/dir/file.pem', 'tenant_1/leaf'])(
+      'accepts contained relative key %j',
+      async (key) => {
+        await storage.saveFile(key, content);
+        expect(fs.writeFileSync).toHaveBeenCalledWith(resolvedPath(key), content, 'utf-8');
+      },
+    );
+
+    it('allows traversal/absolute when trusted', async () => {
+      await expect(
+        storage.saveFile('../../escapes/x.pem', content, undefined, { trusted: true }),
+      ).resolves.toBeDefined();
+      await expect(
+        storage.saveFile('/absolute/x.pem', content, undefined, { trusted: true }),
+      ).resolves.toBeDefined();
+      expect(fs.writeFileSync).toHaveBeenCalledTimes(2);
     });
   });
 

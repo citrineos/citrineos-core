@@ -22,7 +22,12 @@ export type { ICache } from './src/interfaces/cache/cache.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';
 export type { IWebsocketConnection } from './src/interfaces/cache/types.js';
 export type { IFileAccess } from './src/interfaces/files/fileAccess.js';
-export type { IFileStorage } from './src/interfaces/files/fileStorage.js';
+export type {
+  IFileStorage,
+  TrustOptions,
+  CreateDirectoryOptions,
+  DeleteFileOptions,
+} from './src/interfaces/files/fileStorage.js';
 export {
   AbstractConnectionManager,
   AbstractMessageHandler,

@@ -61,7 +61,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       s.tlsCertificateChainFilePath as string,
       s.mtlsCertificateAuthorityKeyFilePath as string,
     ]);
-    const existResults = await Promise.all(requiredPaths.map((p) => fileStorage.exists(p)));
+    const existResults = await Promise.all(
+      requiredPaths.map((p) => fileStorage.exists(p, undefined, { trusted: true })),
+    );
     const allExistInFileStorage = existResults.every(Boolean);
     if (allExistInFileStorage) {
       log.debug('Loading certificate files from configured file storage');
@@ -76,8 +78,16 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     const securityCertChainKeyMap = new Map<string, [string, string]>();
     for (const server of securityProfile3Servers) {
       try {
-        const certChain = await storage.getFile(server.tlsCertificateChainFilePath as string);
-        const mtlsKey = await storage.getFile(server.mtlsCertificateAuthorityKeyFilePath as string);
+        const certChain = await storage.getFile(
+          server.tlsCertificateChainFilePath as string,
+          undefined,
+          { trusted: true },
+        );
+        const mtlsKey = await storage.getFile(
+          server.mtlsCertificateAuthorityKeyFilePath as string,
+          undefined,
+          { trusted: true },
+        );
         if (certChain === undefined || mtlsKey === undefined) {
           throw new Error(`Certificate file not found for server ${server.id}`);
         }
@@ -102,7 +112,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     if (!resolvedClient) {
       const accountKeyFilePath = config.util.certificateAuthority.chargingStationCA?.acme
         ?.accountKeyFilePath as string;
-      const accountKeyStr = await diskStorage.getFile(accountKeyFilePath);
+      const accountKeyStr = await diskStorage.getFile(accountKeyFilePath, undefined, {
+        trusted: true,
+      });
       if (!accountKeyStr) {
         throw new Error('Account key file not found');
       }
@@ -151,8 +163,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       challengeCreateFn: async (authz, challenge, keyAuthorization) => {
         this._logger.debug('Triggered challengeCreateFn()');
         const filePath = `${folderPath}/${challenge.token}`;
-        if (!(await this._fileStorage.exists(folderPath))) {
-          await this._fileStorage.createDirectory(folderPath, undefined, { recursive: true });
+        if (!(await this._fileStorage.exists(folderPath, undefined, { trusted: true }))) {
+          await this._fileStorage.createDirectory(folderPath, undefined, {
+            recursive: true,
+            trusted: true,
+          });
           this._logger.debug(`Directory created: ${folderPath}`);
         } else {
           this._logger.debug(`Directory already exists: ${folderPath}`);
@@ -160,11 +175,17 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         this._logger.debug(
           `Creating challenge response ${keyAuthorization} for ${authz.identifier.value} at path: ${filePath}`,
         );
-        await this._fileStorage.saveFile(filePath, Buffer.from(keyAuthorization));
+        await this._fileStorage.saveFile(filePath, Buffer.from(keyAuthorization), undefined, {
+          trusted: true,
+        });
       },
       challengeRemoveFn: async (_authz, _challenge, _keyAuthorization) => {
         this._logger.debug(`Triggered challengeRemoveFn(). Would remove "${folderPath}`);
-        await this._fileStorage.deleteFile(folderPath, undefined, { recursive: true, force: true });
+        await this._fileStorage.deleteFile(folderPath, undefined, {
+          recursive: true,
+          force: true,
+          trusted: true,
+        });
       },
     });
 

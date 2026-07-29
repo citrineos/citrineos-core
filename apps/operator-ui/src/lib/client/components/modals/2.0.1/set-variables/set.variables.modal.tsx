@@ -27,7 +27,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFieldArray } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import z from 'zod';
@@ -41,6 +41,14 @@ import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 interface SetVariablesModalProps {
   station: any;
+  defaultSetVariable?: {
+    componentName?: string;
+    componentInstance?: string | null;
+    variableName?: string;
+    variableInstance?: string | null;
+    value?: string;
+    attributeType?: string;
+  };
 }
 
 type SetVariablesFormData = {
@@ -54,9 +62,10 @@ type SetVariablesFormData = {
 
 const attributeTypes = Object.keys(OCPP2_0_1.AttributeEnumType);
 
-export const SetVariablesModal = ({ station }: SetVariablesModalProps) => {
+export const SetVariablesModal = ({ station, defaultSetVariable }: SetVariablesModalProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
+  const isEdit = !!defaultSetVariable;
   const [loading, setLoading] = useState(false);
   const [variableOptionsMap, setVariableOptionsMap] = useState<
     Record<number, { label: string; value: number }[]>
@@ -99,15 +108,42 @@ export const SetVariablesModal = ({ station }: SetVariablesModalProps) => {
     resolver: zodResolver(SetVariablesSchema),
     defaultValues: {
       setVariableData: [
-        {
-          componentId: 0,
-          variableId: 0,
-          value: '',
-          attributeType: undefined,
-        },
+        defaultSetVariable
+          ? {
+              componentId: defaultSetVariable.componentName ?? '',
+              variableId: defaultSetVariable.variableName ?? '',
+              value: defaultSetVariable.value ?? '',
+              attributeType: defaultSetVariable.attributeType as
+                | OCPP2_0_1.AttributeEnumType
+                | undefined,
+            }
+          : {
+              componentId: 0,
+              variableId: 0,
+              value: '',
+              attributeType: undefined,
+            },
       ],
     },
   });
+
+  useEffect(() => {
+    if (defaultSetVariable) {
+      form.reset({
+        setVariableData: [
+          {
+            componentId: defaultSetVariable.componentName ?? '',
+            variableId: defaultSetVariable.variableName ?? '',
+            value: defaultSetVariable.value ?? '',
+            attributeType: defaultSetVariable.attributeType as
+              | OCPP2_0_1.AttributeEnumType
+              | undefined,
+          },
+        ],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultSetVariable]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -175,12 +211,23 @@ export const SetVariablesModal = ({ station }: SetVariablesModalProps) => {
           ? item.variableId
           : variableOptionsMap[index]?.find((v) => v.value === item.variableId)?.label || '';
 
+      const componentInstance =
+        defaultSetVariable?.componentName === componentName
+          ? defaultSetVariable?.componentInstance
+          : undefined;
+      const variableInstance =
+        defaultSetVariable?.variableName === variableName
+          ? defaultSetVariable?.variableInstance
+          : undefined;
+
       return {
         component: {
           name: componentName,
+          ...(componentInstance ? { instance: componentInstance } : {}),
         },
         variable: {
           name: variableName,
+          ...(variableInstance ? { instance: variableInstance } : {}),
         },
         attributeValue: item.value,
         ...(item.attributeType && { attributeType: item.attributeType }),
@@ -212,19 +259,21 @@ export const SetVariablesModal = ({ station }: SetVariablesModalProps) => {
         <InfoIcon className="h-4 w-4" />
         <AlertDescription>{translate('ChargingStations.getVariablesModal.alert')}</AlertDescription>
       </Alert>
-      <div className="flex items-start">
-        <AddArrayItemButton
-          onAppendAction={() =>
-            append({
-              componentId: 0,
-              variableId: 0,
-              value: '',
-              attributeType: undefined,
-            })
-          }
-          itemLabel={translate('ChargingStations.getVariablesModal.variable')}
-        />
-      </div>
+      {!isEdit && (
+        <div className="flex items-start">
+          <AddArrayItemButton
+            onAppendAction={() =>
+              append({
+                componentId: 0,
+                variableId: 0,
+                value: '',
+                attributeType: undefined,
+              })
+            }
+            itemLabel={translate('ChargingStations.getVariablesModal.variable')}
+          />
+        </div>
+      )}
       <div className="flex flex-col gap-6 w-full">
         {fields.map((field, index) => {
           const componentId = form.watch(`setVariableData.${index}.componentId`);
@@ -292,7 +341,7 @@ export const SetVariablesModal = ({ station }: SetVariablesModalProps) => {
                 placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
               />
 
-              <RemoveArrayItemButton onRemoveAction={() => remove(index)} />
+              {!isEdit && <RemoveArrayItemButton onRemoveAction={() => remove(index)} />}
             </div>
           );
         })}
