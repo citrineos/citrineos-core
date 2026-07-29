@@ -53,6 +53,8 @@ interface VariableAttribute {
   id: string;
   type: string;
   value: string;
+  mutability?: string | null;
+  constant?: boolean | null;
   Variable: {
     name: string;
     instance: string;
@@ -103,6 +105,12 @@ const CONFIG_2_0_1_COLUMNS = [
     headerKey: 'ChargingStations.configuration.value',
     accessor: 'value',
     sortField: 'value',
+  },
+  {
+    key: 'mutability',
+    headerKey: 'ChargingStations.configuration.mutability',
+    accessor: 'mutability',
+    sortField: 'mutability',
   },
   {
     key: 'component',
@@ -284,6 +292,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           key: attribute.id,
           type: attribute.type,
           value: attribute.value,
+          mutability: attribute.mutability ?? '-',
           component: `${attribute.Component?.name ?? '-'}:${attribute.Component?.instance ?? '-'}`,
           variable: `${attribute.Variable?.name ?? '-'}:${attribute.Variable?.instance ?? '-'}`,
           evse: `${attribute.Evse?.id ?? '-'}:${attribute.Evse?.connectorId ?? '-'}`,
@@ -291,6 +300,8 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           componentInstance: attribute.Component?.instance ?? null,
           variableName: attribute.Variable?.name ?? '',
           variableInstance: attribute.Variable?.instance ?? null,
+          // Whether this attribute can be set on the charger — drives the Edit action.
+          isEditable: attribute.mutability !== 'ReadOnly' && !attribute.constant,
         })),
       );
     } else if (version === '1.6' && changeConfigurationsResult?.data) {
@@ -369,6 +380,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           String(id),
           item.type,
           item.value,
+          item.mutability ?? '-',
           `${item.Component?.name ?? '-'}:${item.Component?.instance ?? '-'}`,
           `${item.Variable?.name ?? '-'}:${item.Variable?.instance ?? '-'}`,
           `${item.Evse?.id ?? '-'}:${item.Evse?.connectorId ?? '-'}`,
@@ -592,19 +604,21 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
                       </td>
                     ))}
                     <td className="px-4 py-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          version === '1.6'
-                            ? handleEditConfig(row.key, row.value)
-                            : handleEditVariable(row)
-                        }
-                        disabled={!isConnected}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        {translate('Common.edit')}
-                      </Button>
+                      {version === '1.6' || row.isEditable ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            version === '1.6'
+                              ? handleEditConfig(row.key, row.value)
+                              : handleEditVariable(row)
+                          }
+                          disabled={!isConnected}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          {translate('Common.edit')}
+                        </Button>
+                      ) : null}
                     </td>
                   </tr>
                 ))
