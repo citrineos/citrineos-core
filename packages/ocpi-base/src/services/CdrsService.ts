@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Service } from 'typedi';
-import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../model/PaginatedResponse.js';
+import {
+  buildOcpiPaginatedResponse,
+  DEFAULT_LIMIT,
+  DEFAULT_OFFSET,
+} from '../model/PaginatedResponse.js';
+import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type {
   GetTransactionsQueryResult,
   GetTransactionsQueryVariables,
@@ -62,11 +67,14 @@ export class CdrsService {
       result.Transactions as TransactionDto[],
     );
 
-    return {
-      data: mappedCdr,
-      total: result.Transactions.length,
-      offset: offset,
-      limit: limit,
-    } as PaginatedCdrResponse;
+    const response = buildOcpiPaginatedResponse(
+      OcpiResponseStatusCode.GenericSuccessCode,
+      result.Transactions.length,
+      limit,
+      offset,
+      mappedCdr,
+    );
+
+    return response as PaginatedCdrResponse;
   }
 }
