@@ -45,6 +45,8 @@ export class SequelizeAuthorizationRepository
 
     return {
       where,
+      // Eager-load the group Authorization so IdTokenInfo.groupIdToken can be surfaced.
+      include: [{ model: Authorization, as: 'groupAuthorization' }],
     };
   }
 }

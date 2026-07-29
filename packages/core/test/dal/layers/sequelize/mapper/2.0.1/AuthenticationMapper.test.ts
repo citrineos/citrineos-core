@@ -43,6 +43,38 @@ describe('AuthenticationMapper', () => {
     });
   });
 
+  describe('toIdTokenInfo', () => {
+    it('should map groupIdToken from the eager-loaded groupAuthorization', () => {
+      const group = aAuthorization((auth) => {
+        auth.idToken = 'GROUP';
+        auth.idTokenType = IdTokenEnum.Central;
+        return auth;
+      });
+      const authorization = aAuthorization((auth) => {
+        auth.groupAuthorization = group;
+        return auth;
+      });
+
+      const result = AuthorizationMapper.toIdTokenInfo(authorization);
+
+      expect(result.groupIdToken).toEqual({
+        customData: group.customData,
+        additionalInfo: group.additionalInfo,
+        idToken: 'GROUP',
+        type: OCPP2_0_1.IdTokenEnumType.Central,
+      });
+    });
+
+    it('should omit groupIdToken when groupAuthorization is not loaded', () => {
+      const authorization = aAuthorization((auth) => {
+        auth.groupAuthorization = undefined;
+        return auth;
+      });
+
+      expect(AuthorizationMapper.toIdTokenInfo(authorization).groupIdToken).toBeUndefined();
+    });
+  });
+
   describe('Enum Mappings', () => {
     describe('toAuthorizationStatusEnumType', () => {
       const statuses: {

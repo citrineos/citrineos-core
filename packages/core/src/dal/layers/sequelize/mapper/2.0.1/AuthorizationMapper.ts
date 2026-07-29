@@ -34,6 +34,10 @@ export class AuthorizationMapper {
       language2: authorization.language2,
       personalMessage: authorization.personalMessage,
       customData: authorization.customData,
+      // groupIdToken must be eager-loaded (include groupAuthorization) to be surfaced here.
+      groupIdToken: authorization.groupAuthorization
+        ? AuthorizationMapper.toIdToken(authorization.groupAuthorization)
+        : undefined,
     };
   }
 
