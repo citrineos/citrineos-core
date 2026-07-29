@@ -57,8 +57,7 @@ export function tenantInstalledCertificateTable(
 // ─── Zod schemas (runtime validation + type inference) ───────────────────────
 
 export const InstalledCertificateEntitySchema = createSelectSchema(installedCertificateTable);
-export const InstalledCertificateEntityInsertSchema =
-  createInsertSchema(installedCertificateTable);
+export const InstalledCertificateEntityInsertSchema = createInsertSchema(installedCertificateTable);
 
 export type InstalledCertificateEntity = z.infer<typeof InstalledCertificateEntitySchema>;
 export type InstalledCertificateEntityInsert = z.infer<

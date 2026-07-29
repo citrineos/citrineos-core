@@ -72,8 +72,7 @@ export function tenantServerNetworkProfileTable(
 // ─── Zod schemas (runtime validation + type inference) ───────────────────────
 
 export const ServerNetworkProfileEntitySchema = createSelectSchema(serverNetworkProfileTable);
-export const ServerNetworkProfileEntityInsertSchema =
-  createInsertSchema(serverNetworkProfileTable);
+export const ServerNetworkProfileEntityInsertSchema = createInsertSchema(serverNetworkProfileTable);
 
 export type ServerNetworkProfileEntity = z.infer<typeof ServerNetworkProfileEntitySchema>;
 export type ServerNetworkProfileEntityInsert = z.infer<

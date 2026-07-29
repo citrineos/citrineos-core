@@ -58,9 +58,7 @@ export const LatestStatusNotificationEntityInsertSchema = createInsertSchema(
   latestStatusNotificationTable,
 );
 
-export type LatestStatusNotificationEntity = z.infer<
-  typeof LatestStatusNotificationEntitySchema
->;
+export type LatestStatusNotificationEntity = z.infer<typeof LatestStatusNotificationEntitySchema>;
 export type LatestStatusNotificationEntityInsert = z.infer<
   typeof LatestStatusNotificationEntityInsertSchema
 >;

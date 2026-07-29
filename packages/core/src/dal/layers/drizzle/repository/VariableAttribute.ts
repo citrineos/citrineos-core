@@ -55,9 +55,7 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
   }
 
   protected getTable(tenantId: number): typeof variableAttributeTable {
-    return this.useTenantSchema
-      ? tenantVariableAttributeTable(tenantId)
-      : variableAttributeTable;
+    return this.useTenantSchema ? tenantVariableAttributeTable(tenantId) : variableAttributeTable;
   }
 
   protected toDto(row: VariableAttributeEntity): VariableAttributeDto {

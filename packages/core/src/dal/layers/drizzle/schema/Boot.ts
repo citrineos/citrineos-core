@@ -3,7 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
-import { boolean, integer, jsonb, pgSchema, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgSchema,
+  pgTable,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 

@@ -58,9 +58,7 @@ export const VariableMonitoringStatusEntityInsertSchema = createInsertSchema(
   variableMonitoringStatusTable,
 );
 
-export type VariableMonitoringStatusEntity = z.infer<
-  typeof VariableMonitoringStatusEntitySchema
->;
+export type VariableMonitoringStatusEntity = z.infer<typeof VariableMonitoringStatusEntitySchema>;
 export type VariableMonitoringStatusEntityInsert = z.infer<
   typeof VariableMonitoringStatusEntityInsertSchema
 >;

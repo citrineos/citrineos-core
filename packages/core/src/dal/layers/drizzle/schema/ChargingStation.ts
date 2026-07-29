@@ -48,9 +48,8 @@ function chargingStationColumns() {
     // Sequelize GEOMETRY('POINT') → PostGIS point; [longitude, latitude]
     coordinates: geometry('coordinates', { type: 'point' }),
     floorLevel: varchar('floorLevel', { length: 255 }),
-    parkingRestrictions: jsonb('parkingRestrictions').$type<
-      ChargingStationParkingRestrictionEnumType[]
-    >(),
+    parkingRestrictions:
+      jsonb('parkingRestrictions').$type<ChargingStationParkingRestrictionEnumType[]>(),
     capabilities: jsonb('capabilities').$type<ChargingStationCapabilityEnumType[]>(),
     use16StatusNotification0: boolean('use16StatusNotification0').default(true),
     locationId: integer('locationId'),
@@ -70,7 +69,10 @@ export const chargingStationTable = pgTable(
   chargingStationColumns(),
   (t) => [
     index('charging_stations_ocpp_connection_name').on(t.ocppConnectionName),
-    uniqueIndex('charging_stations_station_name_tenant_id_key').on(t.ocppConnectionName, t.tenantId),
+    uniqueIndex('charging_stations_station_name_tenant_id_key').on(
+      t.ocppConnectionName,
+      t.tenantId,
+    ),
   ],
 );
 

@@ -4,14 +4,7 @@
 
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import { sql } from 'drizzle-orm';
-import {
-  integer,
-  pgSchema,
-  pgTable,
-  serial,
-  timestamp,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core';
+import { integer, pgSchema, pgTable, serial, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 

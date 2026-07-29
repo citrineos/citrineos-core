@@ -46,11 +46,7 @@ function reservationColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const reservationTable = pgTable(TableName.Reservations, reservationColumns(), (t) => [
-  uniqueIndex('reservations_station_name_tenant_id_id').on(
-    t.id,
-    t.ocppConnectionName,
-    t.tenantId,
-  ),
+  uniqueIndex('reservations_station_name_tenant_id_id').on(t.id, t.ocppConnectionName, t.tenantId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

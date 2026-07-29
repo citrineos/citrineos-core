@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, CertificateDto, CountryName, SignatureAlgorithm } from '@citrineos/base';
+import type {
+  BootstrapConfig,
+  CertificateDto,
+  CountryName,
+  SignatureAlgorithm,
+} from '@citrineos/base';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

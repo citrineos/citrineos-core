@@ -39,9 +39,7 @@ function chargingStationSequenceColumns() {
 export const chargingStationSequenceTable = pgTable(
   TableName.ChargingStationSequences,
   chargingStationSequenceColumns(),
-  (t) => [
-    uniqueIndex('charging_station_sequences_station_id_type').on(t.stationId, t.type),
-  ],
+  (t) => [uniqueIndex('charging_station_sequences_station_id_type').on(t.stationId, t.type)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
@@ -62,16 +60,12 @@ export function tenantChargingStationSequenceTable(
 
 // ─── Zod schemas (runtime validation + type inference) ───────────────────────
 
-export const ChargingStationSequenceEntitySchema = createSelectSchema(
-  chargingStationSequenceTable,
-);
+export const ChargingStationSequenceEntitySchema = createSelectSchema(chargingStationSequenceTable);
 export const ChargingStationSequenceEntityInsertSchema = createInsertSchema(
   chargingStationSequenceTable,
 );
 
-export type ChargingStationSequenceEntity = z.infer<
-  typeof ChargingStationSequenceEntitySchema
->;
+export type ChargingStationSequenceEntity = z.infer<typeof ChargingStationSequenceEntitySchema>;
 export type ChargingStationSequenceEntityInsert = z.infer<
   typeof ChargingStationSequenceEntityInsertSchema
 >;

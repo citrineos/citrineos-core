@@ -64,9 +64,7 @@ export const variableMonitoringTable = pgTable(
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof variableMonitoringTable>();
 
-export function tenantVariableMonitoringTable(
-  tenantId: number,
-): typeof variableMonitoringTable {
+export function tenantVariableMonitoringTable(tenantId: number): typeof variableMonitoringTable {
   if (!tenantTableCache.has(tenantId)) {
     const t = pgSchema(`tenant_${tenantId}`).table(
       TableName.VariableMonitorings,
@@ -83,6 +81,4 @@ export const VariableMonitoringEntitySchema = createSelectSchema(variableMonitor
 export const VariableMonitoringEntityInsertSchema = createInsertSchema(variableMonitoringTable);
 
 export type VariableMonitoringEntity = z.infer<typeof VariableMonitoringEntitySchema>;
-export type VariableMonitoringEntityInsert = z.infer<
-  typeof VariableMonitoringEntityInsertSchema
->;
+export type VariableMonitoringEntityInsert = z.infer<typeof VariableMonitoringEntityInsertSchema>;

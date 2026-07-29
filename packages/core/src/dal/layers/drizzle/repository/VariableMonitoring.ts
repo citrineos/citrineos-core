@@ -52,9 +52,7 @@ export class DrizzleVariableMonitoringRepository extends DrizzleRepository<
   }
 
   protected getTable(tenantId: number): typeof variableMonitoringTable {
-    return this.useTenantSchema
-      ? tenantVariableMonitoringTable(tenantId)
-      : variableMonitoringTable;
+    return this.useTenantSchema ? tenantVariableMonitoringTable(tenantId) : variableMonitoringTable;
   }
 
   protected toDto(row: VariableMonitoringEntity): VariableMonitoringDto {

@@ -4,7 +4,16 @@
 
 import type { ServerProfile } from '@citrineos/base';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
-import { boolean, integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgSchema,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 

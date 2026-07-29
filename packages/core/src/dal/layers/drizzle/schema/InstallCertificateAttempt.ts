@@ -61,9 +61,7 @@ export const InstallCertificateAttemptEntityInsertSchema = createInsertSchema(
   installCertificateAttemptTable,
 );
 
-export type InstallCertificateAttemptEntity = z.infer<
-  typeof InstallCertificateAttemptEntitySchema
->;
+export type InstallCertificateAttemptEntity = z.infer<typeof InstallCertificateAttemptEntitySchema>;
 export type InstallCertificateAttemptEntityInsert = z.infer<
   typeof InstallCertificateAttemptEntityInsertSchema
 >;

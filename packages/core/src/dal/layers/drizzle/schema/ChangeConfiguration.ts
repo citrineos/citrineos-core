@@ -51,9 +51,7 @@ export const changeConfigurationTable = pgTable(
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof changeConfigurationTable>();
 
-export function tenantChangeConfigurationTable(
-  tenantId: number,
-): typeof changeConfigurationTable {
+export function tenantChangeConfigurationTable(tenantId: number): typeof changeConfigurationTable {
   if (!tenantTableCache.has(tenantId)) {
     const t = pgSchema(`tenant_${tenantId}`).table(
       TableName.ChangeConfigurations,
@@ -67,10 +65,7 @@ export function tenantChangeConfigurationTable(
 // ─── Zod schemas (runtime validation + type inference) ───────────────────────
 
 export const ChangeConfigurationEntitySchema = createSelectSchema(changeConfigurationTable);
-export const ChangeConfigurationEntityInsertSchema =
-  createInsertSchema(changeConfigurationTable);
+export const ChangeConfigurationEntityInsertSchema = createInsertSchema(changeConfigurationTable);
 
 export type ChangeConfigurationEntity = z.infer<typeof ChangeConfigurationEntitySchema>;
-export type ChangeConfigurationEntityInsert = z.infer<
-  typeof ChangeConfigurationEntityInsertSchema
->;
+export type ChangeConfigurationEntityInsert = z.infer<typeof ChangeConfigurationEntityInsertSchema>;

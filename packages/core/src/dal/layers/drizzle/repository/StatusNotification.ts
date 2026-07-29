@@ -16,9 +16,7 @@ import { DrizzleRepository } from './Base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external StatusNotificationDto contract.
-export function toStatusNotificationDto(
-  entity: StatusNotificationEntity,
-): StatusNotificationDto {
+export function toStatusNotificationDto(entity: StatusNotificationEntity): StatusNotificationDto {
   const dto: Explicit<StatusNotificationDto> = {
     id: entity.id,
     ocppConnectionName: entity.ocppConnectionName ?? '',
@@ -56,9 +54,7 @@ export class DrizzleStatusNotificationRepository extends DrizzleRepository<
   }
 
   protected getTable(tenantId: number): typeof statusNotificationTable {
-    return this.useTenantSchema
-      ? tenantStatusNotificationTable(tenantId)
-      : statusNotificationTable;
+    return this.useTenantSchema ? tenantStatusNotificationTable(tenantId) : statusNotificationTable;
   }
 
   protected toDto(row: StatusNotificationEntity): StatusNotificationDto {
