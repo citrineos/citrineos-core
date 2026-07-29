@@ -144,7 +144,7 @@ export abstract class AbstractModule implements IModule {
           ...describeConflicts(conflicts.values()),
           ``,
           `Dispatch can only route a message to one handler, so the other would never run. ` +
-          `Remove one from this module's handler list.`,
+            `Remove one from this module's handler list.`,
         ].join('\n'),
       );
     }
@@ -493,10 +493,10 @@ export abstract class AbstractModule implements IModule {
     return baseLogger
       ? baseLogger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({
-        name: this.constructor.name,
-        minLevel: this._config.logLevel,
-        hideLogPositionForProduction: this._config.env === 'production',
-      });
+          name: this.constructor.name,
+          minLevel: this._config.logLevel,
+          hideLogPositionForProduction: this._config.env === 'production',
+        });
   }
 
   /**
@@ -523,8 +523,8 @@ export abstract class AbstractModule implements IModule {
     if (shadowed.length > 0) {
       this._logger.warn(
         `${this._eventGroup} has both an @AsHandler method and a handler class for ` +
-        `${shadowed.join(', ')}. The method wins at dispatch, so the handler class will not ` +
-        `run. Delete the method.`,
+          `${shadowed.join(', ')}. The method wins at dispatch, so the handler class will not ` +
+          `run. Delete the method.`,
       );
     }
 
@@ -549,20 +549,20 @@ export abstract class AbstractModule implements IModule {
     throw new Error(
       [
         `Module '${this._eventGroup}' cannot start: it is configured to receive messages it has ` +
-        `no handler for.`,
+          `no handler for.`,
         ``,
         `Unhandled: ${unhandled.map(({ action, type }) => describe(action, type)).join(', ')}`,
         `Registered: ${registered.length > 0 ? registered.join(', ') : '(none)'}`,
         ``,
         `Fix either side:`,
         `  - register a handler: add the class that declares @AsRequestHandler/@AsResponseHandler ` +
-        `for each unhandled action to this module's handler list in its register.ts, and export ` +
-        `it from handlers/index.ts`,
+          `for each unhandled action to this module's handler list in its register.ts, and export ` +
+          `it from handlers/index.ts`,
         `  - or narrow the config: remove those actions from ` +
-        `config.modules.${this._eventGroup}.requests / .responses`,
+          `config.modules.${this._eventGroup}.requests / .responses`,
         ``,
         `Until one of those is done, a charging station sending these messages would be answered ` +
-        `with a NotSupported CallError.`,
+          `with a NotSupported CallError.`,
       ].join('\n'),
     );
   }

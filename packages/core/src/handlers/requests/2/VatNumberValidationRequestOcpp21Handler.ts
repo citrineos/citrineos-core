@@ -56,6 +56,9 @@ export class VatNumberValidationRequestOcpp21Handler extends AbstractHandler {
     };
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('VatNumberValidation response sent: ', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('VatNumberValidationResponse'),
+      messageConfirmation,
+    );
   }
 }
