@@ -68,6 +68,9 @@ export class NotifyMonitoringReportRequestOcpp2Handler extends AbstractHandler {
     const response: OCPP2_response_types.NotifyMonitoringReportResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('Handler sent NotifyMonitoringReportResponse: ', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('NotifyMonitoringReportResponse'),
+      messageConfirmation,
+    );
   }
 }

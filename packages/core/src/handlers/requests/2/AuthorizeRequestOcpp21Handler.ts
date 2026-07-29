@@ -138,7 +138,10 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           },
         } as OCPP2_response_types.AuthorizeResponse;
         const messageConfirmation = await this._sendAuthorizeResult(message, response);
-        this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
+        this._logger.debug(
+          this.createHandlerSentMessageLog('Authorize 2.1 Response'),
+          messageConfirmation,
+        );
         return;
       }
     }
@@ -281,7 +284,10 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     } else {
       // Status is Unknown if no authorization found
       const messageConfirmation = await this._sendAuthorizeResult(message, response);
-      this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
+      this._logger.debug(
+        this.createHandlerSentMessageLog('Authorize 2.1 Response'),
+        messageConfirmation,
+      );
       return;
     }
 
@@ -314,7 +320,10 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     }
 
     const messageConfirmation = await this._sendAuthorizeResult(message, response);
-    this._logger.debug('Authorize 2.1 response sent:', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('Authorize 2.1 Response'),
+      messageConfirmation,
+    );
   }
 
   /**

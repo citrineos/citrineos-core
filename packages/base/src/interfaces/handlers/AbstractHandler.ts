@@ -14,6 +14,8 @@ export abstract class AbstractHandler implements IHandler {
   protected readonly _logger: Logger<ILogObj>;
   protected readonly createHandlerReceivedMessageLog = (messageType: string) =>
     `Handler for ${messageType} received message:`;
+  protected readonly createHandlerSentMessageLog = (messageType: string) =>
+    `Handler sent ${messageType}:`;
 
   constructor(logger: Logger<ILogObj>) {
     this._logger = logger;

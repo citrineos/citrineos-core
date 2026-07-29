@@ -41,6 +41,9 @@ export class DiagnosticsStatusNotificationRequestOcpp16Handler extends AbstractH
     const response: OCPP1_6.DiagnosticsStatusNotificationResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('Handler sent DiagnosticsStatusNotificationResponse: ', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('DiagnosticsStatusNotificationResponse'),
+      messageConfirmation,
+    );
   }
 }

@@ -80,6 +80,9 @@ export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandle
     const response: OCPP2_response_types.NotifyCustomerInformationResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('Handler sent NotifyCustomerInformationResponse: ', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('NotifyCustomerInformationResponse'),
+      messageConfirmation,
+    );
   }
 }

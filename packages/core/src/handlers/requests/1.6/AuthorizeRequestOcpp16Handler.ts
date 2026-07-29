@@ -5,22 +5,22 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
+  AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
   type HandlerProperties,
+  type IAuthorizer,
   type IMessage,
+  type IMessageConfirmation,
+  type IMessageContext,
+  type IOcppSender,
   OCPP1_6,
   OCPP_CallAction,
-  OCPPVersion,
-  type IMessageContext,
-  AuthorizationStatusEnum,
   type OcppRequest,
   type OcppResponse,
-  type IMessageConfirmation,
+  OCPPVersion,
   recordAuthorizeResult,
-  type AuthorizationStatusEnumType,
-  type IAuthorizer,
-  type IOcppSender,
 } from '@citrineos/base';
-import { OCPP1_6_Mapper, type IAuthorizationRepository } from '@/dal/index.js';
+import { type IAuthorizationRepository, OCPP1_6_Mapper } from '@dal/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.Authorize)
 export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
@@ -71,7 +71,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         //below line is just to make it more explicit. Default status is already invalid.
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
         await this._sendAuthorizeResult(message, response);
-        this._logger.debug('Authorize response sent:', response);
+        this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), response);
         return;
       }
       // If we find more than one token for an idTag it's too opinionated on how to define which one is valid.
@@ -80,7 +80,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
         await this._sendAuthorizeResult(message, response);
-        this._logger.debug('Authorize response sent:', response);
+        this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), response);
         return;
       }
 
@@ -123,7 +123,10 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
     }
 
     await this._sendAuthorizeResult(message, response).then((messageConfirmation) => {
-      this._logger.debug('Authorize response sent:', messageConfirmation);
+      this._logger.debug(
+        this.createHandlerSentMessageLog('AuthorizeResponse'),
+        messageConfirmation,
+      );
     });
     return;
   }

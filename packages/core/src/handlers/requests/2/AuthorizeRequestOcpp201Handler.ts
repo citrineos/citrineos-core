@@ -15,16 +15,16 @@ import {
   IdTokenEnum,
   type IMessage,
   type IMessageConfirmation,
+  type IOcppSender,
+  OCPP2_0_1,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_CallAction,
-  OCPP2_0_1,
   OcppError,
   type OcppRequest,
   type OcppResponse,
   OCPPVersion,
   recordAuthorizeResult,
-  type IOcppSender,
 } from '@citrineos/base';
 import { CertificateAuthorityService, validateIdToken } from '@/util/index.js';
 import {
@@ -141,7 +141,10 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           },
         } as OCPP2_response_types.AuthorizeResponse;
         const messageConfirmation = await this._sendAuthorizeResult(message, response);
-        this._logger.debug('Authorize response sent:', messageConfirmation);
+        this._logger.debug(
+          this.createHandlerSentMessageLog('AuthorizeResponse'),
+          messageConfirmation,
+        );
         return;
       }
     }
@@ -265,7 +268,10 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     } else {
       // Status is Unknown if no authorization found
       const messageConfirmation = await this._sendAuthorizeResult(message, response);
-      this._logger.debug('Authorize response sent:', messageConfirmation);
+      this._logger.debug(
+        this.createHandlerSentMessageLog('AuthorizeResponse'),
+        messageConfirmation,
+      );
       return;
     }
 
@@ -299,7 +305,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     }
 
     const messageConfirmation = await this._sendAuthorizeResult(message, response);
-    this._logger.debug('Authorize response sent:', messageConfirmation);
+    this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), messageConfirmation);
   }
 
   /**

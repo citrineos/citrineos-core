@@ -81,6 +81,9 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
     const response: OCPP2_response_types.NotifyEventResponse = {};
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    this._logger.debug('Handler sent NotifyEventResponse:', messageConfirmation);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('NotifyEventResponse'),
+      messageConfirmation,
+    );
   }
 }
