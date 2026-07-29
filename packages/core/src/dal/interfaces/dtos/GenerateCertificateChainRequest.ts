@@ -32,6 +32,12 @@ export class GenerateCertificateChainRequest {
   // The file path to store the generated certificate.
   filePath?: string;
   generationScope?: CertificateGenerationScope;
+  // Only relevant when generationScope is FullChain and a root is actually generated.
+  // When true (the default), the new root is signed by the previous root.
+  signWithPreviousRoot?: boolean;
+  // File path of a specific root certificate to sign the new
+  // root with, overriding whichever root would otherwise be used by default.
+  overridePreviousRoot?: string;
 
   constructor(
     organizationName: string,
@@ -44,6 +50,8 @@ export class GenerateCertificateChainRequest {
     pathLen?: number,
     filePath?: string,
     generationScope?: CertificateGenerationScope,
+    signWithPreviousRoot?: boolean,
+    overridePreviousRoot?: string,
   ) {
     this.selfSigned = selfSigned;
     this.organizationName = organizationName;
@@ -55,5 +63,7 @@ export class GenerateCertificateChainRequest {
     this.pathLen = pathLen;
     this.filePath = filePath;
     this.generationScope = generationScope;
+    this.signWithPreviousRoot = signWithPreviousRoot;
+    this.overridePreviousRoot = overridePreviousRoot;
   }
 }

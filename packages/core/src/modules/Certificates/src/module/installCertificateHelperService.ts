@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AttributeEnum,
   BadRequestError,
+  CertificateUseEnum,
   type CertificateDto,
   type CertificateUseEnumType,
   type IFileStorage,
@@ -18,6 +20,7 @@ import {
 import type {
   ICertificateRepository,
   IDeleteCertificateAttemptRepository,
+  IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
@@ -33,6 +36,7 @@ import {
   extractCertificateDetails,
   generateCertificate,
   generateCSR,
+  isSignedBy,
   parseCertificateChainPem,
   WebsocketNetworkConnection,
 } from '@util/index.js';
@@ -51,6 +55,7 @@ export class InstallCertificateHelperService {
   protected installedCertificateRepository: IInstalledCertificateRepository;
   protected installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+  protected deviceModelRepository: IDeviceModelRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
   protected networkConnection: WebsocketNetworkConnection;
   protected fileStorage: IFileStorage;
@@ -61,6 +66,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository,
     installCertificateAttemptRepository,
     deleteCertificateAttemptRepository,
+    deviceModelRepository,
     certificateAuthorityService,
     networkConnection,
     fileStorage,
@@ -70,6 +76,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository: IInstalledCertificateRepository;
     installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+    deviceModelRepository: IDeviceModelRepository;
     certificateAuthorityService: CertificateAuthorityService;
     networkConnection: WebsocketNetworkConnection;
     fileStorage: IFileStorage;
@@ -79,6 +86,7 @@ export class InstallCertificateHelperService {
     this.installedCertificateRepository = installedCertificateRepository;
     this.installCertificateAttemptRepository = installCertificateAttemptRepository;
     this.deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
+    this.deviceModelRepository = deviceModelRepository;
     this.certificateAuthorityService = certificateAuthorityService;
     this.networkConnection = networkConnection;
     this.fileStorage = fileStorage;
@@ -92,6 +100,13 @@ export class InstallCertificateHelperService {
     certificateType: CertificateUseEnumType,
     requestId?: number | null,
   ) {
+    await this._verifyAdditionalRootCertificateCheck(
+      tenantId,
+      ocppConnectionName,
+      certificateType,
+      certificate,
+    );
+
     const hash = this.getCertificateHash(certificate);
     const existingPendingInstallCertificateAttempt =
       await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
@@ -145,6 +160,65 @@ export class InstallCertificateHelperService {
         installCertificateAttempt.requestId = requestId;
       }
       await installCertificateAttempt.save();
+    }
+  }
+
+  /**
+   * OCPP 2.0.1 M05.FR.10: when SecurityCtrlr.AdditionalRootCertificateCheck is true and
+   * the certificate being installed is a CSMSRootCertificate, the new root MUST be
+   * signed by the CSMS root certificate it is replacing. Throws if that's not the case.
+   */
+  private async _verifyAdditionalRootCertificateCheck(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+    newCertificatePem: string,
+  ): Promise<void> {
+    if (certificateType !== CertificateUseEnum.CSMSRootCertificate) {
+      return;
+    }
+
+    const [additionalRootCertificateCheckAttribute] =
+      await this.deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId,
+        ocppConnectionName,
+        component_name: 'SecurityCtrlr',
+        variable_name: 'AdditionalRootCertificateCheck',
+        type: AttributeEnum.Actual,
+      });
+    if (additionalRootCertificateCheckAttribute?.value !== 'true') {
+      return;
+    }
+
+    const previouslyInstalledRoot = await this.installedCertificateRepository.readOnlyOneByQuery(
+      tenantId,
+      {
+        where: {
+          ocppConnectionName,
+          certificateType: CertificateUseEnum.CSMSRootCertificate,
+        },
+      },
+    );
+    if (!previouslyInstalledRoot) {
+      // Nothing installed yet to replace
+      return;
+    }
+    const previousRootCertificate = await previouslyInstalledRoot.$get('certificate');
+    if (!previousRootCertificate?.certificateFileId) {
+      throw new BadRequestError(
+        `Cannot verify AdditionalRootCertificateCheck for ${ocppConnectionName}: the currently installed CSMS root certificate has no certificate file on record to verify the new one against.`,
+      );
+    }
+    const previousRootPem = await this._readPemFile(
+      previousRootCertificate.certificateFileId,
+      'previously installed CSMS root certificate',
+      ocppConnectionName,
+    );
+
+    if (!isSignedBy(newCertificatePem, previousRootPem)) {
+      throw new BadRequestError(
+        `Cannot install new CSMS root certificate for ${ocppConnectionName}: SecurityCtrlr.AdditionalRootCertificateCheck is enabled, so the new root certificate must be signed by the CSMS root certificate it is replacing.`,
+      );
     }
   }
 
@@ -464,7 +538,7 @@ export class InstallCertificateHelperService {
       case CertificateGenerationScope.SubCAAndLeaf:
         return this._generateSubCAAndLeaf(tenantId, websocketConfig, certRequest);
       case CertificateGenerationScope.FullChain:
-        return this._generateFullChain(tenantId, certRequest);
+        return this._generateFullChain(tenantId, websocketConfig, certRequest);
       default:
         throw new BadRequestError(`Unknown generationScope: ${scope}`);
     }
@@ -486,7 +560,7 @@ export class InstallCertificateHelperService {
       rootCACertificateFilePath?: string;
     };
   }> {
-    return this._generateFullChain(tenantId, certRequest);
+    return this._generateFullChain(tenantId, undefined, certRequest);
   }
 
   private async _generateLeafOnly(
@@ -634,6 +708,7 @@ export class InstallCertificateHelperService {
 
   private async _generateFullChain(
     tenantId: number,
+    websocketConfig: WebsocketServerConfig | undefined,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
     certificates: Certificate[];
@@ -655,9 +730,28 @@ export class InstallCertificateHelperService {
     let storedRoot: Certificate | undefined;
 
     if (selfSigned) {
+      // OCPP 2.0.1 M05.FR.11: sign the new root with the previous root, so charging stations
+      // with SecurityCtrlr.AdditionalRootCertificateCheck enabled accept it as a valid replacement.
+      // signWithPreviousRoot/overridePreviousRoot only applies to a server-scoped chain; a standalone chain
+      // isn't tied to any server's previous root, so both params are ignored
+      const signWithPreviousRoot = !!websocketConfig && (certRequest.signWithPreviousRoot ?? true);
+      const previousRoot = signWithPreviousRoot
+        ? await this._resolvePreviousRoot(
+            tenantId,
+            certRequest,
+            websocketConfig!.id,
+            websocketConfig,
+          )
+        : undefined;
+
       const rootSerialNumber = moment().valueOf();
       const rootEntity = this._buildRootEntity(certRequest, rootSerialNumber);
-      const [rootCertPem, rootKeyPem] = generateCertificate(rootEntity, this.logger);
+      if (previousRoot) {
+        rootEntity.signedBy = previousRoot.certificateId;
+      }
+      const [rootCertPem, rootKeyPem] = previousRoot
+        ? generateCertificate(rootEntity, this.logger, previousRoot.keyPem, previousRoot.certPem)
+        : generateCertificate(rootEntity, this.logger);
       storedRoot = await this.storeCertificateAndKey(
         tenantId,
         rootEntity,
@@ -855,6 +949,53 @@ export class InstallCertificateHelperService {
   }
 
   /**
+   * Resolves the "previous root". A newly-generated root should be signed by:
+   * `certRequest.overridePreviousRoot` if given, else `websocketConfig`'s currently
+   * configured root. Returns `undefined` if neither is available.
+   */
+  private async _resolvePreviousRoot(
+    tenantId: number,
+    certRequest: GenerateCertificateChainRequest,
+    contextId: string,
+    websocketConfig?: WebsocketServerConfig,
+  ): Promise<{ certPem: string; keyPem: string; certificateId: number } | undefined> {
+    // `overridePreviousRoot` is caller-supplied over the API, so it stays path-validated;
+    // `rootCACertificateFilePath` is config-driven and may be an
+    // absolute path, so it's read as trusted.
+    const previousRootFilePath = certRequest.overridePreviousRoot;
+    const trustedRootFilePath = websocketConfig?.rootCACertificateFilePath;
+    const resolvedFilePath = previousRootFilePath ?? trustedRootFilePath;
+    if (!resolvedFilePath) {
+      return undefined;
+    }
+
+    const certPem = previousRootFilePath
+      ? await this._readPemFile(previousRootFilePath, 'previous root certificate', contextId)
+      : await this._readPemFile(trustedRootFilePath!, 'previous root certificate', contextId, {
+          trusted: true,
+        });
+    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
+      where: { certificateFileHash: this.getCertificateHash(certPem) },
+    });
+    if (!record) {
+      throw new BadRequestError(
+        `Cannot sign the new root certificate for ${contextId} with the previous root at ${resolvedFilePath}: cannot find record from db.`,
+      );
+    }
+    if (!record.privateKeyFileId) {
+      throw new BadRequestError(
+        `Cannot sign the new root certificate for ${contextId} with the previous root at ${resolvedFilePath}: private key cannot be located from db.`,
+      );
+    }
+    const keyPem = await this._readPemFile(
+      record.privateKeyFileId,
+      'previous root private key',
+      contextId,
+    );
+    return { certPem, keyPem, certificateId: record.id };
+  }
+
+  /**
    * Reads and extracts the subCA certificate from a server's currently-configured
    * certificate chain file (chain = leaf + subCA concatenation). This is the only
    * config field relied on to identify a server's current lineage — the optional
@@ -871,6 +1012,7 @@ export class InstallCertificateHelperService {
       config.tlsCertificateChainFilePath,
       'certificate chain',
       config.id,
+      { trusted: true },
     );
     const [, subCACertPem] = parseCertificateChainPem(currentChainPem);
     if (!subCACertPem) {
@@ -885,8 +1027,9 @@ export class InstallCertificateHelperService {
     filePath: string,
     description: string,
     serverId: string,
+    options?: { trusted?: boolean },
   ): Promise<string> {
-    const buffer = await this.fileStorage.getFile(filePath);
+    const buffer = await this.fileStorage.getFile(filePath, undefined, options);
     if (!buffer) {
       throw new BadRequestError(
         `Could not read ${description} for server ${serverId} at ${filePath}`,

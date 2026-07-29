@@ -60,6 +60,22 @@ export function parseCertificateChainPem(pem: string): string[] {
 }
 
 /**
+ * Verifies that `certPem` was cryptographically signed by the key corresponding to
+ * `issuerCertPem`
+ */
+export function isSignedBy(certPem: string, issuerCertPem: string): boolean {
+  try {
+    const cert = new X509();
+    cert.readCertPEM(certPem);
+    const issuerCert = new X509();
+    issuerCert.readCertPEM(issuerCertPem);
+    return cert.verifySignature(issuerCert.getPublicKey());
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Decode the pem and extract certificates
  * @param pem - base64 encoded certificate chain string without header and footer
  * @return array of pkijs.CertificateSetItem

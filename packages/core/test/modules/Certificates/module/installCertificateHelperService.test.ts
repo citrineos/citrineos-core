@@ -7,6 +7,7 @@ import {
   type GenerateCertificateChainRequest,
   type ICertificateRepository,
   type IDeleteCertificateAttemptRepository,
+  type IDeviceModelRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
   WebsocketNetworkConnection,
@@ -29,6 +30,7 @@ const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.ho
 const mockExtractCertificateDetails = vi.hoisted(() => vi.fn());
 const mockGenerateCertificate = vi.hoisted(() => vi.fn());
 const mockParseCertificateChainPem = vi.hoisted(() => vi.fn());
+const mockIsSignedBy = vi.hoisted(() => vi.fn());
 
 let createdCertificateInstances: any[] = [];
 let createdInstallCertificateAttemptInstances: any[] = [];
@@ -56,6 +58,7 @@ vi.mock('@util/index.js', async (importOriginal) => {
     extractCertificateDetails: mockExtractCertificateDetails,
     generateCertificate: mockGenerateCertificate,
     parseCertificateChainPem: mockParseCertificateChainPem,
+    isSignedBy: mockIsSignedBy,
   };
 });
 
@@ -142,6 +145,7 @@ describe('InstallCertificateHelperService', () => {
   let mockInstalledCertificateRepository: IInstalledCertificateRepository;
   let mockInstallCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   let mockDeleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
+  let mockDeviceModelRepository: IDeviceModelRepository;
   let mockCertificateAuthorityService: CertificateAuthorityService;
   let mockNetworkConnection: WebsocketNetworkConnection;
 
@@ -152,6 +156,7 @@ describe('InstallCertificateHelperService', () => {
   const mockCertificateReadOnlyOneByQuery = vi.fn();
   const mockInstalledCertificateReadOnlyOneByQuery = vi.fn();
   const mockInstallCertificateAttemptReadOnlyOneByQuery = vi.fn();
+  const mockDeviceModelReadAllByQuerystring = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -172,6 +177,13 @@ describe('InstallCertificateHelperService', () => {
       readOnlyOneByQuery: mockInstallCertificateAttemptReadOnlyOneByQuery,
     } as any;
 
+    // Defaults to an empty result, i.e. AdditionalRootCertificateCheck is unset/disabled,
+    // so existing tests that don't care about M05.FR.10 aren't affected by it.
+    mockDeviceModelReadAllByQuerystring.mockResolvedValue([]);
+    mockDeviceModelRepository = {
+      readAllByQuerystring: mockDeviceModelReadAllByQuerystring,
+    } as any;
+
     mockDeleteCertificateAttemptRepository = {} as any;
     mockCertificateAuthorityService = {} as any;
     mockNetworkConnection = {} as any;
@@ -181,6 +193,7 @@ describe('InstallCertificateHelperService', () => {
       installedCertificateRepository: mockInstalledCertificateRepository,
       installCertificateAttemptRepository: mockInstallCertificateAttemptRepository,
       deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
+      deviceModelRepository: mockDeviceModelRepository,
       certificateAuthorityService: mockCertificateAuthorityService,
       networkConnection: mockNetworkConnection,
       fileStorage: mockFileStorage,
@@ -352,6 +365,134 @@ describe('InstallCertificateHelperService', () => {
       expect(savedAttempt).toBeDefined();
       expect(savedAttempt.certificateId).toBe(99);
       expect(savedAttempt.save).toHaveBeenCalled();
+    });
+
+    describe('AdditionalRootCertificateCheck (M05.FR.10)', () => {
+      const MOCK_CERT_TYPE_CSMS_ROOT = 'CSMSRootCertificate';
+      const previousRootPemBuffer = Buffer.from('previous-root-pem');
+
+      beforeEach(() => {
+        // Common setup for tests that don't short-circuit on an existing pending attempt.
+        mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+        mockExtractCertificateDetails.mockReturnValue({
+          serialNumber: 1,
+          issuerName: 'Test Issuer',
+          organizationName: 'Test Org',
+          commonName: 'localhost',
+          countryName: 'US',
+          validBefore: new Date('2027-02-17'),
+          signatureAlgorithm: 'SHA256withECDSA' as any,
+        });
+        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1 } as any);
+      });
+
+      it('does not consult the device model for non-CSMSRootCertificate types', async () => {
+        await service.prepareToInstallCertificate(
+          tenantId,
+          ocppConnectionName,
+          MOCK_CERTIFICATE,
+          MOCK_CERT_TYPE_V2G as any,
+        );
+
+        expect(mockDeviceModelReadAllByQuerystring).not.toHaveBeenCalled();
+      });
+
+      it('skips the check when AdditionalRootCertificateCheck is not set to true', async () => {
+        mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'false' }]);
+
+        await expect(
+          service.prepareToInstallCertificate(
+            tenantId,
+            ocppConnectionName,
+            MOCK_CERTIFICATE,
+            MOCK_CERT_TYPE_CSMS_ROOT as any,
+          ),
+        ).resolves.not.toThrow();
+
+        expect(mockDeviceModelReadAllByQuerystring).toHaveBeenCalledWith(tenantId, {
+          tenantId,
+          ocppConnectionName,
+          component_name: 'SecurityCtrlr',
+          variable_name: 'AdditionalRootCertificateCheck',
+          type: 'Actual',
+        });
+        expect(mockInstalledCertificateReadOnlyOneByQuery).not.toHaveBeenCalled();
+      });
+
+      it('allows the install when no CSMS root is currently installed (initial install)', async () => {
+        mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
+        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+
+        await expect(
+          service.prepareToInstallCertificate(
+            tenantId,
+            ocppConnectionName,
+            MOCK_CERTIFICATE,
+            MOCK_CERT_TYPE_CSMS_ROOT as any,
+          ),
+        ).resolves.not.toThrow();
+
+        expect(mockIsSignedBy).not.toHaveBeenCalled();
+      });
+
+      it('throws BadRequestError when the installed root record has no certificate file on record', async () => {
+        mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
+        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
+          $get: vi.fn().mockResolvedValue(undefined),
+        } as any);
+
+        await expect(
+          service.prepareToInstallCertificate(
+            tenantId,
+            ocppConnectionName,
+            MOCK_CERTIFICATE,
+            MOCK_CERT_TYPE_CSMS_ROOT as any,
+          ),
+        ).rejects.toThrow(BadRequestError);
+      });
+
+      it('throws BadRequestError when the new root is not signed by the previous root', async () => {
+        mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
+        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
+          $get: vi.fn().mockResolvedValue({ certificateFileId: 'root-cert-path' }),
+        } as any);
+        mockFileStorageGetFile.mockResolvedValue(previousRootPemBuffer);
+        mockIsSignedBy.mockReturnValue(false);
+
+        await expect(
+          service.prepareToInstallCertificate(
+            tenantId,
+            ocppConnectionName,
+            MOCK_CERTIFICATE,
+            MOCK_CERT_TYPE_CSMS_ROOT as any,
+          ),
+        ).rejects.toThrow(BadRequestError);
+
+        expect(mockIsSignedBy).toHaveBeenCalledWith(
+          MOCK_CERTIFICATE,
+          previousRootPemBuffer.toString(),
+        );
+      });
+
+      it('proceeds with the install when the new root is signed by the previous root', async () => {
+        mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
+        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
+          $get: vi.fn().mockResolvedValue({ certificateFileId: 'root-cert-path' }),
+        } as any);
+        mockFileStorageGetFile.mockResolvedValue(previousRootPemBuffer);
+        mockIsSignedBy.mockReturnValue(true);
+
+        await expect(
+          service.prepareToInstallCertificate(
+            tenantId,
+            ocppConnectionName,
+            MOCK_CERTIFICATE,
+            MOCK_CERT_TYPE_CSMS_ROOT as any,
+          ),
+        ).resolves.not.toThrow();
+
+        expect(createdInstallCertificateAttemptInstances).toHaveLength(1);
+      });
     });
   });
 
@@ -812,8 +953,14 @@ describe('InstallCertificateHelperService', () => {
           certRequest,
         );
 
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('SubCA_Key_existing.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem', undefined, {
+          trusted: true,
+        });
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'SubCA_Key_existing.pem',
+          undefined,
+          undefined,
+        );
         expect(mockParseCertificateChainPem).toHaveBeenCalledWith('oldLeafPem+subCACertPem');
         expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
           where: { certificateFileHash: mockHash },
@@ -899,9 +1046,19 @@ describe('InstallCertificateHelperService', () => {
           certRequest,
         );
 
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Certificate_existing.pem');
-        expect(mockFileStorageGetFile).toHaveBeenCalledWith('Root_Key_existing.pem');
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith('chain.pem', undefined, {
+          trusted: true,
+        });
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'Root_Certificate_existing.pem',
+          undefined,
+          undefined,
+        );
+        expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+          'Root_Key_existing.pem',
+          undefined,
+          undefined,
+        );
         expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
           1,
           expect.objectContaining({ signedBy: 10, commonName: 'localhost SubCA' }),
@@ -998,6 +1155,244 @@ describe('InstallCertificateHelperService', () => {
         expect(result.certificates).toHaveLength(2);
         expect(result.filePaths.rootCACertificateFilePath).toBeUndefined();
       });
+
+      describe('signWithPreviousRoot / overridePreviousRoot (M05.FR.10)', () => {
+        it("signs the new root with the server's currently configured root by default", async () => {
+          const websocketConfig: WebsocketServerConfig = {
+            ...baseWebsocketConfig,
+            rootCACertificateFilePath: 'Root_Certificate_existing.pem',
+          };
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+          } as GenerateCertificateChainRequest;
+
+          mockFileStorageGetFile
+            .mockResolvedValueOnce(Buffer.from('previousRootCertPem'))
+            .mockResolvedValueOnce(Buffer.from('previousRootKeyPem'));
+          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+            id: 77,
+            privateKeyFileId: 'Root_Key_existing.pem',
+          });
+          mockGenerateCertificate
+            .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+            .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+            .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+          const result = await service.generateCertificateChain(
+            tenantId,
+            websocketConfig,
+            certRequest,
+          );
+
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Certificate_existing.pem',
+            undefined,
+            { trusted: true },
+          );
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Key_existing.pem',
+            undefined,
+            undefined,
+          );
+          expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ signedBy: 77 }),
+            logger,
+            'previousRootKeyPem',
+            'previousRootCertPem',
+          );
+          expect(result.certificates).toHaveLength(3);
+        });
+
+        it("uses overridePreviousRoot instead of the server's currently configured root", async () => {
+          const websocketConfig: WebsocketServerConfig = {
+            ...baseWebsocketConfig,
+            rootCACertificateFilePath: 'Root_Certificate_current.pem',
+          };
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+            overridePreviousRoot: 'Root_Certificate_other.pem',
+          } as GenerateCertificateChainRequest;
+
+          mockFileStorageGetFile
+            .mockResolvedValueOnce(Buffer.from('otherRootCertPem'))
+            .mockResolvedValueOnce(Buffer.from('otherRootKeyPem'));
+          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+            id: 88,
+            privateKeyFileId: 'Root_Key_other.pem',
+          });
+          mockGenerateCertificate
+            .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+            .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+            .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+          await service.generateCertificateChain(tenantId, websocketConfig, certRequest);
+
+          expect(mockFileStorageGetFile).toHaveBeenCalledWith(
+            'Root_Certificate_other.pem',
+            undefined,
+            undefined,
+          );
+          expect(mockFileStorageGetFile).not.toHaveBeenCalledWith(
+            'Root_Certificate_current.pem',
+            expect.anything(),
+            expect.anything(),
+          );
+        });
+
+        it('self-signs when signWithPreviousRoot is false, even if a previous root exists', async () => {
+          const websocketConfig: WebsocketServerConfig = {
+            ...baseWebsocketConfig,
+            rootCACertificateFilePath: 'Root_Certificate_existing.pem',
+          };
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+            signWithPreviousRoot: false,
+          } as GenerateCertificateChainRequest;
+
+          mockGenerateCertificate
+            .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+            .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+            .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+          await service.generateCertificateChain(tenantId, websocketConfig, certRequest);
+
+          expect(mockFileStorageGetFile).not.toHaveBeenCalled();
+          expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ commonName: 'localhost Root' }),
+            logger,
+          );
+        });
+
+        it('falls back to self-signing when there is no previous root to sign with (bootstrap)', async () => {
+          // baseWebsocketConfig has no rootCACertificateFilePath and certRequest has no
+          // overridePreviousRoot — signWithPreviousRoot defaults to true, but there's
+          // nothing to sign with yet, so this must not throw and must self-sign.
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+          } as GenerateCertificateChainRequest;
+
+          mockGenerateCertificate
+            .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+            .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+            .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+          const result = await service.generateCertificateChain(
+            tenantId,
+            baseWebsocketConfig,
+            certRequest,
+          );
+
+          expect(mockFileStorageGetFile).not.toHaveBeenCalled();
+          expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ commonName: 'localhost Root' }),
+            logger,
+          );
+          expect(result.certificates).toHaveLength(3);
+        });
+
+        it('throws BadRequestError when the previous root is not tracked in the database', async () => {
+          const websocketConfig: WebsocketServerConfig = {
+            ...baseWebsocketConfig,
+            rootCACertificateFilePath: 'Root_Certificate_existing.pem',
+          };
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+          } as GenerateCertificateChainRequest;
+
+          mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('previousRootCertPem'));
+          mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+
+          await expect(
+            service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+          ).rejects.toThrow(BadRequestError);
+        });
+
+        it('throws BadRequestError when the previous root record is missing its private key', async () => {
+          const websocketConfig: WebsocketServerConfig = {
+            ...baseWebsocketConfig,
+            rootCACertificateFilePath: 'Root_Certificate_existing.pem',
+          };
+          const certRequest = {
+            ...baseCertRequest,
+            generationScope: CertificateGenerationScope.FullChain,
+          } as GenerateCertificateChainRequest;
+
+          mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('previousRootCertPem'));
+          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+            id: 77,
+            privateKeyFileId: undefined,
+          });
+
+          await expect(
+            service.generateCertificateChain(tenantId, websocketConfig, certRequest),
+          ).rejects.toThrow(BadRequestError);
+        });
+      });
+    });
+  });
+
+  describe('generateStandaloneFullChain', () => {
+    const baseCertRequest = {
+      organizationName: 'Test Org',
+      commonName: 'localhost',
+    } as GenerateCertificateChainRequest;
+
+    beforeEach(() => {
+      mockFileStorageSaveFile.mockImplementation((key: string) => Promise.resolve(key));
+      (mockCertificateRepository.createOrUpdateCertificate as any).mockImplementation(
+        (_tenantId: number, cert: any) =>
+          Promise.resolve(Object.assign(cert, { id: cert.id ?? 999 })),
+      );
+    });
+
+    it('self-signs the root when there is no override and no prior server to reuse', async () => {
+      mockGenerateCertificate
+        .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+        .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+        .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+      const result = await service.generateStandaloneFullChain(tenantId, baseCertRequest);
+
+      expect(mockFileStorageGetFile).not.toHaveBeenCalled();
+      expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ commonName: 'localhost Root' }),
+        logger,
+      );
+      expect(result.certificates).toHaveLength(3);
+    });
+
+    it('ignores overridePreviousRoot and signWithPreviousRoot, always self-signing', async () => {
+      // A standalone chain isn't tied to any server's previous root, so both fields are
+      // ignored even when explicitly set — it must not attempt to read or sign with them.
+      const certRequest = {
+        ...baseCertRequest,
+        overridePreviousRoot: 'Root_Certificate_other.pem',
+        signWithPreviousRoot: true,
+      } as GenerateCertificateChainRequest;
+
+      mockGenerateCertificate
+        .mockReturnValueOnce(['newRootCertPem', 'newRootKeyPem'])
+        .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
+        .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
+
+      const result = await service.generateStandaloneFullChain(tenantId, certRequest);
+
+      expect(mockFileStorageGetFile).not.toHaveBeenCalled();
+      expect(mockGenerateCertificate).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ commonName: 'localhost Root' }),
+        logger,
+      );
+      expect(result.certificates).toHaveLength(3);
     });
   });
 
