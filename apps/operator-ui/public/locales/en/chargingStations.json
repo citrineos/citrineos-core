@@ -437,7 +437,8 @@
       "addConfiguration": "Add Configuration",
       "editConfiguration": "Edit Configuration",
       "filterByType": "Filter by type",
-      "searchTypes": "Search types"
+      "searchTypes": "Search types",
+      "mutability": "Mutability"
     },
     "connectionModal": {
       "welcomeTitle": "Welcome to CitrineOS Operator UI",
