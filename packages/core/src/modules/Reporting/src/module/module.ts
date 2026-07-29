@@ -120,19 +120,10 @@ export class ReportingModule extends AbstractModule {
 
     // TODO: LogStatusNotification is usually triggered. Ideally, it should be sent to the callbackUrl from the message api that sent the trigger message
 
-    // Validate requestId requirement
-    // requestId is mandatory unless message was triggered by TriggerMessageRequest AND no log upload ongoing
-    if (!message.payload.requestId) {
-      await this.sendCallErrorWithMessage(
-        message,
-        new OcppError(
-          message.context.correlationId,
-          ErrorCode.OccurrenceConstraintViolation,
-          'RequestId is required.',
-        ),
-      );
-      return;
-    }
+    // requestId is optional (see the request schema): it is absent when the message was
+    // triggered by a TriggerMessageRequest and there is no log upload ongoing. Acknowledge
+    // the notification regardless of whether requestId is present.
+
     // Create response
     const response: OCPP2_response_types.LogStatusNotificationResponse = {};
 

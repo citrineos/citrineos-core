@@ -40,7 +40,9 @@ export class TlsCredentialManager {
       ...(this.config.rootCACertificateFilePath ? [this.config.rootCACertificateFilePath] : []),
     ];
 
-    const existResults = await Promise.all(requiredPaths.map((p) => this._fileStorage.exists(p)));
+    const existResults = await Promise.all(
+      requiredPaths.map((p) => this._fileStorage.exists(p, undefined, { trusted: true })),
+    );
     const allExistInFileStorage = existResults.every(Boolean);
 
     if (allExistInFileStorage) {
@@ -55,11 +57,17 @@ export class TlsCredentialManager {
       ? this._fileStorage
       : new LocalStorage('', '');
 
-    const keyStr = await storage.getFile(this.config.tlsKeyFilePath as string);
+    const keyStr = await storage.getFile(this.config.tlsKeyFilePath as string, undefined, {
+      trusted: true,
+    });
     if (!keyStr) {
       throw new Error(`TLS key file not found: ${this.config.tlsKeyFilePath}`);
     }
-    const certStr = await storage.getFile(this.config.tlsCertificateChainFilePath as string);
+    const certStr = await storage.getFile(
+      this.config.tlsCertificateChainFilePath as string,
+      undefined,
+      { trusted: true },
+    );
     if (!certStr) {
       throw new Error(
         `TLS certificate chain file not found: ${this.config.tlsCertificateChainFilePath}`,
@@ -70,7 +78,9 @@ export class TlsCredentialManager {
       cert: Buffer.from(certStr),
     };
     if (this.config.rootCACertificateFilePath) {
-      const caStr = await storage.getFile(this.config.rootCACertificateFilePath);
+      const caStr = await storage.getFile(this.config.rootCACertificateFilePath, undefined, {
+        trusted: true,
+      });
       if (caStr) {
         creds.ca = Buffer.from(caStr);
       }

@@ -491,6 +491,11 @@ export class SmartChargingModule extends AbstractModule {
       tenantId,
       ocppConnectionName,
     );
+    // startSchedule SHALL be present when chargingProfileKind is Absolute (OCPP 2.0.1 K01.FR.41);
+    // compliant charging stations reject the profile otherwise.
+    if (!chargingSchedule.startSchedule) {
+      chargingSchedule.startSchedule = new Date().toISOString();
+    }
 
     const chargingProfile = {
       id: await this._chargingProfileRepository.getNextChargingProfileId(
