@@ -28,7 +28,7 @@ import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useFieldArray } from 'react-hook-form';
+import { type Control, useFieldArray, useWatch } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
@@ -62,14 +62,108 @@ type SetVariablesFormData = {
 
 const attributeTypes = Object.keys(OCPP2_0_1.AttributeEnumType);
 
+const SetVariableRow = ({
+  control,
+  index,
+  isEdit,
+  componentOptions,
+  componentOnSearch,
+  componentLoading,
+  onRemove,
+  translate,
+}: {
+  control: Control<SetVariablesFormData>;
+  index: number;
+  isEdit: boolean;
+  componentOptions: any[];
+  componentOnSearch: (value: string) => void;
+  componentLoading: boolean;
+  onRemove: () => void;
+  translate: ReturnType<typeof useTranslate>;
+}) => {
+  const componentId = useWatch({ control, name: `setVariableData.${index}.componentId` });
+  const numericComponentId = typeof componentId === 'number' && componentId > 0 ? componentId : 0;
+
+  const {
+    options: variableOptions,
+    onSearch: variableOnSearch,
+    query: variableQuery,
+  } = useSelect({
+    resource: ResourceType.VARIABLES,
+    optionLabel: 'name',
+    optionValue: 'name',
+    meta: {
+      gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
+      gqlVariables: numericComponentId
+        ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: 'ReadOnly' }
+        : undefined,
+    },
+    pagination: { mode: 'off' },
+    queryOptions: { enabled: numericComponentId > 0 },
+  });
+
+  return (
+    <div className={nestedFormRowFlex}>
+      <ComboboxFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.componentNumber', {
+          number: index + 1,
+        })}
+        name={`setVariableData.${index}.componentId`}
+        options={componentOptions}
+        onSearch={componentOnSearch}
+        placeholder={translate('ChargingStations.getVariablesModal.selectComponent')}
+        searchPlaceholder={translate('ChargingStations.getVariablesModal.searchComponents')}
+        isLoading={componentLoading}
+        allowManualEntry
+      />
+
+      <ComboboxFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.variableNumber', {
+          number: index + 1,
+        })}
+        name={`setVariableData.${index}.variableId`}
+        options={variableOptions}
+        onSearch={variableOnSearch}
+        placeholder={translate('ChargingStations.getVariablesModal.selectVariable')}
+        searchPlaceholder={translate('ChargingStations.getVariablesModal.searchVariables')}
+        isLoading={variableQuery.isLoading}
+        required
+        disabled={!componentId || componentId === 0}
+        allowManualEntry
+      />
+
+      <FormField
+        control={control}
+        label={translate('ChargingStations.setVariablesModal.valueNumber', {
+          number: index + 1,
+        })}
+        name={`setVariableData.${index}.value`}
+      >
+        <Input placeholder={translate('ChargingStations.setVariablesModal.valuePlaceholder')} />
+      </FormField>
+
+      <SelectFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.attributeTypeNumber', {
+          number: index + 1,
+        })}
+        name={`setVariableData.${index}.attributeType`}
+        options={attributeTypes}
+        placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
+      />
+
+      {!isEdit && <RemoveArrayItemButton onRemoveAction={onRemove} />}
+    </div>
+  );
+};
+
 export const SetVariablesModal = ({ station, defaultSetVariable }: SetVariablesModalProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
   const isEdit = !!defaultSetVariable;
   const [loading, setLoading] = useState(false);
-  const [variableOptionsMap, setVariableOptionsMap] = useState<
-    Record<number, { label: string; value: number }[]>
-  >({});
 
   const tenantId = useTenantId();
 
@@ -168,48 +262,20 @@ export const SetVariablesModal = ({ station, defaultSetVariable }: SetVariablesM
     pagination: { mode: 'off' },
   });
 
-  const variableSelects = fields.map((field, index) => {
-    const componentId = form.watch(`setVariableData.${index}.componentId`);
-    const numericComponentId = typeof componentId === 'number' && componentId > 0 ? componentId : 0;
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { options, onSearch, query } = useSelect({
-      resource: ResourceType.VARIABLES,
-      optionLabel: 'name',
-      optionValue: 'id',
-      meta: {
-        gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
-        gqlVariables: numericComponentId
-          ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: 'ReadOnly' }
-          : undefined,
-      },
-      pagination: { mode: 'off' },
-      queryOptions: { enabled: numericComponentId > 0 },
-    });
-
-    if (numericComponentId > 0 && options.length > 0 && variableOptionsMap[index] !== options) {
-      setVariableOptionsMap((prev) => ({ ...prev, [index]: options }));
-    }
-
-    return { options, onSearch, isLoading: query.isLoading };
-  });
-
   const onFinish = async (values: SetVariablesFormData) => {
     if (!parsedStation?.ocppConnectionName) {
       console.error('Error: Cannot submit Set Variables request because station ID is missing.');
       return;
     }
 
-    const setVariableData = values.setVariableData.map((item, index) => {
+    const setVariableData = values.setVariableData.map((item) => {
       const componentName =
         typeof item.componentId === 'string'
           ? item.componentId
           : (componentOptions.find((c) => c.value === item.componentId) as any)?.label || '';
 
-      const variableName =
-        typeof item.variableId === 'string'
-          ? item.variableId
-          : variableOptionsMap[index]?.find((v) => v.value === item.variableId)?.label || '';
+      // The variable combobox stores the name (optionValue: 'name'), so use it directly.
+      const variableName = typeof item.variableId === 'string' ? item.variableId : '';
 
       const componentInstance =
         defaultSetVariable?.componentName === componentName
@@ -275,76 +341,19 @@ export const SetVariablesModal = ({ station, defaultSetVariable }: SetVariablesM
         </div>
       )}
       <div className="flex flex-col gap-6 w-full">
-        {fields.map((field, index) => {
-          const componentId = form.watch(`setVariableData.${index}.componentId`);
-          const {
-            options: variableOptions,
-            onSearch: variableOnSearch,
-            isLoading: variableLoading,
-          } = variableSelects[index] || {
-            options: [],
-            onSearch: () => {},
-            isLoading: false,
-          };
-
-          return (
-            <div key={field.id} className={nestedFormRowFlex}>
-              <ComboboxFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.componentNumber', {
-                  number: index + 1,
-                })}
-                name={`setVariableData.${index}.componentId`}
-                options={componentOptions}
-                onSearch={componentOnSearch}
-                placeholder={translate('ChargingStations.getVariablesModal.selectComponent')}
-                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchComponents')}
-                isLoading={componentQuery.isLoading}
-                allowManualEntry
-              />
-
-              <ComboboxFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.variableNumber', {
-                  number: index + 1,
-                })}
-                name={`setVariableData.${index}.variableId`}
-                options={variableOptions}
-                onSearch={variableOnSearch}
-                placeholder={translate('ChargingStations.getVariablesModal.selectVariable')}
-                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchVariables')}
-                isLoading={variableLoading}
-                required
-                disabled={!componentId || componentId === 0}
-                allowManualEntry
-              />
-
-              <FormField
-                control={form.control}
-                label={translate('ChargingStations.setVariablesModal.valueNumber', {
-                  number: index + 1,
-                })}
-                name={`setVariableData.${index}.value`}
-              >
-                <Input
-                  placeholder={translate('ChargingStations.setVariablesModal.valuePlaceholder')}
-                />
-              </FormField>
-
-              <SelectFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.attributeTypeNumber', {
-                  number: index + 1,
-                })}
-                name={`setVariableData.${index}.attributeType`}
-                options={attributeTypes}
-                placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
-              />
-
-              {!isEdit && <RemoveArrayItemButton onRemoveAction={() => remove(index)} />}
-            </div>
-          );
-        })}
+        {fields.map((field, index) => (
+          <SetVariableRow
+            key={field.id}
+            control={form.control}
+            index={index}
+            isEdit={isEdit}
+            componentOptions={componentOptions}
+            componentOnSearch={componentOnSearch}
+            componentLoading={componentQuery.isLoading}
+            onRemove={() => remove(index)}
+            translate={translate}
+          />
+        ))}
       </div>
     </Form>
   );
