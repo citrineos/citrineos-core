@@ -2,14 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  BootstrapConfig,
-  ChargingRateUnitEnumType,
-  ChargingScheduleDto,
-} from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ChargingRateUnitEnumType, ChargingScheduleDto } from '@citrineos/base';
 import {
   type ChargingScheduleEntity,
   chargingScheduleTable,
@@ -48,15 +41,6 @@ export class DrizzleChargingScheduleRepository extends DrizzleRepository<
   typeof chargingScheduleTable,
   ChargingScheduleDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof chargingScheduleTable {
     return this.useTenantSchema ? tenantChargingScheduleTable(tenantId) : chargingScheduleTable;
   }

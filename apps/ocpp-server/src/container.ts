@@ -14,7 +14,7 @@ import { ConfigStoreFactory, OCPPValidator } from '@citrineos/base';
 import { Logger, type ILogObj } from 'tslog';
 
 // -- DB --
-import { DefaultSequelizeInstance } from '@citrineos/core';
+import { DefaultDrizzleInstance, DefaultSequelizeInstance } from '@citrineos/core';
 
 // -- RabbitMQ --
 import {
@@ -27,7 +27,6 @@ import {
 
 // -- Repositories --
 import {
-  Component,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -40,6 +39,7 @@ import {
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
+  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -48,7 +48,6 @@ import {
   SequelizeLocationRepository,
   SequelizeMessageInfoRepository,
   SequelizeOCPPMessageRepository,
-  SequelizeRepository,
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
   SequelizeServerNetworkProfileRepository,
@@ -265,8 +264,9 @@ function registerMessaging(container: AwilixContainer): void {
 
 // ============================================================
 // Repositories — all singletons, registered from @citrineos/core named exports.
-// Each class uses a proxy constructor
-// Drizzle security event overrides securityEventRepository.
+// Every repository class takes a single destructured dependency object, which is
+// what PROXY injection hands it, so all of them register with asClass.
+// The Drizzle repositories override their Sequelize counterparts when enabled.
 // ============================================================
 function registerRepositories(container: AwilixContainer): void {
   container.register({
@@ -302,26 +302,21 @@ function registerRepositories(container: AwilixContainer): void {
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
-    componentRepository: asFunction(
-      ({ config, logger }) =>
-        new SequelizeRepository<Component>({ config, namespace: Component.MODEL_NAME, logger }),
-    ).singleton(),
+    componentRepository: asClass(SequelizeComponentRepository).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
     container.register({
-      securityEventRepository: asFunction(
-        ({ config, logger }) => new DrizzleSecurityEventRepository(config, logger),
+      drizzleInstance: asFunction(({ config, logger }) =>
+        DefaultDrizzleInstance.getInstance(config, logger),
       ).singleton(),
-      subscriptionRepository: asFunction(
-        ({ config, logger }) => new DrizzleSubscriptionRepository(config, logger),
-      ).singleton(),
-      serverNetworkProfileRepository: asFunction(
-        ({ config, logger }) => new DrizzleServerNetworkProfileRepository(config, logger),
-      ).singleton(),
-      tenantRepository: asFunction(
-        ({ config, logger }) => new DrizzleTenantRepository(config, logger),
-      ).singleton(),
+
+      useTenantSchema: asValue(false),
+
+      securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
+      serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
+      tenantRepository: asClass(DrizzleTenantRepository).singleton(),
     });
   }
 }

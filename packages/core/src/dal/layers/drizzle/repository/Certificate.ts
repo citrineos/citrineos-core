@@ -2,15 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  BootstrapConfig,
-  CertificateDto,
-  CountryName,
-  SignatureAlgorithm,
-} from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { CertificateDto, CountryName, SignatureAlgorithm } from '@citrineos/base';
 import {
   type CertificateEntity,
   certificateTable,
@@ -51,15 +43,6 @@ export class DrizzleCertificateRepository extends DrizzleRepository<
   typeof certificateTable,
   CertificateDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof certificateTable {
     return this.useTenantSchema ? tenantCertificateTable(tenantId) : certificateTable;
   }

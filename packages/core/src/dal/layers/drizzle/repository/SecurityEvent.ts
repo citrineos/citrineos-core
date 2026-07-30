@@ -3,12 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ISecurityEventRepository } from '@/dal/index.js';
-import type { BootstrapConfig, SecurityEventDto } from '@citrineos/base';
+import type { SecurityEventDto } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/base';
 import { and, between, eq, gte, lte } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import {
   type SecurityEventEntity,
   securityEventTable,
@@ -45,15 +42,6 @@ export class DrizzleSecurityEventRepository
   extends DrizzleRepository<typeof securityEventTable, SecurityEventDto>
   implements ISecurityEventRepository
 {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof securityEventTable {
     return this.useTenantSchema ? tenantSecurityEventTable(tenantId) : securityEventTable;
   }

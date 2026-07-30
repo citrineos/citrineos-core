@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ComponentDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ComponentDto } from '@citrineos/base';
 import { type ComponentEntity, componentTable, tenantComponentTable } from '../schema/Component.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
@@ -34,15 +31,6 @@ export class DrizzleComponentRepository extends DrizzleRepository<
   typeof componentTable,
   ComponentDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof componentTable {
     return this.useTenantSchema ? tenantComponentTable(tenantId) : componentTable;
   }

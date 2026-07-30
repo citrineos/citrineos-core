@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, TariffDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { TariffDto } from '@citrineos/base';
 import { type TariffEntity, tariffTable, tenantTariffTable } from '../schema/Tariff.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
@@ -50,15 +47,6 @@ export function toTariffDto(entity: TariffEntity): TariffDto {
 }
 
 export class DrizzleTariffRepository extends DrizzleRepository<typeof tariffTable, TariffDto> {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof tariffTable {
     return this.useTenantSchema ? tenantTariffTable(tenantId) : tariffTable;
   }

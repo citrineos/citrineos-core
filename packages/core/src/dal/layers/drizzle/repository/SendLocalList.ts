@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, SendLocalListDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { SendLocalListDto } from '@citrineos/base';
 import {
   type SendLocalListEntity,
   sendLocalListTable,
@@ -39,15 +36,6 @@ export class DrizzleSendLocalListRepository extends DrizzleRepository<
   typeof sendLocalListTable,
   SendLocalListDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof sendLocalListTable {
     return this.useTenantSchema ? tenantSendLocalListTable(tenantId) : sendLocalListTable;
   }

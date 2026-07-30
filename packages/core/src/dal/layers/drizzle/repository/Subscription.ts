@@ -3,11 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ISubscriptionRepository } from '@/dal/index.js';
-import type { BootstrapConfig, SubscriptionDto } from '@citrineos/base';
+import type { SubscriptionDto } from '@citrineos/base';
 import { and, eq } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import {
   type SubscriptionEntity,
   subscriptionTable,
@@ -42,15 +39,6 @@ export class DrizzleSubscriptionRepository
   extends DrizzleRepository<typeof subscriptionTable, SubscriptionDto>
   implements ISubscriptionRepository
 {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof subscriptionTable {
     return this.useTenantSchema ? tenantSubscriptionTable(tenantId) : subscriptionTable;
   }
