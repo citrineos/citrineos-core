@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { asValue, type AwilixContainer } from 'awilix';
-import { buildContainer } from './container.js';
 import type {
   AbstractModule,
   BootstrapConfig,
@@ -42,7 +41,6 @@ import {
 } from '@citrineos/core';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import type { AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
 import type {

@@ -9,7 +9,6 @@ import {
   type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  Namespace,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -70,7 +69,6 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
         },
         limit: 1,
       },
-      Namespace.OCPPMessage,
     );
 
     if (!previousRequest || previousRequest.length === 0) {
