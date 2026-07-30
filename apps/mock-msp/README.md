@@ -291,11 +291,69 @@ OCPI-authenticated (optional `x-mock-control-secret` header if
 | POST | `/_mock/commands/:type`, `/_mock/emit/command` | body = `StartSession`/`StopSession`/… → `{ sync, responseUrl }`. Empty `{}` payload is back-filled with a **schema-valid per-type default** (see §Dashboard). |
 | POST | `/_mock/emit/token` | push a default RFID token to Citrine (RECEIVER `PUT`) |
 | POST | `/_mock/pull/:module` | GET Citrine's CPO SENDER endpoints (`locations`/`sessions`/`cdrs`/`tariffs`) |
+| GET | `/_mock/discover/evse` | pull Citrine's locations and return the first real `{ location_id, evse_uid, connector_id }` (what a real eMSP does before commanding). See §Live charging. |
+| POST | `/_mock/charge/start` | `{ location_id?, evse_uid?, connector_id?, token_uid?, timeoutMs? }` → `START_SESSION`, then **await** the async `CommandResult` + the pushed `Session`. Defaults target the seeded EVerest station. |
+| POST | `/_mock/charge/stop` | `{ session_id?, timeoutMs? }` → `STOP_SESSION` (session_id defaults to the last pushed session), then await the `CommandResult` + the pushed `CDR`. |
+| POST | `/_mock/everest/plug`, `/_mock/everest/unplug` | drive the EVerest car simulator over MQTT (`docker exec … mosquitto_pub`). Needs docker access → run the mock **natively**, or use `scripts/everest-plug.sh`. |
 | POST | `/_mock/provoke/:what` | **make Citrine push back**: `location-add` (Hasura insert → Citrine `PUT`, reproduces the coordinates bug) / `location-nudge` (Hasura update → Citrine `PATCH`). See §Dashboard. |
 | GET | `/_mock/coverage` | module × direction matrix (`{ modules:[{module, inbound:{count,lastOk}, outbound:{count,lastOk}}], generatedAt }`) aggregated from the recorder — no new state. |
 | POST | `/_mock/authorize` | `{ default, byUid }` set live authorize behavior |
 | GET / POST / DELETE | `/_mock/faults[/:id]`, POST `/_mock/fault` | CRUD `FaultRule` (`/fault` arms one rule — used by the dashboard builder) |
 | POST | `/_mock/scenarios/:id/evaluate` | run a scenario's `expect[]` oracle → pass/fail |
+
+---
+
+## Live charging with EVerest
+
+Without a charger on the CPO side, an OCPI command has nothing to act on:
+CitrineOS's `handleStartSession` rejects it (`"Unknown charging station"` /
+`"Charging station is offline"`) **before** any OCPP message. EVerest — the
+Linux Foundation SIL simulator already vendored at `apps/ocpp-server/everest/` —
+is that missing charger. With it connected, the mock's `START_SESSION` reaches a
+live station and completes the full round-trip: sync **ACCEPTED** → async
+**CommandResult** → a real **Session** push → (on stop) a real **CDR** push.
+
+**Why it just works: the seed already aligns.** `apps/ocpi-server/seeders/20250822120003-basic-objects.ts`
+seeds Location `1` / Station `cp001` / EVSE `cp001::1` / Connector `1` under the
+`US/TST` partner, plus an Accepted `ISO14443` authorization `DEADBEEF`. That is
+exactly the station EVerest registers as at `ws://host.docker.internal:8081/cp001`.
+So the command defaults (`MOCK_MSP_DEFAULT_*`, see below) point straight at it —
+no extra seeding, no mapping layer.
+
+```bash
+# 1. Main OCPI stack (server + OCPI on :8085 + mock eMSP on :8083)
+pnpm citrine --ocpi --local
+# 2. Mock, natively (needed for the car-sim; container mode can't reach docker)
+bash apps/mock-msp/scripts/demo-up.sh
+# 3. EVerest as the charger, patched to OCPP 2.0.1, wait until cp001 is online
+bash apps/mock-msp/scripts/everest-up.sh
+```
+
+Then, on the dashboard's **Charging session (live · EVerest)** card:
+**① Discover EVSE → ② Plug in car → ③ Start charging → ④ Stop charging → ⑤ Unplug**,
+or via the control API:
+
+```bash
+curl -s localhost:8083/_mock/discover/evse            # {location_id:"1", evse_uid:"cp001::1", ...}
+curl -sX POST localhost:8083/_mock/everest/plug       # car → connector 1 (native mock only)
+curl -sX POST localhost:8083/_mock/charge/start       # sync ACCEPTED → async CommandResult → Session
+curl -sX POST localhost:8083/_mock/charge/stop        # async CommandResult → CDR
+curl -sX POST localhost:8083/_mock/everest/unplug
+```
+
+**Two gotchas** (both handled by `scripts/everest-up.sh`, ported from the
+operator-ui e2e fixture):
+
+- **EVerest defaults to OCPP 2.1**, whose profile CitrineOS (OCPP 2.0.1) won't
+  register. `everest-up.sh` patches the device-model DB to `OCPP20` and restarts
+  the manager.
+- **The token must be authorizable.** An `ISO14443` idToken must be 8/14 hex
+  chars, so the old `MOCK-RFID-001` fails Citrine's Authorize. The default is now
+  `DEADBEEF` (the seeded, Accepted token; OCPI `RFID` → OCPP `ISO14443`).
+
+Override any identity default via env: `MOCK_MSP_DEFAULT_LOCATION_ID`,
+`MOCK_MSP_DEFAULT_EVSE_UID`, `MOCK_MSP_DEFAULT_CONNECTOR_ID`,
+`MOCK_MSP_DEFAULT_TOKEN_UID`, `MOCK_MSP_DEFAULT_TOKEN_TYPE`.
 
 ---
 
@@ -368,12 +426,13 @@ recent exchange for that module+direction (`null` when never exercised). A
 `locations`/`sessions`/`cdrs`/`tariffs` so the whole Citrine-SENDER side lights up
 at once.
 
-> **"n/a locally" caveat.** Flows that need a live charging transaction — the
-> real-time token **authorize** (Citrine calls us only when a driver taps a card
-> at a real charger) and the async **command result** (Citrine posts back to our
-> `response_url` only for a real station) — cannot be provoked from this stack.
-> Those cells are shown **`n/a locally`** rather than faked. The easy ~90% is
-> covered; the honest 10% is labelled, not simulated.
+> **The last two flows — now live via EVerest.** The real-time token
+> **authorize** (Citrine asks us to approve a card) and the async **command
+> result** (Citrine posts the outcome back to our `response_url`) both need a real
+> charging transaction. Start the simulator (`scripts/everest-up.sh`) and run the
+> **Charging session** panel and both fire for real — verified: an inbound
+> `tokens.authorize` and an inbound `commands.result` land in the trace. Without
+> EVerest running they simply stay grey (never exercised) rather than faked.
 
 ### 4. Send-command default payload (polish)
 
@@ -381,8 +440,8 @@ The **Send command** control seeds a **schema-valid default** for the selected
 type (e.g. a full `TokenDTO` + `location_id` for `START_SESSION`), merged
 *under* any JSON you type so your overrides win. An empty `{}` now produces a
 well-formed command Citrine actually parses (a proper sync `ACCEPTED`/`REJECTED`
-`CommandResponse`) instead of a `400`. The **async** command *result* still needs
-a live station, so that leg stays `n/a locally`.
+`CommandResponse`) instead of a `400`. With EVerest connected the **async**
+command *result* now completes too — see §Live charging with EVerest.
 
 ---
 

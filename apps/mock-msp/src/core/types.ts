@@ -36,6 +36,11 @@ export interface MockConfig {
   host: string; // '0.0.0.0'
   publicBaseUrl: string; // 'http://host.docker.internal:8083/ocpi' (advertised)
   citrineOcpiBaseUrl: string; // 'http://localhost:8085/ocpi'
+  // Citrine serves the OCPI version list at a TENANT-SCOPED path
+  // ('/ocpi/versions/{tenantId}'), not the bare '/ocpi/versions' — the spec hands
+  // this URL over during the handshake rather than fixing it. Optional: when unset
+  // the client falls back to `${citrineOcpiBaseUrl}/versions`.
+  citrineVersionsUrl?: string; // 'http://localhost:8085/ocpi/versions/1'
   citrineHasuraUrl: string; // 'http://localhost:8090/v1/graphql' (provoke: Hasura -> Citrine push)
   countryCode: string; // 'US'
   partyId: string; // 'TST'
@@ -47,6 +52,18 @@ export interface MockConfig {
   autoRegister: boolean;
   logLevel: string;
   controlSecret?: string;
+  // Command-identity defaults for START_SESSION / UNLOCK_CONNECTOR / RESERVE_NOW so an
+  // OCPI command maps to the seeded station EVerest registers as (cp001). Overridable
+  // via MOCK_MSP_DEFAULT_*; GET /_mock/discover/evse can also read them live from a
+  // locations pull. Optional so test fixtures may omit them (handlers fall back to the
+  // same literals). evse_uid must be `${ocppConnectionName}::${evseId}` for the CPO's
+  // EXTRACT_STATION_ID split; the token must be authorizable by Citrine (DEADBEEF is
+  // the seeded, Accepted ISO14443 authorization; RFID maps to OCPP ISO14443).
+  defaultLocationId?: string; // '1'
+  defaultEvseUid?: string; // 'cp001::1'
+  defaultConnectorId?: string; // '1'
+  defaultTokenUid?: string; // 'DEADBEEF'
+  defaultTokenType?: string; // 'RFID'
 }
 
 // ---- Registration / domain state ------------------------------------------

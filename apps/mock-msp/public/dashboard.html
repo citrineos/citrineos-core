@@ -121,7 +121,11 @@ SPDX-License-Identifier: Apache-2.0
       <div class="btnrow">
         <button class="primary" onclick="act('/register',{},'register')">Register</button>
         <button onclick="act('/reregister',{},'re-register')">Re-register</button>
-        <button class="danger" onclick="act('/unregister',{},'unregister')">Unregister</button>
+        <!-- Unregister deliberately NOT exposed in the UI: it sends DELETE
+             /credentials, which makes Citrine delete its TenantPartner row (and
+             the Authorizations hanging off it). Everything then answers 401/2002
+             and Register CANNOT undo it — recovery means re-seeding Citrine's DB.
+             The POST /_mock/unregister route still exists for scripted teardown. -->
       </div>
       <div class="hint">POST /_mock/register — runs the credentials + version handshake against Citrine.</div>
     </section>
@@ -142,6 +146,22 @@ SPDX-License-Identifier: Apache-2.0
       <textarea id="cmdPayload"></textarea>
       <button class="primary" onclick="sendCommand()">▶ Send command</button>
       <div class="hint">The actor mints the response_url and awaits Citrine's async CommandResult.</div>
+    </section>
+
+    <section class="group">
+      <h2>Charging session (live · EVerest)</h2>
+      <div class="hint">Runs a real OCPI command against the simulated charger <b>cp001</b>. Needs the stack up with EVerest online (<code>scripts/everest-up.sh</code>); the car-sim steps need the mock running natively (docker access).</div>
+      <div class="btnrow">
+        <button onclick="chDiscover()">① Discover EVSE</button>
+        <button onclick="chPlug()">② Plug in car</button>
+      </div>
+      <div class="btnrow">
+        <button class="primary" onclick="chStart()">③ Start charging</button>
+        <button onclick="chStop()">④ Stop charging</button>
+        <button class="danger" onclick="chUnplug()">⑤ Unplug</button>
+      </div>
+      <div class="hint">Start awaits the sync ACCEPTED → async CommandResult → the pushed Session; Stop awaits the CommandResult → CDR.</div>
+      <div id="chOut" style="margin-top:8px;font-size:11px;max-height:280px;overflow:auto"><span class="empty">No run yet.</span></div>
     </section>
 
     <section class="group">
@@ -222,7 +242,7 @@ SPDX-License-Identifier: Apache-2.0
         <strong>Coverage matrix</strong>
         <span class="hint" style="margin:0">module × direction · green = seen &amp; ok · red = last failed · grey = not exercised</span>
         <span class="spacer"></span>
-        <span class="pill m" title="flows needing a live charging session cannot run locally">real-time authorize &amp; async command-result: n/a locally</span>
+        <span class="pill m" title="Both flows need a live charging session — start EVerest (scripts/everest-up.sh) and run the Charging session panel to exercise them">real-time authorize &amp; async command-result: live via EVerest</span>
       </div>
       <div id="covGrid" class="covgrid"><div class="empty" style="padding:10px">loading coverage…</div></div>
     </div>
@@ -304,21 +324,25 @@ async function act(path, body, name, method) {
 // The backend also injects a schema-valid default under the caller payload,
 // so an empty body still works; these seed the textarea so the user sees a
 // realistic, editable body per command type.
+// Identity matches the seeded station EVerest registers as: location 1, evse
+// cp001::1 (${ocppConnectionName}::${evseId}), connector 1, token DEADBEEF (the
+// seeded Accepted ISO14443 authorization). These reach a real station instead of
+// REJECTing on "Unknown charging station".
 const CMD_DEFAULTS = {
   START_SESSION: {
-    token: { country_code:"US", party_id:"TST", uid:"MOCK-RFID-001", type:"RFID",
+    token: { country_code:"US", party_id:"TST", uid:"DEADBEEF", type:"RFID",
       contract_id:"MOCKCONTRACT-001", issuer:"MockMSP", valid:true, whitelist:"ALWAYS" },
-    location_id:"LOC1", evse_uid:"EVSE1", connector_id:"1"
+    location_id:"1", evse_uid:"cp001::1", connector_id:"1"
   },
   STOP_SESSION:       { session_id:"MOCK-SESSION-001" },
   RESERVE_NOW: {
-    token: { country_code:"US", party_id:"TST", uid:"MOCK-RFID-001", type:"RFID",
+    token: { country_code:"US", party_id:"TST", uid:"DEADBEEF", type:"RFID",
       contract_id:"MOCKCONTRACT-001", issuer:"MockMSP", valid:true, whitelist:"ALWAYS" },
-    location_id:"LOC1", reservation_id:"MOCK-RES-001",
+    location_id:"1", reservation_id:"MOCK-RES-001",
     expiry_date:"2026-12-31T23:59:59Z"
   },
   CANCEL_RESERVATION: { reservation_id:"MOCK-RES-001" },
-  UNLOCK_CONNECTOR:   { location_id:"LOC1", evse_uid:"EVSE1", connector_id:"1" }
+  UNLOCK_CONNECTOR:   { location_id:"1", evse_uid:"cp001::1", connector_id:"1" }
 };
 function fillCmdPayload() {
   const d = CMD_DEFAULTS[$("cmdType").value] || {};
@@ -347,6 +371,63 @@ async function pullAll() {
     await act("/pull/" + m, {}, "pull " + m);
   }
   refresh();
+}
+
+// ---- live charging session (EVerest) ------------------------------------
+// Discover -> Plug -> Start -> Stop -> Unplug. Start/Stop drive real OCPI
+// commands and surface Citrine's async CommandResult + the pushed Session/CDR.
+let CH = { location_id:null, evse_uid:null, connector_id:null, session_id:null };
+function chRender(title, obj) {
+  $("chOut").innerHTML =
+    "<div style='font-weight:600;margin-bottom:4px'>" + esc(title) + "</div>" +
+    "<pre style='white-space:pre-wrap;word-break:break-word;margin:0;background:rgba(127,127,127,.10);padding:8px;border-radius:6px'>" +
+    esc(JSON.stringify(obj, null, 2)) + "</pre>";
+}
+// A command can return HTTP 200 yet be domain-level REJECTED/NOT_SUPPORTED/FAILED,
+// so success must be judged on the body, not just the HTTP status.
+function chResultOk(r) {
+  if (!r || !r.sync || r.sync.result !== "ACCEPTED") return false;
+  if (r.commandResult && r.commandResult.result && r.commandResult.result !== "ACCEPTED") return false;
+  return true;
+}
+async function chCall(path, body, title, method, okFn) {
+  method = method || "POST";
+  const opts = { method };
+  if (method !== "GET") opts.body = JSON.stringify(body || {});
+  try {
+    const res = await api(path, opts);
+    chRender(title, res);
+    const cr = res && res.commandResult && res.commandResult.result;
+    const sy = res && res.sync && res.sync.result;
+    const detail = cr ? " → " + cr : (sy ? " → " + sy : "");
+    const ok = okFn ? !!okFn(res) : true;
+    toast(title + detail + (ok ? " ✓" : " ✗"), ok);
+    refresh();
+    return res;
+  } catch (e) {
+    chRender(title + " — failed", e.body || { error: e.message });
+    toast(title + " failed", false);
+    return null;
+  }
+}
+async function chDiscover() {
+  const r = await chCall("/discover/evse", null, "Discover EVSE", "GET");
+  if (r && r.discovered) { CH.location_id = r.location_id; CH.evse_uid = r.evse_uid; CH.connector_id = r.connector_id; }
+}
+async function chPlug()   { await chCall("/everest/plug", {}, "Plug in car"); }
+async function chUnplug() { await chCall("/everest/unplug", {}, "Unplug"); CH.session_id = null; }
+async function chStart() {
+  const body = {};
+  if (CH.location_id)  body.location_id  = CH.location_id;
+  if (CH.evse_uid)     body.evse_uid     = CH.evse_uid;
+  if (CH.connector_id) body.connector_id = CH.connector_id;
+  const r = await chCall("/charge/start", body, "Start charging", "POST", chResultOk);
+  if (r && r.session && r.session.id) CH.session_id = r.session.id;
+}
+async function chStop() {
+  const body = {};
+  if (CH.session_id) body.session_id = CH.session_id;
+  await chCall("/charge/stop", body, "Stop charging", "POST", chResultOk);
 }
 
 // ---- dynamic fault builder ----------------------------------------------

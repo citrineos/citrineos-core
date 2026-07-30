@@ -261,7 +261,7 @@ class OcpiClientImpl implements OcpiClient {
     const { config, store } = this.deps;
     const reg = store.domain.registration;
     const mode = opts?.mode ?? 'msp-initiated';
-    const citrineVersionsUrl = `${config.citrineOcpiBaseUrl}/versions`;
+    const citrineVersionsUrl = config.citrineVersionsUrl ?? `${config.citrineOcpiBaseUrl}/versions`;
 
     if (mode === 'cpo-initiated') {
       // Hand Citrine our TOKEN_A + versions url; Citrine then GETs our versions
@@ -369,7 +369,8 @@ class OcpiClientImpl implements OcpiClient {
   async reregister(): Promise<RegistrationState> {
     const { config, store } = this.deps;
     const reg = store.domain.registration;
-    const versionsUrl = reg.cpoVersionsUrl ?? `${config.citrineOcpiBaseUrl}/versions`;
+    const versionsUrl =
+      reg.cpoVersionsUrl ?? config.citrineVersionsUrl ?? `${config.citrineOcpiBaseUrl}/versions`;
     const versionsEx = await this.getVersions(versionsUrl);
     const versions = asData(versionsEx.response.body) as unknown as
       | Array<{ version: string; url: string }>

@@ -181,7 +181,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > And the key point: by default this thing is a **spec-perfect partner**. It doesn't cut corners. So anything red from here on is not me being sloppy — unless I explicitly armed it, and when I do, it gets stamped on the row.
 
-> *(Aside, if asked about **Send command** just below it: it now ships a schema-valid default payload, so `START_SESSION` on empty `{}` sends a well-formed command Citrine actually parses — you get a real sync `REJECTED` because there's no live station, not a 400. That's the honest local ceiling; the async result needs a real charger.)*
+> *(Aside, if asked about **Send command** just below it: it ships a schema-valid default payload, so `START_SESSION` on empty `{}` sends a well-formed command Citrine actually parses — not a 400. **With EVerest running you now get a real sync `ACCEPTED`** and the async result comes back too; use the Charging session panel for the polished version.)*
 
 ---
 
@@ -488,7 +488,7 @@ Source: `apps/mock-msp/src/core/Store.ts:252` (`reset()` calls `seedDomain(this.
 | **You clicked Reset** | Nothing to fix — re-run the path. Say: *"That's the reset — it clears the recorder so you get a clean slate per test run."* Don't point at the scenario badge afterward; it's blank. |
 | **Armed a fault and forgot it** | The FAULTS ARMED counter is your seatbelt light. **Clear all** or `curl -s -X DELETE localhost:8083/_mock/faults`. Say: *"Let me clear the fault I armed — otherwise I'd be showing you a failure I caused rather than one Citrine produced."* |
 | **Provoke returns 502** | Hasura or Citrine OCPI is down. `{"error":"provoke_failed"...}` or `{"error":"hasura_error"...}`. Say: *"That's the Provoke path failing honestly — it writes through Citrine's Hasura, and Hasura isn't answering. The mock isn't pretending it worked."* Fix: Tier 3. |
-| **Send command** (if asked or fat-fingered) | `START_SESSION` on the default payload → **valid** command, sync **`REJECTED`** (no live station). Say: *"Well-formed command, real Citrine answer — rejected because there's no physical charger for that location. 'Valid' means the envelope was spec-correct, not that the command succeeded."* Sharper decline: `STOP_SESSION` with `{"session_id":"demo-1"}` → `2001 "Session not found"` / `UNKNOWN_SESSION`. |
+| **Send command** (if asked or fat-fingered) | `START_SESSION` on the default payload → **valid** command. With EVerest up you get a real sync **`ACCEPTED`** (it reaches the simulated charger `cp001`); with EVerest down, **`REJECTED`** ("charging station offline") — both are real Citrine answers, not errors. Say: *"Well-formed command, real answer from the CPO."* Sharper decline if you want one: `STOP_SESSION` with `{"session_id":"demo-1"}` → `2001 "Session not found"` / `UNKNOWN_SESSION`. |
 | Browser cached an old page | **Ctrl+Shift+R**. *"Hard-refresh — it's a polling page, not a socket."* |
 | `live` unticked, screen frozen | Tick **live** or hit **↻**. |
 | Window < 900px | Widen, or Ctrl+- to 90%. |
@@ -539,6 +539,30 @@ The Provoke buttons replace the old terminal step, but the CLI paths still work 
   cd /c/tmp && source ./h.sh && curl -s -X POST http://localhost:8083/ocpi/2.2.1/emsp/cdrs "${H[@]}" -d @/c/tmp/cdr-demo.json
   ```
   (`h.sh` sets the `Authorization: Token <base64>` + routing/tracing headers; `cdr-demo.json` is a valid CDR body.)
+
+---
+
+## Appendix — Live charging with EVerest (raises the local ceiling)
+
+The "no live station, so `START_SESSION` can only be `REJECTED`" caveat above is
+the ceiling **without a charger**. Bring up EVerest and that ceiling lifts — the
+command reaches a real simulated station and comes back with an async
+`CommandResult`, a `Session`, and (on stop) a `CDR`.
+
+```bash
+pnpm citrine --ocpi --local                     # main stack
+bash apps/mock-msp/scripts/demo-up.sh           # mock, native (car-sim needs docker access)
+bash apps/mock-msp/scripts/everest-up.sh        # EVerest → cp001, patched to OCPP 2.0.1, wait online
+```
+
+Then, on the **Charging session (live · EVerest)** card:
+**① Discover EVSE → ② Plug in car → ③ Start charging → ④ Stop charging → ⑤ Unplug.**
+Start surfaces the sync `ACCEPTED` + the async `CommandResult` + the pushed
+`Session`; Stop surfaces the `CommandResult` + the `CDR`. This is the honest,
+end-to-end "both directions with a real transaction" story — the seeded station
+`cp001` / EVSE `cp001::1` / token `DEADBEEF` line up with EVerest out of the box.
+It is **optional** and not part of the timed 15-minute walkthrough; run it when
+you want to show a full charging lifecycle rather than the empty-stack ceiling.
 
 ---
 

@@ -39,17 +39,25 @@
 //     POST   /_mock/emit/command {type,payload} alias of the above
 //     POST   /_mock/emit/token {..TokenDTO}     PUT a token to Citrine's receiver
 //     POST   /_mock/pull/:module                GET Citrine's CPO SENDER endpoint
+//   CHARGE — live simulated session (EVerest)
+//     GET    /_mock/discover/evse               real location_id/evse_uid/connector_id from a pull
+//     POST   /_mock/charge/start                START_SESSION + await CommandResult + Session
+//     POST   /_mock/charge/stop                 STOP_SESSION + await CommandResult + CDR
+//     POST   /_mock/everest/plug  /_mock/everest/unplug   drive the car sim over MQTT
 //   ADVERSARY — faults
 //     GET /_mock/faults  POST /_mock/faults  POST /_mock/fault
 //     DELETE /_mock/faults  DELETE /_mock/faults/:id
 // ============================================================================
+import { spawn } from 'node:child_process';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeAny } from 'zod';
 import type {
+  CommandSendResult,
   DomainState,
   Exchange,
   ExchangeFilter,
   FaultRule,
+  MockConfig,
   MockContext,
   Scenario,
 } from '../core/types.js';
@@ -167,14 +175,24 @@ const commandSchemas: Record<string, ZodTypeAny> = {
  * clean exercise of Citrine's sync ACCEPTED/REJECTED/NOT_SUPPORTED path instead of
  * a 400 on an empty {}. The caller's explicit payload is merged OVER these defaults
  * (caller wins), and `response_url` is intentionally omitted — the actor mints it.
+ *
+ * The location/evse/connector/token identity is sourced from config so it maps to the
+ * seeded station EVerest registers as (cp001 / cp001::1 / connector 1 / token DEADBEEF).
+ * With those the CPO's handleStartSession gate chain resolves a real, online station
+ * and the command reaches OCPP instead of REJECTing on "Unknown charging station".
  */
-function commandDefaults(): Partial<Record<CommandType, Record<string, unknown>>> {
+function commandDefaults(
+  config: MockConfig,
+): Partial<Record<CommandType, Record<string, unknown>>> {
   const now = new Date().toISOString();
+  const locationId = config.defaultLocationId ?? '1';
+  const evseUid = config.defaultEvseUid ?? 'cp001::1';
+  const connectorId = config.defaultConnectorId ?? '1';
   const token = {
-    country_code: 'US',
-    party_id: 'TST',
-    uid: 'MOCK-RFID-001',
-    type: TokenType.RFID,
+    country_code: config.countryCode,
+    party_id: config.partyId,
+    uid: config.defaultTokenUid ?? 'DEADBEEF',
+    type: (config.defaultTokenType as TokenType) ?? TokenType.RFID,
     contract_id: 'MOCKCONTRACT-001',
     issuer: 'MockMSP',
     valid: true,
@@ -184,22 +202,22 @@ function commandDefaults(): Partial<Record<CommandType, Record<string, unknown>>
   return {
     [CommandType.START_SESSION]: {
       token,
-      location_id: 'LOC1',
-      evse_uid: 'EVSE1',
-      connector_id: '1',
+      location_id: locationId,
+      evse_uid: evseUid,
+      connector_id: connectorId,
     },
     [CommandType.STOP_SESSION]: { session_id: 'SESSION1' },
     [CommandType.CANCEL_RESERVATION]: { reservation_id: 'RES1' },
     [CommandType.UNLOCK_CONNECTOR]: {
-      location_id: 'LOC1',
-      evse_uid: 'EVSE1',
-      connector_id: '1',
+      location_id: locationId,
+      evse_uid: evseUid,
+      connector_id: connectorId,
     },
     [CommandType.RESERVE_NOW]: {
       token,
       expiry_date: new Date(Date.now() + 3600_000).toISOString(),
       reservation_id: 'RES1',
-      location_id: 'LOC1',
+      location_id: locationId,
     },
   };
 }
@@ -262,7 +280,10 @@ async function emitCommand(
   // Merge a schema-valid per-type default UNDER the caller's payload (caller wins),
   // so an empty {} yields a clean, valid command instead of a 400. response_url is
   // NOT included here — the actor (OcpiClient.sendCommand) mints it.
-  const src: Record<string, unknown> = { ...(commandDefaults()[type] ?? {}), ...explicit };
+  const src: Record<string, unknown> = {
+    ...(commandDefaults(ctx.config)[type] ?? {}),
+    ...explicit,
+  };
   const probe = { response_url: 'https://mock.invalid/cb', ...src };
   const parsed = schema.safeParse(probe);
   const payloadValidation = parsed.success
@@ -506,6 +527,326 @@ function buildCoverage(ctx: MockContext): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// Live charging session (EVerest): discover the seeded EVSE, run START/STOP end
+// to end (awaiting the async CommandResult + the pushed Session/CDR), and drive
+// the EVerest car simulator over MQTT. Bring-up: apps/mock-msp/scripts/everest-up.sh.
+// ---------------------------------------------------------------------------
+const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+// EVerest SIL car-simulator (JsEvManager, connector 1) command topics on the
+// stack's internal MQTT broker; we publish via `docker exec <broker> mosquitto_pub`,
+// the same pattern apps/operator-ui/tests/e2e/fixtures/everest.ts uses.
+const EVEREST_MQTT_CONTAINER = 'everest-mqtt-server-1';
+const CARSIM_CMD_PREFIX = 'everest_external/nodered/1/carsim/cmd';
+const PLUGIN_CHARGE_COMMAND =
+  'sleep 1;iec_wait_pwr_ready;sleep 1;draw_power_regulated 16,3;sleep 3600';
+const DOCKER_HINT =
+  'Live plug-in needs docker access to the EVerest MQTT broker. Run the mock natively ' +
+  'on the host (not inside its container), or run apps/mock-msp/scripts/everest-plug.sh.';
+
+interface ExecResult {
+  code: number; // exit code, or -1 when docker itself could not be spawned
+  stdout: string;
+  stderr: string;
+}
+function dockerExec(args: string[], timeoutMs = 30_000): Promise<ExecResult> {
+  return new Promise((resolve) => {
+    // shell:false is required: the car-sim message carries spaces + semicolons
+    // (`sleep 1;iec_wait_pwr_ready;...`); under a Windows shell it would be
+    // re-tokenized and mosquitto_pub would see it as stray options. docker.exe
+    // still resolves off PATH without a shell (same as the e2e fixture).
+    const bin = process.platform === 'win32' ? 'docker.exe' : 'docker';
+    const proc = spawn(bin, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+    let stdout = '';
+    let stderr = '';
+    let done = false;
+    const finish = (r: ExecResult) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(r);
+    };
+    // A wedged `docker exec` must not hang the route forever.
+    const timer = setTimeout(() => {
+      try {
+        proc.kill();
+      } catch {
+        /* already gone */
+      }
+      finish({
+        code: -2,
+        stdout,
+        stderr: `${stderr}\n[docker exec timed out after ${timeoutMs}ms]`,
+      });
+    }, timeoutMs);
+    proc.stdout?.on('data', (c: Buffer) => (stdout += c.toString()));
+    proc.stderr?.on('data', (c: Buffer) => (stderr += c.toString()));
+    proc.on('exit', (code) => finish({ code: code ?? -1, stdout, stderr }));
+    proc.on('error', (e) => finish({ code: -1, stdout, stderr: String(e) }));
+  });
+}
+function mosquittoPub(topic: string, message: string): Promise<ExecResult> {
+  return dockerExec(['exec', EVEREST_MQTT_CONTAINER, 'mosquitto_pub', '-t', topic, '-m', message]);
+}
+
+/** Classify a docker ExecResult into an error reply, or null on success. */
+function mqttError(reply: FastifyReply, res: ExecResult, step: string): unknown | null {
+  if (res.code === 0) return null;
+  // code -1 = docker binary not spawnable; also treat a reachable binary with a
+  // dead daemon as "docker unavailable" (the case DOCKER_HINT is written for).
+  const daemonDown =
+    /cannot connect to the docker daemon|docker daemon is not running|is the docker daemon running/i.test(
+      res.stderr,
+    );
+  if (res.code === -1 || daemonDown) {
+    return reply
+      .code(503)
+      .send({ error: 'docker_unavailable', hint: DOCKER_HINT, step, detail: res.stderr.trim() });
+  }
+  return reply.code(502).send({ error: 'mqtt_failed', step, detail: res.stderr.trim() });
+}
+
+/** The current max buffer seq — a floor to hand waitForReceived so it ignores prior-cycle exchanges. */
+function seqFloor(ctx: MockContext): number {
+  const all = ctx.store.query({});
+  return all.length > 0 ? all[all.length - 1].seq : 0;
+}
+
+/** GET /_mock/discover/evse — pull Citrine's locations and return the first real id triple. */
+async function discoverEvse(ctx: MockContext, reply: FastifyReply): Promise<unknown> {
+  let ex: Exchange;
+  try {
+    ex = await ctx.client.pull(ModuleId.Locations);
+  } catch (err) {
+    return reply.code(502).send(errorBody('discover_failed', err));
+  }
+  // pull() resolves an Exchange even on a non-2xx / network failure (it records a
+  // Finding rather than throwing), so a real failure must be detected here — else
+  // it would masquerade as a legitimately-empty location list (404 below).
+  const httpStatus = ex.response?.httpStatus ?? 0;
+  if (httpStatus < 200 || httpStatus >= 300) {
+    return reply.code(502).send({
+      error: 'discover_failed',
+      httpStatus,
+      hint: 'Citrine locations pull did not return 2xx.',
+    });
+  }
+  const body = ex.response.body as { data?: unknown } | undefined;
+  const locations = Array.isArray(body?.data) ? (body!.data as Record<string, unknown>[]) : [];
+  for (const loc of locations) {
+    const evses = Array.isArray(loc.evses) ? (loc.evses as Record<string, unknown>[]) : [];
+    for (const evse of evses) {
+      const connectors = Array.isArray(evse.connectors)
+        ? (evse.connectors as Record<string, unknown>[])
+        : [];
+      if (evse.uid && connectors.length > 0) {
+        return {
+          discovered: true,
+          location_id: String(loc.id),
+          evse_uid: String(evse.uid),
+          connector_id: String(connectors[0].id),
+          source: 'pull.locations',
+        };
+      }
+    }
+  }
+  return reply.code(404).send({
+    error: 'no_evse_found',
+    hint: 'Citrine served no location with an EVSE + connector — is the OCPI stack seeded?',
+    locationsSeen: locations.length,
+  });
+}
+
+interface ChargeStartBody {
+  location_id?: string;
+  evse_uid?: string;
+  connector_id?: string;
+  token_uid?: string;
+  timeoutMs?: number;
+}
+/** POST /_mock/charge/start — START_SESSION, then await the async CommandResult + the pushed Session. */
+async function chargeStart(
+  ctx: MockContext,
+  body: ChargeStartBody,
+  reply: FastifyReply,
+): Promise<unknown> {
+  const payload = {
+    ...(commandDefaults(ctx.config)[CommandType.START_SESSION] ?? {}),
+  } as Record<string, unknown>;
+  if (body.location_id) payload.location_id = body.location_id;
+  if (body.evse_uid) payload.evse_uid = body.evse_uid;
+  if (body.connector_id) payload.connector_id = body.connector_id;
+  if (body.token_uid) {
+    payload.token = { ...(payload.token as Record<string, unknown>), uid: body.token_uid };
+  }
+  const timeoutMs = typeof body.timeoutMs === 'number' ? body.timeoutMs : 30_000;
+
+  // Snapshot a seq floor BEFORE sending, so the Session wait only matches exchanges
+  // recorded after this command — never a stale sessions.put from a prior cycle
+  // (waitForReceived resolves with the OLDEST buffered match otherwise).
+  const floor = seqFloor(ctx);
+  let sent: CommandSendResult;
+  try {
+    sent = await ctx.client.sendCommand(CommandType.START_SESSION, payload);
+  } catch (err) {
+    return reply.code(502).send(errorBody('charge_start_failed', err));
+  }
+  const sync = sent.sync as { result?: string } | undefined;
+  const out: Record<string, unknown> = {
+    command: 'START_SESSION',
+    sync,
+    responseUrl: sent.responseUrl,
+    sent: {
+      location_id: payload.location_id,
+      evse_uid: payload.evse_uid,
+      connector_id: payload.connector_id,
+    },
+  };
+  // Citrine only fires the async callback + Session push when it accepted the command;
+  // REJECTED / NOT_SUPPORTED are terminal, so don't wait out the timeout on those.
+  if (sync?.result === 'ACCEPTED') {
+    try {
+      const cr = await sent.awaitResult(timeoutMs);
+      out.commandResult = cr.request.body;
+    } catch (err) {
+      out.commandResultError = err instanceof Error ? err.message : String(err);
+    }
+    const sessFilter: ExchangeFilter = {
+      direction: 'inbound',
+      operation: 'sessions.put',
+      minSeq: floor + 1,
+    };
+    if (typeof payload.evse_uid === 'string') sessFilter.bodyMatch = { evse_uid: payload.evse_uid };
+    try {
+      const sess = await ctx.store.waitForReceived(sessFilter, timeoutMs);
+      out.session = sess.request.body;
+    } catch {
+      out.sessionPending = true; // no Session within the window (e.g. car not plugged in)
+    }
+  }
+  return out;
+}
+
+interface ChargeStopBody {
+  session_id?: string;
+  timeoutMs?: number;
+}
+/** POST /_mock/charge/stop — STOP_SESSION for the active session, await the CommandResult + CDR. */
+async function chargeStop(
+  ctx: MockContext,
+  body: ChargeStopBody,
+  reply: FastifyReply,
+): Promise<unknown> {
+  let sessionId = body.session_id;
+  if (!sessionId) {
+    const last = [...ctx.store.domain.sessions.values()].pop() as { id?: string } | undefined;
+    sessionId = last?.id;
+  }
+  if (!sessionId) {
+    return reply.code(400).send({
+      error: 'no_session',
+      hint: 'No session to stop — start one first, or pass session_id.',
+    });
+  }
+  const timeoutMs = typeof body.timeoutMs === 'number' ? body.timeoutMs : 30_000;
+
+  // Seq floor so the CDR push-wait can't resolve to a stale cdrs.post from a prior cycle.
+  const floor = seqFloor(ctx);
+  let sent: CommandSendResult;
+  try {
+    sent = await ctx.client.sendCommand(CommandType.STOP_SESSION, { session_id: sessionId });
+  } catch (err) {
+    return reply.code(502).send(errorBody('charge_stop_failed', err));
+  }
+  const sync = sent.sync as { result?: string } | undefined;
+  const out: Record<string, unknown> = {
+    command: 'STOP_SESSION',
+    session_id: sessionId,
+    sync,
+    responseUrl: sent.responseUrl,
+  };
+  if (sync?.result === 'ACCEPTED') {
+    try {
+      const cr = await sent.awaitResult(timeoutMs);
+      out.commandResult = cr.request.body;
+    } catch (err) {
+      out.commandResultError = err instanceof Error ? err.message : String(err);
+    }
+    // The CDR may arrive as a push, or Citrine may only serve it from its CDRs
+    // SENDER endpoint — both are valid ways for an eMSP to obtain the CDR. Try a
+    // short push-wait (this cycle only), then fall back to a pull correlated by session.
+    const cdrWait = Math.min(timeoutMs, 8_000);
+    try {
+      const cdr = await ctx.store.waitForReceived(
+        { direction: 'inbound', operation: 'cdrs.post', minSeq: floor + 1 },
+        cdrWait,
+      );
+      out.cdr = cdr.request.body;
+      out.cdrSource = 'push';
+    } catch {
+      try {
+        // Large limit avoids the default page-1 (oldest) truncation; prefer the CDR
+        // whose session_id matches this stop, else the newest returned (flagged).
+        const ex = await ctx.client.pull(ModuleId.Cdrs, { limit: '1000' });
+        const cdrBody = ex.response.body as { data?: unknown } | undefined;
+        const cdrs = Array.isArray(cdrBody?.data)
+          ? (cdrBody!.data as Record<string, unknown>[])
+          : [];
+        const matched = cdrs.filter((c) => c && c.session_id === sessionId);
+        if (matched.length > 0) {
+          out.cdr = matched[matched.length - 1];
+          out.cdrSource = 'pull';
+        } else if (cdrs.length > 0) {
+          out.cdr = cdrs[cdrs.length - 1];
+          out.cdrSource = 'pull-uncorrelated';
+          out.cdrNote = 'Newest CDR on the page; could not match session_id — verify manually.';
+        } else {
+          out.cdrPending = true;
+        }
+      } catch {
+        out.cdrPending = true;
+      }
+    }
+  }
+  return out;
+}
+
+/** POST /_mock/everest/plug — drive the EVerest car sim to plug in on connector 1. */
+async function everestPlug(reply: FastifyReply): Promise<unknown> {
+  const enable = `${CARSIM_CMD_PREFIX}/enable`;
+  // Every publish is checked — a swallowed failure would leave the sim half-armed
+  // yet report success.
+  let err = mqttError(reply, await mosquittoPub(enable, 'false'), 'enable=false');
+  if (err) return err;
+  await pause(2_000);
+  err = mqttError(reply, await mosquittoPub(enable, 'true'), 'enable=true');
+  if (err) return err;
+  await pause(1_000);
+  err = mqttError(
+    reply,
+    await mosquittoPub(`${CARSIM_CMD_PREFIX}/execute_charging_session`, PLUGIN_CHARGE_COMMAND),
+    'execute_charging_session',
+  );
+  if (err) return err;
+  return {
+    plugged: true,
+    container: EVEREST_MQTT_CONTAINER,
+    note: 'Car plugged into connector 1; parked at iec_wait_pwr_ready. Start charging within ~120s.',
+  };
+}
+
+/** POST /_mock/everest/unplug — end the simulated session (CP state -> A). */
+async function everestUnplug(reply: FastifyReply): Promise<unknown> {
+  const err = mqttError(
+    reply,
+    await mosquittoPub(`${CARSIM_CMD_PREFIX}/modify_charging_session`, 'unplug'),
+    'unplug',
+  );
+  if (err) return err;
+  return { unplugged: true };
+}
+
+// ---------------------------------------------------------------------------
 // registerControlApi — the export the integrator (server.ts) wires in.
 // ---------------------------------------------------------------------------
 export function registerControlApi(app: FastifyInstance, ctx: MockContext): void {
@@ -680,6 +1021,17 @@ export function registerControlApi(app: FastifyInstance, ctx: MockContext): void
           return reply.code(502).send(errorBody('pull_failed', err));
         }
       });
+
+      // ---- CHARGE / EVEREST: live simulated charging session --------------
+      mock.get('/discover/evse', async (_req, reply) => discoverEvse(ctx, reply));
+      mock.post('/charge/start', async (req, reply) =>
+        chargeStart(ctx, (req.body as ChargeStartBody | undefined) ?? {}, reply),
+      );
+      mock.post('/charge/stop', async (req, reply) =>
+        chargeStop(ctx, (req.body as ChargeStopBody | undefined) ?? {}, reply),
+      );
+      mock.post('/everest/plug', async (_req, reply) => everestPlug(reply));
+      mock.post('/everest/unplug', async (_req, reply) => everestUnplug(reply));
 
       // ---- PROVOKE / COVERAGE (Citrine -> mock; both-directions proof) ----
       mock.post('/provoke/:what', async (req, reply) =>
