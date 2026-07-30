@@ -428,7 +428,8 @@ describe('MessageRouterImpl', () => {
         timestamp.toISOString(),
         PROTOCOL,
         NO_ACTION,
-        MessageState.Unknown,
+        // Unparseable message — no messageTypeId could be read off the frame.
+        undefined,
       );
     });
 

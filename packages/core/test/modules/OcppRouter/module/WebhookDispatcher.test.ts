@@ -7,7 +7,7 @@ import {
   DEFAULT_TENANT_ID,
   ICache,
   MessageOrigin,
-  MessageState,
+  MessageTypeId,
 } from '@citrineos/base';
 import {
   IOCPPMessageRepository,
@@ -23,6 +23,9 @@ import { aSubscription } from '../providers/SubscriptionProvider.js';
 
 describe('WebhookDispatcher', () => {
   const { container } = createTestContainer();
+  // Shared fixture for the call sites that only assert on dispatch/filtering behaviour and
+  // don't care about the particular message.
+  const A_BOOT_NOTIFICATION_CALL = [2, '123', 'BootNotification', {}];
   const fetch = vi.fn(() =>
     Promise.resolve({
       ok: true,
@@ -156,11 +159,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -170,11 +174,12 @@ describe('WebhookDispatcher', () => {
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -191,9 +196,10 @@ describe('WebhookDispatcher', () => {
         subscription.ocppConnectionName,
         'Any timestamp',
         'ocpp2.0.1',
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
         'BootNotification',
-        MessageState.Request,
-        [2, '123', 'BootNotification', {}],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -218,9 +224,10 @@ describe('WebhookDispatcher', () => {
         subscription.ocppConnectionName,
         timestamp,
         protocol,
-        action,
-        MessageState.Response,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.CallResult,
         rpcMessage,
+        action,
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -239,6 +246,7 @@ describe('WebhookDispatcher', () => {
             timestamp: timestamp,
             protocol: protocol,
             action: action,
+            type: String(MessageTypeId.CallResult),
           },
         }),
       });
@@ -263,9 +271,10 @@ describe('WebhookDispatcher', () => {
         subscription.ocppConnectionName,
         timestamp,
         protocol,
-        action,
-        MessageState.Request,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.Call,
         rpcMessage,
+        action,
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -284,6 +293,7 @@ describe('WebhookDispatcher', () => {
             timestamp: timestamp,
             protocol: protocol,
             action: action,
+            type: String(MessageTypeId.Call),
           },
         }),
       });
@@ -297,14 +307,17 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.ocppConnectionName);
 
+      const rpcMessage = [2, '123', 'BootNotification', { reason: 'PowerUp' }];
+
       await webhookDispatcher.dispatchMessageReceived(
         subscription.tenantId,
         subscription.ocppConnectionName,
         'Any timestamp',
         'ocpp2.0.1',
+        JSON.stringify(rpcMessage),
+        MessageTypeId.Call,
+        rpcMessage,
         'BootNotification',
-        MessageState.Request,
-        [2, '123', 'BootNotification', { reason: 'PowerUp' }],
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -315,7 +328,7 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.ocppConnectionName);
 
-      const rpcMessage = [2, '123', 'BootNotification', {}];
+      const rpcMessage = [2, '123', 'BootNotification', { reason: 'PowerUp' }];
       const timestamp = 'Any timestamp';
       const protocol = 'ocpp2.0.1';
       const action = 'BootNotification';
@@ -325,9 +338,10 @@ describe('WebhookDispatcher', () => {
         subscription.ocppConnectionName,
         timestamp,
         protocol,
-        action,
-        MessageState.Request,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.Call,
         rpcMessage,
+        action,
       );
 
       expect(createOCPPMessage).toHaveBeenCalledWith(
@@ -337,10 +351,12 @@ describe('WebhookDispatcher', () => {
           ocppConnectionName: subscription.ocppConnectionName,
           correlationId: '123',
           origin: MessageOrigin.ChargingStation,
-          state: MessageState.Request,
+          type: MessageTypeId.Call,
           protocol: protocol,
           action: action,
-          message: rpcMessage,
+          // Call frame: [2, id, action, payload] — only the payload is persisted in `payload`.
+          payload: { reason: 'PowerUp' },
+          raw: JSON.stringify(rpcMessage),
           timestamp: timestamp,
         }),
       );
@@ -364,9 +380,10 @@ describe('WebhookDispatcher', () => {
         subscription.ocppConnectionName,
         'Any timestamp',
         'ocpp2.0.1',
-        undefined as any,
-        MessageState.Response,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.CallResult,
         rpcMessage,
+        undefined,
       );
 
       expect(fetch).toHaveBeenCalledWith(
@@ -386,11 +403,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -412,11 +430,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        action,
-        MessageState.Response,
         timestamp,
         protocol,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.CallResult,
         rpcMessage,
+        action,
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -435,6 +454,7 @@ describe('WebhookDispatcher', () => {
             timestamp: timestamp,
             protocol: protocol,
             action: action,
+            type: String(MessageTypeId.CallResult),
           },
         }),
       });
@@ -456,11 +476,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        action,
-        MessageState.Request,
         timestamp,
         protocol,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.Call,
         rpcMessage,
+        action,
       );
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, {
@@ -479,6 +500,7 @@ describe('WebhookDispatcher', () => {
             timestamp: timestamp,
             protocol: protocol,
             action: action,
+            type: String(MessageTypeId.Call),
           },
         }),
       });
@@ -494,11 +516,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -509,18 +532,19 @@ describe('WebhookDispatcher', () => {
       givenSubscriptions(subscription);
       await givenRegisteredStations(subscription.ocppConnectionName);
 
-      const rpcMessage = [2, '123', 'BootNotification', {}];
+      const rpcMessage = [2, '123', 'BootNotification', { reason: 'PowerUp' }];
       const timestamp = 'Any timestamp';
       const protocol = 'ocpp2.0.1';
       const action = 'BootNotification';
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        action,
-        MessageState.Request,
         timestamp,
         protocol,
+        JSON.stringify(rpcMessage),
+        MessageTypeId.Call,
         rpcMessage,
+        action,
       );
 
       expect(createOCPPMessage).toHaveBeenCalledWith(
@@ -530,10 +554,12 @@ describe('WebhookDispatcher', () => {
           ocppConnectionName: subscription.ocppConnectionName,
           correlationId: '123',
           origin: MessageOrigin.ChargingStationManagementSystem,
-          state: MessageState.Request,
+          type: MessageTypeId.Call,
           protocol: protocol,
           action: action,
-          message: rpcMessage,
+          // Call frame: [2, id, action, payload] — only the payload is persisted in `payload`.
+          payload: { reason: 'PowerUp' },
+          raw: JSON.stringify(rpcMessage),
           timestamp: timestamp,
         }),
       );
@@ -558,7 +584,7 @@ describe('WebhookDispatcher', () => {
         timestamp,
         protocol,
         action,
-        MessageState.Request,
+        MessageTypeId.Call,
       );
 
       expect(fetch).toHaveBeenCalledTimes(1);
@@ -583,7 +609,7 @@ describe('WebhookDispatcher', () => {
         'Any timestamp',
         'ocpp2.0.1',
         'BootNotification',
-        MessageState.Request,
+        MessageTypeId.Call,
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -604,7 +630,7 @@ describe('WebhookDispatcher', () => {
         'Any timestamp',
         'ocpp2.0.1',
         'BootNotification',
-        MessageState.Request,
+        MessageTypeId.Call,
       );
 
       expect(fetch).not.toHaveBeenCalled();
@@ -622,7 +648,7 @@ describe('WebhookDispatcher', () => {
         'Any timestamp',
         'ocpp2.0.1',
         'BootNotification',
-        MessageState.Request,
+        MessageTypeId.Call,
       );
 
       expect(fetch).toHaveBeenCalledWith(
@@ -650,7 +676,7 @@ describe('WebhookDispatcher', () => {
         timestamp,
         protocol,
         action,
-        MessageState.Request,
+        MessageTypeId.Call,
       );
 
       expect(createOCPPMessage).toHaveBeenCalledWith(
@@ -660,10 +686,11 @@ describe('WebhookDispatcher', () => {
           ocppConnectionName: subscription.ocppConnectionName,
           correlationId: expect.any(String),
           origin: MessageOrigin.ChargingStation,
-          state: MessageState.Request,
+          type: MessageTypeId.Call,
           protocol: protocol,
           action: action,
-          message: message,
+          // Unparsed messages have no extractable payload — only the wire text is persisted.
+          raw: message,
           timestamp: timestamp,
         }),
       );
@@ -681,11 +708,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -700,11 +728,12 @@ describe('WebhookDispatcher', () => {
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -720,11 +749,12 @@ describe('WebhookDispatcher', () => {
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -748,11 +778,12 @@ describe('WebhookDispatcher', () => {
 
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -764,11 +795,12 @@ describe('WebhookDispatcher', () => {
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
@@ -786,11 +818,12 @@ describe('WebhookDispatcher', () => {
       fetch.mockClear();
       await webhookDispatcher.dispatchMessageSent(
         createIdentifier(subscription.tenantId, subscription.ocppConnectionName),
-        'BootNotification',
-        MessageState.Request,
         'Any timestamp',
         'ocpp2.0.1',
-        [2, '123', 'BootNotification', {}],
+        JSON.stringify(A_BOOT_NOTIFICATION_CALL),
+        MessageTypeId.Call,
+        A_BOOT_NOTIFICATION_CALL,
+        'BootNotification',
       );
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());

@@ -9,7 +9,7 @@ import type { BootstrapConfig } from '@citrineos/base';
 import {
   DEFAULT_TENANT_ID,
   MessageOrigin,
-  MessageState,
+  MessageTypeId,
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/base';
@@ -192,25 +192,24 @@ async function seedVariableStatus(
 
 /**
  * Seeds an OCPPMessage as the CSMS-originated SetVariables request.
- * Stored in raw OCPP array format: [messageTypeId, correlationId, action, payload].
+ * `payload` holds the OCPP payload alone; `raw` holds the full wire frame
+ * [messageTypeId, correlationId, action, payload].
  */
 async function seedSetVariablesRequest(
   setVariableData: OCPP2_0_1.SetVariableDataType[],
   correlationId: string = CORRELATION_ID,
 ): Promise<OCPPMessage> {
+  const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
   return OCPPMessage.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
-    state: MessageState.Request,
+    type: MessageTypeId.Call,
     protocol: OCPPVersion.OCPP2_0_1,
     action: 'SetVariables',
-    message: [
-      2,
-      correlationId,
-      'SetVariables',
-      { setVariableData } as OCPP2_0_1.SetVariablesRequest,
-    ],
+    payload,
+    raw: JSON.stringify([MessageTypeId.Call, correlationId, 'SetVariables', payload]),
+    timestamp: new Date().toISOString(),
     tenantId: TENANT_ID,
   });
 }
