@@ -21,6 +21,8 @@ import {
 import { type ILogObj, Logger } from 'tslog';
 
 // -- DB --
+import { DefaultDrizzleInstance, DefaultSequelizeInstance } from '@citrineos/core';
+
 // -- RabbitMQ --
 // -- Repositories --
 // -- Services --
@@ -31,50 +33,19 @@ import { type ILogObj, Logger } from 'tslog';
 // -- Module APIs --
 // -- Handlers --
 import {
-  AdminApi,
-  Authenticator,
-  BasicAuthenticationFilter,
   BrokerAwareMessageSender,
-  CertificateAuthorityService,
-  CertificatesDataApi,
-  CertificatesModule,
-  CertificatesOcpp2Api,
-  Component,
-  ConfigurationDataApi,
-  ConfigurationModule,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp2Api,
-  ConnectedStationFilter,
-  DefaultSequelizeInstance,
-  DrizzleSecurityEventRepository,
-  EVDriverDataApi,
-  EVDriverModule,
-  EVDriverOcpp16Api,
-  EVDriverOcpp2Api,
-  IdGenerator,
-  InternalSmartCharging,
-  LocalBypassAuthProvider,
-  MessageRouterImpl,
-  MonitoringDataApi,
-  MonitoringModule,
-  MonitoringOcpp2Api,
-  NetworkProfileFilter,
-  OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RabbitMqReceiver,
   RabbitMqSender,
-  RealTimeAuthorizer,
-  registerCertificatesServices,
-  registerConfigurationServices,
-  registerEVDriverServices,
-  registerMonitoringServices,
-  registerReportingServices,
-  registerSmartChargingServices,
-  registerTransactionsServices,
-  ReportingModule,
-  ReportingOcpp16Api,
-  ReportingOcpp2Api,
+} from '@citrineos/core';
+
+// -- Repositories --
+import {
+  DrizzleSecurityEventRepository,
+  DrizzleServerNetworkProfileRepository,
+  DrizzleSubscriptionRepository,
+  DrizzleTenantRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -83,6 +54,7 @@ import {
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
+  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -100,17 +72,75 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  SmartChargingModule,
-  SmartChargingOcpp16Api,
-  SmartChargingOcpp2Api,
-  TenantDataApi,
-  TenantModule,
-  TransactionsDataApi,
-  TransactionsModule,
-  TransactionsOcpp2Api,
+} from '@citrineos/core';
+
+// -- Services --
+import {
+  CertificateAuthorityService,
+  IdGenerator,
+  InternalSmartCharging,
+  RealTimeAuthorizer,
+} from '@citrineos/core';
+
+// -- API authentication --
+import type { IApiAuthProvider } from '@citrineos/base';
+import { LocalBypassAuthProvider, OIDCAuthProvider } from '@citrineos/core';
+
+// -- Network Connection --
+import {
+  AdminApi,
+  Authenticator,
+  BasicAuthenticationFilter,
+  ConnectedStationFilter,
+  MessageRouterImpl,
+  NetworkProfileFilter,
   UnknownStationFilter,
   WebhookDispatcher,
   WebsocketNetworkConnection,
+} from '@citrineos/core';
+
+// -- Modules --
+import {
+  CertificatesModule,
+  ConfigurationModule,
+  EVDriverModule,
+  MonitoringModule,
+  ReportingModule,
+  SmartChargingModule,
+  TenantModule,
+  TransactionsModule,
+} from '@citrineos/core';
+
+// -- Module-internal services (registered by each module package's own registrar) --
+import {
+  registerCertificatesServices,
+  registerConfigurationServices,
+  registerEVDriverServices,
+  registerMonitoringServices,
+  registerReportingServices,
+  registerSmartChargingServices,
+  registerTransactionsServices,
+} from '@citrineos/core';
+
+// -- Module APIs --
+import {
+  CertificatesDataApi,
+  CertificatesOcpp2Api,
+  ConfigurationDataApi,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp2Api,
+  EVDriverDataApi,
+  EVDriverOcpp16Api,
+  EVDriverOcpp2Api,
+  MonitoringDataApi,
+  MonitoringOcpp2Api,
+  ReportingOcpp16Api,
+  ReportingOcpp2Api,
+  SmartChargingOcpp16Api,
+  SmartChargingOcpp2Api,
+  TenantDataApi,
+  TransactionsDataApi,
+  TransactionsOcpp2Api,
 } from '@citrineos/core';
 
 type Prebuilt = {
@@ -253,8 +283,9 @@ function registerMessaging(container: AwilixContainer): void {
 
 // ============================================================
 // Repositories — all singletons, registered from @citrineos/core named exports.
-// Each class uses a proxy constructor
-// Drizzle security event overrides securityEventRepository.
+// Every repository class takes a single destructured dependency object, which is
+// what PROXY injection hands it, so all of them register with asClass.
+// The Drizzle repositories override their Sequelize counterparts when enabled.
 // ============================================================
 function registerRepositories(container: AwilixContainer): void {
   container.register({
@@ -290,17 +321,21 @@ function registerRepositories(container: AwilixContainer): void {
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
-    componentRepository: asFunction(
-      ({ config, logger }) =>
-        new SequelizeRepository<Component>({ config, namespace: Component.MODEL_NAME, logger }),
-    ).singleton(),
+    componentRepository: asClass(SequelizeComponentRepository).singleton(),
   });
 
-  if (process.env.CITRINEOS_USE_DRIZZLE_SECURITY_EVENT === 'true') {
+  if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
     container.register({
-      securityEventRepository: asFunction(
-        ({ config, logger }) => new DrizzleSecurityEventRepository(config, logger),
+      drizzleInstance: asFunction(({ config, logger }) =>
+        DefaultDrizzleInstance.getInstance(config, logger),
       ).singleton(),
+
+      useTenantSchema: asValue(false),
+
+      securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
+      serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
+      tenantRepository: asClass(DrizzleTenantRepository).singleton(),
     });
   }
 }

@@ -17,6 +17,25 @@ export type CitrineTable = PgTable & {
   tenantId: Column;
 };
 
+/**
+ * Dependencies every Drizzle repository takes, mirroring
+ * {@link SequelizeRepositoryDependencies}. A single destructured object — rather
+ * than positional parameters — so repositories can be registered with awilix
+ * `asClass` under `InjectionMode.PROXY`, which constructs with exactly one
+ * argument: the cradle.
+ *
+ * Every name here must be registered in the container. Destructuring reads the
+ * property off the cradle proxy, and an unregistered name throws
+ * AwilixResolutionError even where the type marks it optional — optionality only
+ * covers direct construction (tests, RepositoryStore).
+ */
+export interface DrizzleRepositoryDependencies {
+  config: BootstrapConfig;
+  logger?: Logger<ILogObj>;
+  drizzleInstance?: NodePgDatabase;
+  useTenantSchema?: boolean;
+}
+
 export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> extends EventEmitter {
   protected readonly db: NodePgDatabase;
   protected readonly logger: Logger<ILogObj>;
@@ -25,14 +44,14 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
   // and the tenantId column filter is omitted — the schema is the isolation boundary.
   protected readonly useTenantSchema: boolean;
 
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
+  constructor({
+    config,
+    logger,
+    drizzleInstance,
     useTenantSchema = false,
-  ) {
+  }: DrizzleRepositoryDependencies) {
     super();
-    this.db = db ?? DefaultDrizzleInstance.getInstance(config, logger);
+    this.db = drizzleInstance ?? DefaultDrizzleInstance.getInstance(config, logger);
     this.logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
