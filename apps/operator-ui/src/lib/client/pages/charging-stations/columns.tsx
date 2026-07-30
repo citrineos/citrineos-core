@@ -205,7 +205,7 @@ export const getChargingStationsColumns = (
               id: row.original.id,
             }}
           >
-            <div className="flex gap-4 flex-1">
+            <div className="flex gap-4 w-fit" onClick={(e) => e.stopPropagation()}>
               {!hasActiveTransactions && <StartTransactionButton station={row.original} />}
               {hasActiveTransactions && <StopTransactionButton station={row.original} />}
               <ResetButton station={row.original} />

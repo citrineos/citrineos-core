@@ -31,12 +31,15 @@ import { buttonIconSize } from '@lib/client/styles/icon';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
 import { useTableFilters } from '@lib/client/hooks/useTableFilters';
+import { StationPreviewDrawer } from '@lib/client/pages/charging-stations/station.preview.drawer';
 
 export const ChargingStationsList = () => {
   const { push } = useRouter();
   const translate = useTranslate();
 
   const [searchFilters, setSearchFilters] = useState<any>(EMPTY_FILTER);
+  const [previewStationId, setPreviewStationId] = useState<number | null>(null);
+  const openPreview = (station: { id?: number | null }) => setPreviewStationId(station.id ?? null);
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
     getChargingStationsColumns(true, translate),
@@ -99,11 +102,20 @@ export const ChargingStationsList = () => {
           enableSorting
           enableFilters
           showHeader
+          onRowClick={openPreview}
           tableStateKey={ResourceType.CHARGING_STATIONS}
         >
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
+
+      <StationPreviewDrawer
+        stationId={previewStationId}
+        open={previewStationId != null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewStationId(null);
+        }}
+      />
     </div>
   );
 };
