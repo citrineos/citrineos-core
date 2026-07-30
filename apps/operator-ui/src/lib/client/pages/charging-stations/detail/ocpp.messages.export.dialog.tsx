@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import React from 'react';
+import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/base';
+import { formatDate } from '@lib/client/components/timestamp-display';
+import { Button } from '@lib/client/components/ui/button';
+import { dateTimePickerDateFormat } from '@lib/client/components/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -11,15 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@lib/client/components/ui/dialog';
-import { Button } from '@lib/client/components/ui/button';
-import { type LogicalFilter, useExport, useTranslate } from '@refinedev/core';
-import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/base';
-import { ResourceType } from '@lib/utils/access.types';
 import { GET_OCPP_MESSAGES_LIST_FOR_STATION } from '@lib/queries/ocpp.messages';
-import { toast } from 'sonner';
+import { ResourceType } from '@lib/utils/access.types';
+import { messageTypeLabel } from '@lib/utils/ocpp.message';
+import { type LogicalFilter, useExport, useTranslate } from '@refinedev/core';
 import { Loader2 } from 'lucide-react';
-import { dateTimePickerDateFormat } from '@lib/client/components/ui/date-time-picker';
-import { formatDate } from '@lib/client/components/timestamp-display';
+import { toast } from 'sonner';
 
 const createFilterListItem = (label: string, value: string) => (
   <li key={label}>
@@ -57,9 +57,10 @@ export const OCPPMessagesExportDialog = ({
         correlationId: ocppMessage.correlationId,
         timestamp: ocppMessage.timestamp,
         origin: ocppMessage.origin,
+        type: messageTypeLabel(ocppMessage.type),
         protocol: ocppMessage.protocol,
         action: ocppMessage.action,
-        message: JSON.stringify(ocppMessage.message),
+        message: ocppMessage.payload ? JSON.stringify(ocppMessage.payload) : ocppMessage.raw,
       };
     },
   });

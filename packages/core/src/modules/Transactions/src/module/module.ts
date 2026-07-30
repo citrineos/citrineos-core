@@ -48,8 +48,8 @@ import {
   StartTransaction,
   Transaction,
 } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
-import type { SignedMeterValuesUtil } from '@util/security/SignedMeterValuesUtil.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
+import type { SignedMeterValuesUtil } from '@util/security/SignedMeterValuesUtil.js';
 import { Op } from 'sequelize';
 
 import type { CostCalculator } from './CostCalculator.js';
@@ -1300,7 +1300,7 @@ export class TransactionsModule extends AbstractModule {
       return;
     }
 
-    const request = storedRequest.message[3] as OCPP2_1.SetDefaultTariffRequest;
+    const request = storedRequest.payload as OCPP2_1.SetDefaultTariffRequest;
     const tariffData = request.tariff;
 
     const newTariff = Tariff.build({

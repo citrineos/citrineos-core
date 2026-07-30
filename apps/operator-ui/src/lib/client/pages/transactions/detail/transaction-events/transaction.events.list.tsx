@@ -4,7 +4,7 @@
 'use client';
 
 import type { TransactionEventDto } from '@citrineos/base';
-import { TransactionEventEnum, TransactionEventProps } from '@citrineos/base';
+import { MessageTypeId, TransactionEventEnum, TransactionEventProps } from '@citrineos/base';
 import { Table } from '@lib/client/components/table';
 import { MeterValuesList } from '@lib/client/pages/transactions/detail/meter-values/meter.values.list';
 import { getTransactionEventColumns } from '@lib/client/pages/transactions/detail/transaction-events/columns';
@@ -70,7 +70,9 @@ export const TransactionEventsList = ({
     );
 
     const messageRows: TransactionEventDto[] = sortedMessages.map((m, index) => {
-      const payload = m.message?.[3];
+      // Only a CALL carries the request payload these rows are built from — a CALLRESULT's
+      // payload is the response body, which has no meter values or stop reason.
+      const payload = m.type === MessageTypeId.Call ? m.payload : undefined;
       const triggerReason: string = m.action === 'StopTransaction' ? (payload?.reason ?? '') : '';
 
       const innerMeterValues: any[] =

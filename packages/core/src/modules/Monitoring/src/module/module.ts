@@ -15,13 +15,13 @@ import {
   type GenericStatusEnumType,
   type HandlerProperties,
   type IMessage,
-  type OcppModuleDependencies,
   MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  type OcppModuleDependencies,
   SetVariableStatusEnum,
 } from '@citrineos/base';
 import {
@@ -335,8 +335,8 @@ export class MonitoringModule extends AbstractModule {
     });
 
     if (requestOcppMessage) {
-      const setVariablesRequest = requestOcppMessage
-        .message[3] as OCPP2_request_types.SetVariablesRequest;
+      const setVariablesRequest =
+        requestOcppMessage.payload as OCPP2_request_types.SetVariablesRequest;
       const setVariableData = setVariablesRequest.setVariableData;
       setVariableData.forEach((setVariableData) => {
         const component = setVariableData.component.name;

@@ -4,32 +4,32 @@
 import {
   AbstractModule,
   AsHandler,
+  AttributeEnum,
   type CallAction,
+  CertificateSigningUseEnum,
+  type CertificateSigningUseEnumType,
+  type CertificateUseEnumType,
+  DeleteCertificateStatusEnum,
   ErrorCode,
   EventGroup,
+  GenericStatusEnum,
+  GetCertificateStatusEnum,
+  GetInstalledCertificateStatusEnum,
   type HandlerProperties,
   type IFileStorage,
   type IMessage,
-  type OcppModuleDependencies,
-  MessageOrigin,
-  OCPP_CallAction,
-  OCPP_2_VER_LIST,
-  OcppError,
-  OCPP2_response_types,
-  OCPP2_request_types,
-  OCPP2_common_types,
-  type CertificateUseEnumType,
-  type CertificateSigningUseEnumType,
   type InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnum,
-  GetCertificateStatusEnum,
-  GenericStatusEnum,
-  GetInstalledCertificateStatusEnum,
-  DeleteCertificateStatusEnum,
-  CertificateSigningUseEnum,
-  AttributeEnum,
-  OCPPVersion,
+  MessageOrigin,
   OCPP2_1,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  OcppError,
+  type OcppModuleDependencies,
+  OCPPVersion,
 } from '@citrineos/base';
 import type {
   ICertificateRepository,
@@ -41,13 +41,13 @@ import type {
 } from '@dal/interfaces/repositories.js';
 import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 
+import { Crypto } from '@peculiar/webcrypto';
 import {
+  CertificateAuthorityService,
   parseCSRForVerification,
   sendOCSPRequest,
   validatePEMEncodedCSR,
-  CertificateAuthorityService,
 } from '@util/index.js';
-import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign from 'jsrsasign';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';
@@ -326,7 +326,7 @@ export class CertificatesModule extends AbstractModule {
         },
       });
       if (originalRequest) {
-        const certSignedPayload = originalRequest.message[3] as OCPP2_1.CertificateSignedRequest;
+        const certSignedPayload = originalRequest.payload as OCPP2_1.CertificateSignedRequest;
         requestId = certSignedPayload?.requestId ?? undefined;
       }
     }
@@ -402,8 +402,8 @@ export class CertificatesModule extends AbstractModule {
       });
       if (request) {
         // should always be true
-        const getInstalledCertificateIdsRequest = request
-          .message[3] as OCPP2_request_types.GetInstalledCertificateIdsRequest;
+        const getInstalledCertificateIdsRequest =
+          request.payload as OCPP2_request_types.GetInstalledCertificateIdsRequest;
         let certificateType;
         if (
           getInstalledCertificateIdsRequest &&

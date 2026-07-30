@@ -871,7 +871,7 @@ export class EVDriverModule extends AbstractModule {
         {
           isActive: message.payload.status === CancelReservationStatusEnum.Rejected,
         },
-        request.message[3].reservationId,
+        request.payload.reservationId,
       );
     } else {
       this._logger.error(
@@ -903,7 +903,7 @@ export class EVDriverModule extends AbstractModule {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,
         },
-        request.message[3].id,
+        request.payload.reservationId,
       );
     } else {
       this._logger.error(
@@ -1144,7 +1144,7 @@ export class EVDriverModule extends AbstractModule {
       });
 
       if (originalMessage) {
-        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+        const originalRequest = originalMessage.payload as OCPP1_6.RemoteStartTransactionRequest;
 
         if (originalRequest.chargingProfile) {
           const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(

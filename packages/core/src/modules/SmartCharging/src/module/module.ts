@@ -6,10 +6,10 @@ import type {
   ChargingRateUnitEnumType,
   HandlerProperties,
   IMessage,
-  OcppModuleDependencies,
+  OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
-  OCPP2_common_types,
+  OcppModuleDependencies,
 } from '@citrineos/base';
 import {
   AbstractModule,
@@ -23,12 +23,12 @@ import {
   EnergyTransferModeEnum,
   EventGroup,
   GenericStatusEnum,
+  MessageOrigin,
   NotifyEVChargingNeedsStatusEnum,
   OCPP1_6,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
-  MessageOrigin,
 } from '@citrineos/base';
 import type {
   IChargingProfileRepository,
@@ -42,8 +42,8 @@ import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import { IdGenerator } from '@util/util/idGenerator.js';
 
-import type { ISmartCharging } from './smartCharging/SmartCharging.js';
 import type { CompositeScheduleInput } from '@/dal/layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
+import type { ISmartCharging } from './smartCharging/SmartCharging.js';
 
 export interface SmartChargingModuleDependencies extends OcppModuleDependencies {
   transactionEventRepository: ITransactionEventRepository;
@@ -545,7 +545,7 @@ export class SmartChargingModule extends AbstractModule {
       });
 
       if (originalMessage) {
-        const originalRequest = originalMessage.message[3] as OCPP1_6.SetChargingProfileRequest;
+        const originalRequest = originalMessage.payload as OCPP1_6.SetChargingProfileRequest;
         const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromSetChargingProfileRequest(
           originalRequest.csChargingProfiles,
         );
