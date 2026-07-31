@@ -17,8 +17,8 @@ import { heading3Style, pageFlex } from '@lib/client/styles/page';
 import { cardHeaderFlex } from '@lib/client/styles/card';
 import { buttonIconSize } from '@lib/client/styles/icon';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
-import { StationPreviewDrawer } from '@lib/client/pages/charging-stations/station.preview.drawer';
-import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { openStationPreview } from '@lib/utils/store/station.preview.slice';
 
 export interface LocationsChargingStationsTableProps {
   location: LocationDto;
@@ -32,8 +32,10 @@ export const LocationsChargingStationsTable = ({
   const { push } = useRouter();
   const translate = useTranslate();
 
-  const [previewStationId, setPreviewStationId] = useState<number | null>(null);
-  const openPreview = (station: { id?: number | null }) => setPreviewStationId(station.id ?? null);
+  const dispatch = useDispatch();
+  const openPreview = (station: { id?: number | null }) => {
+    if (station.id != null) dispatch(openStationPreview(station.id));
+  };
 
   // Use filteredStations if provided, otherwise use all stations from the location
   const stationsToDisplay = location.chargingPool ?? [];
@@ -71,14 +73,6 @@ export const LocationsChargingStationsTable = ({
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
-
-      <StationPreviewDrawer
-        stationId={previewStationId}
-        open={previewStationId != null}
-        onOpenChange={(open) => {
-          if (!open) setPreviewStationId(null);
-        }}
-      />
     </div>
   );
 };

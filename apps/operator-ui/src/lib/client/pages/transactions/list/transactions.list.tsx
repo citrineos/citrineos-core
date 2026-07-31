@@ -24,12 +24,15 @@ import {
 } from '@lib/client/styles/table';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
-import { StationPreviewDrawer } from '@lib/client/pages/charging-stations/station.preview.drawer';
+import { useDispatch } from 'react-redux';
+import { openStationPreview } from '@lib/utils/store/station.preview.slice';
 
 export const TransactionsList = () => {
   const [filters, setFilters] = useState<any>(EMPTY_FILTER);
-  const [previewStationId, setPreviewStationId] = useState<number | null>(null);
-  const openPreview = (station: { id?: number | null }) => setPreviewStationId(station.id ?? null);
+  const dispatch = useDispatch();
+  const openPreview = (station: { id?: number | null }) => {
+    if (station.id != null) dispatch(openStationPreview(station.id));
+  };
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
@@ -85,14 +88,6 @@ export const TransactionsList = () => {
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
-
-      <StationPreviewDrawer
-        stationId={previewStationId}
-        open={previewStationId != null}
-        onOpenChange={(open) => {
-          if (!open) setPreviewStationId(null);
-        }}
-      />
     </div>
   );
 };

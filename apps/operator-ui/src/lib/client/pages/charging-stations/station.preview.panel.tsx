@@ -9,8 +9,7 @@ import { useDispatch } from 'react-redux';
 import { instanceToPlain } from 'class-transformer';
 import type { OCPPMessageDto } from '@citrineos/base';
 import { OCPPMessageProps } from '@citrineos/base';
-import { ChevronDown, MoreHorizontal } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@lib/client/components/ui/sheet';
+import { ChevronDown, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import { KeyValueDisplay } from '@lib/client/components/key-value-display';
 import ProtocolTag from '@lib/client/components/protocol-tag';
@@ -32,22 +31,23 @@ import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { clickableLinkStyle } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 
-export interface StationPreviewDrawerProps {
-  /** The ChargingStations.id to preview. When null the drawer is closed. */
-  stationId: number | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+export interface StationPreviewPanelProps {
+  /** The ChargingStations.id to preview. */
+  stationId: number;
+  /** Called when the panel's close button is clicked. */
+  onClose: () => void;
 }
 
 // Same compact power formatting as connectors/connectors.table.tsx.
 const formatPower = (value?: number | null) =>
   value ? (value > 10000 ? `${(value / 1000).toFixed(1)} kW` : `${value} W`) : NOT_APPLICABLE;
 
-export const StationPreviewDrawer: React.FC<StationPreviewDrawerProps> = ({
-  stationId,
-  open,
-  onOpenChange,
-}) => {
+/**
+ * Persistent, resizable side panel that previews a charging station's key details without leaving
+ * the list. Fields only (no edit/delete); keeps "Other Commands" so an operator can fire a quick
+ * command. Rendered inside a ResizablePanel — only mounted while a station is selected.
+ */
+export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({ stationId, onClose }) => {
   const translate = useTranslate();
   const dispatch = useDispatch();
   const [showEvses, setShowEvses] = useState(false);
@@ -56,11 +56,11 @@ export const StationPreviewDrawer: React.FC<StationPreviewDrawerProps> = ({
     query: { data, isLoading },
   } = useOne<ChargingStationDetailsDto>({
     resource: ResourceType.CHARGING_STATIONS,
-    id: stationId ?? undefined,
+    id: stationId,
     meta: { gqlQuery: CHARGING_STATIONS_GET_QUERY },
     queryOptions: {
       ...getPlainToInstanceOptions(ChargingStationClass, true),
-      enabled: open && stationId != null,
+      enabled: stationId != null,
     },
   });
   const station = data?.data;
@@ -83,7 +83,7 @@ export const StationPreviewDrawer: React.FC<StationPreviewDrawerProps> = ({
     liveMode: 'off',
     queryOptions: {
       ...getPlainToInstanceOptions(OCPPMessageClass),
-      enabled: open && !!station?.ocppConnectionName,
+      enabled: !!station?.ocppConnectionName,
     },
   });
   const latestLog = latestLogsData?.data?.[0] || undefined;
@@ -110,28 +110,31 @@ export const StationPreviewDrawer: React.FC<StationPreviewDrawerProps> = ({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[380px] sm:w-[420px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {station ? (
-              <Link
-                to={`/${MenuSection.CHARGING_STATIONS}/${station.id}`}
-                className={clickableLinkStyle}
-              >
-                {station.ocppConnectionName}
-              </Link>
-            ) : (
-              (stationId ?? '')
-            )}
-            {station && (
-              <span className={station.isOnline ? 'text-success' : 'text-destructive'}>
-                {station.isOnline ? translate('Common.online') : translate('Common.offline')}
-              </span>
-            )}
-          </SheetTitle>
-        </SheetHeader>
+    <div className="flex h-full flex-col bg-card">
+      <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          {station ? (
+            <Link
+              to={`/${MenuSection.CHARGING_STATIONS}/${station.id}`}
+              className={`${clickableLinkStyle} truncate`}
+            >
+              {station.ocppConnectionName}
+            </Link>
+          ) : (
+            <span>{stationId}</span>
+          )}
+          {station && (
+            <span className={station.isOnline ? 'text-success' : 'text-destructive'}>
+              {station.isOnline ? translate('Common.online') : translate('Common.offline')}
+            </span>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" onClick={onClose} title={translate('Common.close')}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
 
+      <div className="flex-1 overflow-y-auto">
         {isLoading || !station ? (
           <div className="flex flex-col gap-3 p-4">
             <Skeleton className="h-5 w-3/4" />
@@ -292,7 +295,7 @@ export const StationPreviewDrawer: React.FC<StationPreviewDrawerProps> = ({
             </CanAccess>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 };

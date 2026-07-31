@@ -84,6 +84,7 @@
     "react-dom": "19.1.4",
     "react-hook-form": "7.65.0",
     "react-redux": "9.2.0",
+    "react-resizable-panels": "^3.0.6",
     "react-syntax-highlighter": "15.6.6",
     "recharts": "3.5.1",
     "redux-persist": "6.0.0",

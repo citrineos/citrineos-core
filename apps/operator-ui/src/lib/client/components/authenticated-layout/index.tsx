@@ -13,6 +13,14 @@ import type { KeycloakUserIdentity } from '@lib/providers/auth-provider/keycloak
 import { Loader2 } from 'lucide-react';
 import { heading2Style } from '@lib/client/styles/page';
 import { HeaderBanner } from '@lib/client/components/ui/header-banner';
+import { useDispatch, useSelector } from 'react-redux';
+import { closeStationPreview, selectStationPreview } from '@lib/utils/store/station.preview.slice';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@lib/client/components/ui/resizable';
+import { StationPreviewPanel } from '@lib/client/pages/charging-stations/station.preview.panel';
 
 type AuthenticatedLayoutProps = {
   children: React.ReactNode;
@@ -28,6 +36,8 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const translate = useTranslate();
+  const dispatch = useDispatch();
+  const { stationId: previewStationId } = useSelector(selectStationPreview);
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
 
   const { data, isLoading } = useIsAuthenticated();
@@ -49,6 +59,11 @@ export default function AuthenticatedLayout({
   const handleFirstLoginModalClose = () => {
     setShowFirstLoginModal(false);
   };
+
+  // Close the station preview panel when navigating to a different page.
+  useEffect(() => {
+    dispatch(closeStationPreview());
+  }, [pathname, dispatch]);
 
   useEffect(() => {
     if (!isLoading && data?.authenticated === false) {
@@ -93,15 +108,38 @@ export default function AuthenticatedLayout({
     <div className="relative">
       <div className="min-h-screen ml-20 bg-cover bg-[url(/gradient.svg)] dark:bg-[url(/gradient-dark.svg)]">
         <MainMenu activeSection={activeSection as MenuSection} />
-        <div className="flex flex-col">
+        <div className="flex h-screen flex-col">
           <AppModal />
-          <main className={`content-container ${routeClassName}`}>
-            <div className="content-outer-wrap">
-              <div className="content-inner-wrap">
-                <>
-                  <HeaderBanner />
-                  {children}
-                </>
+          <main className={`content-container flex min-h-0 flex-1 flex-col ${routeClassName}`}>
+            <div className="content-outer-wrap flex min-h-0 flex-1 flex-col">
+              <div className="content-inner-wrap flex min-h-0 flex-1 flex-col">
+                <HeaderBanner />
+                <ResizablePanelGroup
+                  direction="horizontal"
+                  autoSaveId="app-station-preview"
+                  className="min-h-0 flex-1"
+                >
+                  <ResizablePanel id="main" order={1} className="h-full overflow-auto">
+                    {children}
+                  </ResizablePanel>
+                  {previewStationId != null && (
+                    <>
+                      <ResizableHandle withHandle />
+                      <ResizablePanel
+                        id="preview"
+                        order={2}
+                        defaultSize={30}
+                        minSize={20}
+                        maxSize={50}
+                      >
+                        <StationPreviewPanel
+                          stationId={previewStationId}
+                          onClose={() => dispatch(closeStationPreview())}
+                        />
+                      </ResizablePanel>
+                    </>
+                  )}
+                </ResizablePanelGroup>
               </div>
             </div>
           </main>

@@ -31,15 +31,18 @@ import { buttonIconSize } from '@lib/client/styles/icon';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
 import { useTableFilters } from '@lib/client/hooks/useTableFilters';
-import { StationPreviewDrawer } from '@lib/client/pages/charging-stations/station.preview.drawer';
+import { useDispatch } from 'react-redux';
+import { openStationPreview } from '@lib/utils/store/station.preview.slice';
 
 export const ChargingStationsList = () => {
   const { push } = useRouter();
   const translate = useTranslate();
 
   const [searchFilters, setSearchFilters] = useState<any>(EMPTY_FILTER);
-  const [previewStationId, setPreviewStationId] = useState<number | null>(null);
-  const openPreview = (station: { id?: number | null }) => setPreviewStationId(station.id ?? null);
+  const dispatch = useDispatch();
+  const openPreview = (station: { id?: number | null }) => {
+    if (station.id != null) dispatch(openStationPreview(station.id));
+  };
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
     getChargingStationsColumns(true, translate),
@@ -108,14 +111,6 @@ export const ChargingStationsList = () => {
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
-
-      <StationPreviewDrawer
-        stationId={previewStationId}
-        open={previewStationId != null}
-        onOpenChange={(open) => {
-          if (!open) setPreviewStationId(null);
-        }}
-      />
     </div>
   );
 };
