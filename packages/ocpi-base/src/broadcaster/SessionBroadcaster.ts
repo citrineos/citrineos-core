@@ -10,8 +10,12 @@ import { Logger } from 'tslog';
 import type { Session } from '../model/Session.js';
 import { ModuleId } from '../model/ModuleId.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
-import type { MeterValueDto, TenantDto, TransactionDto } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/base';
+import {
+  type MeterValueDto,
+  type TenantDto,
+  type TransactionDto,
+  HttpMethod,
+} from '@citrineos/types';
 import { SessionMapper } from '../mapper/index.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 

@@ -6,7 +6,7 @@
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { Badge } from '@lib/client/components/ui/badge';
 import { Separator } from '@lib/client/components/ui/separator';
-import type { LocationHours } from '@citrineos/base';
+import type { LocationHours } from '@citrineos/types';
 import { Clock, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { NOT_APPLICABLE } from '@lib/utils/consts';

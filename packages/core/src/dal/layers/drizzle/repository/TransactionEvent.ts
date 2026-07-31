@@ -6,7 +6,7 @@ import type {
   TransactionEventDto,
   TransactionEventEnumType,
   TriggerReasonEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type TransactionEventEntity,
   transactionEventTable,

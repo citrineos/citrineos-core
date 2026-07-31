@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import {
   type TenantPartnerEntity,
   tenantPartnerTable,

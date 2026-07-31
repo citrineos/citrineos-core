@@ -3,25 +3,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { asValue, type AwilixContainer } from 'awilix';
-import type {
-  AbstractModule,
-  BootstrapConfig,
-  IApiAuthProvider,
-  ICache,
-  IFileStorage,
-  IMessageRouter,
-  IModule,
-  IModuleApi,
-  SystemConfig,
-} from '@citrineos/base';
 import {
+  type AbstractModule,
+  type BootstrapConfig,
+  type IApiAuthProvider,
+  type ICache,
+  type IFileStorage,
+  type IMessageRouter,
+  type IModule,
+  type IModuleApi,
   Ajv,
   ConfigStoreFactory,
-  EventGroup,
-  eventGroupFromString,
   type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
+import { type SystemConfig, EventGroup, eventGroupFromString } from '@citrineos/types';
 import {
   AdminApi,
   apiAuthPluginFp,

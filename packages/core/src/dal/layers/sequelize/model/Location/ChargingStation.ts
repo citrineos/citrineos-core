@@ -1,25 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  ChargingStationCapabilityEnumType,
-  ChargingStationDto,
-  ChargingStationParkingRestrictionEnumType,
-  ChargingStationSecurityInfoDto,
-  ChargingStationSequenceDto,
-  ConnectorDto,
-  EvseDto,
-  InstalledCertificateDto,
-  LocationDto,
-  OCPPMessageDto,
-  Point,
-  ServerNetworkProfileDto,
-  StatusNotificationDto,
-  TenantDto,
-  VariableAttributeDto,
-  VariableMonitoringDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, Namespace, OCPPVersion } from '@citrineos/base';
+import {
+  type ChargingStationCapabilityEnumType,
+  type ChargingStationDto,
+  type ChargingStationParkingRestrictionEnumType,
+  type ChargingStationSecurityInfoDto,
+  type ChargingStationSequenceDto,
+  type ConnectorDto,
+  type EvseDto,
+  type InstalledCertificateDto,
+  type LocationDto,
+  type OCPPMessageDto,
+  type Point,
+  type ServerNetworkProfileDto,
+  type StatusNotificationDto,
+  type TenantDto,
+  type VariableAttributeDto,
+  type VariableMonitoringDto,
+  OCPPVersion,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BeforeCreate,

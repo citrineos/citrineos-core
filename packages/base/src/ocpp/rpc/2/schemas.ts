@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { AnySchemaObject } from 'ajv';
-import { OCPP2_0_1, OCPP2_1 } from '../../model/index.js';
-import { OCPPVersion } from '../message.js';
+import { OCPP2_0_1, OCPP2_1, OCPPVersion } from '@citrineos/types';
 
 type SchemaRecord = {
   [V in Exclude<OCPPVersion, OCPPVersion.OCPP1_6>]: Record<string, AnySchemaObject>;

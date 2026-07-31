@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OCPPMessageDto } from '@citrineos/base';
+import type { OCPPMessageDto } from '@citrineos/types';
 import {
   type OCPPMessageEntity,
   ocppMessageTable,

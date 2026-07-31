@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type ILogObj, Logger } from 'tslog';
 import { type HandlerProperties, type IMessage } from '@interfaces/messages/index.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
+import type { OcppRequest, OcppResponse } from '@citrineos/types';
 import type { IHandler } from '@interfaces/handlers/Handler.js';
 
 export interface AbstractHandlerDependencies {

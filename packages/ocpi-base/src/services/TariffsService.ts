@@ -16,7 +16,7 @@ import type {
 } from '../graphql/index.js';
 import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
 import { TariffMapper } from '../mapper/index.js';
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 
 @Service()
 export class TariffsService {

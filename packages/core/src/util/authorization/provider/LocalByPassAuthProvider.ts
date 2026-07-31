@@ -5,8 +5,12 @@
 import type { FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
-import { ApiAuthenticationResult, ApiAuthorizationResult } from '@citrineos/base';
+import {
+  type IApiAuthProvider,
+  type UserInfo,
+  ApiAuthenticationResult,
+  ApiAuthorizationResult,
+} from '@citrineos/base';
 
 /**
  * A local bypass authentication provider that doesn't perform actual authentication

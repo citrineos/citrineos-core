@@ -1,14 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AbstractModule,
-  createIdentifier,
-  DEFAULT_TENANT_ID,
-  ICache,
-  MessageOrigin,
-  MessageState,
-} from '@citrineos/base';
+import { AbstractModule, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { MessageOrigin, MessageState } from '@citrineos/types';
 import {
   IOCPPMessageRepository,
   ISubscriptionRepository,

@@ -5,13 +5,15 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  DeleteCertificateStatusEnum,
-  type HandlerProperties,
   type IMessage,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  DeleteCertificateStatusEnum,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IDeleteCertificateAttemptRepository,
   IInstalledCertificateRepository,

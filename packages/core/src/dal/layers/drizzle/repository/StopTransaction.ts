@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StopTransactionDto } from '@citrineos/base';
+import type { StopTransactionDto } from '@citrineos/types';
 import {
   type StopTransactionEntity,
   stopTransactionTable,

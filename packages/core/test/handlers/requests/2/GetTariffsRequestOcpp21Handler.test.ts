@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IMessage, OcppRequest } from '@citrineos/base';
+import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  DEFAULT_TENANT_ID,
+  type OcppRequest,
   EventGroup,
   MessageOrigin,
   MessageState,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';

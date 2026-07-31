@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { Card, CardContent } from '@lib/client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
 import { cardTabsStyle } from '@lib/client/styles/card';

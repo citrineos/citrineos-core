@@ -24,7 +24,7 @@ import type {
   LocationHours,
   LocationRegularHours,
   LocationExceptionalPeriod,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Plus, Trash2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';

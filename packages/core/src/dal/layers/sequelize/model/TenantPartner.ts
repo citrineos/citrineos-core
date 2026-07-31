@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { PartnerProfile, TenantDto, TenantPartnerDto } from '@citrineos/base';
+import type { PartnerProfile, TenantDto, TenantPartnerDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,

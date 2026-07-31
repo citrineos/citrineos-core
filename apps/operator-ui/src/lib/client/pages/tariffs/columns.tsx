@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import { TariffProps } from '@citrineos/base';
+import { TariffProps } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import type { TariffClass } from '@lib/cls/tariff.dto';

@@ -5,18 +5,15 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   DEFAULT_TENANT_ID,
-  HttpMethod,
   type IFileStorage,
   type IMessageConfirmation,
   type IMessageQuerystring,
   IMessageQuerystringSchema,
   Namespace,
   OCPP1_6_Namespace,
-  OCPP2_0_1,
-  OCPP_CallAction,
   OCPP2_Namespace,
-  OCPPVersion,
 } from '@citrineos/base';
+import { HttpMethod, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { Certificate, InstalledCertificate } from '@dal/layers/sequelize/index.js';
 import {
   InstallRootCertificateRequest,

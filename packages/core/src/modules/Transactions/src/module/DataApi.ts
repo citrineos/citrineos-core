@@ -17,11 +17,11 @@ import { TransactionsModule } from './module.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
 } from '@citrineos/base';
+import { HttpMethod } from '@citrineos/types';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpsertTariffRequest } from './model/tariffs.js';
 import { plainToInstance } from 'class-transformer';

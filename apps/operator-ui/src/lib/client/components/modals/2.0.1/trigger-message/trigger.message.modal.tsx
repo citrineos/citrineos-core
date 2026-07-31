@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React, { useMemo, useState } from 'react';
-import type { ChargingStationDto } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { type ChargingStationDto, OCPP2_0_1 } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField } from '@lib/client/components/form/field';

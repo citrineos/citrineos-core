@@ -5,15 +5,17 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  GenericStatusEnum,
-  type GenericStatusEnumType,
-  type HandlerProperties,
   type IMessage,
   OCPP2_common_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  GenericStatusEnum,
+  type GenericStatusEnumType,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetMonitoringLevel)
 export class SetMonitoringLevelResponseOcpp2Handler extends AbstractHandler {

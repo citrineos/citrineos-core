@@ -5,13 +5,15 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
   MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IChangeConfigurationRepository,
   IOCPPMessageRepository,

@@ -5,14 +5,11 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
   recordAuthorizeResult,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { ILocationRepository, ITransactionEventRepository } from '@/dal/index.js';
 

@@ -10,7 +10,7 @@ import type {
 import { GET_CHARGING_STATION_BY_ID_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { ChargingStationDto } from '@citrineos/base';
+import type { ChargingStationDto } from '@citrineos/types';
 
 @Service()
 export class LocationRepository {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AddressType } from '@interfaces/dto/types/vat.js';
+import type { AddressType } from '@citrineos/types';
 
 export interface IVatProvider {
   /**

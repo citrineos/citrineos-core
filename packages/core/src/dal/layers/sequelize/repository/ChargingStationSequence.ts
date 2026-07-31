@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ChargingStationSequenceTypeEnumType } from '@citrineos/base';
+import type { ChargingStationSequenceTypeEnumType } from '@citrineos/types';
 import type { IChargingStationSequenceRepository } from '../../../interfaces/repositories.js';
 import { ChargingStationSequence } from '../model/ChargingStationSequence/ChargingStationSequence.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';

@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Boot, IBootRepository } from '@citrineos/core';
 import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
-import { ICache, OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/base';
+import { ICache } from '@citrineos/base';
+import { OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/types';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';

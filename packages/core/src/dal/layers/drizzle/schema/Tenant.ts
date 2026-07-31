@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ServerProfile } from '@citrineos/base';
+import type { ServerProfile } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   boolean,

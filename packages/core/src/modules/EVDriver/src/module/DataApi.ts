@@ -10,11 +10,11 @@ import { EVDriverModule } from './module.js';
 import {
   AbstractModuleApi,
   AsDataEndpoint,
-  HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
 } from '@citrineos/base';
+import { HttpMethod } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/queries/ChargingStation.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/queries/ChargingStation.js';
 import { LocalListAuthorization, LocalListVersion } from '@dal/index.js';

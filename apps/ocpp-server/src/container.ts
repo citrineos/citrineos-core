@@ -14,8 +14,8 @@ import {
   type ICache,
   OcppSender,
   OCPPValidator,
-  type SystemConfig,
 } from '@citrineos/base';
+import { type SystemConfig } from '@citrineos/types';
 
 // -- Infrastructure --
 import { type ILogObj, Logger } from 'tslog';

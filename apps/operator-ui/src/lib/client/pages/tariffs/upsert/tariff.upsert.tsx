@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type TariffDto, TariffProps, TariffSchema } from '@citrineos/base';
+import { type TariffDto, TariffProps, TariffSchema } from '@citrineos/types';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';

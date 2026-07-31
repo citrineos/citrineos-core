@@ -5,15 +5,17 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  GenericDeviceModelStatusEnum,
-  type GenericDeviceModelStatusEnumType,
-  type HandlerProperties,
   type IMessage,
   OCPP2_common_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  GenericDeviceModelStatusEnum,
+  type GenericDeviceModelStatusEnumType,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
 export class GetMonitoringReportResponseOcpp2Handler extends AbstractHandler {

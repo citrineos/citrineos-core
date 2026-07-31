@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MessageState, type OCPPMessageDto } from '@citrineos/base';
+import { MessageState, type OCPPMessageDto } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '../../../interfaces/repositories.js';
 import { OCPPMessage } from '../model/OCPPMessage.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';

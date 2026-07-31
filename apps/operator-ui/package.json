@@ -20,7 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1100.0",
     "@aws-sdk/s3-request-presigner": "3.1100.0",
-    "@citrineos/base": "workspace:*",
+    "@citrineos/types": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
     "@google-cloud/storage": "7.21.0",
     "@googlemaps/markerclusterer": "2.6.2",

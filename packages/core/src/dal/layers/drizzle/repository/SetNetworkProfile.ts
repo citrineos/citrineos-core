@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SetNetworkProfileDto } from '@citrineos/base';
+import type { SetNetworkProfileDto } from '@citrineos/types';
 import {
   type SetNetworkProfileEntity,
   setNetworkProfileTable,

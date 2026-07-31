@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { TransactionEventProps } from '@citrineos/base';
+import { TransactionEventProps } from '@citrineos/types';
 import { Table } from '@lib/client/components/table';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import React from 'react';

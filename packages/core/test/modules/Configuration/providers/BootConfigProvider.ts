@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { Boot } from '@citrineos/core';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 

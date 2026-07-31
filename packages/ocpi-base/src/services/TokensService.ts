@@ -2,8 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthorizationDto, ChargingStationDto } from '@citrineos/base';
-import { AuthorizationStatusEnum, IdTokenEnum, OCPP2_0_1 } from '@citrineos/base';
+import {
+  type AuthorizationDto,
+  type ChargingStationDto,
+  AuthorizationStatusEnum,
+  IdTokenEnum,
+  OCPP2_0_1,
+} from '@citrineos/types';
 
 type AdditionalInfoType = OCPP2_0_1.AdditionalInfoType;
 import type {

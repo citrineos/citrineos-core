@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AsyncJobDto } from '@citrineos/base';
+import type { AsyncJobDto } from '@citrineos/types';
 import {
   type AsyncJobStatusEntity,
   asyncJobStatusTable,

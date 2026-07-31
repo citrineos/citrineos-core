@@ -5,19 +5,21 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  AttributeEnum,
   type BootstrapConfig,
+  type IMessage,
+  type IOcppSender,
+} from '@citrineos/base';
+import {
+  AttributeEnum,
   ErrorCode,
   EventGroup,
   type HandlerProperties,
-  type IMessage,
-  type IOcppSender,
   OCPP2_1,
   OCPP_CallAction,
   OcppError,
   OCPPVersion,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type IDeviceModelRepository,
   type ITransactionEventRepository,

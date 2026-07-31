@@ -2,22 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  CallAction,
-  IMessageConfirmation,
-  OCPP2_common_types,
-  OCPP2_request_types,
-} from '@citrineos/base';
 import {
+  type IMessageConfirmation,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
   AbstractModuleApi,
   AsMessageEndpoint,
-  DataEnum,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+} from '@citrineos/base';
+import {
+  type CallAction,
+  DataEnum,
   MonitorEnum,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';

@@ -6,21 +6,23 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type BootstrapConfig,
-  ChargingLimitSourceEnum,
-  ChargingProfilePurposeEnum,
-  ChargingStationSequenceTypeEnum,
-  EventGroup,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ChargingLimitSourceEnum,
+  ChargingProfilePurposeEnum,
+  ChargingStationSequenceTypeEnum,
+  EventGroup,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   RequestStartStopStatusEnum,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import { IdGenerator } from '@util/index.js';
 

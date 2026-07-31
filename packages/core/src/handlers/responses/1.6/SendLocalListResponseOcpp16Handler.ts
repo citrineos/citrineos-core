@@ -5,14 +5,16 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  EventGroup,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
+} from '@citrineos/base';
+import {
+  EventGroup,
+  type HandlerProperties,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ILocalAuthListRepository } from '@dal/interfaces/repositories.js';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SendLocalList)

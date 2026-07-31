@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootConfig, OCPP2_common_types, RegistrationStatusEnumType } from '@citrineos/base';
-import { CrudRepository } from '@citrineos/base';
+import { type BootConfig, type OCPP2_common_types, CrudRepository } from '@citrineos/base';
+import type { RegistrationStatusEnumType } from '@citrineos/types';
 import type { IBootRepository } from '../../../interfaces/repositories.js';
 import { Boot } from '../model/Boot.js';
 import { VariableAttribute } from '../model/DeviceModel/VariableAttribute.js';

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OCPP_CallAction, RetryMessageError } from '@citrineos/base';
+import { OCPP_CallAction, RetryMessageError } from '@citrineos/types';
 import { RabbitMqReceiver } from '@util/queue/rabbit-mq/receiver.js';
 import {
   aConsumeMessage,

@@ -1,13 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  IMessageRouter,
-  INetworkConnection,
-  SubscriptionDto,
-  WebsocketServerConfig,
-} from '@citrineos/base';
 import {
+  type IMessageRouter,
+  type INetworkConnection,
   AbstractModuleApi,
   AsDataEndpoint,
   BadRequestError,
@@ -15,12 +11,12 @@ import {
   ConfigStoreFactory,
   DEFAULT_TENANT_ID,
   getCacheTenantPathMappingKey,
-  HttpMethod,
   Namespace,
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
 } from '@citrineos/base';
+import { type SubscriptionDto, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,

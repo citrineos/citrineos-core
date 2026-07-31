@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  TariffEnergyType,
-  TariffFixedType,
-  TariffTimeType,
-  PriceType,
-  MessageContentType,
-} from '@citrineos/base';
-import { OCPP2_1 } from '@citrineos/base';
+import {
+  type TariffEnergyType,
+  type TariffFixedType,
+  type TariffTimeType,
+  type PriceType,
+  type MessageContentType,
+  OCPP2_1,
+} from '@citrineos/types';
 import { Tariff } from '../../model/Tariff/Tariffs.js';
 export class TariffMapper {
   /**

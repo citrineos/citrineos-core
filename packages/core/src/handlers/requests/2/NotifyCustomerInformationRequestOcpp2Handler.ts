@@ -5,16 +5,18 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  ErrorCode,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ErrorCode,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OcppError,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@dal/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)

@@ -5,15 +5,17 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   SecurityEventNotificationTypeEnumSchema,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ISecurityEventRepository } from '@/dal/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.SecurityEventNotification)

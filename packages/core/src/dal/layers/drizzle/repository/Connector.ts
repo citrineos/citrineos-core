@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ConnectorDto } from '@citrineos/base';
+import type { ConnectorDto } from '@citrineos/types';
 import { type ConnectorEntity, connectorTable, tenantConnectorTable } from '../schema/Connector.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

@@ -17,7 +17,7 @@
  *  • Unsubscribe actually removes bindings from the broker.
  */
 
-import { OCPP_CallAction } from '@citrineos/base';
+import { OCPP_CallAction } from '@citrineos/types';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RabbitMQChannelManager } from '@util/queue/rabbit-mq/ChannelManager.js';

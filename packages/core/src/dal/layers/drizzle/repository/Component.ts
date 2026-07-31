@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ComponentDto } from '@citrineos/base';
+import type { ComponentDto } from '@citrineos/types';
 import { type ComponentEntity, componentTable, tenantComponentTable } from '../schema/Component.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

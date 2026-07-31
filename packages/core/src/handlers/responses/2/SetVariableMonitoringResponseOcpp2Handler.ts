@@ -5,12 +5,10 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
   OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 import type { IVariableMonitoringRepository } from '@/dal/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetVariableMonitoring)

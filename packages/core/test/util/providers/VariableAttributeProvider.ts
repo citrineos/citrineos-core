@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { VariableAttribute, VariableStatus } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
-import { DEFAULT_TENANT_ID, IVariableAttributeDto, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { IVariableAttributeDto, OCPP2_0_1 } from '@citrineos/types';
 
 export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {

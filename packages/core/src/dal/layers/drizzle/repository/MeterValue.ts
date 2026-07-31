@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { MeterValueDto, SampledValue } from '@citrineos/base';
+import type { MeterValueDto, SampledValue } from '@citrineos/types';
 import {
   type MeterValueEntity,
   meterValueTable,

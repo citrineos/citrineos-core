@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import type { AuthorizationDto } from '@citrineos/base';
+import type { AuthorizationDto } from '@citrineos/types';
 import { AuthorizationDetailCard } from '@lib/client/pages/authorizations/detail/authorization.detail.card';
 import { AuthorizationClass } from '@lib/cls/authorization.dto';
 import { AUTHORIZATIONS_SHOW_QUERY } from '@lib/queries/authorizations';

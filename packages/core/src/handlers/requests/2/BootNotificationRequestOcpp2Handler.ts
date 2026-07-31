@@ -9,8 +9,6 @@ import {
   type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
-  EventGroup,
-  type HandlerProperties,
   type ICache,
   type IMessage,
   type IMessageConfirmation,
@@ -19,6 +17,10 @@ import {
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  EventGroup,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   type RegistrationStatusEnumType,
@@ -26,7 +28,7 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';

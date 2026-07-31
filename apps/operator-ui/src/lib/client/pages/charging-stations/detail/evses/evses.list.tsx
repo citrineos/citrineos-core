@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ChevronDown } from 'lucide-react';
-import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/base';
+import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@lib/client/components/ui/dialog';
 import { ConnectorsTable } from '@lib/client/pages/charging-stations/detail/connectors/connectors.table';

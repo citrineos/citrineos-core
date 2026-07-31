@@ -9,8 +9,12 @@ import type { JwtPayload } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import JwksRsa from 'jwks-rsa';
-import type { IApiAuthProvider, UserInfo } from '@citrineos/base';
-import { ApiAuthenticationResult, ApiAuthorizationResult } from '@citrineos/base';
+import {
+  type IApiAuthProvider,
+  type UserInfo,
+  ApiAuthenticationResult,
+  ApiAuthorizationResult,
+} from '@citrineos/base';
 import { createPublicKey } from 'crypto';
 import { RbacRulesLoader } from '../rbac/RbacRulesLoader.js';
 

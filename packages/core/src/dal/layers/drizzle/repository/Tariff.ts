@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { type TariffEntity, tariffTable, tenantTariffTable } from '../schema/Tariff.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

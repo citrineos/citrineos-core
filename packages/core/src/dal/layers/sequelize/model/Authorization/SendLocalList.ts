@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
-import type { TenantDto, LocalListAuthorizationDto } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
+import { OCPP2_0_1, type TenantDto, type LocalListAuthorizationDto } from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,

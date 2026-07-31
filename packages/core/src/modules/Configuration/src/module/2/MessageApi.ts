@@ -8,12 +8,10 @@ import {
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
   OCPP2_request_types,
-  OCPP_CallAction,
-  OCPPVersion,
-  type CallAction,
   type IMessageConfirmation,
   type OCPP2_common_types,
 } from '@citrineos/base';
+import { OCPP_CallAction, OCPPVersion, type CallAction } from '@citrineos/types';
 import { SetNetworkProfile } from '@dal/index.js';
 import { packageGroupCall, validateLanguageTag } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';

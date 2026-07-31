@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { EvseDto } from '@citrineos/base';
+import type { EvseDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Circle } from '@lib/client/pages/overview/circle/circle';
 import type { ChargingStationDetailsDto } from '@lib/cls/charging.station.dto';

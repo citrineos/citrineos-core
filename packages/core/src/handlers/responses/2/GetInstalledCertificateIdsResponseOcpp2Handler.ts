@@ -5,17 +5,19 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type CertificateUseEnumType,
-  GetInstalledCertificateStatusEnum,
-  type HandlerProperties,
   type IMessage,
-  MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type CertificateUseEnumType,
+  GetInstalledCertificateStatusEnum,
+  type HandlerProperties,
+  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type IInstalledCertificateRepository,
   InstalledCertificate,

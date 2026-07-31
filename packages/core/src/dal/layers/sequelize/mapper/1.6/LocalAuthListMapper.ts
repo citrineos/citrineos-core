@@ -2,8 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AuthorizationStatusEnum, OCPP1_6 } from '@citrineos/base';
-import type { AuthorizationStatusEnumType } from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  OCPP1_6,
+  type AuthorizationStatusEnumType,
+} from '@citrineos/types';
 import type { Authorization } from '../../model/Authorization/Authorization.js';
 import type { LocalListAuthorization } from '../../model/Authorization/LocalListAuthorization.js';
 

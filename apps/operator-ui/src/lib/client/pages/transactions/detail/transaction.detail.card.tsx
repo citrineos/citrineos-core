@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import type { TransactionDto } from '@citrineos/base';
+import type { TransactionDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
 import { Badge } from '@lib/client/components/ui/badge';

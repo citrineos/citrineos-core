@@ -9,18 +9,20 @@ import {
   type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
-  EventGroup,
-  type HandlerProperties,
   type ICache,
   type IMessage,
   type IMessageConfirmation,
   type IOcppSender,
   type IWebsocketConnection,
+} from '@citrineos/base';
+import {
+  EventGroup,
+  type HandlerProperties,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IBootRepository,
   IChangeConfigurationRepository,

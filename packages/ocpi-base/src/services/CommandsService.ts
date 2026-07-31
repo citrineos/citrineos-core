@@ -29,7 +29,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { OcpiConfig } from '../config/ocpi.types.js';
 import { OcpiConfigToken } from '../config/ocpi.types.js';
-import type { ChargingStationDto, TenantPartnerDto } from '@citrineos/base';
+import type { ChargingStationDto, TenantPartnerDto } from '@citrineos/types';
 import { EXTRACT_STATION_ID } from '../model/DTO/EvseDTO.js';
 
 @Service()

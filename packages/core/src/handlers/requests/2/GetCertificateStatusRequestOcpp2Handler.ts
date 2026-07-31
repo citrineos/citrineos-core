@@ -5,16 +5,18 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  ErrorCode,
-  GetCertificateStatusEnum,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ErrorCode,
+  GetCertificateStatusEnum,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { sendOCSPRequest } from '@util/index.js';
 

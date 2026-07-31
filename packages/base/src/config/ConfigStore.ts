@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IFileStorage } from '@interfaces/files/fileStorage.js';
-import type { SystemConfig } from './types.js';
+import type { SystemConfig } from '@citrineos/types';
 
 export interface ConfigStore extends IFileStorage {
   fetchConfig(): Promise<SystemConfig | null>;

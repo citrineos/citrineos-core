@@ -7,7 +7,7 @@ import {
   type ChargingStationDto,
   type InstalledCertificateDto,
   InstalledCertificateProps,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ComboboxFormField } from '@lib/client/components/form/field';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { EvseTypeDto } from '@citrineos/base';
+import type { EvseTypeDto } from '@citrineos/types';
 import { type EvseTypeEntity, evseTypeTable, tenantEvseTypeTable } from '../schema/EvseType.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

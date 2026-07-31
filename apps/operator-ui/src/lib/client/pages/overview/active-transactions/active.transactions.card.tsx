@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { TransactionDto } from '@citrineos/base';
-import { BaseProps, TransactionProps } from '@citrineos/base';
+import { type TransactionDto, BaseProps, TransactionProps } from '@citrineos/types';
 import { Combobox } from '@lib/client/components/combobox';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { TransactionClass } from '@lib/cls/transaction.dto';

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, IMessageConfirmation, IModule, OCPPVersion } from '@citrineos/base';
+import type { IMessageConfirmation, IModule } from '@citrineos/base';
+import type { CallAction, OCPPVersion } from '@citrineos/types';
 
 /** Utility function to package and send a collection of calls using the provided delegate and associated parameters. */
 export const packageGroupCall = (

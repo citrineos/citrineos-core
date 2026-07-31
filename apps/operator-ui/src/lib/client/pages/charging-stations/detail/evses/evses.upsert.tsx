@@ -4,8 +4,7 @@
 'use client';
 
 import React from 'react';
-import type { EvseDto } from '@citrineos/base';
-import { EvseProps } from '@citrineos/base';
+import { type EvseDto, EvseProps } from '@citrineos/types';
 import { Form } from '@lib/client/components/form';
 import { CheckboxFormField, FormField } from '@lib/client/components/form/field';
 import { Input } from '@lib/client/components/ui/input';

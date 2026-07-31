@@ -5,14 +5,16 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
+  type IMessage,
+} from '@citrineos/base';
+import {
   ChargingLimitSourceEnum,
   type HandlerProperties,
-  type IMessage,
   MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { OCPP1_6_Mapper } from '@/dal/index.js';
 import type {
   IChargingProfileRepository,

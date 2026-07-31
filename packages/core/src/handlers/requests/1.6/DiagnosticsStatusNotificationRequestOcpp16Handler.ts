@@ -5,13 +5,10 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.DiagnosticsStatusNotification)
 export class DiagnosticsStatusNotificationRequestOcpp16Handler extends AbstractHandler {

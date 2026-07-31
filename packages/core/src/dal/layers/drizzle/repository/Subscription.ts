@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ISubscriptionRepository } from '@/dal/index.js';
-import type { SubscriptionDto } from '@citrineos/base';
+import type { SubscriptionDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
 import {
   type SubscriptionEntity,

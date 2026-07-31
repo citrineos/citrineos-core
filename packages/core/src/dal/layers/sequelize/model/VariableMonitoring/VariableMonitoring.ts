@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  ChargingStationDto,
-  ComponentDto,
-  EventNotificationEnumType,
-  MonitorEnumType,
-  TenantDto,
-  VariableDto,
-  VariableMonitoringDto,
-  VariableMonitoringStatusDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type ComponentDto,
+  type EventNotificationEnumType,
+  type MonitorEnumType,
+  type TenantDto,
+  type VariableDto,
+  type VariableMonitoringDto,
+  type VariableMonitoringStatusDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BeforeCreate,
