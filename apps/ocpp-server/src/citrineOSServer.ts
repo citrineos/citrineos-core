@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AwilixContainer } from 'awilix';
-import { buildContainer } from './container.js';
+import { asValue, type AwilixContainer } from 'awilix';
 import type {
   AbstractModule,
   BootstrapConfig,
@@ -28,6 +27,8 @@ import {
   apiAuthPluginFp,
   BrokerAwareMessageSender,
   DefaultDrizzleInstance,
+  type HealthCheckResult,
+  HealthCheckService,
   initSwagger,
   type IServerNetworkProfileRepository,
   MemoryCache,
@@ -49,7 +50,7 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
-import { type HealthCheckResult, HealthCheckService } from '@citrineos/core';
+import { buildContainer } from './container.js';
 
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {
@@ -424,6 +425,7 @@ export class CitrineOSServer {
    */
   private async initModuleInScope(moduleToken: string, routeApis: string[]): Promise<void> {
     const scope = this._container.createScope();
+    scope.register({ moduleScope: asValue(scope) });
     const module = scope.resolve<AbstractModule>(moduleToken);
     await this.initHandlersAndAddModule(module);
     for (const routeApi of routeApis) {
@@ -438,7 +440,7 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
-    if (process.env.CITRINEOS_USE_DRIZZLE_SECURITY_EVENT === 'true') {
+    if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
   }

@@ -18,8 +18,8 @@
     "playwright:install": "playwright install chromium"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1097.0",
-    "@aws-sdk/s3-request-presigner": "3.1097.0",
+    "@aws-sdk/client-s3": "3.1100.0",
+    "@aws-sdk/s3-request-presigner": "3.1100.0",
     "@citrineos/base": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
     "@google-cloud/storage": "7.21.0",
@@ -42,7 +42,7 @@
     "@radix-ui/react-switch": "1.2.6",
     "@radix-ui/react-tabs": "1.1.17",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@reduxjs/toolkit": "2.9.0",
+    "@reduxjs/toolkit": "2.12.0",
     "@refinedev/cli": "2.16.52",
     "@refinedev/core": "5.0.12",
     "@refinedev/devtools": "2.0.5",

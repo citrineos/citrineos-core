@@ -89,7 +89,7 @@ export class MonitoringOcpp2Api
       try {
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.SetVariableMonitoring,
             tenantId,
@@ -138,7 +138,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.SetVariableMonitoring,
             tenantId,
@@ -195,7 +195,7 @@ export class MonitoringOcpp2Api
 
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
@@ -212,7 +212,7 @@ export class MonitoringOcpp2Api
         const ids = request.id as number[];
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
@@ -319,7 +319,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.SetVariables,
             tenantId,
@@ -368,7 +368,7 @@ export class MonitoringOcpp2Api
       try {
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.GetVariables,
             tenantId,
@@ -386,7 +386,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.GetVariables,
             tenantId,

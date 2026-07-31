@@ -6,6 +6,7 @@ import type {
   ICache,
   OCPPVersion,
   OCPPVersionType,
+  SubscriptionDto,
   SystemConfig,
 } from '@citrineos/base';
 import {
@@ -20,7 +21,6 @@ import type {
   IOCPPMessageRepository,
   ISubscriptionRepository,
 } from '@dal/interfaces/repositories.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import { OidcTokenProvider } from '@util/authorization/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -362,7 +362,7 @@ export class WebhookDispatcher {
     this._sentMessageCallbacks.set(connectionIdentifier, sentMessageCallbacks);
   }
 
-  protected _onConnectionCallback(subscription: Subscription) {
+  protected _onConnectionCallback(subscription: SubscriptionDto) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -374,7 +374,7 @@ export class WebhookDispatcher {
       );
   }
 
-  protected _onCloseCallback(subscription: Subscription) {
+  protected _onCloseCallback(subscription: SubscriptionDto) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -386,7 +386,7 @@ export class WebhookDispatcher {
       );
   }
 
-  protected _onMessageReceivedCallback(subscription: Subscription) {
+  protected _onMessageReceivedCallback(subscription: SubscriptionDto) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
@@ -409,7 +409,7 @@ export class WebhookDispatcher {
     };
   }
 
-  protected _onMessageSentCallback(subscription: Subscription) {
+  protected _onMessageSentCallback(subscription: SubscriptionDto) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
