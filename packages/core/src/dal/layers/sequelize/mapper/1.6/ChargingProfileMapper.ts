@@ -8,7 +8,7 @@ import {
   ChargingRateUnitEnum,
   OCPP1_6,
   RecurrencyKindEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 /**
  * Input type for creating/updating a ChargingProfile via the repository.

@@ -5,7 +5,7 @@
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { MessageInfo } from '../model/MessageInfo/MessageInfo.js';
 import type { IMessageInfoRepository } from '../../../interfaces/repositories.js';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 
 export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>

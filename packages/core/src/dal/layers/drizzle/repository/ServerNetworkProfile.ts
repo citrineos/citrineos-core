@@ -3,11 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IServerNetworkProfileRepository } from '@/dal/index.js';
-import type { BootstrapConfig, ServerNetworkProfileDto } from '@citrineos/base';
+import type { ServerNetworkProfileDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import {
   type ServerNetworkProfileEntity,
   serverNetworkProfileTable,
@@ -49,15 +46,6 @@ export class DrizzleServerNetworkProfileRepository
   extends DrizzleRepository<typeof serverNetworkProfileTable, ServerNetworkProfileDto>
   implements IServerNetworkProfileRepository
 {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof serverNetworkProfileTable {
     return this.useTenantSchema
       ? tenantServerNetworkProfileTable(tenantId)

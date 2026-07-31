@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { type ChargingStationDto, OCPPVersion } from '@citrineos/base';
+import { type ChargingStationDto, OCPPVersion } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { FormField, nestedFormRowFlex } from '@lib/client/components/form/field';

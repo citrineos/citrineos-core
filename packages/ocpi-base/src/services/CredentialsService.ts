@@ -31,7 +31,7 @@ import type { CredentialsDTO } from '../model/DTO/CredentialsDTO.js';
 import type { Endpoint } from '../model/Endpoint.js';
 import type { UnregisterClientRequestDTO } from '../model/UnregisterClientRequestDTO.js';
 import type { AdminCredentialsRequestDTO } from '../model/DTO/AdminCredentialsRequestDTO.js';
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import { RegistrationMapper } from '../mapper/index.js';
 
 // const CpoCredentialsRole = CredentialsRoleDTO.build(

@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, LatestStatusNotificationDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { LatestStatusNotificationDto } from '@citrineos/types';
 import {
   type LatestStatusNotificationEntity,
   latestStatusNotificationTable,
@@ -38,15 +35,6 @@ export class DrizzleLatestStatusNotificationRepository extends DrizzleRepository
   typeof latestStatusNotificationTable,
   LatestStatusNotificationDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof latestStatusNotificationTable {
     return this.useTenantSchema
       ? tenantLatestStatusNotificationTable(tenantId)

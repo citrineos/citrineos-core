@@ -9,7 +9,7 @@ import {
   type ComponentDto,
   ComponentProps,
   OCPP2_0_1,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import {
@@ -29,7 +29,7 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
-import { useFieldArray } from 'react-hook-form';
+import { type Control, useFieldArray, useWatch } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import z from 'zod';
 import { RemoveArrayItemButton } from '@lib/client/components/form/remove-array-item-button';
@@ -57,6 +57,111 @@ export type GetVariablesFormData = {
 
 const attributeTypes = Object.keys(OCPP2_0_1.AttributeEnumType);
 
+const GetVariableRow = ({
+  control,
+  index,
+  componentOptions,
+  componentOnSearch,
+  componentLoading,
+  onRemove,
+  translate,
+}: {
+  control: Control<GetVariablesFormData>;
+  index: number;
+  componentOptions: any[];
+  componentOnSearch: (value: string) => void;
+  componentLoading: boolean;
+  onRemove: () => void;
+  translate: ReturnType<typeof useTranslate>;
+}) => {
+  const componentId = useWatch({ control, name: `getVariableData.${index}.componentId` });
+  const numericComponentId = typeof componentId === 'number' && componentId > 0 ? componentId : 0;
+
+  const {
+    options: variableOptions,
+    onSearch: variableOnSearch,
+    query: variableQuery,
+  } = useSelect({
+    resource: ResourceType.VARIABLES,
+    optionLabel: 'name',
+    optionValue: 'name',
+    meta: {
+      gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
+      gqlVariables: numericComponentId
+        ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: '' }
+        : undefined,
+    },
+    pagination: { mode: 'off' },
+    queryOptions: { enabled: numericComponentId > 0 },
+  });
+
+  return (
+    <div className={nestedFormRowFlex}>
+      <ComboboxFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.componentNumber', {
+          number: index + 1,
+        })}
+        name={`getVariableData.${index}.componentId`}
+        options={componentOptions}
+        onSearch={componentOnSearch}
+        placeholder={translate('ChargingStations.getVariablesModal.selectComponent')}
+        searchPlaceholder={translate('ChargingStations.getVariablesModal.searchComponents')}
+        isLoading={componentLoading}
+        required
+        allowManualEntry
+      />
+
+      <ComboboxFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.variableNumber', {
+          number: index + 1,
+        })}
+        name={`getVariableData.${index}.variableId`}
+        options={variableOptions}
+        onSearch={variableOnSearch}
+        placeholder={translate('ChargingStations.getVariablesModal.selectVariable')}
+        searchPlaceholder={translate('ChargingStations.getVariablesModal.searchVariables')}
+        isLoading={variableQuery.isLoading}
+        required
+        disabled={!componentId || componentId === 0}
+        allowManualEntry
+      />
+
+      <FormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.componentInstanceNumber', {
+          number: index + 1,
+        })}
+        name={`getVariableData.${index}.componentInstance`}
+      >
+        <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
+      </FormField>
+      <FormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.variableInstanceNumber', {
+          number: index + 1,
+        })}
+        name={`getVariableData.${index}.variableInstance`}
+      >
+        <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
+      </FormField>
+
+      <SelectFormField
+        control={control}
+        label={translate('ChargingStations.getVariablesModal.attributeTypeNumber', {
+          number: index + 1,
+        })}
+        name={`getVariableData.${index}.attributeType`}
+        options={attributeTypes}
+        placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
+      />
+
+      <RemoveArrayItemButton onRemoveAction={onRemove} />
+    </div>
+  );
+};
+
 export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
@@ -64,9 +169,6 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
 
   const tenantId = useTenantId();
 
-  const [variableOptionsMap, setVariableOptionsMap] = useState<
-    Record<number, { label: string; value: string }[]>
-  >({});
   const parsedStation: ChargingStationDto = useMemo(
     () => plainToInstance(ChargingStationClass, station),
     [station],
@@ -139,33 +241,6 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
       },
     },
     pagination: { mode: 'off' },
-  });
-
-  const variableSelects = fields.map((field, index) => {
-    const componentId = form.watch(`getVariableData.${index}.componentId`);
-
-    const numericComponentId = typeof componentId === 'number' && componentId > 0 ? componentId : 0;
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { options, onSearch, query } = useSelect({
-      resource: ResourceType.VARIABLES,
-      optionLabel: 'name',
-      optionValue: 'name',
-      meta: {
-        gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
-        gqlVariables: numericComponentId
-          ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: '' }
-          : undefined,
-      },
-      pagination: { mode: 'off' },
-      queryOptions: { enabled: numericComponentId > 0 },
-    });
-
-    if (numericComponentId > 0 && options.length > 0 && variableOptionsMap[index] !== options) {
-      setVariableOptionsMap((prev) => ({ ...prev, [index]: options }));
-    }
-
-    return { options, onSearch, isLoading: query.isLoading };
   });
 
   const onFinish = async (values: GetVariablesFormData) => {
@@ -247,84 +322,18 @@ export const GetVariablesModal = ({ station }: GetVariablesModalProps) => {
         />
       </div>
       <div className="flex flex-col gap-6 w-full">
-        {fields.map((field, index) => {
-          const componentId = form.watch(`getVariableData.${index}.componentId`);
-          const {
-            options: variableOptions,
-            onSearch: variableOnSearch,
-            isLoading: variableLoading,
-          } = variableSelects[index] || {
-            options: [],
-            onSearch: () => {},
-            isLoading: false,
-          };
-
-          return (
-            <div key={field.id} className={nestedFormRowFlex}>
-              <ComboboxFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.componentNumber', {
-                  number: index + 1,
-                })}
-                name={`getVariableData.${index}.componentId`}
-                options={componentOptions}
-                onSearch={onSearch}
-                placeholder={translate('ChargingStations.getVariablesModal.selectComponent')}
-                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchComponents')}
-                isLoading={componentQuery.isLoading}
-                required
-                allowManualEntry
-              />
-
-              <ComboboxFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.variableNumber', {
-                  number: index + 1,
-                })}
-                name={`getVariableData.${index}.variableId`}
-                options={variableOptions}
-                onSearch={variableOnSearch}
-                placeholder={translate('ChargingStations.getVariablesModal.selectVariable')}
-                searchPlaceholder={translate('ChargingStations.getVariablesModal.searchVariables')}
-                isLoading={variableLoading}
-                required
-                disabled={!componentId || componentId === 0}
-                allowManualEntry
-              />
-
-              <FormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.componentInstanceNumber', {
-                  number: index + 1,
-                })}
-                name={`getVariableData.${index}.componentInstance`}
-              >
-                <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
-              </FormField>
-              <FormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.variableInstanceNumber', {
-                  number: index + 1,
-                })}
-                name={`getVariableData.${index}.variableInstance`}
-              >
-                <Input placeholder={translate('ChargingStations.getVariablesModal.instance')} />
-              </FormField>
-
-              <SelectFormField
-                control={form.control}
-                label={translate('ChargingStations.getVariablesModal.attributeTypeNumber', {
-                  number: index + 1,
-                })}
-                name={`getVariableData.${index}.attributeType`}
-                options={attributeTypes}
-                placeholder={translate('ChargingStations.getVariablesModal.selectAttributeType')}
-              />
-
-              <RemoveArrayItemButton onRemoveAction={() => remove(index)} />
-            </div>
-          );
-        })}
+        {fields.map((field, index) => (
+          <GetVariableRow
+            key={field.id}
+            control={form.control}
+            index={index}
+            componentOptions={componentOptions}
+            componentOnSearch={onSearch}
+            componentLoading={componentQuery.isLoading}
+            onRemove={() => remove(index)}
+            translate={translate}
+          />
+        ))}
       </div>
     </Form>
   );

@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  IMessage,
-  IMessageConfirmation,
-  IMessageSender,
-  OcppRequest,
-  OcppResponse,
+import {
+  type IMessage,
+  type IMessageConfirmation,
+  type IMessageSender,
+  AbstractMessageSender,
 } from '@citrineos/base';
-import { AbstractMessageSender, MessageState, OcppError } from '@citrineos/base';
+import { type OcppRequest, type OcppResponse, MessageState, OcppError } from '@citrineos/types';
 import { instanceToPlain } from 'class-transformer';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

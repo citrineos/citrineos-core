@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/base';
+import { type OCPPMessageDto, OCPPMessageProps } from '@citrineos/types';
 import { formatDate } from '@lib/client/components/timestamp-display';
 import { Button } from '@lib/client/components/ui/button';
 import { dateTimePickerDateFormat } from '@lib/client/components/ui/date-time-picker';

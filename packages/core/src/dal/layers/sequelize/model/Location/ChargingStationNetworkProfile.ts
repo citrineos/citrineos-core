@@ -8,7 +8,7 @@ import type {
   ServerNetworkProfileDto,
   SetNetworkProfileDto,
   TenantDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersionType } from '@citrineos/base';
+import type { OCPPVersionType } from '@citrineos/types';
 import type { ITransactionEventRepository } from '@dal/interfaces/repositories.js';
 import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 import type { ILogObj } from 'tslog';

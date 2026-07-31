@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TransactionLimit } from '@citrineos/base';
+import type { TransactionLimit } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   bigint,

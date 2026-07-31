@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, VariableStatusDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { VariableStatusDto } from '@citrineos/types';
 import {
   type VariableStatusEntity,
   variableStatusTable,
@@ -35,15 +32,6 @@ export class DrizzleVariableStatusRepository extends DrizzleRepository<
   typeof variableStatusTable,
   VariableStatusDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof variableStatusTable {
     return this.useTenantSchema ? tenantVariableStatusTable(tenantId) : variableStatusTable;
   }

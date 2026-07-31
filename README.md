@@ -45,7 +45,7 @@ The system features:
 - Dynamic **OCPP 1.6 and 2.0.1** message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
 - Configurable logical modules with decorators
-  - `@AsHandler` to handle incoming OCPP messages (1.6 or 2.0.1)
+  - `@AsRequestHandler` / `@AsResponseHandler` to declare a handler class for an incoming OCPP message
   - `@AsMessageEndpoint` to expose functions allowing sending messages to charging stations
   - `@AsDataEndpoint` to expose CRUD access to data entities
 - Utilities to connect and extend various message broker and cache mechanisms

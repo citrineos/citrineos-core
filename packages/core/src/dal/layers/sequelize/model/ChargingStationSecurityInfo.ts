@@ -6,7 +6,7 @@ import type {
   ChargingStationDto,
   ChargingStationSecurityInfoDto,
   TenantDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,

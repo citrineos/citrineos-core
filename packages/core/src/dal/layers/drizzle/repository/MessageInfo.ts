@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, MessageInfoDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { MessageInfoDto } from '@citrineos/types';
 import {
   type MessageInfoEntity,
   messageInfoTable,
@@ -42,15 +39,6 @@ export class DrizzleMessageInfoRepository extends DrizzleRepository<
   typeof messageInfoTable,
   MessageInfoDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof messageInfoTable {
     return this.useTenantSchema ? tenantMessageInfoTable(tenantId) : messageInfoTable;
   }

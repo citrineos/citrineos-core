@@ -1,26 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  AuthorizationDto,
-  AuthorizationStatusEnumType,
-  ConnectorDto,
-  EvseDto,
-  IAuthorizer,
-  IMessageContext,
-  MeterValueDto,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
+import {
+  type IAuthorizer,
+  type IMessageContext,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
+  type OCPP2_response_types,
+  MeterValueUtils,
 } from '@citrineos/base';
 import {
+  type AuthorizationDto,
+  type AuthorizationStatusEnumType,
+  type ConnectorDto,
+  type EvseDto,
+  type MeterValueDto,
   AuthorizationStatusEnum,
   MessageOrigin,
-  MeterValueUtils,
   OCPP1_6,
   OCPP2_0_1,
   OCPP2_1,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IAuthorizationRepository,
   ILocationRepository,

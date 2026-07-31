@@ -6,12 +6,8 @@ import type {
   AuthorizationDto,
   AuthorizationStatusEnumType,
   AuthorizationWhitelistEnumType,
-  BootstrapConfig,
   IdTokenEnumType,
-} from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+} from '@citrineos/types';
 import {
   type AuthorizationEntity,
   authorizationTable,
@@ -68,15 +64,6 @@ export class DrizzleAuthorizationRepository extends DrizzleRepository<
   typeof authorizationTable,
   AuthorizationDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof authorizationTable {
     return this.useTenantSchema ? tenantAuthorizationTable(tenantId) : authorizationTable;
   }

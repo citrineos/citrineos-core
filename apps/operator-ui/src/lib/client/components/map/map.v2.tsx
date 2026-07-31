@@ -9,7 +9,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getGoogleMapsApiKey, setGoogleMapsApiKey } from '@lib/utils/store/maps.slice';
 import { getGoogleMapsApiKeyAction } from '@lib/server/actions/map/getGoogleMapsApiKeyAction';
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { ClusteredLocationMarkers } from '@lib/client/components/map/map.clusters';
 import { MapErrorBoundary } from '@lib/client/components/map/map.error-boundary';
 import { Skeleton } from '@lib/client/components/ui/skeleton';

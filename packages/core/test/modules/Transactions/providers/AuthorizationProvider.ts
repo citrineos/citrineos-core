@@ -1,12 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  AuthorizationStatusEnum,
-  AuthorizationWhitelistEnum,
-  DEFAULT_TENANT_ID,
-  IdTokenEnum,
-} from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { AuthorizationStatusEnum, AuthorizationWhitelistEnum, IdTokenEnum } from '@citrineos/types';
 import { Authorization } from '@citrineos/core';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';

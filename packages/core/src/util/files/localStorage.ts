@@ -7,9 +7,9 @@ import type {
   ConfigStore,
   CreateDirectoryOptions,
   DeleteFileOptions,
-  SystemConfig,
   TrustOptions,
 } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

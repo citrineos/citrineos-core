@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { VariableAttribute } from '@citrineos/core';
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../providers/VariableAttributeProvider.js';
 import { BasicAuthenticationFilter } from '@util/index.js';

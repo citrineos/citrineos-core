@@ -1,32 +1,34 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  Call,
-  CallAction,
-  CallError,
-  CallResult,
-  ICache,
-  IMessage,
-  IMessageConfirmation,
-  IMessageHandler,
-  IMessageRouter,
-  IMessageSender,
-  OcppRequest,
-  OcppResponse,
-  OCPPVersionType,
-  SystemConfig,
-} from '@citrineos/base';
 import {
+  type BootstrapConfig,
+  type ICache,
+  type IMessage,
+  type IMessageConfirmation,
+  type IMessageHandler,
+  type IMessageRouter,
+  type IMessageSender,
   AbstractMessageRouter,
   BOOT_STATUS,
   CacheNamespace,
   createIdentifier,
-  ErrorCode,
-  EventGroup,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
+  OCPPValidator,
+  RequestBuilder,
+} from '@citrineos/base';
+import {
+  type Call,
+  type CallAction,
+  type CallError,
+  type CallResult,
+  type OcppRequest,
+  type OcppResponse,
+  type OCPPVersionType,
+  type SystemConfig,
+  ErrorCode,
+  EventGroup,
   mapToCallAction,
   MessageOrigin,
   MessageState,
@@ -35,11 +37,9 @@ import {
   OCPP2_1,
   OCPP_CallAction,
   OcppError,
-  OCPPValidator,
   OCPPVersion,
-  RequestBuilder,
   RetryMessageError,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import {
   CallHandledOutcome,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { LocationProps } from '@citrineos/base';
+import { LocationProps } from '@citrineos/types';
 import { Combobox } from '@lib/client/components/combobox';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Button } from '@lib/client/components/ui/button';

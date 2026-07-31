@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import { CrudRepository } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import type { IReservationRepository } from '../../../interfaces/repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ILogObj } from 'tslog';

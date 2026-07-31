@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPPVersion } from '@citrineos/base';
+import { OCPPVersion } from '@citrineos/types';
 import { UnsuccessfulRequestException } from '@lib/exceptions/UnsuccessfulRequestException';
 import { authProvider } from '@lib/providers/auth-provider';
 import { incrementRequestCount } from '@lib/utils/telemetry';

@@ -4,7 +4,7 @@
 
 /* eslint-disable */
 
-import type { SystemConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
 import fastifySwagger from '@fastify/swagger';

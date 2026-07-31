@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type AuthorizationDto, type ChargingStationDto } from '@citrineos/base';
+import { type AuthorizationDto, type ChargingStationDto } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckboxFormField, ComboboxFormField, FormField } from '@lib/client/components/form/field';
 import { Input } from '@lib/client/components/ui/input';

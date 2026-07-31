@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export { DefaultDrizzleInstance } from './util.js';
-export { DrizzleRepository } from './repository/Base.js';
+export { DrizzleRepository, type DrizzleRepositoryDependencies } from './repository/Base.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

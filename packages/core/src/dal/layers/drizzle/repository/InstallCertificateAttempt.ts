@@ -3,14 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type {
-  BootstrapConfig,
   CertificateUseEnumType,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
-} from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+} from '@citrineos/types';
 import {
   type InstallCertificateAttemptEntity,
   installCertificateAttemptTable,
@@ -44,15 +40,6 @@ export class DrizzleInstallCertificateAttemptRepository extends DrizzleRepositor
   typeof installCertificateAttemptTable,
   InstallCertificateAttemptDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof installCertificateAttemptTable {
     return this.useTenantSchema
       ? tenantInstallCertificateAttemptTable(tenantId)

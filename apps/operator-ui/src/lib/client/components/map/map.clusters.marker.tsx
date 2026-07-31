@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import type { Marker } from '@googlemaps/markerclusterer';
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import { MarkerIconCircle } from '@lib/client/components/map/marker.icons';

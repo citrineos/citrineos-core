@@ -3,8 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { OCPPMessageDto } from '@citrineos/base';
-import { MessageOrigin, OCPP_CallAction, OCPPMessageProps } from '@citrineos/base';
+import {
+  type OCPPMessageDto,
+  MessageOrigin,
+  OCPP_CallAction,
+  OCPPMessageProps,
+} from '@citrineos/types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { MultiSelect } from '@lib/client/components/multi-select';
 import { Table } from '@lib/client/components/table';

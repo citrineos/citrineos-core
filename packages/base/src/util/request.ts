@@ -2,11 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
+import {
+  type CallAction,
+  type OCPPVersionType,
+  OcppError,
+  type OcppRequest,
+  type OcppResponse,
+  EventGroup,
+  MessageOrigin,
+  MessageState,
+} from '@citrineos/types';
 import type { IMessage } from '@interfaces/messages/Message.js';
-import { OcppError } from '@ocpp/rpc/message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import { EventGroup, MessageOrigin, MessageState } from '@interfaces/messages/internal-types.js';
 
 export class RequestBuilder {
   static buildCall(

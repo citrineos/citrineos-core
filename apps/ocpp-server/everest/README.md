@@ -9,6 +9,7 @@ the project yourself. [See here for Docs](https://everest.github.io/latest/how-t
 # Running EVerest
 
 ## From citrineos-core
+
 Convenience commands are available from the root directory (citrineos-core) to run EVerest that match the commands already
 found in `apps/ocpp-server`:
 

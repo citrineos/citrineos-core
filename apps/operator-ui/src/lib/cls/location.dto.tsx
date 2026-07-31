@@ -8,7 +8,7 @@ import type {
   LocationFacilityEnumType,
   LocationParkingEnumType,
   TenantDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { Point } from 'geojson';
 
 export class LocationClass implements LocationDto {

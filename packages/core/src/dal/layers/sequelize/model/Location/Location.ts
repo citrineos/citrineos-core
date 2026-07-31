@@ -1,16 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  ChargingStationDto,
-  LocationDto,
-  LocationFacilityEnumType,
-  LocationParkingEnumType,
-  Point,
-  TenantDto,
-  TransactionDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, LocationHours, OCPP2_Namespace } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type LocationDto,
+  type LocationFacilityEnumType,
+  type LocationParkingEnumType,
+  type Point,
+  type TenantDto,
+  type TransactionDto,
+  LocationHours,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,

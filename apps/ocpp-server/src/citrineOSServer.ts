@@ -2,25 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  AbstractModule,
-  BootstrapConfig,
-  IApiAuthProvider,
-  ICache,
-  IFileStorage,
-  IMessageRouter,
-  IModule,
-  IModuleApi,
-  SystemConfig,
-} from '@citrineos/base';
+import { asValue, type AwilixContainer } from 'awilix';
 import {
+  type AbstractModule,
+  type BootstrapConfig,
+  type IApiAuthProvider,
+  type ICache,
+  type IFileStorage,
+  type IMessageRouter,
+  type IModule,
+  type IModuleApi,
   Ajv,
   ConfigStoreFactory,
-  EventGroup,
-  eventGroupFromString,
   type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
+import { type SystemConfig, EventGroup, eventGroupFromString } from '@citrineos/types';
 import {
   AdminApi,
   apiAuthPluginFp,
@@ -40,7 +37,6 @@ import {
 } from '@citrineos/core';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import type { AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
 import type {
@@ -425,6 +421,7 @@ export class CitrineOSServer {
    */
   private async initModuleInScope(moduleToken: string, routeApis: string[]): Promise<void> {
     const scope = this._container.createScope();
+    scope.register({ moduleScope: asValue(scope) });
     const module = scope.resolve<AbstractModule>(moduleToken);
     await this.initHandlersAndAddModule(module);
     for (const routeApi of routeApis) {

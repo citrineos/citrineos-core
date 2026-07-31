@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TenantDto, TenantPartnerDto } from '@citrineos/base';
-import { type AsyncJobNameEnumType, DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { TenantDto, TenantPartnerDto, AsyncJobNameEnumType } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,

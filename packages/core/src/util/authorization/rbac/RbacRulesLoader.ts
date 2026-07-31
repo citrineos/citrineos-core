@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { RbacRules } from '@citrineos/base';
-import { RbacRulesSchema } from '@citrineos/base';
+import { type RbacRules, RbacRulesSchema } from '@citrineos/types';
 import { UrlMatcher } from './UrlMatcher.js';
 import { LocalStorage } from '../../files/localStorage.js';
 import path from 'path';

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6 } from '@citrineos/base';
+import { OCPP1_6 } from '@citrineos/types';
 
 export class BootMapper {
   static toRegistrationStatusEnumType(status: string): OCPP1_6.BootNotificationResponseStatus {

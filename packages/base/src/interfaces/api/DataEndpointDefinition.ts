@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { HttpMethod } from '@interfaces/api/HttpMethods.js';
+import { HttpMethod } from '@citrineos/types';
 import { Namespace } from '@ocpp/persistence/namespace.js';
 import { OCPP1_6_Namespace, OCPP2_Namespace } from '@ocpp/persistence/index.js';
 

@@ -3,9 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { TransactionEventDto } from '@citrineos/base';
-import { MessageTypeId, TransactionEventEnum, TransactionEventProps } from '@citrineos/base';
+import {
+  MessageTypeId,
+  type TransactionEventDto,
+  TransactionEventEnum,
+  TransactionEventProps,
+} from '@citrineos/types';
 import { Table } from '@lib/client/components/table';
+import { useTenantId } from '@lib/client/hooks/useTenantId';
 import { MeterValuesList } from '@lib/client/pages/transactions/detail/meter-values/meter.values.list';
 import { getTransactionEventColumns } from '@lib/client/pages/transactions/detail/transaction-events/columns';
 import { OCPPMessageClass } from '@lib/cls/ocpp.message.dto';
@@ -18,10 +23,9 @@ import {
 import { ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { useList, useTranslate } from '@refinedev/core';
-import { ChevronDownIcon } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
 import type { ExpandedState } from '@tanstack/react-table';
-import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { ChevronDownIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 export const TransactionEventsList = ({
   transactionDatabaseId,

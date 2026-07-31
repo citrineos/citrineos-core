@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AsyncJobDto, BootstrapConfig } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { AsyncJobDto } from '@citrineos/types';
 import {
   type AsyncJobStatusEntity,
   asyncJobStatusTable,
@@ -41,15 +38,6 @@ export class DrizzleAsyncJobStatusRepository extends DrizzleRepository<
   typeof asyncJobStatusTable,
   AsyncJobDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof asyncJobStatusTable {
     return this.useTenantSchema ? tenantAsyncJobStatusTable(tenantId) : asyncJobStatusTable;
   }

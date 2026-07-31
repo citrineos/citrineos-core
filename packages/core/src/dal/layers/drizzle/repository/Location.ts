@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, LocationDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { LocationDto } from '@citrineos/types';
 import { type LocationEntity, locationTable, tenantLocationTable } from '../schema/Location.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
@@ -43,15 +40,6 @@ export class DrizzleLocationRepository extends DrizzleRepository<
   typeof locationTable,
   LocationDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof locationTable {
     return this.useTenantSchema ? tenantLocationTable(tenantId) : locationTable;
   }

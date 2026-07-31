@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ChargingStationDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ChargingStationDto } from '@citrineos/types';
 import {
   type ChargingStationEntity,
   chargingStationTable,
@@ -61,15 +58,6 @@ export class DrizzleChargingStationRepository extends DrizzleRepository<
   typeof chargingStationTable,
   ChargingStationDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof chargingStationTable {
     return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
   }

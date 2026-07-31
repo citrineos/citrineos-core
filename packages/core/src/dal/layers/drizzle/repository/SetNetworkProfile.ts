@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, SetNetworkProfileDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { SetNetworkProfileDto } from '@citrineos/types';
 import {
   type SetNetworkProfileEntity,
   setNetworkProfileTable,
@@ -46,15 +43,6 @@ export class DrizzleSetNetworkProfileRepository extends DrizzleRepository<
   typeof setNetworkProfileTable,
   SetNetworkProfileDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof setNetworkProfileTable {
     return this.useTenantSchema ? tenantSetNetworkProfileTable(tenantId) : setNetworkProfileTable;
   }

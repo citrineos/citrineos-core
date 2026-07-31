@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { TenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/types';
 import { BeforeCreate, BeforeUpdate, Column, DataType, Model } from 'sequelize-typescript';
 
 export abstract class BaseModelWithTenant<

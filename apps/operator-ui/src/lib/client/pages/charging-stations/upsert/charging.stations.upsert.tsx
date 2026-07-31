@@ -13,7 +13,7 @@ import {
   ChargingStationSchema,
   type LocationDto,
   LocationProps,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import {

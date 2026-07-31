@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import { LocationProps, type LocationDto, ChargingStationProps } from '@citrineos/base';
+import { LocationProps, type LocationDto, ChargingStationProps } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { getFullAddress } from '@lib/utils/geocoding';
 import { ChevronDownIcon } from 'lucide-react';

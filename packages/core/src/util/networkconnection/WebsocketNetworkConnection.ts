@@ -10,25 +10,21 @@ export function getClientIdFromUrl(url: string): string {
   return url.split('?')[0].split('/').pop() as string;
 }
 
-import type {
-  IAuthenticator,
-  ICache,
-  IConnectionManager,
-  IFileStorage,
-  IMessageRouter,
-  INetworkConnection,
-  IWebsocketConnection,
-  OCPPVersionType,
-  SystemConfig,
-  WebsocketServerConfig,
-} from '@citrineos/base';
 import {
+  type IAuthenticator,
+  type ICache,
+  type IConnectionManager,
+  type IFileStorage,
+  type IMessageRouter,
+  type INetworkConnection,
+  type IWebsocketConnection,
   CacheNamespace,
   createIdentifier,
   getCacheTenantPathMappingKey,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
+import type { OCPPVersionType, SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import * as http from 'http';
 import * as https from 'https';
 import { performance } from 'node:perf_hooks';

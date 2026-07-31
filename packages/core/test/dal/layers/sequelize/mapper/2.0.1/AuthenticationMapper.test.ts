@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { AuthorizationStatusType, IdTokenType } from '@citrineos/base';
-import { AuthorizationStatusEnum, IdTokenEnum, OCPP2_0_1 } from '@citrineos/base';
+import {
+  type AuthorizationStatusType,
+  type IdTokenType,
+  AuthorizationStatusEnum,
+  IdTokenEnum,
+  OCPP2_0_1,
+} from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
 import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.0.1';
 import { aAuthorization } from '../../../../providers/Authorization.js';

@@ -58,6 +58,7 @@ export {
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
+  SequelizeComponentRepository,
   SequelizeOCPPMessageRepository,
   SequelizeCertificateRepository,
   SequelizeInstalledCertificateRepository,

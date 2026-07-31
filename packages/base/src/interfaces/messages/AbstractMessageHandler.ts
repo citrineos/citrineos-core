@@ -5,11 +5,14 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IMessage } from './Message.js';
 import type { IMessageHandler } from './MessageHandler.js';
-import { OcppError } from '@ocpp/rpc/message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction } from '@ocpp/rpc/message.js';
+import {
+  OcppError,
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type HandlerProperties,
+} from '@citrineos/types';
 import type { IModule } from '@interfaces/modules/Module.js';
-import type { HandlerProperties } from '@interfaces/messages/internal-types.js';
 
 /**
  * Abstract class implementing {@link IMessageHandler}.

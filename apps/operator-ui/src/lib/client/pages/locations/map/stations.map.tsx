@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { LocationMap } from '@lib/client/components/map/map';
 import { Button } from '@lib/client/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';

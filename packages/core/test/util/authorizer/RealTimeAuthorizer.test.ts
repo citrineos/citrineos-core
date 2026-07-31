@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { type IMessageContext } from '@citrineos/base';
 import {
   AuthorizationStatusEnum,
   AuthorizationWhitelistEnum,
   type ConnectorDto,
   type EvseDto,
-  type IMessageContext,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { Authorization } from '@dal/layers/sequelize/index.js';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';

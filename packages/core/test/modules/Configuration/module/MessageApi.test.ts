@@ -4,7 +4,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SetNetworkProfile } from '@dal/index.js';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPPVersion, OCPP_CallAction } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_0_1, OCPPVersion, OCPP_CallAction } from '@citrineos/types';
 import { ConfigurationOcpp2Api } from '@modules/Configuration/src/module/2/MessageApi.js';
 
 vi.mock('uuid', () => ({

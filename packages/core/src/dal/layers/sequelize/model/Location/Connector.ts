@@ -17,7 +17,7 @@ import type {
   TariffDto,
   TenantDto,
   TransactionDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

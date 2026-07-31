@@ -46,7 +46,8 @@
     "fastify": ">=5.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1097.0",
+    "@aws-sdk/client-s3": "3.1100.0",
+    "@citrineos/types": "workspace:*",
     "@opentelemetry/api": "1.9.0",
     "@types/big.js": "6.2.2",
     "ajv": "^8.18.0",

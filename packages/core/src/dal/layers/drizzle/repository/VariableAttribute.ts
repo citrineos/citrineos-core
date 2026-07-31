@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, VariableAttributeDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { VariableAttributeDto } from '@citrineos/types';
 import {
   type VariableAttributeEntity,
   variableAttributeTable,
@@ -45,15 +42,6 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
   typeof variableAttributeTable,
   VariableAttributeDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof variableAttributeTable {
     return this.useTenantSchema ? tenantVariableAttributeTable(tenantId) : variableAttributeTable;
   }

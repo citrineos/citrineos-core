@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, MeterValueDto, SampledValue } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { MeterValueDto, SampledValue } from '@citrineos/types';
 import {
   type MeterValueEntity,
   meterValueTable,
@@ -39,15 +36,6 @@ export class DrizzleMeterValueRepository extends DrizzleRepository<
   typeof meterValueTable,
   MeterValueDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof meterValueTable {
     return this.useTenantSchema ? tenantMeterValueTable(tenantId) : meterValueTable;
   }

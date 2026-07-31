@@ -5,11 +5,10 @@ import {
   CacheNamespace,
   createIdentifier,
   CrudRepository,
-  OCPP1_6,
-  OCPP2_0_1,
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
+import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';

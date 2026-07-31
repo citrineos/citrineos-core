@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthorizationDto } from '@interfaces/dto/authorization.dto.js';
-import type { AuthorizationStatusEnumType } from '@interfaces/dto/types/enums.js';
-import type { ConnectorDto } from '@interfaces/dto/connector.dto.js';
-import type { EvseDto } from '@interfaces/dto/evse.dto.js';
+import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  ConnectorDto,
+  EvseDto,
+} from '@citrineos/types';
 import type { IMessageContext } from '@interfaces/messages/MessageContext.js';
 
 export interface IAuthorizer {

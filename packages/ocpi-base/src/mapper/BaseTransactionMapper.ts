@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthorizationDto, LocationDto, TariffDto, TransactionDto } from '@citrineos/base';
+import type { AuthorizationDto, LocationDto, TariffDto, TransactionDto } from '@citrineos/types';
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

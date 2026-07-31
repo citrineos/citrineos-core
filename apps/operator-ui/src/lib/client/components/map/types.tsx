@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import type { GeoPoint } from '@lib/utils/GeoPoint';
 import type { ReactNode } from 'react';
 

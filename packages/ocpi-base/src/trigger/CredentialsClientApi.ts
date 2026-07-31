@@ -9,7 +9,7 @@ import { CredentialsResponseSchema } from '../model/CredentialsResponse.js';
 import { Service } from 'typedi';
 import type { OcpiEmptyResponse } from '../model/OcpiEmptyResponse.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
-import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/base';
+import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
 import type { CredentialsDTO } from '../index.js';
 

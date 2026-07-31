@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6, OCPP2_0_1, OCPP2_1 } from '@ocpp/model/index.js';
-import { OCPP_CallAction } from '@ocpp/rpc/message.js';
+import { OCPP1_6, OCPP2_0_1, OCPP2_1, OCPP_CallAction } from '@citrineos/types';
 
 export const OCPP1_6_CALL_SCHEMA_RECORD: Record<string, object> = {
   [OCPP_CallAction.Authorize]: OCPP1_6.AuthorizeRequestSchema,

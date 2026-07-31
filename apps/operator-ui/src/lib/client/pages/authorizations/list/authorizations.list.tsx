@@ -27,7 +27,7 @@ import {
   tableWrapperStyle,
 } from '@lib/client/styles/table';
 import { buttonIconSize } from '@lib/client/styles/icon';
-import { type AuthorizationDto, AuthorizationProps } from '@citrineos/base';
+import { type AuthorizationDto, AuthorizationProps } from '@citrineos/types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
 

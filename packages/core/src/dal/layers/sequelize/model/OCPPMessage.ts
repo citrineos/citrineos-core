@@ -2,8 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, MessageTypeId, OCPPMessageDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type MessageTypeId,
+  type OCPPMessageDto,
+  type TenantDto,
+  MessageOrigin,
+  OCPPVersion,
+} from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,

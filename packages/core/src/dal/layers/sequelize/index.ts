@@ -72,9 +72,10 @@ export { AsyncJobStatus, AsyncJobStatusDTO, AsyncJobRequest } from './model/Asyn
 export { DeleteCertificateAttempt, InstallCertificateAttempt } from './model/Certificate/index.js';
 
 // Sequelize Repositories
-export { SequelizeRepository } from './repository/Base.js';
+export { SequelizeRepository, type SequelizeRepositoryDependencies } from './repository/Base.js';
 export { SequelizeAuthorizationRepository } from './repository/Authorization.js';
 export { SequelizeBootRepository } from './repository/Boot.js';
+export { SequelizeComponentRepository } from './repository/Component.js';
 export { SequelizeDeviceModelRepository } from './repository/DeviceModel.js';
 export { SequelizeLocalAuthListRepository } from './repository/LocalAuthList.js';
 export { SequelizeLocationRepository } from './repository/Location.js';

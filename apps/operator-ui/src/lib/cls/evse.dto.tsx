@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/base';
+import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/types';
 
 export class EvseClass implements Partial<EvseDto> {
   id?: number;

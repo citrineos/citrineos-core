@@ -16,7 +16,7 @@ import {
 } from '@lib/client/components/ui/dialog';
 import { S3_BUCKET_FILE_CONFIG, S3_BUCKET_FILE_CORE_CONFIG } from '@lib/utils/consts';
 import config from '@lib/utils/config';
-import type { SystemConfig, WebsocketServerConfig } from '@citrineos/base';
+import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import { fetchFileAction } from '@lib/server/actions/file/fetchFileAction';
 import { BucketType } from '@lib/utils/enums';
 import { useTenantId } from '@lib/client/hooks/useTenantId';

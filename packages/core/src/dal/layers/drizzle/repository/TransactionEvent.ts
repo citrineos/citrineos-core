@@ -3,14 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type {
-  BootstrapConfig,
   TransactionEventDto,
   TransactionEventEnumType,
   TriggerReasonEnumType,
-} from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+} from '@citrineos/types';
 import {
   type TransactionEventEntity,
   transactionEventTable,
@@ -59,15 +55,6 @@ export class DrizzleTransactionEventRepository extends DrizzleRepository<
   typeof transactionEventTable,
   TransactionEventDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof transactionEventTable {
     return this.useTenantSchema ? tenantTransactionEventTable(tenantId) : transactionEventTable;
   }

@@ -15,7 +15,7 @@
  * codes) stay typed as `string` — they are inherently high-cardinality.
  */
 
-import { MessageTypeId } from '@citrineos/base';
+import { MessageTypeId } from '@citrineos/types';
 import { metrics } from '@opentelemetry/api';
 
 const meter = metrics.getMeter('citrineos.ocpp');

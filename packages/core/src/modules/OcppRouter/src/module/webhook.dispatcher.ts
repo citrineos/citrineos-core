@@ -2,19 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  type BootstrapConfig,
+  type ICache,
   AbstractModule,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
-  MessageOrigin,
-  MessageTypeId,
-  type BootstrapConfig,
-  type ICache,
+} from '@citrineos/base';
+import {
   type OCPPVersion,
   type OCPPVersionType,
   type SubscriptionDto,
   type SystemConfig,
-} from '@citrineos/base';
+  MessageOrigin,
+  MessageTypeId,
+} from '@citrineos/types';
 import type {
   IOCPPMessageRepository,
   ISubscriptionRepository,

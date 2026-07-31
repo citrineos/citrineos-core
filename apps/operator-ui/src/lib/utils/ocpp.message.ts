@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MessageTypeId } from '@citrineos/base';
+import { MessageTypeId } from '@citrineos/types';
 
 /**
  * `type` is the OCPP RPC messageTypeId (2 = Call, 3 = CallResult, 4 = CallError). It is absent

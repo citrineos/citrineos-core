@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ITenantRepository } from '@/dal/index.js';
-import type { BootstrapConfig, TenantDto } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/types';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import EventEmitter from 'events';
 import { type ILogObj, Logger } from 'tslog';
 import { DefaultDrizzleInstance } from '../util.js';
+import type { DrizzleRepositoryDependencies } from './Base.js';
 import { type Explicit } from '../types.js';
 import { type TenantEntity, tenantTable } from '../schema/Tenant.js';
 
@@ -36,9 +37,11 @@ export class DrizzleTenantRepository extends EventEmitter implements ITenantRepo
   protected readonly db: NodePgDatabase;
   protected readonly logger: Logger<ILogObj>;
 
-  constructor(config: BootstrapConfig, logger?: Logger<ILogObj>, db?: NodePgDatabase) {
+  // Takes the same dependency object as DrizzleRepository, minus useTenantSchema:
+  // the tenancy-root table has no per-tenant schema variant.
+  constructor({ config, logger, drizzleInstance }: DrizzleRepositoryDependencies) {
     super();
-    this.db = db ?? DefaultDrizzleInstance.getInstance(config, logger);
+    this.db = drizzleInstance ?? DefaultDrizzleInstance.getInstance(config, logger);
     this.logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

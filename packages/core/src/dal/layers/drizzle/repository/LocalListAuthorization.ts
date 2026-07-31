@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, LocalListAuthorizationDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { LocalListAuthorizationDto } from '@citrineos/types';
 import {
   type LocalListAuthorizationEntity,
   localListAuthorizationTable,
@@ -55,15 +52,6 @@ export class DrizzleLocalListAuthorizationRepository extends DrizzleRepository<
   typeof localListAuthorizationTable,
   LocalListAuthorizationDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof localListAuthorizationTable {
     return this.useTenantSchema
       ? tenantLocalListAuthorizationTable(tenantId)

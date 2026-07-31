@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig } from '@citrineos/base';
-import { CrudRepository } from '@citrineos/base';
+import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -36,11 +35,11 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
 } from '../../drizzle/index.js';
-import { Component } from '../model/DeviceModel/Component.js';
+import type { Component } from '../model/DeviceModel/Component.js';
 import { SequelizeAuthorizationRepository } from './Authorization.js';
-import { SequelizeRepository } from './Base.js';
 import { SequelizeBootRepository } from './Boot.js';
 import { SequelizeCertificateRepository } from './Certificate.js';
+import { SequelizeComponentRepository } from './Component.js';
 import { SequelizeChangeConfigurationRepository } from './ChangeConfiguration.js';
 import { SequelizeChargingProfileRepository } from './ChargingProfile.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
@@ -138,10 +137,10 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.componentRepository = new SequelizeRepository<Component>({
+    this.componentRepository = new SequelizeComponentRepository({
       config,
-      namespace: Component.MODEL_NAME,
       logger,
+      sequelizeInstance,
     });
     this.deviceModelRepository = new SequelizeDeviceModelRepository({
       config,
@@ -174,13 +173,13 @@ export class RepositoryStore {
       sequelizeInstance,
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
-      this.securityEventRepository = new DrizzleSecurityEventRepository(config, logger);
-      this.subscriptionRepository = new DrizzleSubscriptionRepository(config, logger);
-      this.tenantRepository = new DrizzleTenantRepository(config, logger);
-      this.serverNetworkProfileRepository = new DrizzleServerNetworkProfileRepository(
+      this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
+      this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
+      this.tenantRepository = new DrizzleTenantRepository({ config, logger });
+      this.serverNetworkProfileRepository = new DrizzleServerNetworkProfileRepository({
         config,
         logger,
-      );
+      });
     } else {
       this.securityEventRepository = new SequelizeSecurityEventRepository({
         config,

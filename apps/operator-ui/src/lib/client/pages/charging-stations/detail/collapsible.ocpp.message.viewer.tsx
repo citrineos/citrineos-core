@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MessageTypeId, type OCPPMessageDto } from '@citrineos/base';
+import { MessageTypeId, type OCPPMessageDto } from '@citrineos/types';
 import { ScrollArea } from '@ferdiunal/refine-shadcn/ui';
 import { formatDate } from '@lib/client/components/timestamp-display';
 import { Button } from '@lib/client/components/ui/button';

@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ConnectorDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ConnectorDto } from '@citrineos/types';
 import { type ConnectorEntity, connectorTable, tenantConnectorTable } from '../schema/Connector.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
@@ -51,15 +48,6 @@ export class DrizzleConnectorRepository extends DrizzleRepository<
   typeof connectorTable,
   ConnectorDto
 > {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof connectorTable {
     return this.useTenantSchema ? tenantConnectorTable(tenantId) : connectorTable;
   }

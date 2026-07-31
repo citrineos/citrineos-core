@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, EvseDto } from '@citrineos/base';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { EvseDto } from '@citrineos/types';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../schema/Evse.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
@@ -32,15 +29,6 @@ export function toEvseDto(entity: EvseEntity): EvseDto {
 }
 
 export class DrizzleEvseRepository extends DrizzleRepository<typeof evseTable, EvseDto> {
-  constructor(
-    config: BootstrapConfig,
-    logger?: Logger<ILogObj>,
-    db?: NodePgDatabase,
-    useTenantSchema = false,
-  ) {
-    super(config, logger, db, useTenantSchema);
-  }
-
   protected getTable(tenantId: number): typeof evseTable {
     return this.useTenantSchema ? tenantEvseTable(tenantId) : evseTable;
   }

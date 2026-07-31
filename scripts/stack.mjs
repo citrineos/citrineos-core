@@ -24,6 +24,13 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+// To help support running on Windows
+const useShell = process.platform === 'win32';
+
+function run(command, args) {
+  return spawnSync(command, args, { stdio: 'inherit', cwd: repoRoot, shell: useShell });
+}
+
 const KNOWN_FLAGS = new Set([
   '--local',
   '--solo',
@@ -106,7 +113,7 @@ if (command === 'down') {
 }
 
 console.log(`> docker ${composeArgs.join(' ')}`);
-const result = spawnSync('docker', composeArgs, { stdio: 'inherit', cwd: repoRoot });
+const result = run('docker', composeArgs);
 
 if (result.error) {
   console.error(`Failed to run docker: ${result.error.message}`);
@@ -125,7 +132,7 @@ const everestPnpmScript =
 
 if (everestPnpmScript) {
   console.log(`> pnpm ${everestPnpmScript}`);
-  const everestResult = spawnSync('pnpm', [everestPnpmScript], { stdio: 'inherit', cwd: repoRoot });
+  const everestResult = run('pnpm', [everestPnpmScript]);
   if (everestResult.error) {
     console.error(`Failed to start EVerest: ${everestResult.error.message}`);
     process.exit(1);
