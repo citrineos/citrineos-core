@@ -10,13 +10,13 @@ import {
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppError,
 } from '@citrineos/base';
 import {
   ErrorCode,
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
 } from '@citrineos/types';
 import type {
   IDeviceModelRepository,

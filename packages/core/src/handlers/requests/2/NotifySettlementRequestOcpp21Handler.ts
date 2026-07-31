@@ -8,6 +8,7 @@ import {
   type BootstrapConfig,
   type IMessage,
   type IOcppSender,
+  OcppError,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -16,7 +17,6 @@ import {
   type HandlerProperties,
   OCPP2_1,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/types';

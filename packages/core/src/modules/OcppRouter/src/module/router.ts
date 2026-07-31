@@ -9,34 +9,37 @@ import {
   type IMessageHandler,
   type IMessageRouter,
   type IMessageSender,
+  type RpcMessage,
   AbstractMessageRouter,
   BOOT_STATUS,
   CacheNamespace,
+  Call,
+  CallError,
+  CallResult,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
+  mapToCallAction,
+  OcppError,
   OCPPValidator,
+  readMessageId,
   RequestBuilder,
+  UNREADABLE_MESSAGE_ID,
 } from '@citrineos/base';
 import {
-  type Call,
   type CallAction,
-  type CallError,
-  type CallResult,
   type OcppRequest,
   type OcppResponse,
   type OCPPVersionType,
   type SystemConfig,
   ErrorCode,
   EventGroup,
-  mapToCallAction,
   MessageOrigin,
   MessageState,
   MessageTypeId,
   NO_ACTION,
   OCPP2_1,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
@@ -221,8 +224,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let success = true;
     let rpcMessage: any;
     let messageTypeId: MessageTypeId | undefined = undefined;
-    let messageId: string = '-1'; // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
+    // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
+    let messageId: string = UNREADABLE_MESSAGE_ID;
 
+    let parsedMessage: Call | CallResult | CallError | undefined = undefined;
     try {
       try {
         rpcMessage = JSON.parse(message);
@@ -233,30 +238,18 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         throw error;
       }
       messageTypeId = rpcMessage[0];
-      messageId = rpcMessage[1];
+      messageId = readMessageId(rpcMessage);
       switch (messageTypeId) {
         case MessageTypeId.Call: {
-          await this._onCall(identifier, rpcMessage as Call, timestamp, protocol, message);
+          parsedMessage = new Call(rpcMessage);
           break;
         }
         case MessageTypeId.CallResult: {
-          await this._onCallResult(
-            identifier,
-            rpcMessage as CallResult,
-            timestamp,
-            protocol,
-            message,
-          );
+          parsedMessage = new CallResult(rpcMessage);
           break;
         }
         case MessageTypeId.CallError: {
-          await this._onCallError(
-            identifier,
-            rpcMessage as CallError,
-            timestamp,
-            protocol,
-            message,
-          );
+          parsedMessage = new CallError(rpcMessage);
           break;
         }
         default: {
@@ -282,19 +275,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       }
     } catch (error) {
       success = false; // ensure we return false in case of an error
-      this._logger.error('Error processing message:', message, error);
+      this._logger.error('Error parsing message:', message, error);
       const action = this.getActionFromIncompletelyParsedRpcMessage(rpcMessage, messageTypeId);
       if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
         const callError =
           error instanceof OcppError
             ? error.asCallError()
-            : [
-                MessageTypeId.CallError,
-                messageId,
-                ErrorCode.InternalError,
-                'Unable to process message',
-                { error: error },
-              ];
+            : new CallError(messageId, ErrorCode.InternalError, 'Unable to process message', {
+                error: error,
+              });
         const rawMessage = JSON.stringify(callError);
         await this._sendMessage(
           identifier,
@@ -314,9 +303,60 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         action,
         messageTypeId,
       );
-    } finally {
-      recordOcppMessageReceived(messageTypeId, protocol);
     }
+    if (parsedMessage && success) {
+      const action =
+        parsedMessage.messageTypeId === MessageTypeId.Call
+          ? (parsedMessage as Call).action
+          : NO_ACTION;
+      try {
+        switch (parsedMessage.messageTypeId) {
+          case MessageTypeId.Call: {
+            await this._onCall(identifier, parsedMessage as Call, timestamp, protocol);
+            break;
+          }
+          case MessageTypeId.CallResult: {
+            await this._onCallResult(identifier, parsedMessage as CallResult, timestamp, protocol);
+            break;
+          }
+          case MessageTypeId.CallError: {
+            await this._onCallError(identifier, parsedMessage as CallError, timestamp, protocol);
+            break;
+          }
+        }
+      } catch (error) {
+        this._logger.error('Error processing message:', message, error);
+        if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
+          const callError =
+            error instanceof OcppError
+              ? error.asCallError()
+              : new CallError(messageId, ErrorCode.InternalError, 'Unable to process message', {
+                  error: error,
+                });
+          const rawMessage = JSON.stringify(callError);
+          await this._sendMessage(
+            identifier,
+            protocol,
+            action,
+            MessageState.Response,
+            rawMessage,
+            callError,
+          );
+        }
+      } finally {
+        await this._webhookDispatcher.dispatchMessageReceived(
+          tenantId,
+          ocppConnectionName,
+          timestamp.toISOString(),
+          protocol,
+          message,
+          parsedMessage.messageTypeId,
+          parsedMessage.toJSON(),
+          action,
+        );
+      }
+    }
+    recordOcppMessageReceived(messageTypeId, protocol);
 
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
     this._locationRepository
@@ -352,7 +392,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     const transactionNamespace = CacheNamespace.Transactions + identifier;
 
-    const message: Call = [MessageTypeId.Call, correlationId, action, payload];
+    const message = new Call(correlationId, action, payload);
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (!(await this._cache.existsAnyInNamespace(transactionNamespace))) {
         const cacheTimestamp = new Date();
@@ -426,7 +466,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     payload: OcppResponse,
     _origin?: MessageOrigin,
   ): Promise<IMessageConfirmation> {
-    const message: CallResult = [MessageTypeId.CallResult, correlationId, payload];
+    const message = new CallResult(correlationId, payload);
     const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const cachedActionTimestamp = await this._cache.get<string>(
@@ -497,7 +537,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     error: OcppError,
     _origin?: MessageOrigin | undefined,
   ): Promise<IMessageConfirmation> {
-    const message: CallError = error.asCallError();
+    const message = error.asCallError();
     const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const cachedActionTimestamp = await this._cache.get<string>(
@@ -559,16 +599,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     message: Call,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<void> {
-    const messageId = message[1];
+    const messageId = message.messageId;
     const tenantId = getTenantIdFromIdentifier(identifier);
     const ocppConnectionName = getStationIdFromIdentifier(identifier);
 
-    let action = message[2];
     this._logger.debug('_onCall:', identifier, message, timestamp.toISOString(), protocol);
 
-    action = mapToCallAction(protocol, action);
+    const action = mapToCallAction(protocol, message.action);
     const isAllowed = await this._onCallIsAllowed(action, identifier);
     if (!isAllowed) {
       throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
@@ -623,13 +661,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     try {
       // Route call
-      const confirmation = await this._routeCall(
-        identifier,
-        message,
-        timestamp,
-        protocol,
-        rawMessage,
-      );
+      const confirmation = await this._routeCall(identifier, message, timestamp, protocol);
 
       if (!confirmation.success) {
         throw new OcppError(messageId, ErrorCode.InternalError, 'Call failed', {
@@ -645,11 +677,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
               details: error,
             });
 
-      recordOcppCallHandled(
-        String(action),
-        CallHandledOutcome.Error,
-        String(callError.asCallError()[2]),
-      );
+      recordOcppCallHandled(String(action), CallHandledOutcome.Error, String(callError.errorCode));
 
       this.sendCallError(messageId, ocppConnectionName, tenantId, protocol, action, callError)
         .catch((err) => {
@@ -676,9 +704,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     message: CallResult,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<void> {
-    const messageId = message[1];
+    const messageId = message.messageId;
 
     this._logger.debug('_onCallResult:', identifier, message, timestamp.toISOString(), protocol);
 
@@ -736,7 +763,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       mapToCallAction(protocol, action),
       timestamp,
       protocol,
-      rawMessage,
     );
 
     if (!confirmation.success) {
@@ -759,9 +785,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     message: CallError,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<void> {
-    const messageId = message[1];
+    const messageId = message.messageId;
 
     this._logger.debug('_onCallError:', identifier, message, timestamp.toISOString(), protocol);
 
@@ -791,7 +816,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       (timestamp.getTime() - new Date(cachedTimestamp).getTime()) / 1000,
       String(action),
     );
-    recordOcppCallResponse(String(action), CallResponseOutcome.Error, String(message[2]));
+    recordOcppCallResponse(String(action), CallResponseOutcome.Error, String(message.errorCode));
     this._logger.debug(
       `Message received. Time taken since sent: ${
         timestamp.getTime() - new Date(cachedTimestamp).getTime()
@@ -806,7 +831,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       mapToCallAction(protocol, action),
       timestamp,
       protocol,
-      rawMessage,
     );
 
     if (!confirmation.success) {
@@ -837,7 +861,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {string} action - The OCPP CallAction to be sent. See {@link CallAction}.
    * @param {MessageState} state - The state of the message. Used for dispatching in webhook.
    * @param {string} rawMessage - The raw message string to be sent, i.e. the stringified version of the rpc message. Used for sending in webhook and logging.
-   * @param {any} rpcMessage - the rpc message json object, i.e. [MessageTypeId, messageId, action, payload] for Call or [MessageTypeId, messageId, payload] for CallResult. Used for logging and dispatching in webhook.
+   * @param {RpcMessage} rpcMessage - the rpc message being sent, as a model object. Used for logging and dispatching in webhook.
    * @param {string} receivedIsoTimestamp - The ISO timestamp of when the Call was received, if this is a response to a Call. Used for logging the time taken for the message to be sent since it was received.
    * @returns {Promise<Date | undefined>} A promise that resolves to the timestamp of when the message was sent or undefined if the message failed to send.
    */
@@ -847,7 +871,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     action: string,
     state: MessageState,
     rawMessage: string,
-    rpcMessage: any,
+    rpcMessage: RpcMessage,
     receivedIsoTimestamp?: string,
   ): Promise<Date | undefined> {
     try {
@@ -874,8 +898,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         sentTimestamp.toISOString(),
         protocol,
         rawMessage,
-        rpcMessage[0],
-        rpcMessage,
+        rpcMessage.messageTypeId,
+        rpcMessage.toJSON(),
         action,
       )
       .catch((err) => {
@@ -894,8 +918,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       status === OCPP2_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
-        mapToCallAction(protocol, message[2]) === OCPP_CallAction.TriggerMessage &&
-        (message[3] as OCPP2_1.TriggerMessageRequest).requestedMessage ==
+        mapToCallAction(protocol, message.action) === OCPP_CallAction.TriggerMessage &&
+        (message.payload as OCPP2_1.TriggerMessageRequest).requestedMessage ==
           OCPP2_1.MessageTriggerEnumType.BootNotification
       )
     ) {
@@ -909,11 +933,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     message: Call,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<IMessageConfirmation> {
-    const messageId = message[1];
-    const action = mapToCallAction(protocol, message[2]);
-    const payload = message[3] as OcppRequest;
+    const messageId = message.messageId;
+    const action = mapToCallAction(protocol, message.action);
+    const payload = message.payload;
     const tenantId = getTenantIdFromIdentifier(connectionIdentifier);
     const ocppConnectionName = getStationIdFromIdentifier(connectionIdentifier);
 
@@ -929,7 +952,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
-    return this.emitMessage(_message, message, rawMessage);
+    return this.emitMessage(_message);
   }
 
   private async _routeCallResult(
@@ -938,10 +961,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     action: CallAction,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<IMessageConfirmation> {
-    const messageId = message[1];
-    const payload = message[2] as OcppResponse;
+    const messageId = message.messageId;
+    const payload = message.payload;
     const tenantId = getTenantIdFromIdentifier(connectionIdentifier);
     const ocppConnectionName = getStationIdFromIdentifier(connectionIdentifier);
 
@@ -963,7 +985,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
       .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
 
-    return this.emitMessage(_message, message, rawMessage);
+    return this.emitMessage(_message);
   }
 
   private async _routeCallError(
@@ -972,10 +994,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     action: CallAction,
     timestamp: Date,
     protocol: OCPPVersionType,
-    rawMessage: string,
   ): Promise<IMessageConfirmation> {
-    const messageId = message[1];
-    const payload = new OcppError(messageId, message[2], message[3], message[4]);
+    const messageId = message.messageId;
+    const payload = message.asOcppError();
     const tenantId = getTenantIdFromIdentifier(connectionIdentifier);
     const ocppConnectionName = getStationIdFromIdentifier(connectionIdentifier);
 
@@ -996,14 +1017,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
       .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
 
-    return this.emitMessage(_message, message, rawMessage);
+    return this.emitMessage(_message);
   }
 
-  private async emitMessage(
-    message: IMessage<any>,
-    rpcMessage: any,
-    rawMessage: string,
-  ): Promise<IMessageConfirmation> {
+  private async emitMessage(message: IMessage<any>): Promise<IMessageConfirmation> {
     let confirmation: IMessageConfirmation;
     if (message.payload instanceof OcppError) {
       // No error routing currently done
@@ -1019,17 +1036,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       // send failures stay in the received-minus-routed delta.
       recordOcppMessageRouted(message.action ?? UNKNOWN_ACTION, message.protocol);
     }
-
-    await this._webhookDispatcher.dispatchMessageReceived(
-      message.context.tenantId,
-      message.context.ocppConnectionName,
-      message.context.timestamp,
-      message.protocol,
-      rawMessage,
-      rpcMessage[0],
-      rpcMessage,
-      message.action,
-    );
 
     return confirmation;
   }

@@ -126,3 +126,16 @@ export * as OCPP2_request_types from './src/ocpp/rpc/2/requests.js';
 export * as OCPP2_response_types from './src/ocpp/rpc/2/responses.js';
 export { getOcpp2Schema } from './src/ocpp/rpc/2/schemas.js';
 export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
+
+// OCPP RPC messages: the model objects wrapping the wire frames declared in
+// @citrineos/types, plus the validation that turns one into the other.
+export {
+  Call,
+  CallError,
+  CallResult,
+  mapToCallAction,
+  OcppError,
+  readMessageId,
+  UNREADABLE_MESSAGE_ID,
+} from './src/ocpp/rpc/message.js';
+export type { RpcMessage } from './src/ocpp/rpc/message.js';

@@ -9,13 +9,13 @@ import {
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppError,
 } from '@citrineos/base';
 import {
   ErrorCode,
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
 } from '@citrineos/types';
 import { type ITransactionEventRepository, Transaction } from '@dal/index.js';
 import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';

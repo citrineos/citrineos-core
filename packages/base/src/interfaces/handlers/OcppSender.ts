@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   ErrorCode,
-  OcppError,
   OCPPVersion,
   type OcppRequest,
   type OcppResponse,
   type SystemConfig,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import {
   type IMessage,
   type IMessageConfirmation,

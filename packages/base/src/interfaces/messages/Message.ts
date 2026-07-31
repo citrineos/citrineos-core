@@ -4,7 +4,6 @@
 
 import type { IMessageContext } from '@interfaces/messages/MessageContext.js';
 import {
-  OcppError,
   type OcppRequest,
   type OcppResponse,
   type CallAction,
@@ -13,6 +12,7 @@ import {
   MessageOrigin,
   MessageState,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 
 /**
  * Message

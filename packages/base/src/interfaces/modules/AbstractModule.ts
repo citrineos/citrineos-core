@@ -14,9 +14,9 @@ import {
   type CallAction,
   type OCPPVersionType,
   ErrorCode,
-  OcppError,
   OCPPVersion,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type {
   IMessage,

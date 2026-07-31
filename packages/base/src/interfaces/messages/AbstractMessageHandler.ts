@@ -6,12 +6,12 @@ import { Logger } from 'tslog';
 import type { IMessage } from './Message.js';
 import type { IMessageHandler } from './MessageHandler.js';
 import {
-  OcppError,
   type OcppRequest,
   type OcppResponse,
   type CallAction,
   type HandlerProperties,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { IModule } from '@interfaces/modules/Module.js';
 
 /**
