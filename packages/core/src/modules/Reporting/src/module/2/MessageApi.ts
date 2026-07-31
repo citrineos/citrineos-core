@@ -5,15 +5,15 @@
 import {
   AbstractModuleApi,
   AsMessageEndpoint,
+  type CallAction,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+  type IMessageConfirmation,
+  type MonitoringCriterionEnumType,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP_CallAction,
   OCPPVersion,
-  type CallAction,
-  type IMessageConfirmation,
-  type MonitoringCriterionEnumType,
 } from '@citrineos/base';
 import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -95,7 +95,7 @@ export class ReportingOcpp2Api
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetReport, return error
     const bytesPerMessageGetReport =
-      await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+      await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP_CallAction.GetReport,
         tenantId,
@@ -126,7 +126,7 @@ export class ReportingOcpp2Api
 
     // Batching logic
     let itemsPerMessageGetReport =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+      await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP_CallAction.GetReport,
         tenantId,
@@ -205,7 +205,7 @@ export class ReportingOcpp2Api
     for (const ocppConnectionName of identifier) {
       // Otherwise, do batching if needed
       let itemsPerMessageGetReport =
-        await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+        await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
           this._componentDeviceDataCtrlr,
           OCPP_CallAction.GetReport,
           tenantId,

@@ -50,7 +50,6 @@ export type {
 } from './src/interfaces/messages/index.js';
 export { AbstractModule } from './src/interfaces/modules/AbstractModule.js';
 export type { OcppModuleDependencies } from './src/interfaces/modules/AbstractModule.js';
-export { AsHandler } from './src/interfaces/modules/AsHandler.js';
 export type { IModule } from './src/interfaces/modules/Module.js';
 export { OCPPValidator } from './src/interfaces/modules/OCPPValidator.js';
 export { AbstractMessageRouter } from './src/interfaces/router/AbstractRouter.js';
@@ -76,6 +75,21 @@ export type {
   CallResult,
   OCPPVersionType,
 } from './src/ocpp/rpc/message.js';
+
+export { AsRequestHandler, AsResponseHandler } from './src/interfaces/handlers/AsHandlerClass.js';
+export {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+} from './src/interfaces/handlers/AbstractHandler.js';
+export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
+export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
+export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';
+export { buildHandlers } from './src/interfaces/handlers/buildHandlers.js';
+export type {
+  HandlerClass,
+  HandlerResolverCradle,
+  IHandlerBuilder,
+} from './src/interfaces/handlers/buildHandlers.js';
 
 // Persistence Interfaces
 

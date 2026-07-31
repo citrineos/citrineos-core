@@ -8,3 +8,4 @@ export type { ISmartChargingModuleApi } from './module/interface.js';
 export { SmartChargingModule } from './module/module.js';
 export type { ISmartCharging } from './module/smartCharging/SmartCharging.js';
 export { InternalSmartCharging } from './module/smartCharging/InternalSmartCharging.js';
+export { registerSmartChargingServices } from './register.js';

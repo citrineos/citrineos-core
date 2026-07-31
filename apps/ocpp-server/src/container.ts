@@ -7,30 +7,83 @@ import { asClass, asFunction, asValue, createContainer, InjectionMode } from 'aw
 import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
-import type { BootstrapConfig, ICache, SystemConfig } from '@citrineos/base';
-import { ConfigStoreFactory, OCPPValidator } from '@citrineos/base';
+import {
+  type BootstrapConfig,
+  ConfigStoreFactory,
+  type IApiAuthProvider,
+  type ICache,
+  OcppSender,
+  OCPPValidator,
+  type SystemConfig,
+} from '@citrineos/base';
 
 // -- Infrastructure --
-import { Logger, type ILogObj } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 
 // -- DB --
-import { DefaultDrizzleInstance, DefaultSequelizeInstance } from '@citrineos/core';
-
 // -- RabbitMQ --
-import {
-  BrokerAwareMessageSender,
-  RabbitMQChannelManager,
-  RabbitMQConnectionManager,
-  RabbitMqReceiver,
-  RabbitMqSender,
-} from '@citrineos/core';
-
 // -- Repositories --
+// -- Services --
+// -- API authentication --
+// -- Network Connection --
+// -- Modules --
+// -- Module-internal services (registered by each module package's own registrar) --
+// -- Module APIs --
+// -- Handlers --
+// -- Repositories --
+// -- Services --
+// -- Network Connection --
+// -- Modules --
+// -- Module-internal services (registered by each module package's own registrar) --
+// -- Module APIs --
 import {
+  AdminApi,
+  Authenticator,
+  BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
+  CertificateAuthorityService,
+  CertificatesDataApi,
+  CertificatesModule,
+  CertificatesOcpp2Api,
+  ConfigurationDataApi,
+  ConfigurationModule,
+  ConfigurationOcpp16Api,
+  ConfigurationOcpp2Api,
+  ConnectedStationFilter,
+  DefaultDrizzleInstance,
+  DefaultSequelizeInstance,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  EVDriverDataApi,
+  EVDriverModule,
+  EVDriverOcpp16Api,
+  EVDriverOcpp2Api,
+  IdGenerator,
+  InternalSmartCharging,
+  LocalBypassAuthProvider,
+  MessageRouterImpl,
+  MonitoringDataApi,
+  MonitoringModule,
+  MonitoringOcpp2Api,
+  NetworkProfileFilter,
+  OIDCAuthProvider,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  RealTimeAuthorizer,
+  registerCertificatesServices,
+  registerConfigurationServices,
+  registerEVDriverServices,
+  registerMonitoringServices,
+  registerReportingServices,
+  registerSmartChargingServices,
+  registerTransactionsServices,
+  ReportingModule,
+  ReportingOcpp16Api,
+  ReportingOcpp2Api,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -56,74 +109,17 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-} from '@citrineos/core';
-
-// -- Services --
-import {
-  CertificateAuthorityService,
-  IdGenerator,
-  InternalSmartCharging,
-  RealTimeAuthorizer,
-} from '@citrineos/core';
-
-// -- API authentication --
-import type { IApiAuthProvider } from '@citrineos/base';
-import { LocalBypassAuthProvider, OIDCAuthProvider } from '@citrineos/core';
-
-// -- Network Connection --
-import {
-  AdminApi,
-  Authenticator,
-  BasicAuthenticationFilter,
-  ConnectedStationFilter,
-  MessageRouterImpl,
-  NetworkProfileFilter,
-  UnknownStationFilter,
-  WebhookDispatcher,
-  WebsocketNetworkConnection,
-} from '@citrineos/core';
-
-// -- Modules --
-import {
-  CertificatesModule,
-  ConfigurationModule,
-  EVDriverModule,
-  MonitoringModule,
-  ReportingModule,
   SmartChargingModule,
-  TenantModule,
-  TransactionsModule,
-} from '@citrineos/core';
-
-// -- Module-internal services (registered by each module package's own registrar) --
-import {
-  registerCertificatesServices,
-  registerConfigurationServices,
-  registerEVDriverServices,
-  registerMonitoringServices,
-  registerReportingServices,
-  registerTransactionsServices,
-} from '@citrineos/core';
-
-// -- Module APIs --
-import {
-  CertificatesDataApi,
-  CertificatesOcpp2Api,
-  ConfigurationDataApi,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp2Api,
-  EVDriverDataApi,
-  EVDriverOcpp16Api,
-  EVDriverOcpp2Api,
-  MonitoringDataApi,
-  MonitoringOcpp2Api,
-  ReportingOcpp16Api,
-  ReportingOcpp2Api,
   SmartChargingOcpp16Api,
   SmartChargingOcpp2Api,
   TenantDataApi,
+  TenantModule,
   TransactionsDataApi,
+  TransactionsModule,
   TransactionsOcpp2Api,
+  UnknownStationFilter,
+  WebhookDispatcher,
+  WebsocketNetworkConnection,
 } from '@citrineos/core';
 
 type Prebuilt = {
@@ -168,6 +164,7 @@ export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt:
   registerNetwork(container);
   registerModules(container);
   registerModuleApis(container);
+  registerHandlers(container);
 
   return container;
 }
@@ -184,6 +181,7 @@ function registerModuleServices(container: AwilixContainer): void {
   registerEVDriverServices(container);
   registerMonitoringServices(container);
   registerReportingServices(container);
+  registerSmartChargingServices(container);
   registerTransactionsServices(container);
 }
 
@@ -415,5 +413,14 @@ function registerModuleApis(container: AwilixContainer): void {
     transactionsOcpp2Api: asClass(TransactionsOcpp2Api).scoped(),
     transactionsDataApi: asClass(TransactionsDataApi).scoped(),
     tenantDataApi: asClass(TenantDataApi).scoped(),
+  });
+}
+
+// ============================================================
+// Handlers — Resolved in the same per-module scope as their module
+// ============================================================
+function registerHandlers(container: AwilixContainer): void {
+  container.register({
+    ocppSender: asClass(OcppSender).scoped(),
   });
 }

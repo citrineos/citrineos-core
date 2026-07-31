@@ -74,6 +74,8 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
       })
       .optional(),
     configuration: z.object({
@@ -81,6 +83,8 @@ export const systemConfigInputSchema = z.object({
       bootRetryInterval: z.number().int().min(1).default(10).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
+      excludedRequests: z.array(CallActionSchema).optional(),
+      excludedResponses: z.array(CallActionSchema).optional(),
       ocpp2_0_1: z
         .object({
           unknownChargerStatus: z
@@ -133,6 +137,8 @@ export const systemConfigInputSchema = z.object({
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
+      excludedRequests: z.array(CallActionSchema).optional(),
+      excludedResponses: z.array(CallActionSchema).optional(),
       enableGetChargingProfilesOnStartTransaction: z.boolean().default(true).optional(),
     }),
     monitoring: z.object({
@@ -141,6 +147,8 @@ export const systemConfigInputSchema = z.object({
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
+      excludedRequests: z.array(CallActionSchema).optional(),
+      excludedResponses: z.array(CallActionSchema).optional(),
     }),
     reporting: z.object({
       endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
@@ -148,6 +156,8 @@ export const systemConfigInputSchema = z.object({
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
+      excludedRequests: z.array(CallActionSchema).optional(),
+      excludedResponses: z.array(CallActionSchema).optional(),
     }),
     smartcharging: z
       .object({
@@ -156,6 +166,8 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
       })
       .optional(),
     tenant: z
@@ -165,6 +177,8 @@ export const systemConfigInputSchema = z.object({
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
         ocppRouterBaseUrl: z.string().optional(),
       })
       .optional(),
@@ -172,6 +186,8 @@ export const systemConfigInputSchema = z.object({
       endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
+      excludedRequests: z.array(CallActionSchema).optional(),
+      excludedResponses: z.array(CallActionSchema).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().min(1).default(8081).optional(),
       costUpdatedInterval: z.number().int().min(1).default(60).optional(),
@@ -385,6 +401,8 @@ export const systemConfigSchema = z
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
+          excludedRequests: z.array(CallActionSchema).optional(),
+          excludedResponses: z.array(CallActionSchema).optional(),
         })
         .optional(),
       evdriver: z.object({
@@ -393,6 +411,8 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
         enableGetChargingProfilesOnStartTransaction: z.boolean().optional(),
       }),
       configuration: z
@@ -443,6 +463,8 @@ export const systemConfigSchema = z
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
+          excludedRequests: z.array(CallActionSchema).optional(),
+          excludedResponses: z.array(CallActionSchema).optional(),
         })
         .refine((obj) => obj.ocpp1_6 || obj.ocpp2_0_1 || obj.ocpp2_1, {
           message: 'A protocol configuration must be set',
@@ -453,6 +475,8 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
       }),
       reporting: z.object({
         endpointPrefix: z.string(),
@@ -460,6 +484,8 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
       }),
       smartcharging: z
         .object({
@@ -468,6 +494,8 @@ export const systemConfigSchema = z
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
+          excludedRequests: z.array(CallActionSchema).optional(),
+          excludedResponses: z.array(CallActionSchema).optional(),
         })
         .optional(),
       tenant: z.object({
@@ -476,6 +504,8 @@ export const systemConfigSchema = z
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
         responses: z.array(CallActionSchema),
+        excludedRequests: z.array(CallActionSchema).optional(),
+        excludedResponses: z.array(CallActionSchema).optional(),
         ocppRouterBaseUrl: z.string().optional(),
       }),
       transactions: z
@@ -487,6 +517,8 @@ export const systemConfigSchema = z
           sendCostUpdatedOnMeterValue: z.boolean().optional(),
           requests: z.array(CallActionSchema),
           responses: z.array(CallActionSchema),
+          excludedRequests: z.array(CallActionSchema).optional(),
+          excludedResponses: z.array(CallActionSchema).optional(),
           signedMeterValuesConfiguration: z
             .object({
               publicKeyFileId: z.string(),
