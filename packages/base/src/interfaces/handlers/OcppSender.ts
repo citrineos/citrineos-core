@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { ErrorCode, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
+import {
+  ErrorCode,
+  OcppError,
+  OCPPVersion,
+  type OcppRequest,
+  type OcppResponse,
+  type SystemConfig,
+} from '@citrineos/types';
 import {
   type IMessage,
   type IMessageConfirmation,
@@ -11,7 +17,6 @@ import {
 } from '@interfaces/messages/index.js';
 import { createIdentifier } from '@base-util/identifiers.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { SystemConfig } from '@config/types.js';
 import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import { type ILogObj, Logger } from 'tslog';

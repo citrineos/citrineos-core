@@ -1,8 +1,34 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, BOOT_STATUS, type BootstrapConfig, CacheNamespace, createIdentifier, type ICache, type IMessage, type IMessageConfirmation, type IOcppSender, type IWebsocketConnection, OCPP2_common_types, OCPP2_request_types, OCPP2_response_types } from '@citrineos/base';
-import { EventGroup, type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction, type RegistrationStatusEnumType, RegistrationStatusEnum, ResetEnum, SetVariableStatusEnum, type SystemConfig } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  BOOT_STATUS,
+  type BootstrapConfig,
+  CacheNamespace,
+  createIdentifier,
+  type ICache,
+  type IMessage,
+  type IMessageConfirmation,
+  type IOcppSender,
+  type IWebsocketConnection,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  EventGroup,
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  type RegistrationStatusEnumType,
+  RegistrationStatusEnum,
+  ResetEnum,
+  SetVariableStatusEnum,
+  type SystemConfig,
+} from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';

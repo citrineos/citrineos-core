@@ -1,8 +1,21 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage, OCPP2_common_types, OCPP2_response_types } from '@citrineos/base';
-import { GenericDeviceModelStatusEnum, type GenericDeviceModelStatusEnumType, type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsResponseHandler,
+  type IMessage,
+  OCPP2_common_types,
+  OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  GenericDeviceModelStatusEnum,
+  type GenericDeviceModelStatusEnumType,
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+} from '@citrineos/types';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetMonitoringReport)
 export class GetMonitoringReportResponseOcpp2Handler extends AbstractHandler {

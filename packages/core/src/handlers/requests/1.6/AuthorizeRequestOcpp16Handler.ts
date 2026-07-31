@@ -1,8 +1,27 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IAuthorizer, type IMessage, type IMessageConfirmation, type IMessageContext, type IOcppSender, recordAuthorizeResult } from '@citrineos/base';
-import { AuthorizationStatusEnum, type AuthorizationStatusEnumType, type HandlerProperties, OCPP1_6, OCPP_CallAction, type OcppRequest, type OcppResponse, OCPPVersion } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IAuthorizer,
+  type IMessage,
+  type IMessageConfirmation,
+  type IMessageContext,
+  type IOcppSender,
+  recordAuthorizeResult,
+} from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
+  type HandlerProperties,
+  OCPP1_6,
+  OCPP_CallAction,
+  type OcppRequest,
+  type OcppResponse,
+  OCPPVersion,
+} from '@citrineos/types';
 import { type IAuthorizationRepository, OCPP1_6_Mapper } from '@dal/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.Authorize)

@@ -2,7 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { BadRequestError, type IFileStorage } from '@citrineos/base';
-import { AttributeEnum, CertificateUseEnum, type CertificateDto, type CertificateUseEnumType, type InstallCertificateStatusEnumType, OCPP2_0_1, type WebsocketServerConfig } from '@citrineos/types';
+import {
+  AttributeEnum,
+  CertificateUseEnum,
+  type CertificateDto,
+  type CertificateUseEnumType,
+  type InstallCertificateStatusEnumType,
+  OCPP2_0_1,
+  type WebsocketServerConfig,
+} from '@citrineos/types';
 import {
   CertificateGenerationScope,
   type GenerateCertificateChainRequest,

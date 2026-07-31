@@ -1,8 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage, OCPP2_common_types } from '@citrineos/base';
-import { type ChargingRateUnitEnumType, type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsResponseHandler,
+  type IMessage,
+  OCPP2_common_types,
+} from '@citrineos/base';
+import {
+  type ChargingRateUnitEnumType,
+  type HandlerProperties,
+  OCPP1_6,
+  OCPP_CallAction,
+  OCPPVersion,
+} from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import type { CompositeScheduleInput } from '@dal/layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 

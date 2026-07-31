@@ -1,8 +1,22 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IMessage, type IOcppSender, OCPP2_request_types, OCPP2_response_types } from '@citrineos/base';
-import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction, ReservationUpdateStatusEnum, type ReservationUpdateStatusEnumType } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IMessage,
+  type IOcppSender,
+  OCPP2_request_types,
+  OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  ReservationUpdateStatusEnum,
+  type ReservationUpdateStatusEnumType,
+} from '@citrineos/types';
 import type { IReservationRepository } from '@dal/interfaces/repositories.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReservationStatusUpdate)

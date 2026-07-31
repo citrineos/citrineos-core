@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthorizationDto, AuthorizationStatusEnumType, AuthorizationWhitelistEnumType, IdTokenEnumType } from '@citrineos/types';
+import type {
+  AuthorizationDto,
+  AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnumType,
+  IdTokenEnumType,
+} from '@citrineos/types';
 import {
   type AuthorizationEntity,
   authorizationTable,

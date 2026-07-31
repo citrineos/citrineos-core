@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IMessage, type IOcppSender, recordAuthorizeResult } from '@citrineos/base';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IMessage,
+  type IOcppSender,
+  recordAuthorizeResult,
+} from '@citrineos/base';
 import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { ILocationRepository, ITransactionEventRepository } from '@/dal/index.js';

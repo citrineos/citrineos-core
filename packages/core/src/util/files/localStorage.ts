@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
 import path from 'path';
-import type { ConfigStore, CreateDirectoryOptions, DeleteFileOptions, TrustOptions } from '@citrineos/base';
+import type {
+  ConfigStore,
+  CreateDirectoryOptions,
+  DeleteFileOptions,
+  TrustOptions,
+} from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

@@ -1,8 +1,33 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IAuthorizer, type IMessage, type IMessageConfirmation, type IOcppSender, OCPP2_request_types, OCPP2_response_types, recordAuthorizeResult } from '@citrineos/base';
-import { AttributeEnum, AuthorizationStatusEnum, type AuthorizationStatusEnumType, AuthorizeCertificateStatusEnum, ErrorCode, type HandlerProperties, IdTokenEnum, OCPP2_1, OCPP_CallAction, OcppError, type OcppRequest, type OcppResponse, OCPPVersion } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IAuthorizer,
+  type IMessage,
+  type IMessageConfirmation,
+  type IOcppSender,
+  OCPP2_request_types,
+  OCPP2_response_types,
+  recordAuthorizeResult,
+} from '@citrineos/base';
+import {
+  AttributeEnum,
+  AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
+  AuthorizeCertificateStatusEnum,
+  ErrorCode,
+  type HandlerProperties,
+  IdTokenEnum,
+  OCPP2_1,
+  OCPP_CallAction,
+  OcppError,
+  type OcppRequest,
+  type OcppResponse,
+  OCPPVersion,
+} from '@citrineos/types';
 import { CertificateAuthorityService, validateOcpp21IdToken } from '@/util/index.js';
 import {
   type IAuthorizationRepository,

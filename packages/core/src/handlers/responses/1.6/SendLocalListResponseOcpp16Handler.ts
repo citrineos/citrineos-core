@@ -1,8 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsResponseHandler, type IMessage, type IOcppSender } from '@citrineos/base';
-import { EventGroup, type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsResponseHandler,
+  type IMessage,
+  type IOcppSender,
+} from '@citrineos/base';
+import {
+  EventGroup,
+  type HandlerProperties,
+  OCPP1_6,
+  OCPP_CallAction,
+  OCPPVersion,
+} from '@citrineos/types';
 import type { ILocalAuthListRepository } from '@dal/interfaces/repositories.js';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SendLocalList)

@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { EventGroup, MessageOrigin } from '@interfaces/messages/internal-types.js';
+import {
+  EventGroup,
+  MessageOrigin,
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type OCPPVersionType,
+  OcppError,
+} from '@citrineos/types';
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
-import { OcppError } from '@ocpp/rpc/message.js';
 
 /**
  * Fields shared by the methods that build a new outbound message from scratch

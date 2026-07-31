@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TransactionEventDto, TransactionEventEnumType, TriggerReasonEnumType } from '@citrineos/types';
+import type {
+  TransactionEventDto,
+  TransactionEventEnumType,
+  TriggerReasonEnumType,
+} from '@citrineos/types';
 import {
   type TransactionEventEntity,
   transactionEventTable,

@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { DeleteCertificateAttemptDto, DeleteCertificateStatusEnumType, HashAlgorithmEnumType } from '@citrineos/types';
+import type {
+  DeleteCertificateAttemptDto,
+  DeleteCertificateStatusEnumType,
+  HashAlgorithmEnumType,
+} from '@citrineos/types';
 import {
   type DeleteCertificateAttemptEntity,
   deleteCertificateAttemptTable,

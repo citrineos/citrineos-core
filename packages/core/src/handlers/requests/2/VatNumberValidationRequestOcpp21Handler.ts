@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractHandler, type AbstractHandlerDependencies, AsRequestHandler, type IMessage, type IOcppSender, type IVatProvider } from '@citrineos/base';
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IMessage,
+  type IOcppSender,
+  type IVatProvider,
+} from '@citrineos/base';
 import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.VatNumberValidation)
