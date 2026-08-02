@@ -236,6 +236,9 @@ export interface Store {
   // Resolves with the first Exchange matching f (scanning from f.minSeq inclusive so
   // already-arrived traffic is caught); rejects on timeout with nearest near-misses.
   waitForReceived(f: ExchangeFilter, timeoutMs: number): Promise<Exchange>;
+  // Cheap size / newest-seq reads (avoid a full query({}) filter+sort just for length).
+  count(): number;
+  maxSeq(): number;
   domain: DomainState;
   findings: Finding[];
   addFinding(f: Finding): void;

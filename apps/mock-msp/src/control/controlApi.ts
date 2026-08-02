@@ -84,6 +84,13 @@ import {
   resetScenarioRuntime,
   setAuthorizePolicy,
 } from './scenario.js';
+import {
+  createStatusCache,
+  type StatusProbes,
+  type HasuraStatus,
+  type OcpiProbe,
+  type EverestProbe,
+} from './statusCache.js';
 
 // ---------------------------------------------------------------------------
 // small helpers
@@ -231,7 +238,7 @@ function healthPayload(ctx: MockContext): Record<string, unknown> {
     role: ctx.identity.role,
     registration: { status: reg.status, registeredAt: reg.registeredAt },
     scenario: rt.name,
-    exchanges: ctx.store.query({}).length,
+    exchanges: ctx.store.count(),
     findings: ctx.store.findings.length,
     faults: ctx.faults.list().length,
     authorize: rt.authorize.default,
@@ -608,8 +615,128 @@ function mqttError(reply: FastifyReply, res: ExecResult, step: string): unknown 
 
 /** The current max buffer seq — a floor to hand waitForReceived so it ignores prior-cycle exchanges. */
 function seqFloor(ctx: MockContext): number {
-  const all = ctx.store.query({});
-  return all.length > 0 ? all[all.length - 1].seq : 0;
+  return ctx.store.maxSeq();
+}
+
+// ---------------------------------------------------------------------------
+// Spec probes: semantic checks the schema validator cannot make. Each one is
+// spec-legal on the wire, so validation passes — the defect only shows when you
+// compare what Citrine SERVES against what it actually KNOWS (its own DB), or
+// against the spec's stated meaning of a field.
+// ---------------------------------------------------------------------------
+interface Probe {
+  id: string;
+  name: string;
+  ok: boolean;
+  expected: string;
+  actual: string;
+  detail: string;
+}
+
+/** Read the first connector's internal status straight from Citrine's DB. */
+async function internalConnectorStatus(ctx: MockContext): Promise<string | undefined> {
+  const q = 'query { Connectors(limit: 1, order_by: {id: asc}) { status } }';
+  try {
+    const r = await hasuraFetch(ctx.config.citrineHasuraUrl, q);
+    const rows = ((r.json.data as Record<string, unknown> | undefined)?.Connectors ?? []) as Array<{
+      status?: string;
+    }>;
+    return rows[0]?.status;
+  } catch {
+    return undefined;
+  }
+}
+
+/** GET /_mock/probes — run the semantic (non-schema) conformance checks. */
+async function runProbes(ctx: MockContext): Promise<unknown> {
+  const probes: Probe[] = [];
+
+  // --- 1. EVSE availability: what Citrine knows vs what it publishes --------
+  const internal = await internalConnectorStatus(ctx);
+  let published: string | undefined;
+  let totalLocations = 0;
+  try {
+    const ex = await ctx.client.pull(ModuleId.Locations);
+    const data = ((ex.response.body as { data?: unknown } | undefined)?.data ?? []) as Record<
+      string,
+      unknown
+    >[];
+    totalLocations = data.length;
+    for (const loc of data) {
+      const evses = Array.isArray(loc.evses) ? (loc.evses as Record<string, unknown>[]) : [];
+      if (evses.length > 0) {
+        published = String(evses[0].status ?? '');
+        break;
+      }
+    }
+  } catch {
+    /* leave undefined */
+  }
+  // Citrine's own connector state maps onto an OCPI EVSE status; 'Occupied' has
+  // no mapping, so a busy charger is published as UNKNOWN.
+  const busy = internal !== undefined && internal !== 'Available';
+  probes.push({
+    id: 'evse-availability',
+    name: 'EVSE availability reflects the charger',
+    ok: !(busy && published === 'UNKNOWN'),
+    expected: busy ? 'OCCUPIED / CHARGING' : 'AVAILABLE',
+    actual: published ?? 'unknown',
+    detail: `Citrine's own DB says the connector is "${internal ?? '?'}"; it publishes EVSE status "${published ?? '?'}".`,
+  });
+
+  // --- 2. Pagination: X-Total-Count should be the result-set size ----------
+  try {
+    const ex = await ctx.client.call({
+      method: 'GET',
+      url: `${ctx.config.citrineOcpiBaseUrl}/2.2.1/locations?offset=0&limit=2`,
+      module: ModuleId.Locations,
+      operation: 'probe.pagination',
+      functional: true,
+    });
+    const h = ex.response.headers ?? {};
+    const total = h['x-total-count'] ?? h['X-Total-Count'];
+    const link = h['link'] ?? h['Link'];
+    probes.push({
+      id: 'pagination-total',
+      name: 'Pagination reports the full total',
+      ok: total !== undefined && Number(total) > 2,
+      expected: `X-Total-Count = ${totalLocations || 'all'} (+ Link header)`,
+      actual: `X-Total-Count = ${total ?? 'absent'}${link ? ' (+ Link)' : ' (no Link)'}`,
+      detail:
+        'Asked for 2 records. X-Total-Count must be the size of the whole result set, not the page (OCPI 4.1.4.1) — otherwise a client stops after page one.',
+    });
+  } catch {
+    /* skip */
+  }
+
+  // --- 3. location_id is a string in the spec ------------------------------
+  try {
+    const ex = await ctx.client.call({
+      method: 'GET',
+      url: `${ctx.config.citrineOcpiBaseUrl}/2.2.1/locations/LOC1`,
+      module: ModuleId.Locations,
+      operation: 'probe.string-location-id',
+      functional: true,
+    });
+    const st = ex.response.httpStatus;
+    probes.push({
+      id: 'string-location-id',
+      name: 'A string location_id is handled',
+      ok: st < 500,
+      expected: '404 (or an OCPI 2003), not a crash',
+      actual: `HTTP ${st}`,
+      detail:
+        'location_id is a string in OCPI. Requesting a non-numeric id returns a 500 rather than a handled not-found.',
+    });
+  } catch {
+    /* skip */
+  }
+
+  return {
+    probes,
+    failing: probes.filter((p) => !p.ok).length,
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 /** GET /_mock/discover/evse — pull Citrine's locations and return the first real id triple. */
@@ -847,9 +974,208 @@ async function everestUnplug(reply: FastifyReply): Promise<unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// Live status — the single cheap 2s-poll source powering the dashboard's status
+// strip + state-aware buttons. GET /_mock/status. Never awaits outbound I/O (a
+// TTL cache does that in the background) and never throws.
+// ---------------------------------------------------------------------------
+
+/** The one combined Hasura query: station online + connector status + active transaction. */
+async function probeHasura(ctx: MockContext): Promise<HasuraStatus> {
+  const q =
+    'query MockMspStatus {' +
+    ' ChargingStations(order_by: { id: asc }, limit: 5) { id ocppConnectionName isOnline }' +
+    ' Connectors(order_by: { id: asc }, limit: 10) { id stationId status }' +
+    ' Transactions(where: { isActive: { _eq: true } }, order_by: { id: desc }, limit: 3)' +
+    ' { transactionId stationId chargingState totalKwh } }';
+  const empty: HasuraStatus = { ok: false, station: null, connector: null, transaction: null };
+  let r: HasuraResult;
+  try {
+    r = await hasuraFetch(ctx.config.citrineHasuraUrl, q);
+  } catch {
+    return empty;
+  }
+  if (r.status < 200 || r.status >= 300) return empty;
+  const data = (r.json.data ?? {}) as Record<string, unknown>;
+  const ok = !hasuraErrors(r);
+  const stations = (Array.isArray(data.ChargingStations) ? data.ChargingStations : []) as Record<
+    string,
+    unknown
+  >[];
+  const prefix = (ctx.config.defaultEvseUid ?? 'cp001::1').split('::')[0]; // 'cp001'
+  const st = stations.find((s) => s.ocppConnectionName === prefix) ?? stations[0] ?? undefined;
+  const station = st
+    ? { id: Number(st.id), name: String(st.ocppConnectionName), isOnline: Boolean(st.isOnline) }
+    : null;
+  const connectors = (Array.isArray(data.Connectors) ? data.Connectors : []) as Record<
+    string,
+    unknown
+  >[];
+  // When a station is resolved, only accept ITS connector/transaction — never fall back to
+  // another station's row (that would misreport once a 2nd station exists). null → 'unknown'/'none'.
+  const conn = station ? connectors.find((c) => Number(c.stationId) === station.id) : connectors[0];
+  const connector = conn ? { id: Number(conn.id), status: String(conn.status) } : null;
+  const txns = (Array.isArray(data.Transactions) ? data.Transactions : []) as Record<
+    string,
+    unknown
+  >[];
+  const tx = station ? txns.find((t) => Number(t.stationId) === station.id) : txns[0];
+  const transaction = tx
+    ? {
+        transactionId: String(tx.transactionId),
+        chargingState: tx.chargingState != null ? String(tx.chargingState) : null,
+        totalKwh: tx.totalKwh != null ? Number(tx.totalKwh) : null,
+      }
+    : null;
+  return { ok, station, connector, transaction };
+}
+
+/** Citrine OCPI reachability: free if a recent outbound landed, else a bare timed versions fetch. */
+async function probeOcpi(ctx: MockContext): Promise<OcpiProbe> {
+  const outbound = ctx.store.query({ direction: 'outbound' });
+  const last = outbound[outbound.length - 1];
+  if (last && last.response.httpStatus > 0) {
+    const ageMs = Date.now() - new Date(last.timing.receivedAt).getTime();
+    if (ageMs < 10_000) return { up: true, httpStatus: last.response.httpStatus, latencyMs: null };
+  }
+  const url = ctx.config.citrineVersionsUrl ?? `${ctx.config.citrineOcpiBaseUrl}/versions`;
+  const t0 = Date.now();
+  try {
+    // Any HTTP response (even 401) proves reachability. Bare fetch — NOT ctx.client.call,
+    // which would record an Exchange and be subject to armed faults.
+    const res = await fetch(url, { signal: AbortSignal.timeout(2500) });
+    return { up: true, httpStatus: res.status, latencyMs: Date.now() - t0 };
+  } catch {
+    return { up: false, httpStatus: null, latencyMs: Date.now() - t0 };
+  }
+}
+
+/** EVerest car-sim container reachability via `docker inspect` (cheaper than exec). */
+async function probeEverest(): Promise<EverestProbe> {
+  const res = await dockerExec(
+    ['inspect', '-f', '{{.State.Running}}', EVEREST_MQTT_CONTAINER],
+    3000,
+  );
+  const daemonDown =
+    /cannot connect to the docker daemon|is the docker daemon running|docker daemon is not running/i.test(
+      res.stderr,
+    );
+  // code -1 = docker not spawnable, -2 = inspect timed out (a hung daemon) → both 'unavailable',
+  // matching the real remediation (start/repair docker) rather than "container down".
+  if (res.code === -1 || res.code === -2 || daemonDown)
+    return {
+      state: 'unavailable',
+      detail: res.stderr.trim() || (res.code === -2 ? 'docker inspect timed out' : null),
+    };
+  if (res.code === 0 && /true/i.test(res.stdout)) return { state: 'up', detail: null };
+  return { state: 'down', detail: res.stderr.trim() || 'container not running' };
+}
+
+function defaultProbes(ctx: MockContext): StatusProbes {
+  return {
+    hasura: () => probeHasura(ctx),
+    ocpi: () => probeOcpi(ctx),
+    everest: () => probeEverest(),
+  };
+}
+
+/** The mock's own view of an ACTIVE session (raw OCPI Sessions in the domain map, never pruned). */
+function deriveActiveSession(ctx: MockContext): Record<string, unknown> | null {
+  let best: Record<string, unknown> | null = null;
+  for (const v of ctx.store.domain.sessions.values()) {
+    const s = v as Record<string, unknown>;
+    if (s && s.status === 'ACTIVE') {
+      if (!best || String(s.last_updated ?? '') >= String(best.last_updated ?? '')) best = s;
+    }
+  }
+  if (!best) return null;
+  return {
+    id: best.id,
+    evse_uid: best.evse_uid,
+    status: best.status,
+    kwh: best.kwh,
+    last_updated: best.last_updated,
+  };
+}
+
+/** Assemble the /status payload from the cheap in-memory sources + the cached probe snapshot. */
+function buildStatus(
+  ctx: MockContext,
+  snap: ReturnType<typeof createStatusCache>['snapshot'],
+): Record<string, unknown> {
+  const s = snap();
+  const reg = ctx.store.domain.registration;
+  const rt = getScenarioRuntime();
+  const h = s.hasura;
+  const hasuraUp = h?.ok === true;
+  const station = hasuraUp && h ? h.station : null;
+  const connector = hasuraUp && h ? h.connector : null;
+  const transaction = hasuraUp && h ? h.transaction : null;
+  return {
+    ts: new Date().toISOString(),
+    degraded: s.stale,
+    gen: {
+      maxSeq: ctx.store.maxSeq(),
+      exchanges: ctx.store.count(),
+      findings: ctx.store.findings.length,
+      faults: ctx.faults.list().length,
+    },
+    mock: {
+      party: `${ctx.identity.country_code}/${ctx.identity.party_id}`,
+      role: ctx.identity.role,
+      registration: reg.status,
+      registeredAt: reg.registeredAt ?? null,
+      scenario: rt.name,
+      authorizeDefault: rt.authorize.default,
+      activeSession: deriveActiveSession(ctx),
+      defaults: {
+        locationId: ctx.config.defaultLocationId ?? '1',
+        evseUid: ctx.config.defaultEvseUid ?? 'cp001::1',
+        connectorId: ctx.config.defaultConnectorId ?? '1',
+        tokenUid: ctx.config.defaultTokenUid ?? 'DEADBEEF',
+      },
+    },
+    citrine: {
+      ocpi: s.ocpi
+        ? {
+            state: s.ocpi.up ? 'up' : 'down',
+            httpStatus: s.ocpi.httpStatus,
+            latencyMs: s.ocpi.latencyMs,
+          }
+        : { state: 'unknown', httpStatus: null, latencyMs: null },
+      hasura: { state: h ? (h.ok ? 'up' : 'down') : 'unknown' },
+      station: station
+        ? { state: station.isOnline ? 'online' : 'offline', id: station.id, name: station.name }
+        : { state: 'unknown', id: null, name: null },
+      connector: connector
+        ? { state: connector.status, id: connector.id }
+        : { state: 'unknown', id: null },
+      transaction: transaction
+        ? {
+            state: 'active',
+            transactionId: transaction.transactionId,
+            chargingState: transaction.chargingState,
+            totalKwh: transaction.totalKwh,
+          }
+        : { state: hasuraUp ? 'none' : 'unknown', transactionId: null },
+    },
+    everest: s.everest
+      ? { state: s.everest.state, detail: s.everest.detail }
+      : { state: 'unknown', detail: null },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // registerControlApi — the export the integrator (server.ts) wires in.
 // ---------------------------------------------------------------------------
-export function registerControlApi(app: FastifyInstance, ctx: MockContext): void {
+export function registerControlApi(
+  app: FastifyInstance,
+  ctx: MockContext,
+  probeOverride?: Partial<StatusProbes>,
+): void {
+  // One TTL cache per app (factory, not a module singleton → zero test leakage,
+  // no timers). Tests inject a fake `everest` probe; Hasura/OCPI are stubbed via
+  // config URLs.
+  const statusCache = createStatusCache({ ...defaultProbes(ctx), ...probeOverride });
   app.register(
     async (mock) => {
       // Optional shared-secret guard, scoped to this encapsulated plugin only.
@@ -866,6 +1192,13 @@ export function registerControlApi(app: FastifyInstance, ctx: MockContext): void
 
       // ---- INSPECTION -----------------------------------------------------
       mock.get('/health', async () => healthPayload(ctx));
+      // Aggregate live status for the dashboard (2s poll). ?fresh=1 awaits a bounded
+      // refresh (manual refresh button + tests); the poll never does.
+      mock.get('/status', async (req) => {
+        const q = req.query as { fresh?: string };
+        if (q.fresh === '1' || q.fresh === 'true') await statusCache.refreshAll();
+        return buildStatus(ctx, statusCache.snapshot);
+      });
       mock.get('/registration', async () => ctx.store.domain.registration);
       mock.get('/state', async () => serializeDomain(ctx.store.domain));
       mock.get('/state/:module', async (req, reply) => {
@@ -1032,6 +1365,7 @@ export function registerControlApi(app: FastifyInstance, ctx: MockContext): void
       );
       mock.post('/everest/plug', async (_req, reply) => everestPlug(reply));
       mock.post('/everest/unplug', async (_req, reply) => everestUnplug(reply));
+      mock.get('/probes', async () => runProbes(ctx));
 
       // ---- PROVOKE / COVERAGE (Citrine -> mock; both-directions proof) ----
       mock.post('/provoke/:what', async (req, reply) =>

@@ -32,6 +32,7 @@ import { ok, empty, error } from '../src/core/envelope.js';
 import { encodeToken } from '../src/core/auth.js';
 import { buildServer } from '../src/server.js';
 import { resetScenarioRuntime } from '../src/control/scenario.js';
+import type { StatusProbes } from '../src/control/statusCache.js';
 
 // The plaintext tokens the harness uses. Any consistent values work; the auth
 // layer base64-encodes on the wire and decodes+compares the plaintext.
@@ -72,13 +73,16 @@ export interface TestServer {
   app: FastifyInstance;
 }
 
-export function makeServer(overrides: Partial<MockConfig> = {}): TestServer {
+export function makeServer(
+  overrides: Partial<MockConfig> = {},
+  probeOverride?: Partial<StatusProbes>,
+): TestServer {
   // Reset the process-global scenario runtime so tests don't leak authorize
   // policy / strictInbound / active-scenario state into one another.
   resetScenarioRuntime();
   const config = makeConfig(overrides);
   const ctx = makeContext(config);
-  const app = buildServer(ctx);
+  const app = buildServer(ctx, probeOverride);
   return { ctx, app };
 }
 

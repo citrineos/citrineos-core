@@ -14,9 +14,15 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { MockContext } from './core/types.js';
 import { registerAllModules } from './core/registry.js';
 import { registerControlApi } from './control/controlApi.js';
+import type { StatusProbes } from './control/statusCache.js';
 import { registerDashboard } from './control/dashboard.js';
 
-export function buildServer(ctx: MockContext): FastifyInstance {
+// probeOverride lets tests inject a fake docker/EVerest probe (Hasura + OCPI are
+// already stubbable via config URLs); production passes nothing and gets the real ones.
+export function buildServer(
+  ctx: MockContext,
+  probeOverride?: Partial<StatusProbes>,
+): FastifyInstance {
   const app = Fastify({
     logger: { level: ctx.config.logLevel },
     // The dispatcher owns route matching for known OCPI paths; unknown paths
@@ -45,7 +51,7 @@ export function buildServer(ctx: MockContext): FastifyInstance {
   // Mount OCPI modules (versions/credentials/emsp/*) via the dispatcher, then
   // the /_mock control+inspection API (its own encapsulated plugin/prefix).
   registerAllModules(app, ctx);
-  registerControlApi(app, ctx);
+  registerControlApi(app, ctx, probeOverride);
   // Human-facing view over the control API — served at / and /_mock/ui.
   registerDashboard(app, ctx);
 

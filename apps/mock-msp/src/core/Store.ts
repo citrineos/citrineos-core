@@ -220,6 +220,18 @@ class MemoryStore implements Store {
     return this.index.get(id);
   }
 
+  // Cheap accessors so callers that only need the size / newest seq don't pay a
+  // full filter+sort of the ring buffer (which query({}) does). The buffer is
+  // append-only in seq order (RING_CAP evicts from the front), so the last entry
+  // always holds the max seq.
+  count(): number {
+    return this.buffer.length;
+  }
+
+  maxSeq(): number {
+    return this.buffer.length > 0 ? this.buffer[this.buffer.length - 1].seq : 0;
+  }
+
   waitForReceived(f: ExchangeFilter, timeoutMs: number): Promise<Exchange> {
     return new Promise<Exchange>((resolve, reject) => {
       // Catch already-arrived traffic first (cursor = f.minSeq, inclusive).

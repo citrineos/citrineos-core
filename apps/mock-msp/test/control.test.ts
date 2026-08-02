@@ -47,6 +47,18 @@ describe('/_mock control API', () => {
     expect(body.registration.status).toBe('registered');
   });
 
+  it('Store.count()/maxSeq() track recorded exchanges and back health.exchanges', async () => {
+    expect(ctx.store.count()).toBe(0);
+    expect(ctx.store.maxSeq()).toBe(0);
+    await putSession('CNT-1');
+    await putSession('CNT-2');
+    expect(ctx.store.count()).toBe(2);
+    // maxSeq is the newest seq — monotonic and >= the count here.
+    expect(ctx.store.maxSeq()).toBe(ctx.store.query({}).at(-1)!.seq);
+    const res = await app.inject({ method: 'GET', url: '/_mock/health' });
+    expect(res.json().exchanges).toBe(2);
+  });
+
   it('waitForReceived resolves on emitted inbound traffic (direct store primitive)', async () => {
     // Register the waiter FIRST (executor runs synchronously), then emit.
     const waitPromise = ctx.store.waitForReceived(
