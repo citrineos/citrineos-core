@@ -165,6 +165,13 @@ SPDX-License-Identifier: Apache-2.0
     </section>
 
     <section class="group">
+      <h2>Spec probes (semantic checks)</h2>
+      <div class="hint">Checks the schema validator <b>cannot</b> make — these responses are spec-legal, so validation passes. Compares what Citrine <b>serves</b> against what it actually <b>knows</b>.</div>
+      <button class="wide primary" onclick="runProbes()">🔎 Run spec probes</button>
+      <div id="probeOut" style="margin-top:8px;font-size:11px"><span class="empty">Not run yet.</span></div>
+    </section>
+
+    <section class="group">
       <h2>Adversary · inject fault</h2>
       <div class="hint">Compose a rule, then Arm. Chips pre-fill the builder (they do not arm).</div>
       <div class="btnrow">
@@ -371,6 +378,35 @@ async function pullAll() {
     await act("/pull/" + m, {}, "pull " + m);
   }
   refresh();
+}
+
+// ---- spec probes (semantic conformance, not schema) ----------------------
+// Each probe compares what Citrine SERVES against what it KNOWS (its own DB) or
+// against the spec's meaning of a field. These pass schema validation, so the
+// wire trace stays green — the defect only shows here.
+async function runProbes() {
+  $("probeOut").innerHTML = "<span class='empty'>running…</span>";
+  try {
+    const r = await api("/probes", { method: "GET" });
+    const rows = (r.probes || []).map(p => {
+      const badge = p.ok
+        ? "<span style='color:#3fb950;font-weight:600'>PASS</span>"
+        : "<span style='color:#f85149;font-weight:600'>FAIL</span>";
+      return "<div style='padding:7px 0;border-bottom:1px solid var(--border)'>" +
+        badge + " &nbsp;<b>" + esc(p.name) + "</b>" +
+        "<div style='margin-top:3px;color:var(--muted2)'>expected: " + esc(p.expected) + "</div>" +
+        "<div style='color:" + (p.ok ? "var(--muted2)" : "#f85149") + "'>actual:&nbsp;&nbsp;&nbsp; " + esc(p.actual) + "</div>" +
+        "<div style='margin-top:3px'>" + esc(p.detail) + "</div>" +
+        "</div>";
+    }).join("");
+    $("probeOut").innerHTML =
+      "<div style='margin-bottom:5px'><b>" + r.failing + " of " + (r.probes || []).length + " failing</b></div>" + rows;
+    toast("spec probes: " + r.failing + " failing", r.failing === 0);
+    refresh();
+  } catch (e) {
+    $("probeOut").innerHTML = "<span class='empty'>failed: " + esc(e.message) + "</span>";
+    toast("spec probes failed", false);
+  }
 }
 
 // ---- live charging session (EVerest) ------------------------------------
