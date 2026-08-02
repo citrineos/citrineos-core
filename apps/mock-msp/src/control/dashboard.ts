@@ -21,6 +21,21 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { MockContext } from '../core/types.js';
 
 const HTML_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../../public/dashboard.html');
+// The redesign under construction. Served at /_mock/ui2 while / keeps the proven
+// dashboard untouched; at cutover this file becomes dashboard.html and this route
+// is removed. Optional — if the file is absent (e.g. after cutover), /ui2 404s.
+const NEXT_HTML_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../public/dashboard.next.html',
+);
+
+function loadFile(path: string): string | null {
+  try {
+    return readFileSync(path, 'utf-8');
+  } catch {
+    return null;
+  }
+}
 
 function loadHtml(): string {
   try {
@@ -43,4 +58,12 @@ export function registerDashboard(app: FastifyInstance, _ctx: MockContext): void
     reply.type('text/html; charset=utf-8').send(html);
   app.get('/', serve);
   app.get('/_mock/ui', serve);
+
+  // Redesign preview (only if the file exists — removed at cutover).
+  const nextHtml = loadFile(NEXT_HTML_PATH);
+  if (nextHtml) {
+    app.get('/_mock/ui2', async (_req, reply: FastifyReply) =>
+      reply.type('text/html; charset=utf-8').send(nextHtml),
+    );
+  }
 }
