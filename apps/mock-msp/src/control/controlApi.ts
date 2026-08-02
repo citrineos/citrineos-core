@@ -38,6 +38,8 @@
 //     POST   /_mock/commands/:type              send a command to Citrine
 //     POST   /_mock/emit/command {type,payload} alias of the above
 //     POST   /_mock/emit/token {..TokenDTO}     PUT a token to Citrine's receiver
+//     POST   /_mock/emit/token-patch {uid?,patch?,omitLastUpdated?}  PATCH it (default: block newest)
+//     POST   /_mock/verify/token {uid?}          GET it back + diff vs our copy (drift -> findings)
 //     POST   /_mock/pull/:module                GET Citrine's CPO SENDER endpoint
 //   CHARGE — live simulated session (EVerest)
 //     GET    /_mock/discover/evse               real location_id/evse_uid/connector_id from a pull
@@ -74,6 +76,7 @@ import {
   UnlockConnectorSchema,
 } from '../ocpi/barrel.js';
 import { uuid } from '../core/ids.js';
+import { patchTokenAtCpo, verifyTokenAtCpo } from '../modules/tokens.js';
 import {
   ScenarioSchema,
   FaultRuleInputSchema,
@@ -335,6 +338,10 @@ async function emitToken(
   const endpointBase = ep?.url ?? `${ctx.config.citrineOcpiBaseUrl}/2.2.1/tokens`;
   const url = `${endpointBase}/${token.country_code}/${token.party_id}/${token.uid}`;
 
+  // Store our expected copy so /_mock/verify/token can diff Citrine's readback
+  // (and /_mock/emit/token-patch can default to the newest pushed uid).
+  ctx.store.domain.tokens.set(String(token.uid), parsed.data);
+
   try {
     const ex = await ctx.client.call({
       method: 'PUT',
@@ -348,6 +355,73 @@ async function emitToken(
     return { pushed: true, url, tokenUid: token.uid, exchange: ex };
   } catch (err) {
     return reply.code(502).send(errorBody('token_push_failed', err, { url }));
+  }
+}
+
+// Newest pushed/patched token uid — insertion order of the Map is push order.
+function newestTokenUid(ctx: MockContext): string | undefined {
+  let last: string | undefined;
+  for (const key of ctx.store.domain.tokens.keys()) last = key;
+  return last;
+}
+
+// PATCH one of our tokens at the CPO (default: block the newest pushed token
+// with {valid:false}). The seeded DEADBEEF is deliberately never the implicit
+// target — blocking it would genuinely break the charge flow in Citrine's DB;
+// pass uid explicitly to patch it.
+async function emitTokenPatch(
+  ctx: MockContext,
+  body: Record<string, unknown>,
+  reply: FastifyReply,
+): Promise<unknown> {
+  const uid = typeof body.uid === 'string' && body.uid ? body.uid : newestTokenUid(ctx);
+  if (!uid) {
+    return reply
+      .code(409)
+      .send({ error: 'no_token', hint: 'Push a token first (POST /_mock/emit/token).' });
+  }
+  const patch =
+    body.patch && typeof body.patch === 'object'
+      ? (body.patch as Record<string, unknown>)
+      : { valid: false };
+  const omitLastUpdated = body.omitLastUpdated === true;
+  try {
+    const exchange = await patchTokenAtCpo(ctx, uid, patch, { omitLastUpdated });
+    return {
+      patched: true,
+      uid,
+      sent: patch,
+      exchange,
+      expected: ctx.store.domain.tokens.get(uid),
+    };
+  } catch (err) {
+    return reply.code(502).send(errorBody('token_patch_failed', err, { uid }));
+  }
+}
+
+// GET our token back from Citrine and report field-level drift vs what we
+// pushed/patched. verified === no error-level drift.
+async function verifyToken(
+  ctx: MockContext,
+  body: Record<string, unknown>,
+  reply: FastifyReply,
+): Promise<unknown> {
+  const uid = typeof body.uid === 'string' && body.uid ? body.uid : newestTokenUid(ctx);
+  if (!uid) {
+    return reply
+      .code(409)
+      .send({ error: 'no_token', hint: 'Push a token first (POST /_mock/emit/token).' });
+  }
+  try {
+    const { exchange, drift } = await verifyTokenAtCpo(ctx, uid);
+    return {
+      verified: drift.every((d) => d.severity !== 'error'),
+      uid,
+      drift,
+      exchange,
+    };
+  } catch (err) {
+    return reply.code(502).send(errorBody('token_verify_failed', err, { uid }));
   }
 }
 
@@ -1127,6 +1201,7 @@ function buildStatus(
       scenario: rt.name,
       authorizeDefault: rt.authorize.default,
       activeSession: deriveActiveSession(ctx),
+      tokensPushed: ctx.store.domain.tokens.size,
       defaults: {
         locationId: ctx.config.defaultLocationId ?? '1',
         evseUid: ctx.config.defaultEvseUid ?? 'cp001::1',
@@ -1299,9 +1374,38 @@ export function registerControlApi(
           return reply.code(502).send(errorBody('register_failed', err));
         }
       });
-      mock.post('/reregister', async (_req, reply) => {
+      // Re-register = re-discover the CPO endpoint catalog AND really rotate
+      // our credentials at the CPO (PUT + stale-token probe). Pass
+      // {discoverOnly:true} for the old read-only refresh behavior.
+      mock.post('/reregister', async (req, reply) => {
+        const body = (req.body as Record<string, unknown> | undefined) ?? {};
         try {
-          return { registration: await ctx.client.reregister() };
+          const registration = await ctx.client.reregister();
+          if (body.discoverOnly === true || registration.status !== 'registered') {
+            return { registration };
+          }
+          const before = ctx.store.maxSeq();
+          const oldToken = registration.tokenWePresent;
+          const rotated = await ctx.client.rotateCredentials();
+          const probes = ctx.store.query({
+            direction: 'outbound',
+            operation: 'credentials.stale-token-probe',
+            minSeq: before,
+          });
+          const probe = probes[probes.length - 1];
+          return {
+            registration: rotated,
+            rotation: {
+              rotated: true,
+              cpoTokenChanged: rotated.tokenWePresent !== oldToken,
+              staleTokenProbe: probe
+                ? {
+                    httpStatus: probe.response.httpStatus,
+                    rejected: probe.response.httpStatus === 401,
+                  }
+                : null,
+            },
+          };
         } catch (err) {
           return reply.code(502).send(errorBody('reregister_failed', err));
         }
@@ -1337,6 +1441,12 @@ export function registerControlApi(
       });
       mock.post('/emit/token', async (req, reply) =>
         emitToken(ctx, (req.body as Record<string, unknown> | undefined) ?? {}, reply),
+      );
+      mock.post('/emit/token-patch', async (req, reply) =>
+        emitTokenPatch(ctx, (req.body as Record<string, unknown> | undefined) ?? {}, reply),
+      );
+      mock.post('/verify/token', async (req, reply) =>
+        verifyToken(ctx, (req.body as Record<string, unknown> | undefined) ?? {}, reply),
       );
       mock.post('/pull/:module', async (req, reply) => {
         const mod = normalizeModuleId((req.params as { module: string }).module);

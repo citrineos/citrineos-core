@@ -176,6 +176,161 @@ export async function pushTokenToCpo(ctx: MockContext, token: unknown): Promise<
 }
 
 // ---------------------------------------------------------------------------
+// Actor helper: PATCH one of our tokens at the CPO (partial update — the
+// canonical case is blocking a lost card with {valid:false}). Citrine's PATCH
+// is fully wired (TokensModuleApi PATCH -> TokensService.patchToken), so this
+// is a real round-trip, not a probe. last_updated is stamped unless
+// opts.omitLastUpdated — omitting it is itself a known-bug trigger: Citrine's
+// TokensMapper maps an ABSENT `valid` to status Invalid and applies it
+// unconditionally, silently blocking the token (see the known-bugs scenario).
+// The patch is merged into our stored expected copy so verifyTokenAtCpo can
+// diff Citrine's readback against what we believe the token now is.
+// ---------------------------------------------------------------------------
+const TokenPatchSchema = TokenDTOSchema.partial();
+const TokenReadResponseSchema = OcpiResponseSchema(TokenDTOSchema);
+
+export async function patchTokenAtCpo(
+  ctx: MockContext,
+  uid: string,
+  patch: unknown,
+  opts?: { omitLastUpdated?: boolean },
+): Promise<Exchange> {
+  const parsed = TokenPatchSchema.parse(patch ?? {});
+  const body: Record<string, unknown> = { ...parsed };
+  if (!opts?.omitLastUpdated && body.last_updated === undefined) {
+    body.last_updated = new Date().toISOString();
+  }
+
+  // Merge into the local expected copy (upsert a minimal shell if we never
+  // pushed this uid — verify will then report drift on the missing fields).
+  const existing = ctx.store.domain.tokens.get(uid);
+  const merged =
+    existing && typeof existing === 'object'
+      ? { ...(existing as Record<string, unknown>), ...body }
+      : { uid, ...body };
+  ctx.store.domain.tokens.set(uid, merged);
+
+  const id = ctx.identity;
+  const url = `${ctx.config.citrineOcpiBaseUrl}/2.2.1/tokens/${id.country_code}/${id.party_id}/${uid}`;
+  return ctx.client.call({
+    method: 'PATCH',
+    url,
+    module: ModuleId.Tokens,
+    operation: 'tokens.patch',
+    functional: true,
+    body,
+    responseSchema: OcpiEmptyResponseSchema,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Actor helper: GET our token back from the CPO and diff it against the copy
+// we pushed/patched. Field-by-field over the set Citrine actually persists on
+// its Authorization row; last_updated is excluded (server-regenerated), and
+// fields Citrine is known not to round-trip (energy_contract) degrade to an
+// 'info' finding instead of 'error'. The special case: `valid` served false
+// while we expect true right after a valid-omitting PATCH is Citrine's
+// TokensMapper bug — flagged isKnownCitrineBug.
+// ---------------------------------------------------------------------------
+export interface TokenDrift {
+  field: string;
+  severity: 'info' | 'error';
+  expected: unknown;
+  served: unknown;
+  isKnownCitrineBug?: boolean;
+}
+
+const TOKEN_COMPARE_FIELDS = [
+  'uid',
+  'country_code',
+  'party_id',
+  'type',
+  'contract_id',
+  'issuer',
+  'valid',
+  'whitelist',
+  'visual_number',
+  'language',
+  'group_id',
+] as const;
+const TOKEN_INFO_ONLY_FIELDS = new Set(['energy_contract']);
+
+export async function verifyTokenAtCpo(
+  ctx: MockContext,
+  uid: string,
+): Promise<{ exchange: Exchange; drift: TokenDrift[] }> {
+  const id = ctx.identity;
+  const url = `${ctx.config.citrineOcpiBaseUrl}/2.2.1/tokens/${id.country_code}/${id.party_id}/${uid}`;
+  const exchange = await ctx.client.call({
+    method: 'GET',
+    url,
+    module: ModuleId.Tokens,
+    operation: 'tokens.get',
+    functional: true,
+    responseSchema: TokenReadResponseSchema,
+  });
+
+  const drift: TokenDrift[] = [];
+  const expected = ctx.store.domain.tokens.get(uid) as Record<string, unknown> | undefined;
+  const body = exchange.response.body as { data?: Record<string, unknown> } | undefined;
+  const served = body && typeof body === 'object' ? body.data : undefined;
+
+  if (!expected) {
+    drift.push({
+      field: '*',
+      severity: 'error',
+      expected: undefined,
+      served,
+      isKnownCitrineBug: false,
+    });
+  } else if (!served || typeof served !== 'object') {
+    drift.push({
+      field: '*',
+      severity: 'error',
+      expected,
+      served: served ?? `HTTP ${exchange.response.httpStatus}`,
+    });
+  } else {
+    const fields: string[] = [...TOKEN_COMPARE_FIELDS, ...TOKEN_INFO_ONLY_FIELDS];
+    for (const field of fields) {
+      // Citrine serves never-sent optional fields as explicit null — null and
+      // absent are the same statement ("no value"), not drift.
+      const want = expected[field] ?? undefined;
+      const got = served[field] ?? undefined;
+      if (want === undefined && got === undefined) continue;
+      if (JSON.stringify(want) === JSON.stringify(got)) continue;
+      const infoOnly = TOKEN_INFO_ONLY_FIELDS.has(field);
+      const knownValidBug = field === 'valid' && want !== false && got === false;
+      drift.push({
+        field,
+        severity: infoOnly ? 'info' : 'error',
+        expected: want,
+        served: got,
+        ...(knownValidBug ? { isKnownCitrineBug: true } : {}),
+      });
+    }
+  }
+
+  for (const d of drift) {
+    if (d.severity !== 'error') continue;
+    ctx.store.addFinding({
+      severity: 'error',
+      kind: 'body',
+      module: ModuleId.Tokens,
+      seq: exchange.seq,
+      detail:
+        `Token readback drift on '${d.field}': pushed=${JSON.stringify(d.expected)} served=${JSON.stringify(d.served)}` +
+        (d.isKnownCitrineBug
+          ? ' — known Citrine bug: TokensMapper maps an absent `valid` in a PATCH to status Invalid (TokensMapper.ts:149)'
+          : ''),
+      ...(d.isKnownCitrineBug ? { isKnownCitrineBug: true } : {}),
+    });
+  }
+
+  return { exchange, drift };
+}
+
+// ---------------------------------------------------------------------------
 // Module definition (the integrator registers `tokensModule` via the registry)
 // ---------------------------------------------------------------------------
 export const tokensModule: ModuleDef = {

@@ -19,6 +19,7 @@ import {
   registrationHeaders,
   cpoCredentials,
   cpoVersionsPayloads,
+  ocpiEnvelope,
   SEED_TOKEN_WE_ACCEPT,
   type StubCpo,
 } from './harness.js';
@@ -122,5 +123,134 @@ describe('credentials handshake (CPO-initiated, in-process)', () => {
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().status_code).toBe(2002); // ClientNotEnoughInformation
+  });
+});
+
+// ============================================================================
+// (2) Credentials ROTATION: rotateCredentials() PUTs a fresh token to the CPO,
+//     adopts the CPO's newly-minted server token (only after a schema-valid
+//     response), and probes that the OLD outbound token now 401s. The
+//     /_mock/reregister route composes discovery + rotation.
+// ============================================================================
+describe('credentials rotation (rotateCredentials + /_mock/reregister)', () => {
+  const NEW_SERVER_TOKEN = 'CPO-FRESH-SERVER-TOKEN';
+  let app: FastifyInstance;
+  let ctx: MockContext;
+  let cpo: StubCpo;
+  // Per-test knobs for the stub's behavior:
+  let putReplyToken: string; // token the stub's credentials PUT hands back
+  let staleProbeStatus: number; // status for the GET credentials (stale-token) probe
+  let putStatus: number;
+
+  beforeEach(async () => {
+    putReplyToken = NEW_SERVER_TOKEN;
+    staleProbeStatus = 401;
+    putStatus = 200;
+    cpo = await startStubCpo((req) => {
+      const payloads = cpoVersionsPayloads(cpo.baseUrl);
+      if (req.method === 'GET' && req.path === '/ocpi/versions') return { json: payloads.list };
+      if (req.method === 'GET' && req.path === '/ocpi/versions/2.2.1')
+        return { json: payloads.details };
+      if (req.method === 'PUT' && req.path === '/ocpi/2.2.1/credentials') {
+        if (putStatus !== 200) return { status: putStatus, json: { error: 'stub_put_rejected' } };
+        return {
+          json: ocpiEnvelope(cpoCredentials(`${cpo.baseUrl}/versions`, putReplyToken)),
+        };
+      }
+      if (req.method === 'GET' && req.path === '/ocpi/2.2.1/credentials') {
+        if (staleProbeStatus === 200) {
+          return { json: ocpiEnvelope(cpoCredentials(`${cpo.baseUrl}/versions`, putReplyToken)) };
+        }
+        return { status: staleProbeStatus, json: { status_code: 2002 } };
+      }
+      return undefined;
+    });
+    ({ app, ctx } = makeServer({ citrineOcpiBaseUrl: cpo.baseUrl }));
+    const reg = ctx.store.domain.registration;
+    reg.status = 'registered';
+    reg.cpoCredentialsUrl = `${cpo.baseUrl}/2.2.1/credentials`;
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
+    await cpo.close();
+  });
+
+  it('rotates: PUTs a fresh token, adopts the CPO token, stale probe 401s warn-free', async () => {
+    const oldPresent = ctx.store.domain.registration.tokenWePresent;
+    const oldAccept = ctx.store.domain.registration.tokenWeAccept;
+
+    const reg = await ctx.client.rotateCredentials();
+
+    const put = cpo.requests.find((r) => r.method === 'PUT');
+    expect(put).toBeDefined();
+    const sentToken = (put!.body as { token: string }).token;
+    expect(sentToken).not.toBe(oldAccept); // fresh token minted for the CPO
+    expect(reg.tokenWeAccept).toBe(sentToken);
+    expect(reg.tokenWePresent).toBe(NEW_SERVER_TOKEN);
+    expect(reg.tokenWePresent).not.toBe(oldPresent);
+
+    // Stale probe: recorded, 401, and NO warn finding (expectHttpStatus suppressed it).
+    const probes = ctx.store.query({
+      direction: 'outbound',
+      operation: 'credentials.stale-token-probe',
+    });
+    expect(probes.length).toBe(1);
+    expect(probes[0].response.httpStatus).toBe(401);
+    expect(probes[0].findings.length).toBe(0);
+    // No error findings at all on a clean rotation.
+    expect(ctx.store.findings.filter((f) => f.severity === 'error').length).toBe(0);
+  });
+
+  it('keeps the working registration when the PUT fails (swap only after valid response)', async () => {
+    putStatus = 500;
+    const oldPresent = ctx.store.domain.registration.tokenWePresent;
+    const oldAccept = ctx.store.domain.registration.tokenWeAccept;
+    await expect(ctx.client.rotateCredentials()).rejects.toThrow(/credentials PUT/);
+    expect(ctx.store.domain.registration.tokenWePresent).toBe(oldPresent);
+    expect(ctx.store.domain.registration.tokenWeAccept).toBe(oldAccept);
+  });
+
+  it('flags a CPO that does not rotate its server token', async () => {
+    putReplyToken = ctx.store.domain.registration.tokenWePresent; // echo the old token back
+    await ctx.client.rotateCredentials();
+    const finding = ctx.store.findings.find((f) => f.detail.includes('did not rotate'));
+    expect(finding?.severity).toBe('error');
+  });
+
+  it('flags a CPO that still accepts the old token after rotation', async () => {
+    staleProbeStatus = 200;
+    await ctx.client.rotateCredentials();
+    const finding = ctx.store.findings.find((f) => f.detail.includes('old token still accepted'));
+    expect(finding?.severity).toBe('error');
+    expect(finding?.kind).toBe('auth');
+  });
+
+  it('POST /_mock/reregister rotates and reports; {discoverOnly:true} does not PUT', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/_mock/reregister',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.rotation.rotated).toBe(true);
+    expect(body.rotation.cpoTokenChanged).toBe(true);
+    expect(body.rotation.staleTokenProbe.httpStatus).toBe(401);
+    expect(body.rotation.staleTokenProbe.rejected).toBe(true);
+    expect(body.registration.status).toBe('registered');
+
+    const putsBefore = cpo.requests.filter((r) => r.method === 'PUT').length;
+    const res2 = await app.inject({
+      method: 'POST',
+      url: '/_mock/reregister',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ discoverOnly: true }),
+    });
+    expect(res2.statusCode).toBe(200);
+    expect(res2.json().rotation).toBeUndefined();
+    expect(cpo.requests.filter((r) => r.method === 'PUT').length).toBe(putsBefore);
   });
 });

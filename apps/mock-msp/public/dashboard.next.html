@@ -200,6 +200,10 @@ ul.issues .ipath{color:var(--warn)}
           <button data-action="pull" data-arg="tariffs">tariffs</button>
         </div>
         <button class="wide" data-action="emit-token">▶ Push token (RFID DEADBEEF)</button>
+        <div class="grid2">
+          <button data-action="token-block" title="PATCH {valid:false} — blocks the newest pushed token at Citrine (a lost-card block)">⛔ Block token</button>
+          <button data-action="token-verify" title="GET the token back from Citrine and diff it against what we pushed — drift lands in Findings">✓ Verify token</button>
+        </div>
         <details>
           <summary>Raw OCPI command (advanced)</summary>
           <div class="hint">Sends the request, shows Citrine's sync ack only — never gated (adversarial sends welcome).</div>
@@ -451,6 +455,7 @@ function deriveView(st){
     txn: (c.transaction && c.transaction.state) || "unknown",
     registration: (st.mock && st.mock.registration) || "unknown",
     activeSession: (st.mock && st.mock.activeSession) || null,
+    tokensPushed: (st.mock && st.mock.tokensPushed) || 0,
     faultsArmed: (st.gen && st.gen.faults) || 0,
     plugged: conn === "Occupied", ready: conn === "Available", active: !!active,
   };
@@ -677,6 +682,16 @@ const GUARDS = {
   "pull": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable — will record a failed exchange" } : { level:"ok" },
   "pull-all": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable" } : { level:"ok" },
   "emit-token": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable" } : { level:"ok" },
+  "token-block": (v) => {
+    if (!v.tokensPushed) return { level:"block", reason:"No token pushed yet. → Push token first" };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
+    return { level:"ok" };
+  },
+  "token-verify": (v) => {
+    if (!v.tokensPushed) return { level:"block", reason:"No token pushed yet. → Push token first" };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
+    return { level:"ok" };
+  },
   "probes-run": (v) => {
     if (v.faultsArmed > 0) return { level:"warn", reason:v.faultsArmed + " fault(s) armed — probes may fail because of them. → Clear faults for a clean read" };
     if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
@@ -828,6 +843,8 @@ const ACTIONS = {
   pull:(el, a) => runAction("Pull " + a, () => api("/pull/" + a, { method:"POST", body:"{}" }), exchangeOk),
   "pull-all":() => pullAll(),
   "emit-token":() => runAction("Push token", () => api("/emit/token", { method:"POST", body:"{}" }), exchangeOk),
+  "token-block":() => runAction("Block token", () => api("/emit/token-patch", { method:"POST", body:"{}" }), exchangeOk),
+  "token-verify":() => runAction("Verify token", () => api("/verify/token", { method:"POST", body:"{}" }), (r) => !!(r && r.verified)),
   "cmd-send":() => sendCommand(),
   "cmd-fill":() => fillCmdPayload(true),
   "probes-run":() => runProbes(),

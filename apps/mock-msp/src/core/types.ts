@@ -297,6 +297,11 @@ export interface OutboundCall {
   body?: unknown;
   responseSchema?: ZodTypeAny; // validate Citrine's response (drift => Finding)
   presentToken?: string; // overrides registration.tokenWePresent (e.g. TOKEN_A)
+  // When the response status equals this, the generic "Citrine returned HTTP N"
+  // warn finding is suppressed (schema validation still runs). For probes whose
+  // EXPECTED outcome is a non-2xx — e.g. the stale-token 401 check after a
+  // credentials rotation — where the warn would be noise on a passing probe.
+  expectHttpStatus?: number;
 }
 export interface RegisterOptions {
   tokenA?: string;
@@ -313,6 +318,11 @@ export interface OcpiClient {
   getVersionDetails(url: string, token?: string): Promise<Exchange>;
   register(opts?: RegisterOptions): Promise<RegistrationState>;
   reregister(): Promise<RegistrationState>;
+  // Rotate our credentials AT the CPO: PUT a fresh token to cpoCredentialsUrl,
+  // adopt the CPO's newly-minted server token, then probe that the OLD token is
+  // rejected (401). reregister() stays discovery-only; the control API composes
+  // reregister + rotateCredentials for the dashboard's Re-register button.
+  rotateCredentials(): Promise<RegistrationState>;
   unregister(): Promise<void>;
   sendCommand(type: CommandType, payload: unknown): Promise<CommandSendResult>;
   pull(module: ModuleId, params?: Record<string, string>): Promise<Exchange>;

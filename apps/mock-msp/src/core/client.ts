@@ -206,7 +206,10 @@ class OcpiClientImpl implements OcpiClient {
           });
         }
       }
-      if (res.status < 200 || res.status > 299) {
+      // Suppress the generic warn when the caller EXPECTS this exact status
+      // (e.g. the stale-token probe wants a 401) — schema validation above is
+      // unaffected.
+      if ((res.status < 200 || res.status > 299) && res.status !== spec.expectHttpStatus) {
         this.addFinding(ex, {
           severity: 'warn',
           kind: 'status',
@@ -385,6 +388,81 @@ class OcpiClientImpl implements OcpiClient {
         const creds = endpoints.find((e) => e.identifier === ModuleId.Credentials);
         if (creds) reg.cpoCredentialsUrl = creds.url;
       }
+    }
+    return reg;
+  }
+
+  // Rotate our credentials AT the CPO (OCPI credentials PUT). Distinct from
+  // reregister(), which only re-discovers the endpoint catalog: this really
+  // mints a fresh token for Citrine to present to US, PUTs it, adopts the new
+  // token Citrine mints for us to present to IT, and then verifies the old
+  // outbound token died. Token state is swapped ONLY after a schema-valid
+  // response so a rejected/failed PUT leaves the working registration intact.
+  async rotateCredentials(): Promise<RegistrationState> {
+    const { config, store } = this.deps;
+    const reg = store.domain.registration;
+    if (reg.status !== 'registered' || !reg.cpoCredentialsUrl) {
+      throw new Error(
+        'rotateCredentials requires a registered state with a known CPO credentials URL',
+      );
+    }
+
+    const oldPresentToken = reg.tokenWePresent;
+    const newOurToken = uuid();
+    const putEx = await this.call({
+      method: 'PUT',
+      url: reg.cpoCredentialsUrl,
+      module: 'credentials',
+      operation: 'credentials.put',
+      functional: false,
+      body: {
+        token: newOurToken,
+        url: versionsListUrl(config.publicBaseUrl),
+        roles: [this.ourRole()],
+      },
+      responseSchema: CredentialsResponseSchema,
+    });
+    const data = asData(putEx.response.body);
+    const okStatus = putEx.response.httpStatus >= 200 && putEx.response.httpStatus <= 299;
+    if (!okStatus || !putEx.validation.ok || !data?.token) {
+      throw new Error(
+        `credentials PUT did not return a valid credentials object (HTTP ${putEx.response.httpStatus})`,
+      );
+    }
+    if (String(data.token) === oldPresentToken) {
+      this.addFinding(putEx, {
+        severity: 'error',
+        kind: 'body',
+        module: 'credentials',
+        seq: putEx.seq,
+        detail:
+          'CPO did not rotate its server token on credentials PUT — spec expects a fresh token per handshake',
+      });
+    }
+    // Swap only now: the PUT is confirmed accepted + schema-valid.
+    reg.tokenWePresent = String(data.token);
+    reg.tokenWeAccept = newOurToken;
+    reg.registeredAt = new Date().toISOString();
+
+    // Stale-token probe: the OLD outbound token must now be rejected. 401 is
+    // the passing outcome, so expectHttpStatus keeps the trace warn-free.
+    const probeEx = await this.call({
+      method: 'GET',
+      url: reg.cpoCredentialsUrl,
+      module: 'credentials',
+      operation: 'credentials.stale-token-probe',
+      functional: false,
+      presentToken: oldPresentToken,
+      expectHttpStatus: 401,
+    });
+    if (probeEx.response.httpStatus >= 200 && probeEx.response.httpStatus <= 299) {
+      this.addFinding(probeEx, {
+        severity: 'error',
+        kind: 'auth',
+        module: 'credentials',
+        seq: probeEx.seq,
+        detail: 'old token still accepted after credentials rotation',
+      });
     }
     return reg;
   }
