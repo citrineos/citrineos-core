@@ -17,11 +17,12 @@ test.describe('tariffs › CRUD', () => {
   });
 
   test('E2E-111: Create tariff via UI surfaces success toast', async ({ page, apiClient }) => {
-    // XTS is the ISO currency code reserved for testing, and the price is
-    // unique per attempt — the old fixed USD@0.35 collided with rows a failed
+    // XTS is the ISO currency code reserved for testing, and the price varies
+    // per attempt — the old fixed USD@0.35 collided with rows a failed
     // attempt (or another run) left behind, and its cleanup deleted every
-    // matching tariff in the DB, not just ours.
-    const distinctivePrice = Number(`0.${Date.now().toString().slice(-6)}`);
+    // matching tariff in the DB, not just ours. Two decimals only: the form's
+    // price input enforces step="0.01", so a finer price blocks the submit.
+    const distinctivePrice = ((Date.now() % 89) + 11) / 100;
     const form = new TariffFormPage(page);
     await form.gotoNew();
     await form.fill({
