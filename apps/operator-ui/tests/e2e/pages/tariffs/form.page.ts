@@ -87,10 +87,14 @@ export class TariffFormPage {
 
   async submit(): Promise<void> {
     await this.submitButton.click();
-    await this.page
-      .getByRole('region', { name: /notifications/i })
-      .getByText(/(success|created|updated|saved)/i)
-      .first()
-      .waitFor({ state: 'visible', timeout: 30_000 });
+    // Toast or redirect — the toast auto-dismisses and can be missed under load.
+    await Promise.any([
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .getByText(/(success|created|updated|saved)/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 }),
+      this.page.waitForURL(/\/tariffs\/\d+$/, { timeout: 30_000 }),
+    ]);
   }
 }

@@ -145,19 +145,20 @@ export class LocationFormPage {
     await input.fill(stateName);
   }
 
-  // Never return while Refine is in-flight. We wait for either the
-  // success-redirect to the detail route OR a success toast.
+  // Never return while Refine is in-flight. The toast fires on the
+  // mutation's onSuccess before redirecting, but it auto-dismisses — so a
+  // stalled test process can miss it entirely. Accept the redirect too; the
+  // end-anchored regex cannot match the /locations/:id/edit entry route.
   async submit(): Promise<void> {
-    // The success-toast wait is the canonical signal — Refine fires the
-    // toast on the mutation's onSuccess BEFORE redirecting. URL-based
-    // waits race with the current route (/locations/:id/edit can match
-    // a permissive `/locations/\d+` regex on entry).
     await this.submitButton.click();
-    await this.page
-      .getByRole('region', { name: /notifications/i })
-      .getByText(/(success|created|updated|saved)/i)
-      .first()
-      .waitFor({ state: 'visible', timeout: 30_000 });
+    await Promise.any([
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .getByText(/(success|created|updated|saved)/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 }),
+      this.page.waitForURL(/\/locations\/\d+$/, { timeout: 30_000 }),
+    ]);
   }
 
   async cancel(): Promise<void> {

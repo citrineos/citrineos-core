@@ -90,25 +90,37 @@ export class ModalHarness {
     toastPattern: RegExp = /success|accepted|sent|started|stopped|reset|completed|received/i,
     timeout = 30_000,
   ): Promise<void> {
-    await this.submitButton.click();
-    const toastRegion = this.page.getByRole('region', {
-      name: /notifications/i,
-    });
-    await expect(toastRegion).toContainText(toastPattern, { timeout });
+    await this.submitAndWaitForNewToast(toastPattern, timeout);
   }
 
   async submitExpectingError(
     errorPattern: RegExp = /failed|error|invalid|denied/i,
     timeout = 30_000,
   ): Promise<void> {
-    await this.submitButton.click();
-    const toastRegion = this.page.getByRole('region', {
-      name: /notifications/i,
-    });
     // The destructive toast is the contract; whether the modal stays open or
     // auto-closes depends on the per-modal handler. Both are acceptable
     // observable behaviours per the OCPP command pipeline.
-    await expect(toastRegion).toContainText(errorPattern, { timeout });
+    await this.submitAndWaitForNewToast(errorPattern, timeout);
+  }
+
+  // Tags the toasts already on screen, submits, then waits for a NEW toast
+  // matching the pattern — a leftover toast from an earlier action in the
+  // same test can no longer satisfy the wait.
+  private async submitAndWaitForNewToast(pattern: RegExp, timeout: number): Promise<void> {
+    const toastRegion = this.page.getByRole('region', {
+      name: /notifications/i,
+    });
+    await toastRegion
+      .locator('[data-sonner-toast]')
+      .evaluateAll((els) => els.forEach((el) => el.setAttribute('data-e2e-stale', '1')))
+      .catch(() => undefined);
+    await this.submitButton.click();
+    await expect(
+      toastRegion
+        .locator('[data-sonner-toast]:not([data-e2e-stale])')
+        .filter({ hasText: pattern })
+        .first(),
+    ).toBeVisible({ timeout });
   }
 
   // Submits and asserts the form REJECTED it: a validation message appears
