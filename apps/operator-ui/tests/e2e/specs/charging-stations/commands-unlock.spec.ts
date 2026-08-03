@@ -48,6 +48,6 @@ test.describe('charging-stations › UnlockConnector command', () => {
     // stays mounted instead of dispatching to the OCPP backend.
     const connectorCombobox = modal.dialog.getByRole('combobox').first();
     await expect(connectorCombobox).toBeVisible();
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.expectBlockedSubmit();
   });
 });

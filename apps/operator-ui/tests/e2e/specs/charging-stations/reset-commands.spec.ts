@@ -65,7 +65,8 @@ test.describe('charging-stations › Reset validation + offline', () => {
     await modal.select(/reset type/i, /^onidle$/i);
 
     // Without an active OCPP session, the command pipeline returns a failure.
-    // The modal stays open and an error toast appears.
-    await modal.submitExpectingError();
+    // The modal stays open and an error toast appears. 60s: doomed commands
+    // queue behind the shared core pipeline under load.
+    await modal.submitExpectingError(undefined, 60_000);
   });
 });

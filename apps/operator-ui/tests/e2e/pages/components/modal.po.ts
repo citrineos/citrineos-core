@@ -62,11 +62,15 @@ export class ModalHarness {
       .getByRole('combobox')
       .first();
     await trigger.click();
-    await this.page
+    // The option list is a portal fed by a useSelect query — wait for it
+    // instead of clicking into a still-empty popover.
+    const option = this.page
       .getByRole('option', {
         name: optionName instanceof RegExp ? optionName : new RegExp(optionName, 'i'),
       })
-      .click();
+      .first();
+    await option.waitFor({ state: 'visible', timeout: 30_000 });
+    await option.click();
   }
 
   async cancel(): Promise<void> {
@@ -105,6 +109,18 @@ export class ModalHarness {
     // auto-closes depends on the per-modal handler. Both are acceptable
     // observable behaviours per the OCPP command pipeline.
     await expect(toastRegion).toContainText(errorPattern, { timeout });
+  }
+
+  // Submits and asserts the form REJECTED it: a validation message appears
+  // and the dialog stays mounted. A bare dialog-still-visible check passes on
+  // the first poll even if the submit was about to dispatch — this waits for
+  // the positive signal instead.
+  async expectBlockedSubmit(): Promise<void> {
+    await this.submitButton.click();
+    await expect(
+      this.dialog.locator('[role="alert"], [data-slot="form-message"]').first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(this.dialog).toBeVisible();
   }
 
   validationError(fieldLabel: RegExp | string): Locator {
