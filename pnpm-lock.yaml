@@ -501,6 +501,9 @@ importers:
       react-redux:
         specifier: 9.2.0
         version: 9.2.0(@types/react@19.2.17)(react@19.1.4)(redux@5.0.1)
+      react-resizable-panels:
+        specifier: 3.0.6
+        version: 3.0.6(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       react-syntax-highlighter:
         specifier: 15.6.6
         version: 15.6.6(react@19.1.4)
