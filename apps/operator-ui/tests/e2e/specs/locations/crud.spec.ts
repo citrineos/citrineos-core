@@ -50,6 +50,7 @@ test.describe('locations › CRUD', () => {
     // numeric id for cleanup.
     const list = new LocationsListPage(page);
     await list.goto();
+    await list.searchInput.fill(name);
     await expect(list.rowByName(name)).toBeVisible({ timeout: 30_000 });
 
     // Cleanup via apiClient: locate by name, delete by id.

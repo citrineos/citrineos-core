@@ -82,6 +82,9 @@ export class ChargingStationFormPage {
     const trigger = this.locationCombobox;
     await expect(trigger).toBeEnabled({ timeout: 15_000 });
     await trigger.click();
+    // The dropdown lists only the 5 most recently updated locations, so type
+    // the name to filter server-side before picking.
+    await this.page.keyboard.type(locationName);
     const option = this.page
       .getByRole('option', { name: new RegExp(`^${locationName}\\b`, 'i') })
       .first();

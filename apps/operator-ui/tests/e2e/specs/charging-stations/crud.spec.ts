@@ -27,6 +27,7 @@ test.describe('charging-stations › CRUD', () => {
 
     const list = new ChargingStationsListPage(page);
     await list.goto();
+    await list.searchInput.fill(name);
     await expect(list.rowById(name)).toBeVisible({ timeout: 30_000 });
 
     // Cleanup via apiClient (no UI delete on charging-stations list).

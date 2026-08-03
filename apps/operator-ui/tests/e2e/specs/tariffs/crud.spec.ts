@@ -75,7 +75,13 @@ test.describe('tariffs › CRUD', () => {
       await page.waitForURL(/\/tariffs$/, { timeout: 30_000 });
       const list = new TariffsListPage(page);
       await expect(list.heading).toBeVisible();
-      await expect(page.getByRole('row').filter({ hasText: String(created.id) })).toHaveCount(0);
+      // Match the id cell exactly — a substring match on the whole row also
+      // hits price cells (id 47 vs a 0.47 price from a concurrent test).
+      await expect(
+        page
+          .getByRole('row')
+          .filter({ has: page.getByRole('cell', { name: String(created.id), exact: true }) }),
+      ).toHaveCount(0);
     } finally {
       await apiClient
         .gql(

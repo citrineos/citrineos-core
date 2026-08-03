@@ -84,8 +84,13 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(page.getByText(seededTransaction.transactionId, { exact: false })).toBeVisible({
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    // The card lists only the 3 newest active transactions, so concurrently
+    // seeded ones can displace ours — look it up via the card's search, which
+    // filters server-side on transactionId.
+    await page.getByRole('combobox').click();
+    await page.keyboard.type(seededTransaction.transactionId);
+    await expect(page.getByRole('option', { name: seededTransaction.transactionId })).toBeVisible({
       timeout: 30_000,
     });
   });
