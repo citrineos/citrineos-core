@@ -14,6 +14,13 @@ export default defineConfig({
     // (they call @playwright/test's test.use(), which only works under the
     // Playwright runner). Run them via `pnpm --filter @citrineos/operator-ui test:e2e`.
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'apps/operator-ui/**'],
+    // The testcontainers-backed integration suites annotate their beforeAll
+    // with 90s but leave beforeEach/afterAll on the 5s/10s defaults, which CI
+    // load intermittently blows (truncate cascade, container stop). Raised
+    // globally — passing unit suites never wait on a timeout, this only
+    // bounds failures.
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
     coverage: {
       reporter: ['text', 'json', 'html'],
     },
