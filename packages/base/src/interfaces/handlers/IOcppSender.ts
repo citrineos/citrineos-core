@@ -8,8 +8,8 @@ import {
   type OcppResponse,
   type CallAction,
   type OCPPVersionType,
-  OcppError,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
 

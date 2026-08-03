@@ -61,7 +61,7 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,
         },
-        request.message[3].id,
+        request.payload.id,
       );
     } else {
       this._logger.error(

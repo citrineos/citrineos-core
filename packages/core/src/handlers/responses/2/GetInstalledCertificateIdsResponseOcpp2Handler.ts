@@ -67,8 +67,8 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
       });
       if (request) {
         // should always be true
-        const getInstalledCertificateIdsRequest = request
-          .message[3] as OCPP2_request_types.GetInstalledCertificateIdsRequest;
+        const getInstalledCertificateIdsRequest =
+          request.payload as OCPP2_request_types.GetInstalledCertificateIdsRequest;
         let certificateType;
         if (
           getInstalledCertificateIdsRequest &&

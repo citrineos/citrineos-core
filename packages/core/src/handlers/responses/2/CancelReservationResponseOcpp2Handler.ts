@@ -62,7 +62,7 @@ export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
         {
           isActive: message.payload.status === CancelReservationStatusEnum.Rejected,
         },
-        request.message[3].reservationId,
+        request.payload.reservationId,
       );
     } else {
       this._logger.error(

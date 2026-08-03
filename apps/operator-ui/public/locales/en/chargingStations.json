@@ -413,6 +413,8 @@
       "correlationId": "Correlation ID",
       "actionOrigin": "Action - Origin",
       "unknownAction": "Unknown Action",
+      "type": "Type",
+      "unknownType": "Unknown Type",
       "timestamp": "Timestamp",
       "content": "Content",
       "findRelatedMessage": "Find related message",

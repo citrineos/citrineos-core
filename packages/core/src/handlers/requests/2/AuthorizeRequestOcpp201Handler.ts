@@ -11,6 +11,7 @@ import {
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
 import {
@@ -23,7 +24,6 @@ import {
   IdTokenEnum,
   OCPP2_0_1,
   OCPP_CallAction,
-  OcppError,
   type OcppRequest,
   type OcppResponse,
   OCPPVersion,

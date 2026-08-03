@@ -7,19 +7,17 @@ import type { ErrorObject } from 'ajv';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import {
-  type Call,
   type CallAction,
-  type CallResult,
   type OCPPVersionType,
   type SystemConfig,
   ErrorCode,
-  OcppError,
   OCPPVersion,
   MessageOrigin,
   MessageState,
   type OcppRequest,
   type OcppResponse,
 } from '@citrineos/types';
+import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
@@ -242,9 +240,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     message: Call,
     protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
-    const action = message[2];
-    const payload = message[3];
-
     let protocolEnum: OCPPVersion | undefined;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
@@ -261,7 +256,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         return { isValid: false };
     }
 
-    return this._ocppValidator.validateOCPPRequest(action, payload, protocolEnum);
+    return this._ocppValidator.validateOCPPRequest(message.action, message.payload, protocolEnum);
   }
 
   /**
@@ -279,8 +274,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     message: CallResult,
     protocol: string,
   ): { isValid: boolean; errors?: ErrorObject[] | null } {
-    const payload = message[2];
-
     let protocolEnum: OCPPVersion | undefined;
     switch (protocol) {
       case OCPPVersion.OCPP1_6:
@@ -297,7 +290,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         return { isValid: false };
     }
 
-    return this._ocppValidator.validateOCPPResponse(action, payload, protocolEnum);
+    return this._ocppValidator.validateOCPPResponse(action, message.payload, protocolEnum);
   }
 
   abstract onMessage(

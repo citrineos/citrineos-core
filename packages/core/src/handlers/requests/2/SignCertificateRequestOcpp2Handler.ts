@@ -9,6 +9,7 @@ import {
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppError,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -22,7 +23,6 @@ import {
   OCPP2_1,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
 } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';

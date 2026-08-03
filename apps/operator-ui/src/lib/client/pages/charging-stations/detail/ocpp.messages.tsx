@@ -9,9 +9,14 @@ import {
   OCPP_CallAction,
   OCPPMessageProps,
 } from '@citrineos/types';
+import { DebounceSearch } from '@lib/client/components/debounce-search';
+import { MultiSelect } from '@lib/client/components/multi-select';
+import { Table } from '@lib/client/components/table';
+import { TableQueryStateSchema } from '@lib/client/components/table/fields/table-query-state';
+import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import { Button } from '@lib/client/components/ui/button';
+import { DateTimePicker } from '@lib/client/components/ui/date-time-picker';
 import { Label } from '@lib/client/components/ui/label';
-import { Switch } from '@lib/client/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -19,34 +24,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lib/client/components/ui/select';
+import { Switch } from '@lib/client/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@lib/client/components/ui/tooltip';
+import { OCPPMessagesExportDialog } from '@lib/client/pages/charging-stations/detail/ocpp.messages.export.dialog';
+import { buttonIconSize } from '@lib/client/styles/icon';
 import { OCPPMessageClass } from '@lib/cls/ocpp.message.dto';
 import { GET_OCPP_MESSAGES_LIST_FOR_STATION } from '@lib/queries/ocpp.messages';
 import { ResourceType } from '@lib/utils/access.types';
+import { copy } from '@lib/utils/copy';
+import { messageTypeLabel } from '@lib/utils/ocpp.message';
+import { getPageSizePreference } from '@lib/utils/store/table.preferences.slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { type LogicalFilter, useInvalidate, useList, useTranslate } from '@refinedev/core';
-import { Copy, Download, Link, RefreshCw } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CollapsibleOCPPMessageViewer } from './collapsible.ocpp.message.viewer';
-import { buttonIconSize } from '@lib/client/styles/icon';
-import { TimestampDisplay } from '@lib/client/components/timestamp-display';
-import { Table } from '@lib/client/components/table';
 import type { CellContext } from '@tanstack/react-table';
-import { copy } from '@lib/utils/copy';
-import { DebounceSearch } from '@lib/client/components/debounce-search';
-import { MultiSelect } from '@lib/client/components/multi-select';
-import { OCPPMessagesExportDialog } from '@lib/client/pages/charging-stations/detail/ocpp.messages.export.dialog';
-import { DateTimePicker } from '@lib/client/components/ui/date-time-picker';
+import { Copy, Download, Link, RefreshCw } from 'lucide-react';
 import { parseAsJson, useQueryState } from 'nuqs';
-import { TableQueryStateSchema } from '@lib/client/components/table/fields/table-query-state';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { getPageSizePreference } from '@lib/utils/store/table.preferences.slice';
 import { toast } from 'sonner';
+import { CollapsibleOCPPMessageViewer } from './collapsible.ocpp.message.viewer';
 
 export interface OCPPMessagesProps {
   stationId: number;
@@ -397,6 +398,20 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               }}
             />,
             <Table.Column
+              id="type"
+              key="type"
+              accessorKey="type"
+              header={translate('ChargingStations.ocppMessages.type')}
+              cell={({ row }: CellContext<OCPPMessageDto, unknown>) => {
+                return (
+                  <span>
+                    {messageTypeLabel(row.original.type) ??
+                      translate('ChargingStations.ocppMessages.unknownType')}
+                  </span>
+                );
+              }}
+            />,
+            <Table.Column
               id="timestamp"
               key="timestamp"
               accessorKey="timestamp"
@@ -420,7 +435,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
                 return (
                   <CollapsibleOCPPMessageViewer
                     ocppMessageDto={row.original}
-                    unparsed={typeof row.original.message === 'string'}
+                    unparsed={row.original.payload === undefined}
                   />
                 );
               }}

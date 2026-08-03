@@ -61,7 +61,7 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
         },
       });
       if (originalRequest) {
-        const certSignedPayload = originalRequest.message[3] as OCPP2_1.CertificateSignedRequest;
+        const certSignedPayload = originalRequest.payload as OCPP2_1.CertificateSignedRequest;
         requestId = certSignedPayload?.requestId ?? undefined;
       }
     }

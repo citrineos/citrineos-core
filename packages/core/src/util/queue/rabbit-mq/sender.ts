@@ -7,8 +7,9 @@ import {
   type IMessageConfirmation,
   type IMessageSender,
   AbstractMessageSender,
+  OcppError,
 } from '@citrineos/base';
-import { type OcppRequest, type OcppResponse, MessageState, OcppError } from '@citrineos/types';
+import { type OcppRequest, type OcppResponse, MessageState } from '@citrineos/types';
 import { instanceToPlain } from 'class-transformer';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

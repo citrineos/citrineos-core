@@ -10,6 +10,7 @@ import {
   pgSchema,
   pgTable,
   serial,
+  text,
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -22,16 +23,21 @@ function ocppMessageColumns() {
   return {
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
+    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
     correlationId: varchar('correlationId', { length: 255 }),
     origin: varchar('origin', { length: 255 }),
-    state: varchar('state', { length: 255 }),
+    // OCPP RPC messageTypeId (2 = Call, 3 = CallResult, 4 = CallError). Absent for messages
+    // that could not be parsed far enough to determine it.
+    type: integer('type'),
     protocol: varchar('protocol', { length: 255 }),
     action: varchar('action', { length: 255 }),
-    message: jsonb('message'),
+    // Parsed OCPP payload only — the surrounding RPC frame lives in `raw`.
+    payload: jsonb('payload'),
+    // Exact message as it appeared on the wire. text because messages routinely exceed 255 chars.
+    raw: text('raw').notNull(),
     requestMessageId: integer('requestMessageId'),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
-    timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }),
+    timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
@@ -47,6 +53,8 @@ export const ocppMessageTable = pgTable(TableName.OCPPMessages, ocppMessageColum
   index('ocpp_messages_ocpp_connection_name').on(t.ocppConnectionName),
   index('ocpp_messages_correlation_id').on(t.correlationId),
   index('ocpp_messages_request_message_id').on(t.requestMessageId),
+  // Serves the request/response lookups in the ocpp_correlate_message() insert trigger.
+  index('ocpp_messages_correlation_lookup').on(t.tenantId, t.ocppConnectionName, t.correlationId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

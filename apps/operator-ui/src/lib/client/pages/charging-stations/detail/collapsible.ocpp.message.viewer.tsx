@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Copy, Plus } from 'lucide-react';
 import { MessageTypeId, type OCPPMessageDto } from '@citrineos/types';
+import { ScrollArea } from '@ferdiunal/refine-shadcn/ui';
+import { formatDate } from '@lib/client/components/timestamp-display';
 import { Button } from '@lib/client/components/ui/button';
-import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { buttonIconSize } from '@lib/client/styles/icon';
 import {
   Sheet,
   SheetContent,
@@ -17,10 +14,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@lib/client/components/ui/sheet';
-import { ScrollArea } from '@ferdiunal/refine-shadcn/ui';
+import { buttonIconSize } from '@lib/client/styles/icon';
 import { copy } from '@lib/utils/copy';
-import { formatDate } from '@lib/client/components/timestamp-display';
+import { messageTypeLabel } from '@lib/utils/ocpp.message';
 import { useTranslate } from '@refinedev/core';
+import { Copy, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export const CollapsibleOCPPMessageViewer: React.FC<{
   ocppMessageDto: OCPPMessageDto;
@@ -30,11 +31,12 @@ export const CollapsibleOCPPMessageViewer: React.FC<{
   const [open, setOpen] = useState(false);
   const threshold = 7;
 
-  const ocppMessage = ocppMessageDto.message;
+  const ocppMessage = ocppMessageDto.payload ?? ocppMessageDto.raw;
   const correlationId = ocppMessageDto.correlationId;
   const timestamp = ocppMessageDto.timestamp;
   const action = ocppMessageDto.action;
   const origin = ocppMessageDto.origin;
+  const type = messageTypeLabel(ocppMessageDto.type);
 
   let payload;
   if (unparsed) {
@@ -128,6 +130,7 @@ export const CollapsibleOCPPMessageViewer: React.FC<{
             <SheetDescription className="text-base">
               <span className="font-semibold">
                 {action} - {origin}
+                {type ? ` - ${type}` : ''}
               </span>{' '}
               @ {formatDate(timestamp, 'yyyy-MM-dd HH:mm:ss.SSS')}
             </SheetDescription>

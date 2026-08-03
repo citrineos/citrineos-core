@@ -5,13 +5,13 @@
 import {
   type CallAction,
   type OCPPVersionType,
-  OcppError,
   type OcppRequest,
   type OcppResponse,
   EventGroup,
   MessageOrigin,
   MessageState,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { IMessage } from '@interfaces/messages/Message.js';
 
 export class RequestBuilder {

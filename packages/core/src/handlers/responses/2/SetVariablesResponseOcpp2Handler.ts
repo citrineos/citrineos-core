@@ -94,8 +94,8 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     });
 
     if (requestOcppMessage) {
-      const setVariablesRequest = requestOcppMessage
-        .message[3] as OCPP2_request_types.SetVariablesRequest;
+      const setVariablesRequest =
+        requestOcppMessage.payload as OCPP2_request_types.SetVariablesRequest;
       const setVariableData = setVariablesRequest.setVariableData;
       setVariableData.forEach((setVariableData) => {
         const component = setVariableData.component.name;

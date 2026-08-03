@@ -72,7 +72,7 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
       return;
     }
 
-    const request = storedRequest.message[3] as OCPP2_1.SetDefaultTariffRequest;
+    const request = storedRequest.payload as OCPP2_1.SetDefaultTariffRequest;
     const tariffData = request.tariff;
 
     const newTariff = Tariff.build({

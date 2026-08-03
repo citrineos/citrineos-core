@@ -4,20 +4,19 @@
 
 export {
   ErrorCode,
-  mapToCallAction,
   MessageTypeId,
   NO_ACTION,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
 } from './src/ocpp/rpc/message.js';
 export type {
-  Call,
   CallAction,
-  CallError,
-  CallResult,
   OCPPVersionType,
+  RawCall,
+  RawCallError,
+  RawCallResult,
+  RawRpcMessage,
 } from './src/ocpp/rpc/message.js';
 
 export type { OcppRequest, OcppResponse } from './src/ocpp/internal-types.js';

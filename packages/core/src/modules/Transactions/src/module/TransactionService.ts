@@ -477,9 +477,9 @@ export class TransactionService {
       return;
     }
 
-    const transactionId = request.message[3].transactionId;
+    const transactionId = request.payload.transactionId;
     if (!transactionId) {
-      this._logger.error(`No valid transactionId found from the message ${request.message[3]}`);
+      this._logger.error(`No valid transactionId found from the message ${request.payload}`);
       return;
     }
 

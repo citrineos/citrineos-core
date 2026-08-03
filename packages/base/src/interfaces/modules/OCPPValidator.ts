@@ -18,9 +18,9 @@ import {
   type OcppResponse,
   type CallAction,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
 } from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 
 export class OCPPValidator {
   protected _ajv: Ajv;

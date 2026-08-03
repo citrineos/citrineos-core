@@ -7,15 +7,20 @@ import {
   type IMessageHandler,
   type IMessageSender,
   CacheNamespace,
+  Call,
+  CallError,
+  CallResult,
   createIdentifier,
+  OcppError,
   RequestBuilder,
 } from '@citrineos/base';
+import type { ILocationRepository } from '@citrineos/core';
 import {
-  type Call,
-  type CallError,
-  type CallResult,
   type OcppRequest,
   type OcppResponse,
+  type RawCall,
+  type RawCallError,
+  type RawCallResult,
   type SystemConfig,
   ErrorCode,
   EventGroup,
@@ -25,15 +30,13 @@ import {
   NO_ACTION,
   OCPP2_0_1,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/core';
-import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { MessageRouterImpl } from '@modules/OcppRouter/src/module/router.js';
 import { WebhookDispatcher } from '@modules/OcppRouter/src/module/webhook.dispatcher.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { type Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -290,7 +293,7 @@ describe('MessageRouterImpl', () => {
         // Stub _onCallIsAllowed
         cache.exists.mockResolvedValue(false); // not blacklisted
 
-        const callMessage: Call = [
+        const callMessage: RawCall = [
           MessageTypeId.Call,
           CORRELATION_ID,
           OCPP_CallAction.BootNotification,
@@ -358,7 +361,7 @@ describe('MessageRouterImpl', () => {
         // CallResult errors should not trigger a CallError response
         expect(networkHook).not.toHaveBeenCalled();
         // The networkHook should be called with a CallError
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
 
       it('should not send CallError for failed CallError processing', async () => {
@@ -372,7 +375,7 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
     });
 
@@ -382,7 +385,7 @@ describe('MessageRouterImpl', () => {
         cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
         vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
 
-        const callResultMessage: CallResult = [MessageTypeId.CallResult, CORRELATION_ID, {}];
+        const callResultMessage: RawCallResult = [MessageTypeId.CallResult, CORRELATION_ID, {}];
         const rawMessage = JSON.stringify(callResultMessage);
 
         const result = await router.onMessage(IDENTIFIER, rawMessage, timestamp, PROTOCOL);
@@ -399,7 +402,7 @@ describe('MessageRouterImpl', () => {
       it('should process a valid CallError message', async () => {
         cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
 
-        const callErrorMessage: CallError = [
+        const callErrorMessage: RawCallError = [
           MessageTypeId.CallError,
           CORRELATION_ID,
           ErrorCode.InternalError,
@@ -428,7 +431,8 @@ describe('MessageRouterImpl', () => {
         timestamp.toISOString(),
         PROTOCOL,
         NO_ACTION,
-        MessageState.Unknown,
+        // Unparseable message — no messageTypeId could be read off the frame.
+        undefined,
       );
     });
 
@@ -1019,12 +1023,10 @@ describe('MessageRouterImpl', () => {
 
   describe('_routeCall', () => {
     it('should build and send a Call IMessage via sender', async () => {
-      const message: Call = [
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.BootNotification,
-        { chargingStation: { model: 'M', vendorName: 'V' }, reason: 'PowerUp' },
-      ];
+      const message = new Call(CORRELATION_ID, OCPP_CallAction.BootNotification, {
+        chargingStation: { model: 'M', vendorName: 'V' },
+        reason: 'PowerUp',
+      } as OcppRequest);
       const timestamp = new Date();
 
       const buildCallSpy = vi.spyOn(RequestBuilder, 'buildCall');
@@ -1036,7 +1038,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         TENANT_ID,
         OCPP_CallAction.BootNotification,
-        message[3],
+        message.payload,
         EventGroup.Router,
         MessageOrigin.ChargingStation,
         PROTOCOL,
@@ -1050,11 +1052,7 @@ describe('MessageRouterImpl', () => {
 
   describe('_routeCallResult', () => {
     it('should build and send a CallResult IMessage via sender', async () => {
-      const message: CallResult = [
-        MessageTypeId.CallResult,
-        CORRELATION_ID,
-        { status: 'Accepted' },
-      ];
+      const message = new CallResult(CORRELATION_ID, { status: 'Accepted' } as OcppResponse);
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 
@@ -1067,7 +1065,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         TENANT_ID,
         action,
-        message[2],
+        message.payload,
         EventGroup.Router,
         MessageOrigin.ChargingStation,
         PROTOCOL,
@@ -1083,13 +1081,7 @@ describe('MessageRouterImpl', () => {
     it('should always return success false (error routing not implemented)', async () => {
       cache.get.mockResolvedValue(null); // no callback URL
 
-      const message: CallError = [
-        MessageTypeId.CallError,
-        CORRELATION_ID,
-        ErrorCode.InternalError,
-        'test error',
-        {},
-      ];
+      const message = new CallError(CORRELATION_ID, ErrorCode.InternalError, 'test error');
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 
@@ -1105,13 +1097,9 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should call dispatchCallbackUrl on the webhook dispatcher', async () => {
-      const message: CallError = [
-        MessageTypeId.CallError,
-        CORRELATION_ID,
-        ErrorCode.InternalError,
-        'test error',
-        { detail: 'some detail' },
-      ];
+      const message = new CallError(CORRELATION_ID, ErrorCode.InternalError, 'test error', {
+        detail: 'some detail',
+      });
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 

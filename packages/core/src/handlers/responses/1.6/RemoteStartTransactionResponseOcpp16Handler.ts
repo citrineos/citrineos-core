@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { OCPP1_6_Mapper } from '@/dal/index.js';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,
@@ -15,7 +16,6 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import { OCPP1_6_Mapper } from '@/dal/index.js';
 import type {
   IChargingProfileRepository,
   IOCPPMessageRepository,
@@ -63,7 +63,7 @@ export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler
       });
 
       if (originalMessage) {
-        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+        const originalRequest = originalMessage.payload as OCPP1_6.RemoteStartTransactionRequest;
 
         if (originalRequest.chargingProfile) {
           const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(
