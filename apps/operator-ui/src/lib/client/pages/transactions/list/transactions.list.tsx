@@ -24,19 +24,18 @@ import {
 } from '@lib/client/styles/table';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
-import { useDispatch } from 'react-redux';
-import { openStationPreview } from '@lib/utils/store/station.preview.slice';
+import { usePreview } from '@lib/client/hooks/usePreview';
 
 export const TransactionsList = () => {
   const [filters, setFilters] = useState<any>(EMPTY_FILTER);
-  const dispatch = useDispatch();
-  const openPreview = (station: { id?: number | null }) => {
-    if (station.id != null) dispatch(openStationPreview(station.id));
+  const { openPreview } = usePreview();
+  const handlePreview = (station: { ocppConnectionName?: string | null }) => {
+    if (station.ocppConnectionName) openPreview(station.ocppConnectionName);
   };
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    getTransactionsColumns(translate, openPreview),
+    getTransactionsColumns(translate, handlePreview),
     ResourceType.TRANSACTIONS,
   );
 

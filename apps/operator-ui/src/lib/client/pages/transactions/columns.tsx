@@ -38,7 +38,7 @@ type TranslateFn = (key: string, options?: any) => string;
  */
 export const getTransactionsColumns = (
   translate?: TranslateFn,
-  onPreview?: (station: { id?: number | null }) => void,
+  onPreview?: (station: { ocppConnectionName?: string | null }) => void,
 ): ColumnConfiguration[] => {
   const t = (key: string, fallback: string) => (translate ? translate(key, fallback) : fallback);
 

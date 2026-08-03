@@ -7,8 +7,8 @@ import React, { useState } from 'react';
 import { CanAccess, Link, useList, useOne, useTranslate } from '@refinedev/core';
 import { useDispatch } from 'react-redux';
 import { instanceToPlain } from 'class-transformer';
-import type { OCPPMessageDto } from '@citrineos/base';
-import { OCPPMessageProps } from '@citrineos/base';
+import type { ChargingStationDto, OCPPMessageDto } from '@citrineos/base';
+import { ChargingStationProps, OCPPMessageProps } from '@citrineos/base';
 import { ChevronDown, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import { KeyValueDisplay } from '@lib/client/components/key-value-display';
@@ -32,8 +32,8 @@ import { clickableLinkStyle } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 
 export interface StationPreviewPanelProps {
-  /** The ChargingStations.id to preview. */
-  stationId: number;
+  /** The ocppConnectionName of the station to preview (the identifier carried in the URL). */
+  ocppConnectionName: string;
   /** Called when the panel's close button is clicked. */
   onClose: () => void;
 }
@@ -47,10 +47,32 @@ const formatPower = (value?: number | null) =>
  * the list. Fields only (no edit/delete); keeps "Other Commands" so an operator can fire a quick
  * command. Rendered inside a ResizablePanel — only mounted while a station is selected.
  */
-export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({ stationId, onClose }) => {
+export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
+  ocppConnectionName,
+  onClose,
+}) => {
   const translate = useTranslate();
   const dispatch = useDispatch();
   const [showEvses, setShowEvses] = useState(false);
+
+  // The URL carries the human-readable ocppConnectionName; resolve it to the numeric id that the
+  // detail query fetches by.
+  const {
+    query: { data: idData },
+  } = useList<ChargingStationDto>({
+    resource: ResourceType.CHARGING_STATIONS,
+    meta: { fields: [ChargingStationProps.id] },
+    filters: [
+      {
+        field: ChargingStationProps.ocppConnectionName,
+        operator: 'eq',
+        value: ocppConnectionName,
+      },
+    ],
+    pagination: { pageSize: 1, currentPage: 1 },
+    queryOptions: { enabled: !!ocppConnectionName },
+  });
+  const stationId = idData?.data?.[0]?.id;
 
   const {
     query: { data, isLoading },
@@ -121,7 +143,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({ statio
               {station.ocppConnectionName}
             </Link>
           ) : (
-            <span>{stationId}</span>
+            <span>{ocppConnectionName}</span>
           )}
           {station && (
             <span className={station.isOnline ? 'text-success' : 'text-destructive'}>

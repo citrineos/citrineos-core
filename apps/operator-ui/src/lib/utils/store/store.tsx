@@ -6,7 +6,6 @@ import { combineSlices, configureStore } from '@reduxjs/toolkit';
 import { associationSelectionSlice } from '@lib/utils/store/association.selection.slice';
 import { selectedChargingStationSlice } from '@lib/utils/store/selected.charging.station.slice';
 import { modalSlice } from '@lib/utils/store/modal.slice';
-import { stationPreviewSlice } from '@lib/utils/store/station.preview.slice';
 import { mapsSlice } from '@lib/utils/store/maps.slice';
 import { FLUSH, PAUSE, PERSIST, persistReducer, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
@@ -26,7 +25,6 @@ const slices = [
   associationSelectionSlice,
   selectedChargingStationSlice,
   modalSlice,
-  stationPreviewSlice,
   mapsSlice,
   tablePreferencesSlice,
 ];
