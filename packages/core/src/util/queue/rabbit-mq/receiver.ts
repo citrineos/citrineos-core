@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, IModule, SystemConfig } from '@citrineos/base';
-import { AbstractMessageHandler, Message, RetryMessageError } from '@citrineos/base';
+import { type IModule, AbstractMessageHandler, Message } from '@citrineos/base';
+import { type CallAction, type SystemConfig, RetryMessageError } from '@citrineos/types';
 import * as amqplib from 'amqplib';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

@@ -12,7 +12,8 @@ import {
   type IInstalledCertificateRepository,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
-import { BadRequestError, type WebsocketServerConfig } from '@citrineos/base';
+import { BadRequestError } from '@citrineos/base';
+import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Certificate } from '@dal/layers/sequelize/index.js';
 import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService';

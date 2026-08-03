@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  CertificateSigningUseEnumType,
-  ICache,
-  IFileStorage,
-  SystemConfig,
-} from '@citrineos/base';
-import { CertificateSigningUseEnum, OCPP2_1 } from '@citrineos/base';
+import type { ICache, IFileStorage } from '@citrineos/base';
+import {
+  type CertificateSigningUseEnumType,
+  type SystemConfig,
+  CertificateSigningUseEnum,
+  OCPP2_1,
+} from '@citrineos/types';
 import { Crypto } from '@peculiar/webcrypto';
 import jsrsasign, { KJUR, X509 } from 'jsrsasign';
 import moment from 'moment';

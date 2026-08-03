@@ -3,7 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootstrapConfig } from '@config/bootstrap.config.js';
-import type { SystemConfig } from '@config/types.js';
+import {
+  type SystemConfig,
+  type HandlerProperties,
+  EventGroup,
+  MessageOrigin,
+  MessageState,
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type OCPPVersionType,
+  ErrorCode,
+  OCPPVersion,
+} from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type {
   IMessage,
@@ -11,12 +24,7 @@ import type {
   IMessageHandler,
   IMessageSender,
 } from '@interfaces/messages/index.js';
-import type { HandlerProperties } from '@interfaces/messages/internal-types.js';
-import { EventGroup, MessageOrigin, MessageState } from '@interfaces/messages/internal-types.js';
 import type { IModule } from '@interfaces/modules/Module.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
-import { ErrorCode, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

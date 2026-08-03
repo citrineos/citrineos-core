@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { IVariableMonitoringRepository } from '@citrineos/core';
 import { MonitoringService } from '@modules/Monitoring/src/module/MonitoringService.js';
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { aClearMonitoringResult } from '../providers/Monitoring.js';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';

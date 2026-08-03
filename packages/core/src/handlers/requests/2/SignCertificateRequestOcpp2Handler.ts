@@ -5,6 +5,13 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
+  type IMessage,
+  type IOcppSender,
+  OCPP2_request_types,
+  OCPP2_response_types,
+  OcppError,
+} from '@citrineos/base';
+import {
   AttributeEnum,
   CertificateSigningUseEnum,
   type CertificateSigningUseEnumType,
@@ -13,16 +20,11 @@ import {
   EventGroup,
   GenericStatusEnum,
   type HandlerProperties,
-  type IMessage,
-  type IOcppSender,
   OCPP2_1,
-  OCPP2_request_types,
-  OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import {
   CertificateAuthorityService,

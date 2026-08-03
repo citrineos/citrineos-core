@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CompositeScheduleDto } from '@citrineos/base';
+import type { CompositeScheduleDto } from '@citrineos/types';
 import {
   type CompositeScheduleEntity,
   compositeScheduleTable,

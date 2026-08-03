@@ -5,12 +5,10 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
   OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CostUpdated)
 export class CostUpdatedResponseOcpp2Handler extends AbstractHandler {

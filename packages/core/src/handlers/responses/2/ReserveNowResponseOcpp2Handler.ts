@@ -5,15 +5,17 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
-  MessageOrigin,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
+  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   ReserveNowStatusEnum,
   type ReserveNowStatusEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IOCPPMessageRepository,
   IReservationRepository,
@@ -59,7 +61,7 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,
         },
-        request.message[3].id,
+        request.payload.id,
       );
     } else {
       this._logger.error(

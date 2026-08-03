@@ -4,11 +4,7 @@
 
 import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
-import {
-  MessageOriginSchema,
-  MessageStateSchema,
-  OCPPVersionSchema,
-} from './types/ocpp.message.js';
+import { MessageOriginSchema, MessageTypeSchema, OCPPVersionSchema } from './types/ocpp.message.js';
 
 export const OCPPMessageWithoutRequestResponseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -16,10 +12,11 @@ export const OCPPMessageWithoutRequestResponseSchema = BaseSchema.extend({
   stationId: z.number().int().optional(),
   correlationId: z.string().optional(),
   origin: MessageOriginSchema,
-  state: MessageStateSchema,
+  type: MessageTypeSchema.optional(),
   protocol: OCPPVersionSchema,
-  action: z.string(),
-  message: z.any(), // JSONB
+  action: z.string().optional(),
+  payload: z.any().optional(), // JSONB
+  raw: z.string(),
   timestamp: z.iso.datetime(),
 });
 

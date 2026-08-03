@@ -5,12 +5,9 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
-  OCPP2_1,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifyWebPaymentStarted)
 export class NotifyWebPaymentStartedResponseOcpp21Handler extends AbstractHandler {

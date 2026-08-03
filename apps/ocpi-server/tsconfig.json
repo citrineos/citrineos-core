@@ -9,6 +9,9 @@
   },
   "references": [
     {
+      "path": "../../packages/types"
+    },
+    {
       "path": "../../packages/base"
     },
     {

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
 import { AuthMethod } from '../../src/model/AuthMethod.js';
 import { SessionStatus } from '../../src/model/SessionStatus.js';

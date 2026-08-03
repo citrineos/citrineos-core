@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { WebsocketServerConfig } from '@config/types.js';
+import type { WebsocketServerConfig } from '@citrineos/types';
 
 /**
  * Interface for the ocpp network connection

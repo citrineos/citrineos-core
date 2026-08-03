@@ -6,7 +6,7 @@
 import { ActionType, CommandType, ResourceType } from '@lib/utils/access.types';
 import { Button } from '@lib/client/components/ui/button';
 import { CanAccess, useTranslate } from '@refinedev/core';
-import type { ChargingStationDto } from '@citrineos/base';
+import type { ChargingStationDto } from '@citrineos/types';
 import { useDispatch } from 'react-redux';
 import { openModal } from '@lib/utils/store/modal.slice';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';

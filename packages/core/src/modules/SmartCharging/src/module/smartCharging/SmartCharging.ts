@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_1 } from '@citrineos/base';
+import { OCPP2_1 } from '@citrineos/types';
 import { Transaction } from '@dal/layers/sequelize/model/TransactionEvent/index.js';
 
 export interface ISmartCharging {

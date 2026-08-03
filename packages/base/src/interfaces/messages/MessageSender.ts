@@ -4,9 +4,8 @@
 
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
+import { type OcppRequest, type OcppResponse, MessageState } from '@citrineos/types';
 import { OcppError } from '@ocpp/rpc/message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import { MessageState } from '@interfaces/messages/internal-types.js';
 
 /**
  * IMessageSender

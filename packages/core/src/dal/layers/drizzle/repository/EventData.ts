@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { EventDataDto } from '@citrineos/base';
+import type { EventDataDto } from '@citrineos/types';
 import { type EventDataEntity, eventDataTable, tenantEventDataTable } from '../schema/EventData.js';
 import { DrizzleRepository } from './Base.js';
 

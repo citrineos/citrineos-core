@@ -16,7 +16,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { Inject, Service } from 'typedi';
 import { TariffsModuleApi } from './module/TariffsModuleApi.js';
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 
 export { TariffsModuleApi } from './module/TariffsModuleApi.js';
 export type { ITariffsModuleApi } from './module/ITariffsModuleApi.js';

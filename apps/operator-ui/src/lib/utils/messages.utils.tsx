@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { HttpMethod, OCPPVersion } from '@citrineos/base';
+import { HttpMethod, OCPPVersion } from '@citrineos/types';
 import { BaseRestClient } from '@lib/utils/BaseRestClient';
 import { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { closeModal } from '@lib/utils/store/modal.slice';

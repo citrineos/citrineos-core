@@ -5,19 +5,21 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  ChargingStationSequenceTypeEnum,
-  EventGroup,
-  GenericDeviceModelStatusEnum,
-  type GenericDeviceModelStatusEnumType,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ChargingStationSequenceTypeEnum,
+  EventGroup,
+  GenericDeviceModelStatusEnum,
+  type GenericDeviceModelStatusEnumType,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IVariableMonitoringRepository } from '@/dal/index.js';
 import { IdGenerator } from '@/util/index.js';
 

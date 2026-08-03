@@ -5,16 +5,18 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
+  OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
   type InstallCertificateStatusEnumType,
   MessageOrigin,
   OCPP2_1,
-  OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@dal/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
 
@@ -59,7 +61,7 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
         },
       });
       if (originalRequest) {
-        const certSignedPayload = originalRequest.message[3] as OCPP2_1.CertificateSignedRequest;
+        const certSignedPayload = originalRequest.payload as OCPP2_1.CertificateSignedRequest;
         requestId = certSignedPayload?.requestId ?? undefined;
       }
     }

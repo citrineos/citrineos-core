@@ -1,19 +1,21 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { OCPP1_6_Mapper } from '@/dal/index.js';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
+  type IMessage,
+} from '@citrineos/base';
+import {
   ChargingLimitSourceEnum,
   type HandlerProperties,
-  type IMessage,
   MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
-import { OCPP1_6_Mapper } from '@/dal/index.js';
+} from '@citrineos/types';
 import type {
   IChargingProfileRepository,
   IOCPPMessageRepository,
@@ -61,7 +63,7 @@ export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler
       });
 
       if (originalMessage) {
-        const originalRequest = originalMessage.message[3] as OCPP1_6.RemoteStartTransactionRequest;
+        const originalRequest = originalMessage.payload as OCPP1_6.RemoteStartTransactionRequest;
 
         if (originalRequest.chargingProfile) {
           const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(

@@ -11,8 +11,9 @@ import {
   type LocationParkingEnumType,
   LocationProps,
   LocationSchema,
-} from '@citrineos/base';
-import { LocationFacilityEnum, LocationParkingEnum } from '@citrineos/base';
+  LocationFacilityEnum,
+  LocationParkingEnum,
+} from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import {
   defaultLatitude,

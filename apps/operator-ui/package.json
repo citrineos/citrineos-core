@@ -18,13 +18,13 @@
     "playwright:install": "playwright install chromium"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1100.0",
-    "@aws-sdk/s3-request-presigner": "3.1100.0",
-    "@citrineos/base": "workspace:*",
+    "@aws-sdk/client-s3": "3.1101.0",
+    "@aws-sdk/s3-request-presigner": "3.1101.0",
+    "@citrineos/types": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
     "@google-cloud/storage": "7.21.0",
     "@googlemaps/markerclusterer": "2.6.2",
-    "@hookform/resolvers": "5.5.7",
+    "@hookform/resolvers": "5.7.1",
     "@opentelemetry/exporter-metrics-otlp-http": "0.57.0",
     "@opentelemetry/resources": "^1.30.0",
     "@opentelemetry/sdk-metrics": "1.30.1",

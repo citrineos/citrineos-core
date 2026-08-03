@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableCharacteristicsDto } from '@citrineos/base';
+import type { VariableCharacteristicsDto } from '@citrineos/types';
 import {
   type VariableCharacteristicsEntity,
   variableCharacteristicsTable,

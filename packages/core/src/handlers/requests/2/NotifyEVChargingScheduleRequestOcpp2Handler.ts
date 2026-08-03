@@ -5,19 +5,21 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  ChargingProfileKindEnum,
-  ChargingProfilePurposeEnum,
-  EventGroup,
-  GenericStatusEnum,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ChargingProfileKindEnum,
+  ChargingProfilePurposeEnum,
+  EventGroup,
+  GenericStatusEnum,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Transaction } from '@/dal/index.js';
 import type {
   IChargingProfileRepository,

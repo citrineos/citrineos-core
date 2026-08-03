@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { IDataEndpointDefinition } from '@interfaces/api/DataEndpointDefinition.js';
-import { HttpMethod } from '@interfaces/api/HttpMethods.js';
+import { HttpMethod } from '@citrineos/types';
 import { METADATA_DATA_ENDPOINTS } from '@interfaces/api/metadata.js';
 import { Namespace, OCPP1_6_Namespace, OCPP2_Namespace } from '@ocpp/persistence/index.js';
 

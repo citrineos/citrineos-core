@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { HandlerProperties } from '@interfaces/messages/internal-types.js';
+import type { HandlerProperties, OcppRequest, OcppResponse } from '@citrineos/types';
 import type { IMessage } from '@interfaces/messages/Message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
 
 /**
  * Base interface for all OCPP handler classes.

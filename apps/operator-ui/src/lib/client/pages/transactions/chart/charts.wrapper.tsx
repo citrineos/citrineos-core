@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import { type MeterValueDto, OCPP2_0_1 } from '@citrineos/base';
+import { type MeterValueDto, OCPP2_0_1 } from '@citrineos/types';
 import { PowerOverTime } from '@lib/client/pages/transactions/chart/power.over.time';
 import { EnergyOverTime } from '@lib/client/pages/transactions/chart/energy.over.time';
 import { StateOfCharge } from '@lib/client/pages/transactions/chart/state.of.charge';

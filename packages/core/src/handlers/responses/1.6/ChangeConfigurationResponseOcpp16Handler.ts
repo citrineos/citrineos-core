@@ -5,13 +5,15 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
   MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IChangeConfigurationRepository,
   IOCPPMessageRepository,
@@ -65,8 +67,8 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
     }
 
     const status = message.payload.status;
-    const key = request?.message[3].key;
-    const value = request?.message[3].value;
+    const key = request?.payload.key;
+    const value = request?.payload.value;
 
     if (
       status == OCPP1_6.ChangeConfigurationResponseStatus.Rejected ||

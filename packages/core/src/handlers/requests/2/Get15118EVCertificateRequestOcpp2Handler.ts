@@ -5,16 +5,18 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  ErrorCode,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  Iso15118EVCertificateStatusEnum,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  ErrorCode,
+  type HandlerProperties,
+  Iso15118EVCertificateStatusEnum,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { CertificateAuthorityService } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)

@@ -4,7 +4,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { type ChargingStationDto, OCPP2_0_1 } from '@citrineos/base';
+import { type ChargingStationDto, OCPP2_0_1 } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MultiSelectFormField } from '@lib/client/components/form/field';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';

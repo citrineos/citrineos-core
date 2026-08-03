@@ -5,14 +5,16 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
   MessageOrigin,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
   TariffSetStatusEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { type IOCPPMessageRepository, type ITariffRepository, Tariff } from '@dal/index.js';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.SetDefaultTariff)
@@ -70,7 +72,7 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
       return;
     }
 
-    const request = storedRequest.message[3] as OCPP2_1.SetDefaultTariffRequest;
+    const request = storedRequest.payload as OCPP2_1.SetDefaultTariffRequest;
     const tariffData = request.tariff;
 
     const newTariff = Tariff.build({

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { EventGroup, loadBootstrapConfig } from '@citrineos/base';
+import { loadBootstrapConfig } from '@citrineos/base';
+import { EventGroup } from '@citrineos/types';
 import { CitrineOSServer } from './citrineOSServer.js';
 import { getSystemConfig } from './config/index.js';
 

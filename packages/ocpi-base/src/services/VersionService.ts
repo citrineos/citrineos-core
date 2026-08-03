@@ -10,7 +10,7 @@ import { NotFoundError } from 'routing-controllers';
 import type { VersionDetailsResponseDTO } from '../model/DTO/VersionDetailsResponseDTO.js';
 import type { VersionListResponseDTO } from '../model/DTO/VersionListResponseDTO.js';
 import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
-import type { Endpoint, TenantDto, Version } from '@citrineos/base';
+import type { Endpoint, TenantDto, Version } from '@citrineos/types';
 import { RegistrationMapper } from '../mapper/index.js';
 
 @Service()

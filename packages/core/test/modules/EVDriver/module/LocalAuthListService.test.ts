@@ -11,7 +11,8 @@ import {
   VariableCharacteristics,
 } from '@citrineos/core';
 import { LocalAuthListService } from '@modules/EVDriver/src/module/LocalAuthListService.js';
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 

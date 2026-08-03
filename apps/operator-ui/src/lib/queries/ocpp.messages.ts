@@ -22,9 +22,11 @@ export const GET_OCPP_MESSAGES_LIST_FOR_STATION = gql`
       ocppConnectionName
       correlationId
       origin
+      type
       protocol
       action
-      message
+      payload
+      raw
       timestamp
       createdAt
       updatedAt
@@ -52,7 +54,7 @@ export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
       order_by: $order_by
       where: {
         _and: [
-          { message: { _contains: [{ transactionId: $ocppTransactionId }] } }
+          { payload: { _contains: { transactionId: $ocppTransactionId } } }
           { ocppConnectionName: { _eq: $ocppConnectionName } }
           {
             _or: [
@@ -84,16 +86,19 @@ export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
       }
     ) {
       id
+      ocppConnectionName
       action
       protocol
-      message
+      type
+      payload
+      raw
       timestamp
     }
 
     OCPPMessages_aggregate(
       where: {
         _and: [
-          { message: { _contains: [{ transactionId: $ocppTransactionId }] } }
+          { payload: { _contains: { transactionId: $ocppTransactionId } } }
           { ocppConnectionName: { _eq: $ocppConnectionName } }
           {
             _or: [

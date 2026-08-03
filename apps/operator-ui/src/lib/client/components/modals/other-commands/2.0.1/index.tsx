@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { ChargingStationDto } from '@citrineos/base';
+import type { ChargingStationDto } from '@citrineos/types';
 import {
   OCPP2_0_1_COMMANDS_REGISTRY,
   type CommandDefinition,

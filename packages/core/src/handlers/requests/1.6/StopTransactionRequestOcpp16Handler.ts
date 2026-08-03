@@ -5,14 +5,16 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  AuthorizationStatusEnum,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
+} from '@citrineos/base';
+import {
+  AuthorizationStatusEnum,
+  type HandlerProperties,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   Authorization,
   type IAuthorizationRepository,

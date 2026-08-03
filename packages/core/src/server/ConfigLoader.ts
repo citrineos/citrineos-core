@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
-import { ConfigStoreFactory, defineConfig } from '@citrineos/base';
+import {
+  type BootstrapConfig,
+  type ConfigStore,
+  ConfigStoreFactory,
+  defineConfig,
+} from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { GcpCloudStorage, LocalStorage, S3Storage } from '@util/index.js';
 
 /**

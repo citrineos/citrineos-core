@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { MessageInfoDto } from '@citrineos/base';
+import type { MessageInfoDto } from '@citrineos/types';
 import {
   type MessageInfoEntity,
   messageInfoTable,

@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import { ChargingStationProps, LocationProps } from '@citrineos/base';
+import { ChargingStationProps, LocationProps } from '@citrineos/types';
 import { CanAccess, type CrudFilter } from '@refinedev/core';
 import type { ColumnConfiguration } from '@lib/utils/column.configuration';
 import type { CellContext } from '@tanstack/react-table';

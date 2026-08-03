@@ -9,7 +9,7 @@ import {
   type ConnectorStatusEnumType,
   type EvseDto,
   ConnectorStatusEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import { LatestStatusNotificationClass } from '@lib/cls/latest.status.notification.dto';
 import { GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS_AND_TRANSACTIONS } from '@lib/queries/charging.stations';

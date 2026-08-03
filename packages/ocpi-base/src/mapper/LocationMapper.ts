@@ -22,8 +22,6 @@ import {
   type LocationDto,
   type LocationFacilityEnumType,
   type LocationParkingEnumType,
-} from '@citrineos/base';
-import {
   ChargingStationCapabilityEnum,
   ChargingStationParkingRestrictionEnum,
   ConnectorFormatEnum,
@@ -33,7 +31,7 @@ import {
   LocationFacilityEnum,
   LocationHours,
   LocationParkingEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { ParkingRestriction } from '../model/ParkingRestriction.js';
 import { Capability } from '../model/Capability.js';
 import { Container } from 'typedi';

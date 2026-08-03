@@ -8,8 +8,8 @@ import {
   buildHandlers,
   type HandlerClass,
   type HandlerResolverCradle,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { OCPP_CallAction } from '@citrineos/types';
 import { SignedMeterValuesUtil } from '@util/security/SignedMeterValuesUtil.js';
 import { CostCalculator } from './module/CostCalculator.js';
 import { CostNotifier, type CostUpdatedNotifier } from './module/CostNotifier.js';

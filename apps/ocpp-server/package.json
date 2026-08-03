@@ -41,6 +41,7 @@
   "dependencies": {
     "@citrineos/base": "workspace:*",
     "@citrineos/core": "workspace:*",
+    "@citrineos/types": "workspace:*",
     "@fastify/cors": "10.1.0",
     "awilix": "^13.0.3",
     "cross-env": "7.0.3",

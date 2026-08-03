@@ -3,8 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { ChargingStationDto, OCPPMessageDto } from '@citrineos/base';
-import { ChargingStationProps, OCPPMessageProps } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type OCPPMessageDto,
+  ChargingStationProps,
+  OCPPMessageProps,
+} from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
 import ProtocolTag from '@lib/client/components/protocol-tag';

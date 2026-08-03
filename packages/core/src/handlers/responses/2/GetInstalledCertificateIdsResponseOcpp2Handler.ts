@@ -5,17 +5,19 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type CertificateUseEnumType,
-  GetInstalledCertificateStatusEnum,
-  type HandlerProperties,
   type IMessage,
-  MessageOrigin,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  type CertificateUseEnumType,
+  GetInstalledCertificateStatusEnum,
+  type HandlerProperties,
+  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type IInstalledCertificateRepository,
   InstalledCertificate,
@@ -65,8 +67,8 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
       });
       if (request) {
         // should always be true
-        const getInstalledCertificateIdsRequest = request
-          .message[3] as OCPP2_request_types.GetInstalledCertificateIdsRequest;
+        const getInstalledCertificateIdsRequest =
+          request.payload as OCPP2_request_types.GetInstalledCertificateIdsRequest;
         let certificateType;
         if (
           getInstalledCertificateIdsRequest &&

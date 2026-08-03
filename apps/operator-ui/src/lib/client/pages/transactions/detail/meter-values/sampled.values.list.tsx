@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { OCPP2_0_1, type SampledValue } from '@citrineos/base';
+import { OCPP2_0_1, type SampledValue } from '@citrineos/types';
 import GenericTag from '@lib/client/components/tag';
 import { Separator } from '@lib/client/components/ui/separator';
 import { useTranslate } from '@refinedev/core';

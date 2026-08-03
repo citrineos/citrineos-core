@@ -5,15 +5,13 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@dal/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEvent)

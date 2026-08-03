@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LocalListVersionDto } from '@citrineos/base';
+import type { LocalListVersionDto } from '@citrineos/types';
 import {
   type LocalListVersionEntity,
   localListVersionTable,

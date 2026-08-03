@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
+import type { BootstrapConfig, ConfigStore } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { Bucket, Storage } from '@google-cloud/storage';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

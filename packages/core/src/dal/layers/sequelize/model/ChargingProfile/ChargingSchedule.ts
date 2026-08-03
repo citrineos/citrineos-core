@@ -7,7 +7,7 @@ import type {
   ChargingScheduleDto,
   SalesTariffDto,
   TenantDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   AutoIncrement,

@@ -7,8 +7,8 @@ import {
   NotFoundError,
   type ConfigStore,
   type INetworkConnection,
-  type WebsocketServerConfig,
 } from '@citrineos/base';
+import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminApi } from '@modules/OcppRouter/src/module/DataApi.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';

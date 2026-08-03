@@ -5,7 +5,7 @@
 import type {
   ChargingStationCapabilityEnumType,
   ChargingStationParkingRestrictionEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   boolean,

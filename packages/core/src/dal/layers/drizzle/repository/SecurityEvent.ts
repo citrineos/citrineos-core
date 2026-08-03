@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ISecurityEventRepository } from '@/dal/index.js';
-import type { SecurityEventDto } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { type SecurityEventDto, OCPP2_0_1 } from '@citrineos/types';
 import { and, between, eq, gte, lte } from 'drizzle-orm';
 import {
   type SecurityEventEntity,

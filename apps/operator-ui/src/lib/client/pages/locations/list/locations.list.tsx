@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Table } from '@lib/client/components/table';

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, OCPP2_0_1 } from '@citrineos/base';
-import { CrudRepository, OCPPVersion } from '@citrineos/base';
+import { type ChargingStationDto, type OCPP2_0_1, OCPPVersion } from '@citrineos/types';
+import { CrudRepository } from '@citrineos/base';
 import { Op } from 'sequelize';
 import { type ILocationRepository } from '../../../interfaces/repositories.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';

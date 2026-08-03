@@ -5,13 +5,10 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
-  OCPP2_1,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { Op } from 'sequelize';
 import {
   Authorization,

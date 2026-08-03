@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StartTransactionDto } from '@citrineos/base';
+import type { StartTransactionDto } from '@citrineos/types';
 import {
   type StartTransactionEntity,
   startTransactionTable,

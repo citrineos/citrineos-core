@@ -21,7 +21,6 @@ look like this:
       │  │  ├─ HeartbeatResponseOcpp16Handler.ts
       │  ├─ 2/
       │  │  ├─ HeartbeatResponseOcpp2Handler.ts
-   
 
 All handlers are exported in `handlers/index.ts`.
 
@@ -33,7 +32,7 @@ To register a handler to a particular module:
    `<Action><Request|Response>Ocpp<version>Handler.ts`.
 2. Extend `AbstractHandler`.
 3. Decorate your handler with either `@AsRequestHandler` or `@AsResponseHandler` (based on whether the handler processes
-a request or response).
+   a request or response).
    1. Ensure that the correct protocols and call action are passed as arguments to the decorator.
 4. Export your handler from `handlers/index.ts` so it's part of `@citrineos/core`'s public API.
 5. Add the handler class to your module's handler list in `modules/<Module>/src/register.ts`.
@@ -63,5 +62,5 @@ constructs each one from the module's own container scope (`moduleScope`). `Abst
 metadata back off each instance twice over: to key its `protocol:action:type` dispatch map, and to derive
 the requests and responses it subscribes to, minus anything config excludes.
 
-So a handler declares *what it serves* once, on itself; its module declares *that it owns it*; and those
+So a handler declares _what it serves_ once, on itself; its module declares _that it owns it_; and those
 two facts alone decide what the module receives.

@@ -5,14 +5,11 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   type IVatProvider,
-  OCPP2_1,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.VatNumberValidation)
 export class VatNumberValidationRequestOcpp21Handler extends AbstractHandler {

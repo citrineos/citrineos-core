@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChangeConfigurationDto } from '@citrineos/base';
+import type { ChangeConfigurationDto } from '@citrineos/types';
 import {
   type ChangeConfigurationEntity,
   changeConfigurationTable,

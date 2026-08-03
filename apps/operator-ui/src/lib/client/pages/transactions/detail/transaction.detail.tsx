@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { TransactionDto } from '@citrineos/base';
+import type { TransactionDto } from '@citrineos/types';
 import { TransactionDetailCard } from '@lib/client/pages/transactions/detail/transaction.detail.card';
 import { TransactionClass } from '@lib/cls/transaction.dto';
 import { TRANSACTION_GET_QUERY } from '@lib/queries/transactions';

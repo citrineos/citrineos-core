@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import config from '@lib/utils/config';
 
 export interface GoogleGeocodingResponse {

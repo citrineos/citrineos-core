@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OCPPMessageDto } from '@citrineos/base';
+import type { OCPPMessageDto } from '@citrineos/types';
 import {
   type OCPPMessageEntity,
   ocppMessageTable,
@@ -16,16 +16,17 @@ import { DrizzleRepository } from './Base.js';
 export function toOCPPMessageDto(entity: OCPPMessageEntity): OCPPMessageDto {
   const dto: Explicit<OCPPMessageDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    ocppConnectionName: entity.ocppConnectionName,
     stationId: entity.stationId ?? undefined,
     correlationId: entity.correlationId ?? undefined,
     origin: entity.origin as OCPPMessageDto['origin'],
-    state: entity.state as unknown as OCPPMessageDto['state'],
+    type: entity.type as OCPPMessageDto['type'],
     protocol: entity.protocol as OCPPMessageDto['protocol'],
-    action: entity.action ?? '',
-    message: entity.message,
+    action: entity.action ?? undefined,
+    payload: entity.payload ?? undefined,
+    raw: entity.raw,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
-    timestamp: entity.timestamp ? entity.timestamp.toISOString() : '',
+    timestamp: entity.timestamp.toISOString(),
     requestMessageId: entity.requestMessageId ?? undefined,
     requestMessage: undefined,
     responseMessages: undefined,

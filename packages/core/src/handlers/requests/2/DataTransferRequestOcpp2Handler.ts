@@ -5,16 +5,18 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  DataTransferStatusEnum,
-  ErrorCode,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
+} from '@citrineos/base';
+import {
+  DataTransferStatusEnum,
+  ErrorCode,
+  type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.DataTransfer)
 export class DataTransferRequestOcpp2Handler extends AbstractHandler {

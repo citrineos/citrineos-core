@@ -5,14 +5,16 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
+  type IMessage,
+} from '@citrineos/base';
+import {
   ChargingLimitSourceEnum,
   type HandlerProperties,
-  type IMessage,
   MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   IChargingProfileRepository,
   IOCPPMessageRepository,
@@ -61,7 +63,7 @@ export class SetChargingProfileResponseOcpp16Handler extends AbstractHandler {
       });
 
       if (originalMessage) {
-        const originalRequest = originalMessage.message[3] as OCPP1_6.SetChargingProfileRequest;
+        const originalRequest = originalMessage.payload as OCPP1_6.SetChargingProfileRequest;
         const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromSetChargingProfileRequest(
           originalRequest.csChargingProfiles,
         );

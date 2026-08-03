@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OCPP2_0_1, OCPP2_1 } from '@ocpp/model/index.js';
+import type { OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 
 /**
  * APN. APN_ Authentication. APN_ Authentication_ Code

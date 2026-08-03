@@ -6,7 +6,7 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type DeleteCertificateAttemptEntity,
   deleteCertificateAttemptTable,

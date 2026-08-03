@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { type LocationEntity, locationTable, tenantLocationTable } from '../schema/Location.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';

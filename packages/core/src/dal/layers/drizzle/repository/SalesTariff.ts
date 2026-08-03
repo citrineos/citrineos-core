@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SalesTariffDto } from '@citrineos/base';
+import type { SalesTariffDto } from '@citrineos/types';
 import {
   type SalesTariffEntity,
   salesTariffTable,

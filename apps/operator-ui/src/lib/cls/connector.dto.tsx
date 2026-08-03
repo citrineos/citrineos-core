@@ -6,7 +6,7 @@ import type {
   ConnectorDto,
   ConnectorErrorCodeEnumType,
   ConnectorStatusEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class ConnectorClass implements Partial<ConnectorDto> {
   id?: number;

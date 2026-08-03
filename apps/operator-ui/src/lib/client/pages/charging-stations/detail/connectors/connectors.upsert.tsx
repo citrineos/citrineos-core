@@ -4,13 +4,14 @@
 'use client';
 
 import React from 'react';
-import { type ConnectorDto, type TariffDto } from '@citrineos/base';
 import {
+  type ConnectorDto,
+  type TariffDto,
   ConnectorFormatEnum,
   ConnectorPowerTypeEnum,
   ConnectorProps,
   ConnectorTypeEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Form } from '@lib/client/components/form';
 import {
   ComboboxFormField,

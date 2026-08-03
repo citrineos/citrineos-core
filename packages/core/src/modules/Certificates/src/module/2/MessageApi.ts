@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CallAction, IMessageConfirmation, OCPP2_request_types } from '@citrineos/base';
 import {
+  type IMessageConfirmation,
+  type OCPP2_request_types,
   AbstractModuleApi,
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type CallAction, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { DeleteCertificateAttempt } from '@dal/index.js';
 import { packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';

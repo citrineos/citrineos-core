@@ -6,7 +6,7 @@ import type {
   CertificateUseEnumType,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   type InstallCertificateAttemptEntity,
   installCertificateAttemptTable,

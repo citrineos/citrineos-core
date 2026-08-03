@@ -2,8 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingLimitSourceEnumType, ChargingProfilePurposeEnumType } from '@citrineos/base';
-import { ChargingLimitSourceEnum, CrudRepository, OCPP2_0_1 } from '@citrineos/base';
+import {
+  type ChargingLimitSourceEnumType,
+  type ChargingProfilePurposeEnumType,
+  ChargingLimitSourceEnum,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { CrudRepository } from '@citrineos/base';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { IChargingProfileRepository } from '../../../interfaces/repositories.js';
 import type {

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CompositeScheduleDto, EvseDto, TenantDto } from '@citrineos/base';
+import type { CompositeScheduleDto, EvseDto, TenantDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

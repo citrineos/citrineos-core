@@ -6,21 +6,23 @@ import {
   type AbstractHandlerDependencies,
   AsRequestHandler,
   type BootstrapConfig,
-  ErrorCode,
-  type HandlerProperties,
   type ICache,
   type IMessage,
   type IOcppSender,
-  MutabilityEnum,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  OcppError,
+} from '@citrineos/base';
+import {
+  ErrorCode,
+  type HandlerProperties,
+  MutabilityEnum,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OcppError,
   SetVariableStatusEnum,
   type SystemConfig,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Component, type IDeviceModelRepository, Variable } from '@dal/index.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 

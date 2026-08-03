@@ -7,8 +7,9 @@ import type {
   HashAlgorithmEnumType,
   InstalledCertificateDto,
   TenantDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_Namespace, type ChargingStationDto } from '@citrineos/base';
+  ChargingStationDto,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,

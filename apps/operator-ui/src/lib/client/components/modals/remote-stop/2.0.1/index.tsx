@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { EvseDto, TransactionDto } from '@citrineos/base';
+import type { EvseDto, TransactionDto } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField } from '@lib/client/components/form/field';

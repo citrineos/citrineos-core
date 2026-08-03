@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
 import path from 'path';
-import type { SystemConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStorage } from '@util/index.js';
 

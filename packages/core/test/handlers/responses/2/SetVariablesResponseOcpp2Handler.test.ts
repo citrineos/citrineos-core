@@ -2,17 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
-import {
-  DEFAULT_TENANT_ID,
-  MessageOrigin,
-  MessageState,
-  OCPP2_0_1,
-  OCPPVersion,
-} from '@citrineos/base';
+import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { MessageOrigin, MessageTypeId, OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import {
   ChargingStation,
   Component,
@@ -26,13 +17,16 @@ import {
   VariableStatus,
 } from '@dal/index.js';
 import { SetVariablesResponseOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer } from '@test/testContainer.js';
 import {
   aSetVariableData,
   aSetVariableResult,
   aSetVariablesResponse,
   aSetVariablesResponseMessage,
 } from '@test/modules/Monitoring/providers/Monitoring.js';
+import { createTestContainer } from '@test/testContainer.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -176,25 +170,24 @@ async function seedVariableStatus(
 
 /**
  * Seeds an OCPPMessage as the CSMS-originated SetVariables request.
- * Stored in raw OCPP array format: [messageTypeId, correlationId, action, payload].
+ * `payload` holds the OCPP payload alone; `raw` holds the full wire frame
+ * [messageTypeId, correlationId, action, payload].
  */
 async function seedSetVariablesRequest(
   setVariableData: OCPP2_0_1.SetVariableDataType[],
   correlationId: string = CORRELATION_ID,
 ): Promise<OCPPMessage> {
+  const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
   return OCPPMessage.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
-    state: MessageState.Request,
+    type: MessageTypeId.Call,
     protocol: OCPPVersion.OCPP2_0_1,
     action: 'SetVariables',
-    message: [
-      2,
-      correlationId,
-      'SetVariables',
-      { setVariableData } as OCPP2_0_1.SetVariablesRequest,
-    ],
+    payload,
+    raw: JSON.stringify([MessageTypeId.Call, correlationId, 'SetVariables', payload]),
+    timestamp: new Date().toISOString(),
     tenantId: TENANT_ID,
   });
 }

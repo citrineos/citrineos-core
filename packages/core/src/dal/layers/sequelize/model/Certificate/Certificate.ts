@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CertificateDto, CountryName, SignatureAlgorithm, TenantDto } from '@citrineos/base';
+import type { CertificateDto, CountryName, SignatureAlgorithm, TenantDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

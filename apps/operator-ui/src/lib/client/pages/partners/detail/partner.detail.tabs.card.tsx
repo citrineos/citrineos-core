@@ -7,7 +7,7 @@ import { Card, CardContent } from '@lib/client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
 import { PartnerEndpointsTable } from '@lib/client/pages/partners/detail/partner.endpoints.table';
 import { PartnerAuthorizations } from '@lib/client/pages/partners/detail/partner.authorizations';
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import { cardTabsStyle } from '@lib/client/styles/card';
 import { useTranslate } from '@refinedev/core';
 

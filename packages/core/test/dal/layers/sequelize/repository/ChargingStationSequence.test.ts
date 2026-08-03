@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
-import { BootstrapConfig, ChargingStationSequenceTypeEnum } from '@citrineos/base';
+import { BootstrapConfig } from '@citrineos/base';
+import { ChargingStationSequenceTypeEnum } from '@citrineos/types';
 import { Sequelize } from 'sequelize-typescript';
 import { ILogObj, Logger } from 'tslog';
 import { ChargingStationSequence } from '@dal/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';

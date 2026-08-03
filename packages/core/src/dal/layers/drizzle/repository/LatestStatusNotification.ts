@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LatestStatusNotificationDto } from '@citrineos/base';
+import type { LatestStatusNotificationDto } from '@citrineos/types';
 import {
   type LatestStatusNotificationEntity,
   latestStatusNotificationTable,

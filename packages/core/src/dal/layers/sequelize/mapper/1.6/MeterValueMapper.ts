@@ -10,7 +10,7 @@ import {
   ReadingContextEnum,
   type MeterValueDto,
   type SampledValue,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class MeterValueMapper {
   /**

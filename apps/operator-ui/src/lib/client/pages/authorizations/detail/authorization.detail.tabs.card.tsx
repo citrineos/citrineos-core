@@ -13,7 +13,7 @@ import { Table } from '@lib/client/components/table';
 import { GET_TRANSACTIONS_FOR_AUTHORIZATION } from '@lib/queries/transactions';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { TransactionClass } from '@lib/cls/transaction.dto';
-import type { AuthorizationDto } from '@citrineos/base';
+import type { AuthorizationDto } from '@citrineos/types';
 import {
   getTransactionsColumns,
   transactionAuthorizationIdTokenField,

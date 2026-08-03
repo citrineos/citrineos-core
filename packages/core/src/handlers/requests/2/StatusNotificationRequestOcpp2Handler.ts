@@ -5,14 +5,12 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type HandlerProperties,
   type IMessage,
   type IOcppSender,
   OCPP2_request_types,
   OCPP2_response_types,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
 import type { StatusNotificationService } from '@modules/Transactions/src/module/StatusNotificationService.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.StatusNotification)

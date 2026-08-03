@@ -5,7 +5,7 @@
 import React from 'react';
 import { useTranslate } from '@refinedev/core';
 import { BaseRestClient } from './BaseRestClient';
-import type { SystemConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   Dialog,
   DialogContent,

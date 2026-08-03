@@ -5,12 +5,9 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type HandlerProperties,
   type IMessage,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '@citrineos/base';
+import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { ILocalAuthListRepository } from '@dal/interfaces/repositories.js';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetLocalListVersion)

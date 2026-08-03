@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { Card, CardContent } from '@lib/client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
 import { LocationsChargingStationsTable } from '@lib/client/pages/locations/list/locations.charging.stations.table';
