@@ -77,42 +77,49 @@ export class OverviewPage {
     // Anchor on the Locations card heading which is rendered statically
     // without a Hasura query dependency. The Charger Online Status heading
     // sits inside a query-bound skeleton and times out when the dev server
-    // is under sustained load. The 60s budget covers Next.js dev-server
-    // cold-route compilation. Tests that need to assert specific KPI
+    // is under sustained load. Tests that need to assert specific KPI
     // headings do so individually in their own expectations, not via this
     // load gate. A one-shot reload retry catches the rare case where the
     // dev server stalls a /overview compile under sustained multi-spec load.
+    // The first attempt is capped at 45s so the reload retry still fits
+    // inside the 150s test budget (45 + 30 reload + 60 leaves headroom);
+    // the old 60+60+60 worst case blew past it and died as a bare timeout.
     try {
-      await Promise.race([
-        this.locationsCardHeading.waitFor({
-          state: 'visible',
-          timeout: 60_000,
-        }),
-        this.welcomeDialog.waitFor({ state: 'visible', timeout: 60_000 }),
-      ]);
-      await this.dismissWelcomeIfPresent();
-      await expect(this.locationsCardHeading).toBeVisible({ timeout: 60_000 });
+      await this.settleOverview(45_000);
     } catch {
       await this.page.reload({
         waitUntil: 'domcontentloaded',
-        timeout: 60_000,
+        timeout: 30_000,
       });
-      await Promise.race([
-        this.locationsCardHeading.waitFor({
-          state: 'visible',
-          timeout: 60_000,
-        }),
-        this.welcomeDialog.waitFor({ state: 'visible', timeout: 60_000 }),
-      ]);
-      await this.dismissWelcomeIfPresent();
-      await expect(this.locationsCardHeading).toBeVisible({ timeout: 60_000 });
+      await this.settleOverview(60_000);
     }
   }
 
-  async dismissWelcomeIfPresent(): Promise<void> {
-    if (await this.welcomeDialog.isVisible().catch(() => false)) {
+  private async settleOverview(timeout: number): Promise<void> {
+    await Promise.race([
+      this.locationsCardHeading.waitFor({ state: 'visible', timeout }),
+      this.welcomeDialog.waitFor({ state: 'visible', timeout }),
+    ]);
+    await this.dismissWelcomeIfPresent();
+    await expect(this.locationsCardHeading).toBeVisible({ timeout });
+  }
+
+  async dismissWelcomeIfPresent(waitMs = 0): Promise<void> {
+    // The dialog mounts from a client effect, so it can appear shortly AFTER
+    // the card heading does. Callers that know the first-login flag is absent
+    // (admin.setup) pass a wait window to catch the late mount; everyone else
+    // keeps the cheap one-shot check — with the flag captured in admin.json
+    // the dialog never appears in ordinary tests.
+    const visible =
+      waitMs > 0
+        ? await this.welcomeDialog
+            .waitFor({ state: 'visible', timeout: waitMs })
+            .then(() => true)
+            .catch(() => false)
+        : await this.welcomeDialog.isVisible().catch(() => false);
+    if (visible) {
       await this.welcomeCloseButton.click();
-      await expect(this.welcomeDialog).toBeHidden();
+      await expect(this.welcomeDialog).toBeHidden({ timeout: 15_000 });
     }
   }
 
