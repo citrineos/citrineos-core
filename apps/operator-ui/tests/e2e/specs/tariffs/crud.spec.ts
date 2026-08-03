@@ -17,23 +17,28 @@ test.describe('tariffs › CRUD', () => {
   });
 
   test('E2E-111: Create tariff via UI surfaces success toast', async ({ page, apiClient }) => {
+    // XTS is the ISO currency code reserved for testing, and the price is
+    // unique per attempt — the old fixed USD@0.35 collided with rows a failed
+    // attempt (or another run) left behind, and its cleanup deleted every
+    // matching tariff in the DB, not just ours.
+    const distinctivePrice = Number(`0.${Date.now().toString().slice(-6)}`);
     const form = new TariffFormPage(page);
     await form.gotoNew();
     await form.fill({
-      currency: 'USD',
-      pricePerKwh: 0.35,
+      currency: 'XTS',
+      pricePerKwh: distinctivePrice,
     });
     await form.submit();
 
-    // Cleanup: delete the tariff we just created (best-effort match by
-    // recently-added USD tariff with the per-kWh price we set).
+    // Cleanup: the price is unique, so this can only match our own row.
     await apiClient
       .gql(
-        `mutation Cleanup {
-           delete_Tariffs(where: { currency: { _eq: "USD" }, pricePerKwh: { _eq: 0.35 } }) {
+        `mutation Cleanup($price: numeric!) {
+           delete_Tariffs(where: { currency: { _eq: "XTS" }, pricePerKwh: { _eq: $price } }) {
              affected_rows
            }
          }`,
+        { price: distinctivePrice },
       )
       .catch(() => undefined);
   });
@@ -52,7 +57,7 @@ test.describe('tariffs › CRUD', () => {
        }`,
       {
         obj: {
-          currency: 'USD',
+          currency: 'XTS',
           pricePerKwh: distinctivePrice,
           createdAt: now,
           updatedAt: now,
@@ -73,7 +78,7 @@ test.describe('tariffs › CRUD', () => {
     } finally {
       await apiClient
         .gql(
-          `mutation Cleanup($id: bigint!) {
+          `mutation Cleanup($id: Int!) {
              delete_Tariffs_by_pk(id: $id) { id }
            }`,
           { id: created.id },

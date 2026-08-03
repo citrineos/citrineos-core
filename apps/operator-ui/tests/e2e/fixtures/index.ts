@@ -40,28 +40,39 @@ export const test = base.extend<E2EFixtures, E2EWorkerFixtures>({
     await client.dispose();
   },
 
+  // Teardown deletes stay non-fatal (a failed cleanup must not fail the
+  // test), but they log: a silently-broken delete leaks rows for the whole
+  // run and only the name-prefix purge at teardown reclaims them.
   seededLocation: async ({ apiClient }, use) => {
     const location = await seedLocation(apiClient);
     await use(location);
-    await deleteLocation(apiClient, location.id).catch(() => undefined);
+    await deleteLocation(apiClient, location.id).catch((err) => {
+      console.warn(`[e2e:fixtures] deleteLocation(${location.id}) failed:`, err);
+    });
   },
 
   seededStation: async ({ apiClient, seededLocation }, use) => {
     const station = await seedStation(apiClient, seededLocation.id);
     await use(station);
-    await deleteStation(apiClient, station.id).catch(() => undefined);
+    await deleteStation(apiClient, station.id).catch((err) => {
+      console.warn(`[e2e:fixtures] deleteStation(${station.id}) failed:`, err);
+    });
   },
 
   seededTransaction: async ({ apiClient, seededStation }, use) => {
     const transaction = await seedTransaction(apiClient, seededStation.ocppConnectionName);
     await use(transaction);
-    await deleteTransaction(apiClient, transaction.transactionId).catch(() => undefined);
+    await deleteTransaction(apiClient, transaction.transactionId).catch((err) => {
+      console.warn(`[e2e:fixtures] deleteTransaction(${transaction.transactionId}) failed:`, err);
+    });
   },
 
   seededAuthorization: async ({ apiClient }, use) => {
     const authorization = await seedAuthorization(apiClient);
     await use(authorization);
-    await deleteAuthorization(apiClient, authorization.id).catch(() => undefined);
+    await deleteAuthorization(apiClient, authorization.id).catch((err) => {
+      console.warn(`[e2e:fixtures] deleteAuthorization(${authorization.id}) failed:`, err);
+    });
   },
 
   // EVerest is expensive: docker-compose up of multiple containers, then a
