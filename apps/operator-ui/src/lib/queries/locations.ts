@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS, LOCATION_DETAIL_FIELDS } from '@lib/queries/fields/location.fields';
+import { CONNECTOR_STATUS_FIELDS } from '@lib/queries/fields/connector.fields';
 
 export const LOCATIONS_LIST_QUERY = gql`
   query LocationsList(
@@ -13,16 +15,7 @@ export const LOCATIONS_LIST_QUERY = gql`
     $chargingStationsWhere: ChargingStations_bool_exp
   ) {
     Locations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      createdAt
-      updatedAt
+      ${LOCATION_CORE_FIELDS}
       timeZone
       parkingType
       chargingPool: ChargingStations(where: $chargingStationsWhere) {
@@ -72,12 +65,7 @@ export const LOCATIONS_LIST_QUERY = gql`
         }
         connectors: Connectors {
           connectorId
-          status
-          errorCode
-          timestamp
-          info
-          vendorId
-          vendorErrorCode
+          ${CONNECTOR_STATUS_FIELDS}
           createdAt
           updatedAt
         }
@@ -94,20 +82,8 @@ export const LOCATIONS_LIST_QUERY = gql`
 export const LOCATIONS_GET_QUERY = gql`
   query GetLocationById($id: Int!) {
     Locations_by_pk(id: $id) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      facilities
-      timeZone
-      parkingType
-      createdAt
-      updatedAt
-      openingHours
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS}
       chargingPool: ChargingStations {
         id
         ocppConnectionName
@@ -162,19 +138,10 @@ export const LOCATIONS_GET_QUERY = gql`
 export const LOCATIONS_CREATE_MUTATION = gql`
   mutation LocationsCreate($object: Locations_insert_input!) {
     insert_Locations_one(object: $object) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
+      ${LOCATION_CORE_FIELDS}
       facilities
       timeZone
       parkingType
-      createdAt
-      updatedAt
     }
   }
 `;
@@ -182,19 +149,10 @@ export const LOCATIONS_CREATE_MUTATION = gql`
 export const LOCATIONS_DELETE_MUTATION = gql`
   mutation LocationsDelete($id: Int!) {
     delete_Locations_by_pk(id: $id) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
+      ${LOCATION_CORE_FIELDS}
       facilities
       timeZone
       parkingType
-      createdAt
-      updatedAt
     }
   }
 `;
@@ -202,19 +160,10 @@ export const LOCATIONS_DELETE_MUTATION = gql`
 export const LOCATIONS_EDIT_MUTATION = gql`
   mutation LocationsEdit($id: Int!, $object: Locations_set_input!) {
     update_Locations_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
+      ${LOCATION_CORE_FIELDS}
       facilities
       timeZone
       parkingType
-      createdAt
-      updatedAt
     }
   }
 `;

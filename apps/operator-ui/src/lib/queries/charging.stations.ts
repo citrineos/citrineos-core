@@ -3,6 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
+import {
+  CONNECTOR_SPEC_FIELDS,
+  CONNECTOR_STATUS_FIELDS,
+} from '@lib/queries/fields/connector.fields';
 
 export const CHARGING_STATIONS_LIST_QUERY = gql`
   query ChargingStationsList(
@@ -26,16 +31,7 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
       parkingRestrictions
       capabilities
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
         id
@@ -79,12 +75,7 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
       }
       connectors: Connectors {
         connectorId
-        status
-        errorCode
-        timestamp
-        info
-        vendorId
-        vendorErrorCode
+        ${CONNECTOR_STATUS_FIELDS}
         createdAt
         updatedAt
       }
@@ -127,16 +118,7 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
       createdAt
       updatedAt
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       LatestStatusNotifications {
         id
@@ -225,16 +207,7 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         securityProfile
       }
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
         id
@@ -252,20 +225,8 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
           evseId
           evseTypeConnectorId
           connectorId
-          status
-          type
-          maximumPowerWatts
-          maximumAmperage
-          maximumVoltage
-          format
-          powerType
-          termsAndConditionsUrl
-          tariffId
-          errorCode
-          timestamp
-          info
-          vendorId
-          vendorErrorCode
+          ${CONNECTOR_STATUS_FIELDS}
+          ${CONNECTOR_SPEC_FIELDS}
           createdAt
           updatedAt
         }
@@ -311,20 +272,8 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         stationId
         evseId
         connectorId
-        status
-        type
-        maximumPowerWatts
-        maximumAmperage
-        maximumVoltage
-        format
-        powerType
-        termsAndConditionsUrl
-        tariffId
-        errorCode
-        timestamp
-        info
-        vendorId
-        vendorErrorCode
+        ${CONNECTOR_STATUS_FIELDS}
+        ${CONNECTOR_SPEC_FIELDS}
         createdAt
         updatedAt
       }
@@ -369,16 +318,7 @@ export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS
         updatedAt
       }
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
         id

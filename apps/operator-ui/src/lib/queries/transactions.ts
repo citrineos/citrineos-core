@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
 
 export const TRANSACTION_LIST_QUERY = gql`
   query TransactionList(
@@ -27,16 +28,7 @@ export const TRANSACTION_LIST_QUERY = gql`
       createdAt
       updatedAt
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evse: Evse {
         id
@@ -75,16 +67,7 @@ export const TRANSACTION_LIST_QUERY = gql`
         createdAt
         updatedAt
         location: Location {
-          id
-          name
-          address
-          city
-          postalCode
-          state
-          country
-          coordinates
-          createdAt
-          updatedAt
+          ${LOCATION_CORE_FIELDS}
         }
       }
     }
@@ -133,16 +116,7 @@ export const GET_TRANSACTIONS_FOR_AUTHORIZATION = gql`
         createdAt
         updatedAt
         location: Location {
-          id
-          name
-          address
-          city
-          postalCode
-          state
-          country
-          coordinates
-          createdAt
-          updatedAt
+          ${LOCATION_CORE_FIELDS}
         }
       }
       TransactionEvents(where: { eventType: { _eq: "Started" } }) {
@@ -210,16 +184,7 @@ export const GET_TRANSACTION_LIST_FOR_STATION = gql`
         createdAt
         updatedAt
         location: Location {
-          id
-          name
-          address
-          city
-          postalCode
-          state
-          country
-          coordinates
-          createdAt
-          updatedAt
+          ${LOCATION_CORE_FIELDS}
         }
       }
     }
@@ -268,15 +233,7 @@ export const TRANSACTION_GET_QUERY = gql`
       createdAt
       updatedAt
       location: Location {
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evse: Evse {
         id
