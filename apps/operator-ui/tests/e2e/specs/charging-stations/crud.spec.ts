@@ -16,7 +16,7 @@ test.describe('charging-stations › CRUD', () => {
     seededLocation,
     apiClient,
   }) => {
-    const name = `e2e-${shortId()}-cp`;
+    const name = `${shortId()}-cp`;
     const form = new ChargingStationFormPage(page);
     await form.gotoNew();
     await form.fill({
@@ -75,7 +75,7 @@ test.describe('charging-stations › CRUD', () => {
   }) => {
     // Inline-seed so the UI delete owns the lifecycle (no fixture-teardown
     // race against the form-driven mutation).
-    const name = `e2e-${shortId()}-cp`;
+    const name = `${shortId()}-cp`;
     const { insert_ChargingStations_one: created } = await apiClient.gql<{
       insert_ChargingStations_one: { id: number };
     }>(

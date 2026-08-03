@@ -31,7 +31,7 @@ test.describe('locations › CRUD', () => {
   });
 
   test('E2E-021: Create location via UI redirects to detail', async ({ page, apiClient }) => {
-    const name = `e2e-${shortId()}-loc`;
+    const name = `${shortId()}-loc`;
     const form = new LocationFormPage(page);
     await form.gotoNew();
     // United States is the default country and requires State + ZIP per

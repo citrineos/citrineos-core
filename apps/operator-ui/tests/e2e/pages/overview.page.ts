@@ -76,13 +76,12 @@ export class OverviewPage {
   }
 
   async expectLoaded(): Promise<void> {
-    // Anchor on the Locations card heading which is rendered statically
-    // without a Hasura query dependency. The Charger Online Status heading
-    // sits inside a query-bound skeleton and times out when the dev server
-    // is under sustained load. Tests that need to assert specific KPI
-    // headings do so individually in their own expectations, not via this
-    // load gate. A one-shot reload retry catches the rare case where the
-    // dev server stalls a /overview compile under sustained multi-spec load.
+    // Anchor on the Locations card heading, which renders without a Hasura
+    // query dependency. The Charger Online Status heading sits inside a
+    // query-bound skeleton and times out when the server is under sustained
+    // load. Tests that need to assert specific KPI headings do so
+    // individually in their own expectations, not via this load gate. A
+    // one-shot reload retry catches the rare stalled response.
     // The first attempt is capped at 45s so the reload retry still fits
     // inside the 150s test budget (45 + 30 reload + 60 leaves headroom);
     // the old 60+60+60 worst case blew past it and died as a bare timeout.
