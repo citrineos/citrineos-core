@@ -37,10 +37,13 @@ const PLUGIN_CHARGE_COMMAND =
   'sleep 1;iec_wait_pwr_ready;sleep 1;draw_power_regulated 16,3;sleep 3600';
 const DEFAULT_BOOT_TIMEOUT_MS = 90_000;
 // Recovery after a reboot-causing Reset (which reboots the manager container)
-// is slow and variable — empirically >150s in CI — so the per-test online guard
-// waits well beyond the initial-boot budget. The reset describe runs under an
-// extended test timeout so this guard can finish inside a single attempt.
-const RECONNECT_TIMEOUT_MS = 210_000;
+// is slow and variable — empirically >150s in CI, and a recorded run had the
+// reboot outlive the previous 210s ceiling, failing the guard on a station
+// that came back moments later (the retry then passed: the classic E2E-071
+// flake signature). 300s covers the observed worst case with margin; the
+// everestStation fixture's own timeout sits above this so the guard's
+// diagnostic error still fires first.
+const RECONNECT_TIMEOUT_MS = 300_000;
 const POLL_INTERVAL_MS = 2_000;
 // How long to wait for libocpp to materialise the device-model DB on a cold
 // boot before applying the network-profile patch. The DB normally appears a

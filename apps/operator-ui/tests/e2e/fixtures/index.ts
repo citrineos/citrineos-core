@@ -103,14 +103,15 @@ export const test = base.extend<E2EFixtures, E2EWorkerFixtures>({
   // this waits for it to reconnect before the test runs (no-op when already
   // online). The guard gets its own fixture timeout so the reconnect is
   // billed here, not against the test body — RECONNECT_TIMEOUT_MS alone
-  // would otherwise swallow most of a test's budget.
+  // would otherwise swallow most of a test's budget. The ceiling sits above
+  // RECONNECT_TIMEOUT_MS so the guard's own diagnostic fires first.
   // Specs request `everestStation` exactly as before.
   everestStation: [
     async ({ everestManager }, use) => {
       await ensureEverestOnline();
       await use(everestManager);
     },
-    { timeout: 240_000 },
+    { timeout: 330_000 },
   ],
 });
 
