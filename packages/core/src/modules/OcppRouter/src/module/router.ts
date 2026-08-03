@@ -325,6 +325,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           }
         }
       } catch (error) {
+        success = false; // ensure we return false in case of an error
         this._logger.error('Error processing message:', message, error);
         if (messageTypeId != MessageTypeId.CallResult && messageTypeId != MessageTypeId.CallError) {
           const callError =

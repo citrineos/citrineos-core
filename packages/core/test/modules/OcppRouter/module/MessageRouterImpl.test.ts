@@ -14,6 +14,7 @@ import {
   OcppError,
   RequestBuilder,
 } from '@citrineos/base';
+import type { ILocationRepository } from '@citrineos/core';
 import {
   type OcppRequest,
   type OcppResponse,
@@ -32,11 +33,10 @@ import {
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/core';
-import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { MessageRouterImpl } from '@modules/OcppRouter/src/module/router.js';
 import { WebhookDispatcher } from '@modules/OcppRouter/src/module/webhook.dispatcher.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { type Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -361,7 +361,7 @@ describe('MessageRouterImpl', () => {
         // CallResult errors should not trigger a CallError response
         expect(networkHook).not.toHaveBeenCalled();
         // The networkHook should be called with a CallError
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
 
       it('should not send CallError for failed CallError processing', async () => {
@@ -375,7 +375,7 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
     });
 
