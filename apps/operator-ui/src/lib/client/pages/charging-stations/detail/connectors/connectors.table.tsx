@@ -7,6 +7,7 @@ import type { ConnectorDto } from '@citrineos/base';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Button } from '@lib/client/components/ui/button';
 import { clickableLinkStyle } from '@lib/client/styles/page';
+import { formatPower } from '@lib/utils/format';
 import { useTranslate } from '@refinedev/core';
 import Link from 'next/link';
 import React from 'react';
@@ -19,8 +20,6 @@ interface ConnectorsTableProps {
 
 export const ConnectorsTable: React.FC<ConnectorsTableProps> = ({ connectors, onEdit }) => {
   const translate = useTranslate();
-  const formatPower = (value: number | undefined) =>
-    value ? (value > 10000 ? `${(value / 1000).toFixed(1)} kW` : `${value} W`) : '-';
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -62,9 +61,7 @@ export const ConnectorsTable: React.FC<ConnectorsTableProps> = ({ connectors, on
                   <td className="px-4 py-2">{connector.evseTypeConnectorId}</td>
                   <td className="px-4 py-2">{connector.type}</td>
                   <td className="px-4 py-2">{connector.status}</td>
-                  <td className="px-4 py-2">
-                    {formatPower(connector.maximumPowerWatts || undefined)}
-                  </td>
+                  <td className="px-4 py-2">{formatPower(connector.maximumPowerWatts, '-')}</td>
                   <td className="px-4 py-2">
                     {tariffId ? (
                       <Link

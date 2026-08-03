@@ -23,6 +23,7 @@ import { OCPPMessageClass } from '@lib/cls/ocpp.message.dto';
 import { CHARGING_STATIONS_GET_QUERY } from '@lib/queries/charging.stations';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { DETAIL_TAB_STATE, NOT_APPLICABLE } from '@lib/utils/consts';
+import { formatPower } from '@lib/utils/format';
 import { isEmpty } from '@lib/utils/assertion';
 import { openModal } from '@lib/utils/store/modal.slice';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
@@ -37,10 +38,6 @@ export interface StationPreviewPanelProps {
   /** Called when the panel's close button is clicked. */
   onClose: () => void;
 }
-
-// Same compact power formatting as connectors/connectors.table.tsx.
-const formatPower = (value?: number | null) =>
-  value ? (value > 10000 ? `${(value / 1000).toFixed(1)} kW` : `${value} W`) : NOT_APPLICABLE;
 
 /**
  * Persistent, resizable side panel that previews a charging station's key details without leaving
