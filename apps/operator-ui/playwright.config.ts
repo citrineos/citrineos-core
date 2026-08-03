@@ -22,15 +22,16 @@ export default defineConfig({
   testDir: './tests/e2e/specs',
   outputDir: './test-results',
 
-  fullyParallel: true,
+  // File-level parallelism: tests within a file stay sequential, so
+  // same-file tests can never race each other's rows.
+  fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  // workers=1 because the Next.js dev server serves all routes through a
-  // single compiler instance; under workers > 1 the parametric harness
-  // intermittently leaves Refine `useOne(ChargingStations_by_pk)` queries
-  // hanging while the dev server is stuck in a re-compile loop. Sequential
-  // route compilation eliminates the flake at the cost of wall-clock time.
-  workers: 1,
+  // CI runs a production `next start` (managed-server), so the old dev-mode
+  // recompile-loop hazard doesn't apply there — 3 workers share the 4-vCPU
+  // runner with the docker stack. Local default stays 1: `next dev` compiles
+  // routes on demand and does not take concurrency well.
+  workers: process.env.E2E_WORKERS ? Number(process.env.E2E_WORKERS) : isCI ? 3 : 1,
 
   // 150s default test timeout: expectLoaded budgets up to 90s for cold-route
   // Next.js compilation + the useOne(ChargingStation) query under heavy
@@ -56,7 +57,9 @@ export default defineConfig({
     navigationTimeout: 30_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // retain-on-failure records every test and discards on pass — several
+    // concurrent encoders don't fit the runner alongside the stack.
+    video: 'on-first-retry',
     locale: 'en-US',
     timezoneId: 'UTC',
     viewport: { width: 1440, height: 900 },
