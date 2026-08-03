@@ -61,6 +61,7 @@ import type {
   FaultRule,
   MockConfig,
   MockContext,
+  RouteModule,
   Scenario,
 } from '../core/types.js';
 import {
@@ -705,6 +706,34 @@ interface Probe {
   expected: string;
   actual: string;
   detail: string;
+  module?: RouteModule; // defaults to locations (every probe today is a locations probe)
+  seq?: number; // the outbound exchange this probe judged — links its Finding to the trace
+}
+
+/**
+ * A failing probe IS a conformance failure, so it belongs in the findings ledger.
+ * Nothing else in the pipeline would ever record it: a probe failure is a
+ * SPEC-LEGAL response (the schema validator passes it), which is the whole reason
+ * probes exist. Without this, the Findings panel and the probe verdict disagree.
+ *
+ * Deduped by probe id — re-running the suite REPLACES that probe's previous
+ * verdict instead of stacking a duplicate on every click.
+ */
+function recordProbeFindings(ctx: MockContext, probes: Probe[]): void {
+  for (const p of probes) {
+    const tag = `[${p.id}]`;
+    for (let i = ctx.store.findings.length - 1; i >= 0; i--) {
+      if (ctx.store.findings[i].detail.includes(tag)) ctx.store.findings.splice(i, 1);
+    }
+    if (p.ok) continue;
+    ctx.store.addFinding({
+      severity: 'error',
+      kind: 'body',
+      module: p.module ?? ModuleId.Locations,
+      seq: p.seq ?? ctx.store.maxSeq(),
+      detail: `Spec probe ${tag} ${p.name} — expected ${p.expected}, got ${p.actual}. ${p.detail}`,
+    });
+  }
 }
 
 /** Read the first connector's internal status straight from Citrine's DB. */
@@ -729,8 +758,10 @@ async function runProbes(ctx: MockContext): Promise<unknown> {
   const internal = await internalConnectorStatus(ctx);
   let published: string | undefined;
   let totalLocations = 0;
+  let pullSeq: number | undefined;
   try {
     const ex = await ctx.client.pull(ModuleId.Locations);
+    pullSeq = ex.seq;
     const data = ((ex.response.body as { data?: unknown } | undefined)?.data ?? []) as Record<
       string,
       unknown
@@ -756,6 +787,7 @@ async function runProbes(ctx: MockContext): Promise<unknown> {
     expected: busy ? 'OCCUPIED / CHARGING' : 'AVAILABLE',
     actual: published ?? 'unknown',
     detail: `Citrine's own DB says the connector is "${internal ?? '?'}"; it publishes EVSE status "${published ?? '?'}".`,
+    seq: pullSeq,
   });
 
   // --- 2. Pagination: X-Total-Count should be the result-set size ----------
@@ -778,6 +810,7 @@ async function runProbes(ctx: MockContext): Promise<unknown> {
       actual: `X-Total-Count = ${total ?? 'absent'}${link ? ' (+ Link)' : ' (no Link)'}`,
       detail:
         'Asked for 2 records. X-Total-Count must be the size of the whole result set, not the page (OCPI 4.1.4.1) — otherwise a client stops after page one.',
+      seq: ex.seq,
     });
   } catch {
     /* skip */
@@ -793,18 +826,27 @@ async function runProbes(ctx: MockContext): Promise<unknown> {
       functional: true,
     });
     const st = ex.response.httpStatus;
+    // A 401 means we never reached the handler, so "no 500" would be a PASS for
+    // the wrong reason — never report green off an unauthenticated probe.
+    const unauthorized = st === 401;
     probes.push({
       id: 'string-location-id',
       name: 'A string location_id is handled',
-      ok: st < 500,
+      ok: !unauthorized && st < 500,
       expected: '404 (or an OCPI 2003), not a crash',
-      actual: `HTTP ${st}`,
-      detail:
-        'location_id is a string in OCPI. Requesting a non-numeric id returns a 500 rather than a handled not-found.',
+      actual: unauthorized ? 'HTTP 401 — not authorized, probe inconclusive' : `HTTP ${st}`,
+      detail: unauthorized
+        ? 'The probe never reached the handler. Re-register the mock (or restore the seeded token) and run again.'
+        : 'location_id is a string in OCPI. Requesting a non-numeric id returns a 500 rather than a handled not-found.',
+      seq: ex.seq,
     });
   } catch {
     /* skip */
   }
+
+  // Mirror the verdicts into the findings ledger so the Findings panel and the
+  // probe results never disagree (see recordProbeFindings).
+  recordProbeFindings(ctx, probes);
 
   return {
     probes,
