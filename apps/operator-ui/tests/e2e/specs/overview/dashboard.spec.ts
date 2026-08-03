@@ -4,10 +4,18 @@
 
 import { test, expect } from '../../fixtures';
 import { OverviewPage } from '../../pages/overview.page';
+import { blockGoogleMaps, restoreAllRoutes } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.describe('overview › dashboard', () => {
+  // CI has no Maps key, so /overview otherwise fires live requests at
+  // maps.googleapis.com (and renders the SDK's AuthFailure card) on every
+  // test — external network has no business in these assertions. E2E-011
+  // opts back out below because the live SDK is exactly what it tests.
+  test.beforeEach(async ({ page }) => {
+    await blockGoogleMaps(page);
+  });
   test('E2E-010: KPI cards render their headings on /overview', async ({
     page,
     seededLocation,
@@ -54,6 +62,9 @@ test.describe('overview › dashboard', () => {
       'MAPS_E2E_KEY not provisioned; the Google Maps SDK cannot authenticate and the map surface never mounts.',
     );
     void seededLocation;
+
+    // This test wants the real SDK — undo the suite-wide Maps block.
+    await restoreAllRoutes(page);
 
     const overview = new OverviewPage(page);
     await overview.goto();

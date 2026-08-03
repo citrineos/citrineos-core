@@ -5,10 +5,15 @@
 import { test, expect } from '../../fixtures';
 import { OverviewPage } from '../../pages/overview.page';
 import { clearWelcomeFlagBeforeLoad } from '../../utils/storage';
+import { blockGoogleMaps } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.describe('overview › welcome modal', () => {
+  // Keep the live Maps SDK (no key in CI) out of these navigations.
+  test.beforeEach(async ({ page }) => {
+    await blockGoogleMaps(page);
+  });
   test('E2E-015: first sign-in shows the welcome modal; dismissal persists across reload', async ({
     page,
   }) => {

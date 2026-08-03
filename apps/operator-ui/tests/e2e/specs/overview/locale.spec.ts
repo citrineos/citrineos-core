@@ -4,12 +4,17 @@
 
 import { test, expect } from '../../fixtures';
 import { OverviewPage } from '../../pages/overview.page';
+import { blockGoogleMaps } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.setTimeout(90_000);
 
 test.describe('overview › locale', () => {
+  // Keep the live Maps SDK (no key in CI) out of these navigations.
+  test.beforeEach(async ({ page }) => {
+    await blockGoogleMaps(page);
+  });
   test('E2E-018: language switcher changes UI language and persists across reload', async ({
     page,
   }) => {
