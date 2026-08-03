@@ -91,17 +91,27 @@ export const test = base.extend<E2EFixtures, E2EWorkerFixtures>({
       await use(handle);
       await handle.stop();
     },
-    { scope: 'worker' },
+    // Own timeout: worker setup otherwise bills against the FIRST @everest
+    // test's 180s budget (compose up + profile patch + boot + isOnline can
+    // total 60+90+210s worst case). The internal deadlines still fail first
+    // with their own diagnostics; this is just the ceiling.
+    { scope: 'worker', timeout: 420_000 },
   ],
 
-  // Test-scoped guard over the shared manager. A Reset Immediate in a prior
-  // test reboots the manager, leaving cp001 offline for ~1 minute; this waits
-  // for it to reconnect before the test runs (no-op when already online).
+  // Test-scoped guard over the shared manager. A reboot-causing Reset in a
+  // prior test reboots the manager, leaving cp001 offline for >150s in CI;
+  // this waits for it to reconnect before the test runs (no-op when already
+  // online). The guard gets its own fixture timeout so the reconnect is
+  // billed here, not against the test body — RECONNECT_TIMEOUT_MS alone
+  // would otherwise swallow most of a test's budget.
   // Specs request `everestStation` exactly as before.
-  everestStation: async ({ everestManager }, use) => {
-    await ensureEverestOnline();
-    await use(everestManager);
-  },
+  everestStation: [
+    async ({ everestManager }, use) => {
+      await ensureEverestOnline();
+      await use(everestManager);
+    },
+    { timeout: 240_000 },
+  ],
 });
 
 export { expect } from '@playwright/test';
