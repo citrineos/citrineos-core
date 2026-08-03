@@ -76,25 +76,30 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
         await detail.goto(station.id);
         const modal = new ModalHarness(page, spec.titlePattern);
 
-        // Strategy 1: primary command-bar button.
+        // Strategy 1: primary command-bar button. Only probe for the modal when
+        // the button was actually there to click — most modals have no primary
+        // button, and probing after a no-op click used to burn the full probe
+        // timeout 27 times per run (minutes of dead wait) before falling
+        // through to the dispatcher.
         const primary = page.getByRole('button', {
           name: spec.openButtonNamePattern,
         });
-        if (
-          await primary
-            .first()
-            .isVisible()
-            .catch(() => false)
-        ) {
+        const clickedPrimary = await primary
+          .first()
+          .isVisible()
+          .catch(() => false);
+        if (clickedPrimary) {
           await primary.first().click();
         }
-        // 15s probe: a modal whose form runs useSelect/useList queries can take
-        // well over 5s to mount under CI load, and a too-short probe here turns
-        // a slow open into a silent skip (coverage quietly evaporates).
-        let opened = await modal.title
-          .waitFor({ state: 'visible', timeout: 15_000 })
-          .then(() => true)
-          .catch(() => false);
+        // 30s probe: a modal whose form runs useSelect/useList queries can be
+        // slow to mount under CI load, and a too-short probe here turns a slow
+        // open into a silent skip (coverage quietly evaporates).
+        let opened = clickedPrimary
+          ? await modal.title
+              .waitFor({ state: 'visible', timeout: 30_000 })
+              .then(() => true)
+              .catch(() => false)
+          : false;
 
         // Strategy 2: OtherCommandsModal dispatcher. Matching the modal's own
         // heading guarantees the dispatcher's "Other Commands" dialog is never
@@ -104,7 +109,7 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
             .openViaOtherCommands(spec.openButtonNamePattern)
             .catch(() => undefined);
           opened = await modal.title
-            .waitFor({ state: 'visible', timeout: 15_000 })
+            .waitFor({ state: 'visible', timeout: 30_000 })
             .then(() => true)
             .catch(() => false);
         }
@@ -114,8 +119,13 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
         // (e.g. its trigger moves elsewhere), record a documented skip rather
         // than failing — the operator-critical modals' open/submit paths are
         // hard-asserted by the bespoke E2E-070..E2E-089 specs, so this must
-        // never produce a false red.
+        // never produce a false red. The annotation makes the gap visible in
+        // the junit/github reporters, which render skips without their reason.
         if (!opened) {
+          test.info().annotations.push({
+            type: 'coverage-gap',
+            description: `${spec.name}: not reachable from the charging-station detail page`,
+          });
           test.skip(
             true,
             `${spec.name}: not reachable from the charging-station detail page via primary button or OtherCommands dispatcher.`,
