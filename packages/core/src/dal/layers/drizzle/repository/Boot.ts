@@ -20,6 +20,7 @@ export function toBootDto(entity: BootEntity): BootDto {
     statusInfo: (entity.statusInfo as Record<string, any> | null) ?? null,
     getBaseReportOnPending: entity.getBaseReportOnPending ?? null,
     pendingBootSetVariables: undefined,
+    pendingBootSetVariableIds: undefined,
     variablesRejectedOnLastBoot:
       (entity.variablesRejectedOnLastBoot as Record<string, any>[] | null) ?? null,
     bootWithRejectedVariables: entity.bootWithRejectedVariables ?? null,

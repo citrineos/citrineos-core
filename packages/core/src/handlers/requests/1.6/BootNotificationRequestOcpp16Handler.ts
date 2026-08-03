@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  BOOT_STATUS,
   type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
@@ -89,7 +88,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       await this._bootService.createOcpp16BootNotificationResponse(tenantId, ocppConnectionName);
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null = await this._cache.get(
-      BOOT_STATUS,
+      CacheNamespace.BootStatus,
       ocppConnectionName,
     );
     // Blacklist or whitelist charger actions
@@ -154,7 +153,11 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       bootNotificationResponse.status !== OCPP1_6.BootNotificationResponseStatus.Accepted &&
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(
+        CacheNamespace.BootStatus,
+        bootNotificationResponse.status,
+        ocppConnectionName,
+      );
     }
     // Update boot with details of most recently sent BootNotificationResponse
     const bootEntity = await this._bootService.updateOcpp16BootConfig(

@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { CrudRepository, OCPP2_common_types, OCPP2_request_types } from '@citrineos/base';
 import type {
-  BootConfig,
-  CrudRepository,
-  OCPP2_common_types,
-  OCPP2_request_types,
-} from '@citrineos/base';
-import type {
+  BootCreate,
+  BootDto,
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
@@ -88,10 +85,10 @@ export interface IAuthorizationRepository extends CrudRepository<Authorization> 
 /**
  * Key is StationId
  */
-export interface IBootRepository extends CrudRepository<BootConfig> {
+export interface IBootRepository extends CrudRepository<BootDto> {
   createOrUpdateByKey: (
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ) => Promise<Boot | undefined>;
   updateStatusByKey: (
@@ -99,15 +96,15 @@ export interface IBootRepository extends CrudRepository<BootConfig> {
     status: RegistrationStatusEnumType,
     statusInfo: OCPP2_common_types.StatusInfoType | undefined,
     key: string,
-  ) => Promise<Boot | undefined>;
+  ) => Promise<BootDto | undefined>;
   updateLastBootTimeByKey: (
     tenantId: number,
     lastBootTime: string,
     key: string,
-  ) => Promise<Boot | undefined>;
+  ) => Promise<BootDto | undefined>;
   readByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
   existsByKey: (tenantId: number, key: string) => Promise<boolean>;
-  deleteByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
+  deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
 }
 
 export interface IDeviceModelRepository

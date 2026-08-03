@@ -1,18 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import {
-  type BootConfig,
   type ICache,
   type IMessageConfirmation,
   type OCPP2_response_types,
-  BOOT_STATUS,
+  CacheNamespace,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
+  type BootCreate,
+  type BootDto,
   type RegistrationStatusEnumType,
   type SystemConfig,
   OCPP1_6,
@@ -20,6 +19,8 @@ import {
   OCPP_CallAction,
   RegistrationStatusEnum,
 } from '@citrineos/types';
+import type { IBootRepository } from '@dal/interfaces/repositories.js';
+import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -107,7 +108,7 @@ export class BootNotificationService {
       ocppConnectionName,
     );
     if (!bootConfigDbEntity) {
-      const unknownChargerBootConfig: BootConfig = {
+      const unknownChargerBootConfig: BootCreate = {
         status: bootNotificationResponse.status,
         statusInfo: bootNotificationResponse.statusInfo,
       };
@@ -154,7 +155,7 @@ export class BootNotificationService {
         );
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, ocppConnectionName);
+        await this._cache.remove(CacheNamespace.BootStatus, ocppConnectionName);
         this._logger.debug('Cached boot status removed: ', cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -238,7 +239,7 @@ export class BootNotificationService {
    */
 
   determineOcpp16BootStatus(
-    bootConfig: BootConfig | undefined,
+    bootConfig: BootDto | undefined,
   ): OCPP1_6.BootNotificationResponseStatus {
     let bootStatus = bootConfig
       ? OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
@@ -314,7 +315,7 @@ export class BootNotificationService {
         );
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, ocppConnectionName);
+        await this._cache.remove(CacheNamespace.BootStatus, ocppConnectionName);
         this._logger.debug(
           `Cached boot status ${cachedBootStatus} removed for station ${ocppConnectionName}.`,
         );
@@ -337,7 +338,7 @@ export class BootNotificationService {
     response: OCPP1_6.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<Boot> {
+  ): Promise<BootDto> {
     const heartbeatInterval =
       response.status === OCPP1_6.BootNotificationResponseStatus.Accepted
         ? response.interval
@@ -347,12 +348,12 @@ export class BootNotificationService {
         ? response.interval
         : undefined;
 
-    const unknownChargerBootConfig: BootConfig = {
+    const unknownChargerBootConfig: BootCreate = {
       status: response.status,
       heartbeatInterval,
       bootRetryInterval,
     };
-    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.createOrUpdateByKey(
+    let bootConfigDbEntity: BootDto | undefined = await this._bootRepository.createOrUpdateByKey(
       tenantId,
       unknownChargerBootConfig,
       ocppConnectionName,

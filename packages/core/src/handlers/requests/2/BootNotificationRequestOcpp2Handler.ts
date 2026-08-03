@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  BOOT_STATUS,
   type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
@@ -23,8 +22,8 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  type RegistrationStatusEnumType,
   RegistrationStatusEnum,
+  type RegistrationStatusEnumType,
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
@@ -93,7 +92,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: RegistrationStatusEnumType | null = await this._cache.get(
-      BOOT_STATUS,
+      CacheNamespace.BootStatus,
       ocppConnectionName,
     );
 
@@ -164,7 +163,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(
+        CacheNamespace.BootStatus,
+        bootNotificationResponse.status,
+        ocppConnectionName,
+      );
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse

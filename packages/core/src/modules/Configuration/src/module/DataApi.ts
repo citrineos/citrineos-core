@@ -2,13 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { IConfigurationModuleApi } from './interface.js';
-import { ConfigurationModule } from './module.js';
 import {
-  type BootConfig,
   type IMessageConfirmation,
   AbstractModuleApi,
   AsDataEndpoint,
@@ -19,6 +13,7 @@ import {
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
 import {
+  type BootDto,
   type UpdateChargingStationPasswordRequest,
   HttpMethod,
   OCPP2_0_1,
@@ -31,7 +26,6 @@ import type {
   NetworkProfileQuerystring,
   UpdateChargingStationPasswordQueryString,
 } from '@dal/interfaces/index.js';
-import { Boot, Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
 import {
   ChargingStationKeyQuerySchema,
   NetworkProfileDeleteQuerySchema,
@@ -40,12 +34,20 @@ import {
 } from '@dal/interfaces/index.js';
 import {
   ChargingStationNetworkProfile,
+  Component,
   ServerNetworkProfile,
   SetNetworkProfile,
+  Variable,
+  VariableAttribute,
 } from '@dal/layers/sequelize/index.js';
-import { Op } from 'sequelize';
 import { generatePassword, isValidPassword } from '@util/index.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { Op } from 'sequelize';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
+import type { IConfigurationModuleApi } from './interface.js';
+import { ConfigurationModule } from './module.js';
 
 /**
  * Server API for the Configuration component.
@@ -84,7 +86,7 @@ export class ConfigurationDataApi
       Body: OCPP2_0_1.BootNotificationResponse;
       Querystring: ChargingStationKeyQuerystring;
     }>,
-  ): Promise<BootConfig | undefined> {
+  ): Promise<BootDto | undefined> {
     return this._module.bootRepository.createOrUpdateByKey(
       request.query.tenantId,
       request.body,
@@ -95,7 +97,7 @@ export class ConfigurationDataApi
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Get, ChargingStationKeyQuerySchema)
   getBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<Boot | undefined> {
+  ): Promise<BootDto | undefined> {
     return this._module.bootRepository.readByKey(
       request.query.tenantId,
       request.query.ocppConnectionName,
@@ -105,7 +107,7 @@ export class ConfigurationDataApi
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Delete, ChargingStationKeyQuerySchema)
   deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<Boot | undefined> {
+  ): Promise<BootDto | undefined> {
     return this._module.bootRepository.deleteByKey(
       request.query.tenantId,
       request.query.ocppConnectionName,

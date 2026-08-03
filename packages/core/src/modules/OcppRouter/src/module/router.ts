@@ -11,7 +11,6 @@ import {
   type IMessageSender,
   type RpcMessage,
   AbstractMessageRouter,
-  BOOT_STATUS,
   CacheNamespace,
   Call,
   CallError,
@@ -914,7 +913,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
-    const status = await this._cache.get<string>(BOOT_STATUS, identifier);
+    const status = await this._cache.get<string>(CacheNamespace.BootStatus, identifier);
     if (
       status === OCPP2_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
