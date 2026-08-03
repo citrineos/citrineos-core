@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { CanAccess, Link, useList, useOne, useTranslate } from '@refinedev/core';
 import { useDispatch } from 'react-redux';
 import { instanceToPlain } from 'class-transformer';
@@ -11,6 +11,11 @@ import type { ChargingStationDto, OCPPMessageDto } from '@citrineos/types';
 import { ChargingStationProps, OCPPMessageProps } from '@citrineos/types';
 import { ChevronDown, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@lib/client/components/ui/collapsible';
 import { KeyValueDisplay } from '@lib/client/components/key-value-display';
 import ProtocolTag from '@lib/client/components/protocol-tag';
 import { formatDate } from '@lib/client/components/timestamp-display';
@@ -50,7 +55,6 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
 }) => {
   const translate = useTranslate();
   const dispatch = useDispatch();
-  const [showEvses, setShowEvses] = useState(false);
 
   // The URL carries the human-readable ocppConnectionName; resolve it to the numeric id that the
   // detail query fetches by.
@@ -229,71 +233,61 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
             />
 
             {/* Collapsible EVSEs & Connectors — operators generally care about this at a glance. */}
-            <div className="border-t pt-3">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between text-sm font-medium"
-                onClick={() => setShowEvses((s) => !s)}
-              >
+            <Collapsible defaultOpen className="border-t pt-3">
+              <CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium [&[data-state=open]>svg]:rotate-180">
                 <span>
                   {translate('ChargingStations.tabs.evses')} ({station.evses?.length ?? 0})
                 </span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${showEvses ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {showEvses && (
-                <div className="mt-2 flex flex-col gap-2">
-                  {isEmpty(station.evses) ? (
-                    <span className="text-sm text-muted-foreground">{NOT_APPLICABLE}</span>
-                  ) : (
-                    station.evses!.map((evse) => (
-                      <div key={evse.id} className="rounded-md border p-2 text-sm">
-                        <div className="font-medium">#{evse.evseId}</div>
-                        {isEmpty(evse.connectors) ? (
-                          <div className="mt-1 text-muted-foreground">
-                            {translate('ChargingStations.connectors.noConnectors')}
-                          </div>
-                        ) : (
-                          <div className="mt-2 overflow-x-auto rounded-md border">
-                            <table className="w-full border-collapse text-xs">
-                              <thead className="bg-muted">
-                                <tr>
-                                  <th className="px-2 py-1 text-left font-medium">
-                                    {translate('ChargingStations.connectors.connectorId')}
-                                  </th>
-                                  <th className="px-2 py-1 text-left font-medium">
-                                    {translate('ChargingStations.connectors.type')}
-                                  </th>
-                                  <th className="px-2 py-1 text-left font-medium">
-                                    {translate('Common.status')}
-                                  </th>
-                                  <th className="px-2 py-1 text-left font-medium">
-                                    {translate('ChargingStations.connectors.maxPower')}
-                                  </th>
+                <ChevronDown className="h-4 w-4 transition-transform" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 flex flex-col gap-2">
+                {isEmpty(station.evses) ? (
+                  <span className="text-sm text-muted-foreground">{NOT_APPLICABLE}</span>
+                ) : (
+                  station.evses!.map((evse) => (
+                    <div key={evse.id} className="rounded-md border p-2 text-sm">
+                      <div className="font-medium">#{evse.evseId}</div>
+                      {isEmpty(evse.connectors) ? (
+                        <div className="mt-1 text-muted-foreground">
+                          {translate('ChargingStations.connectors.noConnectors')}
+                        </div>
+                      ) : (
+                        <div className="mt-2 overflow-x-auto rounded-md border">
+                          <table className="w-full border-collapse text-xs">
+                            <thead className="bg-muted">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium">
+                                  {translate('ChargingStations.connectors.connectorId')}
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium">
+                                  {translate('ChargingStations.connectors.type')}
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium">
+                                  {translate('Common.status')}
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium">
+                                  {translate('ChargingStations.connectors.maxPower')}
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {evse.connectors!.map((c) => (
+                                <tr key={c.id} className="border-t">
+                                  <td className="px-2 py-1">{c.connectorId}</td>
+                                  <td className="px-2 py-1">{c.type ?? NOT_APPLICABLE}</td>
+                                  <td className="px-2 py-1">{c.status ?? NOT_APPLICABLE}</td>
+                                  <td className="px-2 py-1">{formatPower(c.maximumPowerWatts)}</td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {evse.connectors!.map((c) => (
-                                  <tr key={c.id} className="border-t">
-                                    <td className="px-2 py-1">{c.connectorId}</td>
-                                    <td className="px-2 py-1">{c.type ?? NOT_APPLICABLE}</td>
-                                    <td className="px-2 py-1">{c.status ?? NOT_APPLICABLE}</td>
-                                    <td className="px-2 py-1">
-                                      {formatPower(c.maximumPowerWatts)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </CollapsibleContent>
+            </Collapsible>
 
             <CanAccess
               resource={ResourceType.CHARGING_STATIONS}
