@@ -87,13 +87,23 @@ function spawnDetachedServer(): number {
 // return. If a server is already responding, reuse it. Otherwise build a
 // production bundle and spawn `next start`, persisting the PID so
 // teardown can stop it.
+//
+// E2E_SKIP_BUILD: CI builds operator-ui in its own workflow step right before
+// the test step, so rebuilding here doubles ~1.7 min onto the critical path
+// of BOTH e2e lanes. When the flag is set AND a build output exists, reuse
+// it. The BUILD_ID guard keeps the flag safe locally: no artifacts, no skip.
 export async function ensureManagedServer(baseUrl: string): Promise<void> {
   if (await isServerResponding(baseUrl)) {
     console.info('[e2e:managed-server] reusing existing server at', baseUrl);
     return;
   }
-  console.info('[e2e:managed-server] no server responding — building production bundle...');
-  await runNpmScriptToCompletion('build');
+  const buildOutput = resolve(REPO_ROOT, '.next', 'BUILD_ID');
+  if (process.env.E2E_SKIP_BUILD && existsSync(buildOutput)) {
+    console.info('[e2e:managed-server] E2E_SKIP_BUILD set — reusing existing .next build.');
+  } else {
+    console.info('[e2e:managed-server] no server responding — building production bundle...');
+    await runNpmScriptToCompletion('build');
+  }
   console.info('[e2e:managed-server] starting next start...');
   const pid = spawnDetachedServer();
   writeFileSync(PID_FILE, String(pid), 'utf8');
