@@ -75,6 +75,12 @@ function spawnDetachedServer(): number {
     detached: true,
     stdio: 'ignore',
     shell: process.platform === 'win32',
+    env: {
+      ...process.env,
+      // Same heap budget as the build: an OOM in `next start` takes down
+      // every worker at once and reads as a mass timeout.
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=4096`.trim(),
+    },
   });
   proc.unref();
   if (!proc.pid) {

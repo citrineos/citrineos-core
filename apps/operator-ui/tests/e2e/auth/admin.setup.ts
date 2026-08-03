@@ -50,10 +50,24 @@ setup('authenticate as admin and persist storage state', async ({ page }) => {
   });
   await overview.dismissWelcomeIfPresent(10_000);
 
+  // Pin the locale so every English-text locator stays valid even if the
+  // app ever grows an Accept-Language fallback.
+  await page.context().addCookies([
+    {
+      name: 'NEXT_LOCALE',
+      value: 'en',
+      url: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    },
+  ]);
+
   const state = await page.context().storageState({ path: ADMIN_STORAGE_STATE });
   const origin = state.origins.find((o) => o.origin.includes('localhost'));
   expect(
     origin?.localStorage.some((entry) => entry.name === 'firstLoginHelp:1'),
     'captured storage state must contain the dismissed-welcome flag',
+  ).toBe(true);
+  expect(
+    state.cookies.some((c) => c.name === 'NEXT_LOCALE' && c.value === 'en'),
+    'captured storage state must pin the locale to en',
   ).toBe(true);
 });

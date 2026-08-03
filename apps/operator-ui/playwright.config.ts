@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import { resolve } from 'node:path';
 
-dotenv.config({ path: resolve(__dirname, '.env.test'), override: true });
+dotenv.config({ path: resolve(__dirname, '.env.test') });
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const isCI = !!process.env.CI;
