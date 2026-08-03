@@ -81,12 +81,16 @@ export class LocationFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(LocationFormPage.newPath);
+    await this.page.goto(LocationFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(LocationFormPage.editPath(id));
+    await this.page.goto(LocationFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

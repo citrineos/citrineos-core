@@ -43,12 +43,16 @@ export class AuthorizationFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(AuthorizationFormPage.newPath);
+    await this.page.goto(AuthorizationFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(AuthorizationFormPage.editPath(id));
+    await this.page.goto(AuthorizationFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

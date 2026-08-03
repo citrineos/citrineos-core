@@ -48,7 +48,9 @@ export class PartnerFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(PartnerFormPage.newPath);
+    await this.page.goto(PartnerFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

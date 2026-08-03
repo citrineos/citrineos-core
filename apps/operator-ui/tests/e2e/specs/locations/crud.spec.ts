@@ -79,8 +79,9 @@ test.describe('locations › CRUD', () => {
     // assertion here stays on the pre-fill contract.
     const form = new LocationFormPage(page);
     await form.gotoEdit(seededLocation.id);
-    await expect(form.heading).toContainText(/edit location/i);
-    await expect(form.nameInput).toHaveValue(seededLocation.name);
+    // The prefill lands after the edit query resolves, later than the heading.
+    await expect(form.heading).toContainText(/edit location/i, { timeout: 30_000 });
+    await expect(form.nameInput).toHaveValue(seededLocation.name, { timeout: 30_000 });
   });
 
   test('E2E-024: Create location with empty required fields surfaces validation', async ({

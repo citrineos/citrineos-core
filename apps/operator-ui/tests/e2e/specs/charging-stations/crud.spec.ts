@@ -49,8 +49,11 @@ test.describe('charging-stations › CRUD', () => {
   }) => {
     const form = new ChargingStationFormPage(page);
     await form.gotoEdit(seededStation.id);
-    await expect(form.heading).toContainText(/edit charging\s*station/i);
-    await expect(form.nameInput).toHaveValue(seededStation.ocppConnectionName);
+    // The prefill lands after the edit query resolves, later than the heading.
+    await expect(form.heading).toContainText(/edit charging\s*station/i, { timeout: 30_000 });
+    await expect(form.nameInput).toHaveValue(seededStation.ocppConnectionName, {
+      timeout: 30_000,
+    });
 
     // floorLevel is optional and the seed leaves it empty; the Name column is
     // immutable on edit, so floorLevel is the safe mutable target.

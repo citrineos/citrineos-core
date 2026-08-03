@@ -21,11 +21,13 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiOnlineHeading).toBeVisible();
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(overview.kpiPluginSuccessHeading).toBeVisible();
-    await expect(overview.kpiChargerActivityHeading).toBeVisible();
-    await expect(overview.locationsCardHeading).toBeVisible();
+    // The KPI headings sit inside query-bound skeletons; under CI load the
+    // Hasura round trips can far outlive the default expect timeout.
+    await expect(overview.kpiOnlineHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiPluginSuccessHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiChargerActivityHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.locationsCardHeading).toBeVisible({ timeout: 60_000 });
   });
 
   test('E2E-011: Locations card mounts the Google map surface when MAPS_E2E_KEY is provisioned', async ({
@@ -81,9 +83,9 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiOnlineHeading).toBeVisible();
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(overview.kpiPluginSuccessHeading).toBeVisible();
-    await expect(overview.kpiChargerActivityHeading).toBeVisible();
+    await expect(overview.kpiOnlineHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiPluginSuccessHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiChargerActivityHeading).toBeVisible({ timeout: 60_000 });
   });
 });

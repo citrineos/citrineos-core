@@ -20,7 +20,9 @@ export class AuthorizationsListPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(AuthorizationsListPage.path);
+    await this.page.goto(AuthorizationsListPage.path, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

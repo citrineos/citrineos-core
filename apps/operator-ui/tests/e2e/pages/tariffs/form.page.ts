@@ -49,12 +49,16 @@ export class TariffFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(TariffFormPage.newPath);
+    await this.page.goto(TariffFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(TariffFormPage.editPath(id));
+    await this.page.goto(TariffFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

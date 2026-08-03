@@ -38,7 +38,7 @@ export class ModalHarness {
 
   async expectOpen(): Promise<void> {
     await expect(this.dialog).toBeVisible({ timeout: 15_000 });
-    await expect(this.title).toBeVisible();
+    await expect(this.title).toBeVisible({ timeout: 15_000 });
   }
 
   async expectClosed(): Promise<void> {

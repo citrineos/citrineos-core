@@ -43,7 +43,11 @@ export default defineConfig({
   globalTeardown: './tests/e2e/auth/global-teardown.ts',
 
   expect: {
-    timeout: 10_000,
+    // Default for every assertion that doesn't pass its own timeout. Most of
+    // the suite asserts on query-bound UI (Refine + Hasura round trips), and
+    // under CI load 10s was regularly too tight — genuinely slow spots get an
+    // explicit 60s at the call site instead.
+    timeout: 30_000,
   },
 
   use: {

@@ -17,7 +17,9 @@ test.describe('overview › locale', () => {
     await overview.goto();
 
     // Default locale is English: the Locations card heading is rendered in English.
-    await expect(page.getByRole('heading', { name: /^locations$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^locations$/i })).toBeVisible({
+      timeout: 30_000,
+    });
 
     // Switch to Brazilian Portuguese via the sidebar language switcher.
     await page.getByRole('button', { name: /^language$/i }).click();

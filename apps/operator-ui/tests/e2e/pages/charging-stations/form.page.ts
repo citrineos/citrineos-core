@@ -48,12 +48,16 @@ export class ChargingStationFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(ChargingStationFormPage.newPath);
+    await this.page.goto(ChargingStationFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(ChargingStationFormPage.editPath(id));
+    await this.page.goto(ChargingStationFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

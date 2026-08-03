@@ -88,7 +88,13 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
         ) {
           await primary.first().click();
         }
-        let opened = await modal.title.isVisible({ timeout: 5_000 }).catch(() => false);
+        // 15s probe: a modal whose form runs useSelect/useList queries can take
+        // well over 5s to mount under CI load, and a too-short probe here turns
+        // a slow open into a silent skip (coverage quietly evaporates).
+        let opened = await modal.title
+          .waitFor({ state: 'visible', timeout: 15_000 })
+          .then(() => true)
+          .catch(() => false);
 
         // Strategy 2: OtherCommandsModal dispatcher. Matching the modal's own
         // heading guarantees the dispatcher's "Other Commands" dialog is never
@@ -97,7 +103,10 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
           await detail.commandBar
             .openViaOtherCommands(spec.openButtonNamePattern)
             .catch(() => undefined);
-          opened = await modal.title.isVisible({ timeout: 5_000 }).catch(() => false);
+          opened = await modal.title
+            .waitFor({ state: 'visible', timeout: 15_000 })
+            .then(() => true)
+            .catch(() => false);
         }
 
         // Safety net: in practice every station-page modal opens via one of the
@@ -132,7 +141,7 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
         } else {
           await page.keyboard.press('Escape');
         }
-        await expect(modal.title).toBeHidden({ timeout: 10_000 });
+        await expect(modal.title).toBeHidden({ timeout: 15_000 });
       } finally {
         if (seededTxnId) {
           await deleteTransaction(apiClient, seededTxnId).catch(() => undefined);

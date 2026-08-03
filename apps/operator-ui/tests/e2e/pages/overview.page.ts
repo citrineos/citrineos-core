@@ -69,7 +69,9 @@ export class OverviewPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(OverviewPage.path);
+    await this.page.goto(OverviewPage.path, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
