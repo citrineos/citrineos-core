@@ -39,6 +39,7 @@ export {
   HUBJECT_DEFAULT_TOKENURL,
   OCPP_VERSION_LIST,
   RbacRulesSchema,
+  signedMeterValuesSigningMethods,
   systemConfigInputSchema,
   systemConfigSchema,
 } from './src/config/types.js';
@@ -58,8 +59,6 @@ export * from './src/interfaces/dto/authorization.dto.js';
 export * from './src/interfaces/dto/boot.dto.js';
 export * from './src/interfaces/dto/certificate.dto.js';
 export * from './src/interfaces/dto/change.configuration.dto.js';
-export * from './src/interfaces/dto/delete.certificate.attempt.dto.js';
-export * from './src/interfaces/dto/install.certificate.attempt.dto.js';
 export * from './src/interfaces/dto/charging.needs.dto.js';
 export * from './src/interfaces/dto/charging.profile.dto.js';
 export * from './src/interfaces/dto/charging.schedule.dto.js';
@@ -70,9 +69,11 @@ export * from './src/interfaces/dto/charging.station.sequence.dto.js';
 export * from './src/interfaces/dto/component.dto.js';
 export * from './src/interfaces/dto/composite.schedule.dto.js';
 export * from './src/interfaces/dto/connector.dto.js';
+export * from './src/interfaces/dto/delete.certificate.attempt.dto.js';
 export * from './src/interfaces/dto/event.data.dto.js';
 export * from './src/interfaces/dto/evse.dto.js';
 export * from './src/interfaces/dto/evse.type.dto.js';
+export * from './src/interfaces/dto/install.certificate.attempt.dto.js';
 export * from './src/interfaces/dto/installed.certificate.dto.js';
 export * from './src/interfaces/dto/latest.status.notification.dto.js';
 export * from './src/interfaces/dto/local.list.authorization.dto.js';

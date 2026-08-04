@@ -25,7 +25,7 @@ export const OCPP_VERSION_LIST: OCPPVersionType[] = [
   OCPPVersion.OCPP1_6,
 ] as const;
 
-const signedMeterValuesSigningMethods = ['RSASSA-PKCS1-v1_5', 'ECDSA', 'SECP192R1'] as const;
+export const signedMeterValuesSigningMethods = ['RSASSA-PKCS1-v1_5', 'ECDSA', 'SECP192R1'] as const;
 
 // TODO: Refactor other objects out of system config, such as certificatesModuleInputSchema etc.
 export const websocketServerInputSchema = z.object({
