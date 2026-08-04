@@ -103,24 +103,31 @@ export class ModalHarness {
     await this.submitAndWaitForNewToast(errorPattern, timeout);
   }
 
-  // Tags the toasts already on screen, submits, then waits for a NEW toast
-  // matching the pattern — a leftover toast from an earlier action in the
-  // same test can no longer satisfy the wait.
-  private async submitAndWaitForNewToast(pattern: RegExp, timeout: number): Promise<void> {
-    const toastRegion = this.page.getByRole('region', {
-      name: /notifications/i,
-    });
-    await toastRegion
+  // Tags the toasts already on screen so a leftover toast from an earlier
+  // action in the same test can't satisfy a later wait.
+  async markToastsStale(): Promise<void> {
+    await this.page
+      .getByRole('region', { name: /notifications/i })
       .locator('[data-sonner-toast]')
       .evaluateAll((els) => els.forEach((el) => el.setAttribute('data-e2e-stale', '1')))
       .catch(() => undefined);
-    await this.submitButton.click();
+  }
+
+  // Waits for a toast that appeared after the last markToastsStale() call.
+  async newToastVisible(pattern: RegExp, timeout: number): Promise<void> {
     await expect(
-      toastRegion
+      this.page
+        .getByRole('region', { name: /notifications/i })
         .locator('[data-sonner-toast]:not([data-e2e-stale])')
         .filter({ hasText: pattern })
         .first(),
     ).toBeVisible({ timeout });
+  }
+
+  private async submitAndWaitForNewToast(pattern: RegExp, timeout: number): Promise<void> {
+    await this.markToastsStale();
+    await this.submitButton.click();
+    await this.newToastVisible(pattern, timeout);
   }
 
   // Submits and asserts the form REJECTED it: a validation message appears

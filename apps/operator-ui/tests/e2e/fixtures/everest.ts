@@ -167,6 +167,25 @@ async function waitForOnline(api: ApiClient, timeoutMs: number): Promise<boolean
   return false;
 }
 
+// Resolves once citrine marks cp001 offline — the observable proof that a
+// reboot-causing command actually executed. Only an explicit false counts;
+// query errors read as "unknown" and keep polling.
+export async function waitForEverestOffline(timeoutMs: number): Promise<void> {
+  const api = await makeApiClient();
+  try {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if ((await readEverestOnline(api)) === false) return;
+      await delay(POLL_INTERVAL_MS);
+    }
+    throw new Error(
+      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not go offline within ${timeoutMs}ms`,
+    );
+  } finally {
+    await api.dispose();
+  }
+}
+
 function restartEverestManager(): Promise<void> {
   return new Promise<void>((res) => {
     const proc = spawn(
@@ -504,7 +523,20 @@ export async function startEverest(options: EverestStartOptions = {}): Promise<E
   const api = await makeApiClient();
   let id: number;
   try {
-    id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs);
+    try {
+      id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs);
+    } catch {
+      // A retry after a failed reset test boots a fresh worker while the
+      // manager is still mid-reboot (or wedged) from the dispatched Reset —
+      // compose up is a no-op on the running stack, so without this the
+      // whole retry chain dies here at the boot budget. Same recovery as
+      // ensureEverestOnline: restart the container, wait once more.
+      console.warn(
+        `[e2e:everest] ${EVEREST_OCPP_CONNECTION_NAME} not up after compose — restarting the manager container`,
+      );
+      await restartEverestManager();
+      id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs * 2);
+    }
     await ensureEverestEvseAndConnector(api, id);
     await ensureEverestAuthorization(api);
   } finally {

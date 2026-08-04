@@ -5,6 +5,7 @@
 import { test } from '../../fixtures';
 import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
 import { ModalHarness } from '../../pages/components/modal.po';
+import { waitForEverestOffline } from '../../fixtures/everest';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -12,13 +13,23 @@ test.use({ storageState: 'playwright/.auth/admin.json' });
 // the EVerest manager container, dropping cp001's OCPP link for >150s in CI. The
 // reset tests run LAST in the @everest lane, so the only test that can land on a
 // reconnecting station is the *next* reset test — its everestStation guard waits
-// for cp001 to come back under the fixture's own timeout, so the reconnect no
-// longer eats the test budget (it used to: the guard alone burned 150-210s of
-// the old 240s describe budget and E2E-071 failed its first attempt on nearly
-// every CI run). The body fits the lane default now; retries stay as a backstop
-// for a reconnect that outlives RECONNECT_TIMEOUT_MS. The contract under test is
-// that the Reset is ACKnowledged (the success toast); the reboot is a side
-// effect we simply let settle.
+// for cp001 to come back (and restarts the manager if it wedges) under the
+// fixture's own timeout, so the reconnect never eats the test budget.
+//
+// The contract under test is that the Reset was accepted OR observably
+// executed: an immediate reboot can kill the socket before the CALLRESULT
+// flushes, so the ack toast is not guaranteed even on success — the station
+// visibly dropping offline is equally hard proof the command worked (a
+// recorded run rebooted the charger and never showed the toast).
+async function submitResetAndConfirm(modal: ModalHarness): Promise<void> {
+  await modal.markToastsStale();
+  await modal.submitButton.click();
+  await Promise.any([
+    modal.newToastVisible(/success|accepted|sent|reset|completed|received/i, 60_000),
+    waitForEverestOffline(60_000),
+  ]);
+}
+
 test.describe('charging-stations › Reset command @everest', () => {
   test.describe.configure({ retries: 2 });
 
@@ -33,7 +44,7 @@ test.describe('charging-stations › Reset command @everest', () => {
     const modal = new ModalHarness(page, /reset/i);
     await modal.expectOpen();
     await modal.select(/reset type/i, /^immediate$/i);
-    await modal.submitAndWaitForToast();
+    await submitResetAndConfirm(modal);
   });
 
   test('E2E-071: Reset OnIdle variant against EVerest station', async ({
@@ -47,7 +58,7 @@ test.describe('charging-stations › Reset command @everest', () => {
     const modal = new ModalHarness(page, /reset/i);
     await modal.expectOpen();
     await modal.select(/reset type/i, /^onidle$/i);
-    await modal.submitAndWaitForToast();
+    await submitResetAndConfirm(modal);
   });
 });
 
