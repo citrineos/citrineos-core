@@ -5,6 +5,9 @@
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS, LOCATION_DETAIL_FIELDS } from '@lib/queries/fields/location.fields';
 import { CONNECTOR_STATUS_FIELDS } from '@lib/queries/fields/connector.fields';
+import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status.notification.fields';
+import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction.fields';
+import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse.fields';
 
 export const LOCATIONS_LIST_QUERY = gql`
   query LocationsList(
@@ -26,11 +29,7 @@ export const LOCATIONS_LIST_QUERY = gql`
         createdAt
         updatedAt
         evses: Evses {
-          id
-          evseTypeId
-          evseId
-          createdAt
-          updatedAt
+          ${EVSE_CORE_FIELDS}
         }
         LatestStatusNotifications {
           id
@@ -39,29 +38,11 @@ export const LOCATIONS_LIST_QUERY = gql`
           updatedAt
           createdAt
           StatusNotification {
-            connectorId
-            connectorStatus
-            createdAt
-            evseId
-            ocppConnectionName
-            id
-            timestamp
-            updatedAt
+            ${STATUS_NOTIFICATION_FIELDS}
           }
         }
         transactions: Transactions(where: { isActive: { _eq: true } }) {
-          id
-          timeSpentCharging
-          isActive
-          chargingState
-          ocppConnectionName
-          stoppedReason
-          transactionId
-          evseId
-          remoteStartId
-          totalKwh
-          createdAt
-          updatedAt
+          ${ACTIVE_TRANSACTION_FIELDS}
         }
         connectors: Connectors {
           connectorId
@@ -106,29 +87,11 @@ export const LOCATIONS_GET_QUERY = gql`
           updatedAt
           createdAt
           StatusNotification {
-            connectorId
-            connectorStatus
-            createdAt
-            evseId
-            ocppConnectionName
-            id
-            timestamp
-            updatedAt
+            ${STATUS_NOTIFICATION_FIELDS}
           }
         }
         Transactions(where: { isActive: { _eq: true } }) {
-          id
-          timeSpentCharging
-          isActive
-          chargingState
-          ocppConnectionName
-          stoppedReason
-          transactionId
-          evseId
-          remoteStartId
-          totalKwh
-          createdAt
-          updatedAt
+          ${ACTIVE_TRANSACTION_FIELDS}
         }
       }
     }

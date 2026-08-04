@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization.fields';
 
 export const AUTHORIZATIONS_LIST_QUERY = gql`
   query AuthorizationsList(
@@ -12,24 +13,11 @@ export const AUTHORIZATIONS_LIST_QUERY = gql`
     $where: Authorizations_bool_exp
   ) {
     Authorizations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       allowedConnectorTypes
       disallowedEvseIdPrefixes
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
     }
     Authorizations_aggregate(where: $where) {
       aggregate {
@@ -53,24 +41,11 @@ export const GET_AUTHORIZATIONS_BY_TRANSACTION = gql`
       order_by: $order_by
       where: { id: { _eq: $id } }
     ) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       allowedConnectorTypes
       disallowedEvseIdPrefixes
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
     }
     Authorizations_aggregate(where: $where) {
       aggregate {
@@ -83,24 +58,11 @@ export const GET_AUTHORIZATIONS_BY_TRANSACTION = gql`
 export const AUTHORIZATIONS_SHOW_QUERY = gql`
   query AuthorizationsShow($id: Int!) {
     Authorizations_by_pk(id: $id) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       allowedConnectorTypes
       disallowedEvseIdPrefixes
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
       tenantPartner: TenantPartner {
         id
         partnerProfileOCPI
@@ -112,22 +74,9 @@ export const AUTHORIZATIONS_SHOW_QUERY = gql`
 export const AUTHORIZATIONS_CREATE_MUTATION = gql`
   mutation AuthorizationsCreate($object: Authorizations_insert_input!) {
     insert_Authorizations_one(object: $object) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
     }
   }
 `;
@@ -135,22 +84,9 @@ export const AUTHORIZATIONS_CREATE_MUTATION = gql`
 export const AUTHORIZATIONS_EDIT_MUTATION = gql`
   mutation AuthorizationsEdit($id: Int!, $object: Authorizations_set_input!) {
     update_Authorizations_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
     }
   }
 `;
@@ -158,22 +94,9 @@ export const AUTHORIZATIONS_EDIT_MUTATION = gql`
 export const AUTHORIZATIONS_DELETE_MUTATION = gql`
   mutation AuthorizationsDelete($id: Int!) {
     delete_Authorizations_by_pk(id: $id) {
-      id
-      idToken
-      idTokenType
-      status
-      groupAuthorizationId
-      additionalInfo
-      concurrentTransaction
-      chargingPriority
-      language1
-      language2
-      personalMessage
-      cacheExpiryDateTime
+      ${AUTHORIZATION_FIELDS}
       realTimeAuth
       realTimeAuthUrl
-      createdAt
-      updatedAt
     }
   }
 `;

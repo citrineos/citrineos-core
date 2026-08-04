@@ -4,6 +4,8 @@
 
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
+import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization.fields';
+import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
 
 export const TRANSACTION_LIST_QUERY = gql`
   query TransactionList(
@@ -43,29 +45,10 @@ export const TRANSACTION_LIST_QUERY = gql`
         updatedAt
       }
       authorization: Authorization {
-        id
-        idToken
-        idTokenType
-        status
-        groupAuthorizationId
-        additionalInfo
-        concurrentTransaction
-        chargingPriority
-        language1
-        language2
-        personalMessage
-        cacheExpiryDateTime
-        createdAt
-        updatedAt
+        ${AUTHORIZATION_FIELDS}
       }
       chargingStation: ChargingStation {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        locationId
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
           ${LOCATION_CORE_FIELDS}
         }
@@ -108,13 +91,7 @@ export const GET_TRANSACTIONS_FOR_AUTHORIZATION = gql`
       createdAt
       updatedAt
       chargingStation: ChargingStation {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        locationId
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
           ${LOCATION_CORE_FIELDS}
         }
@@ -255,20 +232,7 @@ export const TRANSACTION_GET_QUERY = gql`
         }
       }
       authorization: Authorization {
-        id
-        idToken
-        idTokenType
-        status
-        groupAuthorizationId
-        additionalInfo
-        concurrentTransaction
-        chargingPriority
-        language1
-        language2
-        personalMessage
-        cacheExpiryDateTime
-        createdAt
-        updatedAt
+        ${AUTHORIZATION_FIELDS}
       }
     }
   }

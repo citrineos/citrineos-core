@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
+import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
 
 export const TARIFF_LIST_QUERY = gql`
   query TariffList(
@@ -64,24 +66,9 @@ export const GET_CHARGING_STATIONS_FOR_TARIFF = gql`
       order_by: $order_by
       where: { Connectors: { tariffId: { _eq: $tariffId } }, _and: $where }
     ) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
+      ${CHARGING_STATION_CORE_FIELDS}
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
         id
@@ -125,24 +112,9 @@ export const GET_TRANSACTIONS_FOR_TARIFF = gql`
       createdAt
       updatedAt
       chargingStation: ChargingStation {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        locationId
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
-          id
-          name
-          address
-          city
-          postalCode
-          state
-          country
-          coordinates
-          createdAt
-          updatedAt
+          ${LOCATION_CORE_FIELDS}
         }
       }
       authorization: Authorization {
