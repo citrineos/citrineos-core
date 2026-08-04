@@ -17,30 +17,34 @@ test.describe('charging-stations › CRUD', () => {
     apiClient,
   }) => {
     const name = `${shortId()}-cp`;
-    const form = new ChargingStationFormPage(page);
-    await form.gotoNew();
-    await form.fill({
-      name,
-      locationName: seededLocation.name,
-    });
-    await form.submit();
+    try {
+      const form = new ChargingStationFormPage(page);
+      await form.gotoNew();
+      await form.fill({
+        name,
+        locationName: seededLocation.name,
+      });
+      await form.submit();
 
-    const list = new ChargingStationsListPage(page);
-    await list.goto();
-    await list.searchInput.fill(name);
-    await expect(list.rowById(name)).toBeVisible({ timeout: 30_000 });
-
-    // Cleanup via apiClient (no UI delete on charging-stations list).
-    const { ChargingStations } = await apiClient.gql<{
-      ChargingStations: { id: number }[];
-    }>(
-      `query LookupCS($name: String!) {
-         ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { id }
-       }`,
-      { name },
-    );
-    if (ChargingStations[0]) {
-      await deleteStation(apiClient, ChargingStations[0].id).catch(() => undefined);
+      const list = new ChargingStationsListPage(page);
+      await list.goto();
+      await list.searchInput.fill(name);
+      await expect(list.rowById(name)).toBeVisible({ timeout: 30_000 });
+    } finally {
+      // Cleanup via apiClient (no UI delete on charging-stations list). In a
+      // finally: a failed attempt would otherwise leave the UI-created
+      // station behind, and it FK-pins seededLocation's teardown delete.
+      const { ChargingStations } = await apiClient.gql<{
+        ChargingStations: { id: number }[];
+      }>(
+        `query LookupCS($name: String!) {
+           ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { id }
+         }`,
+        { name },
+      );
+      if (ChargingStations[0]) {
+        await deleteStation(apiClient, ChargingStations[0].id).catch(() => undefined);
+      }
     }
   });
 

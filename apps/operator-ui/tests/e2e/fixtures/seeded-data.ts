@@ -84,6 +84,20 @@ export async function seedLocation(
 }
 
 export async function deleteLocation(api: ApiClient, id: number): Promise<void> {
+  // A station left behind by a failed test (e.g. a UI-created one whose
+  // inline cleanup never ran) FK-pins the location. Every station under an
+  // e2e location is itself e2e-owned, so clear them first — status rows
+  // before stations, same FK order the purge uses.
+  await api
+    .gql(
+      `mutation ClearLocationStations($locationId: Int!) {
+         delete_StatusNotifications(where: { ChargingStation: { locationId: { _eq: $locationId } } }) { affected_rows }
+         delete_LatestStatusNotifications(where: { ChargingStation: { locationId: { _eq: $locationId } } }) { affected_rows }
+         delete_ChargingStations(where: { locationId: { _eq: $locationId } }) { affected_rows }
+       }`,
+      { locationId: id },
+    )
+    .catch(() => undefined);
   // Hasura exposes Locations.id as Int — declaring it bigint! makes the
   // mutation fail validation before it runs, so every seeded location leaked.
   await api.gql(
