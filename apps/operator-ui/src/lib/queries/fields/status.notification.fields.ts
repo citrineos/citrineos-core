@@ -4,7 +4,6 @@
 
 import { fieldSet } from '@lib/queries/fields/field.set';
 
-
 export const STATUS_NOTIFICATION_FIELDS = fieldSet([
   'id',
   'connectorId',

@@ -4,7 +4,6 @@
 
 import { fieldSet } from '@lib/queries/fields/field.set';
 
-
 export const CONNECTOR_STATUS_FIELDS = fieldSet([
   'status',
   'errorCode',

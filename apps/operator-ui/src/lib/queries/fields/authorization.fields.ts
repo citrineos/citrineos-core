@@ -4,7 +4,6 @@
 
 import { fieldSet } from '@lib/queries/fields/field.set';
 
-
 export const AUTHORIZATION_FIELDS = fieldSet([
   'id',
   'idToken',

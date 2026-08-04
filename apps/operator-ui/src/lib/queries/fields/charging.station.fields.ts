@@ -4,7 +4,6 @@
 
 import { fieldSet } from '@lib/queries/fields/field.set';
 
-
 export const CHARGING_STATION_CORE_FIELDS = fieldSet([
   'id',
   'ocppConnectionName',
