@@ -28,6 +28,12 @@ async function submitResetAndConfirm(modal: ModalHarness): Promise<void> {
     modal.newToastVisible(/success|accepted|sent|reset|completed|received/i, 60_000),
     waitForEverestOffline(60_000),
   ]);
+  // The reboot trails the ack by a few seconds. Returning before the link
+  // drops lets the next test's online guard sample the pre-reboot window and
+  // walk straight into the outage mid-test. Hold until the drop is observed;
+  // if it never comes the reset simply didn't reboot and there is nothing to
+  // shield the next test from.
+  await waitForEverestOffline(120_000).catch(() => undefined);
 }
 
 test.describe('charging-stations › Reset command @everest', () => {
