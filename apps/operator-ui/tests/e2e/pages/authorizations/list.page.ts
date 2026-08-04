@@ -13,8 +13,9 @@ export class AuthorizationsListPage {
 
   constructor(private readonly page: Page) {
     this.heading = page.getByRole('heading', { name: /^authorizations$/i }).first();
+    // Placeholder is "Search Authorization" (singular).
     this.searchInput = page.getByRole('textbox', {
-      name: /search authorizations/i,
+      name: /search authorization/i,
     });
     this.addButton = page.getByRole('button', { name: /add authorization/i });
   }
