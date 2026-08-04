@@ -27,6 +27,10 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
+  // A retry-rescued test still fails the job on CI. Green-with-a-flaky-
+  // annotation is how E2E-071 stayed invisible for weeks — the retry remains
+  // as diagnostics (trace/video of both attempts), not as absolution.
+  failOnFlakyTests: isCI,
   // CI runs a production `next start` (managed-server), so the old dev-mode
   // recompile-loop hazard doesn't apply there — 3 workers share the 4-vCPU
   // runner with the docker stack. Local default stays 1: `next dev` compiles
