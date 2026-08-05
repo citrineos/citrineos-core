@@ -132,7 +132,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
       tenantId,
       protocol: OCPPVersion.OCPP2_0_1,
       action: OCPP_CallAction.SetVariables,
-      eventGroup: EventGroup.Api,
+      eventGroup: EventGroup.Monitoring,
       payload: {
         setVariableData: [
           {

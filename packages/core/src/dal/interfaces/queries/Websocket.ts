@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { QuerySchema } from '@citrineos/base';
+import { websocketServerSchema } from '@citrineos/types';
+import { z } from 'zod';
 
 export interface WebsocketGetQuerystring {
   id?: string;
@@ -32,72 +34,10 @@ export const WebsocketDeleteQuerySchema = QuerySchema('WebsocketDeleteQuerySchem
   },
 ]);
 
-export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
-  {
-    key: 'id',
-    type: 'string',
-    required: true,
-  },
-  {
-    key: 'host',
-    type: 'string',
-    required: true,
-  },
-  {
-    key: 'port',
-    type: 'number',
-    required: true,
-  },
-  {
-    key: 'pingInterval',
-    type: 'number',
-    required: true,
-  },
-  {
-    key: 'protocol',
-    type: 'string',
-    required: true,
-  },
-  {
-    key: 'securityProfile',
-    type: 'number',
-    required: true,
-  },
-  {
-    key: 'allowUnknownChargingStations',
-    type: 'boolean',
-    required: true,
-  },
-  {
-    key: 'tlsKeyFilePath',
-    type: 'string',
-  },
-  {
-    key: 'tlsCertificateChainFilePath',
-    type: 'string',
-  },
-  {
-    key: 'mtlsCertificateAuthorityKeyFilePath',
-    type: 'string',
-  },
-  {
-    key: 'rootCACertificateFilePath',
-    type: 'string',
-  },
-  {
-    key: 'tenantId',
-    type: 'number',
-    required: true,
-  },
-  {
-    key: 'tenantPathMapping',
-    type: 'object',
-  },
-  {
-    key: 'dynamicTenantResolution',
-    type: 'boolean',
-  },
-]);
+export const WebsocketRequestSchema = {
+  ...z.toJSONSchema(websocketServerSchema, { target: 'openapi-3.0', io: 'input' }),
+  $id: 'WebsocketRequestSchema',
+};
 
 export interface WebsocketMappingQuerystring {
   id: string;

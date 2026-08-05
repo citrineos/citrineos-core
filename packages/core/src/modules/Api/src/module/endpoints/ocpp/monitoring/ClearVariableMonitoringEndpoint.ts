@@ -90,7 +90,7 @@ export class ClearVariableMonitoringEndpoint extends AbstractMessageEndpoint {
             eventGroup: EventGroup.Monitoring,
             items: ids,
             itemsPerMessage,
-            buildPayload: (batch) => ({ id: batch }),
+            buildPayload: (batch) => ({ ...request, id: batch }),
             callbackUrl,
           })),
         );

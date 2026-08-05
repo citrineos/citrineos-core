@@ -3,10 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Op } from 'sequelize';
+import type { IChargingStationNetworkProfileRepository } from '../../../interfaces/repositories.js';
 import { ChargingStationNetworkProfile } from '../model/Location/ChargingStationNetworkProfile.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
-export class SequelizeChargingStationNetworkProfileRepository extends SequelizeRepository<ChargingStationNetworkProfile> {
+export class SequelizeChargingStationNetworkProfileRepository
+  extends SequelizeRepository<ChargingStationNetworkProfile>
+  implements IChargingStationNetworkProfileRepository
+{
   constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
     super({
       config,

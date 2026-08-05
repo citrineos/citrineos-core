@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type ILogObj, Logger } from 'tslog';
-import type { CallAction, OCPPVersion, SystemConfig } from '@citrineos/types';
+import type { CallAction, EventGroup, OCPPVersion, SystemConfig } from '@citrineos/types';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 
 export interface AbstractMessageEndpointDependencies {
@@ -15,6 +15,10 @@ export interface IMessageEndpointDeclaration {
   endpointPrefixConfigKey: keyof SystemConfig['modules'];
   bodySchema: (version: OCPPVersion) => object | undefined;
   optionalQuerystrings?: Record<string, unknown>;
+}
+
+export interface IPassthroughMessageEndpointDeclaration extends IMessageEndpointDeclaration {
+  eventGroup: EventGroup;
 }
 
 export abstract class AbstractMessageEndpoint {

@@ -33,7 +33,6 @@ export class CitrineOSServer {
    * Fields
    */
   private readonly modules: IModule[] = [];
-  private readonly apis: object[] = [];
   private ocpiConfig?: OcpiConfig;
   private _logger?: Logger<ILogObj>;
   private _cache?: ICache;

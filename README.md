@@ -44,10 +44,12 @@ The system features:
 
 - Dynamic **OCPP 1.6 and 2.0.1** message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
-- Configurable logical modules with decorators
+- Configurable logical modules
   - `@AsRequestHandler` / `@AsResponseHandler` to declare a handler class for an incoming OCPP message
-  - `@AsMessageEndpoint` to expose functions allowing sending messages to charging stations
-  - `@AsDataEndpoint` to expose CRUD access to data entities
+  - A dedicated `Api` module exposing every HTTP surface, kept separate from message handling
+    - `AbstractMessageEndpoint` classes under `/ocpp/<version>/…` to send messages to charging stations
+    - `AbstractEndpoint` classes under `/commands` for CitrineOS-native admin operations
+  - Each endpoint declares its route as a static `route` and is listed in its module's `register.ts`
 - Utilities to connect and extend various message broker and cache mechanisms
   - Currently supported broker is **RabbitMQ**
   - Currently supported caches are **In Memory** and **Redis**

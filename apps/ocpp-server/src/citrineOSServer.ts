@@ -68,7 +68,6 @@ export class CitrineOSServer {
   protected readonly _ocppValidator: OCPPValidator;
   protected readonly _fileStorage: IFileStorage;
   protected readonly modules: IModule[] = [];
-  protected readonly apis: object[] = [];
   protected _sequelizeInstance!: Sequelize;
   protected host?: string;
   protected port?: number;
@@ -422,7 +421,7 @@ export class CitrineOSServer {
     const scope = this._container.createScope();
     scope.register({ moduleScope: asValue(scope) });
     for (const apiToken of apiTokens) {
-      this.apis.push(scope.resolve(apiToken));
+      scope.resolve(apiToken);
     }
   }
 

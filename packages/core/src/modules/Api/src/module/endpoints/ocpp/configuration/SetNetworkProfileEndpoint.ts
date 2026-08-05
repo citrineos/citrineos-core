@@ -11,7 +11,7 @@ import {
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, type OCPPVersion } from '@citrineos/types';
-import type { NetworkProfileService } from '@modules/Configuration/src/module/NetworkProfileService.js';
+import type { NetworkProfileService } from '@util/networkProfile/NetworkProfileService.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 
 const WEBSOCKET_SERVER_CONFIG_ID = 'websocketServerConfigId';

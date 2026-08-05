@@ -5,8 +5,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import type { BuiltEndpoint } from '@interfaces/api/endpoints/buildEndpoints.js';
 import type { IEndpointDefinition } from '@interfaces/api/endpoints/EndpointDefinition.js';
-
-const SCHEMA_ALREADY_PRESENT = 'FST_ERR_SCH_ALREADY_PRESENT';
+import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
 
 export abstract class AbstractEndpointApi {
   protected readonly _server: FastifyInstance;
@@ -31,21 +31,22 @@ export abstract class AbstractEndpointApi {
   }
 
   private _addRoute(route: IEndpointDefinition, endpoint: BuiltEndpoint['endpoint']): void {
-    const url = this._toPath(route.path);
+    const url = joinRoutePath(this._prefix, route.path);
     this._logger.debug(`Adding ${route.method} route ${url}`);
 
     this._server.route({
       method: route.method,
       url,
       schema: this._toRouteSchema(route),
-      handler: (request: FastifyRequest, reply: FastifyReply) => endpoint.handle(request, reply),
+      handler: async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+          return await endpoint.handle(request, reply);
+        } catch (error) {
+          this._logger.error(`Error handling ${route.method} ${url}`, error);
+          throw error;
+        }
+      },
     });
-  }
-
-  private _toPath(path: string): string {
-    const prefix = this._prefix.startsWith('/') ? this._prefix : `/${this._prefix}`;
-    const suffix = path.startsWith('/') ? path : `/${path}`;
-    return `${prefix.replace(/\/$/, '')}${suffix}`;
   }
 
   private _toRouteSchema(route: IEndpointDefinition): Record<string, unknown> {
@@ -68,19 +69,10 @@ export abstract class AbstractEndpointApi {
     return schema;
   }
 
-  private _shareSchema(schema: object): object {
-    const id = (schema as { $id?: string }).$id;
-    if (!id) {
-      return schema;
-    }
-
-    try {
-      this._server.addSchema(schema);
-    } catch (error) {
-      if ((error as { code?: string }).code !== SCHEMA_ALREADY_PRESENT) {
-        throw error;
-      }
-    }
-    return { $ref: id };
+  private _shareSchema(schema: object): object | null {
+    return registerRouteSchema(
+      { scoped: this._server, root: this._server, logger: this._logger },
+      schema,
+    );
   }
 }

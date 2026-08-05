@@ -2,19 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { OCPP2_request_types } from '@citrineos/base';
-import type { SequelizeSetNetworkProfileRepository } from '@dal/layers/sequelize/index.js';
+import type { ISetNetworkProfileRepository } from '@dal/interfaces/repositories.js';
 import { type ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 
+export interface PersistSetNetworkProfileOptions {
+  websocketServerConfigId?: string;
+}
+
 export class NetworkProfileService {
-  protected _setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
+  protected _setNetworkProfileRepository: ISetNetworkProfileRepository;
   protected _logger: Logger<ILogObj>;
 
   constructor({
     setNetworkProfileRepository,
     logger,
   }: {
-    setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
+    setNetworkProfileRepository: ISetNetworkProfileRepository;
     logger: Logger<ILogObj>;
   }) {
     this._setNetworkProfileRepository = setNetworkProfileRepository;
@@ -27,7 +31,7 @@ export class NetworkProfileService {
     tenantId: number,
     ocppConnectionNames: string[],
     request: OCPP2_request_types.SetNetworkProfileRequest,
-    persistFor?: { websocketServerConfigId?: string },
+    persistFor?: PersistSetNetworkProfileOptions,
   ): Promise<string> {
     const correlationId = uuidv4();
 
@@ -35,6 +39,7 @@ export class NetworkProfileService {
       await Promise.all(
         ocppConnectionNames.map((ocppConnectionName) =>
           this._setNetworkProfileRepository.createPending({
+            ...request.connectionData,
             ocppConnectionName,
             tenantId,
             correlationId,
@@ -42,7 +47,6 @@ export class NetworkProfileService {
             websocketServerConfigId: persistFor.websocketServerConfigId,
             apn: JSON.stringify(request.connectionData.apn),
             vpn: JSON.stringify(request.connectionData.vpn),
-            ...request.connectionData,
           }),
         ),
       );

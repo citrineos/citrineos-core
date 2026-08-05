@@ -16,14 +16,14 @@ export type {
   AbstractMessageEndpointDependencies,
   IMessageEndpointDeclaration,
 } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
-export { buildMessageEndpoints } from './src/interfaces/api/endpoints/buildMessageEndpoints.js';
-export { passthroughMessageEndpoint } from './src/interfaces/api/endpoints/passthroughMessageEndpoint.js';
-export type { IPassthroughMessageEndpointDeclaration } from './src/interfaces/api/endpoints/passthroughMessageEndpoint.js';
+export { buildMessageEndpoints } from './src/util/endpoints/buildMessageEndpoints.js';
+export { passthroughMessageEndpoint } from './src/util/endpoints/passthroughMessageEndpoint.js';
+export type { IPassthroughMessageEndpointDeclaration } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
 export type {
   BuiltMessageEndpoint,
   MessageEndpointClass,
 } from './src/interfaces/api/endpoints/buildMessageEndpoints.js';
-export { buildEndpoints } from './src/interfaces/api/endpoints/buildEndpoints.js';
+export { buildEndpoints } from './src/util/endpoints/buildEndpoints.js';
 export type {
   BuiltEndpoint,
   EndpointClass,

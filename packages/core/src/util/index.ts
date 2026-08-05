@@ -20,6 +20,8 @@ export * from './queue/index.js';
 export * from './networkconnection/index.js';
 export * from './certificate/index.js';
 export { DeviceModelService } from './deviceModel/DeviceModelService.js';
+export { NetworkProfileService } from './networkProfile/NetworkProfileService.js';
+export type { PersistSetNetworkProfileOptions } from './networkProfile/NetworkProfileService.js';
 
 export { initSwagger } from './util/swagger.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './util/parser.js';

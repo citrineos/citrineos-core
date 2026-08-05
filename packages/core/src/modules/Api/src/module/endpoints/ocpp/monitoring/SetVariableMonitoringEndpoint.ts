@@ -108,7 +108,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
             eventGroup: EventGroup.Monitoring,
             items: setMonitoringData,
             itemsPerMessage,
-            buildPayload: (batch) => ({ setMonitoringData: batch }),
+            buildPayload: (batch) => ({ ...request, setMonitoringData: batch }),
             callbackUrl,
           })),
         );

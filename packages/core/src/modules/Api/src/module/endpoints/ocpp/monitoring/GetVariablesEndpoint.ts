@@ -84,7 +84,7 @@ export class GetVariablesEndpoint extends AbstractMessageEndpoint {
             eventGroup: EventGroup.Monitoring,
             items: getVariableData,
             itemsPerMessage,
-            buildPayload: (batch) => ({ getVariableData: batch }),
+            buildPayload: (batch) => ({ ...request, getVariableData: batch }),
             callbackUrl,
           })),
         );

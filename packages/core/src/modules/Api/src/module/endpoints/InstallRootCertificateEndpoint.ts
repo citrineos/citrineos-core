@@ -68,7 +68,7 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
       tenantId: installReq.tenantId,
       protocol: OCPPVersion.OCPP2_0_1,
       action: OCPP_CallAction.InstallCertificate,
-      eventGroup: EventGroup.Api,
+      eventGroup: EventGroup.Certificates,
       payload: {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,

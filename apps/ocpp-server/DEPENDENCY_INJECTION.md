@@ -56,15 +56,16 @@ Per-module scopes: each module is resolved in its own child scope (`initModuleIn
 
 `buildContainer()` calls one registrar per layer. To find a registration, open `container.ts` and go to:
 
-| Registrar                                | What it registers                                                                        |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `registerPrimitives`                     | config + derived scalars, the Sequelize instance, prebuilt infra (all values)            |
-| `registerMessaging`                      | RabbitMQ connection/channel managers, `sender`/`handler`, `routerSender`/`routerHandler` |
-| `registerRepositories`                   | every repository (singletons)                                                            |
-| `registerServices`                       | shared services + `apiAuthProvider`                                                      |
-| `registerModuleServices`                 | calls each module package's own `register<Module>Services` (see next section)            |
-| `registerNetwork`                        | filters, authenticator, router, network connection, `adminApi`                           |
-| `registerModules` / `registerModuleApis` | the 8 modules and their APIs (scoped)                                                    |
+| Registrar                | What it registers                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| `registerPrimitives`     | config + derived scalars, the Sequelize instance, prebuilt infra (all values)            |
+| `registerMessaging`      | RabbitMQ connection/channel managers, `sender`/`handler`, `routerSender`/`routerHandler` |
+| `registerRepositories`   | every repository (singletons)                                                            |
+| `registerServices`       | shared services + `apiAuthProvider`                                                      |
+| `registerModuleServices` | calls each module package's own `register<Module>Services` (see next section)            |
+| `registerNetwork`        | filters, authenticator, router, network connection, `adminApi`                           |
+| `registerModules`        | the 8 modules (scoped)                                                                   |
+| `registerApis`           | `commandsApi`, `ocppMessageApi`, `webPaymentApi` (scoped)                                |
 
 ## Module-internal services live in the module packages
 
@@ -77,7 +78,8 @@ To add or change a module's internal service, edit that package's `register.ts`.
 ## Patterns worth knowing
 
 - Breaking a dependency cycle. `CostNotifier` has to call back into its module to send a message. Instead of holding the module (a cycle), it injects a `costUpdatedNotifier` function token whose factory reads the module lazily, only when invoked — so there's no cycle at construction time.
-- One API instance serves multiple OCPP versions; the version is threaded through as a parameter (`AbstractModuleApi.supportedVersions`)
+- One message endpoint serves multiple OCPP versions; the versions it supports are declared on its static `route.protocols`, and the version is threaded through to `handle` as a parameter. `AbstractMessageEndpointApi` registers one Fastify route per declared protocol.
+- APIs are resolved in their own scope, not a module's. `initApiInScope` builds the API unit together with its endpoints, so endpoint instances are shared per scope without a singleton→transient leak.
 
 ## Intentionally NOT in the container
 
@@ -195,14 +197,15 @@ constructor({ monitoringService, monitoringDeviceModelService }: { /* … */ }) 
 ### …a new module
 
 1. If it has internal services: add `register<Module>Services` in the package and export it.
-2. Register the module + its APIs in `container.ts` (`registerModules`, `registerModuleApis`).
-3. Add one row to `MODULE_INITS` in `citrineOSServer.ts`: `{ moduleToken, routeApis, configKey }`.
+2. Register the module in `container.ts` (`registerModules`).
+3. Add one row to `MODULE_SPECS` in `citrineOSServer.ts`: `{ moduleToken, configKey }`.
 
-**Example** — the Tenant module (no internal services, so no `register.ts`). Its module and API are registered in `container.ts`:
+Modules no longer own HTTP routes, so there is nothing API-related to register here.
+
+**Example** — the Tenant module (no internal services, so no `register.ts`). Its module is registered in `container.ts`:
 
 ```ts
 tenantModule: asClass(TenantModule).scoped(),
-tenantDataApi: asClass(TenantDataApi).scoped(),
 ```
 
 and one row in `citrineOSServer.ts` drives its startup:
@@ -210,7 +213,15 @@ and one row in `citrineOSServer.ts` drives its startup:
 ```ts
 [EventGroup.Tenant]: {
   moduleToken: 'tenantModule',
-  routeApis: ['tenantDataApi'],
   configKey: 'tenant',
 },
 ```
+
+### …a new HTTP endpoint
+
+1. Add an `AbstractEndpoint` (or `AbstractMessageEndpoint`) subclass with a static `route`.
+2. List it in the owning package's `register.ts` — `Api`'s `COMMAND_ENDPOINTS` / `MESSAGE_ENDPOINTS`, or `OcppRouter`'s `ADMIN_ENDPOINTS`.
+
+`buildEndpoints` resolves each class through the module scope, so an endpoint declares its
+dependencies as constructor properties exactly like a service. Registering the API class itself
+in `container.ts` (`registerApis`) is only needed when adding a whole new API surface.

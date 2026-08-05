@@ -1,20 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { EventGroup, OcppRequest, OCPPVersion } from '@citrineos/types';
+import type { OcppRequest, OCPPVersion } from '@citrineos/types';
 import {
   AbstractMessageEndpoint,
   type AbstractMessageEndpointDependencies,
-  type IMessageEndpointDeclaration,
+  type IPassthroughMessageEndpointDeclaration,
 } from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
 import type { MessageEndpointClass } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
-
-export interface IPassthroughMessageEndpointDeclaration extends IMessageEndpointDeclaration {
-  eventGroup: EventGroup;
-}
 
 interface PassthroughDependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;

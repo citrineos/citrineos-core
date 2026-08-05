@@ -5,7 +5,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NetworkProfileService } from '@modules/Configuration/src/module/NetworkProfileService.js';
+import { NetworkProfileService } from '@util/networkProfile/NetworkProfileService.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 describe('NetworkProfileService', () => {
@@ -14,6 +14,18 @@ describe('NetworkProfileService', () => {
   const stationA = 'Station01';
   const stationB = 'Station02';
   const websocketServerConfigId = 'ws-config-1';
+
+  const apn: OCPP2_0_1.APNType = {
+    apn: 'internet',
+    apnAuthentication: OCPP2_0_1.APNAuthenticationEnumType.NONE,
+  };
+  const vpn: OCPP2_0_1.VPNType = {
+    server: 'vpn.example.com',
+    user: 'vpn-user',
+    password: 'vpn-password',
+    key: 'vpn-key',
+    type: OCPP2_0_1.VPNEnumType.IPSec,
+  };
 
   const request: OCPP2_0_1.SetNetworkProfileRequest = {
     configurationSlot: 1,
@@ -24,6 +36,8 @@ describe('NetworkProfileService', () => {
       messageTimeout: 30,
       securityProfile: 1,
       ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired0,
+      apn,
+      vpn,
     },
   };
 
@@ -34,7 +48,7 @@ describe('NetworkProfileService', () => {
     vi.clearAllMocks();
     mockCreatePending = vi.fn().mockResolvedValue(undefined);
     service = getTestInstance(container, NetworkProfileService, {
-      setNetworkProfileRepository: { createPending: mockCreatePending } as any,
+      setNetworkProfileRepository: { createPending: mockCreatePending },
     });
   });
 
@@ -98,5 +112,37 @@ describe('NetworkProfileService', () => {
         securityProfile: request.connectionData.securityProfile,
       }),
     );
+  });
+
+  it('serializes apn and vpn, which are objects on the request but text columns on the row', async () => {
+    await service.prepareSetNetworkProfile(tenantId, [stationA], request, {});
+
+    expect(mockCreatePending).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apn: JSON.stringify(apn),
+        vpn: JSON.stringify(vpn),
+      }),
+    );
+  });
+
+  it('does not leak the raw apn and vpn objects onto the row', async () => {
+    await service.prepareSetNetworkProfile(tenantId, [stationA], request, {});
+
+    const persisted = mockCreatePending.mock.calls[0][0];
+    expect(typeof persisted.apn).toBe('string');
+    expect(typeof persisted.vpn).toBe('string');
+  });
+
+  it('serializes absent apn and vpn to undefined rather than a raw object', async () => {
+    const withoutTunnels: OCPP2_0_1.SetNetworkProfileRequest = {
+      configurationSlot: 1,
+      connectionData: { ...request.connectionData, apn: undefined, vpn: undefined },
+    };
+
+    await service.prepareSetNetworkProfile(tenantId, [stationA], withoutTunnels, {});
+
+    const persisted = mockCreatePending.mock.calls[0][0];
+    expect(persisted.apn).toBeUndefined();
+    expect(persisted.vpn).toBeUndefined();
   });
 });

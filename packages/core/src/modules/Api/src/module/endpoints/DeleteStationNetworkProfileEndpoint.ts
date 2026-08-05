@@ -9,12 +9,12 @@ import {
 } from '@citrineos/base';
 import { HttpMethod } from '@citrineos/types';
 import type { NetworkProfileDeleteQuerystring } from '@dal/interfaces/index.js';
+import type { IChargingStationNetworkProfileRepository } from '@dal/interfaces/repositories.js';
 import { NetworkProfileDeleteQuerySchema } from '@dal/interfaces/index.js';
-import type { SequelizeChargingStationNetworkProfileRepository } from '@dal/layers/sequelize/index.js';
 import type { FastifyRequest } from 'fastify';
 
 interface DeleteStationNetworkProfileEndpointDependencies extends AbstractEndpointDependencies {
-  chargingStationNetworkProfileRepository: SequelizeChargingStationNetworkProfileRepository;
+  chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
 }
 
 type DeleteStationNetworkProfileRoute = { Querystring: NetworkProfileDeleteQuerystring };
@@ -26,7 +26,7 @@ export class DeleteStationNetworkProfileEndpoint extends AbstractEndpoint<Delete
     querySchema: NetworkProfileDeleteQuerySchema,
   };
 
-  private readonly _chargingStationNetworkProfileRepository: SequelizeChargingStationNetworkProfileRepository;
+  private readonly _chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
 
   constructor({
     logger,

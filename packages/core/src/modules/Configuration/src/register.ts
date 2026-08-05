@@ -38,7 +38,6 @@ import {
 } from '@handlers/index.js';
 import { BootNotificationService } from './module/BootNotificationService.js';
 import { DeviceModelService } from './module/DeviceModelService.js';
-import { NetworkProfileService } from './module/NetworkProfileService.js';
 
 /**
  * The handlers this module owns. This list is what the module subscribes to — each handler declares
@@ -79,7 +78,6 @@ const CONFIGURATION_HANDLERS = [
 export function registerConfigurationServices(container: AwilixContainer): void {
   container.register({
     configurationDeviceModelService: asClass(DeviceModelService).scoped(),
-    networkProfileService: asClass(NetworkProfileService).scoped(),
     // BootNotificationService takes the narrowed module config, not the full `config` token.
     bootNotificationService: asFunction(
       ({ bootRepository, cache, config, logger }) =>

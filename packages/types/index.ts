@@ -41,6 +41,7 @@ export {
   RbacRulesSchema,
   systemConfigInputSchema,
   systemConfigSchema,
+  websocketServerSchema,
 } from './src/config/types.js';
 export type {
   RbacRules,

@@ -12,6 +12,7 @@ import type {
 import { type ILogObj, Logger } from 'tslog';
 import {
   HttpMethod,
+  type CallAction,
   type OcppRequest,
   type OCPPVersion,
   type SystemConfig,
@@ -21,7 +22,8 @@ import type {
   AbstractMessageEndpoint,
   IMessageEndpointDeclaration,
 } from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
-import { registerRouteSchema } from '@interfaces/api/endpoints/routeSchemas.js';
+import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
 import {
   type IMessageQuerystring,
   IMessageQuerystringSchema,
@@ -69,6 +71,14 @@ export abstract class AbstractMessageEndpointApi {
     endpoint: AbstractMessageEndpoint,
     version: OCPPVersion,
   ): void {
+    const moduleConfig = this._config.modules[route.endpointPrefixConfigKey];
+    if (!moduleConfig) {
+      this._logger.debug(
+        `Skipping message route for ${route.action} — ${route.endpointPrefixConfigKey} is not configured`,
+      );
+      return;
+    }
+
     const bodySchema = route.bodySchema(version);
     if (!bodySchema) {
       this._logger.debug(
@@ -77,7 +87,7 @@ export abstract class AbstractMessageEndpointApi {
       return;
     }
 
-    const url = this._toMessagePath(route, version);
+    const url = this._toMessagePath(moduleConfig.endpointPrefix, route.action, version);
     this._logger.debug(`Adding message route for ${route.action}`, url);
 
     const querystringSchema = {
@@ -153,11 +163,9 @@ export abstract class AbstractMessageEndpointApi {
     };
   }
 
-  private _toMessagePath(route: IMessageEndpointDeclaration, version: OCPPVersion): string {
-    const endpointPrefix =
-      this._config.modules[route.endpointPrefixConfigKey]?.endpointPrefix ?? '';
+  private _toMessagePath(endpointPrefix: string, action: CallAction, version: OCPPVersion): string {
     const endpointVersion = version.replace(/^ocpp/, '');
-    const action = route.action.charAt(0).toLowerCase() + route.action.slice(1);
-    return `/ocpp/${endpointVersion}${!endpointPrefix.startsWith('/') ? '/' : ''}${endpointPrefix}${!endpointPrefix.endsWith('/') ? '/' : ''}${action}`;
+    const route = action.charAt(0).toLowerCase() + action.slice(1);
+    return joinRoutePath('ocpp', endpointVersion, endpointPrefix, route);
   }
 }

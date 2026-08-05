@@ -24,7 +24,7 @@ export class PutSystemConfigEndpoint extends AbstractEndpoint<Route> {
     method: HttpMethod.Put,
     path: '/systemConfig',
     bodySchema: {
-      ...z.toJSONSchema(systemConfigSchema, { target: 'openapi-3.0' }),
+      ...z.toJSONSchema(systemConfigSchema, { target: 'openapi-3.0', io: 'input' }),
       $id: 'SystemConfigSchema',
     },
   };

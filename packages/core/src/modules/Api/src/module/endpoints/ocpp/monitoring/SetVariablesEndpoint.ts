@@ -80,7 +80,7 @@ export class SetVariablesEndpoint extends AbstractMessageEndpoint {
             eventGroup: EventGroup.Monitoring,
             items: setVariableData,
             itemsPerMessage,
-            buildPayload: (batch) => ({ setVariableData: batch }),
+            buildPayload: (batch) => ({ ...request, setVariableData: batch }),
             callbackUrl,
           })),
         );

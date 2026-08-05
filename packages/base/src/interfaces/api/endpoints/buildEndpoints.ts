@@ -20,13 +20,3 @@ export interface IEndpointBuilder {
 export interface EndpointResolverCradle {
   moduleScope: IEndpointBuilder;
 }
-
-export function buildEndpoints(
-  builder: IEndpointBuilder,
-  endpointClasses: ReadonlyArray<EndpointClass>,
-): BuiltEndpoint[] {
-  return endpointClasses.map((endpointClass) => ({
-    route: endpointClass.route,
-    endpoint: builder.build(endpointClass),
-  }));
-}
