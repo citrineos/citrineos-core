@@ -4,6 +4,7 @@
 
 import { gql } from 'graphql-tag';
 import {
+  CONNECTOR_FULL_FIELDS,
   CONNECTOR_SPEC_FIELDS,
   CONNECTOR_STATUS_FIELDS,
 } from '@lib/queries/fields/connector.fields';
@@ -85,15 +86,7 @@ export const GET_CONNECTOR_LIST_FOR_STATION_EVSE = gql`
 export const CONNECTOR_CREATE_MUTATION = gql`
   mutation ConnectorCreate($object: Connectors_insert_input!) {
     insert_Connectors_one(object: $object) {
-      id
-      ocppConnectionName
-      evseId
-      evseTypeConnectorId
-      connectorId
-      ${CONNECTOR_STATUS_FIELDS}
-      ${CONNECTOR_SPEC_FIELDS}
-      createdAt
-      updatedAt
+      ${CONNECTOR_FULL_FIELDS}
     }
   }
 `;
@@ -101,15 +94,7 @@ export const CONNECTOR_CREATE_MUTATION = gql`
 export const CONNECTOR_EDIT_MUTATION = gql`
   mutation ConnectorEdit($id: Int!, $object: Connectors_set_input!) {
     update_Connectors_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      ocppConnectionName
-      evseId
-      evseTypeConnectorId
-      connectorId
-      ${CONNECTOR_STATUS_FIELDS}
-      ${CONNECTOR_SPEC_FIELDS}
-      createdAt
-      updatedAt
+      ${CONNECTOR_FULL_FIELDS}
     }
   }
 `;

@@ -5,6 +5,7 @@
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
 import {
+  CONNECTOR_FULL_FIELDS,
   CONNECTOR_SPEC_FIELDS,
   CONNECTOR_STATUS_FIELDS,
 } from '@lib/queries/fields/connector.fields';
@@ -162,15 +163,7 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         ${EVSE_DETAIL_FIELDS}
         stationId
         connectors: Connectors {
-          id
-          ocppConnectionName
-          evseId
-          evseTypeConnectorId
-          connectorId
-          ${CONNECTOR_STATUS_FIELDS}
-          ${CONNECTOR_SPEC_FIELDS}
-          createdAt
-          updatedAt
+          ${CONNECTOR_FULL_FIELDS}
         }
       }
       LatestStatusNotifications {

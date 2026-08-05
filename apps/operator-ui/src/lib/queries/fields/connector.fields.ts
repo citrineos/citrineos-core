@@ -32,3 +32,20 @@ export const CONNECTOR_SPEC_FIELDS = fieldSet([
   'termsAndConditionsUrl',
   'tariffId',
 ]);
+
+/**
+ * The full connector selection (identity + status + spec + timestamps) shared by the connector
+ * create/edit mutations and the station-detail EVSE connectors. Built from CONNECTOR_STATUS_FIELDS /
+ * CONNECTOR_SPEC_FIELDS so field changes propagate.
+ */
+export const CONNECTOR_FULL_FIELDS = fieldSet([
+  'id',
+  'ocppConnectionName',
+  'evseId',
+  'evseTypeConnectorId',
+  'connectorId',
+  ...CONNECTOR_STATUS_FIELDS.fields,
+  ...CONNECTOR_SPEC_FIELDS.fields,
+  'createdAt',
+  'updatedAt',
+]);
