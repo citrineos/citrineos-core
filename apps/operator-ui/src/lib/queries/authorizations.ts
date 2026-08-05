@@ -14,10 +14,6 @@ export const AUTHORIZATIONS_LIST_QUERY = gql`
   ) {
     Authorizations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
       ${AUTHORIZATION_FIELDS}
-      allowedConnectorTypes
-      disallowedEvseIdPrefixes
-      realTimeAuth
-      realTimeAuthUrl
     }
     Authorizations_aggregate(where: $where) {
       aggregate {
@@ -42,10 +38,6 @@ export const GET_AUTHORIZATIONS_BY_TRANSACTION = gql`
       where: { id: { _eq: $id } }
     ) {
       ${AUTHORIZATION_FIELDS}
-      allowedConnectorTypes
-      disallowedEvseIdPrefixes
-      realTimeAuth
-      realTimeAuthUrl
     }
     Authorizations_aggregate(where: $where) {
       aggregate {
@@ -59,10 +51,6 @@ export const AUTHORIZATIONS_SHOW_QUERY = gql`
   query AuthorizationsShow($id: Int!) {
     Authorizations_by_pk(id: $id) {
       ${AUTHORIZATION_FIELDS}
-      allowedConnectorTypes
-      disallowedEvseIdPrefixes
-      realTimeAuth
-      realTimeAuthUrl
       tenantPartner: TenantPartner {
         id
         partnerProfileOCPI
@@ -74,9 +62,7 @@ export const AUTHORIZATIONS_SHOW_QUERY = gql`
 export const AUTHORIZATIONS_CREATE_MUTATION = gql`
   mutation AuthorizationsCreate($object: Authorizations_insert_input!) {
     insert_Authorizations_one(object: $object) {
-      ${AUTHORIZATION_FIELDS}
-      realTimeAuth
-      realTimeAuthUrl
+      ${AUTHORIZATION_FIELDS.omit('allowedConnectorTypes', 'disallowedEvseIdPrefixes')}
     }
   }
 `;
@@ -84,9 +70,7 @@ export const AUTHORIZATIONS_CREATE_MUTATION = gql`
 export const AUTHORIZATIONS_EDIT_MUTATION = gql`
   mutation AuthorizationsEdit($id: Int!, $object: Authorizations_set_input!) {
     update_Authorizations_by_pk(pk_columns: { id: $id }, _set: $object) {
-      ${AUTHORIZATION_FIELDS}
-      realTimeAuth
-      realTimeAuthUrl
+      ${AUTHORIZATION_FIELDS.omit('allowedConnectorTypes', 'disallowedEvseIdPrefixes')}
     }
   }
 `;
@@ -94,9 +78,7 @@ export const AUTHORIZATIONS_EDIT_MUTATION = gql`
 export const AUTHORIZATIONS_DELETE_MUTATION = gql`
   mutation AuthorizationsDelete($id: Int!) {
     delete_Authorizations_by_pk(id: $id) {
-      ${AUTHORIZATION_FIELDS}
-      realTimeAuth
-      realTimeAuthUrl
+      ${AUTHORIZATION_FIELDS.omit('allowedConnectorTypes', 'disallowedEvseIdPrefixes')}
     }
   }
 `;

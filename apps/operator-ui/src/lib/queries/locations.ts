@@ -8,6 +8,7 @@ import { CONNECTOR_STATUS_FIELDS } from '@lib/queries/fields/connector.fields';
 import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status.notification.fields';
 import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction.fields';
 import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse.fields';
+import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
 
 export const LOCATIONS_LIST_QUERY = gql`
   query LocationsList(
@@ -19,15 +20,9 @@ export const LOCATIONS_LIST_QUERY = gql`
   ) {
     Locations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
       ${LOCATION_CORE_FIELDS}
-      timeZone
-      parkingType
+      ${LOCATION_DETAIL_FIELDS.pick('timeZone', 'parkingType')}
       chargingPool: ChargingStations(where: $chargingStationsWhere) {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         evses: Evses {
           ${EVSE_CORE_FIELDS}
         }
@@ -66,12 +61,7 @@ export const LOCATIONS_GET_QUERY = gql`
       ${LOCATION_CORE_FIELDS}
       ${LOCATION_DETAIL_FIELDS}
       chargingPool: ChargingStations {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         Evses: VariableAttributes(
           distinct_on: evseDatabaseId
           where: { evseDatabaseId: { _is_null: false } }
@@ -102,9 +92,7 @@ export const LOCATIONS_CREATE_MUTATION = gql`
   mutation LocationsCreate($object: Locations_insert_input!) {
     insert_Locations_one(object: $object) {
       ${LOCATION_CORE_FIELDS}
-      facilities
-      timeZone
-      parkingType
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;
@@ -113,9 +101,7 @@ export const LOCATIONS_DELETE_MUTATION = gql`
   mutation LocationsDelete($id: Int!) {
     delete_Locations_by_pk(id: $id) {
       ${LOCATION_CORE_FIELDS}
-      facilities
-      timeZone
-      parkingType
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;
@@ -124,9 +110,7 @@ export const LOCATIONS_EDIT_MUTATION = gql`
   mutation LocationsEdit($id: Int!, $object: Locations_set_input!) {
     update_Locations_by_pk(pk_columns: { id: $id }, _set: $object) {
       ${LOCATION_CORE_FIELDS}
-      facilities
-      timeZone
-      parkingType
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;

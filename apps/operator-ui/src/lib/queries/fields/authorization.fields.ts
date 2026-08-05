@@ -17,6 +17,10 @@ export const AUTHORIZATION_FIELDS = fieldSet([
   'language2',
   'personalMessage',
   'cacheExpiryDateTime',
+  'allowedConnectorTypes',
+  'disallowedEvseIdPrefixes',
+  'realTimeAuth',
+  'realTimeAuthUrl',
   'createdAt',
   'updatedAt',
 ]);

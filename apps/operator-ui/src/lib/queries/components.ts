@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { COMPONENT_FIELDS } from '@lib/queries/fields/component.fields';
 
 export const COMPONENT_LIST_QUERY = gql`
   query ComponentList(
@@ -12,12 +13,7 @@ export const COMPONENT_LIST_QUERY = gql`
     $where: Components_bool_exp
   ) {
     Components(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      instance
-      name
-      evseDatabaseId
-      createdAt
-      updatedAt
+      ${COMPONENT_FIELDS}
       EvseType {
         connectorId
         id
@@ -34,12 +30,7 @@ export const COMPONENT_LIST_QUERY = gql`
 export const COMPONENT_GET_QUERY = gql`
   query GetComponentById($id: Int!) {
     Components_by_pk(id: $id) {
-      id
-      instance
-      name
-      evseDatabaseId
-      createdAt
-      updatedAt
+      ${COMPONENT_FIELDS}
     }
   }
 `;

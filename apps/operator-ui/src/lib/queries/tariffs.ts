@@ -5,6 +5,9 @@
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
 import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
+import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization.fields';
+import { TRANSACTION_DETAIL_FIELDS } from '@lib/queries/fields/transaction.fields';
+import { TARIFF_FIELDS } from '@lib/queries/fields/tariff.fields';
 
 export const TARIFF_LIST_QUERY = gql`
   query TariffList(
@@ -14,17 +17,7 @@ export const TARIFF_LIST_QUERY = gql`
     $where: Tariffs_bool_exp
   ) {
     Tariffs(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      currency
-      pricePerKwh
-      pricePerMin
-      pricePerSession
-      authorizationAmount
-      paymentFee
-      taxRate
-      tariffAltText
-      createdAt
-      updatedAt
+      ${TARIFF_FIELDS}
     }
     Tariffs_aggregate(where: $where) {
       aggregate {
@@ -37,17 +30,7 @@ export const TARIFF_LIST_QUERY = gql`
 export const TARIFF_GET_QUERY = gql`
   query GetTariffById($id: Int!) {
     Tariffs_by_pk(id: $id) {
-      id
-      currency
-      pricePerKwh
-      pricePerMin
-      pricePerSession
-      authorizationAmount
-      paymentFee
-      taxRate
-      tariffAltText
-      createdAt
-      updatedAt
+      ${TARIFF_FIELDS}
     }
   }
 `;
@@ -98,19 +81,7 @@ export const GET_TRANSACTIONS_FOR_TARIFF = gql`
       order_by: $order_by
       where: { tariffId: { _eq: $tariffId }, _and: $where }
     ) {
-      id
-      timeSpentCharging
-      isActive
-      chargingState
-      stoppedReason
-      transactionId
-      evseId
-      remoteStartId
-      totalKwh
-      startTime
-      endTime
-      createdAt
-      updatedAt
+      ${TRANSACTION_DETAIL_FIELDS.omit('ocppConnectionName')}
       chargingStation: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
@@ -118,9 +89,7 @@ export const GET_TRANSACTIONS_FOR_TARIFF = gql`
         }
       }
       authorization: Authorization {
-        id
-        idToken
-        idTokenType
+        ${AUTHORIZATION_FIELDS.pick('id', 'idToken', 'idTokenType')}
       }
     }
     Transactions_aggregate(where: { tariffId: { _eq: $tariffId }, _and: $where }) {

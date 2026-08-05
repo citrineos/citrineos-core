@@ -11,7 +11,11 @@ import {
 import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status.notification.fields';
 import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction.fields';
 import { EVSE_CORE_FIELDS, EVSE_DETAIL_FIELDS } from '@lib/queries/fields/evse.fields';
-import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
+import {
+  CHARGING_STATION_CORE_FIELDS,
+  CHARGING_STATION_DETAIL_FIELDS,
+} from '@lib/queries/fields/charging.station.fields';
+import { SERVER_NETWORK_PROFILE_BASIC_FIELDS } from '@lib/queries/fields/server.network.profile.fields';
 
 export const CHARGING_STATIONS_LIST_QUERY = gql`
   query ChargingStationsList(
@@ -22,20 +26,13 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
   ) {
     ChargingStations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
       ${CHARGING_STATION_CORE_FIELDS}
-      chargePointVendor
-      chargePointModel
-      firmwareVersion
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_DETAIL_FIELDS}
       location: Location {
         ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
-        id
-        evseTypeId
-        evseId
-        physicalReference
+        ${EVSE_CORE_FIELDS.omit('createdAt', 'updatedAt')}
+        ${EVSE_DETAIL_FIELDS.pick('physicalReference')}
       }
       LatestStatusNotifications {
         id
@@ -146,22 +143,12 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
     ChargingStations_by_pk(id: $id) {
       ${CHARGING_STATION_CORE_FIELDS}
       tenantId
-      chargePointVendor
-      chargePointModel
-      firmwareVersion
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_DETAIL_FIELDS}
       coordinates
       use16StatusNotification0
       connectedWebsocketServerConfigId
       ConnectedServerNetworkProfile {
-        id
-        host
-        port
-        protocols
-        securityProfile
-        allowUnknownChargingStations
+        ${SERVER_NETWORK_PROFILE_BASIC_FIELDS.omit('pingInterval', 'messageTimeout')}
       }
       SetNetworkProfiles(order_by: { updatedAt: desc }) {
         websocketServerConfigId
@@ -233,10 +220,7 @@ export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS
         ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
-        id
-        evseTypeId
-        createdAt
-        updatedAt
+        ${EVSE_CORE_FIELDS.omit('evseId')}
       }
     }
   }
@@ -257,9 +241,7 @@ export const CHARGING_STATIONS_CREATE_MUTATION = gql`
   mutation ChargingStationsCreate($object: ChargingStations_insert_input!) {
     insert_ChargingStations_one(object: $object) {
       ${CHARGING_STATION_CORE_FIELDS}
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_DETAIL_FIELDS.pick('floorLevel', 'parkingRestrictions', 'capabilities')}
     }
   }
 `;

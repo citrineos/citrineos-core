@@ -4,6 +4,15 @@
 
 import { fieldSet } from '@lib/queries/fields/field.set';
 
+/** Minimal connector reference (id + connectorId + type + timestamps) used by the transaction views. */
+export const CONNECTOR_CORE_FIELDS = fieldSet([
+  'id',
+  'connectorId',
+  'type',
+  'createdAt',
+  'updatedAt',
+]);
+
 export const CONNECTOR_STATUS_FIELDS = fieldSet([
   'status',
   'errorCode',
