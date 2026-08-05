@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/ocpi-demo",
-  "version": "3.0.0-alpha3",
+  "version": "3.0.0-beta1",
   "description": "CitrineOS OCPI server",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
