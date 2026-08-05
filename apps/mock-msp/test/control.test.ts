@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/control.test.ts
-// (4) The /_mock control API — the test-harness surface. Covers the headline
+// The /_mock control API — the test-harness surface. Covers the headline
 //     async primitive (emit -> waitForReceived resolves, both directly and over
 //     the HTTP surface) and lifecycle reset (clears the recorder + domain state).
 //     Plus health, exchange queries, findings, and fault CRUD.

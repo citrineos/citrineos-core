@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/modules.functional.test.ts
-// (3) Two functional RECEIVER/SENDER modules validate a good payload and detect
+// Two functional RECEIVER/SENDER modules validate a good payload and detect
 //     a bad one. The mock reuses the SAME ocpi-base Zod schema Citrine parses
 //     with, so validation.ok===false + an error Finding IS a detected contract
 //     drift. Also proves auth + routing-header enforcement, and the strictInbound

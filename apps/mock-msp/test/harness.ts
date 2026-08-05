@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/harness.ts
 // Shared test scaffolding for the @citrineos/mock-msp self-tests.
 //
 //  - makeConfig()   : a deterministic MockConfig (silent logs, ephemeral ports).

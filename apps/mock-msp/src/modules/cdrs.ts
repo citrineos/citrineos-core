@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/cdrs.ts
 // CDRs RECEIVER module: the eMSP endpoint Citrine (CPO) POSTs a completed
 // Charge Detail Record to.
 //
@@ -18,7 +17,7 @@
 // responseSchema is OcpiEmptyResponseSchema (the LIVE broadcaster path parses an
 // empty envelope — `data` MUST be omitted, so we reply ctx.empty()).
 //
-// Recon note: Citrine's CdrsClientApi ignores the Location header and never
+// Observed: Citrine's CdrsClientApi ignores the Location header and never
 // issues the follow-up GET, so the GET reader exists purely for /_mock
 // completeness; we still emit a spec-correct Location on POST.
 // ============================================================================

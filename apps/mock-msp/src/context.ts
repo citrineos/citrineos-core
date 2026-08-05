@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/context.ts   (integrate owner)
 // buildContext(cfg): assemble the shared singletons (WireLogger, Store,
 // FaultEngine, OcpiClient) + identity + envelope helpers into one MockContext.
 // The dispatcher shallow-clones this per request and fills req/route/event/etc;

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/tokens.outbound.test.ts
 // Outbound token lifecycle against a stub CPO: PUSH (PUT) -> BLOCK (PATCH,
 // default {valid:false}) -> VERIFY (GET + field-level drift vs our stored
 // copy). Includes the known-Citrine-bug detector: a PATCH that omits `valid`

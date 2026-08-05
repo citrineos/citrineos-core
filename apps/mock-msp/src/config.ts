@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/config.ts   (FROZEN)
 // ============================================================================
 import type { MockConfig } from './core/types.js';
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): MockConfig {

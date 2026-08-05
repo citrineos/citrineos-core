@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/envelope.ts   (FROZEN)
 // ============================================================================
 import {
   buildOcpiResponse,

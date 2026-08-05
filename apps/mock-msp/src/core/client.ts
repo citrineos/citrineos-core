@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/client.ts
 // OcpiClient (the Actor): a fetch wrapper that mirrors Citrine's BaseClientApi
 // wire rules so Citrine accepts our calls — `Authorization: Token base64(token)`,
 // fresh X-Request-ID / X-Correlation-ID on every call, OCPI-* routing headers

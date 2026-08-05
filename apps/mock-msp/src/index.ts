@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/index.ts   (integrate owner)
 // Entrypoint: loadConfig -> buildContext -> buildServer -> listen(:8083).
 // If a scenario is configured it is loaded + applied before listen; if the
 // scenario is 'unregistered' and autoRegister is on, the Actor drives the

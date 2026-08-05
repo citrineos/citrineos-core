@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/control/dashboard.ts
 // ----------------------------------------------------------------------------
 // Serves the self-contained mock-msp dashboard (a single static HTML page) at
 // GET / and GET /_mock/ui. The page is a pure VIEW: it talks to the existing

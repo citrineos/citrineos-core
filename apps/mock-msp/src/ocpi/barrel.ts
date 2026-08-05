@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/ocpi/barrel.ts
 // The ONLY file allowed to import from @citrineos/ocpi-base. Everything else
 // imports schemas/types from here. zod is the catalog instance (4.1.12) so
 // these schemas .parse identically to Citrine's. ocpi-base MUST be built first.

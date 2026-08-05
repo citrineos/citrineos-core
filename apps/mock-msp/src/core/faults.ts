@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/faults.ts
 // FaultEngine (the Adversary) — a PURE matcher: decide() returns the first armed
 // rule whose ExchangeFilter matches the Exchange (honoring scope guards +
 // per-rule hit counters). The dispatcher (inbound) and OcpiClient (outbound)

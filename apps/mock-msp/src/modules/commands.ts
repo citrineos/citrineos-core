@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/commands.ts
 // ----------------------------------------------------------------------------
 // Module "commands" — the eMSP SENDER side of OCPI 2.2.1 Commands.
 //
-// Two halves of the command flow, split across two builders per the frozen spec:
+// Two halves of the command flow:
 //   1. SEND (outbound): WE (eMSP) POST a command
 //      (START_SESSION/STOP_SESSION/RESERVE_NOW/CANCEL_RESERVATION/UNLOCK_CONNECTOR)
 //      to Citrine's CPO commands receiver with a `response_url` pointing back at
@@ -20,7 +19,7 @@
 //      POST /ocpi/2.2.1/emsp/commands/:command/:uid, correlate it back to the
 //      PendingCommand, and reply with an empty OCPI envelope.
 //
-// recon #1 (candidate Citrine bug): Citrine sends this async callback with the
+// Candidate Citrine bug: Citrine sends this async callback with the
 // OCPI-from / OCPI-to routing headers REVERSED (from=eMSP US/TST, to=CPO). Therefore
 // this route uses auth:'callback' with requireRoutingHeaders:false so the dispatcher
 // does NOT strict-validate routing headers — otherwise a valid Citrine callback would
@@ -31,7 +30,7 @@
 // returns to our SEND is validated by OcpiClient (CommandResponseSchema) on the
 // outbound side — not here. Our own reply is the empty envelope (OcpiEmptyResponseSchema).
 //
-// This file only EXPORTS a ModuleDef; the integrator plugs it into the registry via
+// This file only EXPORTS a ModuleDef; it is plugged into the registry via
 // src/modules/index.ts. Handlers are pure (ctx) => OcpiReply — they never touch the
 // Fastify request/reply, never set wire status codes, never build the envelope, and
 // never check auth/routing headers (the dispatcher owns all of that).
@@ -124,7 +123,7 @@ const commandResultRoute: OcpiRoute = {
   method: 'POST',
   path: '/:command/:uid',
   operation: 'commands.result',
-  auth: 'callback', // token required; routing headers NOT strict-validated (recon #1: Citrine reverses from/to)
+  auth: 'callback', // token required; routing headers NOT strict-validated (Citrine reverses from/to)
   requireRoutingHeaders: false,
   requestSchema: CommandResultSchema, // ocpi-base — validates Citrine's async CommandResult body
   responseSchema: OcpiEmptyResponseSchema, // ocpi-base — our empty-envelope reply self-check + fault target

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/Store.ts
 // The single in-memory Store injected everywhere: a bounded exchange ring
 // buffer (recorder), the DomainState (registration + object maps + pending
 // commands), a findings list, and the waitForReceived waiter registry that

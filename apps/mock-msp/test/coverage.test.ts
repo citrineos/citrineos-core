@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/coverage.test.ts
 // The GET /_mock/coverage matrix — a pure read over the recorder that buckets
 // every exchange by {module, direction} into a { count, lastOk } cell. These
 // tests boot the in-process app (harness), drive a couple of real exchanges

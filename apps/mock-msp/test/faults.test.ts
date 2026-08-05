@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/faults.test.ts
-// (2) Injected faults via the FaultEngine (the Adversary). With no fault armed
+// Injected faults via the FaultEngine (the Adversary). With no fault armed
 //     the mock emits its clean baseline; once a rule is armed the dispatcher
 //     perturbs exactly that response and stamps exchange.fault. Proves the
 //     adversary is inert by default and manifests on the wire when armed.

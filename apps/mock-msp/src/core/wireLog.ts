@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/wireLog.ts
 // WireLogger: the human-facing wire trace. Every finalized Exchange (inbound
 // and outbound) is emitted as a one-line summary to stderr and, when NDJSON is
 // enabled, as a structured line to stdout for machine capture. Tokens and

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/control/controlApi.ts   (owner: build:control)
 // ----------------------------------------------------------------------------
 // The /_mock control API — the test-harness driver surface. Plain JSON, NEVER
 // OCPI-enveloped, NEVER OCPI-authenticated (optional shared-secret preHandler).
@@ -16,7 +15,7 @@
 // itself and are deliberately NOT recorded (so they never pollute the OCPI trace
 // that tests assert on, nor wake waitForReceived waiters).
 //
-// Route map (union of the build:control task + the frozen controlApi spec):
+// Route map:
 //   INSPECTION
 //     GET    /_mock/health                     up + registration/faults summary
 //     GET    /_mock/registration               current RegistrationState
@@ -1127,7 +1126,7 @@ async function probeHasura(ctx: MockContext): Promise<HasuraStatus> {
     unknown
   >[];
   // When a station is resolved, only accept ITS connector/transaction — never fall back to
-  // another station's row (that would misreport once a 2nd station exists). null → 'unknown'/'none'.
+  // another station's row (that would misreport once a 2nd station exists). null -> 'unknown'/'none'.
   const conn = station ? connectors.find((c) => Number(c.stationId) === station.id) : connectors[0];
   const connector = conn ? { id: Number(conn.id), status: String(conn.status) } : null;
   const txns = (Array.isArray(data.Transactions) ? data.Transactions : []) as Record<
@@ -1175,7 +1174,7 @@ async function probeEverest(): Promise<EverestProbe> {
     /cannot connect to the docker daemon|is the docker daemon running|docker daemon is not running/i.test(
       res.stderr,
     );
-  // code -1 = docker not spawnable, -2 = inspect timed out (a hung daemon) → both 'unavailable',
+  // code -1 = docker not spawnable, -2 = inspect timed out (a hung daemon) -> both 'unavailable',
   // matching the real remediation (start/repair docker) rather than "container down".
   if (res.code === -1 || res.code === -2 || daemonDown)
     return {
@@ -1282,14 +1281,14 @@ function buildStatus(
 }
 
 // ---------------------------------------------------------------------------
-// registerControlApi — the export the integrator (server.ts) wires in.
+// registerControlApi — wired in by server.ts.
 // ---------------------------------------------------------------------------
 export function registerControlApi(
   app: FastifyInstance,
   ctx: MockContext,
   probeOverride?: Partial<StatusProbes>,
 ): void {
-  // One TTL cache per app (factory, not a module singleton → zero test leakage,
+  // One TTL cache per app (factory, not a module singleton -> zero test leakage,
   // no timers). Tests inject a fake `everest` probe; Hasura/OCPI are stubbed via
   // config URLs.
   const statusCache = createStatusCache({ ...defaultProbes(ctx), ...probeOverride });

@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/ocpi/dispatcher.ts
-// The uniform per-request pipeline, CALLED BY the registry (integrate owner):
+// The uniform per-request pipeline, CALLED BY the registry:
 //   dispatch(route, ctx, freq, freply)
 //     build OcpiRequest -> open Exchange -> auth -> routing headers ->
 //     record + conformance(requestSchema) -> handle -> self-check(responseSchema)

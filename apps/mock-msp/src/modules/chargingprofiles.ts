@@ -3,17 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/chargingprofiles.ts
 // ChargingProfiles RECEIVER (eMSP side). Mounted at /ocpi/2.2.1/emsp/chargingprofiles.
 //
 // Owner: build:chargingprofiles. Exports a single `chargingprofilesModule: ModuleDef`
-// for the integrator to register via src/core/registry.ts. Pure handlers — they read
+// registered via src/core/registry.ts. Pure handlers — they read
 // ctx.req / mutate nothing the type system forbids and return an OcpiReply; the
 // dispatcher owns auth, routing-header checks, recording, schema validation, faults,
 // and header echoing. Never touch Fastify req/reply here.
 //
 // ----------------------------------------------------------------------------
-// CANDIDATE GAP (recon #7): Citrine's CPO seed advertises a chargingprofiles
+// Candidate gap: Citrine's CPO seed advertises a chargingprofiles
 // RECEIVER endpoint for the eMSP (apps/ocpi-server/seeders/20250806120002-
 // default-tenant-partner.ts registers CHARGING_PROFILES_RECEIVER at
 // .../emsp/chargingprofiles), BUT the CPO->eMSP push that would exercise it is
@@ -44,7 +43,7 @@ function handlePutChargingProfile(ctx: MockContext): OcpiReply {
   // session_id is available at ctx.req.params.session_id; the full inbound Exchange
   // (headers, raw + parsed body, validation result) is captured by the recorder, so
   // there is nothing to persist here beyond acknowledging receipt. DomainState has no
-  // dedicated chargingprofiles map (frozen types), and this route expects zero
+  // dedicated chargingprofiles map, and this route expects zero
   // traffic, so we intentionally do not stash domain state — the exchange record IS
   // the observability surface (queryable via /_mock/exchanges?module=chargingprofiles).
   return ctx.empty();

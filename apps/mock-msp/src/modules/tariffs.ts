@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/tariffs.ts   (owner: build:tariffs)
 // ----------------------------------------------------------------------------
 // Tariffs RECEIVER interface the CPO (Citrine) pushes to us.
 //
-// Live wire behavior (recon:modules §4 — TariffsBroadcaster.broadcastToClients):
+// Live wire behavior (TariffsBroadcaster.broadcastToClients):
 //   PUT    /ocpi/2.2.1/emsp/tariffs/{country_code}/{party_id}/{tariff_id}  body=Tariff
 //   DELETE /ocpi/2.2.1/emsp/tariffs/{country_code}/{party_id}/{tariff_id}
 // Both are answered with the EMPTY envelope (OcpiEmptyResponseSchema). The
@@ -16,9 +15,9 @@
 // (data OMITTED; returning data:{} or data:null would fail Citrine's z.undefined()).
 //
 // A GET reader at the same path is added for /_mock inspection completeness only
-// — Citrine never calls it (its client-owned GET is dead code, recon:modules §4).
+// — Citrine never calls it (its client-owned GET is dead code).
 //
-// This file only EXPORTS a ModuleDef. The integrator binds each route through the
+// This file only EXPORTS a ModuleDef. The registry binds each route through the
 // dispatcher (auth 'functional' + strict OCPI-* routing headers, inbound
 // requestSchema validation -> Finding on drift, responseSchema self-check + fault
 // target, X-Request-ID/X-Correlation-ID echo). Handlers stay pure: read

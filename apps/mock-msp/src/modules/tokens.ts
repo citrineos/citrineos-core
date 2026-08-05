@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/tokens.ts   (owner: build:tokens)
 // ----------------------------------------------------------------------------
 // eMSP Tokens SENDER interface (mounted at /ocpi/2.2.1/emsp/tokens):
 //   POST /:token_uid/authorize?type=<TokenType>  (optional LocationReferences body)
@@ -46,7 +45,7 @@ import { resolveAuthorize } from '../control/scenario.js';
 
 // WhitelistType is not exported through the barrel; 'ALLOWED' is
 // WhitelistType.ALLOWED and z.nativeEnum(WhitelistType) inside TokenDTOSchema
-// accepts the raw string value. (If the integrator later adds WhitelistType to
+// accepts the raw string value. (If WhitelistType is later added to
 // the barrel, swap this for the enum member — behavior is identical.)
 const WHITELIST_ALLOWED = 'ALLOWED';
 

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/sessions.ts   (owner: build:sessions)
 // ----------------------------------------------------------------------------
 // Sessions RECEIVER interface the CPO (Citrine) pushes client-owned Session
 // objects to. Base mount: /ocpi/2.2.1/emsp/sessions.
@@ -20,7 +19,7 @@
 //                                                 charging_preferences is a
 //                                                 SENDER method the eMSP CALLS on
 //                                                 the CPO, not one the eMSP hosts,
-//                                                 and recon confirms Citrine never
+//                                                 and Citrine never
 //                                                 pushes it here. Hosted so an
 //                                                 unexpected push is recorded
 //                                                 rather than 404'd.

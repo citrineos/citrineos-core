@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/server.ts   (integrate owner)
 // buildServer(ctx): a Fastify 5 instance with the raw-preserving JSON parser,
 // every OCPI module mounted through the registry+dispatcher, and the /_mock
 // control API. An onSend/error safety net guarantees an Exchange still records

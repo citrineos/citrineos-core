@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/credentials.ts
 // ----------------------------------------------------------------------------
 // OCPI 2.2.1 Credentials handshake, RECEIVER side (Citrine/CPO -> our mock eMSP).
 // Mounted at /ocpi/2.2.1/credentials (auth:'registration', no routing headers).
@@ -189,7 +188,7 @@ function handleDelete(ctx: MockContext): OcpiReply {
 }
 
 // ============================================================================
-// ModuleDef — the shape the registry (integrate owner) binds through dispatch.
+// ModuleDef — the shape the registry binds through dispatch.
 // ============================================================================
 export const credentialsModule: ModuleDef = {
   id: 'credentials',

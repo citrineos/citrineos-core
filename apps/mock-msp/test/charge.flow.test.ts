@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/charge.flow.test.ts
 // The live-charging control flow, Citrine-free. Drives /_mock/discover/evse and
 // /_mock/charge/start|stop against a stub CPO, and simulates Citrine's async
 // CommandResult callback + the Session/CDR push so the orchestrator's awaits

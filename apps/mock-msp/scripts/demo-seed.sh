@@ -9,7 +9,7 @@
 # Seeds the running mock eMSP with a narrative-ordered burst of OCPI traffic so
 # the dashboard (http://localhost:8083/) tells a story on screen.
 #
-#   *** WHAT THIS SCRIPT IS, SAID PLAINLY ***
+#   What this script does
 #   This script PLAYS CITRINEOS'S ROLE. It is not CitrineOS. It is curl wearing
 #   Citrine's hat: the same Authorization token, the same OCPI-from/to routing
 #   headers, the same URLs Citrine's CPO client calls. The mock cannot tell the
@@ -269,7 +269,7 @@ pause
 # STEP 4 -- the happy path: a fully schema-valid Session
 # ============================================================================
 # Every field below satisfies the ocpi-base SessionSchema (the same Zod object
-# Citrine itself parses with). Expect ✓ valid + green 1000 + zero findings, and
+# Citrine itself parses with). Expect check valid + green 1000 + zero findings, and
 # the object lands in /_mock/state/sessions.
 step 'happy path -- PUT a fully schema-valid Session'
 ocpi_functional PUT "/ocpi/2.2.1/emsp/sessions/$CPO_CC/$CPO_PARTY/SESSION-DEMO-1" '{
@@ -295,7 +295,7 @@ ocpi_functional PUT "/ocpi/2.2.1/emsp/sessions/$CPO_CC/$CPO_PARTY/SESSION-DEMO-1
 }'
 check 'http' "$HTTP_CODE" '200'
 check 'ocpi status_code' "$(json_num status_code "$RESP_BODY")" '1000'
-say "-> dashboard: green ✓ in the valid column. This is what conformance looks like."
+say "-> dashboard: green check in the valid column. This is what conformance looks like."
 pause
 
 # ============================================================================
@@ -345,7 +345,7 @@ ocpi_functional PUT "/ocpi/2.2.1/emsp/locations/$CPO_CC/$CPO_PARTY/LOC-DEMO-1" '
 # scenario option flips this to an outright 2001 rejection.)
 check 'http' "$HTTP_CODE" '200'
 check 'ocpi status_code' "$(json_num status_code "$RESP_BODY")" '1000'
-say "-> dashboard: ✗ invalid + an error finding. Expand the row to see the Zod issues."
+say "-> dashboard: cross invalid + an error finding. Expand the row to see the Zod issues."
 say "   note the mock still replied 1000 -- record-and-accept, it detects without breaking the CPO"
 pause
 
@@ -362,7 +362,7 @@ ocpi_functional POST '/ocpi/2.2.1/emsp/tokens/04E7F5A2B37C80/authorize?type=RFID
 check 'http' "$HTTP_CODE" '200'
 check 'ocpi status_code' "$(json_num status_code "$RESP_BODY")" '1000'
 check 'authorize decision' "$(json_str allowed "$RESP_BODY")" 'ALLOWED'
-say "-> ✗ invalid on the body, yet the mock still answered a well-formed ALLOWED"
+say "-> cross invalid on the body, yet the mock still answered a well-formed ALLOWED"
 pause
 
 # ============================================================================
@@ -387,7 +387,7 @@ check 'fault armed' "$(json_str armed "$RESP_BODY")" 'demo-cdr-3001'
 pause
 
 # This CDR is FULLY schema-valid. That is deliberate: it means the 3001 on screen
-# cannot be blamed on a bad payload. The row will read ✓ valid AND red 3001 --
+# cannot be blamed on a bad payload. The row will read check valid AND red 3001 --
 # proving the status came from the adversary, not from the data.
 ocpi_functional POST '/ocpi/2.2.1/emsp/cdrs' '{
   "country_code": "US",
@@ -436,7 +436,7 @@ ocpi_functional POST '/ocpi/2.2.1/emsp/cdrs' '{
 check 'http' "$HTTP_CODE" '200'
 check 'ocpi status_code (forced by the fault)' "$(json_num status_code "$RESP_BODY")" '3001'
 say "-> dashboard: the row is tinted dark red, flags show fault:ocpiStatus, ocpi is a red 3001"
-say "   ...and the valid column still says ✓ -- the payload was perfect, the mock lied on purpose"
+say "   ...and the valid column still says check -- the payload was perfect, the mock lied on purpose"
 pause
 
 # ============================================================================
@@ -474,10 +474,10 @@ printf '\n=== the story now on the dashboard (%s) ===\n' "$BASE"
 # counter), so on screen these will read e.g. #36..#42, not #1..#7. Listed here
 # top-of-table down to match what is actually on screen.
 say 'Wire trace, top row down (newest first):'
-say '  cdrs.post          ✓ valid  BUT red 3001 + fault:ocpiStatus  <- the adversary'
-say '  tokens.authorize   ✗ invalid (empty body is not LocationReferences)'
-say '  locations.put      ✗ invalid (coordinates "1.0"/"2.0" fail the regex)'
-say '  sessions.put       ✓ valid, clean 1000                       <- the happy path'
+say '  cdrs.post          check valid  BUT red 3001 + fault:ocpiStatus  <- the adversary'
+say '  tokens.authorize   cross invalid (empty body is not LocationReferences)'
+say '  locations.put      cross invalid (coordinates "1.0"/"2.0" fail the regex)'
+say '  sessions.put       check valid, clean 1000                       <- the happy path'
 say '  sessions.put       401 / 2002 + auth finding                 <- auth enforced'
 say '  versions.details   clean 1000'
 say '  versions.list      clean 1000'

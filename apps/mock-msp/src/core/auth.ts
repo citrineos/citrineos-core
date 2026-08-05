@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/auth.ts
 // Inbound auth guard mirroring Citrine's AuthMiddleware + AuthToken decorator:
 //   - Authorization header format is literally `Token <base64(rawToken)>`.
 //   - Citrine base64-ENCODES outbound (BaseClientApi.getHeaders) and

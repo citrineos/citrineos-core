@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/conformance.ts
 // ConformanceChecker: validate what Citrine sends us against the reused
 // ocpi-base Zod schema and turn any drift into Findings. Because the mock reuses
 // the SAME schema (same catalog zod instance) Citrine parses with, a validation

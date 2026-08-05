@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/identity.ts   (FROZEN)
 // ============================================================================
 import { ModuleId, InterfaceRole, VersionNumber } from './ocpi/barrel.js';
 import type { MockConfig, OcpiIdentity, CpoEndpoint } from './core/types.js';

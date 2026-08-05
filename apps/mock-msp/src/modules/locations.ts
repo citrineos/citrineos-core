@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/locations.ts
 // ----------------------------------------------------------------------------
 // Locations RECEIVER (client-owned push). Citrine (CPO) PUT/PATCHes client-owned
 // Location / EVSE / Connector objects to us at three path depths:
@@ -89,7 +88,7 @@ function read(ctx: MockContext): OcpiReply {
 }
 
 // ============================================================================
-// ModuleDef — the shape the registry (integrate owner) binds through dispatch.
+// ModuleDef — the shape the registry binds through dispatch.
 // ============================================================================
 export const locationsModule: ModuleDef = {
   id: ModuleId.Locations,

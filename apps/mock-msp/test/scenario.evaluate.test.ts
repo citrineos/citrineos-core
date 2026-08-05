@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/scenario.evaluate.test.ts
-// (5) The expect[] assertion oracle, exercised against every shipped fixture.
+// The expect[] assertion oracle, exercised against every shipped fixture.
 //     Each scenario is loaded, the minimal OCPI traffic its expectation refers
 //     to is driven, and evaluateExpectations(...) must report passed===true.
 //     This guards the metric() grammar (dotted paths resolved against the last

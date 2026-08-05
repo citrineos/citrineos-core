@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/credentials.handshake.test.ts
-// (1) Credentials handshake happy path, exercised in-process. The CPO (Citrine)
+// Credentials handshake happy path, exercised in-process. The CPO (Citrine)
 //     POSTs its CredentialsDTO to our /ocpi/2.2.1/credentials; the mock stores
 //     the CPO's token, calls the (stub) CPO back to discover its version
 //     endpoints, mints a fresh TOKEN_C, marks itself registered, and answers with
@@ -127,7 +126,7 @@ describe('credentials handshake (CPO-initiated, in-process)', () => {
 });
 
 // ============================================================================
-// (2) Credentials ROTATION: rotateCredentials() PUTs a fresh token to the CPO,
+// Credentials ROTATION: rotateCredentials() PUTs a fresh token to the CPO,
 //     adopts the CPO's newly-minted server token (only after a schema-valid
 //     response), and probes that the OLD outbound token now 401s. The
 //     /_mock/reregister route composes discovery + rotation.

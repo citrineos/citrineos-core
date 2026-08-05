@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/control/scenario.ts   (owner: build:control)
 // ----------------------------------------------------------------------------
 // Scenario = the single checked-in file that is simultaneously the adversary
 // config, the registration state, and the assertion oracle. This module owns:
@@ -138,7 +137,7 @@ const expectationSchema = z.object({
   detail: z.string().optional(),
 });
 
-/** The authoritative Scenario validator (matches the frozen Scenario type). */
+/** The authoritative Scenario validator. */
 export const ScenarioSchema = z.object({
   name: z.string(),
   identity: identityPartialSchema.optional(),
@@ -151,7 +150,7 @@ export const ScenarioSchema = z.object({
 
 // ---------------------------------------------------------------------------
 // Scenario runtime singleton — the authorize policy + strictInbound flag + the
-// active scenario. Lives here (not on DomainState, which is frozen) so both the
+// active scenario. Lives here (not on DomainState) so both the
 // control API and the tokens module can read one source of truth via imports.
 // ---------------------------------------------------------------------------
 export interface ScenarioRuntimeState {
@@ -270,13 +269,13 @@ export function applyScenario(ctx: MockContext, scn: Scenario): void {
 // `assert` is a tiny predicate evaluated over that set. Supported asserts:
 //   bare:  received | notReceived | hasFinding | hasError | valid | invalid
 //   cmp:   <metric> <op> <value>  where
-//          metric ∈ count | findings | globalFindings | httpStatus |
+//          metric is one of count | findings | globalFindings | httpStatus |
 //                   ocpiStatusCode | validationOk
 //                 | a DOTTED PATH resolved against the last matched exchange
 //                   (e.g. validation.ok, response.body.data.allowed,
 //                    response.httpStatus) or, when it starts with `registration.`,
 //                   against store.domain (e.g. registration.status)
-//          op     ∈ == != > >= < <=
+//          op     is one of == != > >= < <=
 // This grammar is intentionally small and permissive; unknown asserts fail
 // with an explanatory `observed` string rather than throwing.
 // ---------------------------------------------------------------------------

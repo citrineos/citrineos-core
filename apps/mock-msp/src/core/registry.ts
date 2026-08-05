@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/registry.ts   (integrate owner)
 // Binds every ModuleDef route onto the Fastify app through the dispatcher.
 // The dispatcher (ocpi/dispatcher.ts) owns the whole per-request pipeline and
 // sends the reply itself; the Fastify handler here is a thin closure that hands

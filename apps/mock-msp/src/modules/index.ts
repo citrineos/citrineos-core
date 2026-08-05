@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/modules/index.ts   (integrate owner)
 // Barrel of every ModuleDef the registry mounts. The order here is the order the
 // routes are registered; it has no functional effect (Fastify keys on method+url)
 // but keeps versions/credentials first for readability.

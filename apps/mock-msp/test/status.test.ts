@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/status.test.ts
 // GET /_mock/status — the single 2s-poll aggregate powering the dashboard status
 // strip + state-aware buttons. Hermetic: Hasura + Citrine-OCPI are stubbed via
 // config URL overrides (a real http stub), the EVerest/docker probe is injected
@@ -74,7 +73,7 @@ describe('GET /_mock/status — live aggregate', () => {
     stub = undefined;
   });
 
-  it('dead sources → HTTP 200, every remote field unknown, and it answers fast', async () => {
+  it('dead sources -> HTTP 200, every remote field unknown, and it answers fast', async () => {
     // Unreachable URLs; no ?fresh, so probes are still in-flight when the handler returns.
     ({ app, ctx } = makeServer(
       {
@@ -123,7 +122,7 @@ describe('GET /_mock/status — live aggregate', () => {
     expect(q).toContain('Transactions');
   });
 
-  it('GraphQL errors[] → hasura down + domain fields unknown, still HTTP 200', async () => {
+  it('GraphQL errors[] -> hasura down + domain fields unknown, still HTTP 200', async () => {
     stub = await startStatusStub(() => ({ errors: [{ message: 'boom' }] }));
     ({ app, ctx } = makeServer(overrides(stub), EVEREST_UP));
     await app.ready();
@@ -144,7 +143,7 @@ describe('GET /_mock/status — live aggregate', () => {
     await app.inject({ method: 'GET', url: '/_mock/status' }); // cached
     await app.inject({ method: 'GET', url: '/_mock/status' }); // cached
     const gql = stub.requests.filter((r) => r.method === 'POST' && r.path === '/graphql');
-    expect(gql).toHaveLength(1); // TTL (5s) not expired → no second query
+    expect(gql).toHaveLength(1); // TTL (5s) not expired -> no second query
   });
 
   it('handler latency is independent of a slow Hasura source', async () => {

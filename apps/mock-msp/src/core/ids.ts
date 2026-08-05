@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/ids.ts   (FROZEN)
 // ============================================================================
 import { randomUUID } from 'node:crypto';
 let _seq = 0;

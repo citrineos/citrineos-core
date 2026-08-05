@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/provoke.test.ts
 // POST /_mock/provoke/:what — the "both directions" proof. In production a
 // provoke fires a raw fetch at Citrine's Hasura, whose DB write triggers a real
 // OCPI push back to the mock. There is no live Hasura in-process, so we point

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/core/types.ts   (FROZEN — every builder imports these)
 // ============================================================================
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeAny } from 'zod';
@@ -224,7 +223,7 @@ export interface ModuleDef {
   mount: string; // absolute mount, e.g. '/ocpi/2.2.1/emsp/locations'
   routes: OcpiRoute[];
 }
-// Implemented by registry.ts (integrate owner). Builders only EXPORT ModuleDef.
+// Implemented by registry.ts.
 export type RegisterModule = (app: FastifyInstance, def: ModuleDef, ctx: MockContext) => void;
 
 // ---- Store (recorder + domain + waiter) ------------------------------------

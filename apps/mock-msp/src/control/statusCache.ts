@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/src/control/statusCache.ts
 // A tiny TTL cache for the three EXPENSIVE status sources behind GET /_mock/status:
 // the combined Hasura query (station/connector/transaction), the Citrine OCPI
 // reachability probe, and the EVerest-container docker check. The dashboard polls
@@ -51,7 +50,7 @@ export interface StatusProbes {
   everest(): Promise<EverestProbe>;
 }
 
-/** A snapshot value of `undefined` means "never successfully probed" → render as unknown. */
+/** A snapshot value of `undefined` means "never successfully probed" -> render as unknown. */
 export interface StatusSnapshot {
   hasura: HasuraStatus | undefined;
   ocpi: OcpiProbe | undefined;

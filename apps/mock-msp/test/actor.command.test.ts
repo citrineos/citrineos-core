@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ============================================================================
-// FILE: apps/mock-msp/test/actor.command.test.ts
-// (bonus) The Actor's full Command flow, Citrine-free: OcpiClient.sendCommand
+// The Actor's full Command flow, Citrine-free: OcpiClient.sendCommand
 // POSTs to the (stub) CPO and gets a sync CommandResponse; later the CPO POSTs
 // the async CommandResult to the response_url the mock advertised, and
 // awaitResult() (= store.waitForReceived on that url) resolves. This stitches the
