@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 
 export class TariffClass implements Partial<TariffDto> {
   id?: number;

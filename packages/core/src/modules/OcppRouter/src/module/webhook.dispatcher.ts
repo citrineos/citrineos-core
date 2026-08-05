@@ -1,26 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
-  ICache,
-  OCPPVersion,
-  OCPPVersionType,
-  SystemConfig,
-} from '@citrineos/base';
 import {
+  type BootstrapConfig,
+  type ICache,
   AbstractModule,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
-  MessageOrigin,
-  MessageState,
 } from '@citrineos/base';
+import {
+  type OCPPVersion,
+  type OCPPVersionType,
+  type SubscriptionDto,
+  type SystemConfig,
+  MessageOrigin,
+  MessageTypeId,
+} from '@citrineos/types';
 import type {
   IOCPPMessageRepository,
   ISubscriptionRepository,
 } from '@dal/interfaces/repositories.js';
-import { Subscription } from '@dal/layers/sequelize/model/Subscription/index.js';
 import { OidcTokenProvider } from '@util/authorization/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -107,8 +107,8 @@ export class WebhookDispatcher {
     message: string,
     timestamp: string,
     protocol: OCPPVersionType,
-    action: string,
-    state: MessageState,
+    action?: string,
+    type?: MessageTypeId,
   ) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     try {
@@ -121,20 +121,27 @@ export class WebhookDispatcher {
         ['origin', origin],
         ['timestamp', timestamp],
         ['protocol', protocol],
-        ['action', action],
       ]);
+
+      if (action) {
+        info.set('action', action);
+      }
+      if (type) {
+        info.set('type', type.toString());
+      }
 
       const messagePromise = this._ocppMessageRepository.createOCPPMessage(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         correlationId: messageId,
         origin: origin,
-        state: state,
+        type: type,
         protocol: protocol as OCPPVersion,
         action: action,
-        message: message,
+        raw: message,
         timestamp: timestamp,
       });
+
       const promises: Promise<any>[] =
         this._onMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ?? [];
       promises.push(messagePromise);
@@ -149,23 +156,27 @@ export class WebhookDispatcher {
     ocppConnectionName: string,
     timestamp: string,
     protocol: OCPPVersionType,
-    action: string,
-    state: MessageState,
+    message: string,
+    type: MessageTypeId,
     rpcMessage: any,
+    action?: string,
   ) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStation;
+
+    const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
 
     const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
       tenantId: tenantId,
       ocppConnectionName: ocppConnectionName,
       correlationId: messageId,
       origin: origin,
-      state: state,
+      type: type,
       action: action,
       protocol: protocol as OCPPVersion,
-      message: rpcMessage,
+      raw: message,
+      payload: payload,
       timestamp: timestamp,
     });
 
@@ -173,6 +184,12 @@ export class WebhookDispatcher {
       this._logger.debug(
         `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
       );
+      if (!messageRecord.action) {
+        this._logger.error(
+          `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
+        );
+        return;
+      }
       action = messageRecord.action;
     }
 
@@ -182,7 +199,8 @@ export class WebhookDispatcher {
         ['origin', origin],
         ['timestamp', timestamp],
         ['protocol', protocol],
-        ['action', action ? action : 'undefined'],
+        ['action', action],
+        ['type', type.toString()],
       ]);
       const rawMessage = JSON.stringify(rpcMessage);
       const promises: Promise<any>[] =
@@ -203,11 +221,12 @@ export class WebhookDispatcher {
 
   async dispatchMessageSent(
     identifier: string,
-    action: string,
-    state: MessageState,
     timestamp: string,
     protocol: OCPPVersionType,
+    message: string,
+    type: MessageTypeId,
     rpcMessage: any,
+    action?: string,
   ) {
     const tenantId = getTenantIdFromIdentifier(identifier);
     const ocppConnectionName = getStationIdFromIdentifier(identifier);
@@ -215,17 +234,33 @@ export class WebhookDispatcher {
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStationManagementSystem;
 
-    const messageRecordPromise = this._ocppMessageRepository.createOCPPMessage(tenantId, {
+    const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
+
+    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
       tenantId: tenantId,
       ocppConnectionName: ocppConnectionName,
       correlationId: messageId,
       origin: origin,
-      state: state,
+      type: type,
       action: action,
       protocol: protocol as OCPPVersion,
-      message: rpcMessage,
+      raw: message,
+      payload: payload,
       timestamp: timestamp,
     });
+
+    if (action === undefined) {
+      this._logger.debug(
+        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
+      );
+      if (!messageRecord.action) {
+        this._logger.error(
+          `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
+        );
+        return;
+      }
+      action = messageRecord.action;
+    }
 
     try {
       const info = new Map<string, string>([
@@ -233,7 +268,8 @@ export class WebhookDispatcher {
         ['origin', origin],
         ['timestamp', timestamp],
         ['protocol', protocol],
-        ['action', action ? action : 'undefined'],
+        ['action', action],
+        ['type', type.toString()],
       ]);
       const rawMessage = JSON.stringify(rpcMessage);
       const promises: Promise<any>[] =
@@ -246,7 +282,7 @@ export class WebhookDispatcher {
           }),
         ) ?? [];
 
-      await Promise.all([...promises, messageRecordPromise]);
+      await Promise.all(promises);
     } catch (err) {
       this._logger.error(`Failed to dispatch message sent for ${identifier} : ${err}`);
     }
@@ -362,7 +398,7 @@ export class WebhookDispatcher {
     this._sentMessageCallbacks.set(connectionIdentifier, sentMessageCallbacks);
   }
 
-  protected _onConnectionCallback(subscription: Subscription) {
+  protected _onConnectionCallback(subscription: SubscriptionDto) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -374,7 +410,7 @@ export class WebhookDispatcher {
       );
   }
 
-  protected _onCloseCallback(subscription: Subscription) {
+  protected _onCloseCallback(subscription: SubscriptionDto) {
     return (info?: Map<string, string>) =>
       this._subscriptionCallback(
         {
@@ -386,7 +422,7 @@ export class WebhookDispatcher {
       );
   }
 
-  protected _onMessageReceivedCallback(subscription: Subscription) {
+  protected _onMessageReceivedCallback(subscription: SubscriptionDto) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
@@ -409,7 +445,7 @@ export class WebhookDispatcher {
     };
   }
 
-  protected _onMessageSentCallback(subscription: Subscription) {
+  protected _onMessageSentCallback(subscription: SubscriptionDto) {
     return async (message: string, info?: Map<string, string>) => {
       if (
         !subscription.messageRegexFilter ||
@@ -473,6 +509,26 @@ export class WebhookDispatcher {
       );
       return false;
     }
+  }
+
+  private _extractPayloadFromRpcMessage(rpcMessage: any, type: MessageTypeId) {
+    let payload: any;
+    switch (type) {
+      case MessageTypeId.Call:
+        payload = rpcMessage[3];
+        break;
+      case MessageTypeId.CallResult:
+        payload = rpcMessage[2];
+        break;
+      case MessageTypeId.CallError:
+        payload = {
+          errorCode: rpcMessage[2],
+          errorDescription: rpcMessage[3],
+          errorDetails: rpcMessage[4],
+        };
+        break;
+    }
+    return payload;
   }
 }
 

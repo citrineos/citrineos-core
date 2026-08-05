@@ -3,10 +3,28 @@
 In the case you don't have a charger that supports OCPP 2.0.1 to experiment with, we can recommend using the Linux
 Foundation Energy project EVerest. [See here](https://github.com/EVerest) for the repository. They have built an open source version of
 charger firmware and also allow for using it as a simulator. They support OCPP 2.0.1 which makes it a great testing
-opportunity with CitrineOS. For the long route of setting up EVerst you can follow their documentation and build
+opportunity with CitrineOS. For the long route of setting up EVerest you can follow their documentation and build
 the project yourself. [See here for Docs](https://everest.github.io/latest/how-to-guides/getting-started/index.html)
 
 # Running EVerest
+
+## From citrineos-core
+
+Convenience commands are available from the root directory (citrineos-core) to run EVerest that match the commands already
+found in `apps/ocpp-server`:
+
+- `pnpm run start:everest` — starts EVerest for OCPP 2.x (defaults to `OCPP_VERSION=2.1`)
+- `pnpm run start:everest:16` — starts EVerest for OCPP 1.6
+
+Additionally, you can use the `--everest` or `--everest16` flag when running CitrineOS via pnpm:
+
+```
+pnpm citrine --everest
+```
+
+For more information regarding how these commands work under the hood, read the section below.
+
+## From apps/ocpp-server
 
 In order to alleviate some of the complexities that may arise when starting EVerest, we have created
 some helpful commands that should help in getting the EVerest charger simulator running locally and targeting
@@ -59,4 +77,4 @@ To get EVerest running on the side while developing and making changes, you can 
 1. Bring up EVerest with `docker compose --project-name everest-ac-demo --file "docker-compose.ocpp201.yml" up -d`.
 1. Copy over the appropriate device model with `docker cp manager/device_model_storage_citrineos_sp1.db \
 everest-ac-demo-manager-1:/ext/source/build/dist/share/everest/modules/OCPP201/device_model_storage.db`.
-1. Start EVerst having OCPP2.0.1 support with `docker exec everest-ac-demo-manager-1 sh /ext/source/build/run-scripts/run-sil-ocpp201.sh`.
+1. Start EVerest having OCPP2.0.1 support with `docker exec everest-ac-demo-manager-1 sh /ext/source/build/run-scripts/run-sil-ocpp201.sh`.

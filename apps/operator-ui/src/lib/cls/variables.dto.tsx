@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableDto } from '@citrineos/base';
+import type { VariableDto } from '@citrineos/types';
 
 export class VariableClass implements Partial<VariableDto> {
   id?: number;

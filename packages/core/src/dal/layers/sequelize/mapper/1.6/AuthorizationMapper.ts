@@ -2,8 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthorizationStatusEnumType } from '@citrineos/base';
-import { AuthorizationStatusEnum, OCPP1_6 } from '@citrineos/base';
+import {
+  type AuthorizationStatusEnumType,
+  AuthorizationStatusEnum,
+  OCPP1_6,
+} from '@citrineos/types';
 
 export class AuthorizationMapper {
   static toIdTagInfoStatus(status: AuthorizationStatusEnumType): OCPP1_6.AuthorizeResponseStatus {

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type ChargingStationDto, HttpMethod } from '@citrineos/base';
+import { type ChargingStationDto, HttpMethod } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField, nestedFormRowFlex } from '@lib/client/components/form/field';
 import { Input } from '@lib/client/components/ui/input';
@@ -15,7 +15,7 @@ import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useTranslate } from '@refinedev/core';
+import { useInvalidate, useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Form } from '@lib/client/components/form';
 import { useFieldArray } from 'react-hook-form';
@@ -36,6 +36,7 @@ export const DeleteStationNetworkProfilesModal = ({
 }: DeleteStationNetworkProfilesModalProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
+  const invalidate = useInvalidate();
   const [loading, setLoading] = useState(false);
 
   const parsedStation: ChargingStationDto = useMemo(
@@ -94,6 +95,8 @@ export const DeleteStationNetworkProfilesModal = ({
     }).then(() => {
       form.reset();
       dispatch(closeModal());
+      // Refresh the detail card + Network Profiles tab after deleting profiles.
+      invalidate({ invalidates: ['all'] });
     });
   };
 

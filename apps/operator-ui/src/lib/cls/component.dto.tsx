@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ComponentDto } from '@citrineos/base';
+import type { ComponentDto } from '@citrineos/types';
 
 export class ComponentClass implements Partial<ComponentDto> {
   id?: number;

@@ -9,7 +9,7 @@ import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useOne, useTranslate } from '@refinedev/core';
 import { PartnerDetailCard } from '@lib/client/pages/partners/detail/partner.detail.card';
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import { PartnerDetailTabsCard } from '@lib/client/pages/partners/detail/partner.detail.tabs.card';
 import { pageFlex, pageMargin } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';

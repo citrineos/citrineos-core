@@ -2,8 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, MessageState, OCPPMessageDto, TenantDto } from '@citrineos/base';
-import { DEFAULT_TENANT_ID, MessageOrigin, Namespace, OCPPVersion } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type MessageTypeId,
+  type OCPPMessageDto,
+  type TenantDto,
+  MessageOrigin,
+  OCPPVersion,
+} from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -38,17 +45,24 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   @Column(DataType.STRING)
   declare origin: MessageOrigin;
 
-  @Column(DataType.STRING)
-  declare state: MessageState;
+  // OCPP RPC messageTypeId (2 = Call, 3 = CallResult, 4 = CallError). Absent for messages
+  // that could not be parsed far enough to determine it.
+  @Column(DataType.INTEGER)
+  declare type?: MessageTypeId;
 
   @Column(DataType.STRING)
   declare protocol: OCPPVersion;
 
   @Column(DataType.STRING)
-  declare action: string;
+  declare action?: string;
 
+  // Parsed OCPP payload only — the surrounding RPC frame lives in `raw`.
   @Column(DataType.JSONB)
-  declare message: any;
+  declare payload?: any;
+
+  // Exact message as it appeared on the wire. TEXT because messages routinely exceed 255 chars.
+  @Column({ type: DataType.TEXT, allowNull: false })
+  declare raw: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;

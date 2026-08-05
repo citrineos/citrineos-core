@@ -2,31 +2,53 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import 'reflect-metadata';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { v4 as uuidv4 } from 'uuid';
 import type { BootstrapConfig } from '@config/bootstrap.config.js';
-import type { SystemConfig } from '@config/types.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
-import { ErrorCode, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
-import { RequestBuilder } from '@base-util/request.js';
+import {
+  type SystemConfig,
+  type HandlerProperties,
+  EventGroup,
+  MessageOrigin,
+  MessageState,
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type OCPPVersionType,
+  ErrorCode,
+  OCPPVersion,
+} from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
-import type { IWebsocketConnection } from '@interfaces/cache/types.js';
-import { CacheNamespace, createIdentifier } from '@interfaces/cache/types.js';
 import type {
   IMessage,
   IMessageConfirmation,
   IMessageHandler,
   IMessageSender,
 } from '@interfaces/messages/index.js';
-import type { HandlerProperties } from '@interfaces/messages/internal-types.js';
-import { EventGroup, MessageOrigin, MessageState } from '@interfaces/messages/internal-types.js';
 import type { IModule } from '@interfaces/modules/Module.js';
-import type { IHandlerDefinition } from '@interfaces/modules/HandlerDefinition.js';
-import { AS_HANDLER_METADATA } from '@interfaces/modules/AsHandler.js';
+import 'reflect-metadata';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import { OCPPValidator } from './OCPPValidator.js';
+import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
+import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
+import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
+
+/** Two handler classes claiming one action and direction within the same module. */
+interface IHandlerConflict {
+  action: CallAction;
+  type: MessageState;
+  claimedBy: string;
+  alsoClaimedBy: string;
+}
+
+/** Renders one indented line per conflict for the wire-up error. */
+function describeConflicts(conflicts: Iterable<IHandlerConflict>): string[] {
+  return [...conflicts].map(
+    ({ action, type, claimedBy, alsoClaimedBy }) =>
+      `  ${action} (${MessageState[type]}) — ${claimedBy} and ${alsoClaimedBy}`,
+  );
+}
 
 /**
  * The dependencies every OCPP module receives through the container. Each concrete
@@ -39,6 +61,7 @@ export interface OcppModuleDependencies {
   handler: IMessageHandler;
   logger: Logger<ILogObj>;
   ocppValidator: OCPPValidator;
+  ocppSender: IOcppSender;
 }
 
 export abstract class AbstractModule implements IModule {
@@ -51,10 +74,19 @@ export abstract class AbstractModule implements IModule {
   protected readonly _sender: IMessageSender;
   protected readonly _eventGroup: EventGroup;
   protected readonly _logger: Logger<ILogObj>;
+  protected readonly _ocppSender: IOcppSender;
 
-  protected _requests: CallAction[] = [];
-  protected _responses: CallAction[] = [];
+  /**
+   * What this module subscribes to, derived in the constructor from its handlers' declared actions
+   * minus any config exclusions.
+   */
+  private readonly _requests: CallAction[];
+  private readonly _responses: CallAction[];
   private startTime = Date.now();
+
+  private readonly _handlerInstancesByKey = new Map<string, AbstractHandler>();
+  private readonly _declaredRequests = new Set<CallAction>();
+  private readonly _declaredResponses = new Set<CallAction>();
 
   constructor(
     config: SystemConfig,
@@ -62,8 +94,10 @@ export abstract class AbstractModule implements IModule {
     handler: IMessageHandler,
     sender: IMessageSender,
     eventGroup: EventGroup,
+    ocppSender: IOcppSender,
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
+    handlers: AbstractHandler[] = [],
   ) {
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
@@ -73,9 +107,91 @@ export abstract class AbstractModule implements IModule {
     this._sender = sender;
     this._eventGroup = eventGroup;
     this._cache = cache;
+    this._ocppSender = ocppSender;
 
     // Set module for proper message flow.
     this.handler.module = this;
+
+    const conflicts = new Map<string, IHandlerConflict>();
+
+    for (const instance of handlers) {
+      const definitions = (Reflect.getMetadata(AS_HANDLER_CLASS_METADATA, instance.constructor) ??
+        []) as IHandlerClassDefinition[];
+      for (const definition of definitions) {
+        const key = AbstractModule._handlerKey(
+          definition.protocol,
+          definition.action,
+          definition.type,
+        );
+        const claimed = this._handlerInstancesByKey.get(key);
+        if (claimed && claimed !== instance) {
+          conflicts.set(`${definition.action}:${definition.type}`, {
+            action: definition.action,
+            type: definition.type,
+            claimedBy: claimed.constructor.name,
+            alsoClaimedBy: instance.constructor.name,
+          });
+          continue;
+        }
+        this._handlerInstancesByKey.set(key, instance);
+        this._declaredActions(definition.type).add(definition.action);
+      }
+    }
+
+    const excluded = this._excludedActions();
+    this._requests = [...this._declaredRequests].filter(
+      (action) => !excluded.requests?.includes(action),
+    );
+    this._responses = [...this._declaredResponses].filter(
+      (action) => !excluded.responses?.includes(action),
+    );
+
+    if (conflicts.size > 0) {
+      throw new Error(
+        [
+          `Module '${eventGroup}' cannot start: two handlers are registered for the same message.`,
+          ``,
+          ...describeConflicts(conflicts.values()),
+          ``,
+          `Dispatch can only route a message to one handler, so the other would never run. ` +
+            `Remove one from this module's handler list.`,
+        ].join('\n'),
+      );
+    }
+  }
+
+  /**
+   * Builds the lookup key used by {@link _handlerInstancesByKey}, keyed on protocol, action,
+   * and request/response type so a module can't accidentally dispatch a response to a
+   * handler registered for the request side of the same action (or vice versa).
+   */
+  private static _handlerKey(
+    protocol: OCPPVersion,
+    action: CallAction,
+    type: MessageState,
+  ): string {
+    return `${protocol}:${action}:${type}`;
+  }
+
+  /**
+   * The actions this module's handlers declare for one direction. Protocol agnostic
+   */
+  private _declaredActions(type: MessageState): Set<CallAction> {
+    return type === MessageState.Request ? this._declaredRequests : this._declaredResponses;
+  }
+
+  /**
+   * The actions this module's config asks it not to subscribe to
+   */
+  private _excludedActions(): { requests?: CallAction[]; responses?: CallAction[] } {
+    const modules: Partial<
+      Record<EventGroup, { excludedRequests?: CallAction[]; excludedResponses?: CallAction[] }>
+    > = this._config.modules;
+    const moduleConfig = modules[this._eventGroup];
+    return {
+      requests: moduleConfig?.excludedRequests,
+      responses: moduleConfig?.excludedResponses,
+    };
   }
 
   /**
@@ -115,7 +231,7 @@ export abstract class AbstractModule implements IModule {
   }
 
   /**
-   * Methods
+   * Interface methods.
    */
 
   /**
@@ -182,20 +298,19 @@ export abstract class AbstractModule implements IModule {
         throw new Error('Unknown message state: ' + message.state);
     }
     try {
-      const handlerDefinition = (
-        Reflect.getMetadata(AS_HANDLER_METADATA, this.constructor) as Array<IHandlerDefinition>
-      )
-        .filter((h) => h.protocol === message.protocol && h.action === message.action)
-        .pop();
-      if (handlerDefinition) {
-        await handlerDefinition.method.call(this, message, props);
-      } else {
+      const handlerInstance = this._handlerInstancesByKey.get(
+        AbstractModule._handlerKey(message.protocol as OCPPVersion, message.action, message.state),
+      );
+
+      if (!handlerInstance) {
         throw new OcppError(
           message.context.correlationId,
           ErrorCode.NotSupported,
           'No handler found for action: ' + message.action + ' at module ' + this._eventGroup,
         );
       }
+
+      await handlerInstance.handle(message, props);
     } catch (error) {
       this._logger.error('Failed handling message: ', error, message);
       if (message.state === MessageState.Request) {
@@ -221,30 +336,15 @@ export abstract class AbstractModule implements IModule {
   }
 
   /**
-   * Interface methods.
-   */
-
-  /**
-   * Method to handle incoming {@link IMessage}.
-   *
-   * @param message The {@link IMessage} to handle. Can contain either a {@link OcppRequest} or a {@link OcppResponse} as payload.
-   * @param props The {@link HandlerProperties} for this {@link IMessage} containing implementation specific metadata. Metadata is not used in the base implementation.
-   */
-
-  /**
    * Calls shutdown on the handler and sender.
    *
    * Note: To be overwritten by subclass if other logic is necessary.
-   *
+   * TODO shutdown necessary for AbstractHandlers?
    */
   async shutdown(): Promise<void> {
     await this._handler.shutdown();
     await this._sender.shutdown();
   }
-
-  /**
-   * Default implementation
-   */
 
   /**
    * Sends a call with the specified identifier, tenantId, protocol, action, payload, and origin.
@@ -259,7 +359,7 @@ export abstract class AbstractModule implements IModule {
    * @param {MessageOrigin} [origin] - The origin of the call.
    * @return {Promise<IMessageConfirmation>} A promise that resolves to the message confirmation.
    */
-  public async sendCall(
+  public sendCall(
     ocppConnectionName: string,
     tenantId: number,
     protocol: OCPPVersionType,
@@ -269,76 +369,16 @@ export abstract class AbstractModule implements IModule {
     correlationId?: string,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    const identifier = createIdentifier(tenantId, ocppConnectionName);
-    const _correlationId: string = correlationId === undefined ? uuidv4() : correlationId;
-
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+    return this._ocppSender.sendCall({
+      ocppConnectionName,
+      tenantId,
+      protocol,
       action,
+      eventGroup: this._eventGroup,
       payload,
-      protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(_correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
-    }
-
-    if (callbackUrl) {
-      // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
-      this._logger.debug(
-        `Setting callback URL: ${callbackUrl} for correlationId: ${_correlationId}`,
-      );
-      this._cache
-        .set(
-          _correlationId,
-          callbackUrl,
-          AbstractModule.CALLBACK_URL_CACHE_PREFIX + ocppConnectionName,
-          this._config.maxCachingSeconds,
-        )
-        .then((value) => {
-          if (value) {
-            this._logger.debug(`Successfully set cache for correlationId: ${_correlationId}`);
-          } else {
-            this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
-          }
-        })
-        .catch((error) => this._logger.error('Error setting cache: ', error));
-    }
-    // TODO: Future - Compound key with tenantId
-    return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
-      if (connection) {
-        const websocketConnection: IWebsocketConnection = JSON.parse(connection);
-        if (websocketConnection.protocol !== protocol) {
-          this._logger.error(
-            `Failed sending call. Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: `,
-            identifier,
-          );
-          return Promise.resolve({
-            success: false,
-            payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
-          });
-        }
-        return this._sender.sendRequest(
-          RequestBuilder.buildCall(
-            ocppConnectionName,
-            _correlationId,
-            tenantId,
-            action,
-            payload,
-            this._eventGroup,
-            origin,
-            protocol,
-          ),
-        );
-      } else {
-        this._logger.error('Failed sending call. No connection found for identifier: ', identifier);
-        return Promise.resolve({
-          success: false,
-          payload: 'No connection found for identifier: ' + identifier,
-        });
-      }
+      callbackUrl,
+      correlationId,
+      origin,
     });
   }
 
@@ -363,31 +403,16 @@ export abstract class AbstractModule implements IModule {
     payload: OcppResponse,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+    return this._ocppSender.sendCallResult({
+      correlationId,
+      ocppConnectionName,
+      tenantId,
+      protocol,
       action,
+      eventGroup: this._eventGroup,
       payload,
-      protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
-    }
-
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallResult(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        this._eventGroup,
-        origin,
-        protocol,
-      ),
-    );
+      origin,
+    });
   }
 
   /**
@@ -402,26 +427,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation> {
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
-      message.action,
-      payload,
-      message.protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(
-        message.context.correlationId,
-        ErrorCode.FormatViolation,
-        'Invalid message format',
-        {
-          errors: errors,
-        },
-      );
-    }
-
-    message.origin = MessageOrigin.ChargingStationManagementSystem;
-    return this._sender.sendResponse(message, payload);
+    return this._ocppSender.sendCallResultWithMessage(message, payload);
   }
 
   /**
@@ -445,18 +451,16 @@ export abstract class AbstractModule implements IModule {
     payload: OcppError,
     origin: MessageOrigin = MessageOrigin.ChargingStationManagementSystem,
   ): Promise<IMessageConfirmation> {
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallError(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        this._eventGroup,
-        origin,
-        protocol,
-      ),
-    );
+    return this._ocppSender.sendCallError({
+      correlationId,
+      ocppConnectionName,
+      tenantId,
+      protocol,
+      action,
+      eventGroup: this._eventGroup,
+      payload,
+      origin,
+    });
   }
 
   /**
@@ -471,8 +475,7 @@ export abstract class AbstractModule implements IModule {
     message: IMessage<OcppRequest>,
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
-    message.origin = MessageOrigin.ChargingStationManagementSystem;
-    return this._sender.sendResponse(message, payload);
+    return this._ocppSender.sendCallErrorWithMessage(message, payload);
   }
 
   /**

@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';

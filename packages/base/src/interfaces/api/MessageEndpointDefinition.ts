@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, OCPPVersion } from '@ocpp/rpc/message.js';
+import type { CallAction, OCPPVersion } from '@citrineos/types';
 
 /**
  * Interface for usage in {@link AsMessageEndpoint} decorator.

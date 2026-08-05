@@ -9,9 +9,8 @@ import {
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_RESULT_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '../../index.js';
+import { OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { OCPPValidator } from '../../src/interfaces/modules/OCPPValidator.js';
 
 describe('OCPPValidator', () => {
@@ -190,6 +189,51 @@ describe('OCPPValidator', () => {
         );
 
         expect(result.isValid).toBe(true);
+      });
+    });
+
+    describe('SecurityEventNotification (free-form type)', () => {
+      it('accepts an unlisted security event type', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate', timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(true);
+        expect(result.errors).toBeUndefined();
+      });
+
+      it('accepts an unlisted security event type on OCPP 2.1', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate', timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_1,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+
+      it('rejects when the required timestamp is missing', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'InvalidCentralSystemCertificate' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+
+      it('rejects a type longer than 50 characters', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'x'.repeat(51), timestamp: '2026-06-10T13:42:56.340Z' },
+          OCPPVersion.OCPP2_0_1,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
       });
     });
 

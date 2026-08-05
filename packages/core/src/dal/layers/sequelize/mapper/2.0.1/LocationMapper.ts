@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ConnectorStatusEnumType } from '@citrineos/base';
-import { ConnectorStatusEnum, OCPP2_0_1 } from '@citrineos/base';
+import { type ConnectorStatusEnumType, ConnectorStatusEnum, OCPP2_0_1 } from '@citrineos/types';
 
 export class LocationMapper {
   static mapConnectorStatus(status: OCPP2_0_1.ConnectorStatusEnumType): ConnectorStatusEnumType {

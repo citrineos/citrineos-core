@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import type { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/VariableAttribute.js';
 import { IncomingMessage } from 'http';

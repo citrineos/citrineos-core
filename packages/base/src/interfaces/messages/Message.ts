@@ -3,10 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IMessageContext } from '@interfaces/messages/MessageContext.js';
+import {
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  type OCPPVersionType,
+  EventGroup,
+  MessageOrigin,
+  MessageState,
+} from '@citrineos/types';
 import { OcppError } from '@ocpp/rpc/message.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import type { CallAction, OCPPVersionType } from '@ocpp/rpc/message.js';
-import { EventGroup, MessageOrigin, MessageState } from '@interfaces/messages/internal-types.js';
 
 /**
  * Message

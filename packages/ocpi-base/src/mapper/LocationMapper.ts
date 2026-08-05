@@ -22,8 +22,6 @@ import {
   type LocationDto,
   type LocationFacilityEnumType,
   type LocationParkingEnumType,
-} from '@citrineos/base';
-import {
   ChargingStationCapabilityEnum,
   ChargingStationParkingRestrictionEnum,
   ConnectorFormatEnum,
@@ -33,7 +31,7 @@ import {
   LocationFacilityEnum,
   LocationHours,
   LocationParkingEnum,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { ParkingRestriction } from '../model/ParkingRestriction.js';
 import { Capability } from '../model/Capability.js';
 import { Container } from 'typedi';
@@ -41,6 +39,14 @@ import { Logger } from 'tslog';
 import { ParkingType } from '../model/ParkingType.js';
 import { Facilities } from '../model/Facilities.js';
 import type { Hours } from '../model/Hours.js';
+
+export function formatCoordinate(value: number | string): string {
+  const str = String(value).trim();
+  const [integerPart, decimalPart = ''] = str.split('.');
+  if (decimalPart.length < 5) return `${integerPart}.${decimalPart.padEnd(5, '0')}`;
+  if (decimalPart.length <= 6) return str;
+  return `${integerPart}.${decimalPart.slice(0, 6)}`;
+}
 
 export class LocationMapper {
   static fromGraphql(location: LocationDto): LocationDTO {
@@ -56,8 +62,8 @@ export class LocationMapper {
       state: location.state,
       country: location.country,
       coordinates: {
-        longitude: location.coordinates.coordinates[0].toString(),
-        latitude: location.coordinates.coordinates[1].toString(),
+        longitude: formatCoordinate(location.coordinates.coordinates[0]),
+        latitude: formatCoordinate(location.coordinates.coordinates[1]),
       },
       time_zone: location.timeZone,
       evses: location.chargingPool
@@ -85,8 +91,8 @@ export class LocationMapper {
       state: location.state,
       country: location.country,
       coordinates: location.coordinates && {
-        longitude: location.coordinates.coordinates[0].toString(),
-        latitude: location.coordinates.coordinates[1].toString(),
+        longitude: formatCoordinate(location.coordinates.coordinates[0]),
+        latitude: formatCoordinate(location.coordinates.coordinates[1]),
       },
       time_zone: location.timeZone,
       evses:
@@ -232,8 +238,8 @@ export class EvseMapper {
       physical_reference: evse.physicalReference,
       coordinates: station.coordinates
         ? {
-            longitude: station.coordinates.coordinates[0].toString(),
-            latitude: station.coordinates.coordinates[1].toString(),
+            longitude: formatCoordinate(station.coordinates.coordinates[0]),
+            latitude: formatCoordinate(station.coordinates.coordinates[1]),
           }
         : undefined,
       parking_restrictions: station.parkingRestrictions
@@ -266,8 +272,8 @@ export class EvseMapper {
       physical_reference: evse.physicalReference,
       coordinates: station.coordinates
         ? {
-            longitude: station.coordinates.coordinates[0].toString(),
-            latitude: station.coordinates.coordinates[1].toString(),
+            longitude: formatCoordinate(station.coordinates.coordinates[0]),
+            latitude: formatCoordinate(station.coordinates.coordinates[1]),
           }
         : undefined,
       parking_restrictions: station.parkingRestrictions

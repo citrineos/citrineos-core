@@ -3,78 +3,129 @@
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
 import path from 'path';
-import type { ConfigStore, SystemConfig } from '@citrineos/base';
+import type {
+  ConfigStore,
+  CreateDirectoryOptions,
+  DeleteFileOptions,
+  TrustOptions,
+} from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
 export class LocalStorage implements ConfigStore {
   protected readonly _logger: Logger<ILogObj>;
-  private defaultFilePath: string;
+  private defaultRoot: string;
   private configFileName: string;
-  private configDir: string | undefined;
+  private configBucket: string | undefined;
 
   constructor(
-    defaultFilePath: string,
+    defaultRoot: string,
     configFileName: string,
-    configDir?: string,
+    configBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
-    this.defaultFilePath = defaultFilePath;
+    this.defaultRoot = defaultRoot;
     this.configFileName = configFileName;
-    this.configDir = configDir;
+    this.configBucket = configBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  async saveFile(fileName: string, content: Buffer, filePath?: string): Promise<string> {
-    const relativePath = path.join(filePath ? filePath : this.defaultFilePath, fileName);
-    // path.resolve so an absolute filePath/defaultFilePath is honored as-is;
-    // path.join would treat it as relative and re-anchor under cwd.
-    const absoluteFilePath = path.resolve(process.cwd(), relativePath);
-    this._logger.debug(`Saving file to ${absoluteFilePath}`);
-    fs.mkdirSync(path.dirname(absoluteFilePath), { recursive: true });
-    fs.writeFileSync(absoluteFilePath, content, 'utf-8');
-    return filePath ? relativePath : fileName;
+  /**
+   * Writes content to the resolved path, creating any missing parent directories automatically.
+   * @param key File name or relative path.
+   * @param content File content as a Buffer.
+   * @param bucket Optional directory override; defaults to `defaultRoot`.
+   * @param options Pass `{ trusted: true }` for trusted, config-driven paths that may be absolute or
+   *   outside the storage root; untrusted keys are validated with {@link _validatePath}.
+   *
+   * @returns The key used to store the file.
+   */
+  async saveFile(
+    key: string,
+    content: Buffer,
+    bucket?: string,
+    options?: TrustOptions,
+  ): Promise<string> {
+    const absolutePath = this._resolvePath(key, bucket, options?.trusted);
+    this._logger.debug(`Saving file to ${absolutePath}`);
+    fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+    fs.writeFileSync(absolutePath, content, 'utf-8');
+    return key;
   }
 
-  async getFile(id: string, filePath?: string): Promise<string | undefined> {
-    const absoluteFilePath = path.resolve(
-      process.cwd(),
-      filePath ? filePath : this.defaultFilePath,
-      id,
-    );
-    this._logger.debug(`Getting file from ${absoluteFilePath}`);
-    if (!fs.existsSync(absoluteFilePath)) {
+  /**
+   * Reads the file at the resolved path and returns its content as a UTF-8 string.
+   * @param key File name or relative path.
+   * @param bucket Optional directory override; defaults to `defaultRoot`.
+   * @param options Pass `{ trusted: true }` for trusted, config-driven paths that may be absolute or
+   *   outside the storage root; untrusted keys are validated with {@link _validatePath}.
+   *
+   * @returns File content, or undefined if the path does not exist.
+   */
+  async getFile(key: string, bucket?: string, options?: TrustOptions): Promise<string | undefined> {
+    const absolutePath = this._resolvePath(key, bucket, options?.trusted);
+    this._logger.debug(`Getting file from ${absolutePath}`);
+    if (!fs.existsSync(absolutePath)) {
       return;
     }
-    return fs.readFileSync(absoluteFilePath, 'utf-8');
+    return fs.readFileSync(absolutePath, 'utf-8');
   }
 
-  async exists(filePath: string): Promise<boolean> {
-    const absoluteFilePath = path.resolve(process.cwd(), this.defaultFilePath, filePath);
-    this._logger.debug(`Checking existence of ${absoluteFilePath}`);
-    return fs.existsSync(absoluteFilePath);
+  /**
+   * Checks whether the resolved path exists on the filesystem.
+   * @param key File name or relative path.
+   * @param bucket Optional directory override; defaults to `defaultRoot`.
+   * @param options Pass `{ trusted: true }` for trusted, config-driven paths that may be absolute or
+   *   outside the storage root; untrusted keys are validated with {@link _validatePath}.
+   *
+   * @returns True if the path exists.
+   */
+  async exists(key: string, bucket?: string, options?: TrustOptions): Promise<boolean> {
+    const absolutePath = this._resolvePath(key, bucket, options?.trusted);
+    this._logger.debug(`Checking existence of ${absolutePath}`);
+    return fs.existsSync(absolutePath);
   }
 
-  async createDirectory(dirPath: string, options?: { recursive?: boolean }): Promise<void> {
-    const absoluteDirPath = path.resolve(process.cwd(), this.defaultFilePath, dirPath);
-    this._logger.debug(`Creating directory ${absoluteDirPath}`);
-    fs.mkdirSync(absoluteDirPath, options);
-  }
-
-  async deleteFile(
-    target: string,
-    options?: { recursive?: boolean; force?: boolean },
+  /**
+   * Creates a directory at the resolved path.
+   * @param key Directory path.
+   * @param bucket Optional directory override; defaults to `defaultRoot`.
+   * @param options Pass `{ recursive: true }` to create all missing parent directories; `{ trusted: true }`
+   *   for trusted, config-driven paths that may be absolute or outside the storage root; untrusted keys
+   *   are validated with {@link _validatePath}.
+   */
+  async createDirectory(
+    key: string,
+    bucket?: string,
+    options?: CreateDirectoryOptions,
   ): Promise<void> {
-    const absoluteFilePath = path.resolve(process.cwd(), this.defaultFilePath, target);
-    this._logger.debug(`Deleting ${absoluteFilePath}`);
-    fs.rmSync(absoluteFilePath, options);
+    const absolutePath = this._resolvePath(key, bucket, options?.trusted);
+    this._logger.debug(`Creating directory ${absolutePath}`);
+    fs.mkdirSync(absolutePath, { recursive: options?.recursive });
+  }
+
+  /**
+   * Deletes a file or directory at the resolved path.
+   * @param key File or directory path.
+   * @param bucket Optional directory override; defaults to `defaultRoot`.
+   * @param options Pass `{ recursive: true }` to remove a directory tree; `{ force: true }` to suppress
+   *   not-found errors; `{ trusted: true }` for trusted, config-driven paths that may be absolute or
+   *   outside the storage root; untrusted keys are validated with {@link _validatePath}.
+   */
+  async deleteFile(key: string, bucket?: string, options?: DeleteFileOptions): Promise<void> {
+    const absolutePath = this._resolvePath(key, bucket, options?.trusted);
+    this._logger.debug(`Deleting ${absolutePath}`);
+    fs.rmSync(absolutePath, { recursive: options?.recursive, force: options?.force });
   }
 
   async fetchConfig(): Promise<SystemConfig | null> {
     try {
-      const configString = await this.getFile(this.configFileName, this.configDir);
+      const configString = await this.getFile(this.configFileName, this.configBucket, {
+        trusted: true,
+      });
       if (!configString) return null;
       return JSON.parse(configString) as SystemConfig;
     } catch (error) {
@@ -88,11 +139,58 @@ export class LocalStorage implements ConfigStore {
       await this.saveFile(
         this.configFileName,
         Buffer.from(JSON.stringify(config, null, 2)),
-        this.configDir,
+        this.configBucket,
+        { trusted: true },
       );
       this._logger.info('Config saved locally.');
     } catch (error) {
       this._logger.error('Error saving config to local storage:', error);
     }
+  }
+
+  /**
+   * Validates a caller-supplied key so untrusted input cannot escape the storage root.
+   *
+   * Applied for every non-trusted call. Rejects NUL bytes, absolute paths
+   * (POSIX, Windows drive-letter, and UNC), and any parent-directory (`..`) traversal segment.
+   * Throws on failure; returns void when the key is safe.
+   */
+  private _validatePath(key: string): void {
+    // NUL bytes can truncate a path string in lower-level layers letting a value that passed our checks resolve to a different file than intended.
+    // Technically this is guarded against by Node but the storage backends could be vulnerable.
+    // Rejecting this at the boundary so every storage backend fails predictably instead of relying on each one to handle NUL safely
+    if (key.includes('\0')) {
+      throw new Error('Invalid filePath: contains a NUL byte');
+    }
+    // Reject Windows drive-letter and network ("\\host") absolute paths
+    if (/^[a-zA-Z]:[\\/]/.test(key) || key.startsWith('\\\\')) {
+      throw new Error(`Invalid filePath "${key}": absolute paths are not allowed`);
+    }
+    // Reject Linux style absolute paths and any leading separator.
+    if (path.isAbsolute(key) || key.startsWith('/') || key.startsWith('\\')) {
+      throw new Error(`Invalid filePath "${key}": absolute paths are not allowed`);
+    }
+    // Reject any parent-directory traversal, splitting on both separators.
+    if (key.split(/[\\/]+/).some((segment) => segment === '..')) {
+      throw new Error(
+        `Invalid filePath "${key}": parent directory traversal ("..") is not allowed`,
+      );
+    }
+  }
+
+  /**
+   * Resolves a key to an absolute filesystem path.
+   * - Untrusted keys are validated by {@link _validatePath}
+   * - Trusted keys skip validation: absolute keys are used as-is (bypass root
+   *   entirely) and relative keys are joined with bucket (or defaultRoot). Use only for internal,
+   *   config-driven paths.
+   */
+  private _resolvePath(key: string, bucket?: string, trusted = false): string {
+    if (!trusted) {
+      this._validatePath(key);
+    }
+    if (path.isAbsolute(key)) return key;
+    const normalized = key.split('/').join(path.sep);
+    return path.resolve(process.cwd(), bucket ?? this.defaultRoot, normalized);
   }
 }

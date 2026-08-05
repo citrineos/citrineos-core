@@ -14,7 +14,7 @@ import type {
   TariffDto,
   TransactionDto,
   TransactionEventDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class TransactionClass implements Partial<TransactionDto> {
   id?: number;

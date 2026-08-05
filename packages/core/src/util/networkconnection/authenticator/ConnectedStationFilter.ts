@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { AuthenticationOptions, ICache } from '@citrineos/base';
-import { CacheNamespace, createIdentifier, notNull } from '@citrineos/base';
+import {
+  type AuthenticationOptions,
+  type ICache,
+  CacheNamespace,
+  createIdentifier,
+  notNull,
+} from '@citrineos/base';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

@@ -17,7 +17,7 @@ import type {
 } from '../graphql/index.js';
 import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
 import { SessionMapper } from '../mapper/index.js';
-import type { TransactionDto } from '@citrineos/base';
+import type { TransactionDto } from '@citrineos/types';
 
 @Service()
 export class SessionsService {

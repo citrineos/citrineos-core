@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { AuthorizationStatusEnumType, IdTokenEnumType } from '@citrineos/base';
-import { AuthorizationStatusEnum, IdTokenEnum, OCPP2_0_1 } from '@citrineos/base';
+import {
+  type AuthorizationStatusEnumType,
+  type IdTokenEnumType,
+  AuthorizationStatusEnum,
+  IdTokenEnum,
+  OCPP2_0_1,
+} from '@citrineos/types';
 import { Authorization } from '../../model/Authorization/Authorization.js';
 export class AuthorizationMapper {
   static toAuthorizationData(authorization: Authorization): OCPP2_0_1.AuthorizationData {
@@ -34,6 +39,10 @@ export class AuthorizationMapper {
       language2: authorization.language2,
       personalMessage: authorization.personalMessage,
       customData: authorization.customData,
+      // groupIdToken must be eager-loaded (include groupAuthorization) to be surfaced here.
+      groupIdToken: authorization.groupAuthorization
+        ? AuthorizationMapper.toIdToken(authorization.groupAuthorization)
+        : undefined,
     };
   }
 

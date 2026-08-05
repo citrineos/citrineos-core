@@ -26,12 +26,15 @@ apps/ocpp-server/src/assets/logo.png
 .husky/pre-commit
 
 # Package files
+packages/types/package.json
 packages/base/package.json
 packages/core/package.json
 apps/ocpp-server/package.json
 package-lock.json
 
 # TypeScript config files
+packages/types/tsconfig.eslint.json
+packages/types/tsconfig.json
 packages/base/tsconfig.eslint.json
 packages/base/tsconfig.json
 packages/core/tsconfig.eslint.json
@@ -43,13 +46,13 @@ tsconfig.eslint.json
 tsconfig.json
 
 # OCPP 1.6 Schema files
-packages/base/src/ocpp/model/1.6/schemas/
+packages/types/src/ocpp/model/1.6/schemas/
 
 # OCPP 2.0.1 Schema files
-packages/base/src/ocpp/model/2.0.1/schemas/
+packages/types/src/ocpp/model/2.0.1/schemas/
 
 # OCPP 2.1 Schema files
-packages/base/src/ocpp/model/2.1/schemas/
+packages/types/src/ocpp/model/2.1/schemas/
 
 # Persistence schemas
 packages/base/src/ocpp/persistence/schemas/AuthorizationDataSchema.json
@@ -64,15 +67,15 @@ packages/core/src/dal/interfaces/projections/schemas/AuthorizationRestrictionsSc
 packages/core/src/dal/interfaces/projections/schemas/TariffSchema.json
 
 # Certificate files
-packages/core/src/util/test/resources/ChargingStationCSRSample.pem
-packages/core/src/util/test/resources/LeafCertificateSample.pem
-packages/core/src/util/test/resources/LeafKeySample.pem
-packages/core/src/util/test/resources/RootCertificateSample.pem
-packages/core/src/util/test/resources/RootKeySample.pem
-packages/core/src/util/test/resources/SubCACertificateSample.pem
-packages/core/src/util/test/resources/SubCAKeySample.pem
-packages/core/src/util/test/resources/V2GCACertChainSample.pem
-packages/core/src/util/test/resources/V2GLeafCertificateSample.pem
+packages/core/test/util/resources/ChargingStationCSRSample.pem
+packages/core/test/util/resources/LeafCertificateSample.pem
+packages/core/test/util/resources/LeafKeySample.pem
+packages/core/test/util/resources/RootCertificateSample.pem
+packages/core/test/util/resources/RootKeySample.pem
+packages/core/test/util/resources/SubCACertificateSample.pem
+packages/core/test/util/resources/SubCAKeySample.pem
+packages/core/test/util/resources/V2GCACertChainSample.pem
+packages/core/test/util/resources/V2GLeafCertificateSample.pem
 apps/ocpp-server/src/assets/certificates/acme_account_key.pem
 apps/ocpp-server/src/assets/certificates/certChain.pem
 apps/ocpp-server/src/assets/certificates/leafKey.pem
@@ -81,8 +84,9 @@ apps/ocpp-server/src/assets/certificates/rootKey.pem
 apps/ocpp-server/src/assets/certificates/subCAKey.pem
 
 # Documentation
-packages/core/src/util/test/resources/README.md
+packages/core/test/util/resources/README.md
 apps/ocpp-server/everest/README.md
+packages/core/src/handlers/HANDLERS.md
 
 # Configuration files
 apps/ocpp-server/nodemon.json

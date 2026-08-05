@@ -4,7 +4,7 @@
 import type { IVariableMonitoringRepository } from '@dal/interfaces/repositories.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/base';
+import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
 
 export class MonitoringService {
   protected _variableMonitoringRepository: IVariableMonitoringRepository;

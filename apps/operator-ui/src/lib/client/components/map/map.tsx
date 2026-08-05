@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { LocationDto } from '@citrineos/base';
+import type { LocationDto } from '@citrineos/types';
 import { MapMarkerComponent } from '@lib/client/components/map/map.marker';
 import { ClusterIcon } from '@lib/client/components/map/marker.icons';
 import type {

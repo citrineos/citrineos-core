@@ -60,7 +60,3 @@ export const SecurityEventEntityInsertSchema = createInsertSchema(securityEventT
 
 export type SecurityEventEntity = z.infer<typeof SecurityEventEntitySchema>;
 export type SecurityEventEntityInsert = z.infer<typeof SecurityEventEntityInsertSchema>;
-
-// Legacy TypeScript types kept for backward compatibility — prefer the Zod types above.
-export type SecurityEventSelect = typeof securityEventTable.$inferSelect;
-export type SecurityEventInsert = typeof securityEventTable.$inferInsert;

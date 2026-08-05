@@ -13,8 +13,14 @@ import {
   OCPP2_1_CALL_RESULT_SCHEMA_RECORD,
   OCPP2_1_CALL_SCHEMA_RECORD,
 } from '@interfaces/schema/MappingSchema.js';
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
-import { type CallAction, OCPP_CallAction, OcppError, OCPPVersion } from '@ocpp/rpc/message.js';
+import {
+  type OcppRequest,
+  type OcppResponse,
+  type CallAction,
+  OCPP_CallAction,
+  OCPPVersion,
+} from '@citrineos/types';
+import { OcppError } from '@ocpp/rpc/message.js';
 
 export class OCPPValidator {
   protected _ajv: Ajv;

@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { OCPP2_common_types } from '@citrineos/base';
 import {
   LocationEnum,
   MeasurandEnum,
   OCPP2_0_1,
   OCPP2_1,
-  OCPP2_common_types,
   PhaseEnum,
   ReadingContextEnum,
   type MeterValueDto,
   type SampledValue,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class MeterValueMapper {
   static fromMeterValueType(meterValueType: OCPP2_common_types.MeterValueType): MeterValueDto {

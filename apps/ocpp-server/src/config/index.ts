@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, SystemConfig } from '@citrineos/base';
-import { loadBootstrapConfig } from '@citrineos/base';
-import { loadSystemConfig } from './config.loader.js';
+import { type BootstrapConfig, loadBootstrapConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
+import { loadSystemConfig } from '@citrineos/core';
 import { createLocalConfig } from './envs/local.js';
 import { createDockerConfig } from './envs/docker.js';
 

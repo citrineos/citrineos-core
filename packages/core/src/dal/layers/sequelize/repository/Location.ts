@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, OCPP2_0_1 } from '@citrineos/base';
-import { CrudRepository, OCPPVersion } from '@citrineos/base';
+import { type ChargingStationDto, type OCPP2_0_1, OCPPVersion } from '@citrineos/types';
+import { CrudRepository } from '@citrineos/base';
 import { Op } from 'sequelize';
 import { type ILocationRepository } from '../../../interfaces/repositories.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';
@@ -79,19 +79,32 @@ export class SequelizeLocationRepository
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
+    connectedWebsocketServerConfigId?: string | null,
   ): Promise<ChargingStation | undefined> {
     const station = await ChargingStation.findOne({
       where: { ocppConnectionName: ocppConnectionName, tenantId },
     });
 
     if (!station) {
-      this.logger.error(
-        `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with ocppConnectionName ${ocppConnectionName}. Update skipped to prevent modifying a station from a different tenant.`,
-      );
-      return undefined;
+      if (!isOnline) {
+        this.logger.debug(
+          `setChargingStationIsOnlineAndOCPPVersion: No charging station found for tenant ${tenantId} with ocppConnectionName ${ocppConnectionName} while going offline; skipping.`,
+        );
+        return undefined;
+      }
+      return await ChargingStation.create({
+        ocppConnectionName,
+        tenantId,
+        isOnline,
+        protocol: ocppVersion,
+      });
     }
 
-    await station.update({ isOnline, protocol: ocppVersion });
+    await station.update({
+      isOnline,
+      protocol: ocppVersion,
+      connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+    });
     return station;
   }
 

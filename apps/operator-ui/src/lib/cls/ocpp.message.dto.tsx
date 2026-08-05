@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, MessageOrigin, OCPPMessageDto, OCPPVersion } from '@citrineos/base';
+import type { CallAction, MessageOrigin, OCPPMessageDto, OCPPVersion } from '@citrineos/types';
 
 export class OCPPMessageClass implements Partial<OCPPMessageDto> {
   origin!: MessageOrigin;

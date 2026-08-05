@@ -7,24 +7,24 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IConfigurationModuleApi } from './interface.js';
 import { ConfigurationModule } from './module.js';
-import type {
-  BootConfig,
-  IMessageConfirmation,
-  UpdateChargingStationPasswordRequest,
-} from '@citrineos/base';
 import {
+  type BootConfig,
+  type IMessageConfirmation,
   AbstractModuleApi,
   AsDataEndpoint,
   BootConfigSchema,
-  HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
-  OCPP2_0_1,
   OCPP2_Namespace,
-  OCPP_CallAction,
-  OCPPVersion,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
+import {
+  type UpdateChargingStationPasswordRequest,
+  HttpMethod,
+  OCPP2_0_1,
+  OCPP_CallAction,
+  OCPPVersion,
+} from '@citrineos/types';
 import type {
   ChargingStationKeyQuerystring,
   NetworkProfileDeleteQuerystring,

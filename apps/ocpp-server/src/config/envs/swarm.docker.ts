@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID, defineConfig } from '@citrineos/base';
 import {
-  DEFAULT_TENANT_ID,
-  defineConfig,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
@@ -14,7 +13,7 @@ import {
   OCPP2_1,
   OCPP_CallAction,
   OCPP_VERSION_LIST,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -66,8 +65,8 @@ export function createDockerConfig() {
           OCPP_CallAction.FirmwareStatusNotification,
           OCPP_CallAction.Heartbeat,
           OCPP_CallAction.NotifyDisplayMessages,
-          OCPP_CallAction.PublishFirmwareStatusNotification,
         ],
+        excludedRequests: [OCPP_CallAction.PublishFirmwareStatusNotification],
         heartbeatInterval: 60,
         bootRetryInterval: 15,
         ocpp2_0_1: {

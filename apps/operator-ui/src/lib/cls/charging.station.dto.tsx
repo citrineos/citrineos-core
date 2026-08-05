@@ -2,24 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  ChargingStationCapabilityEnumType,
-  ChargingStationDto,
-  ChargingStationParkingRestrictionEnumType,
-  ConnectorDto,
-  ConnectorStatusEnumType,
-  EvseDto,
-  LatestStatusNotificationDto,
-  LocationDto,
-  StatusNotificationDto,
-} from '@citrineos/base';
 import {
+  type ChargingStationCapabilityEnumType,
+  type ChargingStationDto,
+  type ChargingStationParkingRestrictionEnumType,
+  type ConnectorDto,
+  type ConnectorStatusEnumType,
+  type EvseDto,
+  type LatestStatusNotificationDto,
+  type LocationDto,
+  type StatusNotificationDto,
   ChargingStationSchema,
   LatestStatusNotificationSchema,
   LocationSchema,
   OCPP2_0_1,
   TransactionSchema,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { Expose } from 'class-transformer';
 import { IsBoolean } from 'class-validator';
 import type { Point } from 'geojson';
@@ -29,6 +27,28 @@ const ChargingStationDetailsSchema = ChargingStationSchema.extend({
   location: LocationSchema.omit({ chargingPool: true }).optional(),
   statusNotifications: z.array(LatestStatusNotificationSchema).optional(),
   transactions: z.array(TransactionSchema.omit({ station: true, location: true })).optional(),
+  connectedWebsocketServerConfigId: z.string().nullish(),
+  // The websocket server (ServerNetworkProfile) the station is currently connected on — safe fields only.
+  connectedServerNetworkProfile: z
+    .object({
+      id: z.string(),
+      host: z.string().nullish(),
+      port: z.number().nullish(),
+      protocols: z.array(z.string()).nullish(),
+      securityProfile: z.number().nullish(),
+      allowUnknownChargingStations: z.boolean().nullish(),
+    })
+    .nullish(),
+  // Network profiles pushed to the station (SetNetworkProfiles), used to resolve the security
+  // profile actually configured for the connected server config.
+  setNetworkProfiles: z
+    .array(
+      z.object({
+        websocketServerConfigId: z.string().nullish(),
+        securityProfile: z.number().nullish(),
+      }),
+    )
+    .nullish(),
 });
 
 export const ChargingStationDetailsProps = ChargingStationDetailsSchema.keyof().enum;
@@ -69,6 +89,23 @@ export class ChargingStationClass implements Partial<ChargingStationDto> {
   location?: LocationDto;
   networkProfiles?: any;
   transactions?: any[] | null;
+  connectedWebsocketServerConfigId?: string | null;
+  @Expose({ name: 'ConnectedServerNetworkProfile' })
+  connectedServerNetworkProfile?: {
+    id: string;
+    host?: string;
+    port?: number;
+    protocols?: string[];
+    securityProfile?: number;
+    allowUnknownChargingStations?: boolean;
+  } | null;
+  @Expose({ name: 'SetNetworkProfiles' })
+  setNetworkProfiles?:
+    | {
+        websocketServerConfigId?: string | null;
+        securityProfile?: number | null;
+      }[]
+    | null;
 }
 
 // TODO: Add missing enums and types for local use

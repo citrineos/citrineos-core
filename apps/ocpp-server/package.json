@@ -27,8 +27,8 @@
   "devDependencies": {
     "@eslint/js": "catalog:",
     "@fastify/type-provider-json-schema-to-ts": "4.0.1",
-    "@types/amqplib": "0.10.1",
-    "@types/ws": "8.5.4",
+    "@types/amqplib": "0.10.8",
+    "@types/ws": "8.18.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
@@ -41,13 +41,14 @@
   "dependencies": {
     "@citrineos/base": "workspace:*",
     "@citrineos/core": "workspace:*",
+    "@citrineos/types": "workspace:*",
     "@fastify/cors": "10.1.0",
     "awilix": "^13.0.3",
     "cross-env": "7.0.3",
     "fastify": "catalog:",
     "sqlite3": "5.1.7",
     "tslog": "^4.9.2",
-    "ws": "8.20.1"
+    "ws": "8.21.0"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.8",

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { TariffDto } from '@citrineos/base';
+import type { TariffDto } from '@citrineos/types';
 import { TariffDetailCard } from '@lib/client/pages/tariffs/detail/tariff.detail.card';
 import { TariffDetailTabsCard } from '@lib/client/pages/tariffs/detail/tariff.detail.tabs.card';
 import { TariffClass } from '@lib/cls/tariff.dto';

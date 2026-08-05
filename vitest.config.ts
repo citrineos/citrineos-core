@@ -22,7 +22,9 @@ export default defineConfig({
     // Mirror TypeScript path aliases for testing (point to source files, not built files)
     alias: {
       '@': fileURLToPath(new URL('./packages/core/src', import.meta.url)),
+      '@test': fileURLToPath(new URL('./packages/core/test', import.meta.url)),
       '@dal': fileURLToPath(new URL('./packages/core/src/dal', import.meta.url)),
+      '@handlers': fileURLToPath(new URL('./packages/core/src/handlers', import.meta.url)),
       '@modules': fileURLToPath(new URL('./packages/core/src/modules', import.meta.url)),
       '@util': fileURLToPath(new URL('./packages/core/src/util', import.meta.url)),
       '@ocpp': fileURLToPath(new URL('./packages/base/src/ocpp', import.meta.url)),

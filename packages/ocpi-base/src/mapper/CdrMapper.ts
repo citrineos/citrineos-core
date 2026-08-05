@@ -16,7 +16,14 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OcpiGraphqlClient } from '../graphql/index.js';
 import { LocationsService } from '../services/LocationsService.js';
-import type { TariffDto, TransactionDto } from '@citrineos/base';
+import type { TariffDto, TransactionDto } from '@citrineos/types';
+import {
+  calculateEnergyCost,
+  calculateFixedCost,
+  calculateTimeCost,
+  calculateTotalCdrCost,
+  calculateTotalTimeHours,
+} from './cdrCost.js';
 
 @Service()
 export class CdrMapper extends BaseTransactionMapper {
@@ -103,16 +110,15 @@ export class CdrMapper extends BaseTransactionMapper {
       tariffs: [ocpiTariff],
       charging_periods: session.charging_periods || [],
       signed_data: await this.getSignedData(session),
-      // TODO: Map based on OCPI Tariff
-      total_cost: this.calculateTotalCost(session.kwh, tariff.pricePerKwh),
-      total_fixed_cost: await this.calculateTotalFixedCost(tariff),
+      total_cost: calculateTotalCdrCost(session, tariff),
+      total_fixed_cost: calculateFixedCost(tariff),
       total_energy: session.kwh,
-      total_energy_cost: await this.calculateTotalEnergyCost(session, tariff),
-      total_time: this.calculateTotalTime(session),
-      total_time_cost: await this.calculateTotalTimeCost(session, tariff),
-      total_parking_time: await this.calculateTotalParkingTime(session),
-      total_parking_cost: await this.calculateTotalParkingCost(session, tariff),
-      total_reservation_cost: await this.calculateTotalReservationCost(session, tariff),
+      total_energy_cost: calculateEnergyCost(session, tariff),
+      total_time: calculateTotalTimeHours(session),
+      total_time_cost: calculateTimeCost(session, tariff),
+      total_parking_time: this.calculateTotalParkingTime(),
+      total_parking_cost: this.calculateTotalParkingCost(),
+      total_reservation_cost: this.calculateTotalReservationCost(),
       remark: this.generateRemark(session),
       invoice_reference_id: await this.generateInvoiceReferenceId(session),
       credit: this.isCredit(session, tariff),
@@ -176,52 +182,19 @@ export class CdrMapper extends BaseTransactionMapper {
     return undefined;
   }
 
-  private async calculateTotalFixedCost(_tariff: any): Promise<Price | undefined> {
-    // TODO: Return total fixed cost if needed
-    return undefined;
-  }
-
-  private async calculateTotalEnergyCost(
-    _session: Session,
-    _tariff: TariffDto,
-  ): Promise<Price | undefined> {
-    // TODO: Return total energy cost if needed
-    return undefined;
-  }
-
-  private calculateTotalTime(session: Session): number {
-    if (session.end_date_time) {
-      return (session.end_date_time.getTime() - session.start_date_time.getTime()) / 3600000; // Convert ms to hours
-    }
+  // The current Tariff model has no parking/reservation price dimensions
+  // (OCPP 2.1's reservationTime/reservationFixed fields are untyped `any`
+  // placeholders and aren't populated), so these stay unsupported rather
+  // than guessing at a calculation with no backing data.
+  private calculateTotalParkingTime(): number {
     return 0;
   }
 
-  private async calculateTotalTimeCost(
-    _session: Session,
-    _tariff: TariffDto,
-  ): Promise<Price | undefined> {
-    // TODO: Return total time cost if needed
+  private calculateTotalParkingCost(): Price | undefined {
     return undefined;
   }
 
-  private async calculateTotalParkingTime(_session: Session): Promise<number> {
-    // TODO: Return total parking time if needed
-    return 0;
-  }
-
-  private async calculateTotalParkingCost(
-    _session: Session,
-    _tariff: TariffDto,
-  ): Promise<Price | undefined> {
-    // TODO: Return total parking cost if needed
-    return undefined;
-  }
-
-  private async calculateTotalReservationCost(
-    _session: Session,
-    _tariff: TariffDto,
-  ): Promise<Price | undefined> {
-    // TODO: Return total reservation cost if needed
+  private calculateTotalReservationCost(): Price | undefined {
     return undefined;
   }
 

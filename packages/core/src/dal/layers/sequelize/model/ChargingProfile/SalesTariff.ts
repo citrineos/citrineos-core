@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  ChargingScheduleDto,
-  SalesTariffDto,
-  SalesTariffEntry,
-  TenantDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
+import {
+  type ChargingScheduleDto,
+  type SalesTariffDto,
+  type SalesTariffEntry,
+  type TenantDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   AutoIncrement,
   BeforeCreate,

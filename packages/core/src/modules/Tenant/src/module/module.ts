@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CallAction, OcppModuleDependencies } from '@citrineos/base';
-import { AbstractModule, EventGroup } from '@citrineos/base';
+import { type OcppModuleDependencies, AbstractModule } from '@citrineos/base';
+import { EventGroup } from '@citrineos/types';
 import type { ITenantRepository } from '@dal/interfaces/repositories.js';
 
 export interface TenantModuleDependencies extends OcppModuleDependencies {
@@ -10,11 +10,6 @@ export interface TenantModuleDependencies extends OcppModuleDependencies {
 }
 
 export class TenantModule extends AbstractModule {
-  /**
-   * Fields
-   */
-  _requests: CallAction[] = [];
-  _responses: CallAction[] = [];
   protected _tenantRepository: ITenantRepository;
 
   constructor({
@@ -24,11 +19,10 @@ export class TenantModule extends AbstractModule {
     handler,
     logger,
     ocppValidator,
+    ocppSender,
     tenantRepository,
   }: TenantModuleDependencies) {
-    super(config, cache, handler, sender, EventGroup.Tenant, logger, ocppValidator);
-    this._requests = config.modules.tenant.requests;
-    this._responses = config.modules.tenant.responses;
+    super(config, cache, handler, sender, EventGroup.Tenant, ocppSender, logger, ocppValidator);
     this._tenantRepository = tenantRepository;
   }
 

@@ -7,13 +7,18 @@
     "paths": {
       "@/*": ["./src/*"],
       "@dal/*": ["./src/dal/*"],
+      "@handlers/*": ["./src/handlers/*"],
       "@modules/*": ["./src/modules/*"],
-      "@util/*": ["./src/util/*"]
+      "@util/*": ["./src/util/*"],
+      "@test/*": ["./test/*"]
     }
   },
   "include": ["**/*", "**/*.json"],
   "exclude": ["**/dist/**", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
   "references": [
+    {
+      "path": "../types"
+    },
     {
       "path": "../base"
     }
