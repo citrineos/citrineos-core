@@ -85,7 +85,7 @@ export class DrizzleAuthorizationRepository
       conditions.push(eq(authorizationTable.idToken, query.idToken));
     }
     if (query.type) {
-      conditions.push(eq(authorizationTable.idToken, query.idToken));
+      conditions.push(eq(authorizationTable.idTokenType, query.type));
     }
 
     return conditions;
