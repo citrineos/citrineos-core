@@ -261,7 +261,6 @@ export const systemConfigInputSchema = z.object({
       .object({
         path: z.string().default('/docs').optional(),
         logoPath: z.string(),
-        exposeData: z.boolean().default(true).optional(),
         exposeMessage: z.boolean().default(true).optional(),
       })
       .optional(),
@@ -591,7 +590,6 @@ export const systemConfigSchema = z
         .object({
           path: z.string(),
           logoPath: z.string(),
-          exposeData: z.boolean(),
           exposeMessage: z.boolean(),
         })
         .optional(),

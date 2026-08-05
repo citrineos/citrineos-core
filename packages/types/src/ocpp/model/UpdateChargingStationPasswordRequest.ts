@@ -5,5 +5,5 @@
 export interface UpdateChargingStationPasswordRequest {
   ocppConnectionName: string;
   password?: string | null;
-  setOnCharger: boolean;
+  alreadySetOnCharger: boolean;
 }

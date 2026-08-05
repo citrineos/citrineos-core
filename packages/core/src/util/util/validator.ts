@@ -8,6 +8,7 @@ import type {
   IDeviceModelRepository,
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
+import type { ChargingNeeds, EvseType, Transaction } from '@dal/layers/sequelize/index.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -31,6 +32,16 @@ export function validateLanguageTag(languageTag: string): boolean {
   );
 }
 
+export interface ChargingProfileTransactionContext {
+  transaction: Transaction;
+  evse: EvseType;
+  chargingNeeds: ChargingNeeds | undefined;
+}
+
+export interface ChargingProfileValidation {
+  transactionContext?: ChargingProfileTransactionContext;
+}
+
 /**
  * Validate constraints of ChargingProfileType defined in OCPP 2.0.1
  *
@@ -52,7 +63,7 @@ export async function validateChargingProfileType(
   transactionEventRepository: ITransactionEventRepository,
   logger: Logger<ILogObj>,
   evseId?: number | null,
-): Promise<void> {
+): Promise<ChargingProfileValidation> {
   if (chargingProfileType.stackLevel < 0) {
     throw new Error('Lowest Stack level is 0');
   }
@@ -75,7 +86,8 @@ export async function validateChargingProfileType(
     );
   }
 
-  let receivedChargingNeeds;
+  let transactionContext: ChargingProfileTransactionContext | undefined;
+  let receivedChargingNeeds: ChargingNeeds | undefined;
   if (chargingProfileType.transactionId && evseId) {
     const transaction = await transactionEventRepository.readTransactionByStationIdAndTransactionId(
       tenantId,
@@ -99,6 +111,7 @@ export async function validateChargingProfileType(
         transaction.id,
       );
     logger.info(`Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`);
+    transactionContext = { transaction, evse, chargingNeeds: receivedChargingNeeds };
   }
 
   const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
@@ -183,6 +196,8 @@ export async function validateChargingProfileType(
       }
     }
   }
+
+  return { transactionContext };
 }
 
 /**

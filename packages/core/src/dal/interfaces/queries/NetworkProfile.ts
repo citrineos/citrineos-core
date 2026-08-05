@@ -4,25 +4,6 @@
 
 import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
-export interface NetworkProfileQuerystring {
-  ocppConnectionName: string;
-  tenantId: number;
-}
-
-export const NetworkProfileQuerySchema = QuerySchema('NetworkProfileQuerySchema', [
-  {
-    key: 'ocppConnectionName',
-    type: 'string',
-    required: true,
-  },
-  {
-    key: 'tenantId',
-    type: 'number',
-    required: true,
-    defaultValue: String(DEFAULT_TENANT_ID),
-  },
-]);
-
 export interface NetworkProfileDeleteQuerystring {
   ocppConnectionName: string;
   configurationSlot: number[];

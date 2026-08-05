@@ -26,6 +26,7 @@ import type {
 import {
   Certificate,
   CountryNameEnumType,
+  DeleteCertificateAttempt,
   InstallCertificateAttempt,
   InstalledCertificate,
   SignatureAlgorithmEnumType,
@@ -37,7 +38,6 @@ import {
   generateCSR,
   isSignedBy,
   parseCertificateChainPem,
-  WebsocketNetworkConnection,
 } from '@util/index.js';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';
@@ -56,7 +56,6 @@ export class InstallCertificateHelperService {
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected deviceModelRepository: IDeviceModelRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
-  protected networkConnection: WebsocketNetworkConnection;
   protected fileStorage: IFileStorage;
   protected logger: Logger<ILogObj>;
 
@@ -67,7 +66,6 @@ export class InstallCertificateHelperService {
     deleteCertificateAttemptRepository,
     deviceModelRepository,
     certificateAuthorityService,
-    networkConnection,
     fileStorage,
     logger,
   }: {
@@ -77,7 +75,6 @@ export class InstallCertificateHelperService {
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
     deviceModelRepository: IDeviceModelRepository;
     certificateAuthorityService: CertificateAuthorityService;
-    networkConnection: WebsocketNetworkConnection;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
   }) {
@@ -87,7 +84,6 @@ export class InstallCertificateHelperService {
     this.deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
     this.deviceModelRepository = deviceModelRepository;
     this.certificateAuthorityService = certificateAuthorityService;
-    this.networkConnection = networkConnection;
     this.fileStorage = fileStorage;
     this.logger = logger;
   }
@@ -159,6 +155,37 @@ export class InstallCertificateHelperService {
         installCertificateAttempt.requestId = requestId;
       }
       await installCertificateAttempt.save();
+    }
+  }
+
+  async prepareToDeleteCertificate(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateHashData: Pick<
+      DeleteCertificateAttempt,
+      'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+    >,
+  ): Promise<void> {
+    const existingPendingDeleteCertificateAttempt =
+      await this.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
+        where: {
+          ocppConnectionName,
+          hashAlgorithm: certificateHashData.hashAlgorithm,
+          issuerNameHash: certificateHashData.issuerNameHash,
+          issuerKeyHash: certificateHashData.issuerKeyHash,
+          serialNumber: certificateHashData.serialNumber,
+          status: null,
+        },
+      });
+
+    if (!existingPendingDeleteCertificateAttempt) {
+      const deleteCertificateAttempt = new DeleteCertificateAttempt();
+      deleteCertificateAttempt.ocppConnectionName = ocppConnectionName;
+      deleteCertificateAttempt.hashAlgorithm = certificateHashData.hashAlgorithm;
+      deleteCertificateAttempt.issuerNameHash = certificateHashData.issuerNameHash;
+      deleteCertificateAttempt.issuerKeyHash = certificateHashData.issuerKeyHash;
+      deleteCertificateAttempt.serialNumber = certificateHashData.serialNumber;
+      await deleteCertificateAttempt.save();
     }
   }
 

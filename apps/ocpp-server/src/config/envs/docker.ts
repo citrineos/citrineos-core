@@ -185,7 +185,6 @@ export function createDockerConfig() {
       swagger: {
         path: '/docs',
         logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
-        exposeData: true,
         exposeMessage: true,
       },
       networkConnection: {

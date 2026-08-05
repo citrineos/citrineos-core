@@ -4,12 +4,12 @@
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
 import { type IDeviceModelRepository, type IVariableMonitoringRepository } from '@dal/index.js';
-import type { DeviceModelService } from './services.js';
+import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
 
 export interface MonitoringModuleDependencies extends OcppModuleDependencies {
   deviceModelRepository: IDeviceModelRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
-  monitoringDeviceModelService: DeviceModelService;
+  deviceModelService: DeviceModelService;
   monitoringHandlers?: AbstractHandler[];
 }
 
@@ -31,7 +31,7 @@ export class MonitoringModule extends AbstractModule {
     ocppSender,
     deviceModelRepository,
     variableMonitoringRepository,
-    monitoringDeviceModelService,
+    deviceModelService,
     monitoringHandlers,
   }: MonitoringModuleDependencies) {
     super(
@@ -49,7 +49,7 @@ export class MonitoringModule extends AbstractModule {
     this._deviceModelRepository = deviceModelRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
 
-    this._deviceModelService = monitoringDeviceModelService;
+    this._deviceModelService = deviceModelService;
   }
 
   get deviceModelRepository(): IDeviceModelRepository {

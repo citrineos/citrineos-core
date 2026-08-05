@@ -22,17 +22,18 @@ export class MissingRequiredParamException extends Error {
   }
 }
 
+export const COMMANDS_API_PATH = '/commands';
+export const ADMIN_API_PATH = '/ocpprouter';
+
+export const ocppApiPath = (version: OCPPVersion): string =>
+  `/ocpp/${version.replace(/^ocpp/, '')}`;
+
 export class BaseRestClient {
   private axiosInstance: AxiosInstance;
   private _baseUrl: string;
 
-  constructor(ocppVersion: OCPPVersion | null = OCPPVersion.OCPP2_0_1) {
-    if (ocppVersion === null) {
-      this._baseUrl = `${CITRINE_CORE_URL}/data`;
-    } else {
-      const version = ocppVersion.replace(/^ocpp/, '');
-      this._baseUrl = `${CITRINE_CORE_URL}/ocpp/${version}`;
-    }
+  constructor(basePath: string) {
+    this._baseUrl = `${CITRINE_CORE_URL}${basePath}`;
     this.axiosInstance = this.createAxiosInstance();
   }
 

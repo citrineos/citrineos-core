@@ -17,6 +17,7 @@ import { IdGenerator } from '@util/index.js';
 
 import type { BootNotificationService } from './BootNotificationService.js';
 import type { DeviceModelService } from './DeviceModelService.js';
+import type { NetworkProfileService } from './NetworkProfileService.js';
 
 export interface ConfigurationModuleDependencies extends OcppModuleDependencies {
   bootRepository: IBootRepository;
@@ -28,6 +29,7 @@ export interface ConfigurationModuleDependencies extends OcppModuleDependencies 
   idGenerator: IdGenerator;
   tenantRepository: ITenantRepository;
   configurationDeviceModelService: DeviceModelService;
+  networkProfileService: NetworkProfileService;
   bootNotificationService: BootNotificationService;
   configurationHandlers?: AbstractHandler[];
 }
@@ -37,6 +39,7 @@ export interface ConfigurationModuleDependencies extends OcppModuleDependencies 
  */
 export class ConfigurationModule extends AbstractModule {
   public _deviceModelService: DeviceModelService;
+  public networkProfileService: NetworkProfileService;
   protected _bootService: BootNotificationService;
   private _idGenerator: IdGenerator;
 
@@ -57,6 +60,7 @@ export class ConfigurationModule extends AbstractModule {
     idGenerator,
     tenantRepository,
     configurationDeviceModelService,
+    networkProfileService,
     bootNotificationService,
     configurationHandlers,
   }: ConfigurationModuleDependencies) {
@@ -81,6 +85,7 @@ export class ConfigurationModule extends AbstractModule {
     this._tenantRepository = tenantRepository;
 
     this._deviceModelService = configurationDeviceModelService;
+    this.networkProfileService = networkProfileService;
     this._bootService = bootNotificationService;
 
     this._idGenerator = idGenerator;

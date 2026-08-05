@@ -185,7 +185,14 @@ export abstract class AbstractModule implements IModule {
    */
   private _excludedActions(): { requests?: CallAction[]; responses?: CallAction[] } {
     const modules: Partial<
-      Record<EventGroup, { excludedRequests?: CallAction[]; excludedResponses?: CallAction[] }>
+      Record<
+        EventGroup,
+        {
+          excludedRequests?: CallAction[];
+          excludedResponses?: CallAction[];
+          [otherSetting: string]: unknown;
+        }
+      >
     > = this._config.modules;
     const moduleConfig = modules[this._eventGroup];
     return {

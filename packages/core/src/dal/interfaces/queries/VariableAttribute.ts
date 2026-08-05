@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 import { type AttributeEnumType, type SetVariableStatusEnumType } from '@citrineos/types';
 
 export interface VariableAttributeQuerystring {
@@ -18,80 +17,3 @@ export interface VariableAttributeQuerystring {
   variable_name?: string;
   variable_instance?: string | null;
 }
-
-export const VariableAttributeQuerySchema = QuerySchema('VariableAttributeQuerySchema', [
-  {
-    key: 'ocppConnectionName',
-    type: 'string',
-    required: true,
-  },
-  {
-    key: 'tenantId',
-    type: 'number',
-    required: true,
-    defaultValue: String(DEFAULT_TENANT_ID),
-  },
-  {
-    key: 'type',
-    type: 'string',
-  },
-  {
-    key: 'value',
-    type: 'string',
-  },
-  {
-    key: 'status',
-    type: 'string',
-  },
-  {
-    key: 'component_evse_id',
-    type: 'number',
-  },
-  {
-    key: 'component_evse_connectorId',
-    type: 'number',
-  },
-  {
-    key: 'component_name',
-    type: 'string',
-  },
-  {
-    key: 'component_instance',
-    type: 'string',
-  },
-  {
-    key: 'variable_name',
-    type: 'string',
-  },
-  {
-    key: 'variable_instance',
-    type: 'string',
-  },
-]);
-
-export interface CreateOrUpdateVariableAttributeQuerystring {
-  tenantId: number;
-  ocppConnectionName: string;
-  setOnCharger?: boolean; // Used to indicate value has already been accepted by the station via means other than ocpp
-}
-
-export const CreateOrUpdateVariableAttributeQuerySchema = QuerySchema(
-  'CreateOrUpdateVariableAttributeQuerySchema',
-  [
-    {
-      key: 'tenantId',
-      type: 'number',
-      required: true,
-      defaultValue: String(DEFAULT_TENANT_ID),
-    },
-    {
-      key: 'ocppConnectionName',
-      type: 'string',
-      required: true,
-    },
-    {
-      key: 'setOnCharger',
-      type: 'boolean',
-    },
-  ],
-);

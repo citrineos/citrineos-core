@@ -6,16 +6,36 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-export { AbstractModuleApi } from './src/interfaces/api/AbstractModuleApi.js';
-export { AsDataEndpoint } from './src/interfaces/api/AsDataEndpoint.js';
-export { AsMessageEndpoint } from './src/interfaces/api/AsMessageEndpoint.js';
+export { AbstractEndpointApi } from './src/interfaces/api/endpoints/AbstractEndpointApi.js';
+export { AbstractEndpoint } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
+export type { AbstractEndpointDependencies } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
+export type { IEndpointDefinition } from './src/interfaces/api/endpoints/EndpointDefinition.js';
+export { AbstractMessageEndpointApi } from './src/interfaces/api/endpoints/AbstractMessageEndpointApi.js';
+export { AbstractMessageEndpoint } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
+export type {
+  AbstractMessageEndpointDependencies,
+  IMessageEndpointDeclaration,
+} from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
+export { buildMessageEndpoints } from './src/interfaces/api/endpoints/buildMessageEndpoints.js';
+export { passthroughMessageEndpoint } from './src/interfaces/api/endpoints/passthroughMessageEndpoint.js';
+export type { IPassthroughMessageEndpointDeclaration } from './src/interfaces/api/endpoints/passthroughMessageEndpoint.js';
+export type {
+  BuiltMessageEndpoint,
+  MessageEndpointClass,
+} from './src/interfaces/api/endpoints/buildMessageEndpoints.js';
+export { buildEndpoints } from './src/interfaces/api/endpoints/buildEndpoints.js';
+export type {
+  BuiltEndpoint,
+  EndpointClass,
+  EndpointResolverCradle,
+  IEndpointBuilder,
+} from './src/interfaces/api/endpoints/buildEndpoints.js';
 export { ApiAuthenticationResult } from './src/interfaces/api/auth/ApiAuthenticationResult.js';
 export { ApiAuthorizationResult } from './src/interfaces/api/auth/ApiAuthorizationResult.js';
 export type { IApiAuthProvider } from './src/interfaces/api/auth/IApiAuthProvider.js';
 export type { UserInfo } from './src/interfaces/api/auth/UserInfo.js';
 export { BadRequestError } from './src/interfaces/api/exceptions/BadRequestError.js';
 export { NotFoundError } from './src/interfaces/api/exceptions/NotFoundError.js';
-export type { IModuleApi } from './src/interfaces/api/ModuleApi.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
 export type { ICache } from './src/interfaces/cache/cache.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';

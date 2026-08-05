@@ -7,6 +7,7 @@ export * from '@dal/index.js';
 export * from '@util/index.js';
 
 // Module exports
+export * from '@modules/Api/src/index.js';
 export * from '@modules/Certificates/src/index.js';
 export * from '@modules/Configuration/src/index.js';
 export * from '@modules/EVDriver/src/index.js';

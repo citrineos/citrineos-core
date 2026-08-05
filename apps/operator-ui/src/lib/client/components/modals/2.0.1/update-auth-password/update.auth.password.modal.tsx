@@ -10,7 +10,7 @@ import { CheckboxFormField, FormField } from '@lib/client/components/form/field'
 import { Input } from '@lib/client/components/ui/input';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
+import { triggerCommandAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
@@ -26,7 +26,7 @@ interface UpdateAuthPasswordModalProps {
 
 type UpdateAuthPasswordFormData = {
   password: string;
-  setOnCharger: boolean;
+  alreadySetOnCharger: boolean;
 };
 
 export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProps) => {
@@ -45,7 +45,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
         password: z
           .string()
           .min(1, translate('ChargingStations.updateAuthPasswordModal.passwordRequired')),
-        setOnCharger: z.boolean(),
+        alreadySetOnCharger: z.boolean(),
       }),
     [translate],
   );
@@ -54,7 +54,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
     resolver: zodResolver(UpdateAuthPasswordSchema),
     defaultValues: {
       password: '',
-      setOnCharger: false,
+      alreadySetOnCharger: false,
     },
   });
 
@@ -68,16 +68,15 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
 
     const data = {
       password: values.password,
-      setOnCharger: values.setOnCharger,
+      alreadySetOnCharger: values.alreadySetOnCharger,
       ocppConnectionName: parsedStation.ocppConnectionName,
     };
 
-    triggerMessageAndHandleResponse<MessageConfirmation>({
+    triggerCommandAndHandleResponse<MessageConfirmation>({
       translate,
-      url: `/configuration/password`,
+      url: `/setStationPassword`,
       data,
       setLoading,
-      ocppVersion: null,
     }).then(() => {
       form.reset();
       dispatch(closeModal());
@@ -108,7 +107,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
       <CheckboxFormField
         control={form.control}
         label={translate('ChargingStations.updateAuthPasswordModal.setOnCharger')}
-        name="setOnCharger"
+        name="alreadySetOnCharger"
         required
       />
     </Form>

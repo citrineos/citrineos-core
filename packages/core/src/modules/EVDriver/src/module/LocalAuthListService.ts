@@ -5,6 +5,7 @@ import { OCPP2_request_types } from '@citrineos/base';
 import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { v4 as uuidv4 } from 'uuid';
 import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
@@ -36,6 +37,36 @@ export class LocalAuthListService {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
+  }
+
+  async prepareSendLocalList(
+    tenantId: number,
+    ocppConnectionName: string,
+    sendLocalListRequest: OCPP2_request_types.SendLocalListRequest,
+  ): Promise<string> {
+    const correlationId = uuidv4();
+    await this.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+      tenantId,
+      ocppConnectionName,
+      correlationId,
+      sendLocalListRequest,
+    );
+    return correlationId;
+  }
+
+  async prepareSendLocalList16(
+    tenantId: number,
+    ocppConnectionName: string,
+    sendLocalListRequest: OCPP1_6.SendLocalListRequest,
+  ): Promise<string> {
+    const correlationId = uuidv4();
+    await this.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest16(
+      tenantId,
+      ocppConnectionName,
+      correlationId,
+      sendLocalListRequest,
+    );
+    return correlationId;
   }
 
   /**
