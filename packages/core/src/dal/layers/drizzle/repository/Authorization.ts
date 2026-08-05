@@ -15,6 +15,8 @@ import {
 } from '../schema/Authorization.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
+import type { AuthorizationQuerystring, IAuthorizationRepository } from '@/dal/index.js';
+import { and, eq } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external AuthorizationDto contract.
@@ -60,10 +62,10 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
   return dto;
 }
 
-export class DrizzleAuthorizationRepository extends DrizzleRepository<
-  typeof authorizationTable,
-  AuthorizationDto
-> {
+export class DrizzleAuthorizationRepository
+  extends DrizzleRepository<typeof authorizationTable, AuthorizationDto>
+  implements IAuthorizationRepository
+{
   protected getTable(tenantId: number): typeof authorizationTable {
     return this.useTenantSchema ? tenantAuthorizationTable(tenantId) : authorizationTable;
   }
@@ -72,5 +74,49 @@ export class DrizzleAuthorizationRepository extends DrizzleRepository<
     return toAuthorizationDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  private createAuthorizationConditions(tenantId: number, query: AuthorizationQuerystring) {
+    const conditions = [];
+
+    if (!this.useTenantSchema) {
+      conditions.push(eq(authorizationTable.tenantId, tenantId));
+    }
+
+    if (query.idToken) {
+      conditions.push(eq(authorizationTable.idToken, query.idToken));
+    }
+    if (query.type) {
+      conditions.push(eq(authorizationTable.idToken, query.idToken));
+    }
+
+    return conditions;
+  }
+
+  // ─── IAuthorizationRepository methods ────────────────────────────────────
+
+  async readAllByQuerystring(
+    tenantId: number,
+    query: AuthorizationQuerystring,
+  ): Promise<AuthorizationDto[]> {
+    const conditions = this.createAuthorizationConditions(tenantId, query);
+
+    const rows = await this.db
+      .select()
+      .from(authorizationTable)
+      .where(and(...conditions));
+
+    return rows.map((row) => this.toDto(row as AuthorizationEntity));
+  }
+
+  async readOnlyOneByQuerystring(
+    tenantId: number,
+    query: AuthorizationQuerystring,
+  ): Promise<AuthorizationDto | undefined> {
+    const dtos = await this.readAllByQuerystring(tenantId, query);
+
+    if (dtos.length > 1) {
+      throw new Error(`More than one value found for query: ${JSON.stringify(query)}`);
+    }
+
+    return dtos[0];
+  }
 }
