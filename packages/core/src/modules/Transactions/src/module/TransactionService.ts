@@ -4,19 +4,19 @@
 import {
   type IAuthorizer,
   type IMessageContext,
+  MeterValueUtils,
   type OCPP2_common_types,
   type OCPP2_request_types,
   type OCPP2_response_types,
-  MeterValueUtils,
 } from '@citrineos/base';
 import {
   type AuthorizationDto,
+  AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
-  type MeterValueDto,
-  AuthorizationStatusEnum,
   MessageOrigin,
+  type MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPP2_1,
@@ -36,7 +36,7 @@ import { Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
-  private _authorizeRepository: IAuthorizationRepository;
+  private _authorizationRepository: IAuthorizationRepository;
   private _locationRepository: ILocationRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
@@ -63,7 +63,7 @@ export class TransactionService {
     logger: Logger<ILogObj>;
   }) {
     this._transactionEventRepository = transactionEventRepository;
-    this._authorizeRepository = authorizationRepository;
+    this._authorizationRepository = authorizationRepository;
     this._locationRepository = locationRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
@@ -101,7 +101,7 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_response_types.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
-    const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+    const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
       type: idToken.type,
     });
@@ -140,7 +140,7 @@ export class TransactionService {
         authorization.concurrentTransaction === true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
       ) {
-        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
           response.idTokenInfo = {
             status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
@@ -181,7 +181,7 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
-    const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+    const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
       type: idToken.type,
     });
@@ -215,7 +215,7 @@ export class TransactionService {
         authorization.concurrentTransaction === true &&
         transactionEvent.eventType === OCPP2_1.TransactionEventEnumType.Started
       ) {
-        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
           response.idTokenInfo = {
             status: OCPP2_1.AuthorizationStatusEnumType.ConcurrentTx,
@@ -315,7 +315,7 @@ export class TransactionService {
     try {
       // Find authorization
       const tenantId = context.tenantId;
-      const authorizations = await this._authorizeRepository.readAllByQuerystring(tenantId, {
+      const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
       });
       if (authorizations.length !== 1) {
@@ -350,7 +350,7 @@ export class TransactionService {
 
       // Check concurrent transactions
       if (authorization.concurrentTransaction !== true) {
-        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id);
+        const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
           response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
           return response;
@@ -376,8 +376,8 @@ export class TransactionService {
       response.idTagInfo.expiryDate = authorization.cacheExpiryDateTime;
       if (authorization.groupAuthorizationId) {
         // Look up the referenced Authorization for parentIdTag
-        const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
-          where: { id: authorization.groupAuthorizationId },
+        const parentAuth = await this._authorizationRepository.readOnlyOneByQuerystring(tenantId, {
+          id: authorization.groupAuthorizationId,
         });
         if (parentAuth) {
           response.idTagInfo.parentIdTag = parentAuth.idToken;
