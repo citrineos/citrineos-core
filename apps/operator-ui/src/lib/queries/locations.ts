@@ -20,7 +20,7 @@ export const LOCATIONS_LIST_QUERY = gql`
   ) {
     Locations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
       ${LOCATION_CORE_FIELDS}
-      ${LOCATION_DETAIL_FIELDS.pick('timeZone', 'parkingType')}
+      ${LOCATION_DETAIL_FIELDS}
       chargingPool: ChargingStations(where: $chargingStationsWhere) {
         ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         evses: Evses {
