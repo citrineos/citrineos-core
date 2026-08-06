@@ -6,6 +6,8 @@ import { type IAuthorizationRepository } from '../../../interfaces/repositories.
 import { type AuthorizationQuerystring } from '../../../interfaces/queries/Authorization.js';
 import { Authorization } from '../model/Authorization/Authorization.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
+import { Op } from 'sequelize';
+import { Tariff } from '@/dal/index.js';
 
 export class SequelizeAuthorizationRepository
   extends SequelizeRepository<Authorization>
@@ -27,6 +29,22 @@ export class SequelizeAuthorizationRepository
     query: AuthorizationQuerystring,
   ): Promise<Authorization | undefined> {
     return await super.readOnlyOneByQuery(tenantId, this._constructQuery(query));
+  }
+
+  async findAllAuthorizationsWithTariffs(tenantId: number): Promise<Authorization[]> {
+    return await super.readAllByQuery(tenantId, {
+      where: {
+        tenantId,
+        tariffId: { [Op.ne]: null },
+      },
+      include: [
+        {
+          model: Tariff,
+          as: 'tariff',
+          required: true,
+        },
+      ],
+    });
   }
 
   /**

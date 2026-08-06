@@ -16,7 +16,7 @@ import {
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
 import type { AuthorizationQuerystring, IAuthorizationRepository } from '@/dal/index.js';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external AuthorizationDto contract.
@@ -55,7 +55,10 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     // Relation, not a scalar column.
     groupAuthorization: undefined,
     tenantId: entity.tenantId,
+    // Relation, not a scalar column.
     tenant: undefined,
+    // Relation, not a scalar column.
+    tariff: undefined,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };
@@ -118,5 +121,16 @@ export class DrizzleAuthorizationRepository
     }
 
     return dtos[0];
+  }
+
+  async findAllAuthorizationsWithTariffs(tenantId: number): Promise<AuthorizationDto[]> {
+    const rows = await this.db
+      .select()
+      .from(authorizationTable)
+      .where(
+        and(eq(authorizationTable.tenantId, tenantId), isNotNull(authorizationTable.tariffId)),
+      );
+
+    return rows.map((row) => this.toDto(row as AuthorizationEntity));
   }
 }

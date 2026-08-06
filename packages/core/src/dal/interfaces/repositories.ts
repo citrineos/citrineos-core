@@ -83,6 +83,7 @@ export interface IAuthorizationRepository {
     tenantId: number,
     query: AuthorizationQuerystring,
   ) => Promise<AuthorizationDto | undefined>;
+  findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
 }
 
 /**
