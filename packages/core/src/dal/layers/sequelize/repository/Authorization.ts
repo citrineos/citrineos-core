@@ -61,6 +61,10 @@ export class SequelizeAuthorizationRepository
       where.idTokenType = queryParams.type;
     }
 
+    if (queryParams.id) {
+      where.id = queryParams.id;
+    }
+
     return {
       where,
       // Eager-load the group Authorization so IdTokenInfo.groupIdToken can be surfaced.

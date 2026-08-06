@@ -90,6 +90,9 @@ export class DrizzleAuthorizationRepository
     if (query.type) {
       conditions.push(eq(authorizationTable.idTokenType, query.type));
     }
+    if (query.id) {
+      conditions.push(eq(authorizationTable.id, query.id));
+    }
 
     return conditions;
   }
