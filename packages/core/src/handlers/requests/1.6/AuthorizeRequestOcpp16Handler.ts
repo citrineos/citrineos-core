@@ -96,9 +96,9 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
         if (groupAuthorizationId) {
           // Look up the referenced Authorization for parentIdTag
-          const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(
+          const parentAuth = await this._authorizeRepository.readOnlyOneByQuerystring(
             message.context.tenantId,
-            { where: { id: groupAuthorizationId } },
+            { id: groupAuthorizationId },
           );
           if (parentAuth) {
             response.idTagInfo.parentIdTag = parentAuth.idToken;

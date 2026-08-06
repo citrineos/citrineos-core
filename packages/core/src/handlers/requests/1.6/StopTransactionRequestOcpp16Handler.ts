@@ -9,6 +9,7 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
   type HandlerProperties,
   OCPP1_6,
@@ -16,7 +17,6 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import {
-  Authorization,
   type IAuthorizationRepository,
   type ITransactionEventRepository,
   StartTransaction,
@@ -57,7 +57,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
 
-    const authorization: Authorization | undefined = request.idTag
+    const authorization: AuthorizationDto | undefined = request.idTag
       ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
         })
@@ -81,8 +81,8 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     let parentIdTag: string | undefined = undefined;
     if (authorization?.groupAuthorizationId) {
-      const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
-        where: { id: authorization.groupAuthorizationId },
+      const parentAuth = await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
+        id: authorization.groupAuthorizationId,
       });
       if (parentAuth) {
         parentIdTag = parentAuth.idToken;
