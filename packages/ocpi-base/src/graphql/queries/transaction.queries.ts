@@ -56,6 +56,11 @@ export const GET_TRANSACTIONS_QUERY = gql`
         sampledValue
       }
     }
+    Transactions_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 

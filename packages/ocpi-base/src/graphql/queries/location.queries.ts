@@ -83,6 +83,11 @@ export const GET_LOCATIONS_QUERY = gql`
         }
       }
     }
+    Locations_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
