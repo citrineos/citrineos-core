@@ -96,7 +96,6 @@ export class LocationsService {
     ) as PaginatedLocationResponse;
   }
 
-
   private parseLocationId(locationId: string): number {
     if (!/^\d+$/.test(locationId.trim())) {
       throw new NotFoundException(`Unknown location: ${locationId}`);
@@ -153,10 +152,7 @@ export class LocationsService {
       if (!station || !evseRecord) {
         throw new NotFoundException(`Unknown location: ${locationId}`);
       }
-      const evse = EvseMapper.fromGraphql(
-        station as ChargingStationDto,
-        evseRecord as EvseDto,
-      );
+      const evse = EvseMapper.fromGraphql(station as ChargingStationDto, evseRecord as EvseDto);
       return buildOcpiResponse(OcpiResponseStatusCode.GenericSuccessCode, evse);
     } catch (e) {
       const statusCode =
