@@ -28,7 +28,7 @@ import { type IAuthorizationRepository, OCPP1_6_Mapper } from '@dal/index.js';
 export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizers: IAuthorizer[];
-  protected _authorizeRepository: IAuthorizationRepository;
+  protected _authorizationRepository: IAuthorizationRepository;
 
   constructor({
     logger,
@@ -43,7 +43,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
     super(logger);
     this._ocppSender = ocppSender;
     this._authorizers = authorizers;
-    this._authorizeRepository = authorizationRepository;
+    this._authorizationRepository = authorizationRepository;
   }
 
   async handle(
@@ -62,7 +62,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
       },
     };
     try {
-      const authorizations = await this._authorizeRepository.readAllByQuerystring(
+      const authorizations = await this._authorizationRepository.readAllByQuerystring(
         context.tenantId,
         {
           idToken: request.idTag,
@@ -96,7 +96,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         response.idTagInfo.expiryDate = cacheExpiryDateTime;
         if (groupAuthorizationId) {
           // Look up the referenced Authorization for parentIdTag
-          const parentAuth = await this._authorizeRepository.readOnlyOneByQuerystring(
+          const parentAuth = await this._authorizationRepository.readOnlyOneByQuerystring(
             message.context.tenantId,
             { id: groupAuthorizationId },
           );
