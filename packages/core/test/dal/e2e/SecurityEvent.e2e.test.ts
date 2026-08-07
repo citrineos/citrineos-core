@@ -53,7 +53,7 @@ describe.each([
   { label: 'Sequelize', extraEnv: {} },
   {
     label: 'Drizzle',
-    extraEnv: { CITRINEOS_USE_DRIZZLE_SECURITY_EVENT: 'true' } as Record<string, string>,
+    extraEnv: { CITRINEOS_USE_DRIZZLE: 'true' } as Record<string, string>,
   },
 ])('SecurityEventNotification [$label]', ({ label, extraEnv }) => {
   let server: ChildProcess;
