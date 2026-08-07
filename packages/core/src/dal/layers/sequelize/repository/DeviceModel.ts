@@ -157,9 +157,9 @@ export class SequelizeDeviceModelRepository
         );
         if (!variableAttributeCreated) {
           const mutability = variableAttribute.mutability ?? savedVariableAttribute.mutability;
-          // A WriteOnly attribute can never report its own value back, so an omitted value means
-          // "not readable", not "cleared". Overwriting it would destroy secrets such as
-          // SecurityCtrlr.BasicAuthPassword every time the station sends a NotifyReport.
+          // B08.FR.03 The Charging Station sends the requested information,
+          // excluding the value of WriteOnly variables
+          // the existing value should not be overwritten in this case.
           const preserveValue =
             variableAttribute.value === undefined &&
             mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly;
