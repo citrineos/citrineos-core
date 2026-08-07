@@ -13,6 +13,15 @@ export {
   type AuthorizationEntity,
   type AuthorizationEntityInsert,
 } from './schema/Authorization.js';
+export { DrizzleBootRepository, toBootDto } from './repository/Boot.js';
+export {
+  bootTable,
+  tenantBootTable,
+  BootEntitySchema,
+  BootEntityInsertSchema,
+  type BootEntity,
+  type BootEntityInsert,
+} from './schema/Boot.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

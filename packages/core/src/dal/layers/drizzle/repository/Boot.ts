@@ -2,10 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto } from '@citrineos/types';
+import type { BootDto, RegistrationStatusEnumType } from '@citrineos/types';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
+import type { IBootRepository } from '@/dal/index.js';
+import { and, eq } from 'drizzle-orm';
+import type { BootConfig, OCPP2_common_types } from '@citrineos/base';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external BootDto contract.
@@ -33,7 +36,10 @@ export function toBootDto(entity: BootEntity): BootDto {
   return dto;
 }
 
-export class DrizzleBootRepository extends DrizzleRepository<typeof bootTable, BootDto> {
+export class DrizzleBootRepository
+  extends DrizzleRepository<typeof bootTable, BootDto>
+  implements IBootRepository
+{
   protected getTable(tenantId: number): typeof bootTable {
     return this.useTenantSchema ? tenantBootTable(tenantId) : bootTable;
   }
@@ -42,5 +48,100 @@ export class DrizzleBootRepository extends DrizzleRepository<typeof bootTable, B
     return toBootDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  // Internal Methods
+  async _createBoot(tenantId: number, value: object): Promise<BootDto> {
+    const rows = (await this.db
+      .insert(bootTable)
+      .values({ ...value, tenantId } as BootEntity)
+      .returning()) as BootEntity[];
+
+    const dto = this.toDto(rows[0]);
+    this.emit('created', [dto]);
+    return dto;
+  }
+
+  async _updateBootByKey(
+    tenantId: number,
+    value: object,
+    key: string,
+  ): Promise<BootDto | undefined> {
+    const rows = (await this.db
+      .update(bootTable)
+      .set(value)
+      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .returning()) as BootEntity[];
+
+    if (!rows[0]) return undefined;
+    const dto = this.toDto(rows[0]);
+    this.emit('updated', [dto]);
+    return dto;
+  }
+
+  // ─── IBootRepository methods ────────────────────────────────────
+  // Note that for many of the methods below, we purposely DO NOT use the equivalent Drizzle methods
+  // because they only accept key as a number, but Boot stores id as a string value equivalent to the
+  // ocppConnectionName of the relevant station.
+
+  async createOrUpdateByKey(
+    tenantId: number,
+    value: BootConfig,
+    key: string,
+  ): Promise<BootDto | undefined> {
+    const bootExists = await this.existsByKey(tenantId, key);
+
+    if (bootExists) {
+      return await this._updateBootByKey(tenantId, value, key);
+    } else {
+      return await this._createBoot(tenantId, value);
+    }
+  }
+
+  async deleteByKey(tenantId: number, key: string): Promise<BootDto | undefined> {
+    const rows = (await this.db
+      .delete(bootTable)
+      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .returning()) as BootEntity[];
+
+    if (!rows[0]) return undefined;
+    const dto = this.toDto(rows[0]);
+    this.emit('deleted', [dto]);
+    return dto;
+  }
+
+  async existsByKey(tenantId: number, key: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ id: bootTable.id })
+      .from(bootTable)
+      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  async readByKey(tenantId: number, key: string): Promise<BootDto | undefined> {
+    const rows = await this.db
+      .select()
+      .from(bootTable)
+      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .limit(1);
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
+  updateLastBootTimeByKey(
+    tenantId: number,
+    lastBootTime: string,
+    key: string,
+  ): Promise<BootDto | undefined> {
+    return this._updateBootByKey(tenantId, { lastBootTime }, key);
+  }
+
+  updateStatusByKey(
+    tenantId: number,
+    status: RegistrationStatusEnumType,
+    statusInfo: OCPP2_common_types.StatusInfoType | undefined,
+    key: string,
+  ): Promise<BootDto | undefined> {
+    return this._updateBootByKey(tenantId, { status, statusInfo }, key);
+  }
 }
