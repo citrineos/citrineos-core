@@ -17,6 +17,7 @@ import { heading3Style, pageFlex } from '@lib/client/styles/page';
 import { cardHeaderFlex } from '@lib/client/styles/card';
 import { buttonIconSize } from '@lib/client/styles/icon';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
+import { usePreview } from '@lib/client/hooks/usePreview';
 
 export interface LocationsChargingStationsTableProps {
   location: LocationDto;
@@ -29,6 +30,11 @@ export const LocationsChargingStationsTable = ({
 }: LocationsChargingStationsTableProps) => {
   const { push } = useRouter();
   const translate = useTranslate();
+
+  const { openPreview } = usePreview();
+  const handleRowClick = (station: { ocppConnectionName?: string | null }) => {
+    if (station.ocppConnectionName) openPreview(station.ocppConnectionName);
+  };
 
   // Use filteredStations if provided, otherwise use all stations from the location
   const stationsToDisplay = location.chargingPool ?? [];
@@ -62,7 +68,7 @@ export const LocationsChargingStationsTable = ({
         action={ActionType.LIST}
         fallback={<AccessDeniedFallback />}
       >
-        <Table data={stationsToDisplay} useClientData>
+        <Table data={stationsToDisplay} useClientData onRowClick={handleRowClick}>
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
