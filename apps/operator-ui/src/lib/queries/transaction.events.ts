@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { TRANSACTION_EVENT_FIELDS } from '@lib/queries/fields/transaction.event.fields';
+import { METER_VALUE_FIELDS } from '@lib/queries/fields/meter.value.fields';
 
 export const TRANSACTION_EVENT_LIST_QUERY = gql`
   query TransactionEventList(
@@ -12,29 +14,9 @@ export const TRANSACTION_EVENT_LIST_QUERY = gql`
     $where: TransactionEvents_bool_exp
   ) {
     TransactionEvents(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      offline
-      eventType
-      ocppConnectionName
-      triggerReason
-      evseId
-      numberOfPhasesUsed
-      reservationId
-      seqNo
-      transactionDatabaseId
-      transactionInfo
-      cableMaxCurrent
-      createdAt
-      timestamp
-      updatedAt
+      ${TRANSACTION_EVENT_FIELDS}
       MeterValues {
-        id
-        transactionDatabaseId
-        transactionEventId
-        sampledValue
-        timestamp
-        createdAt
-        updatedAt
+        ${METER_VALUE_FIELDS}
       }
     }
     TransactionEvents_aggregate(where: $where) {
@@ -59,21 +41,7 @@ export const GET_TRANSACTION_EVENTS_FOR_TRANSACTION_LIST_QUERY = gql`
       order_by: $order_by
       where: { transactionDatabaseId: { _eq: $transactionDatabaseId }, _and: [$where] }
     ) {
-      id
-      offline
-      eventType
-      ocppConnectionName
-      triggerReason
-      evseId
-      numberOfPhasesUsed
-      reservationId
-      seqNo
-      transactionDatabaseId
-      transactionInfo
-      cableMaxCurrent
-      createdAt
-      timestamp
-      updatedAt
+      ${TRANSACTION_EVENT_FIELDS}
     }
     TransactionEvents_aggregate(
       where: { transactionDatabaseId: { _eq: $transactionDatabaseId }, _and: [$where] }

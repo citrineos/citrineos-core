@@ -9,6 +9,7 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
   type HandlerProperties,
   OCPP1_6,
@@ -16,7 +17,6 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import {
-  Authorization,
   type IAuthorizationRepository,
   type ITransactionEventRepository,
   StartTransaction,
@@ -27,7 +27,7 @@ import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _authorizeRepository: IAuthorizationRepository;
+  protected _authorizationRepository: IAuthorizationRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
 
   constructor({
@@ -43,7 +43,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     super(logger);
 
     this._ocppSender = ocppSender;
-    this._authorizeRepository = authorizationRepository;
+    this._authorizationRepository = authorizationRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
 
@@ -57,8 +57,8 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
 
-    const authorization: Authorization | undefined = request.idTag
-      ? await this._authorizeRepository.readOnlyOneByQuerystring(tenantId, {
+    const authorization: AuthorizationDto | undefined = request.idTag
+      ? await this._authorizationRepository.readOnlyOneByQuerystring(tenantId, {
           idToken: request.idTag,
         })
       : undefined;
@@ -81,8 +81,8 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     let parentIdTag: string | undefined = undefined;
     if (authorization?.groupAuthorizationId) {
-      const parentAuth = await this._authorizeRepository.readOnlyOneByQuery(tenantId, {
-        where: { id: authorization.groupAuthorizationId },
+      const parentAuth = await this._authorizationRepository.readOnlyOneByQuerystring(tenantId, {
+        id: authorization.groupAuthorizationId,
       });
       if (parentAuth) {
         parentIdTag = parentAuth.idToken;

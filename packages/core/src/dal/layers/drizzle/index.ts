@@ -4,6 +4,15 @@
 
 export { DefaultDrizzleInstance } from './util.js';
 export { DrizzleRepository, type DrizzleRepositoryDependencies } from './repository/Base.js';
+export { DrizzleAuthorizationRepository, toAuthorizationDto } from './repository/Authorization.js';
+export {
+  authorizationTable,
+  tenantAuthorizationTable,
+  AuthorizationEntitySchema,
+  AuthorizationEntityInsertSchema,
+  type AuthorizationEntity,
+  type AuthorizationEntityInsert,
+} from './schema/Authorization.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

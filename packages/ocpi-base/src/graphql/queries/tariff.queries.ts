@@ -50,6 +50,11 @@ export const GET_TARIFFS_QUERY = gql`
         partyId
       }
     }
+    Tariffs_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 

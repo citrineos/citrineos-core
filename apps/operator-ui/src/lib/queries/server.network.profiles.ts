@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { SERVER_NETWORK_PROFILE_FULL_FIELDS } from '@lib/queries/fields/server.network.profile.fields';
 
 export const SERVER_NETWORK_PROFILE_LIST_QUERY = gql`
   query ServerNetworkProfileList(
@@ -12,20 +13,7 @@ export const SERVER_NETWORK_PROFILE_LIST_QUERY = gql`
     $where: ServerNetworkProfiles_bool_exp
   ) {
     ServerNetworkProfiles(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      host
-      port
-      pingInterval
-      protocols
-      messageTimeout
-      securityProfile
-      allowUnknownChargingStations
-      tlsKeyFilePath
-      tlsCertificateChainFilePath
-      mtlsCertificateAuthorityKeyFilePath
-      rootCACertificateFilePath
-      tenantPathMapping
-      dynamicTenantResolution
+      ${SERVER_NETWORK_PROFILE_FULL_FIELDS}
     }
     ServerNetworkProfiles_aggregate(where: $where) {
       aggregate {
@@ -38,20 +26,7 @@ export const SERVER_NETWORK_PROFILE_LIST_QUERY = gql`
 export const SERVER_NETWORK_PROFILE_GET_QUERY = gql`
   query GetServerNetworkProfileById($id: String!) {
     ServerNetworkProfiles_by_pk(id: $id) {
-      id
-      host
-      port
-      pingInterval
-      protocols
-      messageTimeout
-      securityProfile
-      allowUnknownChargingStations
-      tlsKeyFilePath
-      tlsCertificateChainFilePath
-      mtlsCertificateAuthorityKeyFilePath
-      rootCACertificateFilePath
-      tenantPathMapping
-      dynamicTenantResolution
+      ${SERVER_NETWORK_PROFILE_FULL_FIELDS}
     }
   }
 `;

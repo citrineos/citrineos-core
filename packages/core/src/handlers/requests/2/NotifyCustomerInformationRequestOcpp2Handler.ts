@@ -57,7 +57,7 @@ export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandle
           tenantId: message.context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           action: OCPP_CallAction.CustomerInformation,
-          message: {
+          payload: {
             requestId: requestId,
           },
         },

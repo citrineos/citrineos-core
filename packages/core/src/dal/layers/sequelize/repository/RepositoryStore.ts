@@ -30,6 +30,7 @@ import type {
   IVariableMonitoringRepository,
 } from '../../../interfaces/repositories.js';
 import {
+  DrizzleAuthorizationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -96,11 +97,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.authorizationRepository = new SequelizeAuthorizationRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
     this.certificateRepository = new SequelizeCertificateRepository({
       config,
@@ -173,6 +169,7 @@ export class RepositoryStore {
       sequelizeInstance,
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
+      this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -181,6 +178,11 @@ export class RepositoryStore {
         logger,
       });
     } else {
+      this.authorizationRepository = new SequelizeAuthorizationRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
       this.securityEventRepository = new SequelizeSecurityEventRepository({
         config,
         logger,
