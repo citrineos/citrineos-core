@@ -52,7 +52,7 @@
     "@refinedev/react-hook-form": "5.0.4",
     "@refinedev/react-table": "6.0.1",
     "@refinedev/ui-types": "2.0.1",
-    "@tanstack/react-query": "5.90.5",
+    "@tanstack/react-query": "5.101.4",
     "@tanstack/react-table": "8.21.3",
     "@vis.gl/react-google-maps": "1.5.1",
     "axios": "1.18.0",
