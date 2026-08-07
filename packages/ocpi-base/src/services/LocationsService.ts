@@ -85,7 +85,7 @@ export class LocationsService {
     // Map GraphQL DTOs to OCPI DTOs
     const locations =
       response.Locations.map((value) => LocationMapper.fromGraphql(value as LocationDto)) ?? [];
-    const locationsTotal = locations.length;
+    const locationsTotal = response.Locations_aggregate?.aggregate?.count ?? 0;
 
     return buildOcpiPaginatedResponse(
       OcpiResponseStatusCode.GenericSuccessCode,
