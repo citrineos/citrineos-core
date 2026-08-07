@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IFileStorage, SystemConfig } from '@citrineos/base';
+import type { IFileStorage } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
@@ -114,17 +115,21 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath, undefined, { trusted: true });
       expect(mockFileStorage.createDirectory).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
+        trusted: true,
       });
       expect(mockFileStorage.saveFile).toHaveBeenCalledWith(
         `${folderPath}/${mockToken}`,
         Buffer.from(mockKeyAuth),
+        undefined,
+        { trusted: true },
       );
       expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
+        trusted: true,
       });
     });
 
@@ -148,11 +153,12 @@ describe('ACME', () => {
       const actualResult = await acme.signCertificateByExternalCA(givenCSR);
 
       expect(actualResult).toBe(mockCert);
-      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath);
+      expect(mockFileStorage.exists).toHaveBeenCalledWith(folderPath, undefined, { trusted: true });
       expect(mockFileStorage.createDirectory).not.toHaveBeenCalled();
       expect(mockFileStorage.deleteFile).toHaveBeenCalledWith(folderPath, undefined, {
         recursive: true,
         force: true,
+        trusted: true,
       });
     });
 

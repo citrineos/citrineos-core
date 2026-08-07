@@ -4,7 +4,7 @@
 
 /* eslint-disable */
 
-import type { SystemConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
 import * as FastifyAuth from '@fastify/auth';
 import fastifySwagger from '@fastify/swagger';
@@ -85,7 +85,9 @@ const registerSwaggerUi = async (systemConfig: SystemConfig, server: FastifyInst
 
   if (systemConfig.util.swagger?.logoPath) {
     const storage = new LocalStorage('', '');
-    const logoContent = await storage.getFile(systemConfig.util.swagger.logoPath);
+    const logoContent = await storage.getFile(systemConfig.util.swagger.logoPath, undefined, {
+      trusted: true,
+    });
     if (logoContent) {
       swaggerUiOptions['logo'] = {
         type: 'image/png',

@@ -2,8 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ConnectorErrorCodeEnumType, ConnectorStatusEnumType } from '@citrineos/base';
-import { ConnectorErrorCodeEnum, ConnectorStatusEnum, OCPP1_6 } from '@citrineos/base';
+import {
+  type ConnectorErrorCodeEnumType,
+  type ConnectorStatusEnumType,
+  ConnectorErrorCodeEnum,
+  ConnectorStatusEnum,
+  OCPP1_6,
+} from '@citrineos/types';
 
 export class LocationMapper {
   static mapStatusNotificationRequestStatusToConnectorStatus(

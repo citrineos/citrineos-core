@@ -211,6 +211,19 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
       capabilities
       coordinates
       use16StatusNotification0
+      connectedWebsocketServerConfigId
+      ConnectedServerNetworkProfile {
+        id
+        host
+        port
+        protocols
+        securityProfile
+        allowUnknownChargingStations
+      }
+      SetNetworkProfiles(order_by: { updatedAt: desc }) {
+        websocketServerConfigId
+        securityProfile
+      }
       location: Location {
         id
         name

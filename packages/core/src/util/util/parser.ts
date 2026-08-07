@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OcppRequest } from '@citrineos/base';
+import type { OcppRequest } from '@citrineos/types';
 
 /**
  * Calculate the size of a request.

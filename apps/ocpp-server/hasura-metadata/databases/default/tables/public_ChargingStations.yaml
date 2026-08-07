@@ -11,6 +11,9 @@ object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
+  - name: ConnectedServerNetworkProfile
+    using:
+      foreign_key_constraint_on: connectedWebsocketServerConfigId
 array_relationships:
   - name: ChargingStationNetworkProfiles
     using:
@@ -131,7 +134,7 @@ insert_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       columns: '*'
-    comment: ""
+    comment: ''
 select_permissions:
   - role: user
     permission:
@@ -140,7 +143,7 @@ select_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+    comment: ''
 update_permissions:
   - role: user
     permission:
@@ -151,11 +154,11 @@ update_permissions:
       check:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ""
+    comment: ''
 delete_permissions:
   - role: user
     permission:
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ""
+    comment: ''

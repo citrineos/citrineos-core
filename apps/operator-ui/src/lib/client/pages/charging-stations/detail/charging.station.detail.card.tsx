@@ -3,8 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { ChargingStationDto, OCPPMessageDto } from '@citrineos/base';
-import { ChargingStationProps, OCPPMessageProps } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type OCPPMessageDto,
+  ChargingStationProps,
+  OCPPMessageProps,
+} from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
 import ProtocolTag from '@lib/client/components/protocol-tag';
@@ -22,7 +26,7 @@ import {
   CHARGING_STATIONS_GET_QUERY,
 } from '@lib/queries/charging.stations';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
-import { NOT_APPLICABLE } from '@lib/utils/consts';
+import { DETAIL_TAB_STATE, NOT_APPLICABLE } from '@lib/utils/consts';
 import { openModal } from '@lib/utils/store/modal.slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, Link, useDelete, useList, useOne, useTranslate } from '@refinedev/core';
@@ -168,6 +172,13 @@ export const ChargingStationDetailCard = ({
   }
 
   const hasActiveTransactions = station.transactions && station.transactions.length > 0;
+
+  // Security profile of the network profile pushed for the connected server config (matches the
+  // Network Profiles tab). Falls back to the connected ServerNetworkProfile's security profile.
+  const connectedSecurityProfile =
+    station.setNetworkProfiles?.find(
+      (p) => p.websocketServerConfigId === station.connectedWebsocketServerConfigId,
+    )?.securityProfile ?? station.connectedServerNetworkProfile?.securityProfile;
 
   let latestTimestamp = NOT_APPLICABLE;
   if (latestLog) {
@@ -402,6 +413,32 @@ export const ChargingStationDetailCard = ({
               <KeyValueDisplay
                 keyLabel={translate('ChargingStations.detailCard.totalEvses')}
                 value={station.evses?.length ?? 0}
+              />
+
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.securityProfile')}
+                value={connectedSecurityProfile}
+                valueRender={(securityProfile: any) => (
+                  <span>{securityProfile ?? NOT_APPLICABLE}</span>
+                )}
+              />
+
+              <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.serverId')}
+                value={station.connectedWebsocketServerConfigId}
+                valueRender={(serverId: any) =>
+                  serverId != null ? (
+                    <Link
+                      to={`/charging-stations/${id}?${DETAIL_TAB_STATE}=networkProfiles`}
+                      className={clickableLinkStyle}
+                      title={translate('ChargingStations.columns.serverId')}
+                    >
+                      {serverId}
+                    </Link>
+                  ) : (
+                    <span>{NOT_APPLICABLE}</span>
+                  )
+                }
               />
             </div>
           </div>

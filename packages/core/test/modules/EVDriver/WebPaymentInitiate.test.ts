@@ -13,13 +13,8 @@
  * so we can control TOTP outcomes without needing a real shared secret.
  */
 
-import {
-  AttributeEnum,
-  CacheNamespace,
-  DEFAULT_TENANT_ID,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { CacheNamespace, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { AttributeEnum, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import Fastify from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TotpUtil } from '@util';

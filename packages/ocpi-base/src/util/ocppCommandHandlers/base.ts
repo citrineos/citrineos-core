@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  type ChargingStationDto,
-  type IMessageConfirmation,
-  type TenantPartnerDto,
-  OCPPVersion,
-} from '@citrineos/base';
+import { type IMessageConfirmation } from '@citrineos/base';
+import { type ChargingStationDto, type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
 import type { OcpiConfig, StartSession, StopSession, UnlockConnector } from '../../index.js';
 import { CommandResultType, CommandType, ModuleId, OcpiConfigToken } from '../../index.js';
 import type { IRequestOptions } from 'typed-rest-client';

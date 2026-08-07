@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type MeterValueDto, OCPP2_0_1, type TransactionDto } from '@citrineos/base';
+import { type MeterValueDto, OCPP2_0_1, type TransactionDto } from '@citrineos/types';
 import { RangePicker } from '@lib/client/components/range-picker';
 import { LoadingIcon } from '@lib/client/components/ui/loading';
 import { MeterValueClass } from '@lib/cls/meter.value.dto';

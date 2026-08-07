@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AddressType, IVatProvider } from '@citrineos/base';
+import type { IVatProvider } from '@citrineos/base';
+import type { AddressType } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

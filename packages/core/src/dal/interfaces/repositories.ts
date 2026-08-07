@@ -4,22 +4,27 @@
 
 import type {
   BootConfig,
+  CrudRepository,
+  OCPP2_common_types,
+  OCPP2_request_types,
+} from '@citrineos/base';
+import type {
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationSequenceTypeEnumType,
-  CrudRepository,
   MeterValueDto,
   OCPP1_6,
-  OCPP2_common_types,
-  OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
   RegistrationStatusEnumType,
   SecurityEventDto,
+  ServerNetworkProfileDto,
+  SubscriptionDto,
+  TenantDto,
   UpdateEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
@@ -51,14 +56,10 @@ import type { ChargingStation } from '../layers/sequelize/model/Location/Chargin
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
 import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
-import type { ServerNetworkProfile } from '../layers/sequelize/model/Location/ServerNetworkProfile.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
-import type { OCPPMessage } from '../layers/sequelize/model/OCPPMessage.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
-import type { Subscription } from '../layers/sequelize/model/Subscription/Subscription.js';
 import type { Tariff } from '../layers/sequelize/model/Tariff/Tariffs.js';
-import type { Tenant } from '../layers/sequelize/model/Tenant.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -263,6 +264,7 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
+    connectedWebsocketServerConfigId?: string | null,
   ) => Promise<ChargingStation | undefined>;
   doesChargingStationExistByStationId: (
     tenantId: number,
@@ -317,10 +319,12 @@ export interface ISecurityEventRepository {
   deleteByKey: (tenantId: number, key: string) => Promise<SecurityEventDto | undefined>;
 }
 
-export interface ISubscriptionRepository extends CrudRepository<Subscription> {
-  create(tenantId: number, value: Subscription): Promise<Subscription>;
-  readAllByStationId(tenantId: number, ocppConnectionName: string): Promise<Subscription[]>;
-  deleteByKey(tenantId: number, key: string): Promise<Subscription | undefined>;
+// ORM-agnostic contract: returns SubscriptionDto so both the Sequelize
+// (model implements SubscriptionDto) and Drizzle implementations satisfy it.
+export interface ISubscriptionRepository {
+  create(tenantId: number, value: SubscriptionDto): Promise<SubscriptionDto>;
+  readAllByStationId(tenantId: number, ocppConnectionName: string): Promise<SubscriptionDto[]>;
+  deleteByKey(tenantId: number, key: string): Promise<SubscriptionDto | undefined>;
 }
 
 export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
@@ -512,12 +516,14 @@ export interface IReservationRepository extends CrudRepository<Reservation> {
   ): Promise<Reservation | undefined>;
 }
 
-export interface IOCPPMessageRepository extends CrudRepository<OCPPMessage> {
-  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage>;
+export interface IOCPPMessageRepository {
+  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessageDto>;
   getRequestByCorrelationId(
     tenantId: number,
     correlationId: string,
-  ): Promise<OCPPMessage | undefined>;
+  ): Promise<OCPPMessageDto | undefined>;
+  readOnlyOneByQuery(tenantId: number, query: object): Promise<OCPPMessageDto | undefined>;
+  readAllByQuery(tenantId: number, query: object): Promise<OCPPMessageDto[]>;
 }
 
 export interface IChargingStationSecurityInfoRepository
@@ -539,11 +545,11 @@ export interface IChargingStationSequenceRepository
   ): Promise<number>;
 }
 
-export interface IServerNetworkProfileRepository extends CrudRepository<ServerNetworkProfile> {
+export interface IServerNetworkProfileRepository {
   upsertServerNetworkProfile(
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
-  ): Promise<ServerNetworkProfile>;
+  ): Promise<ServerNetworkProfileDto>;
 }
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
@@ -552,7 +558,7 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
     configuration: ChangeConfiguration,
   ): Promise<ChangeConfiguration | undefined>;
 }
-
-export interface ITenantRepository extends CrudRepository<Tenant> {
-  createTenant(tenant: Tenant): Promise<Tenant>;
+export interface ITenantRepository {
+  createTenant(tenant: TenantDto): Promise<TenantDto>;
+  readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
 }

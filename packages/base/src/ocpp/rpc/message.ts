@@ -2,234 +2,257 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OcppRequest, OcppResponse } from '@ocpp/internal-types.js';
+import {
+  type CallAction,
+  type OcppRequest,
+  type OcppResponse,
+  type OCPPVersionType,
+  type RawCall,
+  type RawCallError,
+  type RawCallResult,
+  ErrorCode,
+  MessageTypeId,
+  OCPP_CallAction,
+  OCPPVersion,
+} from '@citrineos/types';
 import { Expose } from 'class-transformer';
 
 /**
- * Definition of Call Message (4.2.1 CALL)
+ * MessageId used when the one on the frame cannot be read (OCPP 2.0.1 part 4,
+ * section 4.2.3: the CALLERROR SHALL then contain "-1" as MessageId).
  */
-export type Call = [
-  messageTypeId: MessageTypeId,
-  messageId: string,
-  action: CallAction,
-  payload: OcppRequest,
-];
+export const UNREADABLE_MESSAGE_ID = '-1';
 
 /**
- * Definition of CallResult Message (4.2.2 CALLRESULT)
+ * Reads the messageId off a frame that has not been validated yet, falling back
+ * to {@link UNREADABLE_MESSAGE_ID} when it is absent or not a string.
  */
-export type CallResult = [messageTypeId: MessageTypeId, messageId: string, payload: OcppResponse];
-
-/**
- * Definition of CallError Message (4.2.1 CALLERROR)
- */
-export type CallError = [
-  messageTypeId: MessageTypeId,
-  messageId: string,
-  errorCode: ErrorCode,
-  errorDescription: string,
-  errorDetails: object,
-];
-
-/**
- * Number identifying the different types of OCPP messages.
- */
-export enum MessageTypeId {
-  // Call identifies a request.
-  Call = 2,
-  // CallResult identifies a successful response.
-  CallResult = 3,
-  // CallError identifies an erroneous response.
-  CallError = 4,
+export function readMessageId(raw: unknown): string {
+  const messageId = Array.isArray(raw) ? raw[1] : undefined;
+  // OCPP 2.0.1 part 4, section 4.2.3, When also the MessageId cannot be read, the CALLERROR SHALL contain "-1" as MessageId.
+  return typeof messageId === 'string' && messageId.length > 0 ? messageId : UNREADABLE_MESSAGE_ID;
 }
 
 /**
- * Supported OCPP versions
- */
-export enum OCPPVersion {
-  OCPP1_6 = 'ocpp1.6',
-  OCPP2_0_1 = 'ocpp2.0.1',
-  OCPP2_1 = 'ocpp2.1',
-}
-
-/**
- * All OCPP 2.x versions
- */
-export const OCPP_2_VER_LIST = [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1];
-
-export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
-
-/**
- * The different OCPP action types.
+ * Asserts that `raw` is structurally a frame of the given message type: an array
+ * of at least `minLength` elements carrying a readable messageId. Trailing
+ * elements beyond the ones the specification defines are ignored.
  *
+ * Payload contents are *not* checked here — that is schema validation, and it
+ * needs to know the OCPP version and action.
+ *
+ * @throws {OcppError} ProtocolError if the frame is not the expected shape.
+ * @throws {Error} if the frame's messageTypeId is not the one for this model.
  */
-
-export type CallAction = OCPP_CallAction;
-// NoAction is used when the action is not known, for example when a message is invalid json or otherwise violates the OCPP protocol to the extent that the action cannot be determined. This allows us to still store and process these messages, while marking them as having an unknown action.
-export const NO_ACTION = 'NoAction';
-
-export enum OCPP_CallAction {
-  AdjustPeriodicEventStream = 'AdjustPeriodicEventStream',
-  AFRRSignal = 'AFRRSignal',
-  Authorize = 'Authorize',
-  BatterySwap = 'BatterySwap',
-  BootNotification = 'BootNotification',
-  CancelReservation = 'CancelReservation',
-  CertificateSigned = 'CertificateSigned',
-  ChangeAvailability = 'ChangeAvailability',
-  ChangeConfiguration = 'ChangeConfiguration',
-  ChangeTransactionTariff = 'ChangeTransactionTariff',
-  ClearCache = 'ClearCache',
-  ClearChargingProfile = 'ClearChargingProfile',
-  ClearDERControl = 'ClearDERControl',
-  ClearDisplayMessage = 'ClearDisplayMessage',
-  ClearTariffs = 'ClearTariffs',
-  ClearVariableMonitoring = 'ClearVariableMonitoring',
-  ClearedChargingLimit = 'ClearedChargingLimit',
-  ClosePeriodicEventStream = 'ClosePeriodicEventStream',
-  CostUpdated = 'CostUpdated',
-  CustomerInformation = 'CustomerInformation',
-  DataTransfer = 'DataTransfer',
-  DeleteCertificate = 'DeleteCertificate',
-  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
-  FirmwareStatusNotification = 'FirmwareStatusNotification',
-  Get15118EVCertificate = 'Get15118EVCertificate',
-  GetBaseReport = 'GetBaseReport',
-  GetCertificateChainStatus = 'GetCertificateChainStatus',
-  GetCertificateStatus = 'GetCertificateStatus',
-  GetChargingProfiles = 'GetChargingProfiles',
-  GetCompositeSchedule = 'GetCompositeSchedule',
-  GetConfiguration = 'GetConfiguration',
-  GetDERControl = 'GetDERControl',
-  GetDiagnostics = 'GetDiagnostics',
-  GetDisplayMessages = 'GetDisplayMessages',
-  GetInstalledCertificateIds = 'GetInstalledCertificateIds',
-  GetLocalListVersion = 'GetLocalListVersion',
-  GetLog = 'GetLog',
-  GetMonitoringReport = 'GetMonitoringReport',
-  GetPeriodicEventStream = 'GetPeriodicEventStream',
-  GetReport = 'GetReport',
-  GetTariffs = 'GetTariffs',
-  GetTransactionStatus = 'GetTransactionStatus',
-  GetVariables = 'GetVariables',
-  Heartbeat = 'Heartbeat',
-  InstallCertificate = 'InstallCertificate',
-  LogStatusNotification = 'LogStatusNotification',
-  MeterValues = 'MeterValues',
-  NotifyAllowedEnergyTransfer = 'NotifyAllowedEnergyTransfer',
-  NotifyChargingLimit = 'NotifyChargingLimit',
-  NotifyCustomerInformation = 'NotifyCustomerInformation',
-  NotifyDERAlarm = 'NotifyDERAlarm',
-  NotifyDERStartStop = 'NotifyDERStartStop',
-  NotifyDisplayMessages = 'NotifyDisplayMessages',
-  NotifyEVChargingNeeds = 'NotifyEVChargingNeeds',
-  NotifyEVChargingSchedule = 'NotifyEVChargingSchedule',
-  NotifyEvent = 'NotifyEvent',
-  NotifyMonitoringReport = 'NotifyMonitoringReport',
-  NotifyPeriodicEventStream = 'NotifyPeriodicEventStream',
-  NotifyPriorityCharging = 'NotifyPriorityCharging',
-  NotifyReport = 'NotifyReport',
-  NotifySettlement = 'NotifySettlement',
-  NotifyWebPaymentStarted = 'NotifyWebPaymentStarted',
-  OpenPeriodicEventStream = 'OpenPeriodicEventStream',
-  PublishFirmware = 'PublishFirmware',
-  PublishFirmwareStatusNotification = 'PublishFirmwareStatusNotification',
-  PullDynamicScheduleUpdate = 'PullDynamicScheduleUpdate',
-  RemoteStartTransaction = 'RemoteStartTransaction',
-  RemoteStopTransaction = 'RemoteStopTransaction',
-  ReportChargingProfiles = 'ReportChargingProfiles',
-  ReportDERControl = 'ReportDERControl',
-  RequestBatterySwap = 'RequestBatterySwap',
-  RequestStartTransaction = 'RequestStartTransaction',
-  RequestStopTransaction = 'RequestStopTransaction',
-  ReservationStatusUpdate = 'ReservationStatusUpdate',
-  ReserveNow = 'ReserveNow',
-  Reset = 'Reset',
-  SecurityEventNotification = 'SecurityEventNotification',
-  SendLocalList = 'SendLocalList',
-  SetChargingProfile = 'SetChargingProfile',
-  SetDefaultTariff = 'SetDefaultTariff',
-  SetDERControl = 'SetDERControl',
-  SetDisplayMessage = 'SetDisplayMessage',
-  SetMonitoringBase = 'SetMonitoringBase',
-  SetMonitoringLevel = 'SetMonitoringLevel',
-  SetNetworkProfile = 'SetNetworkProfile',
-  SetVariableMonitoring = 'SetVariableMonitoring',
-  SetVariables = 'SetVariables',
-  SignCertificate = 'SignCertificate',
-  SignedFirmwareStatusNotification = 'SignedFirmwareStatusNotification',
-  SignedUpdateFirmware = 'SignedUpdateFirmware',
-  StartTransaction = 'StartTransaction',
-  StatusNotification = 'StatusNotification',
-  StopTransaction = 'StopTransaction',
-  TransactionEvent = 'TransactionEvent',
-  TriggerMessage = 'TriggerMessage',
-  UnlockConnector = 'UnlockConnector',
-  UnpublishFirmware = 'UnpublishFirmware',
-  UpdateDynamicSchedule = 'UpdateDynamicSchedule',
-  UpdateFirmware = 'UpdateFirmware',
-  UsePriorityCharging = 'UsePriorityCharging',
-  VatNumberValidation = 'VatNumberValidation',
+function assertRawFrame(
+  raw: unknown,
+  messageTypeId: MessageTypeId,
+  minLength: number,
+  name: string,
+): asserts raw is unknown[] {
+  if (!Array.isArray(raw) || raw.length < minLength) {
+    throw new OcppError(
+      readMessageId(raw),
+      ErrorCode.ProtocolError,
+      `Malformed ${name} frame: expected an array of at least ${minLength} elements`,
+    );
+  }
+  if (raw[0] !== messageTypeId) {
+    // The messageTypeId decides which model a frame becomes, so the caller has
+    // already read it to get here. A mismatch means we dispatched on it wrongly:
+    // that is a bug on this side, not a protocol violation by the sender, and it
+    // must not go back over the wire as one.
+    throw new Error(
+      `Cannot build a ${name} model from a frame with messageTypeId ${JSON.stringify(raw[0])}`,
+    );
+  }
+  if (typeof raw[1] !== 'string' || raw[1].length === 0) {
+    throw new OcppError(
+      UNREADABLE_MESSAGE_ID,
+      ErrorCode.ProtocolError,
+      `Malformed ${name} frame: messageId is not a non-empty string`,
+    );
+  }
 }
 
 /**
- * Error codes for CallError message (4.3 RPC Framework Error Codes)
+ * Asserts that a frame element is a payload object, i.e. not a primitive or null.
  *
+ * @throws {OcppError} ProtocolError if it is not.
  */
-export enum ErrorCode {
-  /**
-   * Payload for Action is syntactically incorrect (OCPP 2.0.1 only, see FormationViolation for OCPP 1.6)
-   */
-  FormatViolation = 'FormatViolation',
-  /**
-   * Payload for Action is syntactically incorrect (OCPP 1.6 only, see FormatViolation for OCPP 2.0.1)
-   */
-  FormationViolation = 'FormationViolation',
-  /**
-   * Requested Action is not known by receiver
-   */
-  NotImplemented = 'NotImplemented',
-  /**
-   * Payload for Action is not conform the PDU structure
-   */
-  ProtocolError = 'ProtocolError',
-  /**
-   * Any other error not covered by the more specific error codes in this table
-   */
-  GenericError = 'GenericError',
-  /**
-   * An internal error occurred and the receiver was not able to process the requested Action successfully
-   */
-  InternalError = 'InternalError',
-  /**
-   * A message with a Message Type Number received that is not supported by this implementation.
-   */
-  MessageTypeNotSupported = 'MessageTypeNotSupported',
-  /**
-   * Requested Action is recognized but not supported by the receiver
-   */
-  NotSupported = 'NotSupported',
-  /**
-   * Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints
-   */
-  OccurrenceConstraintViolation = 'OccurrenceConstraintViolation',
-  /**
-   * Payload is syntactically correct but at least one field contains an invalid value
-   */
-  PropertyConstraintViolation = 'PropertyConstraintViolation',
-  /**
-   * Content of the call is not a valid RPC Request, for example: MessageId could not be read.
-   */
-  RpcFrameworkError = 'RpcFrameworkError',
-  /**
-   * During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
-   */
-  SecurityError = 'SecurityError',
-  /**
-   * Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. 'somestring': 12)
-   */
-  TypeConstraintViolation = 'TypeConstraintViolation',
+function assertPayload(
+  payload: unknown,
+  messageId: string,
+  name: string,
+): asserts payload is object {
+  if (typeof payload !== 'object' || payload === null) {
+    throw new OcppError(
+      messageId,
+      ErrorCode.ProtocolError,
+      `Malformed ${name} frame: payload is not an object`,
+    );
+  }
 }
+
+/**
+ * A CALL message (4.2.1) with named fields.
+ *
+ * Construct from a parsed frame to validate its structure and read it by field
+ * name, or from the fields themselves to build an outbound CALL:
+ *
+ * ```ts
+ * const call = new Call(JSON.parse(rawMessage) as RawCall); // inbound, validates
+ * const call = new Call(correlationId, action, payload);     // outbound, trusted
+ * ```
+ *
+ * The frame form is untrusted and throws on anything malformed. The field form is
+ * type-checked at the call site and never throws, so building an error reply
+ * cannot itself fail.
+ *
+ * `JSON.stringify` yields the wire form again, so a model object can be handed
+ * straight to the socket.
+ */
+export class Call {
+  readonly messageTypeId: MessageTypeId.Call = MessageTypeId.Call;
+  readonly messageId: string;
+  readonly action: CallAction;
+  readonly payload: OcppRequest;
+
+  /**
+   * @param raw - A parsed CALL frame, not yet known to be well-formed.
+   * @throws {OcppError} ProtocolError if the frame is not a structurally valid CALL.
+   * @throws {Error} if the frame is not a CALL at all, which is a caller bug.
+   */
+  constructor(raw: RawCall);
+  constructor(messageId: string, action: CallAction, payload: OcppRequest);
+  constructor(rawOrMessageId: RawCall | string, action?: CallAction, payload?: OcppRequest) {
+    if (typeof rawOrMessageId === 'string' && action !== undefined) {
+      this.messageId = rawOrMessageId;
+      this.action = action;
+      this.payload = payload as OcppRequest;
+      return;
+    }
+    const raw: unknown = rawOrMessageId;
+    assertRawFrame(raw, MessageTypeId.Call, 4, 'CALL');
+    const messageId = raw[1] as string;
+    if (typeof raw[2] !== 'string' || raw[2].length === 0) {
+      throw new OcppError(
+        messageId,
+        ErrorCode.ProtocolError,
+        'Malformed CALL frame: action is not a non-empty string',
+      );
+    }
+    assertPayload(raw[3], messageId, 'CALL');
+    this.messageId = messageId;
+    this.action = raw[2] as CallAction;
+    this.payload = raw[3] as OcppRequest;
+  }
+
+  toJSON(): RawCall {
+    return [this.messageTypeId, this.messageId, this.action, this.payload];
+  }
+}
+
+/**
+ * A CALLRESULT message (4.2.2) with named fields. See {@link Call}.
+ */
+export class CallResult {
+  readonly messageTypeId: MessageTypeId.CallResult = MessageTypeId.CallResult;
+  readonly messageId: string;
+  readonly payload: OcppResponse;
+
+  /**
+   * @param raw - A parsed CALLRESULT frame, not yet known to be well-formed.
+   * @throws {OcppError} ProtocolError if the frame is not a structurally valid CALLRESULT.
+   * @throws {Error} if the frame is not a CALLRESULT at all, which is a caller bug.
+   */
+  constructor(raw: RawCallResult);
+  constructor(messageId: string, payload: OcppResponse);
+  constructor(rawOrMessageId: RawCallResult | string, payload?: OcppResponse) {
+    if (typeof rawOrMessageId === 'string' && payload !== undefined) {
+      this.messageId = rawOrMessageId;
+      this.payload = payload;
+      return;
+    }
+    const raw: unknown = rawOrMessageId;
+    assertRawFrame(raw, MessageTypeId.CallResult, 3, 'CALLRESULT');
+    const messageId = raw[1] as string;
+    assertPayload(raw[2], messageId, 'CALLRESULT');
+    this.messageId = messageId;
+    this.payload = raw[2] as OcppResponse;
+  }
+
+  toJSON(): RawCallResult {
+    return [this.messageTypeId, this.messageId, this.payload];
+  }
+}
+
+/**
+ * A CALLERROR message (4.2.3) with named fields. See {@link Call}.
+ */
+export class CallError {
+  readonly messageTypeId: MessageTypeId.CallError = MessageTypeId.CallError;
+  readonly messageId: string;
+  readonly errorCode: ErrorCode;
+  readonly errorDescription: string;
+  readonly errorDetails: object;
+
+  /**
+   * @param raw - A parsed CALLERROR frame, not yet known to be well-formed.
+   * @throws {OcppError} ProtocolError if the frame is not a structurally valid CALLERROR.
+   * @throws {Error} if the frame is not a CALLERROR at all, which is a caller bug.
+   */
+  constructor(raw: RawCallError);
+  constructor(
+    messageId: string,
+    errorCode: ErrorCode,
+    errorDescription: string,
+    errorDetails?: object,
+  );
+  constructor(
+    rawOrMessageId: RawCallError | string,
+    errorCode?: ErrorCode,
+    errorDescription?: string,
+    errorDetails: object = {},
+  ) {
+    if (typeof rawOrMessageId === 'string' && errorCode !== undefined) {
+      this.messageId = rawOrMessageId;
+      this.errorCode = errorCode;
+      this.errorDescription = errorDescription as string;
+      this.errorDetails = errorDetails;
+      return;
+    }
+    const raw: unknown = rawOrMessageId;
+    assertRawFrame(raw, MessageTypeId.CallError, 4, 'CALLERROR');
+    this.messageId = raw[1] as string;
+    this.errorCode = raw[2] as ErrorCode;
+    this.errorDescription = typeof raw[3] === 'string' ? raw[3] : '';
+    this.errorDetails = typeof raw[4] === 'object' && raw[4] !== null ? (raw[4] as object) : {};
+  }
+
+  /**
+   * The error as an {@link OcppError}, for routing to the module that issued the
+   * original Call.
+   */
+  asOcppError(): OcppError {
+    return new OcppError(this.messageId, this.errorCode, this.errorDescription, this.errorDetails);
+  }
+
+  toJSON(): RawCallError {
+    return [
+      this.messageTypeId,
+      this.messageId,
+      this.errorCode,
+      this.errorDescription,
+      this.errorDetails,
+    ];
+  }
+}
+
+/**
+ * Any OCPP RPC frame as a model object. Discriminate on `messageTypeId`.
+ */
+export type RpcMessage = Call | CallResult | CallError;
 
 /**
  * Custom error to handle OCPP errors better.
@@ -242,6 +265,18 @@ export class OcppError extends Error {
   @Expose()
   get message(): string {
     return super.message;
+  }
+
+  get messageId(): string {
+    return this._messageId;
+  }
+
+  get errorCode(): ErrorCode {
+    return this._errorCode;
+  }
+
+  get errorDetails(): object {
+    return this._errorDetails;
   }
 
   constructor(
@@ -258,13 +293,7 @@ export class OcppError extends Error {
   }
 
   asCallError(): CallError {
-    return [
-      MessageTypeId.CallError,
-      this._messageId,
-      this._errorCode,
-      this.message,
-      this._errorDetails,
-    ] as CallError;
+    return new CallError(this._messageId, this._errorCode, this.message, this._errorDetails);
   }
 }
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPPVersion } from '@citrineos/base';
+import { OCPPVersion } from '@citrineos/types';
 import { Badge } from '@lib/client/components/ui/badge';
 import { cn } from '@lib/utils/cn';
 import { useTranslate } from '@refinedev/core';

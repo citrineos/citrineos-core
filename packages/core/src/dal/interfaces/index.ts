@@ -9,6 +9,8 @@ export { AuthorizationQuerySchema } from './queries/Authorization.js';
 export type { AuthorizationQuerystring } from './queries/Authorization.js';
 export { ChargingStationKeyQuerySchema } from './queries/ChargingStation.js';
 export type { ChargingStationKeyQuerystring } from './queries/ChargingStation.js';
+export { GenerateCertificateChainQuerySchema } from './queries/CertificateChain.js';
+export type { GenerateCertificateChainQueryString } from './queries/CertificateChain.js';
 export { ConnectionDeleteQuerySchema } from './queries/Connection.js';
 export type { ConnectionDeleteQuerystring } from './queries/Connection.js';
 export { ModelKeyQuerystringSchema } from './queries/Model.js';
@@ -64,7 +66,10 @@ export { default as AuthorizationRestrictionsSchema } from './projections/schema
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json' with { type: 'json' };
 
 // Date endpoints DTOs
-export { GenerateCertificateChainRequest } from './dtos/GenerateCertificateChainRequest.js';
+export {
+  CertificateGenerationScope,
+  GenerateCertificateChainRequest,
+} from './dtos/GenerateCertificateChainRequest.js';
 export { InstallRootCertificateRequest } from './dtos/InstallRootCertificateRequest.js';
 export { RegenerateExistingCertificate } from './dtos/RegenerateExistingCertificate.js';
 export { UploadExistingCertificate } from './dtos/UploadExistingCertificate.js';

@@ -6,7 +6,7 @@
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { Button } from '@lib/client/components/ui/button';
 import { ChevronLeft, Edit } from 'lucide-react';
-import type { TenantPartnerDto } from '@citrineos/base';
+import type { TenantPartnerDto } from '@citrineos/types';
 import { useRouter } from 'next/navigation';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { buttonIconSize } from '@lib/client/styles/icon';

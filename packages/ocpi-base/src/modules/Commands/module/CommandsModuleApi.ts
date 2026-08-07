@@ -4,8 +4,8 @@
 
 import type { ICommandsModuleApi } from './ICommandsModuleApi.js';
 import { Body, Ctx, JsonController, Param, Post } from 'routing-controllers';
-import type { TenantPartnerDto } from '@citrineos/base';
-import { HttpStatus, OCPPVersion } from '@citrineos/base';
+import { type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
+import { HttpStatus } from '@citrineos/base';
 import type {
   CancelReservation,
   OcpiCommandResponse,

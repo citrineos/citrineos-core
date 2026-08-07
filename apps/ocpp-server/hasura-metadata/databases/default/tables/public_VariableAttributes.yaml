@@ -38,7 +38,7 @@ insert_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       columns: '*'
-    comment: ""
+    comment: ''
 select_permissions:
   - role: user
     permission:
@@ -47,7 +47,7 @@ select_permissions:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ""
+    comment: ''
 update_permissions:
   - role: user
     permission:
@@ -58,11 +58,11 @@ update_permissions:
       check:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ""
+    comment: ''
 delete_permissions:
   - role: user
     permission:
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ""
+    comment: ''

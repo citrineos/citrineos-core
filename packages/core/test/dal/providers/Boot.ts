@@ -4,7 +4,7 @@
 import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { faker } from '@faker-js/faker';
 import { Boot, VariableAttribute } from '@dal/index.js';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 
 export function aSetVariable(
   updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>,

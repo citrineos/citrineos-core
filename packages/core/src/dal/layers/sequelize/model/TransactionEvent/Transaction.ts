@@ -16,7 +16,7 @@ import type {
   TransactionDto,
   TransactionEventDto,
   TransactionLimit,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

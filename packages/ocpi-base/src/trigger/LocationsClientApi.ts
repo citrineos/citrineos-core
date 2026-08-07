@@ -14,7 +14,7 @@ import { EvseResponseSchema } from '../model/DTO/EvseDTO.js';
 import { Service } from 'typedi';
 import { ModuleId } from '../model/ModuleId.js';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
-import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/base';
+import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 
 @Service()
 export class LocationsClientApi extends BaseClientApi {

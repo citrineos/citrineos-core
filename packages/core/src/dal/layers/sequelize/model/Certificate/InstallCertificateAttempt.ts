@@ -1,15 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
-  DEFAULT_TENANT_ID,
-  OCPP2_Namespace,
   type CertificateDto,
   type CertificateUseEnumType,
   type ChargingStationDto,
   type InstallCertificateStatusEnumType,
   type TenantDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,

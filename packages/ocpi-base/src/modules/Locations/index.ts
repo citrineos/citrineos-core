@@ -22,7 +22,7 @@ import {
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { LocationsModuleApi } from './module/LocationsModuleApi.js';
-import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/base';
+import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/types';
 import { Inject, Service } from 'typedi';
 
 export { LocationsModuleApi } from './module/LocationsModuleApi.js';

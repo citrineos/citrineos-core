@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import type { AuthorizationDto } from '@citrineos/base';
+import type { AuthorizationDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import { Badge } from '@lib/client/components/ui/badge';
 import { Button } from '@lib/client/components/ui/button';

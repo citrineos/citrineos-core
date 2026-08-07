@@ -9,16 +9,18 @@ import { Logger } from 'tslog';
 import type { IDataEndpointDefinition } from './DataEndpointDefinition.js';
 import type { IMessageEndpointDefinition } from '@interfaces/api/MessageEndpointDefinition.js';
 import { METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from '@interfaces/api/metadata.js';
-import { HttpMethod } from '@interfaces/api/HttpMethods.js';
-import type { SystemConfig } from '@config/types.js';
-import type { OcppRequest } from '@ocpp/internal-types.js';
+import {
+  HttpMethod,
+  type SystemConfig,
+  type OcppRequest,
+  OCPPVersion,
+  systemConfigSchema,
+  type CallAction,
+} from '@citrineos/types';
 import { ConfigStoreFactory } from '@config/ConfigStore.js';
 import { MessageConfirmationSchema } from '@ocpp/persistence/querySchema.js';
 import { Namespace, OCPP1_6_Namespace } from '@ocpp/persistence/namespace.js';
-import { OCPPVersion } from '@ocpp/rpc/message.js';
-import { systemConfigSchema } from '@config/types.js';
 import { OCPP2_Namespace } from '@ocpp/persistence/index.js';
-import type { CallAction } from '@ocpp/rpc/message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 import type { IModule } from '@interfaces/modules/Module.js';
 import { IMessageQuerystringSchema } from '@interfaces/api/MessageQuerystring.js';

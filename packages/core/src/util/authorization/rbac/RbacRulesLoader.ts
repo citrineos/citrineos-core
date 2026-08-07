@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { RbacRules } from '@citrineos/base';
-import { RbacRulesSchema } from '@citrineos/base';
+import { type RbacRules, RbacRulesSchema } from '@citrineos/types';
 import { UrlMatcher } from './UrlMatcher.js';
 import { LocalStorage } from '../../files/localStorage.js';
 import path from 'path';
@@ -40,7 +39,9 @@ export class RbacRulesLoader {
   private async loadRules(filePath: string): Promise<void> {
     const absoluteFilePath = path.resolve(process.cwd(), filePath);
     try {
-      const rulesContent = await this._storage.getFile(absoluteFilePath);
+      const rulesContent = await this._storage.getFile(absoluteFilePath, undefined, {
+        trusted: true,
+      });
       if (rulesContent === undefined) {
         this._logger.warn(`Rules file not found at ${absoluteFilePath}, using empty rules`);
         return;

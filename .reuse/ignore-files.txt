@@ -26,12 +26,15 @@ apps/ocpp-server/src/assets/logo.png
 .husky/pre-commit
 
 # Package files
+packages/types/package.json
 packages/base/package.json
 packages/core/package.json
 apps/ocpp-server/package.json
 package-lock.json
 
 # TypeScript config files
+packages/types/tsconfig.eslint.json
+packages/types/tsconfig.json
 packages/base/tsconfig.eslint.json
 packages/base/tsconfig.json
 packages/core/tsconfig.eslint.json
@@ -43,13 +46,13 @@ tsconfig.eslint.json
 tsconfig.json
 
 # OCPP 1.6 Schema files
-packages/base/src/ocpp/model/1.6/schemas/
+packages/types/src/ocpp/model/1.6/schemas/
 
 # OCPP 2.0.1 Schema files
-packages/base/src/ocpp/model/2.0.1/schemas/
+packages/types/src/ocpp/model/2.0.1/schemas/
 
 # OCPP 2.1 Schema files
-packages/base/src/ocpp/model/2.1/schemas/
+packages/types/src/ocpp/model/2.1/schemas/
 
 # Persistence schemas
 packages/base/src/ocpp/persistence/schemas/AuthorizationDataSchema.json
@@ -83,6 +86,7 @@ apps/ocpp-server/src/assets/certificates/subCAKey.pem
 # Documentation
 packages/core/test/util/resources/README.md
 apps/ocpp-server/everest/README.md
+packages/core/src/handlers/HANDLERS.md
 
 # Configuration files
 apps/ocpp-server/nodemon.json

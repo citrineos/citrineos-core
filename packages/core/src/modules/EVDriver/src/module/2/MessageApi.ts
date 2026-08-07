@@ -2,20 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, IMessageConfirmation } from '@citrineos/base';
 import {
+  type IMessageConfirmation,
   AbstractModuleApi,
   AsMessageEndpoint,
-  AttributeEnum,
   CacheNamespace,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+  OCPP2_request_types,
+} from '@citrineos/base';
+import {
+  type CallAction,
+  AttributeEnum,
   OCPP2_0_1,
   OCPP2_1,
-  OCPP2_request_types,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { OCPP2_0_1_Mapper } from '@dal/index.js';
 import { packageGroupCall, TotpUtil, validateChargingProfileType } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -306,6 +309,7 @@ export class EVDriverOcpp2Api
     request: OCPP2_request_types.ReserveNowRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
+    version: OCPPVersion = DEFAULT_VERSION,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
 
@@ -331,7 +335,7 @@ export class EVDriverOcpp2Api
         const confirmation = await this._module.sendCall(
           i,
           tenantId,
-          OCPPVersion.OCPP2_0_1,
+          version,
           OCPP_CallAction.ReserveNow,
           request,
           callbackUrl,

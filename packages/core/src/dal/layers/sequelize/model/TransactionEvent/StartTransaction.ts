@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ConnectorDto, StartTransactionDto, TransactionDto, TenantDto } from '@citrineos/base';
+import type {
+  ConnectorDto,
+  StartTransactionDto,
+  TransactionDto,
+  TenantDto,
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

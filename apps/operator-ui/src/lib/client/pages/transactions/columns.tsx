@@ -10,7 +10,7 @@ import {
   OCPP2_0_1,
   type TransactionDto,
   TransactionProps,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import GenericTag from '@lib/client/components/tag';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';

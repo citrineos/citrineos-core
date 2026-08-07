@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ChargingStationDto, ICache, TenantPartnerDto } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/base';
+import type { ICache } from '@citrineos/base';
+import { type ChargingStationDto, type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { Inject, InjectMany, Service } from 'typedi';

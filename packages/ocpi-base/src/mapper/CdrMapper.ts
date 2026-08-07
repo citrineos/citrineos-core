@@ -16,7 +16,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OcpiGraphqlClient } from '../graphql/index.js';
 import { LocationsService } from '../services/LocationsService.js';
-import type { TariffDto, TransactionDto } from '@citrineos/base';
+import type { TariffDto, TransactionDto } from '@citrineos/types';
 import {
   calculateEnergyCost,
   calculateFixedCost,

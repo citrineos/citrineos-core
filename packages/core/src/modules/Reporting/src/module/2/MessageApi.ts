@@ -7,14 +7,16 @@ import {
   AsMessageEndpoint,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+  type IMessageConfirmation,
   OCPP2_common_types,
   OCPP2_request_types,
+} from '@citrineos/base';
+import {
+  type CallAction,
+  type MonitoringCriterionEnumType,
   OCPP_CallAction,
   OCPPVersion,
-  type CallAction,
-  type IMessageConfirmation,
-  type MonitoringCriterionEnumType,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
@@ -95,7 +97,7 @@ export class ReportingOcpp2Api
   ): Promise<IMessageConfirmation> {
     // if request size is bigger than BytesPerMessageGetReport, return error
     const bytesPerMessageGetReport =
-      await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+      await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP_CallAction.GetReport,
         tenantId,
@@ -108,8 +110,9 @@ export class ReportingOcpp2Api
       return { success: false, payload: errorMsg };
     }
 
-    const componentVariables =
-      request.componentVariable as OCPP2_common_types.ComponentVariableType[];
+    // componentVariable is optional in GetReportRequest.
+    const componentVariables = (request.componentVariable ??
+      []) as OCPP2_common_types.ComponentVariableType[];
 
     if (componentVariables.length === 0) {
       // Send everything in one call
@@ -125,7 +128,7 @@ export class ReportingOcpp2Api
 
     // Batching logic
     let itemsPerMessageGetReport =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+      await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
         this._componentDeviceDataCtrlr,
         OCPP_CallAction.GetReport,
         tenantId,
@@ -174,19 +177,23 @@ export class ReportingOcpp2Api
     ),
   )
   async getMonitoringReport(
-    identifier: string,
+    identifier: string[],
     request: OCPP2_request_types.GetMonitoringReportRequest,
     callbackUrl?: string,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion = DEFAULT_VERSION,
-  ): Promise<IMessageConfirmation> {
-    // If monitoringCriteria & componentVariable are both empty, just call once
-    const componentVariable =
-      request.componentVariable as OCPP2_common_types.ComponentVariableType[];
-    const monitoringCriteria = request.monitoringCriteria as MonitoringCriterionEnumType[];
+  ): Promise<IMessageConfirmation[]> {
+    // componentVariable and monitoringCriteria are both optional in
+    // GetMonitoringReportRequest, so default them before reading .length.
+    const componentVariable = (request.componentVariable ??
+      []) as OCPP2_common_types.ComponentVariableType[];
+    const monitoringCriteria = (request.monitoringCriteria ?? []) as MonitoringCriterionEnumType[];
 
-    if (componentVariable.length === 0 && monitoringCriteria.length === 0) {
-      return await this._module.sendCall(
+    // Batching only splits componentVariable, so without it there is nothing to
+    // split - send the request as-is (no filters, or monitoringCriteria only).
+    if (componentVariable.length === 0) {
+      return packageGroupCall(
+        this._module,
         identifier,
         tenantId,
         version,
@@ -196,49 +203,49 @@ export class ReportingOcpp2Api
       );
     }
 
-    // Otherwise, do batching if needed
-    let itemsPerMessageGetReport =
-      await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
-        this._componentDeviceDataCtrlr,
-        OCPP_CallAction.GetReport,
-        tenantId,
-        identifier,
-      );
-    itemsPerMessageGetReport =
-      itemsPerMessageGetReport === null ? componentVariable.length : itemsPerMessageGetReport;
-
-    const confirmations = [];
-    for (const [index, batch] of getBatches(
-      componentVariable,
-      itemsPerMessageGetReport,
-    ).entries()) {
-      try {
-        const batchResult = await this._module.sendCall(
-          identifier,
+    const confirmations: IMessageConfirmation[] = [];
+    for (const ocppConnectionName of identifier) {
+      // Otherwise, do batching if needed
+      let itemsPerMessageGetReport =
+        await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          this._componentDeviceDataCtrlr,
+          OCPP_CallAction.GetReport,
           tenantId,
-          version,
-          OCPP_CallAction.GetMonitoringReport,
-          {
-            ...request,
-            componentVariable: batch,
-          } as OCPP2_request_types.GetMonitoringReportRequest,
-          callbackUrl,
+          ocppConnectionName,
         );
-        confirmations.push({
-          success: batchResult.success,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${batchResult.payload}`,
-        });
-      } catch (error) {
-        confirmations.push({
-          success: false,
-          batch: `[${index}:${index + batch.length}]`,
-          message: `${error}`,
-        });
+      itemsPerMessageGetReport =
+        itemsPerMessageGetReport === null ? componentVariable.length : itemsPerMessageGetReport;
+
+      for (const [index, batch] of getBatches(
+        componentVariable,
+        itemsPerMessageGetReport,
+      ).entries()) {
+        try {
+          const batchResult = await this._module.sendCall(
+            ocppConnectionName,
+            tenantId,
+            version,
+            OCPP_CallAction.GetMonitoringReport,
+            {
+              ...request,
+              componentVariable: batch,
+            } as OCPP2_request_types.GetMonitoringReportRequest,
+            callbackUrl,
+          );
+          confirmations.push({
+            success: batchResult.success,
+            payload: `${ocppConnectionName} batch [${index}:${index + batch.length}]: ${batchResult.payload}`,
+          });
+        } catch (error) {
+          confirmations.push({
+            success: false,
+            payload: `${ocppConnectionName} batch [${index}:${index + batch.length}]: ${error}`,
+          });
+        }
       }
     }
 
-    return { success: true, payload: confirmations };
+    return confirmations;
   }
 
   @AsMessageEndpoint(OCPP_CallAction.GetLog, (_instance: ReportingOcpp2Api, version) =>

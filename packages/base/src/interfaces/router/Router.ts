@@ -22,6 +22,7 @@ export interface IMessageRouter extends IModule {
     tenantId: number,
     ocppConnectionName: string,
     protocol: string,
+    connectedWebsocketServerConfigId?: string,
   ): Promise<boolean>;
   deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean>;
 

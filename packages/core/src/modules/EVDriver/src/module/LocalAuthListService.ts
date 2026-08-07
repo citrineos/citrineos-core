@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP1_6, OCPP2_0_1, OCPP2_request_types } from '@citrineos/base';
+import { OCPP2_request_types } from '@citrineos/base';
+import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
 } from '@dal/interfaces/repositories.js';
 import {
   SendLocalList,
+  Variable,
   VariableAttribute,
-  VariableCharacteristics,
   LocalListVersion,
   LocalListAuthorization,
 } from '@dal/layers/sequelize/index.js';
@@ -17,16 +20,22 @@ import {
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _logger: Logger<ILogObj>;
 
   constructor({
     localAuthListRepository,
     deviceModelRepository,
+    logger,
   }: {
     localAuthListRepository: ILocalAuthListRepository;
     deviceModelRepository: IDeviceModelRepository;
+    logger: Logger<ILogObj>;
   }) {
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
   /**
@@ -62,9 +71,15 @@ export class LocalAuthListService {
       localListVersion,
     );
     // DeviceModelRefactor: If different variable characteristics are allowed for the same variable, per station, then we need to update this
-    const maxLocalAuthListEntries = await this.getMaxLocalAuthListEntries(tenantId);
-    if (!maxLocalAuthListEntries) {
-      throw new Error('Could not get max local auth list entries, required by D01.FR.12');
+    const maxLocalAuthListEntries = await this.getMaxLocalAuthListEntries(
+      tenantId,
+      ocppConnectionName,
+    );
+    if (maxLocalAuthListEntries == null) {
+      this._logger.warn(
+        `Station ${ocppConnectionName} did not report a LocalAuthListCtrlr.Entries maxLimit ` +
+          `(required by D01.FR.12); forwarding SendLocalList without enforcing the max entries.`,
+      );
     } else if (newLocalAuthListLength > maxLocalAuthListEntries) {
       throw new Error(
         `Updated local auth list length (${newLocalAuthListLength}) will exceed max local auth list entries (${maxLocalAuthListEntries})`,
@@ -220,17 +235,21 @@ export class LocalAuthListService {
     );
   }
 
-  private async getMaxLocalAuthListEntries(tenantId: number): Promise<number | null> {
-    const localAuthListEntriesCharacteristics: VariableCharacteristics | undefined =
-      await this._deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
-        tenantId,
-        'Entries',
-        null,
-      );
-    if (!localAuthListEntriesCharacteristics || !localAuthListEntriesCharacteristics.maxLimit) {
-      return null;
-    } else {
-      return localAuthListEntriesCharacteristics.maxLimit;
-    }
+  private async getMaxLocalAuthListEntries(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | null> {
+    const entriesAttributes: VariableAttribute[] =
+      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        component_name: 'LocalAuthListCtrlr',
+        variable_name: 'Entries',
+        type: OCPP2_0_1.AttributeEnumType.Actual,
+      });
+
+    const maxLimit = (entriesAttributes[0]?.variable as Variable | undefined)
+      ?.variableCharacteristics?.maxLimit;
+    return maxLimit ?? null;
   }
 }

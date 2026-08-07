@@ -17,6 +17,9 @@ export * from '@modules/SmartCharging/src/index.js';
 export * from '@modules/Tenant/src/index.js';
 export * from '@modules/Transactions/src/index.js';
 
+// Handler exports
+export * from '@handlers/index.js';
+
 // Server support services (bootstrap-agnostic; the concrete server + DI container live in the app)
 export { HealthCheckService, type HealthCheckResult } from './src/server/HealthCheckService.js';
 export { loadSystemConfig } from './src/server/ConfigLoader.js';

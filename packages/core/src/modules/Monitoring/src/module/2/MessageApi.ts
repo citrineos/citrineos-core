@@ -2,22 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  CallAction,
-  IMessageConfirmation,
-  OCPP2_common_types,
-  OCPP2_request_types,
-} from '@citrineos/base';
 import {
+  type IMessageConfirmation,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
   AbstractModuleApi,
   AsMessageEndpoint,
-  DataEnum,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
+} from '@citrineos/base';
+import {
+  type CallAction,
+  DataEnum,
   MonitorEnum,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import { getBatches, getSizeOfRequest, packageGroupCall } from '@util/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { ILogObj } from 'tslog';
@@ -89,7 +89,7 @@ export class MonitoringOcpp2Api
       try {
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.SetVariableMonitoring,
             tenantId,
@@ -138,7 +138,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.SetVariableMonitoring,
             tenantId,
@@ -195,7 +195,7 @@ export class MonitoringOcpp2Api
 
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
@@ -212,7 +212,7 @@ export class MonitoringOcpp2Api
         const ids = request.id as number[];
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentMonitoringCtrlr,
             OCPP_CallAction.ClearVariableMonitoring,
             tenantId,
@@ -319,7 +319,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.SetVariables,
             tenantId,
@@ -368,7 +368,7 @@ export class MonitoringOcpp2Api
       try {
         // Request size check
         const maxBytes =
-          await this._module._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          await this._module.deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.GetVariables,
             tenantId,
@@ -386,7 +386,7 @@ export class MonitoringOcpp2Api
 
         // Determine how many items to send per message
         const itemsPerMessage =
-          (await this._module._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
+          (await this._module.deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
             this._componentDeviceDataCtrlr,
             OCPP_CallAction.GetVariables,
             tenantId,

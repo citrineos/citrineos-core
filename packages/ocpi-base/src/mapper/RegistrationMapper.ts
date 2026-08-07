@@ -10,7 +10,7 @@ import {
   OCPIVersionNumberEnum,
   type OCPIVersionNumberEnumType,
   type TenantPartnerDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import type { CredentialsDTO } from '../index.js';
 import { ImageCategory, ImageType, Role, VersionNumber } from '../index.js';
 import type { BusinessDetailsDTO } from '../model/DTO/BusinessDetailsDTO.js';

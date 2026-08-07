@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/ocpp-server",
-  "version": "2.0.0-alpha3",
+  "version": "2.0.0-beta2",
   "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "type": "module",
   "main": "dist/index.js",
@@ -41,6 +41,7 @@
   "dependencies": {
     "@citrineos/base": "workspace:*",
     "@citrineos/core": "workspace:*",
+    "@citrineos/types": "workspace:*",
     "@fastify/cors": "10.1.0",
     "awilix": "^13.0.3",
     "cross-env": "7.0.3",

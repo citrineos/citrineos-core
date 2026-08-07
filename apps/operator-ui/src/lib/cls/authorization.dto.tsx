@@ -10,7 +10,7 @@ import type {
   GroupAuthorizationDto,
   IdTokenEnumType,
   TenantPartnerDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 
 export class AuthorizationClass implements Partial<AuthorizationDto> {
   id?: number;

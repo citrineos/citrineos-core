@@ -20,13 +20,12 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   DEFAULT_TENANT_ID,
-  HttpMethod,
   Namespace,
   OCPP1_6_Namespace,
-  OCPP2_0_1,
   OCPP2_Namespace,
   ReportDataTypeSchema,
 } from '@citrineos/base';
+import { HttpMethod, OCPP2_0_1 } from '@citrineos/types';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 /**

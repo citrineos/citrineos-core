@@ -44,6 +44,29 @@ function makeDefaultLogger(): MockLogger {
   return logger;
 }
 
+export type MockOcppSender = {
+  sendCall: Mock;
+  sendCallResult: Mock;
+  sendCallResultWithMessage: Mock;
+  sendCallError: Mock;
+  sendCallErrorWithMessage: Mock;
+};
+
+/**
+ * Every {@link AbstractModule} now requires an `ocppSender` dependency. Tests that construct a
+ * module via {@link getTestInstance} without providing one fail to resolve at construction time,
+ * so this gives a ready-made mock to pass as `{ ocppSender: makeMockOcppSender() }`.
+ */
+export function makeMockOcppSender(): MockOcppSender {
+  return {
+    sendCall: vi.fn().mockResolvedValue({ success: true }),
+    sendCallResult: vi.fn().mockResolvedValue({ success: true }),
+    sendCallResultWithMessage: vi.fn().mockResolvedValue({ success: true }),
+    sendCallError: vi.fn().mockResolvedValue({ success: true }),
+    sendCallErrorWithMessage: vi.fn().mockResolvedValue({ success: true }),
+  };
+}
+
 function toValueResolvers(deps: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(deps).map(([key, value]) => [key, asValue(value)]));
 }

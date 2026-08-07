@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, TenantDto, VariableAttributeDto } from '@citrineos/base';
+import type { BootDto, TenantDto, VariableAttributeDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,

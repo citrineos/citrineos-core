@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { MeterValueProps, type MeterValueDto } from '@citrineos/base';
+import { MeterValueProps, type MeterValueDto } from '@citrineos/types';
 import { Table } from '@lib/client/components/table';
 import { getMeterValueColumns } from '@lib/client/pages/transactions/detail/meter-values/columns';
 import { SampledValuesListView } from '@lib/client/pages/transactions/detail/meter-values/sampled.values.list';

@@ -3,8 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import type { SystemConfig, SystemConfigInput } from './types.js';
-import { systemConfigInputSchema, systemConfigSchema } from './types.js';
+import {
+  type SystemConfig,
+  type SystemConfigInput,
+  systemConfigInputSchema,
+  systemConfigSchema,
+} from '@citrineos/types';
 
 const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
 

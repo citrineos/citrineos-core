@@ -5,34 +5,21 @@ import {
   AbstractModuleApi,
   AsDataEndpoint,
   DEFAULT_TENANT_ID,
-  HttpMethod,
   type IFileStorage,
   type IMessageConfirmation,
   type IMessageQuerystring,
   IMessageQuerystringSchema,
   Namespace,
   OCPP1_6_Namespace,
-  OCPP2_0_1,
-  OCPP_CallAction,
   OCPP2_Namespace,
-  OCPPVersion,
-  type WebsocketServerConfig,
 } from '@citrineos/base';
+import { HttpMethod, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import { Certificate, InstalledCertificate } from '@dal/layers/sequelize/index.js';
 import {
-  Certificate,
-  CountryNameEnumType,
-  InstalledCertificate,
-  SignatureAlgorithmEnumType,
-} from '@dal/layers/sequelize/index.js';
-import {
-  GenerateCertificateChainRequest,
-  GenerateCertificateChainSchema,
   InstallRootCertificateRequest,
   InstallRootCertificateSchema,
   RegenerateExistingCertificate,
   RegenerateInstalledCertificateSchema,
-  TenantQuerySchema,
-  type TenantQueryString,
   UploadExistingCertificate,
   UploadExistingCertificateSchema,
 } from '@dal/interfaces/index.js';
@@ -44,7 +31,6 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { ICertificatesModuleApi } from './interface.js';
 import { CertificatesModule } from './module.js';
-import { PemType } from './installCertificateHelperService.js';
 
 /**
  * Server API for the Certificates module.
@@ -53,7 +39,6 @@ export class CertificatesDataApi
   extends AbstractModuleApi<CertificatesModule>
   implements ICertificatesModuleApi
 {
-  private readonly _websocketServersConfig: WebsocketServerConfig[];
   private readonly _fileStorage: IFileStorage;
 
   /**
@@ -62,225 +47,26 @@ export class CertificatesDataApi
    * @param {CertificatesModule} certificatesModule - The Certificates module.
    * @param {FastifyInstance} server - The Fastify server instance.
    * @param {IFileStorage} fileStorage - The fileStorage
-   * @param {WebsocketServerConfig[]} websocketServersConfig - Configuration for websocket servers
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    */
   constructor({
     certificatesModule,
     server,
     fileStorage,
-    websocketServersConfig,
     logger,
   }: {
     certificatesModule: CertificatesModule;
     server: FastifyInstance;
     fileStorage: IFileStorage;
-    websocketServersConfig: WebsocketServerConfig[];
     logger?: Logger<ILogObj>;
   }) {
     super(certificatesModule, server, logger);
     this._fileStorage = fileStorage;
-    this._websocketServersConfig = websocketServersConfig;
   }
 
   /**
    * Data Endpoint Methods
    */
-
-  /**
-   * This endpoint is used to create certificate chain, root CA, sub CA and leaf certificate
-   *
-   * @param request - GenerateRootCertificatesRequest
-   * @return Promise<Certificate[]> - An array of generated certificates
-   */
-  @AsDataEndpoint(
-    OCPP2_Namespace.CertificateChain,
-    HttpMethod.Post,
-    TenantQuerySchema,
-    GenerateCertificateChainSchema,
-  )
-  async generateCertificateChain(
-    request: FastifyRequest<{
-      Body: GenerateCertificateChainRequest;
-      Querystring: TenantQueryString;
-    }>,
-  ): Promise<Certificate[]> {
-    this._logger.info(
-      `Receiving generate certificate chain request ${JSON.stringify(request.body)}`,
-    );
-
-    const tenantId = request.query.tenantId;
-    const certRequest = request.body as GenerateCertificateChainRequest;
-
-    let certificateFromReq = new Certificate();
-    certificateFromReq.serialNumber = moment().valueOf();
-    certificateFromReq.keyLength = certRequest.keyLength ? certRequest.keyLength : 2048;
-    certificateFromReq.organizationName = certRequest.organizationName;
-    certificateFromReq.commonName = certRequest.commonName + ` ${PemType.Root}`;
-    if (certRequest.validBefore) {
-      certificateFromReq.validBefore = certRequest.validBefore;
-    } else {
-      const defaultValidityDate: Date = new Date();
-      defaultValidityDate.setFullYear(defaultValidityDate.getFullYear() + 1);
-      certificateFromReq.validBefore = defaultValidityDate.toISOString();
-    }
-    certificateFromReq.countryName = certRequest.countryName
-      ? certRequest.countryName
-      : CountryNameEnumType.US;
-    certificateFromReq.signatureAlgorithm = certRequest.signatureAlgorithm
-      ? certRequest.signatureAlgorithm
-      : SignatureAlgorithmEnumType.ECDSA;
-    certificateFromReq.isCA = true;
-    certificateFromReq.pathLen = certRequest.pathLen ? certRequest.pathLen : 1;
-
-    let leafCertPem: string;
-    let subCACertPem: string; // combined with leafCertPem to form the chain
-    let leafKeyPem: string;
-    let subCAKeyPem: string;
-    let rootCACertPem: string | undefined;
-    let responseBody: Certificate[];
-
-    if (certRequest.selfSigned) {
-      // Generate self-signed root CA certificate
-      const [rootCertificatePem, rootPrivateKeyPem] = generateCertificate(
-        certificateFromReq,
-        this._logger,
-      );
-      certificateFromReq =
-        await this._module.installCertificateHelperService.storeCertificateAndKey(
-          tenantId,
-          certificateFromReq,
-          rootCertificatePem,
-          rootPrivateKeyPem,
-          PemType.Root,
-          certRequest.filePath,
-        );
-
-      // Generate sub CA certificate
-      let subCertificate: Certificate = new Certificate();
-      subCertificate.serialNumber = certificateFromReq.serialNumber + 1;
-      subCertificate.keyLength = certificateFromReq.keyLength;
-      subCertificate.organizationName = certificateFromReq.organizationName;
-      subCertificate.commonName = certRequest.commonName + ` ${PemType.SubCA}`;
-      subCertificate.validBefore = certificateFromReq.validBefore;
-      subCertificate.signedBy = certificateFromReq.id;
-      subCertificate.countryName = certificateFromReq.countryName;
-      subCertificate.signatureAlgorithm = certificateFromReq.signatureAlgorithm;
-      subCertificate.isCA = true;
-      subCertificate.pathLen = 0;
-      const [subCertificatePem, subPrivateKeyPem] = generateCertificate(
-        subCertificate,
-        this._logger,
-        rootPrivateKeyPem,
-        rootCertificatePem,
-      );
-      subCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
-        tenantId,
-        subCertificate,
-        subCertificatePem,
-        subPrivateKeyPem,
-        PemType.SubCA,
-        certRequest.filePath,
-      );
-
-      // Generate leaf certificate
-      let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = subCertificate.serialNumber + 1;
-      leafCertificate.keyLength = subCertificate.keyLength;
-      leafCertificate.organizationName = subCertificate.organizationName;
-      leafCertificate.commonName = certRequest.commonName;
-      leafCertificate.validBefore = subCertificate.validBefore;
-      leafCertificate.signedBy = subCertificate.id;
-      leafCertificate.countryName = subCertificate.countryName;
-      leafCertificate.signatureAlgorithm = subCertificate.signatureAlgorithm;
-      leafCertificate.isCA = false;
-      const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
-        leafCertificate,
-        this._logger,
-        subPrivateKeyPem,
-        subCertificatePem,
-      );
-      leafCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
-        tenantId,
-        leafCertificate,
-        leafCertificatePem,
-        leafPrivateKeyPem,
-        PemType.Leaf,
-        certRequest.filePath,
-      );
-
-      leafCertPem = leafCertificatePem;
-      subCACertPem = subCertificatePem;
-      leafKeyPem = leafPrivateKeyPem;
-      subCAKeyPem = subPrivateKeyPem;
-      rootCACertPem = rootCertificatePem;
-      responseBody = [leafCertificate, subCertificate, certificateFromReq];
-    } else {
-      // Generate sub CA certificate and private key signed by external CA server
-      // commonName should be a valid domain name
-      certificateFromReq.commonName = certRequest.commonName;
-      certificateFromReq.pathLen = 0;
-      const [certificatePem, privateKeyPem] =
-        await this._module.installCertificateHelperService.generateSubCACertificateSignedByCAServer(
-          certificateFromReq,
-        );
-      certificateFromReq =
-        await this._module.installCertificateHelperService.storeCertificateAndKey(
-          tenantId,
-          certificateFromReq,
-          certificatePem,
-          privateKeyPem,
-          PemType.SubCA,
-          certRequest.filePath,
-        );
-
-      // Generate leaf certificate
-      let leafCertificate: Certificate = new Certificate();
-      leafCertificate.serialNumber = certificateFromReq.serialNumber + 1;
-      leafCertificate.keyLength = certificateFromReq.keyLength;
-      leafCertificate.organizationName = certificateFromReq.organizationName;
-      leafCertificate.commonName = certRequest.commonName;
-      leafCertificate.validBefore = certificateFromReq.validBefore;
-      leafCertificate.signedBy = certificateFromReq.id;
-      leafCertificate.countryName = certificateFromReq.countryName;
-      leafCertificate.signatureAlgorithm = certificateFromReq.signatureAlgorithm;
-      leafCertificate.isCA = false;
-      leafCertificate.pathLen = undefined;
-      const [leafCertificatePem, leafPrivateKeyPem] = generateCertificate(
-        leafCertificate,
-        this._logger,
-        privateKeyPem,
-        certificatePem,
-      );
-      leafCertificate = await this._module.installCertificateHelperService.storeCertificateAndKey(
-        tenantId,
-        leafCertificate,
-        leafCertificatePem,
-        leafPrivateKeyPem,
-        PemType.Leaf,
-        certRequest.filePath,
-      );
-
-      leafCertPem = leafCertificatePem;
-      subCACertPem = certificatePem;
-      leafKeyPem = leafPrivateKeyPem;
-      subCAKeyPem = privateKeyPem;
-      responseBody = [leafCertificate, certificateFromReq];
-    }
-
-    // Concatenate certificate chain
-    // store chain and keys for websocket servers
-    await this._module.installCertificateHelperService.saveCertificatesToServerConfigs(
-      this._websocketServersConfig,
-      leafCertPem + subCACertPem,
-      leafKeyPem,
-      subCAKeyPem,
-      rootCACertPem,
-      certRequest.filePath,
-    );
-
-    return responseBody;
-  }
 
   @AsDataEndpoint(
     OCPP2_Namespace.RootCertificate,

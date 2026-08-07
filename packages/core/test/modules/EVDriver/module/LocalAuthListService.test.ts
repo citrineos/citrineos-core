@@ -11,7 +11,8 @@ import {
   VariableCharacteristics,
 } from '@citrineos/core';
 import { LocalAuthListService } from '@modules/EVDriver/src/module/LocalAuthListService.js';
-import { DEFAULT_TENANT_ID, OCPP2_0_1 } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
@@ -233,17 +234,15 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
-      maxLimit: 1,
-    });
+    const mockEntriesAttribute = vi.mocked<VariableAttribute>({
+      variable: { variableCharacteristics: { maxLimit: 1 } },
+    } as unknown as VariableAttribute);
 
     mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(undefined); // No previous list version
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      testMockVariableCharacteristics,
-    );
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -257,7 +256,7 @@ describe('LocalAuthListService', () => {
     );
   });
 
-  it('should throw an error when getMaxLocalAuthListEntries returns null', async () => {
+  it('should forward the request when the station has not reported a max (no Entries variable)', async () => {
     const newVersionNumber = 3;
     const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
@@ -273,24 +272,23 @@ describe('LocalAuthListService', () => {
       versionNumber: newVersionNumber,
     } as unknown as SendLocalList);
 
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      undefined,
-    ); // No variable characteristics
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([]); // No Entries variable reported
 
-    await expect(
-      localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+    const result =
+      await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
         tenantId,
         ocppConnectionName,
         correlationId,
         sendLocalListRequest,
-      ),
-    ).rejects.toThrow('Could not get max local auth list entries, required by D01.FR.12');
+      );
+
+    expect(result).toEqual(mockSendLocalList);
   });
 
-  it('should throw an error when getMaxLocalAuthListEntries returns variable characteristics without maxLimit', async () => {
+  it('should forward the request when the Entries variable has no maxLimit', async () => {
     const newVersionNumber = 3;
     const expectedUpdateType = OCPP2_0_1.UpdateEnumType.Full;
 
@@ -306,21 +304,24 @@ describe('LocalAuthListService', () => {
       versionNumber: newVersionNumber,
     } as unknown as SendLocalList);
 
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      baseMockVariableCharacteristics,
-    );
+    const mockEntriesAttribute = vi.mocked<VariableAttribute>({
+      variable: { variableCharacteristics: {} },
+    } as unknown as VariableAttribute);
+
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
 
-    await expect(
-      localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+    const result =
+      await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
         tenantId,
         ocppConnectionName,
         correlationId,
         sendLocalListRequest,
-      ),
-    ).rejects.toThrow('Could not get max local auth list entries, required by D01.FR.12');
+      );
+
+    expect(result).toEqual(mockSendLocalList);
   });
 
   it('should throw an error when localAuthorizationList exceeds itemsPerMessageSendLocalList', async () => {

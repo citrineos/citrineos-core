@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import type { MeterValueDto } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/base';
+import { type MeterValueDto, OCPP2_0_1 } from '@citrineos/types';
 import {
   chartMargin,
   chartSize,

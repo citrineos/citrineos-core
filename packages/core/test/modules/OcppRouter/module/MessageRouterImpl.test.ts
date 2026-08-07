@@ -1,21 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  BootstrapConfig,
+import {
+  type BootstrapConfig,
+  type ICache,
+  type IMessageHandler,
+  type IMessageSender,
+  CacheNamespace,
   Call,
   CallError,
   CallResult,
-  ICache,
-  IMessageHandler,
-  IMessageSender,
-  OcppRequest,
-  OcppResponse,
-  SystemConfig,
-} from '@citrineos/base';
-import {
-  CacheNamespace,
   createIdentifier,
+  OcppError,
+  RequestBuilder,
+} from '@citrineos/base';
+import type { ILocationRepository } from '@citrineos/core';
+import {
+  type OcppRequest,
+  type OcppResponse,
+  type RawCall,
+  type RawCallError,
+  type RawCallResult,
+  type SystemConfig,
   ErrorCode,
   EventGroup,
   MessageOrigin,
@@ -24,16 +30,13 @@ import {
   NO_ACTION,
   OCPP2_0_1,
   OCPP_CallAction,
-  OcppError,
   OCPPVersion,
-  RequestBuilder,
   RetryMessageError,
-} from '@citrineos/base';
-import type { ILocationRepository } from '@citrineos/core';
-import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
+} from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/OcppRouter/src/module/router.js';
 import { WebhookDispatcher } from '@modules/OcppRouter/src/module/webhook.dispatcher.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { type Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -180,6 +183,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         true,
         PROTOCOL,
+        undefined,
       );
 
       expect(result).toBe(true);
@@ -232,6 +236,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         false,
         PROTOCOL,
+        null,
       );
       expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
       expect(result).toBe(true);
@@ -247,6 +252,7 @@ describe('MessageRouterImpl', () => {
         STATION_ID,
         false,
         null,
+        null,
       );
     });
 
@@ -259,6 +265,7 @@ describe('MessageRouterImpl', () => {
         TENANT_ID,
         STATION_ID,
         false,
+        null,
         null,
       );
     });
@@ -286,7 +293,7 @@ describe('MessageRouterImpl', () => {
         // Stub _onCallIsAllowed
         cache.exists.mockResolvedValue(false); // not blacklisted
 
-        const callMessage: Call = [
+        const callMessage: RawCall = [
           MessageTypeId.Call,
           CORRELATION_ID,
           OCPP_CallAction.BootNotification,
@@ -354,7 +361,7 @@ describe('MessageRouterImpl', () => {
         // CallResult errors should not trigger a CallError response
         expect(networkHook).not.toHaveBeenCalled();
         // The networkHook should be called with a CallError
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
 
       it('should not send CallError for failed CallError processing', async () => {
@@ -368,7 +375,7 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
       });
     });
 
@@ -378,7 +385,7 @@ describe('MessageRouterImpl', () => {
         cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
         vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
 
-        const callResultMessage: CallResult = [MessageTypeId.CallResult, CORRELATION_ID, {}];
+        const callResultMessage: RawCallResult = [MessageTypeId.CallResult, CORRELATION_ID, {}];
         const rawMessage = JSON.stringify(callResultMessage);
 
         const result = await router.onMessage(IDENTIFIER, rawMessage, timestamp, PROTOCOL);
@@ -395,7 +402,7 @@ describe('MessageRouterImpl', () => {
       it('should process a valid CallError message', async () => {
         cache.get.mockResolvedValue(`BootNotification@${new Date().toISOString()}`);
 
-        const callErrorMessage: CallError = [
+        const callErrorMessage: RawCallError = [
           MessageTypeId.CallError,
           CORRELATION_ID,
           ErrorCode.InternalError,
@@ -424,7 +431,8 @@ describe('MessageRouterImpl', () => {
         timestamp.toISOString(),
         PROTOCOL,
         NO_ACTION,
-        MessageState.Unknown,
+        // Unparseable message — no messageTypeId could be read off the frame.
+        undefined,
       );
     });
 
@@ -643,6 +651,71 @@ describe('MessageRouterImpl', () => {
         CacheNamespace.Transactions + IDENTIFIER,
         config.maxCallLengthSeconds,
       );
+    });
+  });
+
+  // ─── handle (stale Call TTL) ─────────────────────────────────────────────────
+
+  describe('handle stale Call TTL', () => {
+    const action = OCPP_CallAction.GetBaseReport;
+    const payload = { requestId: 1, reportBase: 'FullInventory' } as unknown as OcppRequest;
+
+    function buildRequestMessage(ageMs: number) {
+      return RequestBuilder.buildCall(
+        STATION_ID,
+        CORRELATION_ID,
+        TENANT_ID,
+        action,
+        payload,
+        EventGroup.General,
+        MessageOrigin.ChargingStationManagementSystem,
+        PROTOCOL,
+        new Date(Date.now() - ageMs),
+      );
+    }
+
+    function buildRouterWithStaleGuard(staleCallMaxAgeSeconds?: number) {
+      return getTestInstance(container, MessageRouterImpl, {
+        config: buildConfig({ staleCallMaxAgeSeconds }),
+        cache,
+        routerSender: sender,
+        routerHandler: handler,
+        webhookDispatcher: dispatcher,
+        networkHook,
+        ocppValidator: undefined,
+        locationRepository,
+      });
+    }
+
+    it('should drop a Call older than staleCallMaxAgeSeconds when the guard is enabled', async () => {
+      const guardedRouter = buildRouterWithStaleGuard(30);
+      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+
+      // guard is 30s; 60s old ⇒ stale
+      await guardedRouter.handle(buildRequestMessage(60_000));
+
+      expect(sendCallSpy).not.toHaveBeenCalled();
+      expect(networkHook).not.toHaveBeenCalled();
+    });
+
+    it('should route a Call still within staleCallMaxAgeSeconds when the guard is enabled', async () => {
+      cache.get.mockResolvedValue(null);
+      const guardedRouter = buildRouterWithStaleGuard(30);
+      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+
+      await guardedRouter.handle(buildRequestMessage(0));
+
+      expect(sendCallSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should route an aged Call when the guard is disabled (default)', async () => {
+      cache.get.mockResolvedValue(null);
+      // default router has no staleCallMaxAgeSeconds ⇒ opt-in guard off, delivery unchanged
+      const sendCallSpy = vi.spyOn(router, 'sendCall');
+
+      await router.handle(buildRequestMessage(60_000));
+
+      expect(sendCallSpy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -950,12 +1023,10 @@ describe('MessageRouterImpl', () => {
 
   describe('_routeCall', () => {
     it('should build and send a Call IMessage via sender', async () => {
-      const message: Call = [
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.BootNotification,
-        { chargingStation: { model: 'M', vendorName: 'V' }, reason: 'PowerUp' },
-      ];
+      const message = new Call(CORRELATION_ID, OCPP_CallAction.BootNotification, {
+        chargingStation: { model: 'M', vendorName: 'V' },
+        reason: 'PowerUp',
+      } as OcppRequest);
       const timestamp = new Date();
 
       const buildCallSpy = vi.spyOn(RequestBuilder, 'buildCall');
@@ -967,7 +1038,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         TENANT_ID,
         OCPP_CallAction.BootNotification,
-        message[3],
+        message.payload,
         EventGroup.Router,
         MessageOrigin.ChargingStation,
         PROTOCOL,
@@ -981,11 +1052,7 @@ describe('MessageRouterImpl', () => {
 
   describe('_routeCallResult', () => {
     it('should build and send a CallResult IMessage via sender', async () => {
-      const message: CallResult = [
-        MessageTypeId.CallResult,
-        CORRELATION_ID,
-        { status: 'Accepted' },
-      ];
+      const message = new CallResult(CORRELATION_ID, { status: 'Accepted' } as OcppResponse);
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 
@@ -998,7 +1065,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         TENANT_ID,
         action,
-        message[2],
+        message.payload,
         EventGroup.Router,
         MessageOrigin.ChargingStation,
         PROTOCOL,
@@ -1014,13 +1081,7 @@ describe('MessageRouterImpl', () => {
     it('should always return success false (error routing not implemented)', async () => {
       cache.get.mockResolvedValue(null); // no callback URL
 
-      const message: CallError = [
-        MessageTypeId.CallError,
-        CORRELATION_ID,
-        ErrorCode.InternalError,
-        'test error',
-        {},
-      ];
+      const message = new CallError(CORRELATION_ID, ErrorCode.InternalError, 'test error');
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 
@@ -1036,13 +1097,9 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should call dispatchCallbackUrl on the webhook dispatcher', async () => {
-      const message: CallError = [
-        MessageTypeId.CallError,
-        CORRELATION_ID,
-        ErrorCode.InternalError,
-        'test error',
-        { detail: 'some detail' },
-      ];
+      const message = new CallError(CORRELATION_ID, ErrorCode.InternalError, 'test error', {
+        detail: 'some detail',
+      });
       const timestamp = new Date();
       const action = OCPP_CallAction.BootNotification;
 

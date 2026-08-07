@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { MeterValueProps } from '@citrineos/base';
+import { MeterValueProps } from '@citrineos/types';
 import { Table } from '@lib/client/components/table';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import { ChevronDownIcon } from 'lucide-react';

@@ -10,13 +10,14 @@ import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { ActionType, ChargingStationAccessType, ResourceType } from '@lib/utils/access.types';
 import { EVSESList } from '@lib/client/pages/charging-stations/detail/evses/evses.list';
 import { OCPPMessages } from '@lib/client/pages/charging-stations/detail/ocpp.messages';
+import { NetworkProfilesTab } from '@lib/client/pages/charging-stations/detail/network.profiles.tab';
 import { AccessDeniedFallback } from '@lib/utils/AccessDeniedFallback';
 import { Table } from '@lib/client/components/table';
 import { DEFAULT_SORTERS, DETAIL_TAB_STATE } from '@lib/utils/consts';
 import { GET_TRANSACTION_LIST_FOR_STATION } from '@lib/queries/transactions';
 import { TransactionClass } from '@lib/cls/transaction.dto';
 import { AggregatedMeterValuesData } from '@lib/client/pages/charging-stations/detail/charging.station.aggregated.data';
-import React from 'react';
+import React, { useState } from 'react';
 import ChargingStationConfiguration from '@lib/client/pages/charging-stations/detail/charging.station.configuration';
 import {
   getTransactionsColumns,
@@ -33,6 +34,7 @@ enum ChargingStationDetailTabType {
   configuration = 'configuration',
   transactions = 'transactions',
   aggregated = 'aggregated',
+  networkProfiles = 'networkProfiles',
 }
 
 export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
@@ -48,6 +50,7 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
   );
 
   const [tab, setTab] = useQueryState(DETAIL_TAB_STATE);
+  const [liveLogEnabled, setLiveLogEnabled] = useState(false);
 
   return (
     <Card>
@@ -73,6 +76,9 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
             </TabsTrigger>
             <TabsTrigger value={ChargingStationDetailTabType.aggregated}>
               {translate('ChargingStations.tabs.aggregatedMeterValuesData')}
+            </TabsTrigger>
+            <TabsTrigger value={ChargingStationDetailTabType.networkProfiles}>
+              {translate('ChargingStations.tabs.networkProfiles')}
             </TabsTrigger>
           </TabsList>
 
@@ -108,7 +114,11 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
                 </p>
               }
             >
-              <OCPPMessages stationId={id} />
+              <OCPPMessages
+                stationId={id}
+                liveLogEnabled={liveLogEnabled}
+                onLiveLogEnabledChange={setLiveLogEnabled}
+              />
             </CanAccess>
           </TabsContent>
 
@@ -158,6 +168,24 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
 
           <TabsContent value={ChargingStationDetailTabType.aggregated} className={cardTabsStyle}>
             <AggregatedMeterValuesData id={id} />
+          </TabsContent>
+
+          <TabsContent
+            value={ChargingStationDetailTabType.networkProfiles}
+            className={cardTabsStyle}
+          >
+            <CanAccess
+              resource={ResourceType.CHARGING_STATIONS}
+              action={ActionType.ACCESS}
+              params={{ id, accessType: ChargingStationAccessType.CONFIGURATION }}
+              fallback={
+                <p className="text-muted-foreground">
+                  {translate('ChargingStations.tabs.noConfigurationsPermission')}
+                </p>
+              }
+            >
+              <NetworkProfilesTab id={id} />
+            </CanAccess>
           </TabsContent>
         </Tabs>
       </CardContent>

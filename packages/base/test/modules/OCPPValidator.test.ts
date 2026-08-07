@@ -9,9 +9,8 @@ import {
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_RESULT_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
-  OCPP_CallAction,
-  OCPPVersion,
 } from '../../index.js';
+import { OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { OCPPValidator } from '../../src/interfaces/modules/OCPPValidator.js';
 
 describe('OCPPValidator', () => {

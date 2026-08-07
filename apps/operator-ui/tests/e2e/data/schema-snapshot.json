@@ -808,15 +808,16 @@
       "correlationId",
       "createdAt",
       "id",
-      "message",
       "ocppConnectionName",
       "origin",
+      "payload",
       "protocol",
+      "raw",
       "requestMessageId",
-      "state",
       "stationId",
       "tenantId",
       "timestamp",
+      "type",
       "updatedAt"
     ],
     "Tariffs": [

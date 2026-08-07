@@ -1,16 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  ChargingStationDto,
-  ComponentDto,
-  EventDataDto,
-  TenantDto,
-  EventTriggerEnumType,
-  EventNotificationEnumType,
-  VariableDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type ComponentDto,
+  type EventDataDto,
+  type TenantDto,
+  type EventTriggerEnumType,
+  type EventNotificationEnumType,
+  type VariableDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -39,16 +40,12 @@ export class EventData extends Model implements EventDataDto {
   declare stationId?: number;
 
   @Index
-  @Column({
-    type: DataType.STRING,
-    unique: 'stationName_tenantId_eventId',
-  })
+  @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'stationName_eventId',
-  })
+  // Not unique per station: eventId is assigned by the charging station and
+  // restarts from zero on reboot, so ids are reused across boots.
+  @Column(DataType.INTEGER)
   declare eventId: number;
 
   @Column(DataType.STRING)
@@ -120,7 +117,6 @@ export class EventData extends Model implements EventDataDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationName_tenantId_eventId',
   })
   declare tenantId: number;
 

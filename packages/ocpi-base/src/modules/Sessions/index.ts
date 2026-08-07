@@ -24,7 +24,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { Inject, Service } from 'typedi';
 import { SessionsModuleApi } from './module/SessionsModuleApi.js';
-import type { MeterValueDto, TransactionDto } from '@citrineos/base';
+import type { MeterValueDto, TransactionDto } from '@citrineos/types';
 
 export { SessionsModuleApi } from './module/SessionsModuleApi.js';
 export type { ISessionsModuleApi } from './module/ISessionsModuleApi.js';

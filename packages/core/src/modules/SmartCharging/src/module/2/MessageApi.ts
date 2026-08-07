@@ -2,23 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CallAction, IMessageConfirmation, OCPP2_request_types } from '@citrineos/base';
 import {
+  type IMessageConfirmation,
+  type OCPP2_request_types,
   AbstractModuleApi,
   AsMessageEndpoint,
-  AttributeEnum,
-  ChargingLimitSourceEnum,
-  ChargingProfileKindEnum,
-  ChargingProfilePurposeEnum,
-  DataEnum,
   DEFAULT_TENANT_ID,
   getOcpp2Schema,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
+} from '@citrineos/base';
+import {
+  type CallAction,
+  AttributeEnum,
+  ChargingLimitSourceEnum,
+  ChargingProfileKindEnum,
+  ChargingProfilePurposeEnum,
+  DataEnum,
   OCPP_CallAction,
   OCPPVersion,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { VariableAttribute } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import { packageGroupCall, stringToSet, validateChargingProfileType } from '@util/index.js';

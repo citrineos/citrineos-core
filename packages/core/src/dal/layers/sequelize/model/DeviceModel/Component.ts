@@ -2,15 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  ComponentDto,
-  MessageInfoDto,
-  TenantDto,
-  VariableAttributeDto,
-  VariableDto,
-  VariableMonitoringDto,
-} from '@citrineos/base';
-import { DEFAULT_TENANT_ID, OCPP2_0_1, OCPP2_Namespace } from '@citrineos/base';
+import {
+  type ComponentDto,
+  type MessageInfoDto,
+  type TenantDto,
+  type VariableAttributeDto,
+  type VariableDto,
+  type VariableMonitoringDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,

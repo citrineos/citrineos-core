@@ -46,7 +46,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.16.0"
+          node-version: '24.16.0'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

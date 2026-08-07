@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ISmartCharging } from './SmartCharging.js';
-import { ChargingProfilePurposeEnum, OCPP2_0_1 } from '@citrineos/base';
+import { ChargingProfilePurposeEnum, OCPP2_0_1 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import {
   ChargingProfile,
@@ -135,6 +135,9 @@ export class InternalSmartCharging implements ISmartCharging {
 
     const chargingSchedule: OCPP2_0_1.ChargingScheduleType = {
       id: scheduleId,
+      // startSchedule SHALL be present when chargingProfileKind is Absolute (OCPP 2.0.1 K01.FR.41);
+      // compliant charging stations reject the profile otherwise. Matches validFrom below.
+      startSchedule: currentTime.toISOString(),
       duration,
       chargingRateUnit,
       chargingSchedulePeriod,

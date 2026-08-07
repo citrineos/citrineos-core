@@ -4,7 +4,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-import { AuthorizationWhitelistEnum } from '@citrineos/base';
+import { AuthorizationWhitelistEnum } from '@citrineos/types';
 import { DataTypes, QueryInterface } from 'sequelize';
 
 const TABLE_NAME = 'Authorizations';

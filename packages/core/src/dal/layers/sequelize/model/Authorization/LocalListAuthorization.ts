@@ -8,7 +8,7 @@ import type {
   AuthorizationDto,
   LocalListVersionDto,
   SendLocalListDto,
-} from '@citrineos/base';
+} from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,

@@ -14,14 +14,14 @@ import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
 import type { ConnectorDTO } from '../model/DTO/ConnectorDTO.js';
 import { ModuleId } from '../model/ModuleId.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
-import type {
-  ChargingStationDto,
-  ConnectorDto,
-  EvseDto,
-  LocationDto,
-  TenantDto,
-} from '@citrineos/base';
-import { HttpMethod } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type ConnectorDto,
+  type EvseDto,
+  type LocationDto,
+  type TenantDto,
+  HttpMethod,
+} from '@citrineos/types';
 import { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/index.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 

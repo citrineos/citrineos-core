@@ -11,7 +11,8 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import type { BootstrapConfig, ConfigStore, SystemConfig } from '@citrineos/base';
+import type { BootstrapConfig, ConfigStore } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { Readable } from 'stream';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

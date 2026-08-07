@@ -5,7 +5,7 @@
 import { BaseClientApi } from './BaseClientApi.js';
 import { Service } from 'typedi';
 import { ModuleId } from '../model/ModuleId.js';
-import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/base';
+import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
 import type { PaginatedParams } from './param/PaginatedParams.js';
 import type { PaginatedTokenResponse } from '../model/DTO/TokenDTO.js';

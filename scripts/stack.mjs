@@ -10,6 +10,8 @@
 //   node scripts/stack.mjs --local         build server + UI from local source
 //   node scripts/stack.mjs --solo          ocpp-server only (no UI)
 //   node scripts/stack.mjs --ocpi          add the OCPI server
+//   node scripts/stack.mjs --everest       add EVerest with OCPP 2.x
+//   node scripts/stack.mjs --everest16     add EVerest with OCPP 1.6
 //   node scripts/stack.mjs --local --ocpi  combine flags freely
 //   node scripts/stack.mjs down            stop the stack (pass the same flags you brought it up with)
 //
@@ -22,7 +24,22 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const KNOWN_FLAGS = new Set(['--local', '--solo', '--ocpi', '--help', '-h']);
+// To help support running on Windows
+const useShell = process.platform === 'win32';
+
+function run(command, args) {
+  return spawnSync(command, args, { stdio: 'inherit', cwd: repoRoot, shell: useShell });
+}
+
+const KNOWN_FLAGS = new Set([
+  '--local',
+  '--solo',
+  '--ocpi',
+  '--everest',
+  '--everest16',
+  '--help',
+  '-h',
+]);
 const KNOWN_COMMANDS = new Set(['up', 'down']);
 
 const argv = process.argv.slice(2);
@@ -30,12 +47,14 @@ const flags = new Set(argv.filter((a) => a.startsWith('-')));
 const positionals = argv.filter((a) => !a.startsWith('-'));
 
 function usage() {
-  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi]
+  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi] [--everest] [--everest16]
 
   (no flags)   ocpp-server + operator UI using ghcr.io images
   --local      build the server and UI from local source instead of pulling
   --solo       ocpp-server only (no operator UI)
   --ocpi       also run the OCPI server
+  --everest    also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
+  --everest16  also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
   up | down    start (default) or stop the stack — pass the same flags both times
 `);
 }
@@ -59,9 +78,18 @@ const command = positionals[0] ?? 'up';
 const local = flags.has('--local');
 const solo = flags.has('--solo');
 const ocpi = flags.has('--ocpi');
+const everest = flags.has('--everest');
+const everest16 = flags.has('--everest16');
 
 if (solo && ocpi) {
   console.error('Error: --solo (server only) and --ocpi (add OCPI) are mutually exclusive.');
+  process.exit(1);
+}
+
+if (everest && everest16) {
+  console.error(
+    'Error: --everest (EVerest 2.x) and --everest16 (EVerest 1.6) are mutually exclusive.',
+  );
   process.exit(1);
 }
 
@@ -85,10 +113,31 @@ if (command === 'down') {
 }
 
 console.log(`> docker ${composeArgs.join(' ')}`);
-const result = spawnSync('docker', composeArgs, { stdio: 'inherit', cwd: repoRoot });
+const result = run('docker', composeArgs);
 
 if (result.error) {
   console.error(`Failed to run docker: ${result.error.message}`);
   process.exit(1);
 }
-process.exit(result.status ?? 1);
+if (result.status !== 0) process.exit(result.status ?? 1);
+
+const everestPnpmScript =
+  command === 'down' && (everest || everest16)
+    ? 'stop:everest'
+    : everest16
+      ? 'start:everest:16'
+      : everest
+        ? 'start:everest'
+        : null;
+
+if (everestPnpmScript) {
+  console.log(`> pnpm ${everestPnpmScript}`);
+  const everestResult = run('pnpm', [everestPnpmScript]);
+  if (everestResult.error) {
+    console.error(`Failed to start EVerest: ${everestResult.error.message}`);
+    process.exit(1);
+  }
+  process.exit(everestResult.status ?? 1);
+}
+
+process.exit(0);

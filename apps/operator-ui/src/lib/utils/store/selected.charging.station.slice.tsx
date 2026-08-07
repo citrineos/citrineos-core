@@ -6,7 +6,7 @@ import type { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSelector, createSlice } from '@reduxjs/toolkit';
 import type { RootState } from '@lib/utils/store/store';
-import type { ChargingStationDto } from '@citrineos/base';
+import type { ChargingStationDto } from '@citrineos/types';
 
 interface SelectedChargingStationState {
   selectedChargingStation: ChargingStationClass | undefined;

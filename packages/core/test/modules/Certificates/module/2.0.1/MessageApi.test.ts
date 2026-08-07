@@ -4,12 +4,8 @@
 import { DeleteCertificateAttempt } from '@dal/index.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CertificatesModule, CertificatesOcpp2Api } from '@modules/Certificates/src';
-import {
-  DEFAULT_TENANT_ID,
-  IMessageConfirmation,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, IMessageConfirmation } from '@citrineos/base';
+import { OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { aInstallCertificateRequest } from '../../providers/InstallCertificateRequestProvider';
 import { aDeleteCertificateRequest } from '../../providers/DeleteCertificateRequestProvider';
 import { aSystemConfig } from '../../providers/SystemConfig';
