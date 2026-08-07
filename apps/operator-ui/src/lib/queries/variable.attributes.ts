@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { VARIABLE_ATTRIBUTE_FIELDS } from '@lib/queries/fields/variable.attribute.fields';
+import { VARIABLE_FIELDS } from '@lib/queries/fields/variable.fields';
+import { COMPONENT_FIELDS } from '@lib/queries/fields/component.fields';
 
 export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
   query VariableAttributeList(
@@ -12,33 +15,12 @@ export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
     $where: VariableAttributes_bool_exp
   ) {
     VariableAttributes(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      ocppConnectionName
-      type
-      dataType
-      value
-      mutability
-      persistent
-      constant
-      variableId
-      componentId
-      evseDatabaseId
-      createdAt
-      updatedAt
+      ${VARIABLE_ATTRIBUTE_FIELDS}
       Variable {
-        id
-        instance
-        name
-        createdAt
-        updatedAt
+        ${VARIABLE_FIELDS}
       }
       Component {
-        id
-        instance
-        name
-        evseDatabaseId
-        createdAt
-        updatedAt
+        ${COMPONENT_FIELDS}
       }
     }
     VariableAttributes_aggregate(where: $where) {
@@ -52,33 +34,12 @@ export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
 export const VARIABLE_ATTRIBUTE_DOWNLOAD_QUERY = gql`
   query DownloadVariableAttributes($stationId: Int!) {
     VariableAttributes(where: { stationId: { _eq: $stationId } }, order_by: { createdAt: desc }) {
-      id
-      ocppConnectionName
-      type
-      dataType
-      value
-      mutability
-      persistent
-      constant
-      variableId
-      componentId
-      evseDatabaseId
-      createdAt
-      updatedAt
+      ${VARIABLE_ATTRIBUTE_FIELDS}
       Variable {
-        id
-        instance
-        name
-        createdAt
-        updatedAt
+        ${VARIABLE_FIELDS}
       }
       Component {
-        id
-        instance
-        name
-        evseDatabaseId
-        createdAt
-        updatedAt
+        ${COMPONENT_FIELDS}
       }
     }
     VariableAttributes_aggregate(where: { stationId: { _eq: $stationId } }) {

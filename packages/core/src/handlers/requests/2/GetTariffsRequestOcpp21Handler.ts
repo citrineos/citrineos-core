@@ -14,6 +14,7 @@ import {
   Authorization,
   Connector,
   Evse,
+  type IAuthorizationRepository,
   type ILocationRepository,
   Tariff,
   Transaction,
@@ -32,19 +33,23 @@ import {
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.GetTariffs)
 export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
+  protected _authorizationRepository: IAuthorizationRepository;
   protected _locationRepository: ILocationRepository;
 
   constructor({
     logger,
     ocppSender,
+    authorizationRepository,
     locationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
+    authorizationRepository: IAuthorizationRepository;
     locationRepository: ILocationRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
+    this._authorizationRepository = authorizationRepository;
     this._locationRepository = locationRepository;
   }
 
@@ -136,19 +141,8 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
       }
 
       // Query driver-specific tariffs from Authorizations
-      const authorizations = await Authorization.findAll({
-        where: {
-          tenantId,
-          tariffId: { [Op.ne]: null },
-        },
-        include: [
-          {
-            model: Tariff,
-            as: 'tariff',
-            required: true,
-          },
-        ],
-      });
+      const authorizations =
+        await this._authorizationRepository.findAllAuthorizationsWithTariffs(tenantId);
 
       // I09.FR.05: DriverTariff includes idTokens list
       for (const authorization of authorizations) {

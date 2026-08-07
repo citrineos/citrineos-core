@@ -13,19 +13,16 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type {
+  IAuthorizationRepository,
+  ILocationRepository,
+} from '@dal/interfaces/repositories.js';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
 
 // Mock sequelize models
 vi.mock('@dal/layers/sequelize/model/Location/Connector.js', () => ({
   Connector: {
-    findAll: vi.fn(),
-  },
-}));
-
-vi.mock('@dal/layers/sequelize/model/Authorization/Authorization.js', () => ({
-  Authorization: {
     findAll: vi.fn(),
   },
 }));
@@ -57,6 +54,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
   let mockLocationRepository: Partial<ILocationRepository>;
+  let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockConnectorFindAll: any;
   let mockAuthorizationFindAll: any;
   let mockTransactionFindAll: any;
@@ -64,17 +62,19 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   beforeEach(async () => {
     // Import the mocked models - these are what the handler actually calls directly.
     const { Connector } = await import('@dal/layers/sequelize/model/Location/Connector.js');
-    const { Authorization } = await import(
-      '@dal/layers/sequelize/model/Authorization/Authorization.js'
-    );
     const { Transaction } = await import(
       '@dal/layers/sequelize/model/TransactionEvent/Transaction.js'
     );
 
     // Mock the sequelize.Connector.findAll which is what the handler actually uses
     mockConnectorFindAll = vi.mocked(Connector.findAll);
-    mockAuthorizationFindAll = vi.mocked(Authorization.findAll);
     mockTransactionFindAll = vi.mocked(Transaction.findAll);
+
+    // Driver tariffs come from the authorization repository, not the model directly.
+    mockAuthorizationFindAll = vi.fn();
+    mockAuthorizationRepository = {
+      findAllAuthorizationsWithTariffs: mockAuthorizationFindAll,
+    };
 
     mockLocationRepository = {
       readChargingStationByStationId: vi.fn().mockResolvedValue({
@@ -89,6 +89,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     handler = new GetTariffsRequestOcpp21Handler({
       logger,
       ocppSender,
+      authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
       locationRepository: mockLocationRepository as unknown as ILocationRepository,
     });
   });

@@ -13,7 +13,7 @@
  *   charger (WS OCPP 2.0.1) → CSMS → Reporting module → SecurityEvents table
  *
  * It runs twice — once with the default Sequelize repository and once with
- * CITRINEOS_USE_DRIZZLE_SECURITY_EVENT=true — confirming both write the same record.
+ * CITRINEOS_USE_DRIZZLE=true — confirming both write the same record.
  *
  * Prerequisites: run `pnpm run test:e2e` (which builds first) rather than
  * `pnpm test`, since the server child process needs ocpp-server/dist/index.js to be
@@ -24,12 +24,12 @@
  *   automatically, so we rely on the real migration path here.
  */
 
-import { execSync, spawn, type ChildProcess } from 'child_process';
+import { type ChildProcess, execSync, spawn } from 'child_process';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Client } from 'pg';
-import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainers';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { fileURLToPath } from 'url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
@@ -222,7 +222,7 @@ afterAll(async () => {
 
 describe.each([
   { label: 'Sequelize', extraEnv: {} },
-  { label: 'Drizzle', extraEnv: { CITRINEOS_USE_DRIZZLE_SECURITY_EVENT: 'true' } },
+  { label: 'Drizzle', extraEnv: { CITRINEOS_USE_DRIZZLE: 'true' } },
 ])('SecurityEventNotification [$label]', ({ label, extraEnv }) => {
   let server: ChildProcess;
   let db: Client;

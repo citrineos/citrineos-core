@@ -71,7 +71,7 @@ export class TariffsService {
     }
     return {
       data: mappedTariffs,
-      count: result.Tariffs.length,
+      count: result.Tariffs_aggregate?.aggregate?.count ?? 0,
     };
   }
 

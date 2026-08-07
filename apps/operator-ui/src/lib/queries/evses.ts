@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { EVSE_CORE_FIELDS, EVSE_DETAIL_FIELDS } from '@lib/queries/fields/evse.fields';
+import { CONNECTOR_SPEC_FIELDS } from '@lib/queries/fields/connector.fields';
 
 export const EVSE_LIST_QUERY = gql`
   query EvseList(
@@ -14,11 +16,7 @@ export const EVSE_LIST_QUERY = gql`
     $variableAttributesOrder_by: [VariableAttributes_order_by!]
   ) {
     Evses(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      evseTypeId
-      evseId
-      createdAt
-      updatedAt
+      ${EVSE_CORE_FIELDS}
     }
 
     # Aggregating EVSE records
@@ -44,25 +42,13 @@ export const GET_EVSE_LIST_FOR_STATION = gql`
       offset: $offset
       limit: $limit
     ) {
-      id
-      ocppConnectionName
-      evseTypeId
-      evseId
-      physicalReference
-      removed
-      createdAt
-      updatedAt
+      ${EVSE_CORE_FIELDS}
+      ${EVSE_DETAIL_FIELDS}
       connectors: Connectors {
         id
         connectorId
         status
-        type
-        format
-        powerType
-        maximumAmperage
-        maximumVoltage
-        maximumPowerWatts
-        termsAndConditionsUrl
+        ${CONNECTOR_SPEC_FIELDS.omit('tariffId')}
         createdAt
         updatedAt
       }
@@ -78,25 +64,13 @@ export const GET_EVSE_LIST_FOR_STATION = gql`
 export const GET_EVSES_FOR_STATION = gql`
   query GetEvseListForStation($stationId: Int!) {
     Evses(where: { stationId: { _eq: $stationId } }) {
-      id
-      ocppConnectionName
-      evseTypeId
-      evseId
-      physicalReference
-      removed
-      createdAt
-      updatedAt
+      ${EVSE_CORE_FIELDS}
+      ${EVSE_DETAIL_FIELDS}
       connectors: Connectors {
         id
         connectorId
         status
-        type
-        format
-        powerType
-        maximumAmperage
-        maximumVoltage
-        maximumPowerWatts
-        termsAndConditionsUrl
+        ${CONNECTOR_SPEC_FIELDS.omit('tariffId')}
         createdAt
         updatedAt
       }
@@ -107,11 +81,7 @@ export const GET_EVSES_FOR_STATION = gql`
 export const EVSE_CREATE_MUTATION = gql`
   mutation EvseCreate($object: Evses_insert_input!) {
     insert_Evses_one(object: $object) {
-      id
-      evseTypeId
-      evseId
-      createdAt
-      updatedAt
+      ${EVSE_CORE_FIELDS}
     }
   }
 `;
@@ -119,11 +89,7 @@ export const EVSE_CREATE_MUTATION = gql`
 export const EVSE_EDIT_MUTATION = gql`
   mutation EvseEdit($id: Int!, $object: Evses_set_input!) {
     update_Evses_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      evseTypeId
-      evseId
-      createdAt
-      updatedAt
+      ${EVSE_CORE_FIELDS}
     }
   }
 `;

@@ -114,6 +114,7 @@ export type TableProps<
     expandedRowClassName?: string | ((record: TData) => string);
   };
   rowClassName?: string | ((record: TData, index: number) => string);
+  onRowClick?: (record: TData) => void;
   showToolbar?: boolean;
   // specific key to track query state with nuqs
   tableStateKey?: string;
@@ -129,6 +130,7 @@ export function Table<
   columns = [],
   expandable,
   rowClassName,
+  onRowClick,
   useClientData = false,
   showToolbar = false,
   tableStateKey = DEFAULT_TABLE_STATE,
@@ -315,8 +317,11 @@ export function Table<
                 <React.Fragment key={row.id}>
                   <TableRow
                     data-state={row.getIsSelected() && 'selected'}
-                    className={getRowClassNames(row.original, index)}
+                    className={`${getRowClassNames(row.original, index)} ${
+                      onRowClick ? 'cursor-pointer' : ''
+                    }`}
                     id={`table-row-${index}`}
+                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   >
                     {row.getVisibleCells().map((cell: any) => (
                       <TableCell key={cell.id} className="text-nowrap">

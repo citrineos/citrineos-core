@@ -3,6 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS, LOCATION_DETAIL_FIELDS } from '@lib/queries/fields/location.fields';
+import { CONNECTOR_STATUS_FIELDS } from '@lib/queries/fields/connector.fields';
+import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status.notification.fields';
+import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction.fields';
+import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse.fields';
+import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
 
 export const LOCATIONS_LIST_QUERY = gql`
   query LocationsList(
@@ -13,31 +19,12 @@ export const LOCATIONS_LIST_QUERY = gql`
     $chargingStationsWhere: ChargingStations_bool_exp
   ) {
     Locations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      createdAt
-      updatedAt
-      timeZone
-      parkingType
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS}
       chargingPool: ChargingStations(where: $chargingStationsWhere) {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         evses: Evses {
-          id
-          evseTypeId
-          evseId
-          createdAt
-          updatedAt
+          ${EVSE_CORE_FIELDS}
         }
         LatestStatusNotifications {
           id
@@ -46,38 +33,15 @@ export const LOCATIONS_LIST_QUERY = gql`
           updatedAt
           createdAt
           StatusNotification {
-            connectorId
-            connectorStatus
-            createdAt
-            evseId
-            ocppConnectionName
-            id
-            timestamp
-            updatedAt
+            ${STATUS_NOTIFICATION_FIELDS}
           }
         }
         transactions: Transactions(where: { isActive: { _eq: true } }) {
-          id
-          timeSpentCharging
-          isActive
-          chargingState
-          ocppConnectionName
-          stoppedReason
-          transactionId
-          evseId
-          remoteStartId
-          totalKwh
-          createdAt
-          updatedAt
+          ${ACTIVE_TRANSACTION_FIELDS}
         }
         connectors: Connectors {
           connectorId
-          status
-          errorCode
-          timestamp
-          info
-          vendorId
-          vendorErrorCode
+          ${CONNECTOR_STATUS_FIELDS}
           createdAt
           updatedAt
         }
@@ -94,27 +58,10 @@ export const LOCATIONS_LIST_QUERY = gql`
 export const LOCATIONS_GET_QUERY = gql`
   query GetLocationById($id: Int!) {
     Locations_by_pk(id: $id) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      facilities
-      timeZone
-      parkingType
-      createdAt
-      updatedAt
-      openingHours
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS}
       chargingPool: ChargingStations {
-        id
-        ocppConnectionName
-        isOnline
-        protocol
-        createdAt
-        updatedAt
+        ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         Evses: VariableAttributes(
           distinct_on: evseDatabaseId
           where: { evseDatabaseId: { _is_null: false } }
@@ -130,29 +77,11 @@ export const LOCATIONS_GET_QUERY = gql`
           updatedAt
           createdAt
           StatusNotification {
-            connectorId
-            connectorStatus
-            createdAt
-            evseId
-            ocppConnectionName
-            id
-            timestamp
-            updatedAt
+            ${STATUS_NOTIFICATION_FIELDS}
           }
         }
         Transactions(where: { isActive: { _eq: true } }) {
-          id
-          timeSpentCharging
-          isActive
-          chargingState
-          ocppConnectionName
-          stoppedReason
-          transactionId
-          evseId
-          remoteStartId
-          totalKwh
-          createdAt
-          updatedAt
+          ${ACTIVE_TRANSACTION_FIELDS}
         }
       }
     }
@@ -162,19 +91,8 @@ export const LOCATIONS_GET_QUERY = gql`
 export const LOCATIONS_CREATE_MUTATION = gql`
   mutation LocationsCreate($object: Locations_insert_input!) {
     insert_Locations_one(object: $object) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      facilities
-      timeZone
-      parkingType
-      createdAt
-      updatedAt
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;
@@ -182,19 +100,8 @@ export const LOCATIONS_CREATE_MUTATION = gql`
 export const LOCATIONS_DELETE_MUTATION = gql`
   mutation LocationsDelete($id: Int!) {
     delete_Locations_by_pk(id: $id) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      facilities
-      timeZone
-      parkingType
-      createdAt
-      updatedAt
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;
@@ -202,19 +109,8 @@ export const LOCATIONS_DELETE_MUTATION = gql`
 export const LOCATIONS_EDIT_MUTATION = gql`
   mutation LocationsEdit($id: Int!, $object: Locations_set_input!) {
     update_Locations_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      name
-      address
-      city
-      postalCode
-      state
-      country
-      coordinates
-      facilities
-      timeZone
-      parkingType
-      createdAt
-      updatedAt
+      ${LOCATION_CORE_FIELDS}
+      ${LOCATION_DETAIL_FIELDS.omit('openingHours')}
     }
   }
 `;
