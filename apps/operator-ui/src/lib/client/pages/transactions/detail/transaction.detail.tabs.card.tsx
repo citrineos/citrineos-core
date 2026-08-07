@@ -74,6 +74,7 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
   );
 
   const [tab, setTab] = useQueryState(DETAIL_TAB_STATE);
+  const [liveLogEnabled, setLiveLogEnabled] = useState(false);
 
   return (
     <Card>
@@ -203,8 +204,10 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
                 initialEndDate={
                   transaction.endTime
                     ? new Date(new Date(transaction.endTime).getTime() + twoMinutesInMs)
-                    : new Date()
+                    : null
                 }
+                liveLogEnabled={liveLogEnabled}
+                onLiveLogEnabledChange={setLiveLogEnabled}
               />
             </CanAccess>
           </TabsContent>
