@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { INSTALLED_CERTIFICATE_FIELDS } from '@lib/queries/fields/installed.certificate.fields';
 
 export const INSTALLED_CERTIFICATE_LIST_QUERY = gql`
   query InstalledCertificateList(
@@ -12,13 +13,7 @@ export const INSTALLED_CERTIFICATE_LIST_QUERY = gql`
     $where: InstalledCertificates_bool_exp
   ) {
     InstalledCertificates(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      ocppConnectionName
-      hashAlgorithm
-      issuerNameHash
-      issuerKeyHash
-      serialNumber
-      certificateType
+      ${INSTALLED_CERTIFICATE_FIELDS}
     }
     InstalledCertificates_aggregate(where: $where) {
       aggregate {
@@ -31,13 +26,7 @@ export const INSTALLED_CERTIFICATE_LIST_QUERY = gql`
 export const INSTALLED_CERTIFICATE_GET_QUERY = gql`
   query GetInstalledCertificateById($id: Int!) {
     InstalledCertificates_by_pk(id: $id) {
-      id
-      ocppConnectionName
-      hashAlgorithm
-      issuerNameHash
-      issuerKeyHash
-      serialNumber
-      certificateType
+      ${INSTALLED_CERTIFICATE_FIELDS}
     }
   }
 `;

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { SERVER_NETWORK_PROFILE_BASIC_FIELDS } from '@lib/queries/fields/server.network.profile.fields';
 
 export const CHARGING_STATION_NETWORK_PROFILES_QUERY = gql`
   query GetChargingStationNetworkProfiles($ocppConnectionName: String!) {
@@ -20,14 +21,7 @@ export const CHARGING_STATION_NETWORK_PROFILES_QUERY = gql`
       websocketServerConfigId
       updatedAt
       ServerNetworkProfile {
-        id
-        host
-        port
-        protocols
-        pingInterval
-        messageTimeout
-        securityProfile
-        allowUnknownChargingStations
+        ${SERVER_NETWORK_PROFILE_BASIC_FIELDS}
       }
     }
   }
@@ -36,14 +30,7 @@ export const CHARGING_STATION_NETWORK_PROFILES_QUERY = gql`
 export const SERVER_NETWORK_PROFILE_SAFE_GET_QUERY = gql`
   query GetServerNetworkProfileSafeById($id: String!) {
     ServerNetworkProfiles_by_pk(id: $id) {
-      id
-      host
-      port
-      protocols
-      pingInterval
-      messageTimeout
-      securityProfile
-      allowUnknownChargingStations
+      ${SERVER_NETWORK_PROFILE_BASIC_FIELDS}
     }
   }
 `;
