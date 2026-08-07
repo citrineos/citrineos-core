@@ -21,6 +21,9 @@ import { aMessageContext } from '../providers/MessageContextProvider.js';
 import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 
 describe('TransactionService', () => {
+  // idToken of the group Authorization that groupAuthorizationId points at.
+  const PARENT_ID_TAG = 'parent-id-tag';
+
   const { container } = createTestContainer();
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
@@ -34,7 +37,7 @@ describe('TransactionService', () => {
   beforeEach(() => {
     authorizationRepository = {
       readAllByQuerystring: vi.fn(),
-      readOnlyOneByQuery: vi.fn().mockResolvedValue({ idToken: 1 }),
+      readOnlyOneByQuerystring: vi.fn().mockResolvedValue({ idToken: PARENT_ID_TAG }),
     } as unknown as Mocked<IAuthorizationRepository>;
 
     transactionEventRepository = {
@@ -225,7 +228,7 @@ describe('TransactionService', () => {
       );
 
       expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Accepted);
-      expect(response.idTagInfo.parentIdTag).toBe(authorization.groupAuthorizationId);
+      expect(response.idTagInfo.parentIdTag).toBe(PARENT_ID_TAG);
       expect(response.idTagInfo.expiryDate).toBe(authorization.cacheExpiryDateTime);
     });
 
