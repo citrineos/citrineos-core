@@ -65,7 +65,7 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
           tenantId: message.context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           action: OCPP_CallAction.GetDisplayMessages,
-          message: {
+          payload: {
             requestId: requestId,
           },
         },
