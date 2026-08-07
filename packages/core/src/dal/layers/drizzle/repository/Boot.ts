@@ -48,22 +48,11 @@ export class DrizzleBootRepository
     return toBootDto(row);
   }
 
-  // Internal Methods
-  async _createBoot(tenantId: number, value: object): Promise<BootDto> {
-    const rows = (await this.db
-      .insert(bootTable)
-      .values({ ...value, tenantId } as BootEntity)
-      .returning()) as BootEntity[];
-
-    const dto = this.toDto(rows[0]);
-    this.emit('created', [dto]);
-    return dto;
-  }
-
   async _updateBootByKey(
     tenantId: number,
     value: object,
     key: string,
+    emitEvent = true,
   ): Promise<BootDto | undefined> {
     const rows = (await this.db
       .update(bootTable)
@@ -73,7 +62,9 @@ export class DrizzleBootRepository
 
     if (!rows[0]) return undefined;
     const dto = this.toDto(rows[0]);
-    this.emit('updated', [dto]);
+    if (emitEvent) {
+      this.emit('updated', [dto]);
+    }
     return dto;
   }
 
@@ -88,12 +79,28 @@ export class DrizzleBootRepository
     key: string,
   ): Promise<BootDto | undefined> {
     const bootExists = await this.existsByKey(tenantId, key);
+    let savedBoot: BootDto | undefined;
 
     if (bootExists) {
-      return await this._updateBootByKey(tenantId, value, key);
+      savedBoot = await this._updateBootByKey(tenantId, value, key, false);
     } else {
-      return await this._createBoot(tenantId, value);
+      const rows = (await this.db
+        .insert(bootTable)
+        .values({ ...value, tenantId } as BootEntity)
+        .returning()) as BootEntity[];
+
+      savedBoot = this.toDto(rows[0]);
     }
+
+    if (savedBoot) {
+      if (value.pendingBootSetVariableIds) {
+        // TODO setup variable attributes repo
+      }
+
+      this.emit(bootExists ? 'updated' : 'created', [savedBoot]);
+    }
+
+    return savedBoot;
   }
 
   async deleteByKey(tenantId: number, key: string): Promise<BootDto | undefined> {
