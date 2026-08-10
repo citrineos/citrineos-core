@@ -37,6 +37,15 @@ export function toBootDto(entity: BootEntity): BootDto {
   return dto;
 }
 
+// Required to convert lastBootTime back into Date
+function toBootEntity(value: object): object {
+  const v = value as { lastBootTime?: unknown };
+  if (typeof v.lastBootTime === 'string') {
+    return { ...value, lastBootTime: new Date(v.lastBootTime) };
+  }
+  return value;
+}
+
 export class DrizzleBootRepository
   extends DrizzleRepository<typeof bootTable, BootDto>
   implements IBootRepository
@@ -76,7 +85,7 @@ export class DrizzleBootRepository
   ): Promise<BootDto | undefined> {
     const rows = (await this.db
       .update(bootTable)
-      .set(value)
+      .set(toBootEntity(value))
       .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
       .returning()) as BootEntity[];
 
@@ -101,7 +110,7 @@ export class DrizzleBootRepository
     } else {
       const rows = (await this.db
         .insert(bootTable)
-        .values({ ...value, tenantId } as BootEntity)
+        .values({ ...toBootEntity(value), tenantId } as BootEntity)
         .returning()) as BootEntity[];
 
       savedBoot = this.toDto(rows[0]);
