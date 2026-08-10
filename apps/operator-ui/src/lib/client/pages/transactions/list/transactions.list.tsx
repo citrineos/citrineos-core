@@ -24,13 +24,18 @@ import {
 } from '@lib/client/styles/table';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
+import { usePreview } from '@lib/client/hooks/usePreview';
 
 export const TransactionsList = () => {
   const [filters, setFilters] = useState<any>(EMPTY_FILTER);
+  const { openPreview } = usePreview();
+  const handlePreview = (station: { ocppConnectionName?: string | null }) => {
+    if (station.ocppConnectionName) openPreview(station.ocppConnectionName);
+  };
   const translate = useTranslate();
 
   const { renderedVisibleColumns, columnSelector } = useColumnPreferences(
-    getTransactionsColumns(translate),
+    getTransactionsColumns(translate, handlePreview),
     ResourceType.TRANSACTIONS,
   );
 

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { LocationsDetail } from '@lib/client/pages/locations/detail/locations.detail';
+import { StationPreviewLayout } from '@lib/client/pages/charging-stations/station.preview.layout';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -10,5 +11,9 @@ type PageProps = {
 
 export default async function ShowLocationPage({ params }: PageProps) {
   const { id } = await params;
-  return <LocationsDetail params={{ id }} />;
+  return (
+    <StationPreviewLayout>
+      <LocationsDetail params={{ id }} />
+    </StationPreviewLayout>
+  );
 }
