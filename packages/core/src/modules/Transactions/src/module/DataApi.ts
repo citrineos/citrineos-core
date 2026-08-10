@@ -87,8 +87,8 @@ export class TransactionsDataApi
     return this._module.tariffRepository
       .deleteAllByQuerystring(request.query.tenantId, request.query)
       .then(
-        (deletedCount: { toString: () => string }) =>
-          deletedCount.toString() + ' rows successfully deleted from ' + OCPP2_Namespace.Tariff,
+        (deleted) =>
+          `${deleted.length} rows successfully deleted from ${OCPP2_Namespace.Tariff}`,
       );
   }
 
