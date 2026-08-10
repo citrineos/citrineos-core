@@ -113,18 +113,30 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
 
-    this._config.util.networkConnection.websocketServers.forEach(async (websocketServerConfig) => {
-      const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
-      this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-      if (websocketServerConfig.securityProfile > 1) {
-        const certManager = new TlsCredentialManager(
-          websocketServerConfig,
-          this._fileStorage,
-          this._logger,
-        );
-        this._certManagersMap.set(websocketServerConfig.id, certManager);
+    this.loadWebsocketServersConfig().then(async (websocketServersConfig) => {
+      for (const websocketServerConfig of websocketServersConfig) {
+        const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
+        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
+        if (websocketServerConfig.securityProfile > 1) {
+          const certManager = new TlsCredentialManager(
+            websocketServerConfig,
+            this._fileStorage,
+            this._logger,
+          );
+          this._certManagersMap.set(websocketServerConfig.id, certManager);
+        }
       }
     });
+  }
+
+  private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {
+    const configString = await this._fileStorage.getFile(this._config.websocketServerConfigFile);
+    if (!configString) {
+      throw new Error(
+        `Websocket servers config file not found: ${this._config.websocketServerConfigFile}`,
+      );
+    }
+    return JSON.parse(configString) as WebsocketServerConfig[];
   }
 
   /**

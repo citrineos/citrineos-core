@@ -1,13 +1,13 @@
-// config/schema.ts
 import {
-  OCPP1_6,
+  HUBJECT_DEFAULT_BASEURL,
+  HUBJECT_DEFAULT_CLIENTID,
+  HUBJECT_DEFAULT_CLIENTSECRET,
+  HUBJECT_DEFAULT_TOKENURL,
   OCPP_VERSION_LIST,
   RegistrationStatusEnum,
   signedMeterValuesSigningMethods,
 } from '@citrineos/types';
 import { z } from 'zod';
-
-// ─── Websocket server (loaded from file, defined here for schema completeness) ───
 
 export const websocketServerSchema = z
   .object({
@@ -53,46 +53,50 @@ export const websocketServerSchema = z
 
 export type WebsocketServerConfig = z.infer<typeof websocketServerSchema>;
 
+// Websocket servers this pod hosts. Loaded from a mounted file, not env vars.
+export const websocketServersConfigSchema = z
+  .array(websocketServerSchema)
+  .refine((arr) => new Set(arr.map((s) => s.id)).size === arr.length, {
+    message: 'Websocket server ids must be unique',
+  });
+
+export type WebsocketServersConfig = z.infer<typeof websocketServersConfigSchema>;
+
 // ─── Main static config ───
 
 export const configSchema = z.object({
   env: z.enum(['development', 'production']).default('development'),
 
-  // Websocket servers this pod hosts. Loaded from a mounted file, not env vars.
-  websocketServers: z
-    .array(websocketServerSchema)
-    .refine((arr) => new Set(arr.map((s) => s.id)).size === arr.length, {
-      message: 'Websocket server ids must be unique',
-    }),
-
-  database: z.object({
-    host: z.string().default('localhost'),
-    port: z.number().int().positive().default(5432),
-    database: z.string().default('citrine'),
-    dialect: z.string().default('postgres'),
-    username: z.string().default('citrine'),
-    password: z.string().default('citrine'),
-    pool: z
-      .object({
-        max: z.number().int().positive().optional(),
-        min: z.number().int().nonnegative().optional(),
-        acquire: z.number().int().positive().optional(),
-        idle: z.number().int().positive().optional(),
-      })
-      .optional(),
-    sync: z.boolean().default(false),
-    alter: z.boolean().default(false),
-    force: z.boolean().default(false),
-    maxRetries: z.number().int().positive().default(3),
-    retryDelay: z.number().int().positive().default(1000),
-    ssl: z
-      .object({
-        require: z.boolean().optional(),
-        rejectUnauthorized: z.boolean().optional(),
-        ca: z.string().optional(),
-      })
-      .optional(),
-  }),
+  database: z
+    .object({
+      host: z.string().default('localhost'),
+      port: z.number().int().positive().default(5432),
+      database: z.string().default('citrine'),
+      dialect: z.string().default('postgres'),
+      username: z.string().default('citrine'),
+      password: z.string().default('citrine'),
+      pool: z
+        .object({
+          max: z.number().int().positive().optional(),
+          min: z.number().int().nonnegative().optional(),
+          acquire: z.number().int().positive().optional(),
+          idle: z.number().int().positive().optional(),
+        })
+        .optional(),
+      sync: z.boolean().default(false),
+      alter: z.boolean().default(false),
+      force: z.boolean().default(false),
+      maxRetries: z.number().int().positive().default(3),
+      retryDelay: z.number().int().positive().default(1000),
+      ssl: z
+        .object({
+          require: z.boolean().optional(),
+          rejectUnauthorized: z.boolean().optional(),
+          ca: z.string().optional(),
+        })
+        .optional(),
+    })
+    .prefault({}),
 
   cache: z
     .discriminatedUnion('type', [
@@ -106,14 +110,18 @@ export const configSchema = z.object({
     ])
     .default({ type: 'memory' }),
 
-  messageBroker: z.object({
-    amqp: z.object({
-      url: z.string().default('amqp://guest:guest@localhost:5672'),
-      exchange: z.string().default('citrineos'),
-      instanceIdentifier: z.string().optional(),
-      maxReconnectDelaySeconds: z.number().int().min(1).default(30),
-    }),
-  }),
+  messageBroker: z
+    .object({
+      amqp: z
+        .object({
+          url: z.string().default('amqp://guest:guest@localhost:5672'),
+          exchange: z.string().default('citrineos'),
+          instanceIdentifier: z.string().optional(),
+          maxReconnectDelaySeconds: z.number().int().min(1).default(30),
+        })
+        .prefault({}),
+    })
+    .prefault({}),
 
   fileAccess: z
     .object({
@@ -156,7 +164,8 @@ export const configSchema = z.object({
     })
     .refine((o) => o.oidc || o.localBypass, {
       message: 'Either oidc config or localBypass must be enabled',
-    }),
+    })
+    .prefault({ localBypass: true }),
   oidcClient: z
     .object({
       tokenUrl: z.string(),
@@ -166,34 +175,39 @@ export const configSchema = z.object({
     })
     .optional(),
 
-  integrations: z.object({
-    v2gCA: z
-      .object({
-        name: z.literal('hubject'),
-        hubject: z.object({
-          baseUrl: z.string(),
-          tokenUrl: z.string(),
-          clientId: z.string(),
-          clientSecret: z.string(),
-        }),
-      })
-      .optional(),
-    chargingStationCA: z
-      .object({
-        name: z.literal('acme'),
-        acme: z.object({
-          env: z.enum(['staging', 'production']),
-          accountKeyFilePath: z.string(),
-          email: z.string().email(),
-        }),
-      })
-      .optional(),
-  }),
+  integrations: z
+    .object({
+      // Opt-in, but zero-config: `v2gCA: {}` yields the Hubject test PKI.
+      v2gCA: z
+        .object({
+          name: z.literal('hubject').default('hubject'),
+          hubject: z
+            .object({
+              baseUrl: z.string().default(HUBJECT_DEFAULT_BASEURL),
+              tokenUrl: z.string().default(HUBJECT_DEFAULT_TOKENURL),
+              clientId: z.string().default(HUBJECT_DEFAULT_CLIENTID),
+              clientSecret: z.string().default(HUBJECT_DEFAULT_CLIENTSECRET),
+            })
+            .prefault({}),
+        })
+        .optional(),
+      chargingStationCA: z
+        .object({
+          name: z.literal('acme').default('acme'),
+          acme: z.object({
+            env: z.enum(['staging', 'production']).default('staging'),
+            accountKeyFilePath: z.string(),
+            email: z.string().email(),
+          }),
+        })
+        .optional(),
+    })
+    .prefault({}),
 
   rbac: z
     .object({
       rulesDir: z.string().optional(),
-      rulesFileName: z.string().optional(),
+      rulesFileName: z.string().default('rbac-rules.json'),
     })
     .optional(),
 
@@ -201,8 +215,8 @@ export const configSchema = z.object({
     .object({
       path: z.string().default('/docs'),
       logoPath: z.string(),
-      exposeData: z.boolean().default(false),
-      exposeMessage: z.boolean().default(false),
+      exposeData: z.boolean().default(true),
+      exposeMessage: z.boolean().default(true),
     })
     .optional(),
 
@@ -212,66 +226,33 @@ export const configSchema = z.object({
 
   timeouts: z
     .object({
-      maxCallLengthSeconds: z.number().int().min(1).default(30),
-      maxCachingSeconds: z.number().int().min(1).default(300),
+      maxCallLengthSeconds: z.number().int().min(1).default(20),
+      maxCachingSeconds: z.number().int().min(1).default(30),
       shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
       realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
       notReadyThresholdSeconds: z.number().int().min(1).default(60),
     })
     .refine((t) => t.maxCachingSeconds >= t.maxCallLengthSeconds, {
       message: 'maxCachingSeconds cannot be less than maxCallLengthSeconds',
-    }),
+    })
+    .prefault({}),
 
   ocpp: z
     .object({
       heartbeatInterval: z.number().int().min(1).default(60),
-      bootRetryInterval: z.number().int().min(1).default(30),
-
-      v1_6: z
-        .object({
-          unknownChargerStatus: z
-            .enum([
-              OCPP1_6.BootNotificationResponseStatus.Accepted,
-              OCPP1_6.BootNotificationResponseStatus.Pending,
-              OCPP1_6.BootNotificationResponseStatus.Rejected,
-            ])
-            .default(OCPP1_6.BootNotificationResponseStatus.Pending),
-        })
-        .optional(),
-
-      v2_0_1: z
-        .object({
-          unknownChargerStatus: z
-            .enum([
-              RegistrationStatusEnum.Accepted,
-              RegistrationStatusEnum.Pending,
-              RegistrationStatusEnum.Rejected,
-            ])
-            .default(RegistrationStatusEnum.Pending),
-          getBaseReportOnPending: z.boolean().default(true),
-          bootWithRejectedVariables: z.boolean().default(false),
-          autoAccept: z.boolean().default(false),
-        })
-        .optional(),
-
-      v2_1: z
-        .object({
-          unknownChargerStatus: z
-            .enum([
-              RegistrationStatusEnum.Accepted,
-              RegistrationStatusEnum.Pending,
-              RegistrationStatusEnum.Rejected,
-            ])
-            .default(RegistrationStatusEnum.Pending),
-          getBaseReportOnPending: z.boolean().default(true),
-          bootWithRejectedVariables: z.boolean().default(false),
-          autoAccept: z.boolean().default(false),
-        })
-        .optional(),
+      bootRetryInterval: z.number().int().min(1).default(15),
+      unknownChargerStatus: z
+        .enum([
+          RegistrationStatusEnum.Accepted,
+          RegistrationStatusEnum.Pending,
+          RegistrationStatusEnum.Rejected,
+        ])
+        .default(RegistrationStatusEnum.Accepted),
+      getBaseReportOnPending: z.boolean().default(true),
+      bootWithRejectedVariables: z.boolean().default(false),
+      autoAccept: z.boolean().default(true),
     })
-    .refine((o) => o.v1_6 || o.v2_0_1 || o.v2_1, {
-      message: 'At least one OCPP protocol version must be configured',
-    }),
+    .prefault({}),
 
   transactions: z
     .object({
@@ -294,7 +275,8 @@ export const configSchema = z.object({
         message:
           'Exactly one of transactions.costUpdatedInterval or transactions.sendCostUpdatedOnMeterValue must be set',
       },
-    ),
+    )
+    .prefault({ costUpdatedInterval: 60 }),
 
   evdriver: z
     .object({
@@ -311,4 +293,8 @@ export const configSchema = z.object({
     .default({}),
 });
 
+/** Post-parse config: every defaulted field is present. What `configSchema.parse()` returns. */
 export type Config = z.infer<typeof configSchema>;
+
+/** Pre-parse config: defaulted fields are optional. What you hand-author or merge env vars into. */
+export type ConfigInput = z.input<typeof configSchema>;
