@@ -133,10 +133,8 @@ export class MonitoringDataApi
     return this._module.deviceModelRepository
       .deleteAllByQuerystring(tenantId, request.query)
       .then(
-        (deletedCount) =>
-          deletedCount.toString() +
-          ' rows successfully deleted from ' +
-          OCPP2_Namespace.VariableAttributeType,
+        (deleted) =>
+          `${deleted.length} rows successfully deleted from ${OCPP2_Namespace.VariableAttributeType}`,
       );
   }
 
