@@ -35,6 +35,7 @@ import {
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  DrizzleVariableAttributeRepository,
 } from '../../drizzle/index.js';
 import type { Component } from '../model/DeviceModel/Component.js';
 import { SequelizeAuthorizationRepository } from './Authorization.js';
@@ -170,7 +171,11 @@ export class RepositoryStore {
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
-      this.bootRepository = new DrizzleBootRepository({ config, logger });
+      this.bootRepository = new DrizzleBootRepository({
+        config,
+        logger,
+        variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
+      });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });

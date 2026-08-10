@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, RegistrationStatusEnumType } from '@citrineos/types';
+import type { BootDto, VariableAttributeDto } from '@citrineos/types';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
 import { type Explicit } from '../types.js';
-import { DrizzleRepository } from './Base.js';
-import type { IBootRepository } from '@/dal/index.js';
+import { DrizzleRepository, type DrizzleRepositoryDependencies } from './Base.js';
+import { type IBootRepository } from '@/dal/index.js';
 import { and, eq } from 'drizzle-orm';
-import type { BootConfig, OCPP2_common_types } from '@citrineos/base';
+import type { BootConfig } from '@citrineos/base';
+import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external BootDto contract.
@@ -40,6 +41,20 @@ export class DrizzleBootRepository
   extends DrizzleRepository<typeof bootTable, BootDto>
   implements IBootRepository
 {
+  private _variableAttributeRepository: DrizzleVariableAttributeRepository;
+
+  constructor({
+    config,
+    logger,
+    variableAttributeRepository,
+  }: DrizzleRepositoryDependencies & {
+    variableAttributeRepository: DrizzleVariableAttributeRepository;
+  }) {
+    super({ config, logger });
+
+    this._variableAttributeRepository = variableAttributeRepository;
+  }
+
   protected getTable(tenantId: number): typeof bootTable {
     return this.useTenantSchema ? tenantBootTable(tenantId) : bootTable;
   }
@@ -48,7 +63,12 @@ export class DrizzleBootRepository
     return toBootDto(row);
   }
 
-  async _updateBootByKey(
+  // ──────────── IBootRepository methods ─────────────────────────────
+  // Note that for many of the methods below, we purposely DO NOT use the equivalent Drizzle methods
+  // because they only accept key as a number, but Boot stores id as a string equal to the
+  // ocppConnectionName of the relevant station.
+
+  async updateByKey(
     tenantId: number,
     value: object,
     key: string,
@@ -68,11 +88,6 @@ export class DrizzleBootRepository
     return dto;
   }
 
-  // ─── IBootRepository methods ────────────────────────────────────
-  // Note that for many of the methods below, we purposely DO NOT use the equivalent Drizzle methods
-  // because they only accept key as a number, but Boot stores id as a string value equivalent to the
-  // ocppConnectionName of the relevant station.
-
   async createOrUpdateByKey(
     tenantId: number,
     value: BootConfig,
@@ -82,7 +97,7 @@ export class DrizzleBootRepository
     let savedBoot: BootDto | undefined;
 
     if (bootExists) {
-      savedBoot = await this._updateBootByKey(tenantId, value, key, false);
+      savedBoot = await this.updateByKey(tenantId, value, key, false);
     } else {
       const rows = (await this.db
         .insert(bootTable)
@@ -94,7 +109,12 @@ export class DrizzleBootRepository
 
     if (savedBoot) {
       if (value.pendingBootSetVariableIds) {
-        // TODO setup variable attributes repo
+        savedBoot.pendingBootSetVariables = await this.manageSetVariables(
+          tenantId,
+          value.pendingBootSetVariableIds,
+          key,
+          savedBoot.id,
+        );
       }
 
       this.emit(bootExists ? 'updated' : 'created', [savedBoot]);
@@ -135,20 +155,41 @@ export class DrizzleBootRepository
     return rows[0] ? this.toDto(rows[0]) : undefined;
   }
 
-  updateLastBootTimeByKey(
+  private async manageSetVariables(
     tenantId: number,
-    lastBootTime: string,
-    key: string,
-  ): Promise<BootDto | undefined> {
-    return this._updateBootByKey(tenantId, { lastBootTime }, key);
-  }
+    setVariableIds: number[],
+    ocppConnectionName: string,
+    bootConfigId: string,
+  ) {
+    const managedSetVariables: VariableAttributeDto[] = [];
 
-  updateStatusByKey(
-    tenantId: number,
-    status: RegistrationStatusEnumType,
-    statusInfo: OCPP2_common_types.StatusInfoType | undefined,
-    key: string,
-  ): Promise<BootDto | undefined> {
-    return this._updateBootByKey(tenantId, { status, statusInfo }, key);
+    await this._variableAttributeRepository.updateAllByQueryString(
+      {
+        tenantId,
+        ocppConnectionName,
+      },
+      { bootConfigId: null },
+    );
+
+    // Assigns variables, or throws an error if variable with id does not exist
+    for (const setVariableId of setVariableIds) {
+      const setVariable: VariableAttributeDto | undefined =
+        await this._variableAttributeRepository.updateById(tenantId, setVariableId, {
+          bootConfigId,
+        });
+
+      if (!setVariable) {
+        // When this is called from createOrUpdateByKey, this code should be impossible to reach
+        // Since the boot object would have already been upserted with the pendingBootSetVariableIds as foreign keys
+        // And if they were not valid foreign keys, it would have thrown an error
+        throw new Error(
+          'Error while setting variables on Boot: SetVariableId does not exist ' + setVariableId,
+        );
+      } else {
+        managedSetVariables.push(setVariable);
+      }
+    }
+
+    return managedSetVariables;
   }
 }

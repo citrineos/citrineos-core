@@ -61,3 +61,15 @@ export {
   type TenantEntity,
   type TenantEntityInsert,
 } from './schema/Tenant.js';
+export {
+  DrizzleVariableAttributeRepository,
+  toVariableAttributeDto,
+} from './repository/VariableAttribute.js';
+export {
+  variableAttributeTable,
+  tenantVariableAttributeTable,
+  VariableAttributeEntitySchema,
+  VariableAttributeEntityInsertSchema,
+  type VariableAttributeEntity,
+  type VariableAttributeEntityInsert,
+} from './schema/VariableAttribute.js';

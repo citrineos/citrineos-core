@@ -20,7 +20,6 @@ import type {
   OCPP1_6,
   OCPPMessageDto,
   OCPPVersion,
-  RegistrationStatusEnumType,
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
@@ -95,17 +94,7 @@ export interface IBootRepository {
     value: BootConfig,
     key: string,
   ) => Promise<BootDto | undefined>;
-  updateStatusByKey: (
-    tenantId: number,
-    status: RegistrationStatusEnumType,
-    statusInfo: OCPP2_common_types.StatusInfoType | undefined,
-    key: string,
-  ) => Promise<BootDto | undefined>;
-  updateLastBootTimeByKey: (
-    tenantId: number,
-    lastBootTime: string,
-    key: string,
-  ) => Promise<BootDto | undefined>;
+  updateByKey: (tenantId: number, value: object, key: string) => Promise<BootDto | undefined>;
   readByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
   existsByKey: (tenantId: number, key: string) => Promise<boolean>;
   deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;

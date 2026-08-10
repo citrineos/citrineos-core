@@ -19,18 +19,19 @@ import {
   OCPP2_response_types,
 } from '@citrineos/base';
 import {
+  type BootDto,
   EventGroup,
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  type RegistrationStatusEnumType,
   RegistrationStatusEnum,
+  type RegistrationStatusEnumType,
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
-import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
+import { ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import type { DeviceModelService } from '@modules/Configuration/src/module/DeviceModelService.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -168,7 +169,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: Boot = await this._bootService.updateBootConfig(
+    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,

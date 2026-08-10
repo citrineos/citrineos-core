@@ -52,10 +52,13 @@ import {
   ConnectedStationFilter,
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
+  DrizzleAuthorizationRepository,
+  DrizzleBootRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  DrizzleVariableAttributeRepository,
   EVDriverDataApi,
   EVDriverModule,
   EVDriverOcpp16Api,
@@ -121,8 +124,6 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
-import { DrizzleAuthorizationRepository } from '@citrineos/core/dist/src/dal/layers/drizzle/index.js';
-import { DrizzleBootRepository } from '@citrineos/core/dist/src/dal/layers/drizzle/repository/Boot.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -319,6 +320,7 @@ function registerRepositories(container: AwilixContainer): void {
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
     });
   }
 }
