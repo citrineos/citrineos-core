@@ -98,7 +98,7 @@ export class BootNotificationService {
     } as OCPP2_response_types.BootNotificationResponse;
   }
 
-  async updateBootConfigFromResponse(
+  async updateBootConfig(
     bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
@@ -339,7 +339,7 @@ export class BootNotificationService {
     }
   }
 
-  async updateOcpp16BootConfigFromResponse(
+  async updateOcpp16BootConfig(
     response: OCPP1_6.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,

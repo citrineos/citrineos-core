@@ -169,7 +169,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfigFromResponse(
+    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
