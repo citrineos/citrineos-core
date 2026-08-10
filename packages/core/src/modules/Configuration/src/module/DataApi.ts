@@ -8,22 +8,23 @@ import { Logger } from 'tslog';
 import type { IConfigurationModuleApi } from './interface.js';
 import { ConfigurationModule } from './module.js';
 import {
-  type BootConfig,
-  type IMessageConfirmation,
   AbstractModuleApi,
   AsDataEndpoint,
+  type BootConfig,
   BootConfigSchema,
+  type IMessageConfirmation,
   Namespace,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
 import {
-  type UpdateChargingStationPasswordRequest,
+  type BootDto,
   HttpMethod,
   OCPP2_0_1,
   OCPP_CallAction,
   OCPPVersion,
+  type UpdateChargingStationPasswordRequest,
 } from '@citrineos/types';
 import type {
   ChargingStationKeyQuerystring,
@@ -31,7 +32,6 @@ import type {
   NetworkProfileQuerystring,
   UpdateChargingStationPasswordQueryString,
 } from '@dal/interfaces/index.js';
-import { Boot, Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
 import {
   ChargingStationKeyQuerySchema,
   NetworkProfileDeleteQuerySchema,
@@ -40,8 +40,11 @@ import {
 } from '@dal/interfaces/index.js';
 import {
   ChargingStationNetworkProfile,
+  Component,
   ServerNetworkProfile,
   SetNetworkProfile,
+  Variable,
+  VariableAttribute,
 } from '@dal/layers/sequelize/index.js';
 import { Op } from 'sequelize';
 import { generatePassword, isValidPassword } from '@util/index.js';
@@ -95,7 +98,7 @@ export class ConfigurationDataApi
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Get, ChargingStationKeyQuerySchema)
   getBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<Boot | undefined> {
+  ): Promise<BootDto | undefined> {
     return this._module.bootRepository.readByKey(
       request.query.tenantId,
       request.query.ocppConnectionName,
@@ -105,7 +108,7 @@ export class ConfigurationDataApi
   @AsDataEndpoint(Namespace.BootConfig, HttpMethod.Delete, ChargingStationKeyQuerySchema)
   deleteBootConfig(
     request: FastifyRequest<{ Querystring: ChargingStationKeyQuerystring }>,
-  ): Promise<Boot | undefined> {
+  ): Promise<BootDto | undefined> {
     return this._module.bootRepository.deleteByKey(
       request.query.tenantId,
       request.query.ocppConnectionName,

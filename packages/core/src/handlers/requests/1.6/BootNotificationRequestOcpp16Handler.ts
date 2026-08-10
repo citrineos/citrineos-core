@@ -157,7 +157,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
     }
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity = await this._bootService.updateOcpp16BootConfig(
+    const bootEntity = await this._bootService.updateOcpp16BootConfigFromResponse(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,

@@ -169,7 +169,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
+    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfigFromResponse(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
@@ -215,8 +215,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-      bootConfigDbEntity.getBaseReportOnPending = false;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { getBaseReportOnPending: false },
+        ocppConnectionName,
+      );
     }
 
     // SetVariables
@@ -294,23 +297,28 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
-        bootConfigDbEntity.status = RegistrationStatusEnum.Rejected;
-        await bootConfigDbEntity.save();
-        // No more to do.
+        await this._bootService.updateBoot(
+          tenantId,
+          { status: RegistrationStatusEnum.Rejected },
+          ocppConnectionName,
+        );
         return;
       }
     }
 
     if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
-      //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
-      // Update boot config with status accepted
+      // TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       // TODO: Determine how/if StatusInfo should be generated
-      bootConfigDbEntity.status = RegistrationStatusEnum.Accepted;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { status: RegistrationStatusEnum.Accepted },
+        ocppConnectionName,
+      );
     }
 
     if (rebootSetVariable) {
-      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
+      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it
+      // is appropriate to send an Immediate Reset
       await this._ocppSender.sendCall({
         ocppConnectionName,
         tenantId,

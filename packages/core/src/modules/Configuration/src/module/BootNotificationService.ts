@@ -98,7 +98,7 @@ export class BootNotificationService {
     } as OCPP2_response_types.BootNotificationResponse;
   }
 
-  async updateBootConfig(
+  async updateBootConfigFromResponse(
     bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
@@ -339,7 +339,7 @@ export class BootNotificationService {
     }
   }
 
-  async updateOcpp16BootConfig(
+  async updateOcpp16BootConfigFromResponse(
     response: OCPP1_6.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
@@ -375,5 +375,13 @@ export class BootNotificationService {
       throw new Error('Unable to create/update BootConfig...');
     }
     return bootConfigDbEntity;
+  }
+
+  async updateBoot(
+    tenantId: number,
+    value: object,
+    ocppConnectionName: string,
+  ): Promise<BootDto | undefined> {
+    return this._bootRepository.updateByKey(tenantId, value, ocppConnectionName);
   }
 }

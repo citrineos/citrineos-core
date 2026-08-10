@@ -58,7 +58,6 @@ import {
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
-  DrizzleVariableAttributeRepository,
   EVDriverDataApi,
   EVDriverModule,
   EVDriverOcpp16Api,
@@ -124,6 +123,7 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { DrizzleVariableAttributeRepository } from '@citrineos/core/dist/src/dal/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;

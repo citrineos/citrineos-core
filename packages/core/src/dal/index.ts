@@ -88,8 +88,11 @@ export {
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore.js';
 export {
   DefaultDrizzleInstance,
+  DrizzleAuthorizationRepository,
+  DrizzleBootRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  DrizzleVariableAttributeRepository,
 } from './layers/drizzle/index.js';
