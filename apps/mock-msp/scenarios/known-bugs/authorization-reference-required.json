@@ -1,0 +1,32 @@
+{
+  "name": "authorization-reference-required",
+  "registration": "preregistered",
+  "authorize": {
+    "default": "ALLOWED"
+  },
+  "strictInbound": false,
+  "faults": [
+    {
+      "id": "drop-authorization-reference",
+      "enabled": true,
+      "match": {
+        "direction": "inbound",
+        "module": "tokens",
+        "method": "POST",
+        "pathMatches": "authorize"
+      },
+      "action": {
+        "kind": "malformBody",
+        "mutation": "dropRequired",
+        "targetPath": "data.authorization_reference"
+      }
+    }
+  ],
+  "expect": [
+    {
+      "on": "tokens.authorize",
+      "assert": "response.body.data.authorization_reference == undefined",
+      "detail": "Known Citrine rough edge: AuthorizationInfoSchema marks authorization_reference REQUIRED, although OCPI 2.2.1 marks it optional. This fault drops the field from our otherwise-valid AuthorizationInfo response; Citrine's schema.parse then throws (UnsuccessfulRequestException) and real-time authorization fails CPO-side. Observable in our trace as the recorded response body missing data.authorization_reference with fault.ruleId=drop-authorization-reference stamped on the exchange."
+    }
+  ]
+}
