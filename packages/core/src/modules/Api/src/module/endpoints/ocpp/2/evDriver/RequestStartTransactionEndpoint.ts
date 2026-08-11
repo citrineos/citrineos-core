@@ -7,7 +7,6 @@ import {
   type IMessageConfirmation,
   type IMessageEndpointDeclaration,
   type IOcppSender,
-  type OCPP2_request_types,
   AbstractMessageEndpoint,
   CacheNamespace,
   DEFAULT_TENANT_ID,
@@ -18,6 +17,7 @@ import {
   OCPPVersion,
   OCPP_CallAction,
   type OCPP2_1,
+  type OCPP2_request_types,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,

@@ -21,10 +21,7 @@ export * from './networkconnection/index.js';
 export * from './certificate/index.js';
 export { DeviceModelService } from './deviceModel/DeviceModelService.js';
 export { resolveStationProtocol } from './station/stationProtocol.js';
-export type {
-  ReadChargingStation,
-  StationProtocolResolution,
-} from './station/stationProtocol.js';
+export type { ReadChargingStation, StationProtocolResolution } from './station/stationProtocol.js';
 export { NetworkProfileService } from './networkProfile/NetworkProfileService.js';
 export type { PersistSetNetworkProfileOptions } from './networkProfile/NetworkProfileService.js';
 

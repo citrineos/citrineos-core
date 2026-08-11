@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPP2_request_types } from '@citrineos/base';
+import type { OCPP2_request_types } from '@citrineos/types';
 import type { ISetNetworkProfileRepository } from '@dal/interfaces/repositories.js';
 import { type ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';

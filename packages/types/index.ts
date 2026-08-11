@@ -52,6 +52,10 @@ export type {
 
 export * from './src/ocpp/model/index.js';
 
+export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
+export * as OCPP2_request_types from './src/ocpp/rpc/2/requests.js';
+export * as OCPP2_response_types from './src/ocpp/rpc/2/responses.js';
+
 export type { UpdateChargingStationPasswordRequest } from './src/ocpp/model/UpdateChargingStationPasswordRequest.js';
 
 export * from './src/interfaces/dto/async.job.dto.js';

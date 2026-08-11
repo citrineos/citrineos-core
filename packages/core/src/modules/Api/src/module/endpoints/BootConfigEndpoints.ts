@@ -7,9 +7,8 @@ import {
   type IEndpointDefinition,
   AbstractEndpoint,
   BootConfigSchema,
-  type OCPP2_response_types,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type OCPP2_response_types } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/index.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/index.js';
 import type { IBootRepository } from '@dal/interfaces/repositories.js';

@@ -2,12 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  BootConfig,
-  CrudRepository,
-  OCPP2_common_types,
-  OCPP2_request_types,
-} from '@citrineos/base';
+import type { BootConfig, CrudRepository } from '@citrineos/base';
 import type {
   AuthorizationDto,
   CallAction,
@@ -25,6 +20,8 @@ import type {
   SubscriptionDto,
   TenantDto,
   UpdateEnumType,
+  OCPP2_common_types,
+  OCPP2_request_types,
 } from '@citrineos/types';
 import type {
   ChargingProfileInput,

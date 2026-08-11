@@ -6,7 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   CancelReservationStatusEnum,
@@ -14,6 +13,7 @@ import {
   MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type {
   IOCPPMessageRepository,

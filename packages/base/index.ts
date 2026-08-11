@@ -142,10 +142,7 @@ export declare type Constructable<T> = new (...args: any[]) => T;
 export { IMessageQuerystringSchema } from './src/interfaces/api/MessageQuerystring.js';
 export type { IMessageQuerystring } from './src/interfaces/api/MessageQuerystring.js';
 
-export * as OCPP2_request_types from './src/ocpp/rpc/2/requests.js';
-export * as OCPP2_response_types from './src/ocpp/rpc/2/responses.js';
 export { getOcpp2Schema } from './src/ocpp/rpc/2/schemas.js';
-export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
 
 // OCPP RPC messages: the model objects wrapping the wire frames declared in
 // @citrineos/types, plus the validation that turns one into the other.

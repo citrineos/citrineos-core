@@ -6,11 +6,15 @@ import {
   type IMessageConfirmation,
   type IMessageEndpointDeclaration,
   type IOcppSender,
-  type OCPP2_request_types,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
-import { EventGroup, OCPP_CallAction, type OCPPVersion } from '@citrineos/types';
+import {
+  EventGroup,
+  OCPP_CallAction,
+  type OCPPVersion,
+  type OCPP2_request_types,
+} from '@citrineos/types';
 import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
 import { getSizeOfRequest } from '@util/index.js';
 import { COMPONENT_DEVICE_DATA_CTRLR } from '../components.js';

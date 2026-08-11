@@ -8,9 +8,14 @@ import {
   type IMessageConfirmation,
   type IOcppSender,
   AbstractEndpoint,
-  type OCPP2_request_types,
 } from '@citrineos/base';
-import { EventGroup, HttpMethod, OCPP_CallAction, OCPP_2_VER_LIST } from '@citrineos/types';
+import {
+  EventGroup,
+  HttpMethod,
+  OCPP_CallAction,
+  OCPP_2_VER_LIST,
+  type OCPP2_request_types,
+} from '@citrineos/types';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { InstallRootCertificateRequest } from '@dal/interfaces/index.js';
 import { InstallRootCertificateSchema } from '@dal/interfaces/index.js';

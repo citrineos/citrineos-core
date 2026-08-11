@@ -6,13 +6,13 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   SetNetworkProfileStatusEnum,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import {
   ChargingStation,

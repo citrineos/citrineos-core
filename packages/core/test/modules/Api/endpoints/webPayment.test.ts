@@ -24,17 +24,20 @@ describe(`POST ${URL}`, () => {
   let readAllByQuerystring: ReturnType<typeof vi.fn>;
   let cacheSet: ReturnType<typeof vi.fn>;
   let sendCall: ReturnType<typeof vi.fn>;
+  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
   let server: FastifyInstance;
 
   beforeEach(async () => {
     readAllByQuerystring = vi.fn();
     cacheSet = vi.fn().mockResolvedValue(undefined);
     sendCall = vi.fn().mockResolvedValue(undefined);
+    readChargingStationByStationId = vi.fn().mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
 
     const endpoint = getTestInstance(container, InitiateWebPaymentEndpoint, {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
       deviceModelRepository: { readAllByQuerystring },
+      locationRepository: { readChargingStationByStationId },
     });
 
     server = Fastify({ logger: false });
@@ -282,6 +285,33 @@ describe(`POST ${URL}`, () => {
         eventGroup: EventGroup.EVDriver,
         payload: { evseId: EVSE_ID, timeout: 180 },
       });
+    });
+
+    it('refuses a station whose protocol cannot receive the notification', async () => {
+      readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
+
+      const res = await server.inject({
+        method: 'POST',
+        url: URL,
+        payload: { identifier: STATION_ID, evseId: EVSE_ID, totp: '123456' },
+      });
+
+      expect(res.statusCode).toBe(503);
+      expect(sendCall).not.toHaveBeenCalled();
+      expect(cacheSet).not.toHaveBeenCalled();
+    });
+
+    it('refuses a station that has never connected', async () => {
+      readChargingStationByStationId.mockResolvedValue(undefined);
+
+      const res = await server.inject({
+        method: 'POST',
+        url: URL,
+        payload: { identifier: STATION_ID, evseId: EVSE_ID, totp: '123456' },
+      });
+
+      expect(res.statusCode).toBe(503);
+      expect(sendCall).not.toHaveBeenCalled();
     });
 
     it('still returns 200 when NotifyWebPaymentStarted fails (non-fatal per C25.FR.21)', async () => {

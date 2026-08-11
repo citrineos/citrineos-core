@@ -2,8 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AttributeEnum, MutabilityEnum, SetVariableStatusEnum } from '@citrineos/types';
-import type { OCPP2_common_types } from '@citrineos/base';
+import {
+  AttributeEnum,
+  MutabilityEnum,
+  SetVariableStatusEnum,
+  type OCPP2_common_types,
+} from '@citrineos/types';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import { Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
 

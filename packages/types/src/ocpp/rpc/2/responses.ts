@@ -9,7 +9,7 @@
  *
  */
 
-import { OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
+import { OCPP2_0_1, OCPP2_1 } from '@ocpp/model/index.js';
 
 export type LogStatusNotificationResponse =
   | OCPP2_1.LogStatusNotificationResponse

@@ -10,9 +10,6 @@ import {
   type IEndpointDefinition,
   AbstractEndpoint,
   UpdateChargingStationPasswordSchema,
-  type OCPP2_common_types,
-  type OCPP2_request_types,
-  type OCPP2_response_types,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -26,6 +23,9 @@ import {
   SetVariableStatusEnum,
   type SystemConfig,
   type UpdateChargingStationPasswordRequest,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
+  type OCPP2_response_types,
 } from '@citrineos/types';
 import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { UpdateChargingStationPasswordQueryString } from '@dal/interfaces/index.js';

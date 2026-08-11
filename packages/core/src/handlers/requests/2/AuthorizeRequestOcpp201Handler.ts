@@ -9,8 +9,6 @@ import {
   type IMessage,
   type IMessageConfirmation,
   type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
@@ -27,6 +25,8 @@ import {
   type OcppRequest,
   type OcppResponse,
   OCPPVersion,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import { CertificateAuthorityService, validateIdToken } from '@/util/index.js';
 import {

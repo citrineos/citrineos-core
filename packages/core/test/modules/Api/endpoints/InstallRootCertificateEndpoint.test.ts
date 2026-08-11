@@ -27,6 +27,7 @@ describe('InstallRootCertificateEndpoint', () => {
   let getFile: ReturnType<typeof vi.fn>;
   let getRootCACertificateFromExternalCA: ReturnType<typeof vi.fn>;
   let sendCall: ReturnType<typeof vi.fn>;
+  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
@@ -34,11 +35,15 @@ describe('InstallRootCertificateEndpoint', () => {
     getFile = vi.fn().mockResolvedValue(Buffer.from(A_PEM));
     getRootCACertificateFromExternalCA = vi.fn().mockResolvedValue(CA_PEM);
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
+    readChargingStationByStationId = vi
+      .fn()
+      .mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
 
     const endpoint = getTestInstance(container, InstallRootCertificateEndpoint, {
       fileStorage: { getFile },
       ocppSender: { sendCall },
       certificateAuthorityService: { getRootCACertificateFromExternalCA },
+      locationRepository: { readChargingStationByStationId },
     });
     mounted = await mountEndpoint(endpoint, InstallRootCertificateEndpoint.route);
   });
@@ -79,6 +84,33 @@ describe('InstallRootCertificateEndpoint', () => {
       action: OCPP_CallAction.InstallCertificate,
       eventGroup: EventGroup.Certificates,
     });
+  });
+
+  it('sends using the protocol the station is recorded as speaking', async () => {
+    readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
+
+    await post(aBody());
+
+    expect(sendCall.mock.calls[0][0].protocol).toBe(OCPPVersion.OCPP2_1);
+  });
+
+  it('refuses a station whose protocol cannot serve the request', async () => {
+    readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP1_6 });
+
+    const response = await post(aBody());
+
+    expect(response.json().success).toBe(false);
+    expect(sendCall).not.toHaveBeenCalled();
+    expect(getRootCACertificateFromExternalCA).not.toHaveBeenCalled();
+  });
+
+  it('refuses a station that has never connected', async () => {
+    readChargingStationByStationId.mockResolvedValue(undefined);
+
+    const response = await post(aBody());
+
+    expect(response.json().success).toBe(false);
+    expect(sendCall).not.toHaveBeenCalled();
   });
 
   it('forwards the callback url when supplied', async () => {

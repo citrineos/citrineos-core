@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPP2_common_types } from '@citrineos/base';
 
 import {
   AttributeEnum,
@@ -10,6 +9,7 @@ import {
   MessageFormatEnum,
   OCPP2_1,
   type IdTokenEnumType,
+  type OCPP2_common_types,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,

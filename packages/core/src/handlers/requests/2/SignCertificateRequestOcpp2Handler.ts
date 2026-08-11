@@ -7,8 +7,6 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
   OcppError,
 } from '@citrineos/base';
 import {
@@ -24,6 +22,8 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import {

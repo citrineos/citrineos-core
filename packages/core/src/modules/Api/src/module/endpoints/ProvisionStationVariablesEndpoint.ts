@@ -7,9 +7,8 @@ import {
   type IMessageConfirmation,
   AbstractEndpoint,
   ReportDataTypeSchema,
-  type OCPP2_common_types,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type OCPP2_common_types } from '@citrineos/types';
 import type { CreateOrUpdateVariableAttributeQuerystring } from '@dal/interfaces/index.js';
 import { CreateOrUpdateVariableAttributeQuerySchema } from '@dal/interfaces/index.js';
 import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
