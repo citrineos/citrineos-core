@@ -7,56 +7,29 @@ import type { ILogObj, Logger } from 'tslog';
 const SCHEMA_ALREADY_PRESENT = 'FST_ERR_SCH_ALREADY_PRESENT';
 const UNKNOWN_SCHEMA_KEYS = ['comment', 'javaType', 'tsEnumNames'];
 
-export type JsonSchema = { [keyword: string]: JsonSchemaValue };
+export function removeUnknownSchemaKeys(schema: any): any {
+  const schemaCopy = structuredClone(schema);
 
-type JsonSchemaValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | JsonSchema
-  | JsonSchemaValue[];
+  const cleanSchema = (obj: any) => {
+    if (typeof obj !== 'object' || obj === null) return;
 
-export interface SchemaRef {
-  $ref: string;
-}
-
-function isJsonSchema(value: unknown): value is JsonSchema {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-export function removeUnknownSchemaKeys(schema: JsonSchema): JsonSchema {
-  const schemaCopy: JsonSchema = structuredClone(schema);
-
-  const cleanSchema = (node: JsonSchema): void => {
     for (const unknownKey of UNKNOWN_SCHEMA_KEYS) {
-      if (unknownKey in node) {
-        delete node[unknownKey];
+      if (unknownKey in obj) {
+        delete obj[unknownKey];
       }
     }
 
-    if ('items' in node && !Array.isArray(node.items) && 'additionalItems' in node) {
-      delete node.additionalItems;
+    if ('items' in obj && !Array.isArray(obj.items) && 'additionalItems' in obj) {
+      delete obj.additionalItems;
     }
 
-    if ('additionalProperties' in node && node.type !== 'object') {
-      delete node.additionalProperties;
+    if ('additionalProperties' in obj && obj.type !== 'object') {
+      delete obj.additionalProperties;
     }
 
-    for (const value of Object.values(node)) {
-      if (isJsonSchema(value)) {
-        cleanSchema(value);
-      } else if (Array.isArray(value)) {
-        for (const entry of value) {
-          if (isJsonSchema(entry)) {
-            cleanSchema(entry);
-          }
-        }
+    for (const key in obj) {
+      if (typeof obj[key] === 'object') {
+        cleanSchema(obj[key]);
       }
     }
   };
@@ -73,15 +46,13 @@ export interface SchemaRegistrationTargets {
 
 export function registerRouteSchema(
   targets: SchemaRegistrationTargets,
-  input: object,
+  schema: any,
   schemaIdPrefix?: string,
-): JsonSchema | SchemaRef | null {
-  if (!isJsonSchema(input)) {
-    targets.logger.error('Could not register schema because it is not an object', input);
-    return null;
+): object | null {
+  let id = schema['$id'];
+  if (!id) {
+    targets.logger.error('Could not register schema because no ID', schema);
   }
-  const schema: JsonSchema = input;
-  let id = asString(schema['$id']);
 
   try {
     const schemaCopy = removeUnknownSchemaKeys(schema);
@@ -89,62 +60,41 @@ export function registerRouteSchema(
       id = schemaIdPrefix + id;
       schemaCopy['$id'] = id;
     }
-    const required = schemaCopy.required;
-    if (Array.isArray(required) && required.length === 0) {
+    if (
+      schemaCopy.required &&
+      Array.isArray(schemaCopy.required) &&
+      schemaCopy.required.length === 0
+    ) {
       delete schemaCopy.required;
     }
-    const definitions = schema.definitions;
-    if (isJsonSchema(definitions)) {
-      for (const [key, definition] of Object.entries(definitions)) {
-        if (!isJsonSchema(definition)) {
-          continue;
+    if (schema.definitions) {
+      Object.keys(schema.definitions).forEach((key) => {
+        const definition = schema.definitions[key];
+        if (!definition['$id']) {
+          definition['$id'] = key;
         }
-        const definitionCopy = structuredClone(definition);
-        definitionCopy['$id'] ??= key;
-        registerRouteSchema(targets, definitionCopy);
-      }
+        registerRouteSchema(targets, definition);
+      });
     }
-    const properties = schemaCopy.properties;
-    if (isJsonSchema(properties)) {
-      for (const property of Object.values(properties)) {
-        if (!isJsonSchema(property)) {
-          continue;
+    if (schemaCopy.properties) {
+      Object.keys(schemaCopy.properties).forEach((key) => {
+        const property = schemaCopy.properties[key];
+        if (property.$ref) {
+          property.$ref = property.$ref.replace('#/definitions/', '');
         }
-        stripDefinitionsPrefix(property);
-        if (isJsonSchema(property.items)) {
-          stripDefinitionsPrefix(property.items);
+        if (property.items && property.items.$ref) {
+          property.items.$ref = property.items.$ref.replace('#/definitions/', '');
         }
-      }
-    }
-    if (!id) {
-      return schemaCopy;
+      });
     }
     targets.scoped.addSchema(schemaCopy);
-    if (targets.root !== targets.scoped) {
-      targets.root.addSchema(schemaCopy);
+    targets.root.addSchema(schemaCopy);
+    return { $ref: `${id}` };
+  } catch (e: any) {
+    if (e.code === SCHEMA_ALREADY_PRESENT) {
+      return { $ref: `${id}` };
     }
-    return { $ref: id };
-  } catch (error) {
-    if (isSchemaAlreadyPresent(error) && id) {
-      return { $ref: id };
-    }
-    targets.logger.error('Could not register schema', error, schema);
+    targets.logger.error('Could not register schema', e, schema);
     return null;
   }
-}
-
-function stripDefinitionsPrefix(node: JsonSchema): void {
-  const ref = asString(node.$ref);
-  if (ref) {
-    node.$ref = ref.replace('#/definitions/', '');
-  }
-}
-
-function isSchemaAlreadyPresent(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === SCHEMA_ALREADY_PRESENT
-  );
 }

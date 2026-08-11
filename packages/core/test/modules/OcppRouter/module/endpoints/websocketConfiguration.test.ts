@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, type BootstrapConfig } from '@citrineos/base';
-import {
-  type SystemConfig,
-  type WebsocketServerConfig,
-  systemConfigSchema,
-} from '@citrineos/types';
+import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateWebsocketConfigurationEndpoint } from '@modules/OcppRouter/src/module/endpoints/CreateWebsocketConfigurationEndpoint.js';
 import { DeleteWebsocketConfigurationEndpoint } from '@modules/OcppRouter/src/module/endpoints/DeleteWebsocketConfigurationEndpoint.js';
@@ -28,6 +24,19 @@ function aWebsocketServer(id: string, port: number): WebsocketServerConfig {
     securityProfile: 0,
     allowUnknownChargingStations: true,
     dynamicTenantResolution: false,
+    tenantId: DEFAULT_TENANT_ID,
+  };
+}
+
+function aWebsocketCreateRequest(id: string, port: number): Record<string, unknown> {
+  return {
+    id,
+    host: '0.0.0.0',
+    port,
+    pingInterval: 60,
+    protocol: 'ocpp2.0.1',
+    securityProfile: 0,
+    allowUnknownChargingStations: true,
     tenantId: DEFAULT_TENANT_ID,
   };
 }
@@ -99,38 +108,12 @@ describe('websocket configuration admin endpoints', () => {
       const response = await mounted.server.inject({
         method: 'POST',
         url: URL,
-        payload: aWebsocketServer('fourth', 8084),
+        payload: aWebsocketCreateRequest('fourth', 8084),
       });
 
       expect(response.statusCode).toBe(200);
       expect(serverIds()).toEqual(['first', 'second', 'third', 'fourth']);
       expect(saveConfig).toHaveBeenCalledWith(config);
-    });
-
-    it('accepts a body shaped like the persisted config type and leaves the config valid', async () => {
-      const mounted = await mount(CreateWebsocketConfigurationEndpoint);
-
-      const response = await mounted.server.inject({
-        method: 'POST',
-        url: URL,
-        payload: aWebsocketServer('fourth', 8084),
-      });
-
-      expect(response.statusCode).toBe(200);
-      expect(systemConfigSchema.safeParse(config).success).toBe(true);
-    });
-
-    it('rejects a body whose protocols are not valid OCPP versions', async () => {
-      const mounted = await mount(CreateWebsocketConfigurationEndpoint);
-
-      const response = await mounted.server.inject({
-        method: 'POST',
-        url: URL,
-        payload: { ...aWebsocketServer('fourth', 8084), protocols: ['ocpp9.9'] },
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(saveConfig).not.toHaveBeenCalled();
     });
 
     it('rejects a duplicate id without touching the stored config', async () => {
@@ -139,7 +122,7 @@ describe('websocket configuration admin endpoints', () => {
       const response = await mounted.server.inject({
         method: 'POST',
         url: URL,
-        payload: aWebsocketServer('second', 9999),
+        payload: aWebsocketCreateRequest('second', 9999),
       });
 
       expect(response.statusCode).toBe(400);

@@ -43,9 +43,7 @@ describe('SetStationPasswordEndpoint', () => {
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
     onChange = vi.fn().mockResolvedValue(anAcceptedSetVariablesResponse());
     provisionVariableAttributes = vi.fn().mockResolvedValue([aVariableAttribute()]);
-    readChargingStationByStationId = vi
-      .fn()
-      .mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
+    readChargingStationByStationId = vi.fn().mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
 
     const endpoint = getTestInstance(container, SetStationPasswordEndpoint, {
       config: aSystemConfig(),

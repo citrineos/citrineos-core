@@ -6,7 +6,7 @@ import { type ILogObj, Logger } from 'tslog';
 import type { BuiltEndpoint } from '@interfaces/api/endpoints/buildEndpoints.js';
 import type { IEndpointDefinition } from '@interfaces/api/endpoints/EndpointDefinition.js';
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
-import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
+import { removeUnknownSchemaKeys } from '@base-util/endpoints/routeSchemas.js';
 
 export abstract class AbstractEndpointApi {
   protected readonly _server: FastifyInstance;
@@ -52,13 +52,13 @@ export abstract class AbstractEndpointApi {
   private _toRouteSchema(route: IEndpointDefinition): Record<string, unknown> {
     const schema: Record<string, unknown> = {};
     if (route.querySchema) {
-      schema.querystring = this._shareSchema(route.querySchema);
+      schema.querystring = this._routeSchema(route.querySchema);
     }
     if (route.bodySchema) {
-      schema.body = this._shareSchema(route.bodySchema);
+      schema.body = this._routeSchema(route.bodySchema);
     }
     if (route.responseSchema) {
-      schema.response = { 200: this._shareSchema(route.responseSchema) };
+      schema.response = { 200: this._routeSchema(route.responseSchema) };
     }
     if (route.tags) {
       schema.tags = route.tags;
@@ -69,10 +69,8 @@ export abstract class AbstractEndpointApi {
     return schema;
   }
 
-  private _shareSchema(schema: object): object | null {
-    return registerRouteSchema(
-      { scoped: this._server, root: this._server, logger: this._logger },
-      schema,
-    );
+  private _routeSchema(schema: object): object {
+    const { $id: _unusedId, ...inlined } = removeUnknownSchemaKeys(schema);
+    return inlined;
   }
 }

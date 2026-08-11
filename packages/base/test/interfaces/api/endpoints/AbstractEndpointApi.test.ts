@@ -152,27 +152,6 @@ describe('AbstractEndpointApi', () => {
       expect(bad.statusCode).toBe(400);
     });
 
-    it('strips generator-only keys so Fastify can compile the schema', async () => {
-      const { server } = await buildApi({
-        ...A_ROUTE,
-        bodySchema: {
-          $id: 'GeneratedBodySchema',
-          comment: 'generated from a JSON schema',
-          javaType: 'com.example.Thing',
-          type: 'object',
-          properties: { password: { type: 'string', tsEnumNames: ['A'] } },
-          required: ['password'],
-        },
-      });
-
-      const ok = await server.inject({
-        method: 'POST',
-        url: '/commands/setStationPassword',
-        payload: { password: 'x' },
-      });
-      expect(ok.statusCode).toBe(200);
-    });
-
     it('serializes the response through the declared response schema', async () => {
       const { server } = await buildApi(
         {

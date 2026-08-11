@@ -35,9 +35,7 @@ describe('InstallRootCertificateEndpoint', () => {
     getFile = vi.fn().mockResolvedValue(Buffer.from(A_PEM));
     getRootCACertificateFromExternalCA = vi.fn().mockResolvedValue(CA_PEM);
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
-    readChargingStationByStationId = vi
-      .fn()
-      .mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
+    readChargingStationByStationId = vi.fn().mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
 
     const endpoint = getTestInstance(container, InstallRootCertificateEndpoint, {
       fileStorage: { getFile },

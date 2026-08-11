@@ -9,12 +9,7 @@ import {
   AbstractEndpoint,
   BadRequestError,
 } from '@citrineos/base';
-import {
-  type SystemConfig,
-  type WebsocketServerConfig,
-  HttpMethod,
-  websocketServerSchema,
-} from '@citrineos/types';
+import { type SystemConfig, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
 import { WebsocketRequestSchema } from '@dal/interfaces/index.js';
 import type { FastifyRequest } from 'fastify';
 
@@ -42,18 +37,18 @@ export class CreateWebsocketConfigurationEndpoint extends AbstractEndpoint<Route
   }
 
   async handle(request: FastifyRequest<Route>): Promise<WebsocketServerConfig> {
-    const server = websocketServerSchema.parse(request.body);
-
     const existingConfig = this._config.util.networkConnection.websocketServers.find(
-      (ws) => ws.id === server.id,
+      (ws) => ws.id === request.body.id,
     );
 
     if (existingConfig) {
-      throw new BadRequestError(`Websocket configuration with id ${server.id} already exists.`);
+      throw new BadRequestError(
+        `Websocket configuration with id ${request.body.id} already exists.`,
+      );
     }
 
-    this._config.util.networkConnection.websocketServers.push(server);
+    this._config.util.networkConnection.websocketServers.push(request.body);
     await this._configStore.saveConfig(this._config);
-    return server;
+    return request.body;
   }
 }
