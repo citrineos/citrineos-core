@@ -193,16 +193,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string,
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
+    const model = this.s.models[namespace];
+    const where = { [model.primaryKeyAttribute]: key, tenantId };
     return this.s.transaction(async (transaction) => {
-      const entryToDelete = await this.s.models[namespace]
-        .findByPk(key, { transaction })
-        .then((row) => row as T);
+      const entryToDelete = await model.findOne({ where, transaction }).then((row) => row as T);
 
       if (entryToDelete) {
-        await this.s.models[namespace].destroy({
-          where: { [this.s.models[namespace].primaryKeyAttribute]: key },
-          transaction,
-        });
+        await model.destroy({ where, transaction });
         return entryToDelete;
       } else {
         return undefined;
@@ -215,12 +212,17 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     query: object,
     namespace: string = this.namespace,
   ): Promise<T[]> {
+    const { where, ...rest } = query as FindOptions<any>;
+    const scopedWhere = { ...where, tenantId };
     return this.s.transaction(async (transaction) => {
       const entriesToDelete = await this.s.models[namespace]
-        .findAll({ ...query, transaction })
+        .findAll({ where: scopedWhere, ...rest, transaction })
         .then((rows) => rows as T[]);
 
-      const deletedCount = await this.s.models[namespace].destroy({ ...query, transaction });
+      const deletedCount = await this.s.models[namespace].destroy({
+        where: scopedWhere,
+        transaction,
+      });
 
       if (entriesToDelete.length === deletedCount) {
         return entriesToDelete;

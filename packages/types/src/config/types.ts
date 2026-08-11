@@ -46,7 +46,10 @@ export const websocketServerSchema = z
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number().int().positive().optional(),
-    dynamicTenantResolution: z.boolean().default(false),
+    // When true, tenant is resolved at connection upgrade time from the request path
+    // segment, matched against Tenant.tenantWebsocketServerPath. Defaults to false for
+    // strict per-server tenant.
+    dynamicTenantResolution: z.boolean().optional().default(false),
     forceProtocol: z.enum(OCPP_VERSION_LIST).optional(),
   })
   .refine(

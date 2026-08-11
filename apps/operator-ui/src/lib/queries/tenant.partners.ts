@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import gql from 'graphql-tag';
+import { PARTNER_FIELDS } from '@lib/queries/fields/partner.fields';
 
 export const PARTNERS_LIST_QUERY = gql`
   query TenantPartners(
@@ -12,10 +13,7 @@ export const PARTNERS_LIST_QUERY = gql`
     $where: TenantPartners_bool_exp
   ) {
     TenantPartners(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id
-      countryCode
-      partyId
-      partnerProfileOCPI
+      ${PARTNER_FIELDS}
     }
     TenantPartners_aggregate(where: $where) {
       aggregate {
@@ -28,10 +26,7 @@ export const PARTNERS_LIST_QUERY = gql`
 export const PARTNER_DETAIL_QUERY = gql`
   query TenantPartner($id: Int!) {
     TenantPartners_by_pk(id: $id) {
-      id
-      countryCode
-      partyId
-      partnerProfileOCPI
+      ${PARTNER_FIELDS}
     }
   }
 `;

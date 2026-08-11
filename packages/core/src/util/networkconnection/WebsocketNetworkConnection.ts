@@ -20,11 +20,11 @@ import {
   type IWebsocketConnection,
   CacheNamespace,
   createIdentifier,
-  getCacheTenantPathMappingKey,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
 import type { OCPPVersionType, SystemConfig, WebsocketServerConfig } from '@citrineos/types';
+import { TENANT_WEBSOCKET_SERVER_PATH_PATTERN } from '@citrineos/types';
 import * as http from 'http';
 import * as https from 'https';
 import { performance } from 'node:perf_hooks';
@@ -77,6 +77,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     ocppConnectionName: string,
   ) => Promise<boolean>;
   private _getMaxChargingStationsForTenant?: (tenantId: number) => Promise<number | null>;
+  private _getTenantIdByWebsocketServerPath?: (path: string) => Promise<number | undefined>;
+  private _getAllTenantWebsocketServerPaths?: () => Promise<Map<string, number>>;
 
   constructor({
     config,
@@ -87,6 +89,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     logger,
     doesChargingStationExistByStationId,
     getMaxChargingStationsForTenant,
+    getTenantIdByWebsocketServerPath,
+    getAllTenantWebsocketServerPaths,
     connectionManager,
   }: {
     config: SystemConfig;
@@ -100,9 +104,13 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       ocppConnectionName: string,
     ) => Promise<boolean>;
     getMaxChargingStationsForTenant: (tenantId: number) => Promise<number | null>;
+    getTenantIdByWebsocketServerPath: (path: string) => Promise<number | undefined>;
+    getAllTenantWebsocketServerPaths: () => Promise<Map<string, number>>;
     connectionManager: IConnectionManager;
   }) {
     this._getMaxChargingStationsForTenant = getMaxChargingStationsForTenant;
+    this._getTenantIdByWebsocketServerPath = getTenantIdByWebsocketServerPath;
+    this._getAllTenantWebsocketServerPaths = getAllTenantWebsocketServerPaths;
     this._cache = cache;
     this._config = config;
     this._doesChargingStationExistByStationId = doesChargingStationExistByStationId;
@@ -112,21 +120,30 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._authenticator = authenticator;
     router.networkHook = this.sendMessage.bind(this);
     this._router = router;
+  }
 
-    this.loadWebsocketServersConfig().then(async (websocketServersConfig) => {
-      for (const websocketServerConfig of websocketServersConfig) {
-        const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
-        this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-        if (websocketServerConfig.securityProfile > 1) {
-          const certManager = new TlsCredentialManager(
-            websocketServerConfig,
-            this._fileStorage,
-            this._logger,
-          );
-          this._certManagersMap.set(websocketServerConfig.id, certManager);
-        }
+  public async initialize(): Promise<void> {
+    const websocketServersConfig = await this.loadWebsocketServersConfig();
+    if (
+      websocketServersConfig.some(
+        (websocketServerConfig) => websocketServerConfig.dynamicTenantResolution,
+      )
+    ) {
+      this._warmTenantPathCache();
+    }
+
+    for (const websocketServerConfig of websocketServersConfig) {
+      const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
+      this._httpServersMap.set(websocketServerConfig.id, _httpServer);
+      if (websocketServerConfig.securityProfile > 1) {
+        const certManager = new TlsCredentialManager(
+          websocketServerConfig,
+          this._fileStorage,
+          this._logger,
+        );
+        this._certManagersMap.set(websocketServerConfig.id, certManager);
       }
-    });
+    }
   }
 
   private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {
@@ -351,7 +368,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       // Resolve tenant at upgrade time (query param, path segment, header),
       // falling back to the server-configured tenant if none provided.
       const resolvedTenantId = websocketServerConfig.dynamicTenantResolution
-        ? await this._extractTenantIdFromRequest(req, websocketServerConfig)
+        ? await this._extractTenantIdFromRequest(req)
         : websocketServerConfig.tenantId;
 
       if (resolvedTenantId === undefined) {
@@ -821,38 +838,77 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       });
   }
   /**
-   * Extract tenant id from the incoming upgrade request.
-   * Supported sources (in order): query `tenant`/`tenantId`, header `x-tenant-id`,
-   * path segment (second-last segment if URL is `/tenant/station`).
+   * Loads every tenant's websocket path into the cache, so upgrade
+   * requests are served from memory. Failures are
+   * non-fatal: {@link _resolveTenantIdByPath} falls back to the database on a cache miss.
+   */
+  private async _warmTenantPathCache(): Promise<void> {
+    if (!this._getAllTenantWebsocketServerPaths) {
+      throw new Error(
+        'Dynamic tenant resolution is enabled but no tenant path loader was provided',
+      );
+    }
+    const pathsByTenant = await this._getAllTenantWebsocketServerPaths();
+    for (const [path, tenantId] of pathsByTenant) {
+      await this._cache.set(path, tenantId.toString(), CacheNamespace.TenantPathMapping);
+    }
+    this._logger.info(`Loaded ${pathsByTenant.size} tenant websocket path mapping(s)`);
+  }
+
+  /**
+   * Extract tenant id from the incoming upgrade request. The tenant is taken from the
+   * path segment preceding the station id (`/{tenantPath}/{station}`) and resolved
+   * against {@link CacheNamespace.TenantPathMapping}, which mirrors
+   * `Tenant.tenantWebsocketServerPath`.
    */
   private async _extractTenantIdFromRequest(
     req: http.IncomingMessage,
-    config: WebsocketServerConfig,
   ): Promise<number | undefined> {
     try {
       const rawUrl = req.url ?? '';
       const url = new URL(rawUrl, 'http://localhost');
       const segments = url.pathname.split('/').filter(Boolean);
 
-      // Path segment mapping: assume /.../{pathSegment}/{station}
-      // We look for a mapping of pathSegment to tenantId.
-      if (segments.length >= 2 && config.tenantPathMapping) {
-        const pathSegment = segments[segments.length - 2];
-
-        const cachedTenantIdString = await this._cache.get<string>(
-          getCacheTenantPathMappingKey(config.id, pathSegment),
-          CacheNamespace.TenantPathMapping,
-        );
-        if (!cachedTenantIdString) {
-          this._logger.debug(`No mapping found for path segment: ${pathSegment}`);
+      if (segments.length >= 2) {
+        // Percent-decode so an encoded segment matches the stored path literally. Stored
+        // paths are restricted to unreserved characters, so a decoded separator (e.g. a
+        // station connecting to `/a%2Fb/station`) simply matches no tenant.
+        const segment = decodeURIComponent(segments[segments.length - 2]);
+        if (!TENANT_WEBSOCKET_SERVER_PATH_PATTERN.test(segment)) {
+          this._logger.debug(`Ignoring malformed tenant path segment: ${segment}`);
+          return undefined;
         }
-        return cachedTenantIdString ? Number(cachedTenantIdString) : undefined;
+        return await this._resolveTenantIdByPath(segment);
       }
     } catch (err) {
       // If parsing fails, ignore and fall back to server-configured tenant
       this._logger.debug('Failed to extract tenant from request', err);
     }
     return undefined;
+  }
+
+  /**
+   * Resolves a path segment to a tenant id, checking the cache first and falling back
+   * to the database. A database hit is written back to the cache so tenants created
+   * after startup (or on another instance) are only looked up once per instance.
+   */
+  private async _resolveTenantIdByPath(path: string): Promise<number | undefined> {
+    const cachedTenantIdString = await this._cache.get<string>(
+      path,
+      CacheNamespace.TenantPathMapping,
+    );
+    if (cachedTenantIdString) {
+      return Number(cachedTenantIdString);
+    }
+
+    const tenantId = await this._getTenantIdByWebsocketServerPath?.(path);
+    if (tenantId === undefined) {
+      this._logger.debug(`No tenant found for websocket path segment: ${path}`);
+      return undefined;
+    }
+
+    await this._cache.set(path, tenantId.toString(), CacheNamespace.TenantPathMapping);
+    return tenantId;
   }
 
   private async _generateServerOptions(
@@ -882,14 +938,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private async _createAndStartWebsocketServer(
     wsConfig: WebsocketServerConfig,
   ): Promise<http.Server | https.Server> {
-    for (const [key, value] of Object.entries(wsConfig.tenantPathMapping ?? {})) {
-      this._cache.set(
-        getCacheTenantPathMappingKey(wsConfig.id, key),
-        value.toString(),
-        CacheNamespace.TenantPathMapping,
-      );
-    }
-
     return new Promise(async (resolve) => {
       let httpServer: http.Server | https.Server;
       switch (wsConfig.securityProfile) {

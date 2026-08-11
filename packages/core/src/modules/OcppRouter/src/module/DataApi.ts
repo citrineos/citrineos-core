@@ -10,13 +10,19 @@ import {
   CacheNamespace,
   ConfigStoreFactory,
   DEFAULT_TENANT_ID,
-  getCacheTenantPathMappingKey,
   Namespace,
   NotFoundError,
   OCPP1_6_Namespace,
   OCPP2_Namespace,
 } from '@citrineos/base';
-import { type SubscriptionDto, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
+import {
+  type SubscriptionDto,
+  type TenantDto,
+  type WebsocketServerConfig,
+  HttpMethod,
+  TENANT_WEBSOCKET_SERVER_PATH_ERROR,
+  TENANT_WEBSOCKET_SERVER_PATH_PATTERN,
+} from '@citrineos/types';
 import type {
   ChargingStationKeyQuerystring,
   ConnectionDeleteQuerystring,
@@ -24,11 +30,13 @@ import type {
   GenerateCertificateChainRequest,
   IServerNetworkProfileRepository,
   ISubscriptionRepository,
+  ITenantRepository,
   ModelKeyQuerystring,
   TenantQueryString,
   TlsReloadQueryString,
   WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
+  WebsocketMappingDeleteQuerystring,
   WebsocketMappingQuerystring,
 } from '@dal/interfaces/index.js';
 import {
@@ -43,10 +51,11 @@ import {
   TlsReloadQuerySchema,
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
+  WebsocketMappingDeleteQuerySchema,
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from '@dal/interfaces/index.js';
-import { Certificate, Subscription } from '@dal/layers/sequelize/index.js';
+import { Certificate } from '@dal/layers/sequelize/index.js';
 import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
@@ -60,6 +69,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   private _networkConnection: INetworkConnection;
   private _subscriptionRepository: ISubscriptionRepository;
   private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  private _tenantRepository: ITenantRepository;
   private _installCertificateHelperService: InstallCertificateHelperService;
 
   /**
@@ -72,6 +82,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
    * @param {Logger<ILogObj>} [logger] - The logger instance.
    * @param {ISubscriptionRepository} subscriptionRepository - The subscription repository instance.
    * @param {IServerNetworkProfileRepository} serverNetworkProfileRepository - The server network profile repository instance.
+   * @param {ITenantRepository} tenantRepository - The tenant repository instance.
    * @param {InstallCertificateHelperService} installCertificateHelperService - Certificate generation/storage helper.
    */
   constructor({
@@ -81,6 +92,7 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     logger,
     subscriptionRepository,
     serverNetworkProfileRepository,
+    tenantRepository,
     installCertificateHelperService,
   }: {
     router: IMessageRouter;
@@ -89,12 +101,14 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
     logger?: Logger<ILogObj>;
     subscriptionRepository: ISubscriptionRepository;
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    tenantRepository: ITenantRepository;
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
     super(router, server, logger);
     this._networkConnection = networkConnection;
     this._subscriptionRepository = subscriptionRepository;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._tenantRepository = tenantRepository;
     this._installCertificateHelperService = installCertificateHelperService;
   }
 
@@ -340,100 +354,79 @@ export class AdminApi extends AbstractModuleApi<IMessageRouter> implements IAdmi
   }
 
   /**
-   * Adds or updates a mapping from a path segment to a tenant for a specific websocket server.
+   * Assigns a websocket path segment to a tenant. The mapping is tenant-scoped: every
+   * websocket server with `dynamicTenantResolution` enabled resolves against it, so the
+   * path must be unique across tenants.
    */
   @AsDataEndpoint(Namespace.WebsocketMapping, HttpMethod.Put, WebsocketMappingQuerySchema)
   async putWebsocketMapping(
     request: FastifyRequest<{
       Querystring: WebsocketMappingQuerystring;
     }>,
-  ): Promise<WebsocketServerConfig> {
-    const { id: serverId, path, tenantId } = request.query;
+  ): Promise<TenantDto> {
+    const { path, tenantId } = request.query;
 
-    this._module.config = (await ConfigStoreFactory.getInstance().fetchConfig())!;
-
-    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
-      (ws) => ws.id === serverId,
-    );
-
-    if (!websocketConfig) {
-      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    // Upgrade requests resolve the tenant from a single URL segment, so a multi-segment
+    // path would let this tenant claim a URL whose resolving segment is another tenant's
+    // path. See TENANT_WEBSOCKET_SERVER_PATH_PATTERN.
+    if (!TENANT_WEBSOCKET_SERVER_PATH_PATTERN.test(path)) {
+      throw new BadRequestError(TENANT_WEBSOCKET_SERVER_PATH_ERROR);
     }
 
-    if (!websocketConfig.tenantPathMapping) {
-      websocketConfig.tenantPathMapping = {};
+    const tenant = await this._tenantRepository.readByKey(tenantId, tenantId);
+    if (!tenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
     }
 
-    if (
-      websocketConfig.tenantPathMapping[path] !== undefined &&
-      websocketConfig.tenantPathMapping[path] !== tenantId
-    ) {
-      throw new BadRequestError(
-        `Path ${path} is already mapped to tenant ${websocketConfig.tenantPathMapping[path]}`,
-      );
+    const pathOwner = await this._tenantRepository.readByWebsocketServerPath(path);
+    if (pathOwner && pathOwner.id !== tenantId) {
+      throw new BadRequestError(`Path ${path} is already mapped to tenant`);
     }
 
-    websocketConfig.tenantPathMapping[path] = tenantId;
-    websocketConfig.dynamicTenantResolution = true;
+    const previousPath = tenant.tenantWebsocketServerPath;
+    const updatedTenant = await this._tenantRepository.updateWebsocketServerPath(tenantId, path);
+    if (!updatedTenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
+    }
 
-    await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
-    await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
-      websocketConfig,
-      this._module.config.maxCallLengthSeconds,
-    );
-    await this._module.cache.set(
-      getCacheTenantPathMappingKey(websocketConfig.id, path),
-      tenantId.toString(),
-      CacheNamespace.TenantPathMapping,
-    );
+    // A tenant has at most one path, so a changed path leaves a stale cache entry behind.
+    if (previousPath && previousPath !== path) {
+      await this._module.cache.remove(previousPath, CacheNamespace.TenantPathMapping);
+    }
+    await this._module.cache.set(path, tenantId.toString(), CacheNamespace.TenantPathMapping);
 
-    return websocketConfig;
+    return updatedTenant;
   }
 
   /**
-   * Removes a mapping for a specific path OR all mappings for a specific tenant from a websocket server.
+   * Removes the websocket path mapping of a tenant.
    */
-  @AsDataEndpoint(Namespace.WebsocketMapping, HttpMethod.Delete, WebsocketMappingQuerySchema)
+  @AsDataEndpoint(Namespace.WebsocketMapping, HttpMethod.Delete, WebsocketMappingDeleteQuerySchema)
   async deleteWebsocketMapping(
     request: FastifyRequest<{
-      Querystring: WebsocketMappingQuerystring;
+      Querystring: WebsocketMappingDeleteQuerystring;
     }>,
-  ): Promise<WebsocketServerConfig> {
-    const { id: serverId, path, tenantId } = request.query;
+  ): Promise<TenantDto> {
+    const { tenantId } = request.query;
 
-    this._module.config = (await ConfigStoreFactory.getInstance().fetchConfig())!;
-
-    const websocketConfig = this._module.config.util.networkConnection.websocketServers.find(
-      (ws) => ws.id === serverId,
-    );
-
-    if (!websocketConfig) {
-      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
+    const tenant = await this._tenantRepository.readByKey(tenantId, tenantId);
+    if (!tenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
     }
 
-    if (websocketConfig.tenantPathMapping) {
-      if (websocketConfig.tenantPathMapping[path] === undefined) {
-        throw new NotFoundError(
-          `Mapping for path ${path} not found in websocket configuration ${serverId}`,
-        );
-      } else if (websocketConfig.tenantPathMapping[path] !== tenantId) {
-        throw new BadRequestError(`Mapping for path ${path} is not mapped to tenant ${tenantId}`);
-      } else if (websocketConfig.tenantPathMapping[path] === tenantId) {
-        delete websocketConfig.tenantPathMapping[path];
-      }
-
-      await ConfigStoreFactory.getInstance().saveConfig(this._module.config);
-      await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
-        websocketConfig,
-        this._module.config.maxCallLengthSeconds,
-      );
-      await this._module.cache.remove(
-        getCacheTenantPathMappingKey(websocketConfig.id, path),
-        CacheNamespace.TenantPathMapping,
-      );
+    if (!tenant.tenantWebsocketServerPath) {
+      throw new NotFoundError(`Tenant with id ${tenantId} has no websocket path mapping`);
     }
 
-    return websocketConfig;
+    const removedPath = tenant.tenantWebsocketServerPath;
+    const updatedTenant = await this._tenantRepository.updateWebsocketServerPath(tenantId, null);
+    if (!updatedTenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
+    }
+
+    await this._module.cache.remove(removedPath, CacheNamespace.TenantPathMapping);
+
+    return updatedTenant;
   }
 
   @AsDataEndpoint(Namespace.Websocket, HttpMethod.Delete, WebsocketDeleteQuerySchema)

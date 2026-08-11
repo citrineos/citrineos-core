@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { METER_VALUE_FIELDS } from '@lib/queries/fields/meter.value.fields';
 
 export const METER_VALUE_LIST_QUERY = gql`
   query MeterValueList(
@@ -12,13 +13,7 @@ export const METER_VALUE_LIST_QUERY = gql`
     $where: MeterValues_bool_exp! = {}
   ) {
     MeterValues(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      transactionDatabaseId
-      transactionEventId
-      sampledValue
-      timestamp
-      createdAt
-      updatedAt
+      ${METER_VALUE_FIELDS}
     }
     MeterValues_aggregate(where: $where) {
       aggregate {
@@ -42,10 +37,7 @@ export const GET_METER_VALUES_FOR_STATION = gql`
       offset: $offset
       limit: $limit
     ) {
-      id
-      transactionDatabaseId
-      sampledValue
-      timestamp
+      ${METER_VALUE_FIELDS.omit('transactionEventId', 'createdAt', 'updatedAt')}
     }
     MeterValues_aggregate(
       where: { _and: [{ transactionDatabaseId: { _in: $transactionDatabaseIds } }, $where] }
@@ -71,13 +63,7 @@ export const GET_METER_VALUES_FOR_TRANSACTION = gql`
       order_by: $order_by
       where: { transactionDatabaseId: { _eq: $transactionDatabaseId }, _and: [$where] }
     ) {
-      id
-      transactionDatabaseId
-      transactionEventId
-      sampledValue
-      timestamp
-      createdAt
-      updatedAt
+      ${METER_VALUE_FIELDS}
     }
     MeterValues_aggregate(
       where: { transactionDatabaseId: { _eq: $transactionDatabaseId }, _and: [$where] }
@@ -103,13 +89,7 @@ export const GET_METER_VALUES_FOR_TRANSACTION_EVENT = gql`
       order_by: $order_by
       where: { transactionEventId: { _eq: $transactionEventId }, _and: [$where] }
     ) {
-      id
-      transactionDatabaseId
-      transactionEventId
-      sampledValue
-      timestamp
-      createdAt
-      updatedAt
+      ${METER_VALUE_FIELDS}
     }
     MeterValues_aggregate(
       where: { transactionEventId: { _eq: $transactionEventId }, _and: [$where] }

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { VARIABLE_FIELDS } from '@lib/queries/fields/variable.fields';
 
 export const VARIABLE_LIST_QUERY = gql`
   query VariableList(
@@ -12,11 +13,7 @@ export const VARIABLE_LIST_QUERY = gql`
     $where: Variables_bool_exp
   ) {
     Variables(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      instance
-      name
-      createdAt
-      updatedAt
+      ${VARIABLE_FIELDS}
     }
     Variables_aggregate(where: $where) {
       aggregate {
@@ -47,11 +44,7 @@ export const VARIABLE_LIST_BY_COMPONENT_QUERY = gql`
         ]
       }
     ) {
-      id
-      instance
-      name
-      createdAt
-      updatedAt
+      ${VARIABLE_FIELDS}
     }
     Variables_aggregate(
       where: { _and: [{ ComponentVariables: { componentId: { _eq: $componentId } } }, $where] }
@@ -66,11 +59,7 @@ export const VARIABLE_LIST_BY_COMPONENT_QUERY = gql`
 export const VARIABLE_GET_QUERY = gql`
   query GetVariableById($id: Int!) {
     Variables_by_pk(id: $id) {
-      id
-      instance
-      name
-      createdAt
-      updatedAt
+      ${VARIABLE_FIELDS}
     }
   }
 `;

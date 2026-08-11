@@ -41,7 +41,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _authorizers: IAuthorizer[];
-  protected _authorizeRepository: IAuthorizationRepository;
+  protected _authorizationRepository: IAuthorizationRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
 
   constructor({
@@ -62,7 +62,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
     this._authorizers = authorizers;
-    this._authorizeRepository = authorizationRepository;
+    this._authorizationRepository = authorizationRepository;
     this._deviceModelRepository = deviceModelRepository;
   }
 
@@ -151,7 +151,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       }
     }
 
-    const authorization = await this._authorizeRepository.readOnlyOneByQuerystring(
+    const authorization = await this._authorizationRepository.readOnlyOneByQuerystring(
       context.tenantId,
       {
         idToken: request.idToken.idToken,

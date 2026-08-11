@@ -15,7 +15,7 @@ import {
   OcppSender,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig } from '@citrineos/types';
+import { type SystemConfig, type TenantDto } from '@citrineos/types';
 
 // -- Infrastructure --
 import { type ILogObj, Logger } from 'tslog';
@@ -121,6 +121,7 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { DrizzleAuthorizationRepository } from '@citrineos/core/dist/src/dal/layers/drizzle/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -311,6 +312,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       useTenantSchema: asValue(false),
 
+      authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
@@ -360,6 +362,29 @@ function registerNetwork(container: AwilixContainer): void {
         async (tenantId: number): Promise<number | null> => {
           const tenant = await tenantRepository.readByKey(tenantId, tenantId);
           return tenant?.maxChargingStations ?? null;
+        },
+    ).singleton(),
+    // Tenant path resolution for websocket servers with dynamicTenantResolution enabled:
+    // one lookup per unknown path (cache miss), plus a bulk load to warm the cache on startup.
+    getTenantIdByWebsocketServerPath: asFunction(
+      ({ tenantRepository }) =>
+        async (path: string): Promise<number | undefined> => {
+          const tenant = await tenantRepository.readByWebsocketServerPath(path);
+          return tenant?.id;
+        },
+    ).singleton(),
+    getAllTenantWebsocketServerPaths: asFunction(
+      ({ tenantRepository }) =>
+        async (): Promise<Map<string, number>> => {
+          const tenants = await tenantRepository.readAllWithWebsocketServerPath();
+          return new Map(
+            tenants
+              .filter((tenant: TenantDto) => tenant.tenantWebsocketServerPath && tenant.id)
+              .map((tenant: TenantDto): [string, number] => [
+                tenant.tenantWebsocketServerPath!,
+                tenant.id!,
+              ]),
+          );
         },
     ).singleton(),
 

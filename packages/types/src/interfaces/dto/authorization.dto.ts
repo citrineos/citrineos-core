@@ -11,6 +11,7 @@ import {
   AuthorizationWhitelistEnumSchema,
   IdTokenEnumSchema,
 } from './types/enums.js';
+import { TariffSchema } from '@interfaces/dto/tariff.dto.js';
 
 const authorizationFields = {
   id: z.number().int().optional(),
@@ -37,6 +38,7 @@ const authorizationFields = {
   tenantPartner: TenantPartnerSchema.nullable().optional(),
   groupAuthorizationId: z.number().int().nullable().optional(),
   tariffId: z.number().int().nullable().optional(),
+  tariff: TariffSchema.nullable().optional(),
 };
 
 export const GroupAuthorizationSchema = BaseSchema.extend(authorizationFields);
@@ -60,6 +62,7 @@ export const AuthorizationCreateSchema = AuthorizationSchema.omit({
   createdAt: true,
   groupAuthorization: true,
   tenantPartner: true,
+  tariff: true,
 });
 
 export type AuthorizationCreate = z.infer<typeof AuthorizationCreateSchema>;
@@ -71,6 +74,7 @@ export const AuthorizationUpdateSchema = AuthorizationSchema.partial()
     createdAt: true,
     groupAuthorization: true,
     tenantPartner: true,
+    tariff: true,
   })
   .required({ id: true, tenantId: true });
 

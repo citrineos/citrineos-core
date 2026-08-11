@@ -4,6 +4,7 @@
 
 import type { CrudRepository, OCPP2_common_types, OCPP2_request_types } from '@citrineos/base';
 import type {
+  AuthorizationDto,
   BootCreate,
   BootDto,
   CallAction,
@@ -26,7 +27,6 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
-import type { Authorization } from '../layers/sequelize/model/Authorization/Authorization.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
 import type { Boot } from '../layers/sequelize/model/Boot.js';
@@ -71,15 +71,16 @@ import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
 import type { VariableAttributeQuerystring } from './queries/VariableAttribute.js';
 
-export interface IAuthorizationRepository extends CrudRepository<Authorization> {
+export interface IAuthorizationRepository {
   readAllByQuerystring: (
     tenantId: number,
     query: AuthorizationQuerystring,
-  ) => Promise<Authorization[]>;
+  ) => Promise<AuthorizationDto[]>;
   readOnlyOneByQuerystring: (
     tenantId: number,
     query: AuthorizationQuerystring,
-  ) => Promise<Authorization | undefined>;
+  ) => Promise<AuthorizationDto | undefined>;
+  findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
 }
 
 /**
@@ -558,4 +559,7 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
   readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
+  readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
+  readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
+  updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
 }

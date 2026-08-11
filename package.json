@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "2.0.0-alpha3",
+  "version": "2.0.0-beta2",
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.19.0",
@@ -31,7 +31,7 @@
       "utf-8-validate"
     ],
     "overrides": {
-      "@tanstack/react-query": "5.90.5",
+      "@tanstack/react-query": "5.101.4",
       "zod": "catalog:",
       "graphql": "15.6.1"
     }
@@ -52,7 +52,7 @@
     "@types/node": "^25.3.3",
     "madge": "^8.0.0",
     "openapi-types": "^12.1.3",
-    "@types/pg": "8.20.0",
+    "@types/pg": "8.20.4",
     "tsc-alias": "^1.8.16",
     "testcontainers": "11.14.0",
     "typescript": "^6.0.0"
