@@ -159,5 +159,25 @@ describe('websocket configuration admin endpoints', () => {
       expect(serverIds()).toEqual(['first', 'third']);
       expect(saveConfig).toHaveBeenCalledTimes(1);
     });
+
+    it('removes the first server', async () => {
+      const mounted = await mount(DeleteWebsocketConfigurationEndpoint);
+
+      const response = await mounted.server.inject({ method: 'DELETE', url: `${URL}?id=first` });
+
+      expect(response.statusCode).toBe(200);
+      expect(serverIds()).toEqual(['second', 'third']);
+      expect(saveConfig).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves every server in place for an unknown id', async () => {
+      const mounted = await mount(DeleteWebsocketConfigurationEndpoint);
+
+      const response = await mounted.server.inject({ method: 'DELETE', url: `${URL}?id=nope` });
+
+      expect(response.statusCode).toBe(200);
+      expect(serverIds()).toEqual(['first', 'second', 'third']);
+      expect(saveConfig).not.toHaveBeenCalled();
+    });
   });
 });

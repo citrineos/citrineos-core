@@ -40,7 +40,7 @@ export class DeleteWebsocketConfigurationEndpoint extends AbstractEndpoint<Route
     const websocketServers = this._config.util.networkConnection.websocketServers;
     const existingConfigIndex = websocketServers.findIndex((ws) => ws.id === request.query.id);
 
-    if (existingConfigIndex) {
+    if (existingConfigIndex !== -1) {
       websocketServers.splice(existingConfigIndex, 1);
       await this._configStore.saveConfig(this._config);
     }
