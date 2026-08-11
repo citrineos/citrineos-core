@@ -44,11 +44,9 @@ export const websocketServerInputSchema = z.object({
   rootCACertificateFilePath: z.string().optional(), // Root CA certificate that overrides default CA certificates
   // allowed by Mozilla
   tenantId: z.number().optional(),
-  // Mapping from path segments to tenant IDs.
-  // Example: { "my-tenant": 1 }
-  tenantPathMapping: z.record(z.string(), z.number()).optional(),
-  // When true, tenant can be resolved at connection upgrade time from the request
-  // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+  // When true, tenant is resolved at connection upgrade time from the request path
+  // segment, matched against Tenant.tenantWebsocketServerPath. Defaults to false for
+  // strict per-server tenant.
   dynamicTenantResolution: z.boolean().optional().default(false),
   // Forces a set protocol to communicate on, mostly used for dev purposes
   forceProtocol: z.enum(OCPP_VERSION_LIST).optional(),
@@ -355,9 +353,9 @@ export const websocketServerSchema = z
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number().optional(),
-    tenantPathMapping: z.record(z.string(), z.number()).optional(),
-    // When true, tenant can be resolved at connection upgrade time from the request
-    // (query param, path segment, or header). Defaults to false for strict per-server tenant.
+    // When true, tenant is resolved at connection upgrade time from the request path
+    // segment, matched against Tenant.tenantWebsocketServerPath. Defaults to false for
+    // strict per-server tenant.
     dynamicTenantResolution: z.boolean().optional().default(false),
     forceProtocol: z.enum(OCPP_VERSION_LIST).optional(),
   })
