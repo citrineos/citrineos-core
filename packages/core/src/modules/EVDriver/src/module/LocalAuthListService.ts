@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_request_types } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import { AttributeEnum, OCPP1_6, UpdateEnum } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -183,9 +183,9 @@ export class LocalAuthListService {
     localListVersion?: LocalListVersion,
   ): Promise<number> {
     switch (sendLocalList?.updateType) {
-      case OCPP2_0_1.UpdateEnumType.Full:
+      case UpdateEnum.Full:
         return sendLocalList?.localAuthorizationList?.length ?? 0;
-      case OCPP2_0_1.UpdateEnumType.Differential: {
+      case UpdateEnum.Differential: {
         const uniqueAuths = new Set(
           [
             ...(sendLocalList.localAuthorizationList ?? []),
@@ -211,7 +211,7 @@ export class LocalAuthListService {
         component_instance: null,
         variable_name: 'ItemsPerMessage',
         variable_instance: null,
-        type: OCPP2_0_1.AttributeEnumType.Actual,
+        type: AttributeEnum.Actual,
       });
     if (itemsPerMessageSendLocalList.length === 0) {
       return null;
@@ -276,7 +276,7 @@ export class LocalAuthListService {
         ocppConnectionName: ocppConnectionName,
         component_name: 'LocalAuthListCtrlr',
         variable_name: 'Entries',
-        type: OCPP2_0_1.AttributeEnumType.Actual,
+        type: AttributeEnum.Actual,
       });
 
     const maxLimit = (entriesAttributes[0]?.variable as Variable | undefined)

@@ -2,7 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
+
 export interface TariffQueryString {
   tenantId: number;
   id?: string;
 }
+
+export const TariffQuerySchema = QuerySchema('TariffQuerySchema', [
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+    defaultValue: String(DEFAULT_TENANT_ID),
+  },
+  {
+    key: 'id',
+    type: 'string',
+  },
+]);

@@ -4,10 +4,10 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChangeConfigurationEndpoint } from '@modules/Api/src/module/endpoints/ocpp/configuration/ChangeConfigurationEndpoint.js';
-import { GetConfigurationEndpoint } from '@modules/Api/src/module/endpoints/ocpp/configuration/GetConfigurationEndpoint.js';
-import { SetDisplayMessageEndpoint } from '@modules/Api/src/module/endpoints/ocpp/configuration/SetDisplayMessageEndpoint.js';
-import { TriggerMessage16Endpoint } from '@modules/Api/src/module/endpoints/ocpp/configuration/TriggerMessage16Endpoint.js';
+import { ChangeConfigurationEndpoint } from '@modules/Api/src/module/endpoints/ocpp/1.6/configuration/ChangeConfigurationEndpoint.js';
+import { GetConfigurationEndpoint } from '@modules/Api/src/module/endpoints/ocpp/1.6/configuration/GetConfigurationEndpoint.js';
+import { SetDisplayMessageEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/configuration/SetDisplayMessageEndpoint.js';
+import { TriggerMessageEndpoint as TriggerMessage16Endpoint } from '@modules/Api/src/module/endpoints/ocpp/1.6/configuration/TriggerMessageEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const STATION = 'cs001';

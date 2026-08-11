@@ -56,7 +56,7 @@ function aRoute(overrides: Partial<IMessageEndpointDeclaration> = {}): IMessageE
   return {
     action: OCPP_CallAction.CertificateSigned,
     protocols: [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1],
-    endpointPrefixConfigKey: 'certificates',
+    eventGroup: EventGroup.Certificates,
     bodySchema: () => BODY_SCHEMA,
     ...overrides,
   };
@@ -127,36 +127,15 @@ describe('AbstractMessageEndpointApi', () => {
       expect(routes.map((r) => r.url)).toEqual(['/ocpp/2.1/certificates/certificateSigned']);
     });
 
-    it('registers no route when the module is not configured', async () => {
+    it('registers the route even when the module is absent from config', async () => {
       const config = aSystemConfig();
       const { certificates: _omitted, ...modules } = config.modules;
       const { routes } = await buildHarness(aRoute(), { ...config, modules });
 
-      expect(routes).toEqual([]);
-    });
-
-    it('never produces a doubled slash for an optional module that is absent', async () => {
-      const config = aSystemConfig();
-      const { smartcharging: _omitted, ...modules } = config.modules;
-      const { routes } = await buildHarness(aRoute({ endpointPrefixConfigKey: 'smartcharging' }), {
-        ...config,
-        modules,
-      });
-
-      expect(routes.filter((r) => r.url.includes('//'))).toEqual([]);
-    });
-
-    it('honours an endpointPrefix that carries no leading slash', async () => {
-      const config = aSystemConfig();
-      const { routes } = await buildHarness(aRoute({ protocols: [OCPPVersion.OCPP2_0_1] }), {
-        ...config,
-        modules: {
-          ...config.modules,
-          certificates: { endpointPrefix: 'certificates', requests: [], responses: [] },
-        },
-      });
-
-      expect(routes[0].url).toBe('/ocpp/2.0.1/certificates/certificateSigned');
+      expect(routes.map((r) => r.url).sort()).toEqual([
+        '/ocpp/2.0.1/certificates/certificateSigned',
+        '/ocpp/2.1/certificates/certificateSigned',
+      ]);
     });
 
     it('registers routes through an encapsulated scope when exposeMessage is on', async () => {
@@ -279,10 +258,10 @@ describe('AbstractMessageEndpointApi', () => {
     ]);
   });
 
-  it('does not reuse an eventGroup-specific prefix across modules', async () => {
+  it('takes the prefix segment from the declared event group', async () => {
     const config = aSystemConfig();
     const { routes } = await buildHarness(
-      aRoute({ endpointPrefixConfigKey: 'monitoring', protocols: [OCPPVersion.OCPP2_0_1] }),
+      aRoute({ eventGroup: EventGroup.Monitoring, protocols: [OCPPVersion.OCPP2_0_1] }),
       config,
     );
 

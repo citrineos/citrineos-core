@@ -14,8 +14,14 @@ export { ConnectionDeleteQuerySchema } from './queries/Connection.js';
 export type { ConnectionDeleteQuerystring } from './queries/Connection.js';
 export { ModelKeyQuerystringSchema } from './queries/Model.js';
 export type { ModelKeyQuerystring } from './queries/Model.js';
-export { NetworkProfileDeleteQuerySchema } from './queries/NetworkProfile.js';
-export type { NetworkProfileDeleteQuerystring } from './queries/NetworkProfile.js';
+export {
+  NetworkProfileDeleteQuerySchema,
+  NetworkProfileQuerySchema,
+} from './queries/NetworkProfile.js';
+export type {
+  NetworkProfileDeleteQuerystring,
+  NetworkProfileQuerystring,
+} from './queries/NetworkProfile.js';
 export {
   GenerateCertificateChainSchema,
   InstallRootCertificateSchema,
@@ -23,6 +29,7 @@ export {
   UploadExistingCertificateSchema,
 } from './queries/RootCertificate.js';
 export { CreateSubscriptionSchema } from './queries/Subscription.js';
+export { TariffQuerySchema } from './queries/Tariff.js';
 export type { TariffQueryString } from './queries/Tariff.js';
 export { CreateTenantQuerySchema, TenantQuerySchema } from './queries/Tenant.js';
 export type { TenantQueryString } from './queries/Tenant.js';
@@ -30,7 +37,16 @@ export { TlsReloadQuerySchema } from './queries/TlsReload.js';
 export type { TlsReloadQueryString } from './queries/TlsReload.js';
 export { UpdateChargingStationPasswordQuerySchema } from './queries/UpdateChargingStationPasswordQuery.js';
 export type { UpdateChargingStationPasswordQueryString } from './queries/UpdateChargingStationPasswordQuery.js';
-export type { VariableAttributeQuerystring } from './queries/VariableAttribute.js';
+export { TransactionEventQuerySchema } from './queries/TransactionEvent.js';
+export type { TransactionEventQuerystring } from './queries/TransactionEvent.js';
+export {
+  CreateOrUpdateVariableAttributeQuerySchema,
+  VariableAttributeQuerySchema,
+} from './queries/VariableAttribute.js';
+export type {
+  CreateOrUpdateVariableAttributeQuerystring,
+  VariableAttributeQuerystring,
+} from './queries/VariableAttribute.js';
 export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,

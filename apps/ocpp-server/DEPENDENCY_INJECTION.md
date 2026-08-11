@@ -175,21 +175,20 @@ A service used by exactly one module.
 
 It resolves in the module's scope, alongside the module's other scoped services.
 
-**Example** — Monitoring registers its two services in its own `register.ts`:
+**Example** — Monitoring registers its service in its own `register.ts`:
 
 ```ts
 export function registerMonitoringServices(container: AwilixContainer): void {
   container.register({
     monitoringService: asClass(MonitoringService).scoped(),
-    monitoringDeviceModelService: asClass(DeviceModelService).scoped(),
   });
 }
 ```
 
-`MonitoringModule` then names them in its constructor to receive that module's instances:
+`MonitoringModule` then names it in its constructor to receive that module's instance:
 
 ```ts
-constructor({ monitoringService, monitoringDeviceModelService }: { /* … */ }) {
+constructor({ monitoringService }: { /* … */ }) {
   this._monitoringService = monitoringService;
 }
 ```
@@ -200,7 +199,6 @@ constructor({ monitoringService, monitoringDeviceModelService }: { /* … */ }) 
 2. Register the module in `container.ts` (`registerModules`).
 3. Add one row to `MODULE_SPECS` in `citrineOSServer.ts`: `{ moduleToken, configKey }`.
 
-Modules no longer own HTTP routes, so there is nothing API-related to register here.
 
 **Example** — the Tenant module (no internal services, so no `register.ts`). Its module is registered in `container.ts`:
 

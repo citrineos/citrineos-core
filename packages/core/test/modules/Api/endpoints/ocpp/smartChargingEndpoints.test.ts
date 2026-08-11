@@ -4,10 +4,10 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClearChargingProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/smartCharging/ClearChargingProfileEndpoint.js';
-import { GetChargingProfilesEndpoint } from '@modules/Api/src/module/endpoints/ocpp/smartCharging/GetChargingProfilesEndpoint.js';
-import { GetCompositeScheduleEndpoint } from '@modules/Api/src/module/endpoints/ocpp/smartCharging/GetCompositeScheduleEndpoint.js';
-import { SetChargingProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/smartCharging/SetChargingProfileEndpoint.js';
+import { ClearChargingProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/smartCharging/ClearChargingProfileEndpoint.js';
+import { GetChargingProfilesEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/smartCharging/GetChargingProfilesEndpoint.js';
+import { GetCompositeScheduleEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/smartCharging/GetCompositeScheduleEndpoint.js';
+import { SetChargingProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/smartCharging/SetChargingProfileEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const STATION = 'cs001';

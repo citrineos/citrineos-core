@@ -26,7 +26,7 @@ interface UpdateAuthPasswordModalProps {
 
 type UpdateAuthPasswordFormData = {
   password: string;
-  alreadySetOnCharger: boolean;
+  setOnCharger: boolean;
 };
 
 export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProps) => {
@@ -45,7 +45,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
         password: z
           .string()
           .min(1, translate('ChargingStations.updateAuthPasswordModal.passwordRequired')),
-        alreadySetOnCharger: z.boolean(),
+        setOnCharger: z.boolean(),
       }),
     [translate],
   );
@@ -54,7 +54,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
     resolver: zodResolver(UpdateAuthPasswordSchema),
     defaultValues: {
       password: '',
-      alreadySetOnCharger: false,
+      setOnCharger: false,
     },
   });
 
@@ -68,7 +68,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
 
     const data = {
       password: values.password,
-      alreadySetOnCharger: values.alreadySetOnCharger,
+      setOnCharger: values.setOnCharger,
       ocppConnectionName: parsedStation.ocppConnectionName,
     };
 
@@ -107,7 +107,7 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
       <CheckboxFormField
         control={form.control}
         label={translate('ChargingStations.updateAuthPasswordModal.setOnCharger')}
-        name="alreadySetOnCharger"
+        name="setOnCharger"
         required
       />
     </Form>

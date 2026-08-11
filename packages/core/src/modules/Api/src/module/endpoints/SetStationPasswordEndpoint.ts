@@ -10,21 +10,29 @@ import {
   type IEndpointDefinition,
   AbstractEndpoint,
   UpdateChargingStationPasswordSchema,
+  type OCPP2_common_types,
+  type OCPP2_request_types,
+  type OCPP2_response_types,
 } from '@citrineos/base';
 import {
-  type SystemConfig,
-  type UpdateChargingStationPasswordRequest,
+  AttributeEnum,
+  DataEnum,
   EventGroup,
   HttpMethod,
-  OCPP2_0_1,
-  OCPP_CallAction,
+  MutabilityEnum,
   OCPPVersion,
+  OCPP_CallAction,
+  OCPP_2_VER_LIST,
+  SetVariableStatusEnum,
+  type SystemConfig,
+  type UpdateChargingStationPasswordRequest,
 } from '@citrineos/types';
+import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { UpdateChargingStationPasswordQueryString } from '@dal/interfaces/index.js';
 import { UpdateChargingStationPasswordQuerySchema } from '@dal/interfaces/index.js';
-import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
-import { Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
-import { generatePassword, isValidPassword } from '@util/index.js';
+import { VariableAttribute } from '@dal/layers/sequelize/index.js';
+import { generatePassword, isValidPassword, resolveStationProtocol } from '@util/index.js';
+import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
 import type { FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -32,7 +40,8 @@ interface SetStationPasswordEndpointDependencies extends AbstractEndpointDepende
   config: BootstrapConfig & SystemConfig;
   cache: ICache;
   ocppSender: IOcppSender;
-  deviceModelRepository: IDeviceModelRepository;
+  deviceModelService: DeviceModelService;
+  locationRepository: ILocationRepository;
 }
 
 type SetStationPasswordEndpointRoute = {
@@ -51,20 +60,23 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
   private readonly _config: BootstrapConfig & SystemConfig;
   private readonly _cache: ICache;
   private readonly _ocppSender: IOcppSender;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _deviceModelService: DeviceModelService;
+  private readonly _locationRepository: ILocationRepository;
 
   constructor({
     logger,
     config,
     cache,
     ocppSender,
-    deviceModelRepository,
+    deviceModelService,
+    locationRepository,
   }: SetStationPasswordEndpointDependencies) {
     super(logger);
     this._config = config;
     this._cache = cache;
     this._ocppSender = ocppSender;
-    this._deviceModelRepository = deviceModelRepository;
+    this._deviceModelService = deviceModelService;
+    this._locationRepository = locationRepository;
   }
 
   async handle(
@@ -75,10 +87,10 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
 
     this._logger.debug(`Updating password for ${ocppConnectionName} station in tenant ${tenantId}`);
 
-    if (request.body.alreadySetOnCharger && !request.body.password) {
+    if (request.body.setOnCharger && !request.body.password) {
       return {
         success: false,
-        payload: 'Password is required when alreadySetOnCharger is true',
+        payload: 'Password is required when setOnCharger is true',
       };
     }
     if (request.body.password && !isValidPassword(request.body.password)) {
@@ -86,12 +98,23 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     }
     const password = request.body.password || generatePassword();
 
-    if (!request.body.alreadySetOnCharger) {
+    if (!request.body.setOnCharger) {
+      const resolution = await resolveStationProtocol(
+        this._locationRepository.readChargingStationByStationId,
+        tenantId,
+        ocppConnectionName,
+        OCPP_2_VER_LIST,
+      );
+      if (!resolution.supported) {
+        return { success: false, payload: resolution.reason };
+      }
+
       try {
         await this.updatePasswordOnStation(
           password,
           ocppConnectionName,
           tenantId,
+          resolution.protocol,
           request.query.callbackUrl,
         );
       } catch (error) {
@@ -118,6 +141,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     password: string,
     ocppConnectionName: string,
     tenantId: number,
+    protocol: OCPPVersion,
     callbackUrl?: string,
   ): Promise<void> {
     const correlationId = uuidv4();
@@ -130,7 +154,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     const messageConfirmation = await this._ocppSender.sendCall({
       ocppConnectionName,
       tenantId,
-      protocol: OCPPVersion.OCPP2_0_1,
+      protocol,
       action: OCPP_CallAction.SetVariables,
       eventGroup: EventGroup.Monitoring,
       payload: {
@@ -138,11 +162,11 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
           {
             variable: { name: 'BasicAuthPassword' },
             attributeValue: password,
-            attributeType: OCPP2_0_1.AttributeEnumType.Actual,
+            attributeType: AttributeEnum.Actual,
             component: { name: 'SecurityCtrlr' },
-          } as OCPP2_0_1.SetVariableDataType,
+          } as OCPP2_common_types.SetVariableDataType,
         ],
-      } as OCPP2_0_1.SetVariablesRequest,
+      } as OCPP2_request_types.SetVariablesRequest,
       callbackUrl,
       correlationId,
     });
@@ -159,9 +183,10 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
       );
     }
 
-    const setVariablesResponse: OCPP2_0_1.SetVariablesResponse = JSON.parse(responseJsonString);
+    const setVariablesResponse: OCPP2_response_types.SetVariablesResponse =
+      JSON.parse(responseJsonString);
     const passwordUpdated = setVariablesResponse.setVariableResult.every(
-      (result) => result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted,
+      (result) => result.attributeStatus === SetVariableStatusEnum.Accepted,
     );
     if (!passwordUpdated) {
       throw new Error(`Failure updating password on ${ocppConnectionName} station`);
@@ -173,49 +198,29 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<VariableAttribute[]> {
-    const timestamp = new Date().toISOString();
-    const variableAttributes =
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-        tenantId,
-        {
-          component: {
-            name: 'SecurityCtrlr',
-          },
-          variable: {
-            name: 'BasicAuthPassword',
-          },
-          variableAttribute: [
-            {
-              type: OCPP2_0_1.AttributeEnumType.Actual,
-              value: password,
-              mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
-            },
-          ],
-          variableCharacteristics: {
-            dataType: OCPP2_0_1.DataEnumType.passwordString,
-            supportsMonitoring: false,
-          },
+    return this._deviceModelService.provisionVariableAttributes(
+      tenantId,
+      ocppConnectionName,
+      {
+        component: {
+          name: 'SecurityCtrlr',
         },
-        ocppConnectionName,
-        timestamp,
-      );
-    for (let variableAttribute of variableAttributes) {
-      variableAttribute = await variableAttribute.reload({
-        include: [Variable, Component],
-      });
-      await this._deviceModelRepository.updateResultByStationId(
-        tenantId,
-        {
-          attributeType: variableAttribute.type,
-          attributeStatus: OCPP2_0_1.SetVariableStatusEnumType.Accepted,
-          attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-          component: variableAttribute.component,
-          variable: variableAttribute.variable,
+        variable: {
+          name: 'BasicAuthPassword',
         },
-        ocppConnectionName,
-        timestamp,
-      );
-    }
-    return variableAttributes;
+        variableAttribute: [
+          {
+            type: AttributeEnum.Actual,
+            value: password,
+            mutability: MutabilityEnum.WriteOnly,
+          },
+        ],
+        variableCharacteristics: {
+          dataType: DataEnum.passwordString,
+          supportsMonitoring: false,
+        },
+      } as OCPP2_common_types.ReportDataType,
+      true,
+    );
   }
 }

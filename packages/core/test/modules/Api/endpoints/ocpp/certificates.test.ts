@@ -4,8 +4,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_TENANT_ID, IMessageConfirmation } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import { DeleteCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/certificates/DeleteCertificateEndpoint.js';
-import { InstallCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/certificates/InstallCertificateEndpoint.js';
+import { DeleteCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/certificates/DeleteCertificateEndpoint.js';
+import { InstallCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/certificates/InstallCertificateEndpoint.js';
 import { aInstallCertificateRequest } from '../../../Certificates/providers/InstallCertificateRequestProvider';
 import { aDeleteCertificateRequest } from '../../../Certificates/providers/DeleteCertificateRequestProvider';
 import { MOCK_CHARGING_STATION_ID } from '../../../Certificates/providers/ChargingStation';

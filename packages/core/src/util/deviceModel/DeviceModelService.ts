@@ -2,15 +2,63 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
+import { AttributeEnum, MutabilityEnum, SetVariableStatusEnum } from '@citrineos/types';
+import type { OCPP2_common_types } from '@citrineos/base';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
-import { VariableAttribute } from '@dal/layers/sequelize/index.js';
+import { Component, Variable, VariableAttribute } from '@dal/layers/sequelize/index.js';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
 
   constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
     this._deviceModelRepository = deviceModelRepository;
+  }
+
+  async provisionVariableAttributes(
+    tenantId: number,
+    ocppConnectionName: string,
+    reportData: OCPP2_common_types.ReportDataType,
+    setOnCharger: boolean,
+  ): Promise<VariableAttribute[]> {
+    const timestamp = new Date().toISOString();
+    const withDefaultedMutability = {
+      ...reportData,
+      variableAttribute: reportData.variableAttribute.map((attribute) => ({
+        ...attribute,
+        mutability: attribute.mutability ?? MutabilityEnum.ReadWrite,
+      })),
+    } as OCPP2_common_types.ReportDataType;
+
+    const variableAttributes =
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        tenantId,
+        withDefaultedMutability,
+        ocppConnectionName,
+        timestamp,
+      );
+
+    if (!setOnCharger) {
+      return variableAttributes;
+    }
+
+    const acceptedAttributes: VariableAttribute[] = [];
+    for (const variableAttribute of variableAttributes) {
+      const reloaded = await variableAttribute.reload({ include: [Variable, Component] });
+      await this._deviceModelRepository.updateResultByStationId(
+        tenantId,
+        {
+          attributeType: reloaded.type,
+          attributeStatus: SetVariableStatusEnum.Accepted,
+          attributeStatusInfo: { reasonCode: 'SetOnCharger' },
+          component: reloaded.component,
+          variable: reloaded.variable,
+        } as OCPP2_common_types.SetVariableResultType,
+        ocppConnectionName,
+        timestamp,
+      );
+      acceptedAttributes.push(reloaded);
+    }
+    return acceptedAttributes;
   }
 
   /**
@@ -36,7 +84,7 @@ export class DeviceModelService {
         component_name: componentName,
         variable_name: 'ItemsPerMessage',
         variable_instance: variableInstance,
-        type: OCPP2_0_1.AttributeEnumType.Actual,
+        type: AttributeEnum.Actual,
       });
     if (itemsPerMessageAttributes.length === 0) {
       return null;
@@ -71,7 +119,7 @@ export class DeviceModelService {
         component_name: componentName,
         variable_name: 'BytesPerMessage',
         variable_instance: variableInstance,
-        type: OCPP2_0_1.AttributeEnumType.Actual,
+        type: AttributeEnum.Actual,
       });
     if (bytesPerMessageAttributes.length === 0) {
       return null;

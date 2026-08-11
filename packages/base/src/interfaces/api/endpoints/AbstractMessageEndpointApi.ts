@@ -13,6 +13,7 @@ import { type ILogObj, Logger } from 'tslog';
 import {
   HttpMethod,
   type CallAction,
+  type EventGroup,
   type OcppRequest,
   type OCPPVersion,
   type SystemConfig,
@@ -71,14 +72,6 @@ export abstract class AbstractMessageEndpointApi {
     endpoint: AbstractMessageEndpoint,
     version: OCPPVersion,
   ): void {
-    const moduleConfig = this._config.modules[route.endpointPrefixConfigKey];
-    if (!moduleConfig) {
-      this._logger.debug(
-        `Skipping message route for ${route.action} — ${route.endpointPrefixConfigKey} is not configured`,
-      );
-      return;
-    }
-
     const bodySchema = route.bodySchema(version);
     if (!bodySchema) {
       this._logger.debug(
@@ -87,7 +80,7 @@ export abstract class AbstractMessageEndpointApi {
       return;
     }
 
-    const url = this._toMessagePath(moduleConfig.endpointPrefix, route.action, version);
+    const url = this._toMessagePath(route.eventGroup, route.action, version);
     this._logger.debug(`Adding message route for ${route.action}`, url);
 
     const querystringSchema = {
@@ -163,9 +156,9 @@ export abstract class AbstractMessageEndpointApi {
     };
   }
 
-  private _toMessagePath(endpointPrefix: string, action: CallAction, version: OCPPVersion): string {
+  private _toMessagePath(eventGroup: EventGroup, action: CallAction, version: OCPPVersion): string {
     const endpointVersion = version.replace(/^ocpp/, '');
     const route = action.charAt(0).toLowerCase() + action.slice(1);
-    return joinRoutePath('ocpp', endpointVersion, endpointPrefix, route);
+    return joinRoutePath('ocpp', endpointVersion, eventGroup, route);
   }
 }

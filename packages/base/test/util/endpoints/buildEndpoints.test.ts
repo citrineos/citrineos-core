@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { HttpMethod, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import { EventGroup, HttpMethod, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
 import { describe, expect, it } from 'vitest';
@@ -57,7 +57,7 @@ class AMessageEndpoint extends AbstractMessageEndpoint {
   static readonly route: IMessageEndpointDeclaration = {
     action: OCPP_CallAction.Reset,
     protocols: [OCPPVersion.OCPP2_0_1],
-    endpointPrefixConfigKey: 'configuration',
+    eventGroup: EventGroup.Configuration,
     bodySchema: () => ({ $id: 'ResetRequestSchema', type: 'object' }),
   };
 

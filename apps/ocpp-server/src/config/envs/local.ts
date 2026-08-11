@@ -27,7 +27,6 @@ export function createLocalConfig() {
     },
     modules: {
       certificates: {
-        endpointPrefix: '/certificates',
         responses: [
           OCPP_CallAction.CertificateSigned,
           OCPP_CallAction.DeleteCertificate,
@@ -75,10 +74,8 @@ export function createLocalConfig() {
         ocpp1_6: {
           unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
         },
-        endpointPrefix: '/configuration',
       },
       evdriver: {
-        endpointPrefix: '/evdriver',
         enableGetChargingProfilesOnStartTransaction: true,
         responses: [
           OCPP_CallAction.CancelReservation,
@@ -100,7 +97,6 @@ export function createLocalConfig() {
         ],
       },
       monitoring: {
-        endpointPrefix: '/monitoring',
         responses: [
           OCPP_CallAction.ClearVariableMonitoring,
           OCPP_CallAction.GetVariables,
@@ -113,7 +109,6 @@ export function createLocalConfig() {
         requests: [OCPP_CallAction.NotifyEvent],
       },
       reporting: {
-        endpointPrefix: '/reporting',
         responses: [
           OCPP_CallAction.CustomerInformation,
           OCPP_CallAction.GetLog,
@@ -132,7 +127,6 @@ export function createLocalConfig() {
         ],
       },
       smartcharging: {
-        endpointPrefix: '/smartcharging',
         responses: [
           OCPP_CallAction.ClearChargingProfile,
           OCPP_CallAction.GetChargingProfiles,
@@ -148,12 +142,10 @@ export function createLocalConfig() {
         ],
       },
       tenant: {
-        endpointPrefix: '/tenant',
         responses: [],
         requests: [],
       },
       transactions: {
-        endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
         responses: [
           OCPP_CallAction.CostUpdated,

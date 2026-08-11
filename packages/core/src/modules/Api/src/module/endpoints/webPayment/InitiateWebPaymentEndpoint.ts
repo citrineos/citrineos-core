@@ -18,10 +18,10 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
+import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { InitiateWebPaymentRequest } from '@modules/EVDriver/src/module/interface.js';
 import { InitiateWebPaymentRequestSchema } from '@modules/EVDriver/src/module/interface.js';
-import { TotpUtil } from '@util/index.js';
+import { resolveStationProtocol, TotpUtil } from '@util/index.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 const DEFAULT_LOCK_TIMEOUT_SECONDS = 300;
@@ -30,6 +30,7 @@ interface Dependencies extends AbstractEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
   deviceModelRepository: IDeviceModelRepository;
+  locationRepository: ILocationRepository;
 }
 
 type InitiateWebPaymentRoute = { Body: InitiateWebPaymentRequest };
@@ -44,12 +45,20 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
   private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _locationRepository: ILocationRepository;
 
-  constructor({ logger, ocppSender, cache, deviceModelRepository }: Dependencies) {
+  constructor({
+    logger,
+    ocppSender,
+    cache,
+    deviceModelRepository,
+    locationRepository,
+  }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._cache = cache;
     this._deviceModelRepository = deviceModelRepository;
+    this._locationRepository = locationRepository;
   }
 
   async handle(
@@ -93,6 +102,17 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
       return reply.code(401).send({ error: 'TOTP validation failed. The QR code may be expired.' });
     }
 
+    const resolution = await resolveStationProtocol(
+      this._locationRepository.readChargingStationByStationId,
+      tenantId,
+      identifier,
+      [OCPPVersion.OCPP2_1],
+    );
+    if (!resolution.supported) {
+      this._logger.warn(`Cannot initiate web payment for station ${identifier}`);
+      return reply.code(503).send({ error: resolution.reason });
+    }
+
     const limits = { maxCost, maxTime, maxEnergy };
     await this._cache.set(
       `webpayment:${tenantId}:${identifier}:${evseId}`,
@@ -101,7 +121,7 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
       lockTimeout,
     );
 
-    await this._notifyStation(tenantId, identifier, evseId, lockTimeout);
+    await this._notifyStation(tenantId, identifier, evseId, lockTimeout, resolution.protocol);
 
     return reply.send({
       success: true,
@@ -117,13 +137,14 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
     ocppConnectionName: string,
     evseId: number,
     lockTimeout: number,
+    protocol: OCPPVersion,
   ): Promise<void> {
     const payload: OCPP2_1.NotifyWebPaymentStartedRequest = { evseId, timeout: lockTimeout };
     try {
       await this._ocppSender.sendCall({
         ocppConnectionName,
         tenantId,
-        protocol: OCPPVersion.OCPP2_1,
+        protocol,
         action: OCPP_CallAction.NotifyWebPaymentStarted,
         eventGroup: EventGroup.EVDriver,
         payload,

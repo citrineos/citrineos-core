@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP2_0_1, OCPPVersion, OCPP_CallAction } from '@citrineos/types';
-import { SetNetworkProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/configuration/SetNetworkProfileEndpoint.js';
+import { SetNetworkProfileEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/configuration/SetNetworkProfileEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 describe('SetNetworkProfileEndpoint', () => {

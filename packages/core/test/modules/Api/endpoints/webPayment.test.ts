@@ -40,7 +40,6 @@ describe(`POST ${URL}`, () => {
     server = Fastify({ logger: false });
     new WebPaymentApi({
       server,
-      config: { modules: { evdriver: { endpointPrefix: ENDPOINT_PREFIX } } },
       webPaymentEndpoints: [{ route: InitiateWebPaymentEndpoint.route, endpoint }],
       logger,
     });

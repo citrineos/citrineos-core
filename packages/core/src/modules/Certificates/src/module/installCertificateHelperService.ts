@@ -5,10 +5,10 @@ import { BadRequestError, type IFileStorage } from '@citrineos/base';
 import {
   AttributeEnum,
   CertificateUseEnum,
+  InstallCertificateStatusEnum,
   type CertificateDto,
   type CertificateUseEnumType,
   type InstallCertificateStatusEnumType,
-  OCPP2_0_1,
   type WebsocketServerConfig,
 } from '@citrineos/types';
 import {
@@ -267,8 +267,7 @@ export class InstallCertificateHelperService {
       existingPendingInstallCertificateAttempt.status = status;
       await existingPendingInstallCertificateAttempt.save();
       if (
-        existingPendingInstallCertificateAttempt.status ===
-        OCPP2_0_1.InstallCertificateStatusEnumType.Accepted
+        existingPendingInstallCertificateAttempt.status === InstallCertificateStatusEnum.Accepted
       ) {
         const existingInstalledCertificate =
           await this.installedCertificateRepository.readOnlyOneByQuery(tenantId, {

@@ -8,24 +8,27 @@ import {
   type IMessageConfirmation,
   type IOcppSender,
   AbstractEndpoint,
+  type OCPP2_request_types,
 } from '@citrineos/base';
-import { EventGroup, HttpMethod, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import { EventGroup, HttpMethod, OCPP_CallAction, OCPP_2_VER_LIST } from '@citrineos/types';
+import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { InstallRootCertificateRequest } from '@dal/interfaces/index.js';
 import { InstallRootCertificateSchema } from '@dal/interfaces/index.js';
-import type { CertificateAuthorityService } from '@util/index.js';
+import { type CertificateAuthorityService, resolveStationProtocol } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
 
 interface InstallRootCertificateEndpointDependencies extends AbstractEndpointDependencies {
   fileStorage: IFileStorage;
   ocppSender: IOcppSender;
   certificateAuthorityService: CertificateAuthorityService;
+  locationRepository: ILocationRepository;
 }
 
 type InstallRootCertificateRoute = { Body: InstallRootCertificateRequest };
 
 export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRootCertificateRoute> {
   static readonly route: IEndpointDefinition = {
-    method: HttpMethod.Post,
+    method: HttpMethod.Put,
     path: '/installRootCertificate',
     bodySchema: InstallRootCertificateSchema,
   };
@@ -33,17 +36,20 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
   private readonly _fileStorage: IFileStorage;
   private readonly _ocppSender: IOcppSender;
   private readonly _certificateAuthorityService: CertificateAuthorityService;
+  private readonly _locationRepository: ILocationRepository;
 
   constructor({
     logger,
     fileStorage,
     ocppSender,
     certificateAuthorityService,
+    locationRepository,
   }: InstallRootCertificateEndpointDependencies) {
     super(logger);
     this._fileStorage = fileStorage;
     this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
+    this._locationRepository = locationRepository;
   }
 
   async handle(
@@ -53,6 +59,16 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
     this._logger.info(
       `Installing ${installReq.certificateType} on charger ${installReq.ocppConnectionName}`,
     );
+
+    const resolution = await resolveStationProtocol(
+      this._locationRepository.readChargingStationByStationId,
+      installReq.tenantId,
+      installReq.ocppConnectionName,
+      OCPP_2_VER_LIST,
+    );
+    if (!resolution.supported) {
+      return { success: false, payload: resolution.reason };
+    }
 
     let rootCAPem: string;
     if (installReq.fileId) {
@@ -66,13 +82,13 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
     const confirmation = await this._ocppSender.sendCall({
       ocppConnectionName: installReq.ocppConnectionName,
       tenantId: installReq.tenantId,
-      protocol: OCPPVersion.OCPP2_0_1,
+      protocol: resolution.protocol,
       action: OCPP_CallAction.InstallCertificate,
       eventGroup: EventGroup.Certificates,
       payload: {
         certificateType: installReq.certificateType,
         certificate: rootCAPem,
-      } as OCPP2_0_1.InstallCertificateRequest,
+      } as OCPP2_request_types.InstallCertificateRequest,
       callbackUrl: installReq.callbackUrl,
     });
 

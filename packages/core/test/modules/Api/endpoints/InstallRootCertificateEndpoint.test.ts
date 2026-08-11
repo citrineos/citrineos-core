@@ -44,7 +44,7 @@ describe('InstallRootCertificateEndpoint', () => {
   });
 
   const post = (body: Record<string, unknown>) =>
-    mounted.server.inject({ method: 'POST', url: URL, payload: body });
+    mounted.server.inject({ method: 'PUT', url: URL, payload: body });
 
   it('reads the certificate from file storage when a fileId is supplied', async () => {
     const response = await post(aBody({ fileId: 'file-1' }));

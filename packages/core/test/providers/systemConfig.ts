@@ -36,9 +36,8 @@ export function aSystemConfig(
     env: 'development',
     centralSystem: { host: '::', port: 8080 },
     modules: {
-      certificates: { endpointPrefix: '/certificates', requests: [], responses: [] },
+      certificates: { requests: [], responses: [] },
       configuration: {
-        endpointPrefix: '/configuration',
         heartbeatInterval: 60,
         bootRetryInterval: 15,
         ocpp2_0_1: {
@@ -50,13 +49,12 @@ export function aSystemConfig(
         requests: [],
         responses: [],
       },
-      evdriver: { endpointPrefix: '/evdriver', requests: [], responses: [] },
-      monitoring: { endpointPrefix: '/monitoring', requests: [], responses: [] },
-      reporting: { endpointPrefix: '/reporting', requests: [], responses: [] },
-      smartcharging: { endpointPrefix: '/smartcharging', requests: [], responses: [] },
-      tenant: { endpointPrefix: '/tenant', requests: [], responses: [] },
+      evdriver: { requests: [], responses: [] },
+      monitoring: { requests: [], responses: [] },
+      reporting: { requests: [], responses: [] },
+      smartcharging: { requests: [], responses: [] },
+      tenant: { requests: [], responses: [] },
       transactions: {
-        endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
         requests: [OCPP_CallAction.TransactionEvent],
         responses: [OCPP_CallAction.CostUpdated],

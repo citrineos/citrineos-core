@@ -34,25 +34,20 @@ describe('SetStationPasswordEndpoint', () => {
 
   let sendCall: ReturnType<typeof vi.fn>;
   let onChange: ReturnType<typeof vi.fn>;
-  let createOrUpdateDeviceModelByStationId: ReturnType<typeof vi.fn>;
-  let updateResultByStationId: ReturnType<typeof vi.fn>;
+  let provisionVariableAttributes: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
     onChange = vi.fn().mockResolvedValue(anAcceptedSetVariablesResponse());
-    createOrUpdateDeviceModelByStationId = vi.fn().mockResolvedValue([aVariableAttribute()]);
-    updateResultByStationId = vi.fn().mockResolvedValue(undefined);
+    provisionVariableAttributes = vi.fn().mockResolvedValue([aVariableAttribute()]);
 
     const endpoint = getTestInstance(container, SetStationPasswordEndpoint, {
       config: aSystemConfig(),
       cache: { onChange },
       ocppSender: { sendCall },
-      deviceModelRepository: {
-        createOrUpdateDeviceModelByStationId,
-        updateResultByStationId,
-      },
+      deviceModelService: { provisionVariableAttributes },
     });
     mounted = await mountEndpoint(endpoint, SetStationPasswordEndpoint.route);
   });
@@ -64,38 +59,38 @@ describe('SetStationPasswordEndpoint', () => {
       payload: body,
     });
 
-  describe('alreadySetOnCharger semantics', () => {
+  describe('setOnCharger semantics', () => {
     it('does not contact the station when the password is already set on it', async () => {
       const response = await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: true,
+        setOnCharger: true,
       });
 
       expect(response.json().success).toBe(true);
       expect(sendCall).not.toHaveBeenCalled();
-      expect(createOrUpdateDeviceModelByStationId).toHaveBeenCalledTimes(1);
+      expect(provisionVariableAttributes).toHaveBeenCalledTimes(1);
     });
 
     it('requires an explicit password when the password is already set on the station', async () => {
       const response = await post({
         ocppConnectionName: 'cs001',
-        alreadySetOnCharger: true,
+        setOnCharger: true,
       });
 
       expect(response.json()).toEqual({
         success: false,
-        payload: 'Password is required when alreadySetOnCharger is true',
+        payload: 'Password is required when setOnCharger is true',
       });
       expect(sendCall).not.toHaveBeenCalled();
-      expect(createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(provisionVariableAttributes).not.toHaveBeenCalled();
     });
 
     it('contacts the station when the password is not already set on it', async () => {
       await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       expect(sendCall).toHaveBeenCalledTimes(1);
@@ -108,7 +103,7 @@ describe('SetStationPasswordEndpoint', () => {
     });
 
     it('generates a password when none was supplied', async () => {
-      await post({ ocppConnectionName: 'cs001', alreadySetOnCharger: false });
+      await post({ ocppConnectionName: 'cs001', setOnCharger: false });
 
       const sent = sendCall.mock.calls[0][0].payload.setVariableData[0];
       expect(sent.attributeValue).toEqual(expect.any(String));
@@ -123,7 +118,7 @@ describe('SetStationPasswordEndpoint', () => {
       const response = await post({
         ocppConnectionName: 'cs001',
         password: 'short',
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       expect(response.statusCode).toBe(400);
@@ -131,7 +126,7 @@ describe('SetStationPasswordEndpoint', () => {
     });
 
     it('rejects a body without a station name', async () => {
-      const response = await post({ password: A_VALID_PASSWORD, alreadySetOnCharger: false });
+      const response = await post({ password: A_VALID_PASSWORD, setOnCharger: false });
 
       expect(response.statusCode).toBe(400);
       expect(sendCall).not.toHaveBeenCalled();
@@ -143,7 +138,7 @@ describe('SetStationPasswordEndpoint', () => {
       await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       const correlationId = sendCall.mock.calls[0][0].correlationId;
@@ -157,14 +152,14 @@ describe('SetStationPasswordEndpoint', () => {
       const response = await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       expect(response.json()).toEqual({
         success: false,
         payload: 'Failed updating password on cs001 station',
       });
-      expect(createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(provisionVariableAttributes).not.toHaveBeenCalled();
     });
 
     it('reports failure when the station never responds', async () => {
@@ -173,11 +168,11 @@ describe('SetStationPasswordEndpoint', () => {
       const response = await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       expect(response.json().success).toBe(false);
-      expect(createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(provisionVariableAttributes).not.toHaveBeenCalled();
     });
 
     it('reports failure when the station rejects the variable', async () => {
@@ -190,11 +185,11 @@ describe('SetStationPasswordEndpoint', () => {
       const response = await post({
         ocppConnectionName: 'cs001',
         password: A_VALID_PASSWORD,
-        alreadySetOnCharger: false,
+        setOnCharger: false,
       });
 
       expect(response.json().success).toBe(false);
-      expect(createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(provisionVariableAttributes).not.toHaveBeenCalled();
     });
   });
 
@@ -202,15 +197,15 @@ describe('SetStationPasswordEndpoint', () => {
     const response = await post({
       ocppConnectionName: 'cs001',
       password: A_VALID_PASSWORD,
-      alreadySetOnCharger: true,
+      setOnCharger: true,
     });
 
     expect(response.json()).toEqual({ success: true, payload: 'Updated 1 attributes' });
-    const [, deviceModel] = createOrUpdateDeviceModelByStationId.mock.calls[0];
-    expect(deviceModel.variableAttribute[0]).toMatchObject({
+    const [, , reportData, setOnCharger] = provisionVariableAttributes.mock.calls[0];
+    expect(reportData.variableAttribute[0]).toMatchObject({
       value: A_VALID_PASSWORD,
       mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
     });
-    expect(updateResultByStationId).toHaveBeenCalledTimes(1);
+    expect(setOnCharger).toBe(true);
   });
 });

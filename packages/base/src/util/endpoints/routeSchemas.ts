@@ -99,8 +99,9 @@ export function registerRouteSchema(
         if (!isJsonSchema(definition)) {
           continue;
         }
-        definition['$id'] ??= key;
-        registerRouteSchema(targets, definition);
+        const definitionCopy = structuredClone(definition);
+        definitionCopy['$id'] ??= key;
+        registerRouteSchema(targets, definitionCopy);
       }
     }
     const properties = schemaCopy.properties;

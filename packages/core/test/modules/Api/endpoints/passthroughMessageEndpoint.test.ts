@@ -17,7 +17,6 @@ const BODY_SCHEMA = { $id: 'ResetRequestSchema', type: 'object' };
 const ResetEndpoint = passthroughMessageEndpoint({
   action: OCPP_CallAction.Reset,
   protocols: [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1],
-  endpointPrefixConfigKey: 'configuration',
   eventGroup: EventGroup.Configuration,
   bodySchema: () => BODY_SCHEMA,
 });
@@ -48,7 +47,6 @@ describe('passthroughMessageEndpoint', () => {
     expect(ResetEndpoint.route).toMatchObject({
       action: OCPP_CallAction.Reset,
       protocols: [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1],
-      endpointPrefixConfigKey: 'configuration',
       eventGroup: EventGroup.Configuration,
     });
   });
