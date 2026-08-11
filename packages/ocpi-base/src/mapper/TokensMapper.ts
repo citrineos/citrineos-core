@@ -70,7 +70,7 @@ export class TokensMapper {
       case null:
         return TokenType.OTHER;
       default:
-        throw new Error(`Unknown token type: ${type}`);
+        return TokenType.OTHER;
     }
   }
 
