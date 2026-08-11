@@ -24,7 +24,7 @@ import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/in
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
-type Configuration = SystemConfig['modules']['configuration'];
+type Configuration = SystemConfig['ocpp'];
 
 export class BootNotificationService {
   protected _bootRepository: IBootRepository;
@@ -54,10 +54,10 @@ export class BootNotificationService {
   determineBootStatus(bootConfig: Boot | undefined): RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
-      : this._config.ocpp2_0_1!.unknownChargerStatus;
+      : this._config.unknownChargerStatus;
 
     if (bootStatus === RegistrationStatusEnum.Pending) {
-      let needToGetBaseReport = this._config.ocpp2_0_1!.getBaseReportOnPending;
+      let needToGetBaseReport = this._config.getBaseReportOnPending;
       let needToSetVariables = false;
       if (bootConfig) {
         if (
@@ -70,7 +70,7 @@ export class BootNotificationService {
           needToSetVariables = true;
         }
       }
-      if (!needToGetBaseReport && !needToSetVariables && this._config.ocpp2_0_1!.autoAccept) {
+      if (!needToGetBaseReport && !needToSetVariables && this._config.autoAccept) {
         bootStatus = RegistrationStatusEnum.Accepted;
       }
     }
@@ -241,10 +241,9 @@ export class BootNotificationService {
   determineOcpp16BootStatus(
     bootConfig: BootDto | undefined,
   ): OCPP1_6.BootNotificationResponseStatus {
-    let bootStatus = bootConfig
-      ? OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
-      : this._config.ocpp1_6!.unknownChargerStatus;
-
+    let bootStatus = OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(
+      bootConfig ? bootConfig.status : this._config.unknownChargerStatus,
+    );
     if (bootStatus === OCPP1_6.BootNotificationResponseStatus.Pending) {
       let needToGetConfigurations = true;
       let needToChangeConfigurations = true;

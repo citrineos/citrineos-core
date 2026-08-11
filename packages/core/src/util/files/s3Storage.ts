@@ -11,21 +11,19 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import type { BootstrapConfig, ConfigStore } from '@citrineos/base';
+import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { Readable } from 'stream';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
-export class S3Storage implements ConfigStore {
+export class S3Storage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
   private s3Client: S3Client;
   private defaultBucketName: string;
-  private configFileName: string;
-  private configBucketName: string | undefined;
 
   constructor(
-    config: BootstrapConfig['fileAccess']['s3'],
+    config: SystemConfig['fileAccess']['s3'],
     configFileName: string,
     configBucket?: string,
     logger?: Logger<ILogObj>,
@@ -48,8 +46,6 @@ export class S3Storage implements ConfigStore {
         : {}),
     });
     this.defaultBucketName = config!.defaultBucketName!;
-    this.configFileName = configFileName!;
-    this.configBucketName = configBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -196,30 +192,6 @@ export class S3Storage implements ConfigStore {
       this._logger.error(`Error deleting "${key}" from S3:`, error);
       throw error;
     }
-  }
-
-  async fetchConfig(): Promise<SystemConfig | null> {
-    try {
-      const configString = await this.getFile(this.configFileName, this.configBucketName);
-      if (!configString) return null;
-      return JSON.parse(configString) as SystemConfig;
-    } catch (error: any) {
-      if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
-        this._logger.warn('Config not found in S3.');
-        return null;
-      }
-      this._logger.error('Error fetching config from S3:', error);
-      throw error;
-    }
-  }
-
-  async saveConfig(config: SystemConfig): Promise<void> {
-    await this.saveFile(
-      this.configFileName,
-      Buffer.from(JSON.stringify(config, null, 2)),
-      this.configBucketName,
-    );
-    this._logger.info('Config saved to S3.');
   }
 
   private async createBucket(bucket: string): Promise<void> {

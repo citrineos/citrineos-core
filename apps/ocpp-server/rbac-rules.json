@@ -5,10 +5,6 @@
       "POST": ["user", "admin"],
       "DELETE": ["user", "admin"]
     },
-    "/data/ocpprouter/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
-    },
     "/ocpp/2.0.1/certificates/certificateSigned": {
       "POST": ["user", "admin"]
     },
@@ -28,10 +24,6 @@
       "POST": ["user", "admin"]
     },
     "/data/certificates/rootCertificate": {
-      "PUT": ["user", "admin"]
-    },
-    "/data/certificates/systemConfig": {
-      "GET": ["user", "admin"],
       "PUT": ["user", "admin"]
     },
     "/ocpp/2.0.1/configuration/setNetworkProfile": {
@@ -91,10 +83,6 @@
       "GET": ["user", "admin"],
       "DELETE": ["user", "admin"]
     },
-    "/data/configuration/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
-    },
     "/ocpp/2.0.1/evdriver/requestStartTransaction": {
       "POST": ["user", "admin"]
     },
@@ -142,10 +130,6 @@
     "/data/evdriver/localListVersion": {
       "GET": ["user", "admin"]
     },
-    "/data/evdriver/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
-    },
     "/ocpp/2.0.1/monitoring/setVariableMonitoring": {
       "POST": ["user", "admin"]
     },
@@ -168,10 +152,6 @@
       "GET": ["user", "admin"],
       "PUT": ["user", "admin"],
       "DELETE": ["user", "admin"]
-    },
-    "/data/monitoring/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
     },
     "/ocpp/2.0.1/reporting/getBaseReport": {
       "POST": ["user", "admin"]
@@ -228,10 +208,6 @@
       "GET": ["user", "admin"],
       "PUT": ["user", "admin"],
       "DELETE": ["user", "admin"]
-    },
-    "/data/transactions/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
     }
   }
 }

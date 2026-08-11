@@ -1,33 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import fs from 'fs';
-import path from 'path';
 import type {
-  ConfigStore,
   CreateDirectoryOptions,
   DeleteFileOptions,
+  IFileStorage,
   TrustOptions,
 } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/types';
+import fs from 'fs';
+import path from 'path';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
-export class LocalStorage implements ConfigStore {
+export class LocalStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
   private defaultRoot: string;
-  private configFileName: string;
   private configBucket: string | undefined;
 
-  constructor(
-    defaultRoot: string,
-    configFileName: string,
-    configBucket?: string,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(defaultRoot: string, defaultBucket?: string, logger?: Logger<ILogObj>) {
     this.defaultRoot = defaultRoot;
-    this.configFileName = configFileName;
-    this.configBucket = configBucket;
+    this.configBucket = defaultBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -119,33 +111,6 @@ export class LocalStorage implements ConfigStore {
     const absolutePath = this._resolvePath(key, bucket, options?.trusted);
     this._logger.debug(`Deleting ${absolutePath}`);
     fs.rmSync(absolutePath, { recursive: options?.recursive, force: options?.force });
-  }
-
-  async fetchConfig(): Promise<SystemConfig | null> {
-    try {
-      const configString = await this.getFile(this.configFileName, this.configBucket, {
-        trusted: true,
-      });
-      if (!configString) return null;
-      return JSON.parse(configString) as SystemConfig;
-    } catch (error) {
-      this._logger.error('Error fetching config from local storage:', error);
-      return null;
-    }
-  }
-
-  async saveConfig(config: SystemConfig): Promise<void> {
-    try {
-      await this.saveFile(
-        this.configFileName,
-        Buffer.from(JSON.stringify(config, null, 2)),
-        this.configBucket,
-        { trusted: true },
-      );
-      this._logger.info('Config saved locally.');
-    } catch (error) {
-      this._logger.error('Error saving config to local storage:', error);
-    }
   }
 
   /**

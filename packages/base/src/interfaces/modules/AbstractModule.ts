@@ -2,22 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@config/bootstrap.config.js';
 import {
-  type SystemConfig,
+  type CallAction,
   type HandlerProperties,
+  type OcppRequest,
+  type OcppResponse,
+  type OCPPVersionType,
+  type SystemConfig,
+  ErrorCode,
   EventGroup,
   MessageOrigin,
   MessageState,
-  type OcppRequest,
-  type OcppResponse,
-  type CallAction,
-  type OCPPVersionType,
-  ErrorCode,
   OCPPVersion,
 } from '@citrineos/types';
-import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
+import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
+import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
+import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type {
   IMessage,
   IMessageConfirmation,
@@ -25,14 +27,11 @@ import type {
   IMessageSender,
 } from '@interfaces/messages/index.js';
 import type { IModule } from '@interfaces/modules/Module.js';
+import { OcppError } from '@ocpp/rpc/message.js';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OCPPValidator } from './OCPPValidator.js';
-import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
-import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
-import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
-import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 
 /** Two handler classes claiming one action and direction within the same module. */
 interface IHandlerConflict {
@@ -55,7 +54,7 @@ function describeConflicts(conflicts: Iterable<IHandlerConflict>): string[] {
  * module extends this with its own repositories and internal services.
  */
 export interface OcppModuleDependencies {
-  config: BootstrapConfig & SystemConfig;
+  config: SystemConfig;
   cache: ICache;
   sender: IMessageSender;
   handler: IMessageHandler;

@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
   type ICache,
@@ -38,7 +37,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -56,7 +55,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
     deviceModelRepository: IDeviceModelRepository;
@@ -188,16 +187,13 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
 
     // GetBaseReport
     // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
-    if (
-      bootConfigDbEntity.getBaseReportOnPending ??
-      this._config.modules.configuration.ocpp2_0_1?.getBaseReportOnPending
-    ) {
+    if (bootConfigDbEntity.getBaseReportOnPending ?? this._config.ocpp.getBaseReportOnPending) {
       // Remove Notify Report from blacklist
       await this._cache.remove(OCPP_CallAction.NotifyReport, ocppConnectionName);
 
       const getBaseReportRequest = await this._bootService.createGetBaseReportRequest(
         ocppConnectionName,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
       );
 
       const getBaseReportConfirmation = await this._ocppSender.sendCall({
@@ -213,7 +209,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
         ocppConnectionName,
         getBaseReportRequest.requestId.toString(),
         getBaseReportConfirmation,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
@@ -248,7 +244,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
 
         const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
           correlationId,
-          this._config.maxCachingSeconds,
+          this._config.timeouts.maxCachingSeconds,
           ocppConnectionName,
         ); // x2 fudge factor for any network lag
 
@@ -291,7 +287,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       const doNotBootWithRejectedVariables = !(
         (
           bootConfigDbEntity.bootWithRejectedVariables ??
-          this._config.modules.configuration.ocpp2_0_1?.bootWithRejectedVariables
+          this._config.ocpp.bootWithRejectedVariables
         ) //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       );
 
@@ -303,7 +299,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       }
     }
 
-    if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
+    if (this._config.ocpp.autoAccept) {
       //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       // Update boot config with status accepted
       // TODO: Determine how/if StatusInfo should be generated

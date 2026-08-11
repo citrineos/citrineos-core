@@ -4,16 +4,16 @@
 
 /* eslint-disable */
 
-import type { SystemConfig } from '@citrineos/types';
 import { HttpHeader, HttpStatus, UnauthorizedError } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import * as FastifyAuth from '@fastify/auth';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { LocalStorage } from '../files/localStorage.js';
 import type { OpenAPIV3_1 } from 'openapi-types';
 import { OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import * as packageJson from '../../../package.json' with { type: 'json' };
+import { LocalStorage } from '../files/localStorage.js';
 
 /**
  * This transformation is used to set default tags
@@ -59,7 +59,7 @@ function OcppTransformObject({
 
 const registerSwaggerUi = async (systemConfig: SystemConfig, server: FastifyInstance) => {
   const swaggerUiOptions: any = {
-    routePrefix: systemConfig.util.swagger?.path,
+    routePrefix: systemConfig.swagger?.path,
     securityDefinitions: {
       authorization: {
         name: 'authorization',
@@ -83,9 +83,9 @@ const registerSwaggerUi = async (systemConfig: SystemConfig, server: FastifyInst
     },
   };
 
-  if (systemConfig.util.swagger?.logoPath) {
+  if (systemConfig.swagger?.logoPath) {
     const storage = new LocalStorage('', '');
-    const logoContent = await storage.getFile(systemConfig.util.swagger.logoPath, undefined, {
+    const logoContent = await storage.getFile(systemConfig.swagger.logoPath, undefined, {
       trusted: true,
     });
     if (logoContent) {

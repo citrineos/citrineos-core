@@ -5,6 +5,7 @@ import type { ICache, IFileStorage } from '@citrineos/base';
 import {
   type CertificateSigningUseEnumType,
   type SystemConfig,
+  type WebsocketServerConfig,
   CertificateSigningUseEnum,
   OCPP2_1,
 } from '@citrineos/types';
@@ -293,25 +294,26 @@ export class CertificateAuthorityService {
     cache: ICache,
     logger?: Logger<ILogObj>,
   ): IV2GCertificateAuthorityClient {
-    switch (config.util.certificateAuthority.v2gCA.name) {
+    switch (config.integrations.v2gCA?.name) {
       case 'hubject':
         return new Hubject({ config, cache, logger });
       default:
-        throw new Error(`Unsupported V2G CA: ${config.util.certificateAuthority.v2gCA.name}`);
+        throw new Error(`Unsupported V2G CA: ${config.integrations.v2gCA?.name}`);
     }
   }
 
   protected static async _instantiateChargingStationClient(
     config: SystemConfig,
+    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     logger?: Logger<ILogObj>,
   ): Promise<IChargingStationCertificateAuthorityClient> {
-    switch (config.util.certificateAuthority.chargingStationCA.name) {
+    switch (config.integrations.chargingStationCA?.name) {
       case 'acme':
-        return Acme.create(config, fileStorage, logger);
+        return Acme.create(config, websocketServersConfig, fileStorage, logger);
       default:
         throw new Error(
-          `Unsupported Charging Station CA: ${config.util.certificateAuthority.chargingStationCA.name}`,
+          `Unsupported Charging Station CA: ${config.integrations.chargingStationCA?.name}`,
         );
     }
   }

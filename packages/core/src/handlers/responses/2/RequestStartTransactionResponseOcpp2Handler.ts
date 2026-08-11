@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsResponseHandler,
-  type BootstrapConfig,
   type IMessage,
   type IOcppSender,
   OCPP2_common_types,
@@ -28,7 +27,7 @@ import { IdGenerator } from '@util/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.RequestStartTransaction)
 export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler {
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _ocppSender: IOcppSender;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _idGenerator: IdGenerator;
@@ -40,7 +39,7 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
     chargingProfileRepository,
     idGenerator,
   }: AbstractHandlerDependencies & {
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     ocppSender: IOcppSender;
     chargingProfileRepository: IChargingProfileRepository;
     idGenerator: IdGenerator;
@@ -83,7 +82,7 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
         },
       );
       // 2. Request charging profiles to get the latest data (if configured)
-      if (this._config.modules.evdriver.enableGetChargingProfilesOnStartTransaction !== false) {
+      if (this._config.evdriver.enableGetChargingProfilesOnStartTransaction !== false) {
         await this._ocppSender.sendCall({
           ocppConnectionName,
           tenantId: message.context.tenantId,

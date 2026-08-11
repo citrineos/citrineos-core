@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   type ICache,
   type IMessage,
   type IOcppSender,
@@ -33,7 +32,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
 
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _deviceModelRepository: IDeviceModelRepository;
 
   constructor({
@@ -45,7 +44,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     deviceModelRepository: IDeviceModelRepository;
   }) {
     super(logger);
@@ -134,7 +133,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
         message.payload.requestId.toString(),
         NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
         ocppConnectionName,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
       );
       this._logger.info('GetBaseReport Ongoing', success, message.payload.requestId);
     }

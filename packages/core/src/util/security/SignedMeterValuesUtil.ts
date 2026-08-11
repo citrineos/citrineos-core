@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, IFileStorage, OCPP2_common_types } from '@citrineos/base';
+import type { IFileStorage, OCPP2_common_types } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { sequelize } from '@dal/index.js';
 import type { IChargingStationSecurityInfoRepository } from '@dal/interfaces/repositories.js';
@@ -19,13 +19,13 @@ export class SignedMeterValuesUtil {
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
   private readonly _signedMeterValuesConfiguration:
-    | SystemConfig['modules']['transactions']['signedMeterValuesConfiguration']
+    | SystemConfig['transactions']['signedMeterValuesConfiguration']
     | undefined;
 
   /**
    * @param {IFileStorage} [fileStorage] - The `fileStorage` allows access to the configured file storage.
    *
-   * @param {BootstrapConfig & SystemConfig} config - The `config` contains the current system configuration settings.
+   * @param {SystemConfig} config - The `config` contains the current system configuration settings.
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
@@ -36,7 +36,7 @@ export class SignedMeterValuesUtil {
     logger,
   }: {
     fileStorage: IFileStorage;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
     this._fileStorage = fileStorage;
@@ -44,8 +44,7 @@ export class SignedMeterValuesUtil {
     this._chargingStationSecurityInfoRepository =
       new sequelize.SequelizeChargingStationSecurityInfoRepository({ config, logger });
 
-    this._signedMeterValuesConfiguration =
-      config.modules.transactions.signedMeterValuesConfiguration;
+    this._signedMeterValuesConfiguration = config.transactions.signedMeterValuesConfiguration;
   }
 
   /**

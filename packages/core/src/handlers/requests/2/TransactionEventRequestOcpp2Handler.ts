@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { SignedMeterValuesUtil } from '@/util/index.js';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   CacheNamespace,
   type ICache,
   type IMessage,
@@ -37,11 +37,10 @@ import {
   Transaction,
   VariableAttribute,
 } from '@dal/index.js';
-import { isForeignKeyConstraintError } from '@util/errors.js';
-import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
-import { SignedMeterValuesUtil } from '@/util/index.js';
-import type { CostNotifier } from '@modules/Transactions/src/module/CostNotifier.js';
 import type { CostCalculator } from '@modules/Transactions/src/module/CostCalculator.js';
+import type { CostNotifier } from '@modules/Transactions/src/module/CostNotifier.js';
+import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
+import { isForeignKeyConstraintError } from '@util/errors.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.TransactionEvent)
 export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
@@ -74,7 +73,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     ocppSender: IOcppSender;
     cache: ICache;
     chargingProfileRepository: IChargingProfileRepository;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     costCalculator: CostCalculator;
     costNotifier: CostNotifier;
     deviceModelRepository: IDeviceModelRepository;
@@ -94,8 +93,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
 
-    this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
-    this._costUpdatedInterval = config.modules.transactions.costUpdatedInterval;
+    this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
+    this._costUpdatedInterval = config.transactions.costUpdatedInterval;
   }
 
   async handle(

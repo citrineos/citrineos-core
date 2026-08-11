@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
   type ICache,
@@ -35,7 +34,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
@@ -53,7 +52,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
@@ -192,7 +191,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
 
       const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
         correlationId,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
         ocppConnectionName,
       );
       const changeConfigurationResponseMessageConfirmation: IMessageConfirmation =

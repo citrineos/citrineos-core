@@ -2,31 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { HttpMethod, OCPPVersion, type CallAction, type OcppRequest } from '@citrineos/types';
+import { AuthorizationSecurity } from '@interfaces/api/AuthorizationSecurity.js';
+import type { IMessageEndpointDefinition } from '@interfaces/api/MessageEndpointDefinition.js';
+import { IMessageQuerystringSchema } from '@interfaces/api/MessageQuerystring.js';
+import { METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from '@interfaces/api/metadata.js';
+import type { IModuleApi } from '@interfaces/api/ModuleApi.js';
+import type { IMessageConfirmation } from '@interfaces/messages/index.js';
+import type { IModule } from '@interfaces/modules/Module.js';
+import { OCPP2_Namespace } from '@ocpp/persistence/index.js';
+import { Namespace, OCPP1_6_Namespace } from '@ocpp/persistence/namespace.js';
+import { MessageConfirmationSchema } from '@ocpp/persistence/querySchema.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IDataEndpointDefinition } from './DataEndpointDefinition.js';
-import type { IMessageEndpointDefinition } from '@interfaces/api/MessageEndpointDefinition.js';
-import { METADATA_DATA_ENDPOINTS, METADATA_MESSAGE_ENDPOINTS } from '@interfaces/api/metadata.js';
-import {
-  HttpMethod,
-  type SystemConfig,
-  type OcppRequest,
-  OCPPVersion,
-  systemConfigSchema,
-  type CallAction,
-} from '@citrineos/types';
-import { ConfigStoreFactory } from '@config/ConfigStore.js';
-import { MessageConfirmationSchema } from '@ocpp/persistence/querySchema.js';
-import { Namespace, OCPP1_6_Namespace } from '@ocpp/persistence/namespace.js';
-import { OCPP2_Namespace } from '@ocpp/persistence/index.js';
-import type { IMessageConfirmation } from '@interfaces/messages/index.js';
-import type { IModule } from '@interfaces/modules/Module.js';
-import { IMessageQuerystringSchema } from '@interfaces/api/MessageQuerystring.js';
-import type { IModuleApi } from '@interfaces/api/ModuleApi.js';
-import { AuthorizationSecurity } from '@interfaces/api/AuthorizationSecurity.js';
-import { z } from 'zod';
 
 /**
  * Canonical signature every OCPP message-endpoint handler is invoked with by
@@ -124,10 +115,6 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
         expose.security,
       );
     });
-
-    if (dataEndpointDefinitions && dataEndpointDefinitions.length > 0) {
-      this.registerSystemConfigRoutes(module);
-    }
   }
 
   /**
@@ -206,7 +193,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       } as const,
     };
 
-    if (this._module.config.util.swagger?.exposeMessage) {
+    if (this._module.config.swagger?.exposeMessage) {
       this._server.register(async (fastifyInstance) => {
         this.registerSchemaForOpts(fastifyInstance, _opts, version);
         fastifyInstance.route(_opts);
@@ -322,7 +309,7 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       }
     }
 
-    if (this._module.config.util.swagger?.exposeData) {
+    if (this._module.config.swagger?.exposeData) {
       this._server.register(async (fastifyInstance) => {
         this.registerSchemaForOpts(fastifyInstance, _opts);
         fastifyInstance.route<{ Body: object; Querystring: object }>(_opts);
@@ -424,35 +411,6 @@ export abstract class AbstractModuleApi<T extends IModule> implements IModuleApi
       return null;
     }
   };
-
-  protected registerSystemConfigRoutes(module: T) {
-    this._addDataRoute.call(
-      this,
-      OCPP2_Namespace.SystemConfig,
-      () => new Promise((resolve) => resolve(module.config)),
-      HttpMethod.Get,
-    );
-
-    const systemConfigJsonSchema = z.toJSONSchema(systemConfigSchema, {
-      target: 'openapi-3.0',
-    });
-    this._addDataRoute.call(
-      this,
-      OCPP2_Namespace.SystemConfig,
-      async (request: FastifyRequest<{ Body: SystemConfig }>) => {
-        await ConfigStoreFactory.getInstance().saveConfig(request.body);
-        module.config = request.body;
-      },
-      HttpMethod.Put,
-      undefined,
-      undefined,
-      undefined,
-      {
-        ...systemConfigJsonSchema,
-        $id: 'SystemConfigSchema',
-      },
-    );
-  }
 
   // TODO: for performance reasons can these unknown keys be removed directly from schemas?
   private removeUnknownKeys = (schema: any): any => {

@@ -4,7 +4,7 @@
 
 import { LocalStorage } from '@/util/files/localStorage.js';
 import type { IFileStorage } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/types';
+import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
@@ -24,12 +24,15 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   // Key: serverId, Value: [cert chain, sub ca private key]
   private _securityCertChainKeyMap: Map<string, [string, string]>;
 
+  private _config: SystemConfig;
+  private _websocketServersConfig: WebsocketServerConfig[];
   private _client: Client | undefined;
   private _logger: Logger<ILogObj>;
   private readonly _fileStorage: IFileStorage;
 
   private constructor(
     config: SystemConfig,
+    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     securityCertChainKeyMap: Map<string, [string, string]>,
     client: Client,
@@ -41,11 +44,14 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-    this._email = config.util.certificateAuthority.chargingStationCA.acme?.email;
+    this._config = config;
+    this._websocketServersConfig = websocketServersConfig;
+    this._email = config.integrations.chargingStationCA?.acme?.email;
   }
 
   static async create(
     config: SystemConfig,
+    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     logger?: Logger<ILogObj>,
     client?: Client,
@@ -55,9 +61,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       : new Logger<ILogObj>({ name: 'Acme' });
 
     // Collect all required file paths to check existence in configured file storage
-    const securityProfile3Servers = config.util.networkConnection.websocketServers.filter(
-      (s) => s.securityProfile === 3,
-    );
+    const securityProfile3Servers = websocketServersConfig.filter((s) => s.securityProfile === 3);
     const requiredPaths = securityProfile3Servers.flatMap((s) => [
       s.tlsCertificateChainFilePath as string,
       s.mtlsCertificateAuthorityKeyFilePath as string,
@@ -103,7 +107,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       }
     }
 
-    const acmeEnv = config.util.certificateAuthority.chargingStationCA?.acme?.env;
+    const acmeEnv = config.integrations.chargingStationCA?.acme?.env;
     const directoryUrl =
       acmeEnv === 'production'
         ? acme.directory.letsencrypt.production
@@ -111,7 +115,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
 
     let resolvedClient = client;
     if (!resolvedClient) {
-      const accountKeyFilePath = config.util.certificateAuthority.chargingStationCA?.acme
+      const accountKeyFilePath = config.integrations.chargingStationCA?.acme
         ?.accountKeyFilePath as string;
       const accountKeyStr = await diskStorage.getFile(accountKeyFilePath, undefined, {
         trusted: true,
@@ -125,7 +129,14 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       });
     }
 
-    return new Acme(config, fileStorage, securityCertChainKeyMap, resolvedClient, logger);
+    return new Acme(
+      config,
+      websocketServersConfig,
+      fileStorage,
+      securityCertChainKeyMap,
+      resolvedClient,
+      logger,
+    );
   }
 
   /**
