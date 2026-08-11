@@ -38,7 +38,7 @@ export class ModalHarness {
 
   async expectOpen(): Promise<void> {
     await expect(this.dialog).toBeVisible({ timeout: 15_000 });
-    await expect(this.title).toBeVisible();
+    await expect(this.title).toBeVisible({ timeout: 15_000 });
   }
 
   async expectClosed(): Promise<void> {
@@ -62,11 +62,15 @@ export class ModalHarness {
       .getByRole('combobox')
       .first();
     await trigger.click();
-    await this.page
+    // The option list is a portal fed by a useSelect query — wait for it
+    // instead of clicking into a still-empty popover.
+    const option = this.page
       .getByRole('option', {
         name: optionName instanceof RegExp ? optionName : new RegExp(optionName, 'i'),
       })
-      .click();
+      .first();
+    await option.waitFor({ state: 'visible', timeout: 30_000 });
+    await option.click();
   }
 
   async cancel(): Promise<void> {
@@ -86,25 +90,56 @@ export class ModalHarness {
     toastPattern: RegExp = /success|accepted|sent|started|stopped|reset|completed|received/i,
     timeout = 30_000,
   ): Promise<void> {
-    await this.submitButton.click();
-    const toastRegion = this.page.getByRole('region', {
-      name: /notifications/i,
-    });
-    await expect(toastRegion).toContainText(toastPattern, { timeout });
+    await this.submitAndWaitForNewToast(toastPattern, timeout);
   }
 
   async submitExpectingError(
     errorPattern: RegExp = /failed|error|invalid|denied/i,
     timeout = 30_000,
   ): Promise<void> {
-    await this.submitButton.click();
-    const toastRegion = this.page.getByRole('region', {
-      name: /notifications/i,
-    });
     // The destructive toast is the contract; whether the modal stays open or
     // auto-closes depends on the per-modal handler. Both are acceptable
     // observable behaviours per the OCPP command pipeline.
-    await expect(toastRegion).toContainText(errorPattern, { timeout });
+    await this.submitAndWaitForNewToast(errorPattern, timeout);
+  }
+
+  // Tags the toasts already on screen so a leftover toast from an earlier
+  // action in the same test can't satisfy a later wait.
+  async markToastsStale(): Promise<void> {
+    await this.page
+      .getByRole('region', { name: /notifications/i })
+      .locator('[data-sonner-toast]')
+      .evaluateAll((els) => els.forEach((el) => el.setAttribute('data-e2e-stale', '1')))
+      .catch(() => undefined);
+  }
+
+  // Waits for a toast that appeared after the last markToastsStale() call.
+  async newToastVisible(pattern: RegExp, timeout: number): Promise<void> {
+    await expect(
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .locator('[data-sonner-toast]:not([data-e2e-stale])')
+        .filter({ hasText: pattern })
+        .first(),
+    ).toBeVisible({ timeout });
+  }
+
+  private async submitAndWaitForNewToast(pattern: RegExp, timeout: number): Promise<void> {
+    await this.markToastsStale();
+    await this.submitButton.click();
+    await this.newToastVisible(pattern, timeout);
+  }
+
+  // Submits and asserts the form REJECTED it: a validation message appears
+  // and the dialog stays mounted. A bare dialog-still-visible check passes on
+  // the first poll even if the submit was about to dispatch — this waits for
+  // the positive signal instead.
+  async expectBlockedSubmit(): Promise<void> {
+    await this.submitButton.click();
+    await expect(
+      this.dialog.locator('[role="alert"], [data-slot="form-message"]').first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(this.dialog).toBeVisible();
   }
 
   validationError(fieldLabel: RegExp | string): Locator {
