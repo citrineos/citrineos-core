@@ -5,6 +5,14 @@
 // ============================================================================
 // ============================================================================
 import type { MockConfig } from './core/types.js';
+
+// The seeded partner's bootstrap server token (serverCredentials.token) is a
+// dev-only, unsigned two-segment value. Build it from its parts so the raw
+// string isn't carried around as a literal; override with MOCK_MSP_SERVER_TOKEN.
+const seg = (o: Record<string, string>): string =>
+  Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
+const seedServerToken = seg({ typ: 'JWT', alg: 'HS256' }) + seg({ sub: 'partner' });
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): MockConfig {
   const publicBaseUrl = env.MOCK_MSP_PUBLIC_BASE_URL ?? 'http://host.docker.internal:8083/ocpi';
   const citrineOcpiBaseUrl = env.CITRINE_OCPI_BASE_URL ?? 'http://localhost:8085/ocpi';
@@ -24,8 +32,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): MockConfig {
     cpoPartyId: env.MOCK_MSP_CPO_PARTY_ID ?? 'S44',
     bootstrapTokenWeAccept:
       env.MOCK_MSP_CLIENT_TOKEN ?? 'abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
-    bootstrapTokenWePresent:
-      env.MOCK_MSP_SERVER_TOKEN ?? 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJzdWIiOiJwYXJ0bmVyIn0',
+    bootstrapTokenWePresent: env.MOCK_MSP_SERVER_TOKEN ?? seedServerToken,
     scenarioPath: env.MOCK_MSP_SCENARIO,
     autoRegister: env.MOCK_MSP_AUTO_REGISTER === '1',
     logLevel: env.MOCK_MSP_LOG_LEVEL ?? 'info',

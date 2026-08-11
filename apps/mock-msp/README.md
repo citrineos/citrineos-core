@@ -255,8 +255,13 @@ Two bootstrap tokens (both **base64-encoded on the wire**, format
 
 | Seed field | Raw value | Direction |
 |---|---|---|
-| `credentials.token` | `abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567` | Citrine **presents** this calling us → the mock **accepts** it inbound. |
-| `serverCredentials.token` | `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJzdWIiOiJwYXJ0bmVyIn0` | The mock **presents** this calling Citrine. |
+| `credentials.token` | the seed's `credentials.token` (`abc123…`) | Citrine **presents** this calling us → the mock **accepts** it inbound. |
+| `serverCredentials.token` | the seed's `serverCredentials.token` (unsigned dev value) | The mock **presents** this calling Citrine. |
+
+The exact bootstrap values live in the seed
+(`apps/ocpi-server/seeders/20250806120002-default-tenant-partner.ts`) — the mock
+reads them from there (or from the `MOCK_MSP_*` env vars) rather than repeating
+them here.
 
 These are **bootstrap** values; a live handshake rotates them. Override any with
 the `MOCK_MSP_*` env vars (table at the bottom).
