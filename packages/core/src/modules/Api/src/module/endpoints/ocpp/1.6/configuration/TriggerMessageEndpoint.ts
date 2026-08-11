@@ -37,7 +37,7 @@ export class TriggerMessageEndpoint extends AbstractMessageEndpoint {
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
-    if (connectorId && connectorId <= 0) {
+    if (connectorId !== null && connectorId !== undefined && connectorId <= 0) {
       const errorMsg = `connectorId should be either omitted or greater than 0.`;
       this._logger.error(errorMsg);
       return [{ success: false, payload: errorMsg }];

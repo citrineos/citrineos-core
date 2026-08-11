@@ -326,6 +326,16 @@ describe('configuration message endpoints', () => {
       expect(sendCall.mock.calls[0][0].payload.connectorId).toBe(1);
     });
 
+    it('rejects a connectorId of zero without sending', async () => {
+      const confirmations = await handle({
+        requestedMessage: OCPP1_6.TriggerMessageRequestRequestedMessage.Heartbeat,
+        connectorId: 0,
+      });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
     it('rejects a negative connectorId without sending', async () => {
       const confirmations = await handle({
         requestedMessage: OCPP1_6.TriggerMessageRequestRequestedMessage.Heartbeat,
