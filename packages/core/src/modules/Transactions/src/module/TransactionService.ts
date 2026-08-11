@@ -318,13 +318,32 @@ export class TransactionService {
       const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
         idToken: idToken,
       });
-      if (authorizations.length !== 1) {
-        this._logger.error(
-          `Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`,
-        );
+      if (authorizations.length === 0) {
+        this._logger.error(`No authorization found for idToken: ${idToken}`);
         return response;
       }
-      const authorization = authorizations[0];
+      // An OCPP 1.6 idTag is a bare string with no token type, so the same value can
+      // legitimately be stored under several idTokenTypes (Authorizations has no unique
+      // constraint on idToken, and the 2.0.1/2.1 paths above disambiguate with
+      // idToken.type — 1.6 has nothing to disambiguate with). Resolve deterministically
+      // and fail safe: honour the first non-Accepted match so a Blocked/Expired duplicate
+      // still blocks, rather than rejecting a token whose matches all say Accepted.
+      let authorization = authorizations[0];
+      if (authorizations.length > 1) {
+        const restrictive = authorizations.find(
+          (candidate) =>
+            candidate.status &&
+            OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
+              candidate.status,
+            ) !== OCPP1_6.StartTransactionResponseStatus.Accepted,
+        );
+        authorization = restrictive ?? authorization;
+        this._logger.warn(
+          `Found ${authorizations.length} authorizations for idToken ${idToken} ` +
+            `(types: ${authorizations.map((candidate) => candidate.idTokenType).join(', ')}); ` +
+            `using authorization ${authorization.id} (status ${authorization.status}).`,
+        );
+      }
 
       // Check expiration and status
       if (!authorization.status) {
