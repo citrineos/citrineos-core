@@ -198,7 +198,8 @@ export function createDockerConfig() {
             host: '0.0.0.0',
             port: 8081,
             protocols: OCPP_VERSION_LIST,
-            dynamicTenantResolution: true,
+            tenantId: DEFAULT_TENANT_ID,
+            dynamicTenantResolution: false,
             //Uncomment to debug or use a specific port
             //forceProtocol: OCPPVersion.OCPP2_0_1
           },
