@@ -77,12 +77,7 @@ export class DrizzleBootRepository
   // because they only accept key as a number, but Boot stores id as a string equal to the
   // ocppConnectionName of the relevant station.
 
-  async updateByKey(
-    tenantId: number,
-    value: object,
-    key: string,
-    emitEvent = true,
-  ): Promise<BootDto | undefined> {
+  async updateByKey(tenantId: number, value: object, key: string): Promise<BootDto | undefined> {
     const rows = (await this.db
       .update(bootTable)
       .set(toBootEntity(value))
@@ -91,9 +86,9 @@ export class DrizzleBootRepository
 
     if (!rows[0]) return undefined;
     const dto = this.toDto(rows[0]);
-    if (emitEvent) {
-      this.emit('updated', [dto]);
-    }
+
+    this.emit('updated', [dto]);
+
     return dto;
   }
 
@@ -102,19 +97,38 @@ export class DrizzleBootRepository
     value: BootConfig,
     key: string,
   ): Promise<BootDto | undefined> {
-    const bootExists = await this.existsByKey(tenantId, key);
+    // Wrapping in a transaction to match the Sequelize repo and "just in case" - unfortunately
+    // means the db logic has to be repeated to use the transaction over the db
     let savedBoot: BootDto | undefined;
+    let bootExists = false;
 
-    if (bootExists) {
-      savedBoot = await this.updateByKey(tenantId, value, key, false);
-    } else {
-      const rows = (await this.db
-        .insert(bootTable)
-        .values({ ...toBootEntity(value), tenantId } as BootEntity)
-        .returning()) as BootEntity[];
+    await this.db.transaction(async (tx) => {
+      const existingBoots = await tx
+        .select({ id: bootTable.id })
+        .from(bootTable)
+        .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+        .limit(1);
 
-      savedBoot = this.toDto(rows[0]);
-    }
+      bootExists = existingBoots.length > 0;
+
+      if (bootExists) {
+        const bootSavedResult = (await tx
+          .update(bootTable)
+          .set(toBootEntity(value))
+          .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+          .returning()) as BootEntity[];
+
+        if (!bootSavedResult[0]) return undefined;
+        savedBoot = this.toDto(bootSavedResult[0]);
+      } else {
+        const rows = (await tx
+          .insert(bootTable)
+          .values({ ...toBootEntity(value), tenantId } as BootEntity)
+          .returning()) as BootEntity[];
+
+        savedBoot = this.toDto(rows[0]);
+      }
+    });
 
     if (savedBoot) {
       if (value.pendingBootSetVariableIds) {
