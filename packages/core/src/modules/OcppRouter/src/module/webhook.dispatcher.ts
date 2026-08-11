@@ -167,29 +167,41 @@ export class WebhookDispatcher {
 
     const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: ocppConnectionName,
-      correlationId: messageId,
-      origin: origin,
-      type: type,
-      action: action,
-      protocol: protocol as OCPPVersion,
-      raw: message,
-      payload: payload,
-      timestamp: timestamp,
-    });
+    // Persisting the audit record must not be able to take down message routing: an
+    // unguarded rejection here surfaces as an unhandled promise rejection and terminates
+    // the process. dispatchMessageReceived is additionally awaited from a finally block
+    // in MessageRouterImpl.onMessage, where a throw also bypasses that method's own
+    // try/catch.
+    let messageRecord;
+    try {
+      messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        correlationId: messageId,
+        origin: origin,
+        type: type,
+        action: action,
+        protocol: protocol as OCPPVersion,
+        raw: message,
+        payload: payload,
+        timestamp: timestamp,
+      });
+    } catch (error) {
+      this._logger.error(
+        `Failed to persist OCPP message for ${identifier} with correlationId ${messageId}: ${error}`,
+      );
+    }
 
     if (action === undefined) {
-      this._logger.debug(
-        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
-      );
-      if (!messageRecord.action) {
+      if (!messageRecord?.action) {
         this._logger.error(
           `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
         );
         return;
       }
+      this._logger.debug(
+        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
+      );
       action = messageRecord.action;
     }
 
@@ -236,29 +248,41 @@ export class WebhookDispatcher {
 
     const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: ocppConnectionName,
-      correlationId: messageId,
-      origin: origin,
-      type: type,
-      action: action,
-      protocol: protocol as OCPPVersion,
-      raw: message,
-      payload: payload,
-      timestamp: timestamp,
-    });
+    // Persisting the audit record must not be able to take down message routing: an
+    // unguarded rejection here surfaces as an unhandled promise rejection and terminates
+    // the process. dispatchMessageReceived is additionally awaited from a finally block
+    // in MessageRouterImpl.onMessage, where a throw also bypasses that method's own
+    // try/catch.
+    let messageRecord;
+    try {
+      messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        correlationId: messageId,
+        origin: origin,
+        type: type,
+        action: action,
+        protocol: protocol as OCPPVersion,
+        raw: message,
+        payload: payload,
+        timestamp: timestamp,
+      });
+    } catch (error) {
+      this._logger.error(
+        `Failed to persist OCPP message for ${identifier} with correlationId ${messageId}: ${error}`,
+      );
+    }
 
     if (action === undefined) {
-      this._logger.debug(
-        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
-      );
-      if (!messageRecord.action) {
+      if (!messageRecord?.action) {
         this._logger.error(
           `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
         );
         return;
       }
+      this._logger.debug(
+        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
+      );
       action = messageRecord.action;
     }
 
