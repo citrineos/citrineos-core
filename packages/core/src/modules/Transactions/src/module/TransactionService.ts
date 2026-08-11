@@ -280,7 +280,7 @@ export class TransactionService {
     transactionId?: string | null,
     tariffId?: number | null,
   ): Promise<MeterValue[]> {
-    return Promise.all(
+    const created = await Promise.all(
       meterValues.map(async (meterValue) => {
         const hasPeriodic: boolean = meterValue.sampledValue?.some(
           (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
@@ -298,6 +298,7 @@ export class TransactionService {
         }
       }),
     );
+    return created.filter((mv): mv is MeterValue => mv !== undefined);
   }
 
   async authorizeOcpp16IdToken(

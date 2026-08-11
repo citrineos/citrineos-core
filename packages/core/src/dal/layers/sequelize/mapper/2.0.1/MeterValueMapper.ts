@@ -199,7 +199,9 @@ export class MeterValueMapper {
       case OCPP2_0_1.MeasurandEnumType.Voltage:
         return 'Voltage';
       default:
-        return 'Energy.Active.Import.Register';
+        // Unrepresentable measurand: return undefined rather than mislabeling it as the energy
+        // register (which would corrupt the stored measurand and the transaction kWh).
+        return undefined;
     }
   }
 

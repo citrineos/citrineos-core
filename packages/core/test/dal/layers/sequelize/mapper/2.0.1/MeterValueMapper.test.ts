@@ -108,10 +108,8 @@ describe('MeterValueMapper (OCPP 2.0.1)', () => {
         expect(MeterValueMapper.fromMeasurandEnumType(undefined)).toBeUndefined();
       });
 
-      it('defaults to Energy.Active.Import.Register for unknown values', () => {
-        expect(MeterValueMapper.fromMeasurandEnumType('unknown' as any)).toBe(
-          'Energy.Active.Import.Register',
-        );
+      it('returns undefined for unrepresentable/unknown values', () => {
+        expect(MeterValueMapper.fromMeasurandEnumType('unknown' as any)).toBeUndefined();
       });
     });
   });

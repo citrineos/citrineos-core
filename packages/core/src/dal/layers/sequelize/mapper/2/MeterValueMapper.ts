@@ -15,15 +15,21 @@ import {
 } from '@citrineos/types';
 
 export class MeterValueMapper {
-  static fromMeterValueType(meterValueType: OCPP2_common_types.MeterValueType): MeterValueDto {
+  static fromMeterValueType(
+    meterValueType: OCPP2_common_types.MeterValueType,
+  ): MeterValueDto | undefined {
+    const sampledValue = MeterValueMapper.fromSampledValueTypes(
+      meterValueType.sampledValue as [
+        OCPP2_common_types.SampledValueType,
+        ...OCPP2_common_types.SampledValueType[],
+      ],
+    );
+    if (sampledValue.length === 0) {
+      return undefined;
+    }
     return {
       timestamp: meterValueType.timestamp,
-      sampledValue: MeterValueMapper.fromSampledValueTypes(
-        meterValueType.sampledValue as [
-          OCPP2_common_types.SampledValueType,
-          ...OCPP2_common_types.SampledValueType[],
-        ],
-      ),
+      sampledValue: sampledValue as [SampledValue, ...SampledValue[]],
     };
   }
 
@@ -32,17 +38,24 @@ export class MeterValueMapper {
       OCPP2_common_types.SampledValueType,
       ...OCPP2_common_types.SampledValueType[],
     ],
-  ): [SampledValue, ...SampledValue[]] {
+  ): SampledValue[] {
     if (!Array.isArray(sampledValueTypes) || sampledValueTypes.length === 0) {
       throw new Error(`Invalid sampledValueTypes: ${JSON.stringify(sampledValueTypes)}`);
     }
 
     const sampledValues: SampledValue[] = [];
     for (const sv of sampledValueTypes) {
+      const measurand = MeterValueMapper.fromMeasurandEnumType(sv.measurand);
+      if (sv.measurand && measurand === undefined) {
+        console.warn(
+          `Dropping unrepresentable OCPP measurand "${sv.measurand}" from meter value sampled values`,
+        );
+        continue;
+      }
       const sampledValue: SampledValue = {
         value: sv.value,
         context: MeterValueMapper.fromReadingContextEnumType(sv.context),
-        measurand: MeterValueMapper.fromMeasurandEnumType(sv.measurand),
+        measurand,
         phase: MeterValueMapper.fromPhaseEnumType(sv.phase),
         location: MeterValueMapper.fromLocationEnumType(sv.location),
       };
@@ -69,7 +82,7 @@ export class MeterValueMapper {
       sampledValues.push(sampledValue);
     }
 
-    return sampledValues as [SampledValue, ...SampledValue[]];
+    return sampledValues;
   }
 
   static fromReadingContextEnumType(
@@ -187,7 +200,7 @@ export class MeterValueMapper {
       case OCPP2_1.MeasurandEnumType.Voltage:
         return 'Voltage';
       default:
-        return 'Energy.Active.Import.Register';
+        return undefined;
     }
   }
 

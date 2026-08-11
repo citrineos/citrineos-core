@@ -340,7 +340,7 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue>;
+  ): Promise<MeterValue | undefined>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
