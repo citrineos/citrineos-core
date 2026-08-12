@@ -4,10 +4,18 @@
 
 import { test, expect } from '../../fixtures';
 import { OverviewPage } from '../../pages/overview.page';
+import { blockGoogleMaps, restoreAllRoutes } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.describe('overview › dashboard', () => {
+  // CI has no Maps key, so /overview otherwise fires live requests at
+  // maps.googleapis.com (and renders the SDK's AuthFailure card) on every
+  // test — external network has no business in these assertions. E2E-011
+  // opts back out below because the live SDK is exactly what it tests.
+  test.beforeEach(async ({ page }) => {
+    await blockGoogleMaps(page);
+  });
   test('E2E-010: KPI cards render their headings on /overview', async ({
     page,
     seededLocation,
@@ -21,11 +29,13 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiOnlineHeading).toBeVisible();
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(overview.kpiPluginSuccessHeading).toBeVisible();
-    await expect(overview.kpiChargerActivityHeading).toBeVisible();
-    await expect(overview.locationsCardHeading).toBeVisible();
+    // The KPI headings sit inside query-bound skeletons; under CI load the
+    // Hasura round trips can far outlive the default expect timeout.
+    await expect(overview.kpiOnlineHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiPluginSuccessHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiChargerActivityHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.locationsCardHeading).toBeVisible({ timeout: 60_000 });
   });
 
   test('E2E-011: Locations card mounts the Google map surface when MAPS_E2E_KEY is provisioned', async ({
@@ -53,6 +63,9 @@ test.describe('overview › dashboard', () => {
     );
     void seededLocation;
 
+    // This test wants the real SDK — undo the suite-wide Maps block.
+    await restoreAllRoutes(page);
+
     const overview = new OverviewPage(page);
     await overview.goto();
 
@@ -71,8 +84,13 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(page.getByText(seededTransaction.transactionId, { exact: false })).toBeVisible({
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    // The card lists only the 3 newest active transactions, so concurrently
+    // seeded ones can displace ours — look it up via the card's search, which
+    // filters server-side on transactionId.
+    await page.getByRole('combobox').click();
+    await page.keyboard.type(seededTransaction.transactionId);
+    await expect(page.getByRole('option', { name: seededTransaction.transactionId })).toBeVisible({
       timeout: 30_000,
     });
   });
@@ -81,9 +99,9 @@ test.describe('overview › dashboard', () => {
     const overview = new OverviewPage(page);
     await overview.goto();
 
-    await expect(overview.kpiOnlineHeading).toBeVisible();
-    await expect(overview.kpiActiveTransactionsHeading).toBeVisible();
-    await expect(overview.kpiPluginSuccessHeading).toBeVisible();
-    await expect(overview.kpiChargerActivityHeading).toBeVisible();
+    await expect(overview.kpiOnlineHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiActiveTransactionsHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiPluginSuccessHeading).toBeVisible({ timeout: 60_000 });
+    await expect(overview.kpiChargerActivityHeading).toBeVisible({ timeout: 60_000 });
   });
 });

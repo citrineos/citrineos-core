@@ -85,7 +85,7 @@ export class LocationsService {
     // Map GraphQL DTOs to OCPI DTOs
     const locations =
       response.Locations.map((value) => LocationMapper.fromGraphql(value as LocationDto)) ?? [];
-    const locationsTotal = locations.length;
+    const locationsTotal = response.Locations_aggregate?.aggregate?.count ?? 0;
 
     return buildOcpiPaginatedResponse(
       OcpiResponseStatusCode.GenericSuccessCode,
@@ -96,17 +96,28 @@ export class LocationsService {
     ) as PaginatedLocationResponse;
   }
 
-  async getLocationById(locationId: number): Promise<LocationResponse> {
+  private parseLocationId(locationId: string): number {
+    if (!/^\d+$/.test(locationId.trim())) {
+      throw new NotFoundException(`Unknown location: ${locationId}`);
+    }
+    return Number(locationId.trim());
+  }
+
+  async getLocationById(locationId: string): Promise<LocationResponse> {
     this.logger.debug(`Getting location ${locationId}`);
 
     try {
-      const variables = { id: locationId };
+      const id = this.parseLocationId(locationId);
+      const variables = { id };
       const response = await this.ocpiGraphqlClient.request<
         GetLocationByIdQueryResult,
         GetLocationByIdQueryVariables
       >(GET_LOCATION_BY_ID_QUERY, variables);
       // response.Locations is an array, so pick the first
-      if (response.Locations && response.Locations.length > 1) {
+      if (!response.Locations || response.Locations.length === 0) {
+        throw new NotFoundException(`Unknown location: ${locationId}`);
+      }
+      if (response.Locations.length > 1) {
         this.logger.warn(
           `Multiple locations found for id ${locationId}. Returning the first one. All entries: ${JSON.stringify(response.Locations)}`,
         );
@@ -125,21 +136,23 @@ export class LocationsService {
     }
   }
 
-  async getEvseById(locationId: number, stationId: string, evseId: number): Promise<EvseResponse> {
+  async getEvseById(locationId: string, stationId: string, evseId: number): Promise<EvseResponse> {
     this.logger.debug(
       `Getting EVSE ${evseId} from Charging Station ${stationId} in Location ${locationId}`,
     );
 
     try {
-      const variables = { locationId, stationId, evseId };
+      const variables = { locationId: this.parseLocationId(locationId), stationId, evseId };
       const response = await this.ocpiGraphqlClient.request<
         GetEvseByIdQueryResult,
         GetEvseByIdQueryVariables
       >(GET_EVSE_BY_ID_QUERY, variables);
-      const evse = EvseMapper.fromGraphql(
-        response.Locations[0].chargingPool[0] as ChargingStationDto,
-        response.Locations[0].chargingPool[0].evses[0] as EvseDto,
-      );
+      const station = response.Locations?.[0]?.chargingPool?.[0];
+      const evseRecord = station?.evses?.[0];
+      if (!station || !evseRecord) {
+        throw new NotFoundException(`Unknown location: ${locationId}`);
+      }
+      const evse = EvseMapper.fromGraphql(station as ChargingStationDto, evseRecord as EvseDto);
       return buildOcpiResponse(OcpiResponseStatusCode.GenericSuccessCode, evse);
     } catch (e) {
       const statusCode =
@@ -151,7 +164,7 @@ export class LocationsService {
   }
 
   async getConnectorById(
-    locationId: number,
+    locationId: string,
     stationId: string,
     evseId: number,
     connectorId: number,
@@ -161,23 +174,27 @@ export class LocationsService {
     );
 
     try {
-      const variables = { locationId, stationId, evseId, connectorId };
+      const variables = {
+        locationId: this.parseLocationId(locationId),
+        stationId,
+        evseId,
+        connectorId,
+      };
       const response = await this.ocpiGraphqlClient.request<
         GetConnectorByIdQueryResult,
         GetConnectorByIdQueryVariables
       >(GET_CONNECTOR_BY_ID_QUERY, variables);
       // Traverse to the Connector object
-      if (
-        response.Locations?.[0]?.chargingPool?.[0]?.evses?.[0]?.connectors &&
-        response.Locations[0].chargingPool[0].evses[0].connectors.length > 1
-      ) {
+      const connectors = response.Locations?.[0]?.chargingPool?.[0]?.evses?.[0]?.connectors;
+      if (!connectors || connectors.length === 0) {
+        throw new NotFoundException(`Unknown location: ${locationId}`);
+      }
+      if (connectors.length > 1) {
         this.logger.warn(
-          `Multiple connectors found for location id ${locationId}, station id ${stationId}, EVSE id ${evseId}, and connector id ${connectorId}. Returning the first one. All entries: ${JSON.stringify(response.Locations[0].chargingPool[0].evses[0].connectors)}`,
+          `Multiple connectors found for location id ${locationId}, station id ${stationId}, EVSE id ${evseId}, and connector id ${connectorId}. Returning the first one. All entries: ${JSON.stringify(connectors)}`,
         );
       }
-      const connector = ConnectorMapper.fromGraphql(
-        response.Locations?.[0]?.chargingPool?.[0]?.evses?.[0]?.connectors?.[0] as ConnectorDto,
-      );
+      const connector = ConnectorMapper.fromGraphql(connectors[0] as ConnectorDto);
       return buildOcpiResponse(OcpiResponseStatusCode.GenericSuccessCode, connector);
     } catch (e) {
       const statusCode =

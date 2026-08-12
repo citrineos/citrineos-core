@@ -55,6 +55,10 @@ export class SessionsService {
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }
+
+    if (endedOnly) {
+      where.totalKwh = { _gt: 0 };
+    }
     const queryOptions = {
       offset,
       limit,
@@ -65,17 +69,13 @@ export class SessionsService {
       GetTransactionsQueryVariables
     >(GET_TRANSACTIONS_QUERY, queryOptions);
 
-    let mappedSessions = await this.sessionMapper.mapTransactionsToSessions(
+    const mappedSessions = await this.sessionMapper.mapTransactionsToSessions(
       result.Transactions as TransactionDto[],
     );
 
-    if (endedOnly) {
-      mappedSessions = mappedSessions.filter((session) => session.kwh > 0);
-    }
-
     const response = buildOcpiPaginatedResponse(
       OcpiResponseStatusCode.GenericSuccessCode,
-      result.Transactions.length,
+      result.Transactions_aggregate?.aggregate?.count ?? 0,
       limit,
       offset,
       mappedSessions,

@@ -203,7 +203,7 @@ export const getLocationFilters = (
       },
       {
         ChargingStations: {
-          [ChargingStationProps.id]: {
+          [ChargingStationProps.ocppConnectionName]: {
             _ilike: filterValue,
           },
         },
@@ -215,7 +215,7 @@ export const getLocationFilters = (
   const chargingStationsFilter = {
     _or: [
       {
-        [ChargingStationProps.id]: {
+        [ChargingStationProps.ocppConnectionName]: {
           _ilike: filterValue,
         },
       },

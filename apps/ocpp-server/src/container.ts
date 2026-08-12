@@ -121,6 +121,7 @@ import {
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { DrizzleAuthorizationRepository } from '@citrineos/core/dist/src/dal/layers/drizzle/index.js';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -311,6 +312,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       useTenantSchema: asValue(false),
 
+      authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),

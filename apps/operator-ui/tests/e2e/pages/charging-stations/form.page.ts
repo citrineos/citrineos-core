@@ -48,12 +48,16 @@ export class ChargingStationFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(ChargingStationFormPage.newPath);
+    await this.page.goto(ChargingStationFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(ChargingStationFormPage.editPath(id));
+    await this.page.goto(ChargingStationFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
@@ -77,20 +81,34 @@ export class ChargingStationFormPage {
   async selectLocation(locationName: string): Promise<void> {
     const trigger = this.locationCombobox;
     await expect(trigger).toBeEnabled({ timeout: 15_000 });
-    await trigger.click();
-    const option = this.page
-      .getByRole('option', { name: new RegExp(`^${locationName}\\b`, 'i') })
-      .first();
-    await option.waitFor({ state: 'visible', timeout: 15_000 });
-    await option.click();
+    // The dropdown lists only the 5 most recently updated locations, so type
+    // the name to filter server-side before picking. The option list refetches
+    // per keystroke (300ms debounced search), and a re-render between locator
+    // resolution and click can recycle the option node into a different
+    // location — so verify the trigger shows the picked name and retry the
+    // whole selection if it doesn't.
+    await expect(async () => {
+      await this.page.keyboard.press('Escape');
+      await trigger.click();
+      await this.page.keyboard.type(locationName);
+      await this.page
+        .getByRole('option', { name: new RegExp(`^${locationName}\\b`, 'i') })
+        .first()
+        .click({ timeout: 5_000 });
+      await expect(trigger).toContainText(locationName, { timeout: 5_000 });
+    }).toPass({ timeout: 60_000 });
   }
 
   async submit(): Promise<void> {
     await this.submitButton.click();
-    await this.page
-      .getByRole('region', { name: /notifications/i })
-      .getByText(/(success|created|updated|saved)/i)
-      .first()
-      .waitFor({ state: 'visible', timeout: 30_000 });
+    // Toast or redirect — the toast auto-dismisses and can be missed under load.
+    await Promise.any([
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .getByText(/(success|created|updated|saved)/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 }),
+      this.page.waitForURL(/\/charging-stations\/\d+$/, { timeout: 30_000 }),
+    ]);
   }
 }

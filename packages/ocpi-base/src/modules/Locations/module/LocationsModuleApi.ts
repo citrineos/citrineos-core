@@ -101,7 +101,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getLocationById(
     @VersionNumberParam() version: VersionNumber,
-    @Param('location_id') locationId: number,
+    @Param('location_id') locationId: string,
   ): Promise<LocationResponse> {
     return this.locationsService.getLocationById(locationId);
   }
@@ -117,7 +117,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getEvseById(
     @VersionNumberParam() version: VersionNumber,
-    @Param('location_id') locationId: number,
+    @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
   ): Promise<EvseResponse> {
     const stationId = EXTRACT_STATION_ID(evseUid);
@@ -137,7 +137,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getConnectorById(
     @VersionNumberParam() version: VersionNumber,
-    @Param('location_id') locationId: number,
+    @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
     @Param('connector_id') connectorId: string,
   ): Promise<ConnectorResponse> {

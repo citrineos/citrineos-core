@@ -1,0 +1,16 @@
+{
+  "name": "unregistered",
+  "registration": "unregistered",
+  "authorize": {
+    "default": "ALLOWED"
+  },
+  "faults": [],
+  "strictInbound": false,
+  "expect": [
+    {
+      "on": "credentials.post",
+      "assert": "registration.status == registered",
+      "detail": "After the full credentials handshake completes, the mock's registration state flips to 'registered' and tokens are rotated away from the bootstrap seed values."
+    }
+  ]
+}

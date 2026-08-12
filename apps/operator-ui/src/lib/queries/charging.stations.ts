@@ -3,6 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
+import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
+import {
+  CONNECTOR_FULL_FIELDS,
+  CONNECTOR_SPEC_FIELDS,
+  CONNECTOR_STATUS_FIELDS,
+} from '@lib/queries/fields/connector.fields';
+import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status.notification.fields';
+import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction.fields';
+import { EVSE_CORE_FIELDS, EVSE_DETAIL_FIELDS } from '@lib/queries/fields/evse.fields';
+import {
+  CHARGING_STATION_CORE_FIELDS,
+  CHARGING_STATION_DETAIL_FIELDS,
+} from '@lib/queries/fields/charging.station.fields';
+import { SERVER_NETWORK_PROFILE_BASIC_FIELDS } from '@lib/queries/fields/server.network.profile.fields';
 
 export const CHARGING_STATIONS_LIST_QUERY = gql`
   query ChargingStationsList(
@@ -12,36 +26,14 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
     $where: ChargingStations_bool_exp
   ) {
     ChargingStations(offset: $offset, limit: $limit, order_by: $order_by, where: $where) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      chargePointVendor
-      chargePointModel
-      firmwareVersion
-      createdAt
-      updatedAt
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_CORE_FIELDS}
+      ${CHARGING_STATION_DETAIL_FIELDS}
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
-        id
-        evseTypeId
-        evseId
-        physicalReference
+        ${EVSE_CORE_FIELDS.omit('createdAt', 'updatedAt')}
+        ${EVSE_DETAIL_FIELDS.pick('physicalReference')}
       }
       LatestStatusNotifications {
         id
@@ -51,40 +43,17 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
         updatedAt
         createdAt
         StatusNotification {
-          connectorId
-          connectorStatus
-          createdAt
-          evseId
+          ${STATUS_NOTIFICATION_FIELDS}
           stationId
-          ocppConnectionName
-          id
-          timestamp
-          updatedAt
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
-        id
-        timeSpentCharging
-        isActive
-        chargingState
+        ${ACTIVE_TRANSACTION_FIELDS}
         stationId
-        ocppConnectionName
-        stoppedReason
-        transactionId
-        evseId
-        remoteStartId
-        totalKwh
-        createdAt
-        updatedAt
       }
       connectors: Connectors {
         connectorId
-        status
-        errorCode
-        timestamp
-        info
-        vendorId
-        vendorErrorCode
+        ${CONNECTOR_STATUS_FIELDS}
         createdAt
         updatedAt
       }
@@ -119,24 +88,9 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
         ]
       }
     ) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
+      ${CHARGING_STATION_CORE_FIELDS}
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       LatestStatusNotifications {
         id
@@ -145,14 +99,7 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
         updatedAt
         createdAt
         StatusNotification {
-          connectorId
-          connectorStatus
-          createdAt
-          evseId
-          ocppConnectionName
-          id
-          timestamp
-          updatedAt
+          ${STATUS_NOTIFICATION_FIELDS}
         }
       }
     }
@@ -195,79 +142,28 @@ export const CHARGING_STATIONS_STATUS_COUNT_QUERY = gql`
 export const CHARGING_STATIONS_GET_QUERY = gql`
   query GetChargingStationById($id: Int!) {
     ChargingStations_by_pk(id: $id) {
-      id
+      ${CHARGING_STATION_CORE_FIELDS}
       tenantId
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      chargePointVendor
-      chargePointModel
-      firmwareVersion
-      createdAt
-      updatedAt
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_DETAIL_FIELDS}
       coordinates
       use16StatusNotification0
       connectedWebsocketServerConfigId
       ConnectedServerNetworkProfile {
-        id
-        host
-        port
-        protocols
-        securityProfile
-        allowUnknownChargingStations
+        ${SERVER_NETWORK_PROFILE_BASIC_FIELDS.omit('pingInterval', 'messageTimeout')}
       }
       SetNetworkProfiles(order_by: { updatedAt: desc }) {
         websocketServerConfigId
         securityProfile
       }
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
-        id
-        ocppConnectionName
+        ${EVSE_CORE_FIELDS}
+        ${EVSE_DETAIL_FIELDS}
         stationId
-        evseTypeId
-        evseId
-        physicalReference
-        removed
-        createdAt
-        updatedAt
         connectors: Connectors {
-          id
-          ocppConnectionName
-          evseId
-          evseTypeConnectorId
-          connectorId
-          status
-          type
-          maximumPowerWatts
-          maximumAmperage
-          maximumVoltage
-          format
-          powerType
-          termsAndConditionsUrl
-          tariffId
-          errorCode
-          timestamp
-          info
-          vendorId
-          vendorErrorCode
-          createdAt
-          updatedAt
+          ${CONNECTOR_FULL_FIELDS}
         }
       }
       LatestStatusNotifications {
@@ -278,32 +174,13 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         updatedAt
         createdAt
         statusNotification: StatusNotification {
-          connectorId
-          connectorStatus
-          createdAt
-          evseId
-          ocppConnectionName
-          id
+          ${STATUS_NOTIFICATION_FIELDS}
           stationId
-          timestamp
-          updatedAt
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
-        id
+        ${ACTIVE_TRANSACTION_FIELDS}
         stationId
-        ocppConnectionName
-        timeSpentCharging
-        isActive
-        chargingState
-        ocppConnectionName
-        stoppedReason
-        transactionId
-        evseId
-        remoteStartId
-        totalKwh
-        createdAt
-        updatedAt
       }
       connectors: Connectors {
         id
@@ -311,20 +188,8 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         stationId
         evseId
         connectorId
-        status
-        type
-        maximumPowerWatts
-        maximumAmperage
-        maximumVoltage
-        format
-        powerType
-        termsAndConditionsUrl
-        tariffId
-        errorCode
-        timestamp
-        info
-        vendorId
-        vendorErrorCode
+        ${CONNECTOR_STATUS_FIELDS}
+        ${CONNECTOR_SPEC_FIELDS}
         createdAt
         updatedAt
       }
@@ -335,56 +200,20 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
 export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS_AND_TRANSACTIONS = gql`
   query GetChargingStationsWithLocationAndLatestStatusNotificationsAndTransactions {
     ChargingStations {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
+      ${CHARGING_STATION_CORE_FIELDS}
       latestStatusNotifications: LatestStatusNotifications {
         statusNotification: StatusNotification {
-          id
-          ocppConnectionName
-          evseId
-          connectorId
-          timestamp
-          connectorStatus
-          createdAt
-          updatedAt
+          ${STATUS_NOTIFICATION_FIELDS}
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
-        id
-        timeSpentCharging
-        isActive
-        chargingState
-        ocppConnectionName
-        stoppedReason
-        transactionId
-        evseId
-        remoteStartId
-        totalKwh
-        createdAt
-        updatedAt
+        ${ACTIVE_TRANSACTION_FIELDS}
       }
       location: Location {
-        id
-        name
-        address
-        city
-        postalCode
-        state
-        country
-        coordinates
-        createdAt
-        updatedAt
+        ${LOCATION_CORE_FIELDS}
       }
       evses: Evses {
-        id
-        evseTypeId
-        createdAt
-        updatedAt
+        ${EVSE_CORE_FIELDS.omit('evseId')}
       }
     }
   }
@@ -404,16 +233,8 @@ export const CHARGING_STATION_ONLINE_STATUS_QUERY = gql`
 export const CHARGING_STATIONS_CREATE_MUTATION = gql`
   mutation ChargingStationsCreate($object: ChargingStations_insert_input!) {
     insert_ChargingStations_one(object: $object) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
-      floorLevel
-      parkingRestrictions
-      capabilities
+      ${CHARGING_STATION_CORE_FIELDS}
+      ${CHARGING_STATION_DETAIL_FIELDS.pick('floorLevel', 'parkingRestrictions', 'capabilities')}
     }
   }
 `;
@@ -421,13 +242,7 @@ export const CHARGING_STATIONS_CREATE_MUTATION = gql`
 export const CHARGING_STATIONS_EDIT_MUTATION = gql`
   mutation ChargingStationsEdit($id: Int!, $object: ChargingStations_set_input!) {
     update_ChargingStations_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
+      ${CHARGING_STATION_CORE_FIELDS}
     }
   }
 `;
@@ -435,13 +250,7 @@ export const CHARGING_STATIONS_EDIT_MUTATION = gql`
 export const CHARGING_STATIONS_DELETE_MUTATION = gql`
   mutation ChargingStationsDelete($id: Int!) {
     delete_ChargingStations_by_pk(id: $id) {
-      id
-      ocppConnectionName
-      isOnline
-      protocol
-      locationId
-      createdAt
-      updatedAt
+      ${CHARGING_STATION_CORE_FIELDS}
     }
   }
 `;

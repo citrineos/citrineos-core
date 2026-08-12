@@ -5,6 +5,7 @@
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   type ChargingStationDto,
+  type MessageState,
   type MessageTypeId,
   type OCPPMessageDto,
   type TenantDto,
@@ -50,6 +51,14 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   @Column(DataType.INTEGER)
   declare type?: MessageTypeId;
 
+  /**
+   * @deprecated Superseded by `type`, kept in sync on every write so consumers written against
+   * the pre-`type` schema keep working. STRING (not INTEGER) because that is the column type it
+   * has always had — MessageState is persisted as its numeric enum value in text form.
+   */
+  @Column(DataType.STRING)
+  declare state?: MessageState;
+
   @Column(DataType.STRING)
   declare protocol: OCPPVersion;
 
@@ -63,6 +72,14 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   // Exact message as it appeared on the wire. TEXT because messages routinely exceed 255 chars.
   @Column({ type: DataType.TEXT, allowNull: false })
   declare raw: string;
+
+  /**
+   * @deprecated Superseded by `payload` + `raw`, kept in sync on every write so consumers
+   * written against the pre-`payload` schema keep working. Holds the whole RPC frame; null for
+   * messages that never parsed into one.
+   */
+  @Column(DataType.JSONB)
+  declare message?: any;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;

@@ -9,6 +9,7 @@ import type {
   OCPP2_request_types,
 } from '@citrineos/base';
 import type {
+  AuthorizationDto,
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
@@ -29,7 +30,6 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
-import type { Authorization } from '../layers/sequelize/model/Authorization/Authorization.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
 import type { Boot } from '../layers/sequelize/model/Boot.js';
@@ -74,15 +74,16 @@ import type { AuthorizationQuerystring } from './queries/Authorization.js';
 import type { TariffQueryString } from './queries/Tariff.js';
 import type { VariableAttributeQuerystring } from './queries/VariableAttribute.js';
 
-export interface IAuthorizationRepository extends CrudRepository<Authorization> {
+export interface IAuthorizationRepository {
   readAllByQuerystring: (
     tenantId: number,
     query: AuthorizationQuerystring,
-  ) => Promise<Authorization[]>;
+  ) => Promise<AuthorizationDto[]>;
   readOnlyOneByQuerystring: (
     tenantId: number,
     query: AuthorizationQuerystring,
-  ) => Promise<Authorization | undefined>;
+  ) => Promise<AuthorizationDto | undefined>;
+  findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
 }
 
 /**

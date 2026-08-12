@@ -7,13 +7,27 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 #
-# It only adds `build:` blocks (merged by service name) so the published images
-# in the base file are built from local source instead of pulled.
+# It adds `build:` blocks (merged by service name) so the published images in the
+# base file are built from local source instead of pulled. For the OCPI test
+# setup it also frees host port 8083 and adds the mock eMSP (@citrineos/mock-msp).
 services:
   citrine:
     build:
       context: .
       dockerfile: ./apps/ocpp-server/deploy.Dockerfile
+    # The base file publishes 8083 on the OCPP server ("additional websocket
+    # server"), but the seeded EMSP partner points Citrine's outbound OCPI calls
+    # at http://host.docker.internal:8083 — so the mock eMSP must own host port
+    # 8083. `!override` REPLACES the base ports list (the default merge only
+    # appends and cannot remove 8083). The default `all`/`docker` OCPP config
+    # binds 8080/8081/8082/8085 only, so dropping the 8083 publish here is safe.
+    ports: !override
+      - 8080:8080
+      - 8081:8081
+      - 8082:8082
+      - 8443:8443
+      - 8444:8444
+      - 9229:9229
 
   citrine-ui:
     build:
@@ -24,3 +38,51 @@ services:
     build:
       context: .
       dockerfile: ./apps/ocpi-server/deploy.Dockerfile
+
+  # Mock eMSP (OCPI 2.2.1) — impersonates the seeded partner US/TST
+  # "TestMobilitySolutions" against Citrine's CPO-side OCPI. Comes up under the
+  # `ocpi` profile (`pnpm citrine --ocpi --local`). OPTIONAL: for active mock
+  # development, run it natively instead (`pnpm --filter @citrineos/mock-msp dev`)
+  # and keep this container off — bring the stack up with `--scale mock-msp=0`
+  # (still with `--local` so the 8083 override above frees the host port). See
+  # apps/mock-msp/README.md.
+  mock-msp:
+    profiles:
+      - ocpi
+    build:
+      context: .
+      dockerfile: ./apps/mock-msp/deploy.Dockerfile
+    environment:
+      NODE_ENV: "development"
+      MOCK_MSP_PORT: "8083"
+      MOCK_MSP_HOST: "0.0.0.0"
+      # Advertised to Citrine at GET /versions/2.2.1. Citrine reaches us through
+      # the host gateway because the seed hardcodes host.docker.internal:8083.
+      MOCK_MSP_PUBLIC_BASE_URL: "http://host.docker.internal:8083/ocpi"
+      # Our EMSP identity — mirrors the partner seed.
+      MOCK_MSP_COUNTRY_CODE: "US"
+      MOCK_MSP_PARTY_ID: "TST"
+      # Citrine's CPO identity (used in OCPI-to-* routing headers on our calls).
+      MOCK_MSP_CPO_COUNTRY_CODE: "US"
+      MOCK_MSP_CPO_PARTY_ID: "S44"
+      # Citrine's CPO OCPI base — same compose network, reached by service DNS.
+      CITRINE_OCPI_BASE_URL: "http://citrineos-ocpi:8085/ocpi"
+      # Bootstrap tokens from the partner seed (rotated during a live handshake):
+      #   credentials.token       -> token Citrine PRESENTS when calling us.
+      MOCK_MSP_CLIENT_TOKEN: "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567"
+      #   serverCredentials.token -> token we PRESENT when calling Citrine.
+      MOCK_MSP_SERVER_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJzdWIiOiJwYXJ0bmVyIn0"
+      # Default to the already-registered baseline (matches the seed). Swap for
+      # scenarios/unregistered.json (+ MOCK_MSP_AUTO_REGISTER=1) to drive the
+      # full credentials handshake. Path is relative to the package WORKDIR.
+      MOCK_MSP_SCENARIO: "scenarios/preregistered.json"
+      MOCK_MSP_LOG_LEVEL: "info"
+    ports:
+      - 8083:8083
+    extra_hosts:
+      # Harmless on Docker Desktop (Win/Mac); required on Linux so our outbound
+      # host.docker.internal resolves to the host gateway.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      citrineos-ocpi:
+        condition: service_started

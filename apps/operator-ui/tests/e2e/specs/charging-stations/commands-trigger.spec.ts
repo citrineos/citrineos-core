@@ -37,9 +37,8 @@ test.describe('charging-stations › TriggerMessage command', () => {
     await detail.commandBar.openViaOtherCommands(/trigger message/i);
     const modal = new ModalHarness(page, /trigger message/i);
     await modal.expectOpen();
-    await modal.submitButton.click();
     // Requested-Message is required; the form blocks dispatch and keeps the
     // modal mounted until a value is picked.
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.expectBlockedSubmit();
   });
 });

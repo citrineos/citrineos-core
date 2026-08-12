@@ -77,7 +77,6 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
   const [selectedOrigin, setSelectedOrigin] = useState<string>(allOption);
   const [filters, setFilters] = useState<LogicalFilter[]>([]);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [sinceTimestamp, setSinceTimestamp] = useState<string | null>(null);
   const translate = useTranslate();
   const liveMode = liveLogEnabled ? 'auto' : 'off';
   const invalidate = useInvalidate();
@@ -102,18 +101,6 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
     getPageSizePreference(state, ResourceType.OCPP_MESSAGES),
   );
 
-  const effectiveFilters = useMemo<LogicalFilter[]>(() => {
-    if (!sinceTimestamp) return filters;
-    return [
-      ...filters,
-      {
-        field: OCPPMessageProps.timestamp,
-        operator: 'gt',
-        value: sinceTimestamp,
-      },
-    ];
-  }, [filters, sinceTimestamp]);
-
   const {
     query: { data },
   } = useList<OCPPMessageDto>({
@@ -133,22 +120,17 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
       gqlQuery: GET_OCPP_MESSAGES_LIST_FOR_STATION,
       gqlVariables: { stationId: stationId },
     },
-    filters: effectiveFilters,
+    filters,
     queryOptions: getPlainToInstanceOptions(OCPPMessageClass),
   });
 
   const messages = useMemo(() => data?.data ?? [], [data?.data]);
 
   const handleRefresh = () => {
-    const latest = messages[0]?.timestamp;
-    if (latest) {
-      setSinceTimestamp(latest);
-    } else {
-      invalidate({
-        resource: ResourceType.OCPP_MESSAGES,
-        invalidates: ['list'],
-      });
-    }
+    invalidate({
+      resource: ResourceType.OCPP_MESSAGES,
+      invalidates: ['list'],
+    });
   };
 
   useEffect(() => {
@@ -224,7 +206,6 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
     }
 
     setFilters(newFilters);
-    setSinceTimestamp(null);
   }, [startDate, endDate, searchCid, selectedActions, selectedOrigin]);
 
   const findRelatedMessages = useCallback(
@@ -314,7 +295,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               initial: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
             },
             filters: {
-              permanent: effectiveFilters,
+              permanent: filters,
             },
             meta: {
               gqlQuery: GET_OCPP_MESSAGES_LIST_FOR_STATION,

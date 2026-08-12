@@ -14,7 +14,7 @@ import {
 import { MenuSection } from '@lib/client/components/main-menu/main.menu';
 import GenericTag from '@lib/client/components/tag';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
-import { CircleCheck, CircleX } from 'lucide-react';
+import { CircleCheck, CircleX, Eye } from 'lucide-react';
 import { buttonIconSize } from '@lib/client/styles/icon';
 import type { BaseRecord, CrudFilters } from '@refinedev/core';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
@@ -36,7 +36,10 @@ type TranslateFn = (key: string, options?: any) => string;
  *   back to their default English text so the columns can be referenced outside
  *   of a React render (e.g. shared filtering helpers in other resource pages).
  */
-export const getTransactionsColumns = (translate?: TranslateFn): ColumnConfiguration[] => {
+export const getTransactionsColumns = (
+  translate?: TranslateFn,
+  onPreview?: (station: { ocppConnectionName?: string | null }) => void,
+): ColumnConfiguration[] => {
   const t = (key: string, fallback: string) => (translate ? translate(key, fallback) : fallback);
 
   return [
@@ -68,12 +71,30 @@ export const getTransactionsColumns = (translate?: TranslateFn): ColumnConfigura
       header: t('Transactions.columns.stationId', 'Station ID'),
       visible: true,
       sortable: true,
-      cellRender: ({ row }: CellContext<TransactionClass, unknown>) => (
-        <TableCellLink
-          path={`/${MenuSection.CHARGING_STATIONS}/${row.original.chargingStation?.id}`}
-          value={row.original.chargingStation?.ocppConnectionName ?? EMPTY_VALUE}
-        />
-      ),
+      cellRender: ({ row }: CellContext<TransactionClass, unknown>) => {
+        const chargingStation = row.original.chargingStation;
+        return (
+          <div className="flex items-center gap-2">
+            <TableCellLink
+              path={`/${MenuSection.CHARGING_STATIONS}/${chargingStation?.id}`}
+              value={chargingStation?.ocppConnectionName ?? EMPTY_VALUE}
+            />
+            {onPreview && chargingStation && (
+              <button
+                type="button"
+                title={t('Transactions.columns.previewStation', 'Preview station')}
+                className="text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPreview(chargingStation);
+                }}
+              >
+                <Eye className={buttonIconSize} />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: transactionChargingStationLocationNameField,

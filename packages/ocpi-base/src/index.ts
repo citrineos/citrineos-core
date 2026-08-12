@@ -201,6 +201,7 @@ export { AuthToken } from './util/decorators/AuthToken.js';
 export { VersionNumberParam } from './util/decorators/VersionNumberParam.js';
 export { EnumParam } from './util/decorators/EnumParam.js';
 export { OcpiExceptionHandler } from './util/middleware/OcpiExceptionHandler.js';
+export { AuthMiddleware, RegistrationAuthMiddleware } from './util/middleware/AuthMiddleware.js';
 export { InvalidParamException } from './exception/InvalidParamException.js';
 export { MissingParamException } from './exception/MissingParamException.js';
 export { UnknownTokenException } from './exception/UnknownTokenException.js';

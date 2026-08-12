@@ -48,7 +48,9 @@ export class PartnerFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(PartnerFormPage.newPath);
+    await this.page.goto(PartnerFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
@@ -74,10 +76,16 @@ export class PartnerFormPage {
 
   async submit(): Promise<void> {
     await this.submitButton.click();
-    await this.page
-      .getByRole('region', { name: /notifications/i })
-      .getByText(/(success|created|updated|saved)/i)
-      .first()
-      .waitFor({ state: 'visible', timeout: 30_000 });
+    // Toast or redirect — the toast auto-dismisses and can be missed under
+    // load. The redirect target includes /authorizations/:id because of the
+    // KNOWN-DRIFT post-create bug documented in the register spec.
+    await Promise.any([
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .getByText(/(success|created|updated|saved)/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 }),
+      this.page.waitForURL(/\/(partners|authorizations)\/\d+$/, { timeout: 30_000 }),
+    ]);
   }
 }

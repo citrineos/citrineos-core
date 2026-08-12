@@ -34,9 +34,8 @@ test.describe('charging-stations › DataTransfer command', () => {
     await detail.commandBar.openViaOtherCommands(/data transfer/i);
     const modal = new ModalHarness(page, /data transfer/i);
     await modal.expectOpen();
-    await modal.submitButton.click();
     // Vendor Id is required; client-side validation keeps the modal mounted
     // until the operator fills it in.
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.expectBlockedSubmit();
   });
 });

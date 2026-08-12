@@ -4,12 +4,17 @@
 
 import { test, expect } from '../../fixtures';
 import { OverviewPage } from '../../pages/overview.page';
+import { blockGoogleMaps } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.setTimeout(90_000);
 
 test.describe('overview › locale', () => {
+  // Keep the live Maps SDK (no key in CI) out of these navigations.
+  test.beforeEach(async ({ page }) => {
+    await blockGoogleMaps(page);
+  });
   test('E2E-018: language switcher changes UI language and persists across reload', async ({
     page,
   }) => {
@@ -17,7 +22,9 @@ test.describe('overview › locale', () => {
     await overview.goto();
 
     // Default locale is English: the Locations card heading is rendered in English.
-    await expect(page.getByRole('heading', { name: /^locations$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^locations$/i })).toBeVisible({
+      timeout: 30_000,
+    });
 
     // Switch to Brazilian Portuguese via the sidebar language switcher.
     await page.getByRole('button', { name: /^language$/i }).click();

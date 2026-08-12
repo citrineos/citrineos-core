@@ -1,0 +1,19 @@
+{
+  "name": "authorize-blocked",
+  "registration": "preregistered",
+  "authorize": {
+    "default": "ALLOWED",
+    "byUid": {
+      "04E7F5A2B37C80": "BLOCKED"
+    }
+  },
+  "faults": [],
+  "strictInbound": false,
+  "expect": [
+    {
+      "on": "tokens.authorize",
+      "assert": "response.body.data.allowed == BLOCKED",
+      "detail": "A real-time authorize (POST /ocpi/2.2.1/emsp/tokens/04E7F5A2B37C80/authorize) for the blocked uid returns allowed=BLOCKED inside a well-formed 1000 envelope; all other uids default to ALLOWED. Response still carries a full token + authorization_reference so Citrine's Zod parse succeeds."
+    }
+  ]
+}

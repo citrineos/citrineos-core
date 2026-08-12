@@ -69,7 +69,7 @@ export class CdrsService {
 
     const response = buildOcpiPaginatedResponse(
       OcpiResponseStatusCode.GenericSuccessCode,
-      result.Transactions.length,
+      result.Transactions_aggregate?.aggregate?.count ?? 0,
       limit,
       offset,
       mappedCdr,
