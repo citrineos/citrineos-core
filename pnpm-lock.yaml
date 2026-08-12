@@ -141,6 +141,46 @@ importers:
         specifier: 3.2.7
         version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.11)(yaml@2.9.0)
 
+  apps/mock-msp:
+    dependencies:
+      '@citrineos/base':
+        specifier: workspace:*
+        version: link:../../packages/base
+      '@citrineos/ocpi-base':
+        specifier: workspace:*
+        version: link:../../packages/ocpi-base
+      fastify:
+        specifier: 'catalog:'
+        version: 5.8.5
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.16.0
+      '@types/node':
+        specifier: ^25.3.3
+        version: 25.9.5
+      eslint:
+        specifier: 'catalog:'
+        version: 9.16.0(jiti@2.7.0)
+      eslint-config-prettier:
+        specifier: 'catalog:'
+        version: 9.1.2(eslint@9.16.0(jiti@2.7.0))
+      eslint-plugin-prettier:
+        specifier: 'catalog:'
+        version: 5.2.3(eslint-config-prettier@9.1.2(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))(prettier@3.6.2)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.23.11
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+
   apps/ocpi-server:
     dependencies:
       '@citrineos/base':
@@ -13653,7 +13693,7 @@ snapshots:
 
   '@types/http-proxy@1.17.17':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
 
   '@types/js-cookie@3.0.6': {}
 
@@ -13764,7 +13804,7 @@ snapshots:
   '@types/request@2.48.13':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.6
 
@@ -13779,7 +13819,7 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
@@ -15055,7 +15095,7 @@ snapshots:
       json-schema-typed: 7.0.3
       onetime: 5.1.2
       pkg-up: 3.1.0
-      semver: 7.5.2
+      semver: 7.8.5
 
   config-chain@1.1.13:
     dependencies:
@@ -18867,7 +18907,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.2
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
       long: 5.3.2
 
   proxy-addr@2.0.7:

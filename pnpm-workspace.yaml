@@ -6,6 +6,7 @@ packages:
   - 'apps/ocpp-server'
   - 'apps/ocpi-server'
   - 'apps/operator-ui'
+  - 'apps/mock-msp'
 
 catalog:
   fastify: 5.8.5

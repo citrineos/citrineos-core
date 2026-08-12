@@ -45,9 +45,12 @@ test.describe('charging-stations › UnlockConnector command', () => {
 
     // The seeded station is created without EVSEs/Connectors. The Connector
     // combobox has no options, so the form cannot be completed and the modal
-    // stays mounted instead of dispatching to the OCPP backend.
+    // stays mounted instead of dispatching to the OCPP backend. This modal
+    // renders no field-level message on an empty submit, so the mounted
+    // dialog is the strongest available signal here.
     const connectorCombobox = modal.dialog.getByRole('combobox').first();
     await expect(connectorCombobox).toBeVisible();
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.submitButton.click();
+    await expect(modal.dialog).toBeVisible({ timeout: 15_000 });
   });
 });

@@ -37,10 +37,11 @@ const PLUGIN_CHARGE_COMMAND =
   'sleep 1;iec_wait_pwr_ready;sleep 1;draw_power_regulated 16,3;sleep 3600';
 const DEFAULT_BOOT_TIMEOUT_MS = 90_000;
 // Recovery after a reboot-causing Reset (which reboots the manager container)
-// is slow and variable — empirically >150s in CI — so the per-test online guard
-// waits well beyond the initial-boot budget. The reset describe runs under an
-// extended test timeout so this guard can finish inside a single attempt.
-const RECONNECT_TIMEOUT_MS = 210_000;
+// is slow and NOT reliably bounded — recorded CI runs blew through 210s and
+// then 300s ceilings, and the manager sometimes wedges outright until its
+// container is restarted. ensureEverestOnline therefore recovers actively at
+// half this budget instead of only waiting; see its comment.
+const RECONNECT_TIMEOUT_MS = 300_000;
 const POLL_INTERVAL_MS = 2_000;
 // How long to wait for libocpp to materialise the device-model DB on a cold
 // boot before applying the network-profile patch. The DB normally appears a
@@ -134,24 +135,67 @@ async function readEverestOnline(api: ApiClient): Promise<boolean | null> {
 
 // Per-test guard for the worker-scoped manager: a destructive command in a
 // prior test (Reset Immediate reboots the manager container) drops cp001's
-// OCPP link, and the station is offline for ~1 minute while it reconnects.
-// Wait for `isOnline` to return true so the next test runs against a live
-// station instead of a rebooting one. Returns immediately when the station
-// is already connected (the common case), so undisrupted tests pay nothing.
+// OCPP link. Returns immediately when the station is already connected (the
+// common case), so undisrupted tests pay nothing. Because the post-reboot
+// reconnect is not reliably bounded and the manager can wedge until its
+// container restarts, the guard waits half the budget passively, then
+// `docker restart`s the manager (a cold boot reconnects in ~15-90s) and
+// waits the other half.
 export async function ensureEverestOnline(timeoutMs = RECONNECT_TIMEOUT_MS): Promise<void> {
   const api = await makeApiClient();
   try {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      if ((await readEverestOnline(api)) === true) return;
-      await delay(POLL_INTERVAL_MS);
-    }
+    if (await waitForOnline(api, timeoutMs / 2)) return;
+    console.warn(
+      `[e2e:everest] ${EVEREST_OCPP_CONNECTION_NAME} still offline after ${timeoutMs / 2}ms — restarting the manager container`,
+    );
+    await restartEverestManager();
+    if (await waitForOnline(api, timeoutMs / 2)) return;
     throw new Error(
-      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not return online within ${timeoutMs}ms`,
+      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not return online within ${timeoutMs}ms (incl. a manager restart)`,
     );
   } finally {
     await api.dispose();
   }
+}
+
+async function waitForOnline(api: ApiClient, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if ((await readEverestOnline(api)) === true) return true;
+    await delay(POLL_INTERVAL_MS);
+  }
+  return false;
+}
+
+// Resolves once citrine marks cp001 offline — the observable proof that a
+// reboot-causing command actually executed. Only an explicit false counts;
+// query errors read as "unknown" and keep polling.
+export async function waitForEverestOffline(timeoutMs: number): Promise<void> {
+  const api = await makeApiClient();
+  try {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if ((await readEverestOnline(api)) === false) return;
+      await delay(POLL_INTERVAL_MS);
+    }
+    throw new Error(
+      `EVerest station ${EVEREST_OCPP_CONNECTION_NAME} did not go offline within ${timeoutMs}ms`,
+    );
+  } finally {
+    await api.dispose();
+  }
+}
+
+function restartEverestManager(): Promise<void> {
+  return new Promise<void>((res) => {
+    const proc = spawn(
+      process.platform === 'win32' ? 'docker.exe' : 'docker',
+      ['restart', 'everest-manager-1'],
+      { stdio: 'ignore', shell: process.platform === 'win32' },
+    );
+    proc.on('exit', () => res());
+    proc.on('error', () => res());
+  });
 }
 
 // Spawn `docker compose` directly with the same cwd + env as the upstream
@@ -479,7 +523,20 @@ export async function startEverest(options: EverestStartOptions = {}): Promise<E
   const api = await makeApiClient();
   let id: number;
   try {
-    id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs);
+    try {
+      id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs);
+    } catch {
+      // A retry after a failed reset test boots a fresh worker while the
+      // manager is still mid-reboot (or wedged) from the dispatched Reset —
+      // compose up is a no-op on the running stack, so without this the
+      // whole retry chain dies here at the boot budget. Same recovery as
+      // ensureEverestOnline: restart the container, wait once more.
+      console.warn(
+        `[e2e:everest] ${EVEREST_OCPP_CONNECTION_NAME} not up after compose — restarting the manager container`,
+      );
+      await restartEverestManager();
+      id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs * 2);
+    }
     await ensureEverestEvseAndConnector(api, id);
     await ensureEverestAuthorization(api);
   } finally {

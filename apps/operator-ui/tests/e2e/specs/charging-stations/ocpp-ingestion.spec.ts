@@ -14,7 +14,7 @@ import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.describe('charging-stations › OCPP ingestion @everest', () => {
-  test('E2E-090: BootNotification and StatusNotification are ingested and surfaced @everest', async ({
+  test('E2E-150: BootNotification and StatusNotification are ingested and surfaced @everest', async ({
     page,
     everestStation,
     apiClient,
@@ -58,7 +58,7 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     expect(status.aggregate.count).toBeGreaterThan(0);
   });
 
-  test('E2E-091: cp001 detail card shows live Online status from ingested state @everest', async ({
+  test('E2E-151: cp001 detail card shows live Online status from ingested state @everest', async ({
     page,
     everestStation,
   }) => {
@@ -70,7 +70,7 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     await expect(detail.statusTag).toHaveText(/online/i, { timeout: 30_000 });
   });
 
-  test('E2E-092: detail card surfaces a real Last-OCPP-Message timestamp @everest', async ({
+  test('E2E-152: detail card surfaces a real Last-OCPP-Message timestamp @everest', async ({
     page,
     everestStation,
   }) => {

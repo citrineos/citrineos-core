@@ -25,7 +25,9 @@ export class ChargingStationsListPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(ChargingStationsListPage.path);
+    await this.page.goto(ChargingStationsListPage.path, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
