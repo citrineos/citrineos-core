@@ -5,6 +5,7 @@
 export * from './repositories.js';
 
 // Data endpoints query models
+export { AuthorizationQuerySchema } from './queries/Authorization.js';
 export type { AuthorizationQuerystring } from './queries/Authorization.js';
 export { ChargingStationKeyQuerySchema } from './queries/ChargingStation.js';
 export type { ChargingStationKeyQuerystring } from './queries/ChargingStation.js';
