@@ -7,7 +7,6 @@ import { MeterValueMapper } from '@dal/layers/sequelize/mapper/2/MeterValueMappe
 import { MeterValueUtils } from '@base-util/MeterValueUtils.js';
 
 describe('MeterValueMapper (OCPP 2 ingestion)', () => {
-  // console.warn is emitted when an unrepresentable measurand is dropped; silence it in tests.
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
@@ -21,77 +20,48 @@ describe('MeterValueMapper (OCPP 2 ingestion)', () => {
       [OCPP2_1.MeasurandEnumType.Current_Import, 'Current.Import'],
       [OCPP2_1.MeasurandEnumType.Voltage, 'Voltage'],
       [OCPP2_1.MeasurandEnumType.SoC, 'SoC'],
-    ] as const)('maps known measurand %s -> %s', (input, expected) => {
+    ] as const)('maps common measurand %s -> %s', (input, expected) => {
       expect(MeterValueMapper.fromMeasurandEnumType(input)).toBe(expected);
     });
 
-    it('returns undefined for null/undefined (absent measurand)', () => {
-      expect(MeterValueMapper.fromMeasurandEnumType(null)).toBeUndefined();
-      expect(MeterValueMapper.fromMeasurandEnumType(undefined)).toBeUndefined();
-    });
-
-    // Regression: these used to fall through to Energy.Active.Import.Register, corrupting the
-    // stored measurand and the transaction kWh.
+    // Regression: these OCPP 2.1 measurands used to fall through to Energy.Active.Import.Register,
+    // corrupting the stored measurand and the transaction kWh. They now map to their own values.
     it.each([
-      OCPP2_1.MeasurandEnumType.Voltage_Minimum,
-      OCPP2_1.MeasurandEnumType.Power_Active_Setpoint,
-      OCPP2_1.MeasurandEnumType.Display_PresentSOC,
-      OCPP2_1.MeasurandEnumType.EnergyRequest_Target,
-    ])('returns undefined for unrepresentable 2.1 measurand %s', (input) => {
-      expect(MeterValueMapper.fromMeasurandEnumType(input)).toBeUndefined();
+      [OCPP2_1.MeasurandEnumType.Voltage_Minimum, 'Voltage.Minimum'],
+      [OCPP2_1.MeasurandEnumType.Voltage_Maximum, 'Voltage.Maximum'],
+      [OCPP2_1.MeasurandEnumType.Power_Active_Setpoint, 'Power.Active.Setpoint'],
+      [OCPP2_1.MeasurandEnumType.Display_PresentSOC, 'Display.PresentSOC'],
+      [OCPP2_1.MeasurandEnumType.EnergyRequest_Target, 'EnergyRequest.Target'],
+      [OCPP2_1.MeasurandEnumType.Current_Import_Minimum, 'Current.Import.Minimum'],
+    ] as const)('maps 2.1 measurand %s -> %s', (input, expected) => {
+      expect(MeterValueMapper.fromMeasurandEnumType(input)).toBe(expected);
     });
-  });
 
-  describe('fromSampledValueTypes', () => {
-    it('drops a sampled value whose measurand is present but unrepresentable, keeps the rest', () => {
-      const result = MeterValueMapper.fromSampledValueTypes([
-        { value: 200, measurand: OCPP2_1.MeasurandEnumType.Energy_Active_Import_Register },
-        { value: 400, measurand: OCPP2_1.MeasurandEnumType.Voltage_Minimum },
-      ] as any);
+    it('maps every OCPP 2.1 measurand to a defined value (no protocol value falls through)', () => {
+      for (const measurand of Object.values(OCPP2_1.MeasurandEnumType)) {
+        expect(MeterValueMapper.fromMeasurandEnumType(measurand)).toBeDefined();
+      }
+    });
 
-      expect(result).toHaveLength(1);
-      expect(result[0].measurand).toBe('Energy.Active.Import.Register');
-      expect(result[0].value).toBe(200);
+    it('defaults an absent measurand to Energy.Active.Import.Register (spec)', () => {
+      expect(MeterValueMapper.fromMeasurandEnumType(null)).toBe('Energy.Active.Import.Register');
+      expect(MeterValueMapper.fromMeasurandEnumType(undefined)).toBe(
+        'Energy.Active.Import.Register',
+      );
+    });
+
+    it('warns and returns undefined for a non-protocol measurand', () => {
+      expect(
+        MeterValueMapper.fromMeasurandEnumType('NotAProtocolMeasurand' as any),
+      ).toBeUndefined();
       expect(console.warn).toHaveBeenCalledTimes(1);
     });
-
-    it('keeps a genuinely absent measurand (spec default applies downstream)', () => {
-      const result = MeterValueMapper.fromSampledValueTypes([{ value: 100 }] as any);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].measurand).toBeUndefined();
-      expect(console.warn).not.toHaveBeenCalled();
-    });
   });
 
-  describe('fromMeterValueType', () => {
-    it('returns undefined when every sampled value is an unrepresentable measurand', () => {
-      const result = MeterValueMapper.fromMeterValueType({
-        timestamp: '2025-05-29T12:01:00Z',
-        sampledValue: [{ value: 400, measurand: OCPP2_1.MeasurandEnumType.Voltage_Minimum }],
-      } as any);
-
-      expect(result).toBeUndefined();
-    });
-
-    it('keeps the meter value when at least one sampled value survives', () => {
-      const result = MeterValueMapper.fromMeterValueType({
-        timestamp: '2025-05-29T12:01:00Z',
-        sampledValue: [
-          { value: 100, measurand: OCPP2_1.MeasurandEnumType.Energy_Active_Import_Register },
-          { value: 400, measurand: OCPP2_1.MeasurandEnumType.Voltage_Minimum },
-        ],
-      } as any);
-
-      expect(result).toBeDefined();
-      expect(result!.sampledValue).toHaveLength(1);
-      expect(result!.sampledValue[0].measurand).toBe('Energy.Active.Import.Register');
-    });
-  });
-
-  // The point of the whole fix: an unrepresentable measurand must not poison totalKwh.
-  describe('totalKwh is not poisoned by an unrepresentable measurand', () => {
-    it('computes kWh from real register readings only, ignoring a dropped Voltage.Minimum', () => {
+  // A 2.1 measurand is now stored as its own distinct value, so it is never counted as the energy
+  // register and never poisons totalKwh.
+  describe('totalKwh ignores non-register measurands', () => {
+    it('computes kWh from real register readings only, ignoring a Voltage.Minimum sample', () => {
       const raw = [
         {
           timestamp: '2025-05-29T12:01:00Z',
@@ -111,7 +81,6 @@ describe('MeterValueMapper (OCPP 2 ingestion)', () => {
               measurand: OCPP2_1.MeasurandEnumType.Energy_Active_Import_Register,
               unitOfMeasure: { unit: 'kWh', multiplier: 0 },
             },
-            // Would previously be relabeled as the register (and, with unit V, crash normalizeToKwh).
             {
               value: 400,
               measurand: OCPP2_1.MeasurandEnumType.Voltage_Minimum,
@@ -121,10 +90,12 @@ describe('MeterValueMapper (OCPP 2 ingestion)', () => {
         },
       ];
 
-      const meterValues = raw
-        .map((mv) => MeterValueMapper.fromMeterValueType(mv as any))
-        .filter((mv) => mv !== undefined);
+      const meterValues = raw.map((mv) => MeterValueMapper.fromMeterValueType(mv as any));
 
+      // The voltage reading is stored as 'Voltage.Minimum', so it is neither counted nor fed to
+      // normalizeToKwh (which would throw on unit 'V').
+      expect(meterValues[1].sampledValue).toHaveLength(2);
+      expect(meterValues[1].sampledValue[1].measurand).toBe('Voltage.Minimum');
       expect(() => MeterValueUtils.getTotalKwh(meterValues as any, 0)).not.toThrow();
       expect(MeterValueUtils.getTotalKwh(meterValues as any, 0)).toBe(100); // 200 - 100
     });

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_0_1, type SampledValue, type MeterValueDto } from '@citrineos/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MeterValueMapper } from '@dal/layers/sequelize/mapper/2.0.1';
 
 describe('MeterValueMapper (OCPP 2.0.1)', () => {
@@ -103,13 +103,18 @@ describe('MeterValueMapper (OCPP 2.0.1)', () => {
         expect(MeterValueMapper.fromMeasurandEnumType(ocpp)).toBe(expected);
       });
 
-      it('returns undefined for null/undefined', () => {
-        expect(MeterValueMapper.fromMeasurandEnumType(null)).toBeUndefined();
-        expect(MeterValueMapper.fromMeasurandEnumType(undefined)).toBeUndefined();
+      it('defaults an absent measurand to Energy.Active.Import.Register (spec)', () => {
+        expect(MeterValueMapper.fromMeasurandEnumType(null)).toBe('Energy.Active.Import.Register');
+        expect(MeterValueMapper.fromMeasurandEnumType(undefined)).toBe(
+          'Energy.Active.Import.Register',
+        );
       });
 
-      it('returns undefined for unrepresentable/unknown values', () => {
+      it('returns undefined for non-protocol/unknown values', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         expect(MeterValueMapper.fromMeasurandEnumType('unknown' as any)).toBeUndefined();
+        expect(warnSpy).toHaveBeenCalled();
+        warnSpy.mockRestore();
       });
     });
   });

@@ -317,9 +317,9 @@ export class SequelizeTransactionEventRepository
       event = await event.save({ transaction: sequelizeTransaction });
 
       if (value.meterValue && value.meterValue.length > 0) {
-        const meterValueTypes = value.meterValue
-          .map((meterValue) => MeterValueMapper.fromMeterValueType(meterValue))
-          .filter((mv): mv is MeterValueDto => mv !== undefined);
+        const meterValueTypes = value.meterValue.map((meterValue) =>
+          MeterValueMapper.fromMeterValueType(meterValue),
+        );
         const newMeterValues = await Promise.all(
           meterValueTypes.map(async (meterValueType) => {
             const savedMeterValue = await MeterValue.create(
@@ -581,11 +581,8 @@ export class SequelizeTransactionEventRepository
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue | undefined> {
+  ): Promise<MeterValue> {
     const meterValueType = MeterValueMapper.fromMeterValueType(meterValue);
-    if (!meterValueType) {
-      return undefined;
-    }
     const savedMeterValue = await MeterValue.create({
       tenantId,
       transactionDatabaseId: transactionDatabaseId,
