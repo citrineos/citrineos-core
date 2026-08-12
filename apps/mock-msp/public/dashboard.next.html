@@ -1,0 +1,911 @@
+<!-- SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>mock-msp · CitrineOS eMSP test harness</title>
+<style>
+/* ---- 01 tokens -------------------------------------------------------- */
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --border:#2a3242; --border2:#3a4459;
+  --fg:#e6edf3; --muted:#8b949e; --muted2:#6e7681;
+  --in:#3fb950; --out:#58a6ff; --warn:#d29922; --err:#f85149; --ok:#3fb950; --accent:#7c8cff;
+  --chip:#21262d; --rowh:#1a2130; --detail:#0b0f16;
+}
+/* ---- reset ----------------------------------------------------------- */
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  display:flex;flex-direction:column;height:100vh;background:var(--bg);color:var(--fg);
+  font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+a{color:var(--out);text-decoration:none;cursor:pointer}
+a:hover{text-decoration:underline}
+/* ---- layout ---------------------------------------------------------- */
+header{display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--panel);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+.citrine-logo{height:22px;width:auto;display:block;flex:0 0 auto}
+header h1{font-size:14px;font-weight:600;margin:0}
+header h1 .sub{color:var(--muted2);font-weight:400}
+.strip{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:7px 16px;
+  background:var(--panel);border-bottom:1px solid var(--border)}
+.strip .grp{display:flex;gap:6px;align-items:center}
+.strip .sep{width:1px;height:16px;background:var(--border2);margin:0 2px}
+.wrap{flex:1;min-height:0;display:grid;grid-template-columns:344px 1fr}
+aside{display:flex;flex-direction:column;min-height:0;background:var(--panel);
+  border-right:1px solid var(--border)}
+.aside-scroll{overflow-y:auto;padding:14px;flex:1}
+main{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+/* ---- components ------------------------------------------------------ */
+.spacer{flex:1}
+.identity{color:var(--muted);font-size:12px}
+.group{margin-bottom:16px}
+.group>h2{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);
+  margin:0 0 8px;border-bottom:1px solid var(--border);padding-bottom:5px}
+.hint{font-size:11px;color:var(--muted2);margin:-2px 0 8px}
+.hint code{background:var(--chip);padding:0 3px;border-radius:3px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+button{font:inherit;font-size:12px;background:var(--chip);color:var(--fg);border:1px solid var(--border2);
+  border-radius:6px;padding:5px 9px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:#1f6feb22;border-color:#1f6feb;color:#8bb7ff}
+button.danger:hover{border-color:var(--err);color:var(--err)}
+button.wide{width:100%;text-align:left;margin-bottom:6px}
+button.sm{padding:2px 7px;font-size:11px}
+[aria-disabled=true]{opacity:.42;cursor:not-allowed;border-color:var(--border)!important;color:var(--muted)!important;background:var(--chip)!important}
+[aria-disabled=true]:hover{border-color:var(--border)!important}
+.is-warn{border-color:var(--warn)!important;color:var(--warn)!important}
+label.fld{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+textarea,input,select{font:inherit;font-size:12px;width:100%;background:var(--detail);color:var(--fg);
+  border:1px solid var(--border2);border-radius:6px;padding:5px 7px;margin-bottom:6px}
+textarea{min-height:74px;white-space:pre}
+.toggle{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.grid2 button{margin:0;text-align:center}
+details{margin-bottom:8px}
+details>summary{cursor:pointer;font-size:11px;color:var(--muted);list-style:none;padding:4px 0}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--muted2)}
+details[open]>summary::before{content:"▾ "}
+/* pills / chips */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:2px 8px;border-radius:20px;background:var(--chip);border:1px solid var(--border2);color:var(--muted)}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);flex:0 0 auto}
+.pill.g{color:#8be9a0;border-color:#1f6f34}.pill.g .dot{background:var(--ok)}
+.pill.b{color:#a7ccff;border-color:#1d4a80}.pill.b .dot{background:var(--out);animation:pulse 1.6s infinite}
+.pill.r{color:#ff9a92;border-color:#6b1f1f}.pill.r .dot{background:var(--err)}
+.pill.y{color:#f2c26b;border-color:#6b520f}.pill.y .dot{background:var(--warn)}
+.pill.click{cursor:pointer}
+.pill.click:hover{border-color:var(--accent)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* stepper */
+.stepid{font-size:11px;color:var(--muted);margin-bottom:6px}
+.stepid b{color:var(--fg)}
+.stephdr{font-size:11px;color:var(--muted2);margin:0 0 6px}
+.step{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;margin-bottom:4px;border:1px solid transparent}
+.step .rail{width:16px;text-align:center;color:var(--muted2)}
+.step.done .rail{color:var(--ok)}
+.step.cur{border-color:#1f6feb;background:#1f6feb14}
+.step button{flex:1;text-align:left}
+.step .ts{font-size:10px;color:var(--muted2)}
+/* cards row removed → strip. main regions */
+.covwrap{padding:10px 16px;border-bottom:1px solid var(--border)}
+.covhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.covgrid{display:grid;grid-template-columns:auto repeat(2,minmax(70px,1fr));gap:4px;max-width:540px}
+.ch{font-size:10px;text-transform:uppercase;color:var(--muted2);padding:2px 6px}
+.ch.rt{text-align:center}
+.rl{font-size:12px;color:var(--muted);padding:3px 6px}
+.covcell{text-align:center;font-size:12px;padding:3px 6px;border-radius:4px;background:var(--chip);color:var(--muted2)}
+.covcell.g{background:#0f2417;color:#8be9a0}.covcell.r{background:#240f0f;color:#ff9a92}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--border)}
+.toolbar input[type=text]{width:220px;margin:0}
+.toolbar select{width:auto;margin:0}
+.tablewrap{overflow:auto;flex:1}
+table{border-collapse:collapse;width:100%}
+thead th{position:sticky;top:0;z-index:1;background:var(--panel2);text-align:left;font-size:10px;
+  text-transform:uppercase;color:var(--muted2);padding:5px 8px;border-bottom:1px solid var(--border)}
+tbody td{padding:4px 8px;border-bottom:1px solid #1a212c;white-space:nowrap;vertical-align:top;font-size:12px}
+tr.x{cursor:pointer}
+tr.x:hover{background:var(--rowh)}
+tr.faulted td{background:#1e1210}
+tr.detail td{white-space:normal;background:var(--detail)}
+tr.detail pre{margin:0;background:#05070b;color:#cbd5e1;padding:8px;border-radius:6px;
+  max-height:340px;overflow:auto;font-size:11px;white-space:pre-wrap;word-break:break-word}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cols h4{font-size:10px;text-transform:uppercase;color:var(--muted2);margin:0 0 4px}
+.dir{font-weight:600}.dir.inbound{color:var(--in)}.dir.outbound{color:var(--out)}
+.empty{padding:20px;text-align:center;color:var(--muted2)}
+.findings{border-top:1px solid var(--border);max-height:24vh;overflow:auto;padding:10px 16px}
+.findings h2{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);margin:0 0 8px}
+.f{border-left:3px solid var(--border2);padding:5px 9px;margin-bottom:6px;background:var(--chip);border-radius:0 6px 6px 0}
+.f.error{border-color:var(--err)}.f.warn{border-color:var(--warn)}.f.info{border-color:var(--out)}
+.f .bug{color:var(--warn);font-weight:600}
+ul.issues{margin:4px 0 0;padding:0;list-style:none}
+ul.issues li{font-size:11px;color:var(--muted);padding-left:12px;position:relative}
+ul.issues li:before{content:"•";position:absolute;left:0;color:var(--muted2)}
+ul.issues .ipath{color:var(--warn)}
+/* activity dock */
+.dock{border-top:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;max-height:38vh}
+.dockhdr{display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--border)}
+.dockhdr h2{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);margin:0}
+.dockbody{overflow-y:auto;padding:8px 14px}
+.act{padding:6px 0;border-bottom:1px solid var(--border)}
+.act:last-child{border-bottom:none}
+.act .l1{display:flex;gap:8px;align-items:center}
+.act .t{color:var(--muted2);font-size:10px}
+.act .name{font-weight:600}
+.act .badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.badge.ok{background:#0f2417;color:#8be9a0}.badge.warn{background:#241d0f;color:#f2c26b}
+.badge.fail{background:#240f0f;color:#ff9a92}.badge.run{background:var(--chip);color:var(--muted)}
+.act .sum{font-size:11px;color:var(--muted);margin-top:2px}
+.act .lnk{font-size:11px;margin-top:2px;display:flex;gap:10px}
+.act pre{margin:4px 0 0;background:#05070b;color:#cbd5e1;padding:7px;border-radius:6px;
+  max-height:200px;overflow:auto;font-size:11px;white-space:pre-wrap;word-break:break-word}
+.probe{padding:5px 0;border-bottom:1px solid var(--border)}
+.probe:last-child{border-bottom:none}
+.probe .pv{font-weight:700}.probe .pv.p{color:var(--ok)}.probe .pv.f{color:var(--err)}
+.probe .meta{font-size:11px;color:var(--muted2)}
+/* down banner */
+.downbar{background:#240f0f;color:#ff9a92;border-color:#6b1f1f}
+#toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;z-index:60}
+#toast .t{background:var(--panel2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;
+  font-size:12px;max-width:360px;box-shadow:0 6px 24px #0008;animation:in .15s}
+#toast .t.ok{border-color:#1f6f34}#toast .t.err{border-color:#6b1f1f}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.strip.dim{opacity:.4}
+@media (max-width:960px){
+  .wrap{grid-template-columns:1fr;overflow-y:auto}
+  aside{border-right:none;border-bottom:1px solid var(--border)}
+  .covgrid{max-width:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <svg class="citrine-logo" viewBox="0 0 64 107" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CitrineOS"><path d="M63.7899 71.4933L25.6683 79.1704L0.789948 84.2565V20.3444L63.7899 71.4933Z" fill="url(#cit0)"/><path d="M63.7899 71.4933L38.817 0L0.789948 20.3444L63.7899 71.4933Z" fill="#F9B41E"/><path d="M63.7899 71.4933L38.6278 107L26.3305 79.0745L63.7899 71.4933Z" fill="#E18A26"/><path opacity="0.4" d="M38.817 0L0.789948 20.3444L38.6278 107L38.817 0Z" fill="url(#cit1)"/><path d="M38.6278 107L0.789948 84.2565L26.4251 78.9785L38.6278 107Z" fill="#D57428"/><defs><linearGradient id="cit0" x1="46.2761" y1="29.1772" x2="4.84919" y2="77.2896" gradientUnits="userSpaceOnUse"><stop offset="0.1723" stop-color="#F7EF79"/><stop offset="0.5313" stop-color="#F9B41E"/><stop offset="0.6042" stop-color="#F8AC24"/><stop offset="0.7357" stop-color="#F6962E"/><stop offset="0.8689" stop-color="#F47C36"/></linearGradient><linearGradient id="cit1" x1="0.789948" y1="53.5136" x2="38.8406" y2="53.5136" gradientUnits="userSpaceOnUse"><stop offset="0.1723" stop-color="#FBF8CD"/><stop offset="0.3223" stop-color="#FAF6BA"/><stop offset="0.709" stop-color="#F8F18C"/><stop offset="0.8942" stop-color="#F7EF79"/></linearGradient></defs></svg>
+  <h1>mock-msp <span class="sub">· CitrineOS eMSP test harness</span></h1>
+  <span class="identity" id="identity">US/TST · EMSP</span>
+  <span class="spacer"></span>
+  <span class="identity" id="stamp"></span>
+  <label class="toggle"><input type="checkbox" id="autoChk" checked data-change="auto" /> live</label>
+  <label class="toggle" title="Force all buttons enabled (ignore state guards) — demo-day safety valve"><input type="checkbox" id="guardChk" data-action="guards-toggle" /> guards off</label>
+  <button class="sm" id="refreshBtn" data-action="refresh" title="refresh now">↻</button>
+</header>
+
+<div class="strip" id="r-strip"><span class="empty" style="padding:2px">connecting…</span></div>
+
+<div class="wrap">
+  <aside>
+    <div class="aside-scroll">
+
+      <section class="group">
+        <h2>Charge a car · EVerest cp001</h2>
+        <div class="stepid" id="ch-id">EVSE identity — run Discover</div>
+        <div class="stephdr" id="ch-state">state: —</div>
+        <div id="ch-steps"></div>
+        <div class="btnrow" style="margin-top:6px">
+          <button class="sm" data-action="charge-discover">Re-discover via OCPI</button>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Pull &amp; push data</h2>
+        <button class="wide primary" data-action="pull-all">⬇ Pull all (4 modules)</button>
+        <div class="grid2">
+          <button data-action="pull" data-arg="locations">locations</button>
+          <button data-action="pull" data-arg="sessions">sessions</button>
+          <button data-action="pull" data-arg="cdrs">cdrs</button>
+          <button data-action="pull" data-arg="tariffs">tariffs</button>
+        </div>
+        <button class="wide" data-action="emit-token">▶ Push token (RFID DEADBEEF)</button>
+        <div class="grid2">
+          <button data-action="token-block" title="PATCH {valid:false} — blocks the newest pushed token at Citrine (a lost-card block)">⛔ Block token</button>
+          <button data-action="token-verify" title="GET the token back from Citrine and diff it against what we pushed — drift lands in Findings">✓ Verify token</button>
+        </div>
+        <details>
+          <summary>Raw OCPI command (advanced)</summary>
+          <div class="hint">Sends the request, shows Citrine's sync ack only — never gated (adversarial sends welcome).</div>
+          <label class="fld">Command</label>
+          <select id="cmdType" data-change="cmd-type">
+            <option>START_SESSION</option><option>STOP_SESSION</option><option>RESERVE_NOW</option>
+            <option>CANCEL_RESERVATION</option><option>UNLOCK_CONNECTOR</option>
+          </select>
+          <div class="hint" id="cmd-note" style="display:none"></div>
+          <label class="fld">Payload (JSON)</label>
+          <textarea id="cmdPayload" data-input="cmd-payload"></textarea>
+          <div class="btnrow">
+            <button class="primary" data-action="cmd-send">▶ Send command</button>
+            <button class="sm" data-action="cmd-fill">reset payload</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="group">
+        <h2>Spec probes · serves-vs-knows</h2>
+        <div class="hint">Spec-legal responses the schema validator can't catch — compares what Citrine serves vs what it knows.</div>
+        <button class="wide primary" data-action="probes-run">🔎 Run spec probes</button>
+      </section>
+
+      <section class="group">
+        <h2>Fault injection</h2>
+        <div class="hint">Chips arm a preset immediately. Custom rule below for all 9 kinds.</div>
+        <div class="btnrow">
+          <button class="sm" data-action="fault-chip" data-arg="delay2s">arm: slow 2s</button>
+          <button class="sm" data-action="fault-chip" data-arg="malformCdr">arm: malform CDR</button>
+          <button class="sm" data-action="fault-chip" data-arg="dropHdrs">arm: drop headers</button>
+        </div>
+        <div id="faultList"></div>
+        <button class="wide danger" data-action="faults-clear" style="margin-top:6px">Clear all faults</button>
+        <details>
+          <summary>Custom rule (all 9 kinds)</summary>
+          <label class="fld">Module</label>
+          <select id="fbModule">
+            <option value="">any</option><option value="cdrs">cdrs</option><option value="sessions">sessions</option>
+            <option value="locations">locations</option><option value="tokens">tokens</option><option value="tariffs">tariffs</option>
+            <option value="commands">commands</option><option value="credentials">credentials</option><option value="chargingprofiles">chargingprofiles</option>
+          </select>
+          <label class="fld">Direction</label>
+          <select id="fbDir"><option value="">any</option><option value="inbound">inbound (C→M)</option><option value="outbound">outbound (M→C)</option></select>
+          <label class="fld">Fault kind</label>
+          <select id="fbKind" data-change="fault-kind">
+            <option value="passthrough">passthrough</option><option value="delay">delay</option><option value="abort">abort</option>
+            <option value="unauthorized">unauthorized</option><option value="httpStatus">httpStatus</option><option value="ocpiStatus">ocpiStatus</option>
+            <option value="malformBody">malformBody</option><option value="dropHeaders">dropHeaders</option><option value="oversizeToken">oversizeToken</option>
+          </select>
+          <div id="fbParams"></div>
+          <button class="primary" data-action="fault-arm">Arm custom fault</button>
+        </details>
+      </section>
+
+      <section class="group">
+        <h2>Make Citrine call us</h2>
+        <div class="hint">Writes Citrine's DB via Hasura → a real inbound PUT/PATCH. "Add" reproduces the coordinates bug.</div>
+        <button class="wide" data-action="provoke" data-arg="location-nudge">↻ Update a location (inbound PATCH)</button>
+        <button class="wide" data-action="provoke" data-arg="location-add">＋ Add a location (inbound PUT)</button>
+      </section>
+
+      <section class="group">
+        <h2>Setup &amp; session</h2>
+        <div class="btnrow">
+          <button data-action="register">Register</button>
+          <button data-action="reregister">Re-register (rotate token)</button>
+        </div>
+        <button class="wide danger" data-action="reset">Reset recorder + state</button>
+        <label class="fld">Control secret (if set)</label>
+        <input type="text" id="secret" data-change="secret" placeholder="x-mock-control-secret" />
+      </section>
+
+    </div>
+    <div class="dock">
+      <div class="dockhdr"><h2>Activity</h2><span class="spacer"></span><button class="sm" data-action="activity-clear">clear</button></div>
+      <div class="dockbody" id="r-activity"><div class="empty" style="padding:10px">No actions yet — everything you click reports here.</div></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="covwrap">
+      <div class="covhead"><strong>Coverage matrix</strong>
+        <span class="hint" style="margin:0">module × direction · green seen &amp; ok · red last failed · grey not exercised</span>
+        <span class="spacer"></span>
+        <span class="pill y" id="cov-note">real-time authorize &amp; async command-result: live via EVerest</span>
+      </div>
+      <div id="r-coverage" class="covgrid"><div class="empty" style="padding:10px">loading…</div></div>
+    </div>
+    <div class="toolbar">
+      <strong>Wire trace</strong>
+      <select id="fDir" data-change="filter-dir"><option value="">all directions</option><option value="inbound">Citrine → Mock</option><option value="outbound">Mock → Citrine</option></select>
+      <input type="text" id="fSearch" data-input="filter-q" placeholder="filter module / operation / path…" />
+      <label class="toggle"><input type="checkbox" id="fFail" data-change="filter-fail" /> problems only</label>
+      <span class="spacer"></span>
+      <span class="identity" id="shownCount"></span>
+    </div>
+    <div class="tablewrap" id="tw">
+      <table>
+        <thead><tr><th>#</th><th>time</th><th>dir</th><th>module</th><th>operation</th><th>method</th><th>path</th><th>http</th><th>ocpi</th><th>valid</th><th>flags</th></tr></thead>
+        <tbody id="r-trace"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none"></div>
+    </div>
+    <div class="findings">
+      <h2>Conformance findings</h2>
+      <div id="r-findings"><div class="empty">None — the mock hasn't caught Citrine misbehaving.</div></div>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+// ================= 01 utils =================
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const short = (s, n) => { s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n) + "…" : s; };
+const fmtTime = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString([], { hour12:false }) + "." + String(d.getMilliseconds()).padStart(3,"0"); };
+const clockNow = () => new Date().toLocaleTimeString([], { hour12:false });
+function jsonBlock(v){ try { return esc(JSON.stringify(v, null, 2)); } catch { return esc(String(v)); } }
+
+// ================= 02 state =================
+const S = {
+  status: null,                                   // last /_mock/status (null = mock down)
+  exchanges: [], findings: [], faults: [], coverage: null,
+  gen: { maxSeq: -1, exchanges: -1, findings: -1, faults: -1 },
+  ch: { location_id: null, evse_uid: null, connector_id: null, session_id: null, charged: false },
+  ui: { openRowId: null, filters: { dir: "", q: "", failOnly: false }, live: true,
+        ignoreGuards: false, cmdDirty: false, activity: [], activityGen: 0, resetArmed: false },
+};
+const FP = {};                                    // per-region fingerprints (change detection)
+
+// ================= 03 api =================
+function hdrs(){ const h = { "content-type": "application/json" }; const s = ($("secret").value||"").trim(); if (s) h["x-mock-control-secret"] = s; return h; }
+async function api(path, opts){
+  const o = Object.assign({ headers: hdrs() }, opts || {});
+  const r = await fetch("/_mock" + path, o);
+  const txt = await r.text();
+  let body; try { body = txt ? JSON.parse(txt) : null; } catch { body = txt; }
+  if (!r.ok) throw Object.assign(new Error("HTTP " + r.status), { body, status: r.status });
+  return body;
+}
+function toast(msg, ok){ const el = document.createElement("div"); el.className = "t " + (ok ? "ok" : "err"); el.textContent = msg; $("toast").appendChild(el); setTimeout(() => el.remove(), 4200); }
+
+// ================= 04 activity =================
+function bumpActivity(){ S.ui.activityGen++; }
+function logActivity(entry){
+  entry.t = clockNow();
+  S.ui.activity.unshift(entry);
+  if (S.ui.activity.length > 50) S.ui.activity.length = 50;
+  bumpActivity(); renderActivity();
+}
+function classify(res){
+  if (!res || typeof res !== "object") return true;
+  const sync = res.sync && res.sync.result;
+  const cr = res.commandResult && res.commandResult.result;
+  if (sync && sync !== "ACCEPTED") return false;
+  if (cr && cr !== "ACCEPTED") return false;
+  if (res.commandResultError) return false;                 // async result timed out / errored
+  // ACCEPTED sync but nothing came back (no CommandResult, no Session/CDR) → not a success
+  if (sync === "ACCEPTED" && !cr && !res.session && !res.cdr) return false;
+  return true;
+}
+// Judge for actions that return {exchange}: OK iff Citrine answered 2xx (a 500 under a fault
+// must badge FAIL even though the mock's own control API answered 200).
+function exchangeOk(r){
+  const st = r && r.exchange && r.exchange.response && r.exchange.response.httpStatus;
+  return st == null ? true : (st >= 200 && st < 300);
+}
+function summarize(entry){
+  const r = entry.result;
+  if (!r || typeof r !== "object") return "";
+  if (r.sync || r.commandResult){
+    const parts = [];
+    if (r.sync && r.sync.result) parts.push("sync " + r.sync.result);
+    if (r.commandResult && r.commandResult.result) parts.push("→ " + r.commandResult.result);
+    if (r.session && r.session.id) parts.push("→ Session " + short(r.session.id, 12));
+    if (r.cdr) parts.push("→ CDR " + short(r.cdr.id || "", 12));
+    return parts.join(" ");
+  }
+  if (r.discovered) return r.location_id + " · " + r.evse_uid + " · conn " + r.connector_id;
+  if (r.probes) return r.failing + " of " + r.probes.length + " failing";
+  if (r.pulled) return "pulled " + r.pulled;
+  if (r.error) return esc(r.error) + (r.hint ? " — " + esc(r.hint) : "");
+  if (r.provoked) return "provoked " + r.what;
+  if (r.plugged) return "car plugged in";
+  if (r.unplugged) return "unplugged";
+  if (r.registration) return "endpoints: " + ((r.registration.cpoEndpoints||[]).length);
+  return "";
+}
+function findTraceSeq(entry){
+  const r = entry.result;
+  if (r && r.responseUrl){ const id = String(r.responseUrl).split("/").pop(); const ex = S.exchanges.find(e => (e.request && e.request.path || "").endsWith(id)); if (ex) return ex.id; }
+  return null;
+}
+
+// ================= 05 poll =================
+let inFlight = false;
+async function poll(){
+  if (inFlight) return; inFlight = true;
+  try {
+    let status = null;
+    try { status = await api("/status", { method: "GET" }); } catch { status = null; }
+    S.status = status;
+    if (status){
+      const g = status.gen || {};
+      // Advance each cursor ONLY when its fetch succeeds, so a transient failure is
+      // retried next poll instead of being skipped until the source changes again.
+      const next = { ...S.gen };
+      const jobs = [];
+      if (g.maxSeq !== S.gen.maxSeq || g.exchanges !== S.gen.exchanges) {
+        jobs.push(api("/exchanges?limit=500").then(x => { S.exchanges = Array.isArray(x)?x:[]; next.maxSeq = g.maxSeq; next.exchanges = g.exchanges; }).catch(()=>{}));
+        jobs.push(api("/coverage").then(c => { S.coverage = c; }).catch(()=>{})); // derived from exchanges; best-effort within the trace gate
+      }
+      if (g.findings !== S.gen.findings) jobs.push(api("/findings").then(x => { S.findings = Array.isArray(x)?x:[]; next.findings = g.findings; }).catch(()=>{}));
+      if (g.faults !== S.gen.faults) jobs.push(api("/faults").then(x => { S.faults = Array.isArray(x)?x:[]; next.faults = g.faults; }).catch(()=>{}));
+      await Promise.all(jobs);
+      S.gen = next;
+    }
+    renderAll();
+  } finally { inFlight = false; }
+}
+async function forceRefresh(){
+  // Full refresh incl. a bounded fresh status probe; used after every action + manual refresh.
+  S.gen = { maxSeq: -1, exchanges: -1, findings: -1, faults: -1 };
+  try { S.status = await api("/status?fresh=1", { method: "GET" }); } catch { S.status = null; }
+  try { S.exchanges = await api("/exchanges?limit=500"); } catch {}
+  try { S.coverage = await api("/coverage"); } catch {}
+  try { S.findings = await api("/findings"); } catch {}
+  try { S.faults = await api("/faults"); } catch {}
+  if (S.status && S.status.gen) S.gen = { ...S.status.gen };
+  renderAll();
+}
+
+// ================= 06 derive =================
+function deriveView(st){
+  if (!st) return { down: true };
+  const c = st.citrine || {};
+  const conn = (c.connector && c.connector.state) || "unknown";
+  const active = !!(st.mock && st.mock.activeSession) || (c.transaction && c.transaction.state === "active");
+  return {
+    down: false, degraded: !!st.degraded,
+    ocpi: (c.ocpi && c.ocpi.state) || "unknown",
+    hasura: (c.hasura && c.hasura.state) || "unknown",
+    everest: (st.everest && st.everest.state) || "unknown",
+    station: (c.station && c.station.state) || "unknown",
+    connector: conn,
+    txn: (c.transaction && c.transaction.state) || "unknown",
+    registration: (st.mock && st.mock.registration) || "unknown",
+    activeSession: (st.mock && st.mock.activeSession) || null,
+    tokensPushed: (st.mock && st.mock.tokensPushed) || 0,
+    faultsArmed: (st.gen && st.gen.faults) || 0,
+    plugged: conn === "Occupied", ready: conn === "Available", active: !!active,
+  };
+}
+function stepperState(v){
+  if (v.down || v.connector === "unknown") return "UNKNOWN";
+  if (["Reserved","Unavailable","Faulted"].includes(v.connector)) return "BLOCKED";
+  if (v.active) return "CHARGING";
+  if (v.plugged) return S.ch.charged ? "UNPLUG" : "PLUGGED"; // a completed charge → highlight Unplug
+  return "IDLE";
+}
+
+// ================= 07 render =================
+function renderRegion(id, fp, htmlFn){ if (FP[id] === fp) return; FP[id] = fp; $(id).innerHTML = htmlFn(); }
+function pill(cls, dot, label){ return '<span class="pill ' + cls + '"><span class="dot"></span>' + esc(label) + '</span>'; }
+
+function renderAll(){
+  renderStrip();
+  renderStepper();
+  renderCoverage();
+  renderTrace();
+  renderFindings();
+  renderFaults();
+  renderActivity();   // re-render on every poll so trace-jump links bind once exchanges arrive
+  renderCmdNote();
+  applyGuards();
+  $("stamp").textContent = "updated " + clockNow();
+}
+
+function stripModel(){
+  const v = deriveView(S.status);
+  if (v.down) return { down:true };
+  const st = S.status;
+  return { down:false, ocpi:v.ocpi, hasura:v.hasura, everest:v.everest, station:v.station,
+    stationName:(st.citrine.station&&st.citrine.station.name)||"cp001", connector:v.connector,
+    session:v.activeSession?("ACTIVE "+short(v.activeSession.id,10)):"none",
+    reg:v.registration, authorize:(st.mock&&st.mock.authorizeDefault)||"?", scenario:(st.mock&&st.mock.scenario)||null,
+    faults:v.faultsArmed, exchanges:(st.gen&&st.gen.exchanges)||0, findings:(st.gen&&st.gen.findings)||0, degraded:v.degraded };
+}
+function renderStrip(){
+  const m = stripModel();
+  const stripEl = $("r-strip"); stripEl.classList.toggle("dim", !!m.down);
+  renderRegion("r-strip", JSON.stringify(m), () => {
+    if (m.down) return '<span class="pill r downbar"><span class="dot"></span>mock-msp unreachable — is the server on :8083?</span>';
+    const connCls = m.connector === "Available" ? "g" : m.connector === "Occupied" ? "b" : (m.connector === "unknown" ? "" : "y");
+    const connLbl = "Connector: " + (m.connector === "Available" ? "Available — no car" : m.connector === "Occupied" ? "Occupied — car plugged" : m.connector);
+    const stCls = m.station === "online" ? "g" : m.station === "offline" ? "r" : "";
+    const everCls = m.everest === "up" ? "g" : m.everest === "unavailable" ? "y" : m.everest === "down" ? "r" : "";
+    const everLbl = "car-sim: " + m.everest;
+    return (
+      '<span class="grp">' +
+        pill(m.ocpi === "up" ? "g" : m.ocpi === "down" ? "r" : "", "", "Citrine OCPI: " + m.ocpi) +
+        pill(m.hasura === "up" ? "g" : m.hasura === "down" ? "r" : "", "", "Hasura: " + m.hasura) +
+        pill(stCls, "", m.stationName + ": " + m.station) +
+        pill(everCls, "", everLbl) +
+      '</span><span class="sep"></span><span class="grp">' +
+        pill(connCls, "", connLbl) +
+        pill(m.session === "none" ? "" : "b", "", "Session: " + m.session) +
+        pill(m.reg === "registered" ? "g" : "y", "", m.reg) +
+        pill("", "", "authorize: " + m.authorize) +
+        (m.scenario ? pill("", "", "scenario: " + m.scenario) : "") +
+      '</span><span class="sep"></span><span class="grp">' +
+        (m.faults > 0 ? '<span class="pill y click" data-scroll="faults"><span class="dot"></span>! faults: ' + m.faults + '</span>' : pill("", "", "faults: 0")) +
+        pill("", "", "exchanges: " + m.exchanges) +
+        (m.findings > 0 ? '<span class="pill r click" data-scroll="findings"><span class="dot"></span>findings: ' + m.findings + '</span>' : pill("", "", "findings: 0")) +
+        (m.degraded ? pill("y", "", "degraded") : "") +
+      '</span>'
+    );
+  });
+}
+
+const STEPS = [
+  { key:"charge-plug",   label:"Plug in car",  cur:"IDLE" },
+  { key:"charge-start",  label:"Start charging",cur:"PLUGGED" },
+  { key:"charge-stop",   label:"Stop charging", cur:"CHARGING" },
+  { key:"charge-unplug", label:"Unplug",        cur:"UNPLUG" },
+];
+function renderStepper(){
+  const v = deriveView(S.status);
+  const state = stepperState(v);
+  const st = S.status;
+  const id = (st && st.citrine && st.citrine.station && st.citrine.station.name) ? (st.citrine.station.name + " · EVSE 1 · conn 1") :
+             (S.ch.evse_uid ? (S.ch.evse_uid) : "EVSE identity — run Discover");
+  $("ch-id").innerHTML = "cp001 identity: <b>" + esc(id) + "</b>";
+  $("ch-state").textContent = "state: " + state + (v.activeSession ? "  (Session " + short(v.activeSession.id, 10) + (v.activeSession.kwh!=null?", "+v.activeSession.kwh+" kWh":"") + ")" : "");
+  const doneMap = { IDLE:[], PLUGGED:["charge-plug"], CHARGING:["charge-plug","charge-start"], UNPLUG:["charge-plug","charge-start","charge-stop"], UNKNOWN:[], BLOCKED:[] };
+  const curMap = { IDLE:"charge-plug", PLUGGED:"charge-start", CHARGING:"charge-stop", UNPLUG:"charge-unplug", UNKNOWN:"", BLOCKED:"" };
+  const done = doneMap[state] || [];
+  const html = STEPS.map(s => {
+    const isDone = done.includes(s.key); const isCur = curMap[state] === s.key;
+    return '<div class="step ' + (isDone?"done ":"") + (isCur?"cur":"") + '">' +
+      '<span class="rail">' + (isDone?"✓":isCur?"▸":"○") + '</span>' +
+      '<button data-action="' + s.key + '">' + s.label + '</button>' + '</div>';
+  }).join("");
+  $("ch-steps").innerHTML = html;
+}
+
+function covCell(c){ if (!c || !c.count) return '<div class="covcell" title="not exercised">—</div>'; if (c.lastOk === false) return '<div class="covcell r" title="last failed">✗ ' + c.count + '</div>'; return '<div class="covcell g" title="seen & valid">✓ ' + c.count + '</div>'; }
+function renderCoverage(){
+  const cov = S.coverage;
+  const fp = (S.gen.maxSeq + ":" + S.gen.exchanges);
+  renderRegion("r-coverage", fp, () => {
+    if (!cov || !Array.isArray(cov.modules)) return '<div class="empty">coverage unavailable</div>';
+    let h = '<div class="ch">module</div><div class="ch rt">inbound C→M</div><div class="ch rt">outbound M→C</div>';
+    for (const m of cov.modules) h += '<div class="rl">' + esc(m.module) + '</div>' + covCell(m.inbound) + covCell(m.outbound);
+    return h;
+  });
+}
+
+function flags(ex){ const out = []; if (ex.fault) out.push('<span class="pill y" style="padding:0 6px">fault:' + esc(ex.fault.kind) + '</span>'); const errs = (ex.findings||[]).filter(f => f.severity === "error").length; const warns = (ex.findings||[]).filter(f => f.severity === "warn").length; if (errs) out.push('<span style="color:var(--err)">' + errs + ' err</span>'); if (warns) out.push('<span style="color:var(--warn)">' + warns + ' warn</span>'); return out.join(" "); }
+function httpCell(s){ if (s == null) return "—"; const col = s < 300 ? "var(--ok)" : s < 500 ? "var(--warn)" : "var(--err)"; return '<span style="color:' + col + '">' + s + '</span>'; }
+function ocpiCell(c){ if (c == null) return "—"; const col = c === 1000 ? "var(--ok)" : c >= 3000 ? "var(--err)" : "var(--warn)"; return '<span style="color:' + col + '">' + c + '</span>'; }
+function validCell(ex){ const ok = ex.validation && ex.validation.ok; if (ok === undefined) return "—"; return ok ? '<span style="color:var(--ok)">✓</span>' : '<span style="color:var(--err)">✗ invalid</span>'; }
+function issueList(issues){ if (!Array.isArray(issues) || !issues.length) return ""; return '<ul class="issues">' + issues.slice(0, 30).map(i => '<li><span class="ipath">' + esc((i.path||[]).join(".")) + '</span> — ' + esc(i.message||"") + '</li>').join("") + '</ul>'; }
+function detailRow(ex){
+  const o = ex.request.ocpi || {};
+  const meta = 'flow: ' + esc(ex.flowId||"—") + '  |  req-id: ' + esc(o.requestId||"—") + '  |  from ' + esc((o.from&&o.from.cc)||"?") + '/' + esc((o.from&&o.from.party)||"?") + ' → to ' + esc((o.to&&o.to.cc)||"?") + '/' + esc((o.to&&o.to.party)||"?") + '  |  token ' + (o.tokenValid===true?"✓":o.tokenValid===false?"✗":"—");
+  const req = ex.request.body != null ? ex.request.body : ex.request.rawBody;
+  let f = "";
+  for (const fi of (ex.findings||[])) f += '<div class="f ' + esc(fi.severity) + '">' + esc(fi.detail||"") + issueList(fi.issues) + '</div>';
+  return '<tr class="detail"><td colspan="11"><div style="color:var(--muted2);font-size:11px;margin-bottom:6px">' + meta + '</div>' +
+    '<div class="cols"><div><h4>request</h4><pre>' + jsonBlock(req) + '</pre></div>' +
+    '<div><h4>response · http ' + esc(ex.response.httpStatus) + ' · ocpi ' + esc(ex.response.ocpiStatusCode==null?"—":ex.response.ocpiStatusCode) + '</h4><pre>' + jsonBlock(ex.response.body) + '</pre></div></div>' + f + '</td></tr>';
+}
+function filteredExchanges(){
+  const f = S.ui.filters; const q = f.q.toLowerCase();
+  return S.exchanges.slice().sort((a,b) => b.seq - a.seq).filter(ex => {
+    if (f.dir && ex.direction !== f.dir) return false;
+    if (f.failOnly && !(ex.fault || (ex.findings||[]).some(x => x.severity === "error") || (ex.validation && ex.validation.ok === false))) return false;
+    if (q){ const hay = (ex.module + " " + ex.operation + " " + ex.request.path + " " + ex.request.method).toLowerCase(); if (!hay.includes(q)) return false; }
+    return true;
+  });
+}
+function renderTrace(){
+  const f = S.ui.filters;
+  const fp = [S.gen.maxSeq, S.gen.exchanges, f.dir, f.q, f.failOnly, S.ui.openRowId].join("|");
+  if (FP["r-trace"] === fp) return; FP["r-trace"] = fp;
+  const rows = filteredExchanges();
+  $("shownCount").textContent = rows.length + " / " + S.exchanges.length + " shown";
+  const em = $("emptyMsg");
+  if (!S.exchanges.length){ em.style.display = "block"; em.textContent = "No exchanges yet — pull data, run a charge, or make Citrine push."; }
+  else if (!rows.length){ em.style.display = "block"; em.innerHTML = 'No exchanges match the filter — <a data-action="clear-filters">clear filters</a> (' + S.exchanges.length + ' total).'; }
+  else em.style.display = "none";
+  // preserve scroll of the table + any open detail <pre> across the innerHTML swap
+  const tw = $("tw"); const sTop = tw.scrollTop;
+  const preTops = S.ui.openRowId ? Array.from($("r-trace").querySelectorAll("tr.detail pre")).map(p => p.scrollTop) : [];
+  let html = "";
+  for (const ex of rows){
+    html += '<tr class="x' + (ex.fault?" faulted":"") + '" data-action="row-toggle" data-arg="' + esc(ex.id) + '">' +
+      '<td>' + ex.seq + '</td><td>' + fmtTime(ex.timing.receivedAt) + '</td>' +
+      '<td class="dir ' + ex.direction + '">' + (ex.direction==="inbound"?"C→M":"M→C") + '</td>' +
+      '<td>' + esc(ex.module) + '</td><td>' + esc(ex.operation) + '</td><td>' + esc(ex.request.method) + '</td>' +
+      '<td title="' + esc(ex.request.path) + '">' + esc(short(ex.request.path, 42)) + '</td>' +
+      '<td>' + httpCell(ex.response.httpStatus) + '</td><td>' + ocpiCell(ex.response.ocpiStatusCode) + '</td>' +
+      '<td>' + validCell(ex) + '</td><td>' + flags(ex) + '</td></tr>';
+    if (S.ui.openRowId === ex.id) html += detailRow(ex);
+  }
+  $("r-trace").innerHTML = html;
+  tw.scrollTop = sTop;
+  if (S.ui.openRowId && preTops.length){ $("r-trace").querySelectorAll("tr.detail pre").forEach((p, i) => { if (preTops[i] != null) p.scrollTop = preTops[i]; }); }
+}
+function renderTraceForce(){ FP["r-trace"] = null; renderTrace(); }
+function renderFindings(){
+  const list = S.findings;
+  const fp = S.gen.findings + ":" + list.length;
+  renderRegion("r-findings", fp, () => {
+    if (!list.length) return '<div class="empty">None — the mock hasn\'t caught Citrine misbehaving.</div>';
+    return list.slice().reverse().map(f => '<div class="f ' + esc(f.severity) + '"><b>#' + f.seq + '</b> ' + esc(f.module) + ' · ' + esc(f.kind) + ' — ' + esc(f.detail) + (f.isKnownCitrineBug?' <span class="bug">⚑ known Citrine bug</span>':"") + issueList(f.issues) + '</div>').join("");
+  });
+}
+function renderFaults(){
+  const list = S.faults;
+  const fp = JSON.stringify(list.map(f => f.id + ":" + f.action.kind));
+  renderRegion("faultList", fp, () => {
+    if (!list.length) return '<div class="hint" style="margin:0">No faults armed.</div>';
+    return list.map(f => '<div class="btnrow" style="margin:2px 0"><span class="pill y" style="padding:1px 7px">' + esc(f.action.kind) + '</span><span class="identity" style="flex:1">' + esc(f.match.module||"any") + " / " + esc(f.match.direction||"any") + '</span><button class="sm" data-action="fault-disarm" data-arg="' + esc(f.id) + '">✕</button></div>').join("");
+  });
+}
+function renderActivity(){
+  renderRegion("r-activity", S.ui.activityGen + ":" + S.gen.exchanges + ":" + S.gen.maxSeq, () => {
+    if (!S.ui.activity.length) return '<div class="empty" style="padding:10px">No actions yet — everything you click reports here.</div>';
+    return S.ui.activity.map((e, idx) => {
+      if (e.kind === "start") return "";
+      const badge = e.kind === "error" || e.ok === false ? "fail" : "ok";
+      const bl = e.kind === "error" ? "FAIL" : (e.ok === false ? "REJECTED" : "OK");
+      const expanded = idx === 0;
+      let body = "";
+      if (expanded){
+        if (e.result && e.result.probes){
+          body = '<div style="margin-top:4px">' + e.result.probes.map(p => '<div class="probe"><span class="pv ' + (p.ok?"p":"f") + '">' + (p.ok?"PASS":"FAIL") + '</span> <b>' + esc(p.name) + '</b><div class="meta">expected: ' + esc(p.expected) + '</div><div class="meta" style="color:' + (p.ok?"var(--muted2)":"var(--err)") + '">actual:&nbsp;&nbsp; ' + esc(p.actual) + '</div></div>').join("") + '</div>';
+        } else if (e.result){ body = '<pre>' + jsonBlock(e.result) + '</pre>'; }
+      }
+      const seqId = findTraceSeq(e);
+      const links = seqId ? '<div class="lnk"><a data-action="trace-jump" data-arg="' + esc(seqId) + '">trace ↗</a></div>' : "";
+      return '<div class="act"><div class="l1"><span class="t">' + esc(e.t) + '</span><span class="name">' + esc(e.title) + '</span><span class="badge ' + badge + '">' + bl + '</span></div>' +
+        (summarize(e) ? '<div class="sum">' + esc(summarize(e)) + '</div>' : "") + links + body + '</div>';
+    }).join("");
+  });
+}
+
+// ================= 08 guards =================
+const GUARDS = {
+  "charge-plug": (v) => {
+    if (v.everest === "unavailable") return { level:"block", reason:"Car-sim control needs docker. → Run the mock natively / scripts/everest-up.sh" };
+    if (v.everest === "down") return { level:"warn", reason:"EVerest charger looks offline. → scripts/everest-up.sh" };
+    if (v.plugged) return { level:"block", reason:"A car is already plugged in. → Start charging, or Unplug", reads:["connector"] };
+    if (["Reserved","Unavailable","Faulted"].includes(v.connector)) return { level:"block", reason:"Connector is " + v.connector + ". → Resolve in EVerest", reads:["connector"] };
+    return { level:"ok" };
+  },
+  "charge-start": (v) => {
+    // "already active" is decided by mock.activeSession (known even when Hasura is down) → no reads[] so anti-wedge can't downgrade it.
+    if (v.active) return { level:"block", reason:"A session is already active. → Stop charging first" };
+    if (v.connector === "Available") return { level:"block", reason:"No car plugged in. → Plug in car first", reads:["connector"] };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable — this will record a failed exchange" };
+    return { level:"ok" };
+  },
+  "charge-stop": (v) => v.active ? { level:"ok" } : { level:"block", reason:"No active session — nothing to stop. → Start charging first" },
+  "charge-unplug": (v) => {
+    if (!v.plugged) return { level:"block", reason:"Nothing is plugged in.", reads:["connector"] };
+    if (v.active) return { level:"warn", reason:"Session still active — unplugging simulates a cable yank. → Stop charging first for a clean CDR" };
+    return { level:"ok" };
+  },
+  "charge-discover": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable" } : { level:"ok" },
+  "pull": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable — will record a failed exchange" } : { level:"ok" },
+  "pull-all": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable" } : { level:"ok" },
+  "emit-token": (v) => v.ocpi === "down" ? { level:"warn", reason:"Citrine looks unreachable" } : { level:"ok" },
+  "token-block": (v) => {
+    if (!v.tokensPushed) return { level:"block", reason:"No token pushed yet. → Push token first" };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
+    return { level:"ok" };
+  },
+  "token-verify": (v) => {
+    if (!v.tokensPushed) return { level:"block", reason:"No token pushed yet. → Push token first" };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
+    return { level:"ok" };
+  },
+  "probes-run": (v) => {
+    if (v.faultsArmed > 0) return { level:"warn", reason:v.faultsArmed + " fault(s) armed — probes may fail because of them. → Clear faults for a clean read" };
+    if (v.ocpi === "down") return { level:"warn", reason:"Citrine looks unreachable" };
+    return { level:"ok" };
+  },
+  "register": (v) => v.registration === "registered" ? { level:"block", reason:"Already registered (seed or prior handshake). → Re-register rotates the token" } : { level:"ok" },
+  "reregister": (v) => v.registration === "registered" ? { level:"ok" } : { level:"block", reason:"Nothing to rotate. → Register first" },
+  "provoke": (v) => v.hasura === "down" ? { level:"block", reason:"Provoke writes Citrine's DB via Hasura — Hasura unreachable. → Check the stack", reads:["hasura"] } : { level:"ok" },
+  "faults-clear": (v) => v.faultsArmed > 0 ? { level:"ok" } : { level:"block", reason:"No faults armed." },
+};
+const GUARD_EXEMPT = new Set(["refresh","guards-toggle","reset","cmd-send","cmd-fill","fault-arm","fault-chip","fault-disarm","activity-clear","row-toggle","trace-jump","clear-filters"]);
+function setBtn(el, level, reason){
+  const blocked = level === "block";
+  el.classList.toggle("is-warn", level === "warn");
+  el.classList.toggle("is-blocked", blocked);
+  el.setAttribute("aria-disabled", blocked ? "true" : "false");
+  if (reason) el.title = reason; else el.removeAttribute("title");
+}
+function applyGuards(){
+  const v = deriveView(S.status);
+  document.querySelectorAll("[data-action]").forEach(el => {
+    const a = el.dataset.action;
+    // refresh + guards-toggle stay live even when the mock is down (recovery + safety valve).
+    if (a === "refresh" || a === "guards-toggle") return;
+    // Mock down → nothing works: block every other action (incl. mutating ones like reset/fault-arm)
+    // BEFORE the state-guard exemptions, so they can't be clicked into a failing request.
+    if (v.down){ setBtn(el, "block", "mock-msp unreachable — is the server on :8083?"); return; }
+    if (GUARD_EXEMPT.has(a)){ setBtn(el, "ok", ""); return; }
+    const g = GUARDS[a];
+    if (!g){ setBtn(el, "ok", ""); return; }
+    let r = g(v);
+    if (r.level === "block" && r.reads && r.reads.some(f => String(v[f] || "unknown") === "unknown")) r = { level:"warn", reason:(r.reason || "") + " (state unknown)" };
+    if (S.ui.ignoreGuards && r.level === "block") r = { level:"warn", reason:"guards off" };
+    setBtn(el, r.level, r.reason || "");
+  });
+}
+
+// ================= 09 actions =================
+const busyActions = new Set();
+async function runAction(name, fn, judge){
+  if (busyActions.has(name)) return null;   // ignore re-fire while the same action is in flight (some await up to 30s)
+  busyActions.add(name);
+  try {
+    const res = await fn();
+    logActivity({ kind:"result", title:name, ok: judge ? !!judge(res) : true, result:res });
+    await forceRefresh();
+    return res;
+  } catch (e){
+    logActivity({ kind:"error", title:name, ok:false, result: e.body != null ? e.body : { error:e.message } });
+    await forceRefresh();
+    return null;
+  } finally { busyActions.delete(name); }
+}
+const CMD_DEFAULTS = {
+  START_SESSION:{ token:{ country_code:"US", party_id:"TST", uid:"DEADBEEF", type:"RFID", contract_id:"MOCKCONTRACT-001", issuer:"MockMSP", valid:true, whitelist:"ALWAYS" }, location_id:"1", evse_uid:"cp001::1", connector_id:"1" },
+  STOP_SESSION:{ session_id:"MOCK-SESSION-001" },
+  RESERVE_NOW:{ token:{ country_code:"US", party_id:"TST", uid:"DEADBEEF", type:"RFID", contract_id:"MOCKCONTRACT-001", issuer:"MockMSP", valid:true, whitelist:"ALWAYS" }, location_id:"1", reservation_id:"MOCK-RES-001", expiry_date:new Date(Date.now()+3600e3).toISOString() },
+  CANCEL_RESERVATION:{ reservation_id:"MOCK-RES-001" }, UNLOCK_CONNECTOR:{ location_id:"1", evse_uid:"cp001::1", connector_id:"1" },
+};
+function fillCmdPayload(force){
+  if (!force && S.ui.cmdDirty) return;
+  const t = $("cmdType").value; const d = CMD_DEFAULTS[t] || {};
+  if (t === "STOP_SESSION" && S.status && S.status.mock && S.status.mock.activeSession) d.session_id = S.status.mock.activeSession.id;
+  $("cmdPayload").value = JSON.stringify(d, null, 2); S.ui.cmdDirty = false;
+}
+function renderCmdNote(){
+  const t = $("cmdType").value; const note = $("cmd-note");
+  if (t === "START_SESSION" || t === "STOP_SESSION"){ note.style.display = "block"; note.textContent = "For a full live session (async result + Session/CDR), use Charge a car above."; }
+  else note.style.display = "none";
+}
+async function sendCommand(){
+  let payload = {};
+  try { payload = JSON.parse($("cmdPayload").value || "{}"); } catch { return toast("payload is not valid JSON", false); }
+  const type = $("cmdType").value;
+  await runAction("Send " + type, () => api("/emit/command", { method:"POST", body: JSON.stringify({ type, payload }) }), (r) => r && r.sync && r.sync.result === "ACCEPTED");
+}
+async function pullAll(){
+  logActivity({ kind:"result", title:"Pull all", ok:true, result:{ pulled:"locations · sessions · cdrs · tariffs" } });
+  let ok = 0;
+  for (const m of ["locations","sessions","cdrs","tariffs"]){ try { const r = await api("/pull/" + m, { method:"POST", body:"{}" }); if (exchangeOk(r)) ok++; } catch {} }
+  S.ui.activity[0].result = { pulled: ok + "/4 modules ok" };
+  S.ui.activity[0].ok = ok === 4;                            // badge reflects reality, not just "it ran"
+  bumpActivity(); renderActivity();
+  await forceRefresh();
+}
+async function chDiscover(){
+  const r = await runAction("Discover EVSE", () => api("/discover/evse", { method:"GET" }));
+  if (r && r.discovered){ S.ch.location_id = r.location_id; S.ch.evse_uid = r.evse_uid; S.ch.connector_id = r.connector_id; }
+}
+async function chStart(){
+  const body = {};
+  if (S.ch.location_id) body.location_id = S.ch.location_id;
+  if (S.ch.evse_uid) body.evse_uid = S.ch.evse_uid;
+  if (S.ch.connector_id) body.connector_id = S.ch.connector_id;
+  const r = await runAction("Start charging", () => api("/charge/start", { method:"POST", body: JSON.stringify(body) }), classify);
+  if (r && r.session && r.session.id){ S.ch.session_id = r.session.id; S.ch.charged = true; }
+}
+async function chStop(){
+  const body = {}; if (S.ch.session_id) body.session_id = S.ch.session_id;
+  await runAction("Stop charging", () => api("/charge/stop", { method:"POST", body: JSON.stringify(body) }), classify);
+}
+// fault builder
+const FB_PARAMS = {
+  passthrough:"", abort:"", unauthorized:"", oversizeToken:"",
+  delay:'<label class="fld">Delay (ms)</label><input type="number" id="fbMs" value="2000" min="0" />',
+  httpStatus:'<label class="fld">HTTP status</label><input type="number" id="fbStatus" value="503" />',
+  ocpiStatus:'<label class="fld">OCPI status_code</label><input type="number" id="fbCode" value="3001" /><label class="fld">status_message</label><input type="text" id="fbMsg" placeholder="mock forced fault" />',
+  malformBody:'<label class="fld">Mutation</label><select id="fbMut"><option value="dropRequired">dropRequired</option><option value="wrongType">wrongType</option><option value="injectData">injectData</option><option value="emptyObject">emptyObject</option><option value="notJson">notJson</option></select><label class="fld">targetPath (optional)</label><input type="text" id="fbPath" placeholder="e.g. coordinates.latitude" />',
+  dropHeaders:'<label class="fld">Headers (comma-separated)</label><input type="text" id="fbHdrs" value="X-Request-ID,X-Correlation-ID" />',
+};
+function renderFaultParams(){ $("fbParams").innerHTML = FB_PARAMS[$("fbKind").value] || ""; }
+function buildFaultAction(){
+  const kind = $("fbKind").value; const a = { kind };
+  if (kind === "delay") a.ms = parseInt($("fbMs").value, 10) || 0;
+  else if (kind === "httpStatus") a.status = parseInt($("fbStatus").value, 10);
+  else if (kind === "ocpiStatus"){ a.status_code = parseInt($("fbCode").value, 10); const m = ($("fbMsg").value||"").trim(); if (m) a.status_message = m; }
+  else if (kind === "malformBody"){ a.mutation = $("fbMut").value; const p = ($("fbPath").value||"").trim(); if (p) a.targetPath = p; }
+  else if (kind === "dropHeaders") a.headers = ($("fbHdrs").value||"").split(",").map(s => s.trim()).filter(Boolean);
+  return a;
+}
+async function armFault(){
+  const rule = { match:{}, action: buildFaultAction() };
+  const mod = $("fbModule").value; const dir = $("fbDir").value;
+  if (mod) rule.match.module = mod; if (dir) rule.match.direction = dir;
+  await runAction("Arm fault", () => api("/fault", { method:"POST", body: JSON.stringify(rule) }));
+}
+const FB_CHIPS = {
+  delay2s:{ module:"", dir:"", kind:"delay", set:() => { $("fbMs") && ($("fbMs").value = "2000"); } },
+  malformCdr:{ module:"cdrs", dir:"inbound", kind:"malformBody", set:() => { $("fbMut") && ($("fbMut").value = "dropRequired"); } },
+  dropHdrs:{ module:"locations", dir:"outbound", kind:"dropHeaders", set:() => { $("fbHdrs") && ($("fbHdrs").value = "X-Request-ID,X-Correlation-ID"); } },
+};
+async function fillFault(k){
+  const c = FB_CHIPS[k]; if (!c) return;
+  $("fbModule").value = c.module; $("fbDir").value = c.dir; $("fbKind").value = c.kind;
+  renderFaultParams(); c.set();
+  await armFault();   // chips ARM (one-click) — the silent-prefill footgun is gone
+}
+async function runProbes(){
+  await runAction("Spec probes", () => api("/probes", { method:"GET" }), (r) => r && r.failing === 0);
+}
+function confirmReset(el){
+  if (!S.ui.resetArmed){ S.ui.resetArmed = true; el.textContent = "Confirm reset?"; el.classList.add("is-warn"); setTimeout(() => { S.ui.resetArmed = false; el.textContent = "Reset recorder + state"; el.classList.remove("is-warn"); }, 3000); return; }
+  S.ui.resetArmed = false; el.textContent = "Reset recorder + state"; el.classList.remove("is-warn");
+  runAction("Reset", () => api("/reset", { method:"POST", body: JSON.stringify({ keepRegistration:true }) }));
+}
+const ACTIONS = {
+  register:() => runAction("Register", () => api("/register", { method:"POST", body:"{}" })),
+  reregister:() => runAction("Re-register", () => api("/reregister", { method:"POST", body:"{}" })),
+  pull:(el, a) => runAction("Pull " + a, () => api("/pull/" + a, { method:"POST", body:"{}" }), exchangeOk),
+  "pull-all":() => pullAll(),
+  "emit-token":() => runAction("Push token", () => api("/emit/token", { method:"POST", body:"{}" }), exchangeOk),
+  "token-block":() => runAction("Block token", () => api("/emit/token-patch", { method:"POST", body:"{}" }), exchangeOk),
+  "token-verify":() => runAction("Verify token", () => api("/verify/token", { method:"POST", body:"{}" }), (r) => !!(r && r.verified)),
+  "cmd-send":() => sendCommand(),
+  "cmd-fill":() => fillCmdPayload(true),
+  "probes-run":() => runProbes(),
+  "charge-discover":() => chDiscover(),
+  "charge-plug":async () => { S.ch.charged = false; await runAction("Plug in car", () => api("/everest/plug", { method:"POST", body:"{}" }), (r) => !!(r && r.plugged)); },
+  "charge-start":() => chStart(),
+  "charge-stop":() => chStop(),
+  "charge-unplug":async () => { await runAction("Unplug", () => api("/everest/unplug", { method:"POST", body:"{}" }), (r) => !!(r && r.unplugged)); S.ch.session_id = null; S.ch.charged = false; },
+  "fault-chip":(el, a) => fillFault(a),
+  "fault-arm":() => armFault(),
+  "fault-disarm":(el, a) => runAction("Disarm fault", () => api("/faults/" + encodeURIComponent(a), { method:"DELETE" })),
+  "faults-clear":() => runAction("Clear faults", () => api("/faults", { method:"DELETE" })),
+  provoke:(el, a) => runAction("Provoke " + a, () => api("/provoke/" + a, { method:"POST", body:"{}" })),
+  reset:(el) => confirmReset(el),
+  refresh:() => forceRefresh(),
+  "row-toggle":(el, a) => { S.ui.openRowId = S.ui.openRowId === a ? null : a; renderTraceForce(); },
+  "trace-jump":(el, a) => { S.ui.openRowId = a; renderTraceForce(); const tw = $("tw"); tw.scrollIntoView({ behavior:"smooth", block:"start" }); },
+  "clear-filters":() => { S.ui.filters = { dir:"", q:"", failOnly:false }; $("fDir").value = ""; $("fSearch").value = ""; $("fFail").checked = false; renderTraceForce(); },
+  "guards-toggle":(el) => { S.ui.ignoreGuards = $("guardChk").checked; localStorage.setItem("mockmsp.guardsOff", S.ui.ignoreGuards ? "1" : ""); applyGuards(); },
+  "activity-clear":() => { S.ui.activity = []; bumpActivity(); renderActivity(); },
+};
+const CHANGES = {
+  auto:(el) => { S.ui.live = el.checked; loopTimer(); },
+  secret:(el) => { localStorage.setItem("mockmsp.secret", (el.value||"").trim()); },
+  "cmd-type":() => { fillCmdPayload(true); renderCmdNote(); },
+  "fault-kind":() => renderFaultParams(),
+  "filter-dir":(el) => { S.ui.filters.dir = el.value; renderTraceForce(); },
+  "filter-fail":(el) => { S.ui.filters.failOnly = el.checked; renderTraceForce(); },
+};
+let qTimer = null;
+const INPUTS = {
+  "filter-q":(el) => { clearTimeout(qTimer); qTimer = setTimeout(() => { S.ui.filters.q = el.value; renderTraceForce(); }, 150); },
+  "cmd-payload":() => { S.ui.cmdDirty = true; },
+};
+
+// ================= 10 wire + init =================
+document.addEventListener("click", (e) => {
+  const scroll = e.target.closest("[data-scroll]");
+  if (scroll){ const t = scroll.dataset.scroll; const el = t === "faults" ? document.querySelector('[data-action="faults-clear"]') : $("r-findings"); el && el.scrollIntoView({ behavior:"smooth", block:"center" }); return; }
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  if (el.getAttribute("aria-disabled") === "true") return;
+  const fn = ACTIONS[el.dataset.action];
+  if (fn) fn(el, el.dataset.arg);
+});
+document.addEventListener("change", (e) => { const el = e.target.closest("[data-change]"); if (!el) return; const fn = CHANGES[el.dataset.change]; if (fn) fn(el); });
+document.addEventListener("input", (e) => { const el = e.target.closest("[data-input]"); if (!el) return; const fn = INPUTS[el.dataset.input]; if (fn) fn(el); });
+
+let timer = null;
+function loopTimer(){ clearInterval(timer); if (S.ui.live) timer = setInterval(poll, 2000); }
+
+// restore persisted UI
+$("secret").value = localStorage.getItem("mockmsp.secret") || "";
+S.ui.ignoreGuards = localStorage.getItem("mockmsp.guardsOff") === "1";
+$("guardChk").checked = S.ui.ignoreGuards;
+
+renderFaultParams();
+fillCmdPayload(true);
+renderCmdNote();
+poll();
+loopTimer();
+</script>
+</body>
+</html>

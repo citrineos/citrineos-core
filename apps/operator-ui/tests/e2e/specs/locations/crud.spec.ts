@@ -31,7 +31,7 @@ test.describe('locations › CRUD', () => {
   });
 
   test('E2E-021: Create location via UI redirects to detail', async ({ page, apiClient }) => {
-    const name = `e2e-${shortId()}-loc`;
+    const name = `${shortId()}-loc`;
     const form = new LocationFormPage(page);
     await form.gotoNew();
     // United States is the default country and requires State + ZIP per
@@ -50,6 +50,7 @@ test.describe('locations › CRUD', () => {
     // numeric id for cleanup.
     const list = new LocationsListPage(page);
     await list.goto();
+    await list.searchInput.fill(name);
     await expect(list.rowByName(name)).toBeVisible({ timeout: 30_000 });
 
     // Cleanup via apiClient: locate by name, delete by id.
@@ -79,8 +80,9 @@ test.describe('locations › CRUD', () => {
     // assertion here stays on the pre-fill contract.
     const form = new LocationFormPage(page);
     await form.gotoEdit(seededLocation.id);
-    await expect(form.heading).toContainText(/edit location/i);
-    await expect(form.nameInput).toHaveValue(seededLocation.name);
+    // The prefill lands after the edit query resolves, later than the heading.
+    await expect(form.heading).toContainText(/edit location/i, { timeout: 30_000 });
+    await expect(form.nameInput).toHaveValue(seededLocation.name, { timeout: 30_000 });
   });
 
   test('E2E-024: Create location with empty required fields surfaces validation', async ({

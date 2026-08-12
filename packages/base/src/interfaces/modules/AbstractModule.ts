@@ -97,6 +97,7 @@ export abstract class AbstractModule implements IModule {
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     handlers: AbstractHandler[] = [],
+    excludedActions?: { requests?: CallAction[]; responses?: CallAction[] },
   ) {
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
@@ -137,12 +138,11 @@ export abstract class AbstractModule implements IModule {
       }
     }
 
-    const excluded = this._excludedActions();
     this._requests = [...this._declaredRequests].filter(
-      (action) => !excluded.requests?.includes(action),
+      (action) => !excludedActions?.requests?.includes(action),
     );
     this._responses = [...this._declaredResponses].filter(
-      (action) => !excluded.responses?.includes(action),
+      (action) => !excludedActions?.responses?.includes(action),
     );
 
     if (conflicts.size > 0) {
@@ -177,20 +177,6 @@ export abstract class AbstractModule implements IModule {
    */
   private _declaredActions(type: MessageState): Set<CallAction> {
     return type === MessageState.Request ? this._declaredRequests : this._declaredResponses;
-  }
-
-  /**
-   * The actions this module's config asks it not to subscribe to
-   */
-  private _excludedActions(): { requests?: CallAction[]; responses?: CallAction[] } {
-    const modules: Partial<
-      Record<EventGroup, { excludedRequests?: CallAction[]; excludedResponses?: CallAction[] }>
-    > = this._config.modules;
-    const moduleConfig = modules[this._eventGroup];
-    return {
-      requests: moduleConfig?.excludedRequests,
-      responses: moduleConfig?.excludedResponses,
-    };
   }
 
   /**
@@ -287,7 +273,7 @@ export abstract class AbstractModule implements IModule {
           message.context.correlationId,
           JSON.stringify(message.payload),
           message.context.ocppConnectionName,
-          this._config.maxCachingSeconds,
+          this._config.timeouts.maxCachingSeconds,
         );
 
         break;

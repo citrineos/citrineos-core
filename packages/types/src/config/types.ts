@@ -40,7 +40,7 @@ export const websocketServerSchema = z
     protocols: z.array(z.enum(OCPP_VERSION_LIST)),
     securityProfile: z.number().int().min(0).max(3),
     allowUnknownChargingStations: z.boolean().default(false),
-    ignoreAuthenticationHeaders: z.boolean().default(false),
+    ignoreAuthenticationHeaders: z.boolean().default(false).optional(),
     tlsKeyFilePath: z.string().optional(),
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
@@ -256,6 +256,7 @@ export const configSchema = z.object({
     .object({
       maxCallLengthSeconds: z.number().int().min(1).default(20),
       maxCachingSeconds: z.number().int().min(1).default(30),
+      staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
       shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
       realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
       notReadyThresholdSeconds: z.number().int().min(1).default(60),
@@ -313,12 +314,6 @@ export const configSchema = z.object({
     .default({
       enableGetChargingProfilesOnStartTransaction: false,
     }),
-
-  telemetry: z
-    .object({
-      consent: z.boolean().optional(),
-    })
-    .default({}),
 });
 
 /** Post-parse config: every defaulted field is present. What `configSchema.parse()` returns. */

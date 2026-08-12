@@ -27,7 +27,9 @@ export class LocationDetailPage {
   }
 
   async goto(id: number | string): Promise<void> {
-    await this.page.goto(LocationDetailPage.path(id));
+    await this.page.goto(LocationDetailPage.path(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

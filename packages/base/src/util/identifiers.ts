@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
+import { DEFAULT_TENANT_ID } from '../../index.js';
 
 /*
  * Helper methods to create a unique identifier used in the cache and queues.

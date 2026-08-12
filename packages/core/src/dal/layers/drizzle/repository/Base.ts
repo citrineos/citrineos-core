@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types/src/config/types.js';
 import { and, count, eq, type Column, type InferSelectModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import EventEmitter from 'events';
-import { type ILogObj, Logger } from 'tslog';
+import { Logger, type ILogObj } from 'tslog';
 import { DefaultDrizzleInstance } from '../util.js';
 
 // Every CitrineOS table shares these two columns — used to implement common
@@ -30,7 +30,7 @@ export type CitrineTable = PgTable & {
  * covers direct construction (tests, RepositoryStore).
  */
 export interface DrizzleRepositoryDependencies {
-  config: BootstrapConfig;
+  config: SystemConfig;
   logger?: Logger<ILogObj>;
   drizzleInstance?: NodePgDatabase;
   useTenantSchema?: boolean;

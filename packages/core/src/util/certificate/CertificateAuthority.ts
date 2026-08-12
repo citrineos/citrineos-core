@@ -45,11 +45,13 @@ export class CertificateAuthorityService {
 
   constructor({
     config,
+    websocketServersConfig,
     cache,
     logger,
     fileStorage,
   }: {
     config: SystemConfig;
+    websocketServersConfig: WebsocketServerConfig[];
     cache: ICache;
     logger: Logger<ILogObj>;
     fileStorage: IFileStorage;
@@ -60,6 +62,7 @@ export class CertificateAuthorityService {
     this._chargingStationClientPromise =
       CertificateAuthorityService._instantiateChargingStationClient(
         config,
+        websocketServersConfig,
         this._fileStorage,
         logger,
       );

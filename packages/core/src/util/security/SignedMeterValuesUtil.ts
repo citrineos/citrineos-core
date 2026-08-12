@@ -19,7 +19,7 @@ export class SignedMeterValuesUtil {
   private readonly _chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
 
   private readonly _signedMeterValuesConfiguration:
-    | SystemConfig['transactions']['signedMeterValuesConfiguration']
+    | SystemConfig['transactions']['signedMeterValues']
     | undefined;
 
   /**
@@ -44,7 +44,7 @@ export class SignedMeterValuesUtil {
     this._chargingStationSecurityInfoRepository =
       new sequelize.SequelizeChargingStationSecurityInfoRepository({ config, logger });
 
-    this._signedMeterValuesConfiguration = config.transactions.signedMeterValuesConfiguration;
+    this._signedMeterValuesConfiguration = config.transactions.signedMeterValues;
   }
 
   /**

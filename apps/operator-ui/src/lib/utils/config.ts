@@ -21,7 +21,6 @@ const getConfig: () => {
   citrineCoreUrl?: string;
   fileServer?: string;
   logoUrl?: string;
-  metricsUrl?: string;
   adminEmail?: string;
   adminPassword?: string;
   authProvider: AuthProviderType;
@@ -69,7 +68,6 @@ const getConfig: () => {
     citrineCoreUrl: process.env.NEXT_PUBLIC_CITRINE_CORE_URL,
     fileServer: process.env.NEXT_PUBLIC_FILE_SERVER_URL,
     logoUrl: process.env.NEXT_PUBLIC_LOGO_URL,
-    metricsUrl: process.env.NEXT_PUBLIC_METRICS_URL,
     adminEmail: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
     adminPassword: process.env.ADMIN_PASSWORD,
     authProvider,

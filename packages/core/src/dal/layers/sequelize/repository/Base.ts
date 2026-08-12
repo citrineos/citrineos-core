@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type BootstrapConfig, CrudRepository } from '@citrineos/base';
+import { CrudRepository } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import type {
   AggregateOptions,
   Attributes,
@@ -21,7 +22,7 @@ import { DefaultSequelizeInstance } from '../util.js';
  * are optional — the base falls back to a default logger and the shared instance.
  */
 export interface SequelizeRepositoryDependencies {
-  config: BootstrapConfig;
+  config: SystemConfig;
   logger?: Logger<ILogObj>;
   sequelizeInstance?: Sequelize;
 }

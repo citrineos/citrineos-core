@@ -76,11 +76,6 @@ export * from './src/ocpp/persistence/index.js';
 
 // Configuration Types
 
-// export { loadBootstrapConfig } from './src/config/bootstrap.config.js';
-// export type { BootstrapConfig } from './src/config/bootstrap.config.js';
-// export { ConfigStoreFactory } from './src/config/ConfigStore.js';
-// export type { ConfigStore } from './src/config/ConfigStore.js';
-// export { DEFAULT_TENANT_ID, defineConfig } from './src/config/defineConfig.js';
 export { ConfigLoader } from './src/config/ConfigLoader.js';
 
 // Utils
@@ -137,3 +132,7 @@ export {
   UNREADABLE_MESSAGE_ID,
 } from './src/ocpp/rpc/message.js';
 export type { RpcMessage } from './src/ocpp/rpc/message.js';
+
+// Constants
+
+export const DEFAULT_TENANT_ID = 1;
