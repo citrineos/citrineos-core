@@ -520,8 +520,8 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Maps an RPC messageTypeId onto the deprecated `state` column so rows stay readable by
-   * consumers written before `type` existed. A message that could not be parsed far enough to
+   * @deprecated Maps an RPC messageTypeId onto the deprecated `state` column so rows stay readable
+   * by consumers written before `type` existed. A message that could not be parsed far enough to
    * have a role is Unknown, which is what the router used to pass here explicitly.
    */
   private _messageStateFromType(type?: MessageTypeId): MessageState {
