@@ -17,14 +17,11 @@ import { CommandExecutor } from '../util/CommandExecutor.js';
 import type {
   GetChargingStationByIdQueryResult,
   GetChargingStationByIdQueryVariables,
-  GetChargingStationByPkQueryResult,
-  GetChargingStationByPkQueryVariables,
   GetTransactionByTransactionIdQueryResult,
   GetTransactionByTransactionIdQueryVariables,
 } from '../graphql/index.js';
 import {
   GET_CHARGING_STATION_BY_ID_QUERY,
-  GET_CHARGING_STATION_BY_PK_QUERY,
   GET_TRANSACTION_BY_TRANSACTION_ID_QUERY,
   OcpiGraphqlClient,
 } from '../graphql/index.js';
@@ -235,26 +232,7 @@ export class CommandsService {
         'Session is already stopped',
       );
     }
-
-    // Fetch the full ChargingStation to get the protocol, which is missing from the transaction's ChargingStationDto.
-    const stationResponse = await this.ocpiGraphqlClient.request<
-      GetChargingStationByPkQueryResult,
-      GetChargingStationByPkQueryVariables
-    >(GET_CHARGING_STATION_BY_PK_QUERY, { id: transaction.stationId });
-    if (!stationResponse.ChargingStations[0]) {
-      this.logger.error('Charging station not found for transaction', {
-        transactionId: transaction.id,
-        stationId: transaction.stationId,
-      });
-      return ResponseGenerator.buildInvalidOrMissingParametersResponse(
-        {
-          result: CommandResponseType.REJECTED,
-          timeout: this.config.commands.timeout,
-        },
-        'Unknown charging station',
-      );
-    }
-    const chargingStation = stationResponse.ChargingStations[0] as ChargingStationDto;
+    const chargingStation = transaction.station as ChargingStationDto;
     if (!chargingStation.isOnline) {
       this.logger.error('Charging station is offline', {
         stationId: chargingStation.id,
