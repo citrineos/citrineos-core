@@ -15,6 +15,7 @@ import {
   type SubscriptionDto,
   type SystemConfig,
   MessageOrigin,
+  MessageState,
   MessageTypeId,
 } from '@citrineos/types';
 import type {
@@ -140,6 +141,9 @@ export class WebhookDispatcher {
         action: action,
         raw: message,
         timestamp: timestamp,
+        // Unparsed messages never produced an RPC frame, so the deprecated `message` mirror
+        // stays null — `raw` is the only faithful record of what arrived.
+        state: this._messageStateFromType(type),
       });
 
       const promises: Promise<any>[] =
@@ -178,6 +182,8 @@ export class WebhookDispatcher {
       raw: message,
       payload: payload,
       timestamp: timestamp,
+      state: this._messageStateFromType(type),
+      message: rpcMessage,
     });
 
     if (action === undefined) {
@@ -247,6 +253,8 @@ export class WebhookDispatcher {
       raw: message,
       payload: payload,
       timestamp: timestamp,
+      state: this._messageStateFromType(type),
+      message: rpcMessage,
     });
 
     if (action === undefined) {
@@ -508,6 +516,23 @@ export class WebhookDispatcher {
            Event: ${requestBody.event}, ${error}`,
       );
       return false;
+    }
+  }
+
+  /**
+   * @deprecated Maps an RPC messageTypeId onto the deprecated `state` column so rows stay readable
+   * by consumers written before `type` existed. A message that could not be parsed far enough to
+   * have a role is Unknown, which is what the router used to pass here explicitly.
+   */
+  private _messageStateFromType(type?: MessageTypeId): MessageState {
+    switch (type) {
+      case MessageTypeId.Call:
+        return MessageState.Request;
+      case MessageTypeId.CallResult:
+      case MessageTypeId.CallError:
+        return MessageState.Response;
+      default:
+        return MessageState.Unknown;
     }
   }
 

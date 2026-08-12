@@ -21,10 +21,14 @@ export function toOCPPMessageDto(entity: OCPPMessageEntity): OCPPMessageDto {
     correlationId: entity.correlationId ?? undefined,
     origin: entity.origin as OCPPMessageDto['origin'],
     type: entity.type as OCPPMessageDto['type'],
+    // Deprecated mirror of `type`. Stored as text, so the numeric enum has to be cast back.
+    state: entity.state as unknown as OCPPMessageDto['state'],
     protocol: entity.protocol as OCPPMessageDto['protocol'],
     action: entity.action ?? undefined,
     payload: entity.payload ?? undefined,
     raw: entity.raw,
+    // Deprecated mirror of `payload` + `raw`.
+    message: entity.message ?? undefined,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp.toISOString(),
     requestMessageId: entity.requestMessageId ?? undefined,
