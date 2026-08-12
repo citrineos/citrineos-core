@@ -273,9 +273,6 @@ export function aSystemConfig(override?: Partial<SystemConfig>): SystemConfig {
       host: '0.0.0.0',
       port: 8085,
     },
-    userPreferences: {
-      // None by default
-    },
     ...override,
   } as SystemConfig;
 }
