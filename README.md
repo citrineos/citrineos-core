@@ -188,6 +188,30 @@ export const TRANSACTIONS_MESSAGE_ENDPOINTS = [
 ] satisfies ReadonlyArray<MessageEndpointClass>;
 ```
 
+Nothing in that list registers itself. Here is how the `CostUpdated` entry above becomes a Call on a
+charging station:
+
+1. `register.ts` hands the list to `buildMessageEndpoints`, which instantiates each class through the DI
+   scope and keeps its static route beside the instance.
+2. `OcppMessageApi` receives those pairs and registers one Fastify POST per entry, per protocol. The
+   event group supplies the third path segment and the action's first letter is lowercased, so
+   `CostUpdated` under `EventGroup.Transactions` becomes `/ocpp/2.0.1/transactions/costUpdated` and
+   `/ocpp/2.1/transactions/costUpdated`.
+3. A request arrives and Fastify validates it — the body against the declared `bodySchema` for that
+   version, the querystring against `IMessageQuerystringSchema`. A body missing a required field is a
+   400 and never reaches the code.
+4. The framework handler takes `identifier`, `tenantId` and `callbackUrl` off the querystring, turns a
+   single identifier into an array, and calls
+   `endpoint.handle(identifiers, body, callbackUrl, tenantId, version, extraQueries)`. Anything declared
+   in `optionalQuerystrings` arrives as `extraQueries`.
+5. `handle` does the work. A forwarder sends one `sendCall` per identifier, and `OcppSender` finds that
+   station's live WebSocket connection and writes the Call to it.
+6. The `IMessageConfirmation[]` it returns becomes the HTTP response, one entry per identifier.
+
+A confirmation means the Call was sent, not that the station obeyed it. The station's CallResult comes
+back over its WebSocket to the owning module's response handler, or is POSTed to `callbackUrl` when the
+caller supplied one.
+
 Write an `AbstractMessageEndpoint` subclass only when something has to happen before or instead of that
 send: reading a repository first, rewriting the payload, or splitting one request into several Calls —
 as `SetVariablesEndpoint` does when it chunks a long variable list per station.
