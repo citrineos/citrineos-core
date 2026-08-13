@@ -17,6 +17,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { citext } from './columnTypes.js';
 import { type z } from 'zod';
 
 // Column definitions are a function to ensure fresh objects per table instance,
@@ -28,8 +29,11 @@ function authorizationColumns() {
     // Sequelize ARRAY(STRING) → varchar(255)[]
     allowedConnectorTypes: varchar('allowedConnectorTypes', { length: 255 }).array(),
     disallowedEvseIdPrefixes: varchar('disallowedEvseIdPrefixes', { length: 255 }).array(),
-    // Sequelize CITEXT (case-insensitive text) stored as varchar here.
-    idToken: varchar('idToken', { length: 255 }),
+    // citext (case-insensitive text). OCPP requires case-insensitive idToken
+    // matching; the database column was converted to citext in migration
+    // 20260113000000-normalize-id-token-case. Declared with the citext custom type
+    // rather than varchar so the schema matches the database exactly.
+    idToken: citext('idToken'),
     idTokenType: varchar('idTokenType', { length: 255 }),
     additionalInfo: jsonb('additionalInfo').$type<[AdditionalInfo, ...AdditionalInfo[]]>(),
     status: varchar('status', { length: 255 }),

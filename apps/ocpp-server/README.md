@@ -29,6 +29,7 @@ bootstrap sequence — is documented in [`DEPENDENCY_INJECTION.md`](./DEPENDENCY
 - [Attaching a Debugger](#attaching-a-debugger)
 - [Server Ports](#server-ports)
 - [Database Sync vs. Migration](#database-sync-vs-migration)
+- [Drizzle Schema Validation](#drizzle-schema-validation)
 - [Runtime Configuration](#runtime-configuration)
 - [Bootstrap Configuration Environment Variables](#bootstrap-configuration-environment-variables)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
@@ -110,6 +111,53 @@ When running, the server container exposes the following ports (see the root `do
 CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm run db:migrate` script — run
 automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
+
+## Drizzle Schema Validation
+
+When the Drizzle data layer is enabled (`CITRINEOS_USE_DRIZZLE=true`), the server checks the live database
+schema against the Drizzle table declarations in
+`packages/core/src/dal/layers/drizzle/schema/` before it starts serving traffic. If they disagree, startup
+fails and every difference is listed.
+
+The check is a one-way containment check — everything the TypeScript schema declares must exist in the
+database:
+
+| Checked                           | Not checked                                                |
+| --------------------------------- | ---------------------------------------------------------- |
+| Every declared table exists       | Tables that exist only in the database                     |
+| Every declared column exists      | Nullable/defaulted columns that exist only in the database |
+| Column SQL types match            | Column defaults (unless explicitly enabled, see below)     |
+| Column nullability matches        | Index definitions — only that the named index exists       |
+| Every declared named index exists | Foreign keys — no schema file declares any                 |
+
+Columns that exist only in the database are tolerated, because Drizzle names every column explicitly in
+generated SQL. The one exception is a `NOT NULL` column with no default: Drizzle omits it from `INSERT`, so
+every insert into that table would fail, and that is reported.
+
+### Environment Variables
+
+- `CITRINEOS_SCHEMA_VALIDATION` — `strict` (default), `warn`, or `off`.
+  - `strict` — log every difference and refuse to start.
+  - `warn` — log every difference and start anyway. Useful for a first run against an existing database.
+  - `off` — skip the check. Not recommended outside local development.
+  - An unrecognised value falls back to `strict` and logs a warning, so a typo cannot silently disable the
+    check.
+- `CITRINEOS_SCHEMA_VALIDATION_CHECK_DEFAULTS` — `true` to also compare whether columns have a database
+  default. Off by default: most defaults in this schema are application-side (`$defaultFn`) and have no
+  database counterpart. Compares presence only, not the default expression.
+
+Validation adds roughly 15 ms to startup across the current 52 tables.
+
+### Adding a Schema File
+
+A table is validated only if its schema file is exported from
+`packages/core/src/dal/layers/drizzle/schema/index.ts`. Add new files there, or they are never checked.
+
+`packages/core/test/dal/layers/drizzle/typeInventory.test.ts` fails if a schema file introduces a column type
+that has not been verified against a real PostgreSQL instance, or an index without an explicit name (index
+checking is name-based). If it fails, create a column of the new type in PostgreSQL, read back
+`format_type(atttypid, atttypmod)`, and confirm `validation/normalizeType.ts` maps the Drizzle and PostgreSQL
+spellings together before adding the type to the verified list.
 
 ## Runtime Configuration
 

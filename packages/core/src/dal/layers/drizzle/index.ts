@@ -52,3 +52,25 @@ export {
   type TenantEntity,
   type TenantEntityInsert,
 } from './schema/Tenant.js';
+
+// ─── Schema declarations & startup validation ────────────────────────────────
+
+export { citext } from './schema/columnTypes.js';
+/** Namespaced access to every drizzle table declaration; also the validator's input. */
+export * as drizzleSchema from './schema/index.js';
+export {
+  formatDriftReport,
+  normalizeSqlType,
+  registeredTableNames,
+  registeredTables,
+  resolveValidationMode,
+  SchemaDriftError,
+  sqlTypesMatch,
+  tableMap,
+  validateDrizzleSchema,
+  type RegisteredTable,
+  type SchemaFinding,
+  type SchemaFindingKind,
+  type SchemaValidationMode,
+  type ValidateSchemaOptions,
+} from './validation/index.js';
