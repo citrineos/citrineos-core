@@ -5,20 +5,17 @@ import { EventGroup, HttpMethod, OCPP_CallAction, OCPPVersion } from '@citrineos
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
 import { describe, expect, it } from 'vitest';
-import { AbstractEndpoint } from '../../../src/interfaces/api/endpoints/AbstractEndpoint.js';
+import { AbstractEndpoint } from '@interfaces/api/endpoints/AbstractEndpoint.js';
 import {
   AbstractMessageEndpoint,
   type IMessageEndpointMetadata,
-} from '../../../src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
-import { buildEndpoints } from '../../../src/util/endpoints/buildEndpoints.js';
-import type {
-  EndpointClass,
-  IEndpointBuilder,
-} from '../../../src/interfaces/api/endpoints/buildEndpoints.js';
-import { buildMessageEndpoints } from '../../../src/util/endpoints/buildMessageEndpoints.js';
-import type { MessageEndpointClass } from '../../../src/interfaces/api/endpoints/buildMessageEndpoints.js';
-import type { ICommandEndpointMetadata } from '../../../src/interfaces/api/endpoints/EndpointMetadata.js';
-import type { IMessageConfirmation } from '../../../src/interfaces/messages/index.js';
+} from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
+import { buildEndpoints } from '@base-util/endpoints/buildEndpoints.js';
+import type { EndpointClass, IEndpointBuilder } from '@interfaces/api/endpoints/buildEndpoints.js';
+import { buildMessageEndpoints } from '@base-util/endpoints/buildMessageEndpoints.js';
+import type { MessageEndpointClass } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
+import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/EndpointMetadata.js';
+import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 
 const silentLogger = () => new Logger<ILogObj>({ type: 'hidden' });
 

@@ -6,9 +6,9 @@ import { DEFAULT_TENANT_ID, IMessageConfirmation } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { DeleteCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/certificates/DeleteCertificateEndpoint.js';
 import { InstallCertificateEndpoint } from '@modules/Api/src/module/endpoints/ocpp/2/certificates/InstallCertificateEndpoint.js';
-import { aInstallCertificateRequest } from '../../../Certificates/providers/InstallCertificateRequestProvider';
-import { aDeleteCertificateRequest } from '../../../Certificates/providers/DeleteCertificateRequestProvider';
-import { MOCK_CHARGING_STATION_ID } from '../../../Certificates/providers/ChargingStation';
+import { aInstallCertificateRequest } from '@test/modules/Certificates/providers/InstallCertificateRequestProvider.js';
+import { aDeleteCertificateRequest } from '@test/modules/Certificates/providers/DeleteCertificateRequestProvider.js';
+import { MOCK_CHARGING_STATION_ID } from '@test/modules/Certificates/providers/ChargingStation.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const mockInstallCertificateHelperService = {

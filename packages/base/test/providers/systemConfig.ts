@@ -9,7 +9,7 @@ import {
   OCPP_CallAction,
   type SystemConfig,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID } from '../../src/config/defineConfig.js';
+import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
 
 export function aSystemConfig(override?: Partial<SystemConfig>): SystemConfig {
   const config: SystemConfig = {

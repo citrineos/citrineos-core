@@ -5,12 +5,12 @@ import { HttpMethod } from '@citrineos/types';
 import fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
 import { describe, expect, it } from 'vitest';
-import { AbstractEndpoint } from '../../../../src/interfaces/api/endpoints/AbstractEndpoint.js';
-import { AbstractEndpointApi } from '../../../../src/interfaces/api/endpoints/AbstractEndpointApi.js';
-import type { BuiltEndpoint } from '../../../../src/interfaces/api/endpoints/buildEndpoints.js';
-import type { ICommandEndpointMetadata } from '../../../../src/interfaces/api/endpoints/EndpointMetadata.js';
-import { BadRequestError } from '../../../../src/interfaces/api/exceptions/BadRequestError.js';
-import { NotFoundError } from '../../../../src/interfaces/api/exceptions/NotFoundError.js';
+import { AbstractEndpoint } from '@interfaces/api/endpoints/AbstractEndpoint.js';
+import { AbstractEndpointApi } from '@interfaces/api/endpoints/AbstractEndpointApi.js';
+import type { BuiltEndpoint } from '@interfaces/api/endpoints/buildEndpoints.js';
+import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/EndpointMetadata.js';
+import { BadRequestError } from '@interfaces/api/exceptions/BadRequestError.js';
+import { NotFoundError } from '@interfaces/api/exceptions/NotFoundError.js';
 
 class TestApi extends AbstractEndpointApi {}
 

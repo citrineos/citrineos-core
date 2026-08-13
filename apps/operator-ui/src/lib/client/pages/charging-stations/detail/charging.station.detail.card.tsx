@@ -47,7 +47,7 @@ import { StartTransactionButton } from '@lib/client/pages/charging-stations/star
 import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop.transaction.button';
 import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands.unavailable.text';
 import { ResetButton } from '@lib/client/pages/charging-stations/reset.button';
-import { ForceDisconnectButton } from '../force.disconnect.button';
+import { ForceDisconnectButton } from '@lib/client/pages/charging-stations/force.disconnect.button';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 import { isEmpty } from '@lib/utils/assertion';

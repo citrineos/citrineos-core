@@ -8,10 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AbstractMessageEndpoint,
   type IMessageEndpointMetadata,
-} from '../../../../src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
-import { AbstractMessageEndpointApi } from '../../../../src/interfaces/api/endpoints/AbstractMessageEndpointApi.js';
-import type { BuiltMessageEndpoint } from '../../../../src/interfaces/api/endpoints/buildMessageEndpoints.js';
-import type { IMessageConfirmation } from '../../../../src/interfaces/messages/index.js';
+} from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
+import { AbstractMessageEndpointApi } from '@interfaces/api/endpoints/AbstractMessageEndpointApi.js';
+import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
+import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 import { aSystemConfig } from '../../../providers/systemConfig.js';
 
 const BODY_SCHEMA = {
