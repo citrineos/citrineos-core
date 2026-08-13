@@ -670,6 +670,17 @@ describe('assertSchemaMatches', () => {
     return harness([IntegerWidget], rows).sequelize;
   }
 
+  /** Captures what actually reaches the logger, at which level. */
+  function capturingLogger() {
+    const calls: { level: 'error' | 'warn' | 'info'; message: string }[] = [];
+    const sub = {
+      error: (message: string) => calls.push({ level: 'error', message }),
+      warn: (message: string) => calls.push({ level: 'warn', message }),
+      info: (message: string) => calls.push({ level: 'info', message }),
+    };
+    return { calls, logger: { getSubLogger: () => sub, ...sub } };
+  }
+
   const goodRows = [
     col({
       column_name: 'id',
@@ -698,15 +709,17 @@ describe('assertSchemaMatches', () => {
     ).rejects.toThrow(SchemaValidationError);
   });
 
-  it('includes the offending column in the thrown message', async () => {
+  it('carries the full report on the thrown error', async () => {
     const error = await assertSchemaMatches(
       gateHarness(driftedRows),
       baseConfig as any,
       logger as any,
     ).catch((e) => e as SchemaValidationError);
     assert.instanceOf(error, SchemaValidationError);
-    assert.include((error as SchemaValidationError).message, '"Widgets"."id"');
-    assert.strictEqual((error as SchemaValidationError).report.errors.length, 1);
+    const { report } = error as SchemaValidationError;
+    assert.strictEqual(report.errors.length, 1);
+    assert.strictEqual(report.errors[0].table, 'Widgets');
+    assert.strictEqual(report.errors[0].column, 'id');
   });
 
   it('keeps the report out of serialized log output', async () => {
@@ -729,22 +742,10 @@ describe('assertSchemaMatches', () => {
     assert.strictEqual(error.report.errors.length, 1);
   });
 
-  it('spells out every finding in the inspected message', async () => {
-    const error = (await assertSchemaMatches(
-      gateHarness(driftedRows),
-      baseConfig as any,
-      logger as any,
-    ).catch((e) => e)) as SchemaValidationError;
-
-    // Whatever a logger does with the error, the message alone carries the
-    // detail: table, column, expected type and actual type.
-    const inspected = inspect(error);
-    assert.include(inspected, 'Widgets');
-    assert.include(inspected, 'INTEGER');
-    assert.include(inspected, 'VARCHAR(255)');
-  });
-
-  it('lists only blocking findings in the thrown message', async () => {
+  it('summarizes counts and kinds in the thrown message without repeating the listing', async () => {
+    // The findings are logged once as a block. The entry point logs this error
+    // and then console.errors it, so carrying the listing here too would print
+    // the whole report three times.
     const rows = [
       col({ column_name: 'id', is_nullable: 'NO' }), // varchar vs INTEGER -> error
       col({ column_name: 'strayColumn', is_nullable: 'YES' }), // undeclared -> warning
@@ -755,10 +756,90 @@ describe('assertSchemaMatches', () => {
       logger as any,
     ).catch((e) => e)) as SchemaValidationError;
 
-    assert.include(error.message, '"Widgets"."id"');
-    // Warnings are counted in the summary but not repeated in the listing.
+    assert.include(error.message, '1 error(s)');
+    assert.include(error.message, '1 type-mismatch');
     assert.include(error.message, '1 warning(s)');
-    assert.notInclude(error.message, 'strayColumn');
+    assert.notInclude(error.message, '"Widgets"."id"');
+  });
+
+  describe('log output', () => {
+    const mixedRows = [
+      col({ column_name: 'id', is_nullable: 'NO' }), // varchar vs INTEGER -> error
+      col({ column_name: 'strayColumn', is_nullable: 'YES' }), // undeclared -> warning
+    ];
+
+    it('emits exactly one consolidated block covering errors and warnings', async () => {
+      const { calls, logger: capture } = capturingLogger();
+      await assertSchemaMatches(gateHarness(mixedRows), baseConfig as any, capture as any).catch(
+        () => undefined,
+      );
+
+      assert.strictEqual(calls.length, 1, JSON.stringify(calls, null, 2));
+      const [entry] = calls;
+      assert.strictEqual(entry.level, 'error');
+      // Summary plus every finding, errors before warnings, in one message.
+      assert.include(entry.message, '1 errors, 1 warnings');
+      assert.include(entry.message, '1 tables, 1 columns checked');
+      assert.include(entry.message, '"Widgets"."id"');
+      assert.include(entry.message, '"Widgets"."strayColumn"');
+      assert.isBelow(
+        entry.message.indexOf('"Widgets"."id"'),
+        entry.message.indexOf('"Widgets"."strayColumn"'),
+      );
+    });
+
+    it('emits the block even when nothing is thrown', async () => {
+      const { calls, logger: capture } = capturingLogger();
+      const warningOnlyRows = [
+        col({
+          column_name: 'id',
+          udt_name: 'int4',
+          data_type: 'integer',
+          character_maximum_length: null,
+          is_nullable: 'NO',
+        }),
+        col({ column_name: 'strayColumn', is_nullable: 'YES' }),
+      ];
+      const report = await assertSchemaMatches(
+        gateHarness(warningOnlyRows),
+        baseConfig as any,
+        capture as any,
+      );
+
+      assert.strictEqual(report?.errors.length, 0);
+      assert.strictEqual(calls.length, 1);
+      // Warn, not error: nothing here blocks startup.
+      assert.strictEqual(calls[0].level, 'warn');
+      assert.include(calls[0].message, '0 errors, 1 warnings');
+      assert.include(calls[0].message, '"Widgets"."strayColumn"');
+    });
+
+    it('emits only the summary when there is nothing to report', async () => {
+      const { calls, logger: capture } = capturingLogger();
+      await assertSchemaMatches(gateHarness(goodRows), baseConfig as any, capture as any);
+
+      assert.strictEqual(calls.length, 1);
+      assert.strictEqual(calls[0].level, 'info');
+      assert.strictEqual(
+        calls[0].message,
+        'schema validation: 0 errors, 0 warnings (1 tables, 1 columns checked)',
+      );
+    });
+
+    it('adds one line, not a second block, when severity is warn', async () => {
+      const { calls, logger: capture } = capturingLogger();
+      await assertSchemaMatches(
+        gateHarness(mixedRows),
+        { ...baseConfig, validateSchemaSeverity: 'warn' } as any,
+        capture as any,
+      );
+
+      assert.strictEqual(calls.length, 2);
+      assert.strictEqual(calls[0].level, 'error');
+      assert.strictEqual(calls[1].level, 'warn');
+      assert.include(calls[1].message, 'startup will continue');
+      assert.notInclude(calls[1].message, '"Widgets"."id"');
+    });
   });
 
   it('reports without throwing when severity is warn', async () => {

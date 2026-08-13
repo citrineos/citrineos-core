@@ -602,6 +602,15 @@ export function formatReport(report: SchemaValidationReport): string {
   return formatFindings([...report.errors, ...report.warnings]);
 }
 
+/** e.g. "2 type-mismatch, 1 missing-column" — keeps the thrown message useful alone. */
+function countByKind(findings: SchemaFinding[]): string {
+  const counts = new Map<SchemaFindingKind, number>();
+  for (const finding of findings) {
+    counts.set(finding.kind, (counts.get(finding.kind) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([kind, count]) => `${count} ${kind}`).join(', ');
+}
+
 /**
  * Startup gate. Introspects the schema, logs a summary plus one structured
  * entry per finding, and throws when errors are present.
@@ -617,7 +626,7 @@ export async function assertSchemaMatches(
 ): Promise<SchemaValidationReport | null> {
   const log = logger.getSubLogger({ name: 'SchemaValidator' });
 
-  if (databaseConfig.validateSchema === false) {
+  if (!databaseConfig.validateSchema) {
     log.warn('Schema validation is disabled (database.validateSchema=false)');
     return null;
   }
@@ -631,25 +640,21 @@ export async function assertSchemaMatches(
 
   const report = await validateSchema(sequelize, { schema: databaseConfig.schema });
 
-  for (const finding of report.findings) {
-    // Absent keys are omitted rather than logged as `expected: undefined`,
-    // which every logger renders as noise.
-    const context: Record<string, string> = { kind: finding.kind, table: finding.table };
-    if (finding.column !== undefined) context.column = finding.column;
-    if (finding.expected !== undefined) context.expected = finding.expected;
-    if (finding.actual !== undefined) context.actual = finding.actual;
-    if (finding.severity === 'error') {
-      log.error(finding.message, context);
-    } else {
-      log.warn(finding.message, context);
-    }
+  const summary =
+    `schema validation: ${report.errors.length} errors, ${report.warnings.length} warnings ` +
+    `(${report.tablesChecked} tables, ${report.columnsChecked} columns checked)`;
+
+  if (report.findings.length === 0) {
+    log.info(summary);
+    return report;
   }
 
-  // Always emitted, so it can be alerted on whether or not anything is wrong.
-  log.info(
-    `schema validation: ${report.errors.length} errors, ${report.warnings.length} warnings ` +
-      `(${report.tablesChecked} tables, ${report.columnsChecked} columns checked)`,
-  );
+  const reportBlock = `${summary}\n${formatReport(report)}`;
+  if (report.errors.length > 0) {
+    log.error(reportBlock);
+  } else {
+    log.warn(reportBlock);
+  }
 
   if (report.errors.length > 0) {
     if (databaseConfig.validateSchemaSeverity === 'warn') {
@@ -658,11 +663,11 @@ export async function assertSchemaMatches(
       );
       return report;
     }
-    // Errors only: the warnings were logged individually above, and repeating
-    // them here would bury the blocking findings in non-blocking noise.
+
     throw new SchemaValidationError(
-      `Database schema does not match the models: ${report.errors.length} error(s), ` +
-        `${report.warnings.length} warning(s).\n${formatFindings(report.errors)}`,
+      `Database schema does not match the models: ${report.errors.length} error(s) ` +
+        `(${countByKind(report.errors)}), ${report.warnings.length} warning(s). ` +
+        `The full report was logged at error level.`,
       report,
     );
   }
