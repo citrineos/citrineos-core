@@ -187,7 +187,7 @@ export class TokensService {
         set.additionalInfo = authorization.additionalInfo;
       }
     }
-    if (authorization.status) set.status = authorization.status;
+    if (authorization.status !== undefined) set.status = authorization.status;
     if (authorization.language1) set.language1 = authorization.language1;
     if (token.group_id) {
       set.groupAuthorizationId = await this.handleGroupAuthorization(

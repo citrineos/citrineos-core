@@ -152,9 +152,12 @@ export class TokensMapper {
           ])
         : undefined;
 
-    const status: AuthorizationStatusEnumType = tokenDto.valid
-      ? AuthorizationStatusEnum.Accepted
-      : AuthorizationStatusEnum.Invalid;
+    const status: AuthorizationStatusEnumType | undefined =
+      tokenDto.valid === undefined
+        ? undefined
+        : tokenDto.valid
+          ? AuthorizationStatusEnum.Accepted
+          : AuthorizationStatusEnum.Invalid;
 
     const language1: string | undefined = tokenDto.language ?? undefined;
 
