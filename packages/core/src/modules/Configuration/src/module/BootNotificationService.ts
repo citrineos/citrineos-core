@@ -306,7 +306,7 @@ export class BootNotificationService {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
         const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(
-          async ([action]) => {
+          async (action) => {
             if (action !== OCPP_CallAction.BootNotification) {
               return this._cache.remove(action, ocppConnectionName);
             }
