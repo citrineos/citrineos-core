@@ -106,6 +106,7 @@ export {
   compareNullability,
   compareTypes,
   DEFAULT_SCHEMA,
+  formatFindings,
   formatReport,
   SchemaValidationError,
   validateSchema,

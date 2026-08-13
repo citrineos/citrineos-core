@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { inspect } from 'node:util';
 import { assert, describe, expect, it } from 'vitest';
 import { DataTypes, QueryTypes, Sequelize as CoreSequelize } from 'sequelize';
 import { Column, DataType, Model, PrimaryKey, Sequelize, Table } from 'sequelize-typescript';
@@ -706,6 +707,58 @@ describe('assertSchemaMatches', () => {
     assert.instanceOf(error, SchemaValidationError);
     assert.include((error as SchemaValidationError).message, '"Widgets"."id"');
     assert.strictEqual((error as SchemaValidationError).report.errors.length, 1);
+  });
+
+  it('keeps the report out of serialized log output', async () => {
+    // Regression: `report` used to be an own property on the error, so
+    // `console.error(err)` in the app entry point printed
+    // `findings: [ [Object], [Object] ]` at util.inspect's depth-2 limit, and
+    // tslog — which walks getOwnPropertyNames — appended the whole report as a
+    // JSON blob. Both buried the readable listing already in the message.
+    const error = (await assertSchemaMatches(
+      gateHarness(driftedRows),
+      baseConfig as any,
+      logger as any,
+    ).catch((e) => e)) as SchemaValidationError;
+
+    assert.notInclude(inspect(error), '[Object]');
+    // getOwnPropertyNames, not keys: tslog ignores enumerability.
+    assert.notInclude(Object.getOwnPropertyNames(error), 'report');
+    assert.notInclude(JSON.stringify(error), 'findings');
+    // Still reachable programmatically.
+    assert.strictEqual(error.report.errors.length, 1);
+  });
+
+  it('spells out every finding in the inspected message', async () => {
+    const error = (await assertSchemaMatches(
+      gateHarness(driftedRows),
+      baseConfig as any,
+      logger as any,
+    ).catch((e) => e)) as SchemaValidationError;
+
+    // Whatever a logger does with the error, the message alone carries the
+    // detail: table, column, expected type and actual type.
+    const inspected = inspect(error);
+    assert.include(inspected, 'Widgets');
+    assert.include(inspected, 'INTEGER');
+    assert.include(inspected, 'VARCHAR(255)');
+  });
+
+  it('lists only blocking findings in the thrown message', async () => {
+    const rows = [
+      col({ column_name: 'id', is_nullable: 'NO' }), // varchar vs INTEGER -> error
+      col({ column_name: 'strayColumn', is_nullable: 'YES' }), // undeclared -> warning
+    ];
+    const error = (await assertSchemaMatches(
+      gateHarness(rows),
+      baseConfig as any,
+      logger as any,
+    ).catch((e) => e)) as SchemaValidationError;
+
+    assert.include(error.message, '"Widgets"."id"');
+    // Warnings are counted in the summary but not repeated in the listing.
+    assert.include(error.message, '1 warning(s)');
+    assert.notInclude(error.message, 'strayColumn');
   });
 
   it('reports without throwing when severity is warn', async () => {

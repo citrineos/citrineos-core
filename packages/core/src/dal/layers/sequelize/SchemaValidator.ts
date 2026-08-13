@@ -58,13 +58,31 @@ export interface SchemaValidationOptions {
   schema?: string;
 }
 
+/**
+ * Held off-instance deliberately, because loggers serialize an Error's own
+ * properties and a nested report survives that badly:
+ *
+ *   - `console.error(err)` / `util.inspect` walk enumerable own properties to a
+ *     default depth of 2, printing `findings: [ [Object], [Object] ]`.
+ *   - tslog walks `getOwnPropertyNames` regardless of enumerability, appending
+ *     the entire report as one long JSON blob.
+ *
+ * Both duplicate detail the error message already lists line by line, and both
+ * bury it. A WeakMap keeps `error.report` working for callers while staying
+ * invisible to either. The per-finding logs emitted before the throw are the
+ * structured, queryable representation.
+ */
+const reportsByError = new WeakMap<SchemaValidationError, SchemaValidationReport>();
+
 export class SchemaValidationError extends Error {
-  constructor(
-    message: string,
-    readonly report: SchemaValidationReport,
-  ) {
+  constructor(message: string, report: SchemaValidationReport) {
     super(message);
     this.name = 'SchemaValidationError';
+    reportsByError.set(this, report);
+  }
+
+  get report(): SchemaValidationReport {
+    return reportsByError.get(this)!;
   }
 }
 
@@ -561,22 +579,27 @@ function normalizeType(sequelize: Sequelize, type: unknown): unknown {
   return typeof normalize === 'function' ? normalize.call(sequelize, type) : type;
 }
 
-export function formatReport(report: SchemaValidationReport): string {
+/** Groups findings by table into indented, human-readable lines. */
+export function formatFindings(findings: SchemaFinding[]): string {
   const byTable = new Map<string, SchemaFinding[]>();
-  for (const finding of [...report.errors, ...report.warnings]) {
+  for (const finding of findings) {
     const list = byTable.get(finding.table) ?? [];
     list.push(finding);
     byTable.set(finding.table, list);
   }
 
   const lines: string[] = [];
-  for (const [table, findings] of byTable) {
+  for (const [table, tableFindings] of byTable) {
     lines.push(`  ${table}:`);
-    for (const finding of findings) {
+    for (const finding of tableFindings) {
       lines.push(`    [${finding.severity}] ${finding.message}`);
     }
   }
   return lines.join('\n');
+}
+
+export function formatReport(report: SchemaValidationReport): string {
+  return formatFindings([...report.errors, ...report.warnings]);
 }
 
 /**
@@ -609,13 +632,12 @@ export async function assertSchemaMatches(
   const report = await validateSchema(sequelize, { schema: databaseConfig.schema });
 
   for (const finding of report.findings) {
-    const context = {
-      kind: finding.kind,
-      table: finding.table,
-      column: finding.column,
-      expected: finding.expected,
-      actual: finding.actual,
-    };
+    // Absent keys are omitted rather than logged as `expected: undefined`,
+    // which every logger renders as noise.
+    const context: Record<string, string> = { kind: finding.kind, table: finding.table };
+    if (finding.column !== undefined) context.column = finding.column;
+    if (finding.expected !== undefined) context.expected = finding.expected;
+    if (finding.actual !== undefined) context.actual = finding.actual;
     if (finding.severity === 'error') {
       log.error(finding.message, context);
     } else {
@@ -636,9 +658,11 @@ export async function assertSchemaMatches(
       );
       return report;
     }
+    // Errors only: the warnings were logged individually above, and repeating
+    // them here would bury the blocking findings in non-blocking noise.
     throw new SchemaValidationError(
       `Database schema does not match the models: ${report.errors.length} error(s), ` +
-        `${report.warnings.length} warning(s).\n${formatReport(report)}`,
+        `${report.warnings.length} warning(s).\n${formatFindings(report.errors)}`,
       report,
     );
   }
