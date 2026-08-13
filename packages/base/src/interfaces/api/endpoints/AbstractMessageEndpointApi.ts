@@ -82,6 +82,13 @@ export abstract class AbstractMessageEndpointApi {
     endpoint: AbstractMessageEndpoint,
     version: OCPPVersion,
   ): void {
+    if (!(route.eventGroup in this._config.modules)) {
+      this._logger.debug(
+        `Skipping message route for ${route.action} — ${route.eventGroup} is not configured`,
+      );
+      return;
+    }
+
     const bodySchema = route.bodySchema(version);
     if (!bodySchema) {
       this._logger.debug(
