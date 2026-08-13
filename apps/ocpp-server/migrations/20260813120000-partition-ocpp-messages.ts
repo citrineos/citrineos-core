@@ -20,13 +20,13 @@ const ID_MARGIN = 1_000_000;
 const COLUMNS = `
   id, "ocppConnectionName", "correlationId", origin, protocol, action,
   "timestamp", "createdAt", "updatedAt", "tenantId", "requestMessageId",
-  "stationId", type, payload, raw`;
+  "stationId", type, state, payload, raw, message`;
 
 /** Same list, qualified for the catch-up's anti-join against the new table. */
 const COLUMNS_QUALIFIED = `
   o.id, o."ocppConnectionName", o."correlationId", o.origin, o.protocol, o.action,
   o."timestamp", o."createdAt", o."updatedAt", o."tenantId", o."requestMessageId",
-  o."stationId", o.type, o.payload, o.raw`;
+  o."stationId", o.type, o.state, o.payload, o.raw, o.message`;
 
 /**
  * Largest id whose "createdAt" precedes the cutoff, minus ID_MARGIN. Used instead of a
@@ -142,8 +142,10 @@ export default {
           "requestMessageId"   integer,
           "stationId"          integer,
           type                 integer,
+          state                varchar(255),
           payload              jsonb,
           raw                  text NOT NULL,
+          message              jsonb,
           PRIMARY KEY (id, "createdAt")
         ) PARTITION BY RANGE ("createdAt")`);
 
