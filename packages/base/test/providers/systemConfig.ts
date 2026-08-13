@@ -90,7 +90,6 @@ export function aSystemConfig(override?: Partial<SystemConfig>): SystemConfig {
     realTimeAuthDefaultTimeoutSeconds: 15,
     notReadyThresholdSeconds: 60,
     ocpiServer: { host: '0.0.0.0', port: 8085 },
-    userPreferences: {},
   };
 
   return { ...config, ...override };
