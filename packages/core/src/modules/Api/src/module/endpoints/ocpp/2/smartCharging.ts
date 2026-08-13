@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type MessageEndpointClass, passthroughMessageEndpoint } from '@citrineos/base';
+import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction } from '@citrineos/types';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from './schemas.js';
 import { ClearChargingProfileEndpoint } from './smartCharging/ClearChargingProfileEndpoint.js';
@@ -10,7 +10,7 @@ import { GetCompositeScheduleEndpoint } from './smartCharging/GetCompositeSchedu
 import { SetChargingProfileEndpoint } from './smartCharging/SetChargingProfileEndpoint.js';
 
 const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>
-  passthroughMessageEndpoint({
+  forwardMessageEndpoint({
     action,
     protocols: OCPP2_PROTOCOLS,
     eventGroup: EventGroup.SmartCharging,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { HttpMethod } from '@citrineos/types';
@@ -24,7 +24,7 @@ interface GetStationNetworkProfilesEndpointDependencies extends AbstractEndpoint
 type GetStationNetworkProfilesRoute = { Querystring: NetworkProfileQuerystring };
 
 export class GetStationNetworkProfilesEndpoint extends AbstractEndpoint<GetStationNetworkProfilesRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: '/stationNetworkProfile',
     querySchema: NetworkProfileQuerySchema,

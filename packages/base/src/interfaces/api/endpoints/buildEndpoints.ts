@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { AbstractEndpoint } from '@interfaces/api/endpoints/AbstractEndpoint.js';
-import type { IEndpointDefinition } from '@interfaces/api/endpoints/EndpointDefinition.js';
+import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/EndpointMetadata.js';
 
 export type EndpointClass = (new (...args: never[]) => AbstractEndpoint) & {
-  readonly route: IEndpointDefinition;
+  readonly route: ICommandEndpointMetadata;
 };
 
 export interface BuiltEndpoint {
-  route: IEndpointDefinition;
+  route: ICommandEndpointMetadata;
   endpoint: AbstractEndpoint;
 }
 

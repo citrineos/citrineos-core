@@ -4,7 +4,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import type { BuiltEndpoint } from '@interfaces/api/endpoints/buildEndpoints.js';
-import type { IEndpointDefinition } from '@interfaces/api/endpoints/EndpointDefinition.js';
+import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/EndpointMetadata.js';
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
 import { removeUnknownSchemaKeys } from '@base-util/endpoints/routeSchemas.js';
 
@@ -30,7 +30,7 @@ export abstract class AbstractEndpointApi {
     }
   }
 
-  private _addRoute(route: IEndpointDefinition, endpoint: BuiltEndpoint['endpoint']): void {
+  private _addRoute(route: ICommandEndpointMetadata, endpoint: BuiltEndpoint['endpoint']): void {
     const url = joinRoutePath(this._prefix, route.path);
     this._logger.debug(`Adding ${route.method} route ${url}`);
 
@@ -49,7 +49,7 @@ export abstract class AbstractEndpointApi {
     });
   }
 
-  private _toRouteSchema(route: IEndpointDefinition): Record<string, unknown> {
+  private _toRouteSchema(route: ICommandEndpointMetadata): Record<string, unknown> {
     const schema: Record<string, unknown> = {};
     if (route.querySchema) {
       schema.querystring = this._routeSchema(route.querySchema);

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { type SubscriptionDto, HttpMethod } from '@citrineos/types';
@@ -21,7 +21,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Querystring: ChargingStationKeyQuerystring };
 
 export class GetSubscriptionsEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: '/subscription',
     querySchema: ChargingStationKeyQuerySchema,

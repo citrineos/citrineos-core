@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { HttpMethod } from '@citrineos/types';
 
-export interface IEndpointDefinition {
+// Interface for command endpoint metadata and includes the admin endpoints as well
+export interface ICommandEndpointMetadata {
   method: HttpMethod;
   path: string;
   querySchema?: object;

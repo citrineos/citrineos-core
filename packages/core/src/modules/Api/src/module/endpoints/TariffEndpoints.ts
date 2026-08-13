@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
@@ -26,7 +26,7 @@ type TariffUpsertRoute = { Body: TariffData; Querystring: TenantQueryString };
 const TARIFF_PATH = '/tariff';
 
 export class UpsertTariffEndpoint extends AbstractEndpoint<TariffUpsertRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Put,
     path: TARIFF_PATH,
     querySchema: TenantQuerySchema,
@@ -49,7 +49,7 @@ export class UpsertTariffEndpoint extends AbstractEndpoint<TariffUpsertRoute> {
 }
 
 export class GetTariffsEndpoint extends AbstractEndpoint<TariffQueryRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: TARIFF_PATH,
     querySchema: TariffQuerySchema,
@@ -68,7 +68,7 @@ export class GetTariffsEndpoint extends AbstractEndpoint<TariffQueryRoute> {
 }
 
 export class DeleteTariffsEndpoint extends AbstractEndpoint<TariffQueryRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: TARIFF_PATH,
     querySchema: TariffQuerySchema,

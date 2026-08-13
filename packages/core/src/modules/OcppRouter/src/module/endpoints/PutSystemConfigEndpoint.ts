@@ -5,7 +5,7 @@ import {
   type AbstractEndpointDependencies,
   type BootstrapConfig,
   type ConfigStore,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { type SystemConfig, HttpMethod, systemConfigSchema } from '@citrineos/types';
@@ -20,7 +20,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Body: SystemConfig };
 
 export class PutSystemConfigEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Put,
     path: '/systemConfig',
     bodySchema: {

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { HttpMethod } from '@citrineos/types';
@@ -20,7 +20,7 @@ interface GetLocalListVersionEndpointDependencies extends AbstractEndpointDepend
 type GetLocalListVersionRoute = { Querystring: ChargingStationKeyQuerystring };
 
 export class GetLocalListVersionEndpoint extends AbstractEndpoint<GetLocalListVersionRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: '/localListVersion',
     querySchema: ChargingStationKeyQuerySchema,

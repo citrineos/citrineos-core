@@ -7,7 +7,7 @@ import { MessageState } from '@interfaces/messages/index.js';
 /**
  * Interface for usage in the {@link AsRequestHandler} and {@link AsResponseHandler} decorators.
  */
-export interface IHandlerClassDefinition {
+export interface IHandlerMetadata {
   protocol: OCPPVersion;
   action: CallAction;
   type: MessageState;

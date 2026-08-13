@@ -4,7 +4,7 @@
 import {
   type AbstractEndpointDependencies,
   type BootConfig,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   BootConfigSchema,
 } from '@citrineos/base';
@@ -29,7 +29,7 @@ type BootConfigWriteRoute = {
 const BOOT_CONFIG_PATH = '/bootConfig';
 
 export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Put,
     path: BOOT_CONFIG_PATH,
     querySchema: ChargingStationKeyQuerySchema,
@@ -53,7 +53,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
 }
 
 export class GetBootConfigEndpoint extends AbstractEndpoint<BootConfigReadRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: BOOT_CONFIG_PATH,
     querySchema: ChargingStationKeyQuerySchema,
@@ -72,7 +72,7 @@ export class GetBootConfigEndpoint extends AbstractEndpoint<BootConfigReadRoute>
 }
 
 export class DeleteBootConfigEndpoint extends AbstractEndpoint<BootConfigReadRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: BOOT_CONFIG_PATH,
     querySchema: ChargingStationKeyQuerySchema,

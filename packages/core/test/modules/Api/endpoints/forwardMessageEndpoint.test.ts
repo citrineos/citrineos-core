@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   buildMessageEndpoints,
-  passthroughMessageEndpoint,
+  forwardMessageEndpoint,
   DEFAULT_TENANT_ID,
   type MessageEndpointClass,
 } from '@citrineos/base';
@@ -14,14 +14,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BODY_SCHEMA = { $id: 'ResetRequestSchema', type: 'object' };
 
-const ResetEndpoint = passthroughMessageEndpoint({
+const ResetEndpoint = forwardMessageEndpoint({
   action: OCPP_CallAction.Reset,
   protocols: [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1],
   eventGroup: EventGroup.Configuration,
   bodySchema: () => BODY_SCHEMA,
 });
 
-describe('passthroughMessageEndpoint', () => {
+describe('forwardMessageEndpoint', () => {
   let sendCall: ReturnType<typeof vi.fn>;
   let container: AwilixContainer;
 

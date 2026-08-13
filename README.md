@@ -23,6 +23,7 @@ here: <https://github.com/citrineos/citrineos>.
 - [Overview](#overview)
 - [Architecture Flow](#architecture-flow)
 - [Repository Structure](#repository-structure)
+- [HTTP API Surfaces](#http-api-surfaces)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Running the Full Stack with Docker](#running-the-full-stack-with-docker)
@@ -119,6 +120,105 @@ Each workspace member documents itself:
 - **Server** — running the server, configuration, bootstrap env vars, migrations, OCPP interfaces, EVerest testing: [`apps/ocpp-server/README.md`](./apps/ocpp-server/README.md)
 - **OCPI Server** — running the OCPI server and its configuration: [`apps/ocpi-server/README.md`](./apps/ocpi-server/README.md)
 - **Operator UI** — running and developing the web UI, bringing a station online end-to-end: [`apps/operator-ui/README.MD`](./apps/operator-ui/README.MD)
+
+## HTTP API Surfaces
+
+The server exposes three REST surfaces, each behind its own prefix:
+
+- **`/ocpp/<version>/<module>/<action>`** — sends an OCPP message to one or more charging stations, e.g.
+  `POST /ocpp/1.6/configuration/changeAvailability?identifier=cs001`. The `<version>` segment selects the
+  protocol (`1.6`, `2.0.1`, `2.1`, etc.); `<module>` comes from that module's configured `endpointPrefix`.
+- **`/commands/<command>`** — CitrineOS-native operations that are not a single OCPP message, e.g.
+  `POST /commands/setStationPassword`.
+- **`/ocpprouter/<resource>`** — router administration: websocket server configuration, tenant path
+  mappings, subscriptions, TLS reload and the live system config, e.g. `DELETE /ocpprouter/connection`.
+
+Endpoints are classes with a static `route` declaring their method, path and schemas, listed in their
+package's `register.ts` — `AbstractMessageEndpoint` for the OCPP surface, `AbstractEndpoint` for the
+other two.
+
+### How endpoints become routes
+
+Each package lists its endpoint classes in `register.ts` and registers a builder over that list:
+
+```ts
+messageEndpoints: asFunction((cradle: EndpointResolverCradle) =>
+  buildMessageEndpoints(cradle.moduleScope, MESSAGE_ENDPOINTS),
+).scoped(),
+```
+
+`buildEndpoints` and `buildMessageEndpoints` resolve each class through the module's DI scope and pair
+the instance with its static `route`. Two things follow from that:
+
+- An endpoint declares its dependencies as constructor properties exactly like a service — nothing is
+  wired by hand at the call site.
+- The resulting array is injected into the API class, whose constructor registers one Fastify route per
+  entry. For message endpoints that means one route per protocol in `route.protocols`, skipped when the
+  action has no schema for that version.
+
+Which builder applies follows from the surface:
+
+- `buildEndpoints` takes `EndpointClass` — an `AbstractEndpoint` whose static route is an
+  `ICommandEndpointMetadata` (`method`, `path`) — and backs `/commands` and `/ocpprouter`.
+- `buildMessageEndpoints` takes `MessageEndpointClass` — an `AbstractMessageEndpoint` whose static route
+  is an `IMessageEndpointMetadata` (`action`, `protocols`, `eventGroup`) — and backs `/ocpp/<version>/…`.
+
+Each list is declared with `satisfies ReadonlyArray<EndpointClass>` (or `MessageEndpointClass`), so
+handing a class to the wrong builder is a compile error rather than a route that quietly never appears.
+
+### Endpoints you don't have to write
+
+Most OCPP routes need no logic of their own — validate the body, send it to each station as a Call.
+`forwardMessageEndpoint` builds one of those from route metadata alone, so it is declared inline instead
+of as a class. Both styles sit in the same list:
+
+```ts
+const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>
+  forwardMessageEndpoint({
+    action,
+    protocols: OCPP2_PROTOCOLS,
+    eventGroup: EventGroup.Transactions,
+    bodySchema: ocpp2Schema(schemaName),
+  });
+
+export const TRANSACTIONS_MESSAGE_ENDPOINTS = [
+  ocpp2(OCPP_CallAction.CostUpdated, 'CostUpdatedRequestSchema'),
+  ocpp2(OCPP_CallAction.GetTransactionStatus, 'GetTransactionStatusRequestSchema'),
+  SetDefaultTariffEndpoint,
+] satisfies ReadonlyArray<MessageEndpointClass>;
+```
+
+Write an `AbstractMessageEndpoint` subclass only when something has to happen before or instead of that
+send: reading a repository first, rewriting the payload, or splitting one request into several Calls —
+as `SetVariablesEndpoint` does when it chunks a long variable list per station.
+
+### Calling them from the Operator UI
+
+Each surface has its own helper in `messages.utils.tsx`. The helper supplies the prefix, so the `url`
+you pass is relative to it:
+
+```ts
+// → /ocpp/1.6/configuration/changeAvailability?identifier=cs001
+triggerMessageAndHandleResponse({
+  url: '/configuration/changeAvailability?identifier=cs001',
+  ocppVersion: OCPPVersion.OCPP1_6,
+  ...
+});
+
+// → /commands/setStationPassword
+triggerCommandAndHandleResponse({ url: '/setStationPassword', ... });
+
+// → /ocpprouter/connection?ocppConnectionName=cs001
+triggerAdminAndHandleResponse({
+  url: '/connection?ocppConnectionName=cs001',
+  method: HttpMethod.Delete,
+  ...
+});
+```
+
+All three wrap `BaseRestClient`, which is constructed with the base path it prepends —
+`ocppApiPath(version)`, `COMMANDS_API_PATH` or `ADMIN_API_PATH`, defined in `BaseRestClient.ts`.
+Choosing the helper is what selects the surface, so the prefix never appears in a call site.
 
 ## Prerequisites
 

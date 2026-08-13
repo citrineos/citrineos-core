@@ -5,7 +5,7 @@ import {
   type AbstractEndpointDependencies,
   type IFileStorage,
   type IMessageQuerystring,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   DEFAULT_TENANT_ID,
   IMessageQuerystringSchema,
@@ -33,7 +33,7 @@ type RegenerateCertificateEndpointRoute = {
 };
 
 export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCertificateEndpointRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/regenerateCertificate',
     querySchema: IMessageQuerystringSchema,

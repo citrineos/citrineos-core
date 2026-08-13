@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { AbstractEndpoint } from '../../../src/interfaces/api/endpoints/AbstractEndpoint.js';
 import {
   AbstractMessageEndpoint,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
 } from '../../../src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
 import { buildEndpoints } from '../../../src/util/endpoints/buildEndpoints.js';
 import type {
@@ -17,7 +17,7 @@ import type {
 } from '../../../src/interfaces/api/endpoints/buildEndpoints.js';
 import { buildMessageEndpoints } from '../../../src/util/endpoints/buildMessageEndpoints.js';
 import type { MessageEndpointClass } from '../../../src/interfaces/api/endpoints/buildMessageEndpoints.js';
-import type { IEndpointDefinition } from '../../../src/interfaces/api/endpoints/EndpointDefinition.js';
+import type { ICommandEndpointMetadata } from '../../../src/interfaces/api/endpoints/EndpointMetadata.js';
 import type { IMessageConfirmation } from '../../../src/interfaces/messages/index.js';
 
 const silentLogger = () => new Logger<ILogObj>({ type: 'hidden' });
@@ -34,7 +34,7 @@ function aBuilder(): IEndpointBuilder & { built: unknown[] } {
 }
 
 class FirstEndpoint extends AbstractEndpoint {
-  static readonly route: IEndpointDefinition = { method: HttpMethod.Post, path: '/first' };
+  static readonly route: ICommandEndpointMetadata = { method: HttpMethod.Post, path: '/first' };
   constructor() {
     super(silentLogger());
   }
@@ -44,7 +44,7 @@ class FirstEndpoint extends AbstractEndpoint {
 }
 
 class SecondEndpoint extends AbstractEndpoint {
-  static readonly route: IEndpointDefinition = { method: HttpMethod.Delete, path: '/second' };
+  static readonly route: ICommandEndpointMetadata = { method: HttpMethod.Delete, path: '/second' };
   constructor() {
     super(silentLogger());
   }
@@ -54,7 +54,7 @@ class SecondEndpoint extends AbstractEndpoint {
 }
 
 class AMessageEndpoint extends AbstractMessageEndpoint {
-  static readonly route: IMessageEndpointDeclaration = {
+  static readonly route: IMessageEndpointMetadata = {
     action: OCPP_CallAction.Reset,
     protocols: [OCPPVersion.OCPP2_0_1],
     eventGroup: EventGroup.Configuration,

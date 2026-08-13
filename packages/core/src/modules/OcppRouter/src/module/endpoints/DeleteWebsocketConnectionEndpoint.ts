@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type INetworkConnection,
   AbstractEndpoint,
 } from '@citrineos/base';
@@ -19,7 +19,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Querystring: ConnectionDeleteQuerystring };
 
 export class DeleteWebsocketConnectionEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: '/connection',
     querySchema: ConnectionDeleteQuerySchema,

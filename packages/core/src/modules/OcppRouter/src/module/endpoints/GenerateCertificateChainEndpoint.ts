@@ -5,7 +5,7 @@ import {
   type AbstractEndpointDependencies,
   type BootstrapConfig,
   type ConfigStore,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type INetworkConnection,
   AbstractEndpoint,
   BadRequestError,
@@ -47,7 +47,7 @@ type CertificateFilePaths = {
 };
 
 export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/certificateChain',
     querySchema: GenerateCertificateChainQuerySchema,

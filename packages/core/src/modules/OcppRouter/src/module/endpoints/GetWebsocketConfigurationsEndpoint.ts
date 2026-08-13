@@ -4,7 +4,7 @@
 import {
   type AbstractEndpointDependencies,
   type BootstrapConfig,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   NotFoundError,
 } from '@citrineos/base';
@@ -20,7 +20,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Querystring: WebsocketGetQuerystring };
 
 export class GetWebsocketConfigurationsEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: '/websocket',
     querySchema: WebsocketGetQuerySchema,

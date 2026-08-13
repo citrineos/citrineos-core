@@ -4,7 +4,7 @@
 import {
   type AbstractMessageEndpointDependencies,
   type IMessageConfirmation,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
@@ -24,7 +24,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
 }
 
 export class ReserveNowEndpoint extends AbstractMessageEndpoint {
-  static readonly route: IMessageEndpointDeclaration = {
+  static readonly route: IMessageEndpointMetadata = {
     action: OCPP_CallAction.ReserveNow,
     protocols: OCPP2_PROTOCOLS,
     eventGroup: EventGroup.EVDriver,

@@ -5,7 +5,7 @@ import {
   type AbstractMessageEndpointDependencies,
   type ICache,
   type IMessageConfirmation,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
   type IOcppSender,
   AbstractMessageEndpoint,
   CacheNamespace,
@@ -39,7 +39,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
 }
 
 export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
-  static readonly route: IMessageEndpointDeclaration = {
+  static readonly route: IMessageEndpointMetadata = {
     action: OCPP_CallAction.RequestStartTransaction,
     protocols: OCPP2_PROTOCOLS,
     eventGroup: EventGroup.EVDriver,

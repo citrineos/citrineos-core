@@ -5,7 +5,7 @@ import {
   type AbstractEndpointDependencies,
   type BootstrapConfig,
   type ConfigStore,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   BadRequestError,
 } from '@citrineos/base';
@@ -21,7 +21,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Body: WebsocketServerConfig };
 
 export class CreateWebsocketConfigurationEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/websocket',
     bodySchema: WebsocketRequestSchema,

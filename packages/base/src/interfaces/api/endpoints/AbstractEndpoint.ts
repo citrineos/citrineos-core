@@ -4,6 +4,8 @@
 import { type ILogObj, Logger } from 'tslog';
 import type { FastifyReply, FastifyRequest, RouteGenericInterface } from 'fastify';
 
+// This interface is longer than just including logger itself
+// but was intentionally left in so that common additions are easily included
 export interface AbstractEndpointDependencies {
   logger: Logger<ILogObj>;
 }

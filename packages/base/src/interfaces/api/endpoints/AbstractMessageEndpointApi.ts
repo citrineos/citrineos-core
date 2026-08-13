@@ -21,7 +21,7 @@ import {
 import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
 import type {
   AbstractMessageEndpoint,
-  IMessageEndpointDeclaration,
+  IMessageEndpointMetadata,
 } from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
 import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
@@ -42,6 +42,16 @@ interface MessageRouteSchemas {
   querystring: object | null;
   response: object | null;
 }
+
+interface MessageRouteSchemaSources {
+  body: object;
+  querystring: object;
+  response: object;
+}
+
+type MessageRouteHandler = (
+  request: FastifyRequest<MessageRoute>,
+) => Promise<IMessageConfirmation[]>;
 
 export abstract class AbstractMessageEndpointApi {
   protected readonly _server: FastifyInstance;
@@ -68,7 +78,7 @@ export abstract class AbstractMessageEndpointApi {
   }
 
   private _addMessageRoute(
-    route: IMessageEndpointDeclaration,
+    route: IMessageEndpointMetadata,
     endpoint: AbstractMessageEndpoint,
     version: OCPPVersion,
   ): void {
@@ -112,31 +122,49 @@ export abstract class AbstractMessageEndpointApi {
       );
     };
 
+    const schemas: MessageRouteSchemaSources = {
+      body: bodySchema,
+      querystring: querystringSchema,
+      response: responseSchema,
+    };
+
     if (this._config.util.swagger?.exposeMessage) {
-      this._server.register(async (fastifyInstance) => {
-        const targets = { scoped: fastifyInstance, root: this._server, logger: this._logger };
-        fastifyInstance.route(
-          this._routeOptions(url, handler, {
-            body: registerRouteSchema(targets, bodySchema, `${version}-`),
-            querystring: registerRouteSchema(targets, querystringSchema),
-            response: registerRouteSchema(targets, responseSchema),
-          }),
-        );
-      });
-    } else {
-      this._server.route(
+      this._registerWithSharedSchemas(url, handler, version, schemas);
+      return;
+    }
+
+    this._registerWithInlineSchemas(url, handler, schemas);
+  }
+
+  private _registerWithSharedSchemas(
+    url: string,
+    handler: MessageRouteHandler,
+    version: OCPPVersion,
+    schemas: MessageRouteSchemaSources,
+  ): void {
+    this._server.register(async (fastifyInstance) => {
+      const targets = { scoped: fastifyInstance, root: this._server, logger: this._logger };
+      fastifyInstance.route(
         this._routeOptions(url, handler, {
-          body: bodySchema,
-          querystring: querystringSchema,
-          response: responseSchema,
+          body: registerRouteSchema(targets, schemas.body, `${version}-`),
+          querystring: registerRouteSchema(targets, schemas.querystring),
+          response: registerRouteSchema(targets, schemas.response),
         }),
       );
-    }
+    });
+  }
+
+  private _registerWithInlineSchemas(
+    url: string,
+    handler: MessageRouteHandler,
+    schemas: MessageRouteSchemaSources,
+  ): void {
+    this._server.route(this._routeOptions(url, handler, schemas));
   }
 
   private _routeOptions(
     url: string,
-    handler: (request: FastifyRequest<MessageRoute>) => Promise<IMessageConfirmation[]>,
+    handler: MessageRouteHandler,
     schemas: MessageRouteSchemas,
   ): RouteOptions<
     RawServerDefault,

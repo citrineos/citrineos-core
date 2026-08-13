@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type IFileStorage,
   type IMessageConfirmation,
   type IOcppSender,
@@ -32,7 +32,7 @@ interface InstallRootCertificateEndpointDependencies extends AbstractEndpointDep
 type InstallRootCertificateRoute = { Body: InstallRootCertificateRequest };
 
 export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRootCertificateRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Put,
     path: '/installRootCertificate',
     bodySchema: InstallRootCertificateSchema,

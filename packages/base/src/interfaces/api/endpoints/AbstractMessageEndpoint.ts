@@ -9,15 +9,13 @@ export interface AbstractMessageEndpointDependencies {
   logger: Logger<ILogObj>;
 }
 
-export interface IMessageEndpointDeclaration {
+export interface IMessageEndpointMetadata {
   action: CallAction;
   protocols: OCPPVersion[];
   eventGroup: EventGroup;
   bodySchema: (version: OCPPVersion) => object | undefined;
   optionalQuerystrings?: Record<string, unknown>;
 }
-
-export type IPassthroughMessageEndpointDeclaration = IMessageEndpointDeclaration;
 
 export abstract class AbstractMessageEndpoint {
   protected readonly _logger: Logger<ILogObj>;

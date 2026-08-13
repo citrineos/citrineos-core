@@ -5,7 +5,7 @@ import {
   type AbstractEndpointDependencies,
   type BootstrapConfig,
   type ConfigStore,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { type SystemConfig, HttpMethod } from '@citrineos/types';
@@ -21,7 +21,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Querystring: WebsocketDeleteQuerystring };
 
 export class DeleteWebsocketConfigurationEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: '/websocket',
     querySchema: WebsocketDeleteQuerySchema,

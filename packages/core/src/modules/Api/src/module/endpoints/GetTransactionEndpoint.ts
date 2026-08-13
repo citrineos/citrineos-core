@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
 import { HttpMethod } from '@citrineos/types';
@@ -20,7 +20,7 @@ interface GetTransactionEndpointDependencies extends AbstractEndpointDependencie
 type GetTransactionRoute = { Querystring: TransactionEventQuerystring };
 
 export class GetTransactionEndpoint extends AbstractEndpoint<GetTransactionRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: '/transaction',
     querySchema: TransactionEventQuerySchema,

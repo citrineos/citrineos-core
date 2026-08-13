@@ -4,7 +4,7 @@
 import {
   type AbstractMessageEndpointDependencies,
   type IMessageConfirmation,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
@@ -18,7 +18,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
 }
 
 export class SendLocalListEndpoint extends AbstractMessageEndpoint {
-  static readonly route: IMessageEndpointDeclaration = {
+  static readonly route: IMessageEndpointMetadata = {
     action: OCPP_CallAction.SendLocalList,
     protocols: [OCPPVersion.OCPP1_6],
     eventGroup: EventGroup.EVDriver,

@@ -7,7 +7,7 @@ import { Logger, type ILogObj } from 'tslog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AbstractMessageEndpoint,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
 } from '../../../../src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
 import { AbstractMessageEndpointApi } from '../../../../src/interfaces/api/endpoints/AbstractMessageEndpointApi.js';
 import type { BuiltMessageEndpoint } from '../../../../src/interfaces/api/endpoints/buildMessageEndpoints.js';
@@ -52,7 +52,7 @@ interface Harness {
   endpoint: RecordingEndpoint;
 }
 
-function aRoute(overrides: Partial<IMessageEndpointDeclaration> = {}): IMessageEndpointDeclaration {
+function aRoute(overrides: Partial<IMessageEndpointMetadata> = {}): IMessageEndpointMetadata {
   return {
     action: OCPP_CallAction.CertificateSigned,
     protocols: [OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1],
@@ -63,7 +63,7 @@ function aRoute(overrides: Partial<IMessageEndpointDeclaration> = {}): IMessageE
 }
 
 async function buildHarness(
-  route: IMessageEndpointDeclaration,
+  route: IMessageEndpointMetadata,
   config: SystemConfig,
 ): Promise<Harness> {
   const server = fastify();

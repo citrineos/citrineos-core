@@ -4,7 +4,7 @@
 import {
   type AbstractEndpointDependencies,
   type ICache,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type IOcppSender,
   AbstractEndpoint,
   CacheNamespace,
@@ -36,7 +36,7 @@ interface Dependencies extends AbstractEndpointDependencies {
 type InitiateWebPaymentRoute = { Body: InitiateWebPaymentRequest };
 
 export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaymentRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/webpayment/initiate',
     bodySchema: InitiateWebPaymentRequestSchema,

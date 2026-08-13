@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type IMessageConfirmation,
   AbstractEndpoint,
   ReportDataTypeSchema,
@@ -24,7 +24,7 @@ type ProvisionStationVariablesRoute = {
 };
 
 export class ProvisionStationVariablesEndpoint extends AbstractEndpoint<ProvisionStationVariablesRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Put,
     path: '/provisionStationVariables',
     querySchema: CreateOrUpdateVariableAttributeQuerySchema,

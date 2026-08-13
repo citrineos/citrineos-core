@@ -4,7 +4,7 @@
 import {
   type AbstractMessageEndpointDependencies,
   type IMessageConfirmation,
-  type IMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
@@ -23,7 +23,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
 }
 
 export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
-  static readonly route: IMessageEndpointDeclaration = {
+  static readonly route: IMessageEndpointMetadata = {
     action: OCPP_CallAction.GetConfiguration,
     protocols: [OCPPVersion.OCPP1_6],
     eventGroup: EventGroup.Configuration,

@@ -4,7 +4,7 @@
 import {
   type AbstractEndpoint,
   type BuiltEndpoint,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpointApi,
 } from '@citrineos/base';
 import fastify, { type FastifyInstance } from 'fastify';
@@ -27,7 +27,7 @@ export interface MountedEndpoint {
 
 export async function mountEndpoint(
   endpoint: AbstractEndpoint,
-  route: IEndpointDefinition,
+  route: ICommandEndpointMetadata,
   prefix = '/commands',
 ): Promise<MountedEndpoint> {
   const server = fastify();

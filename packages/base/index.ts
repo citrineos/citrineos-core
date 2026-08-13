@@ -9,16 +9,15 @@ import addFormats from 'ajv-formats';
 export { AbstractEndpointApi } from './src/interfaces/api/endpoints/AbstractEndpointApi.js';
 export { AbstractEndpoint } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
 export type { AbstractEndpointDependencies } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
-export type { IEndpointDefinition } from './src/interfaces/api/endpoints/EndpointDefinition.js';
+export type { ICommandEndpointMetadata } from './src/interfaces/api/endpoints/EndpointMetadata.js';
 export { AbstractMessageEndpointApi } from './src/interfaces/api/endpoints/AbstractMessageEndpointApi.js';
 export { AbstractMessageEndpoint } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
 export type {
   AbstractMessageEndpointDependencies,
-  IMessageEndpointDeclaration,
+  IMessageEndpointMetadata,
 } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
 export { buildMessageEndpoints } from './src/util/endpoints/buildMessageEndpoints.js';
-export { passthroughMessageEndpoint } from './src/util/endpoints/passthroughMessageEndpoint.js';
-export type { IPassthroughMessageEndpointDeclaration } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
+export { forwardMessageEndpoint } from './src/util/endpoints/forwardMessageEndpoint.js';
 export type {
   BuiltMessageEndpoint,
   MessageEndpointClass,
@@ -79,7 +78,7 @@ export {
 } from './src/interfaces/handlers/AbstractHandler.js';
 export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
 export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
-export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';
+export type { IHandlerMetadata } from './src/interfaces/handlers/HandlerMetadata.js';
 export { buildHandlers } from './src/interfaces/handlers/buildHandlers.js';
 export type {
   HandlerClass,

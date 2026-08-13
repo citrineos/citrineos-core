@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
@@ -23,7 +23,7 @@ type StationVariableRoute = { Querystring: VariableAttributeQuerystring };
 const STATION_VARIABLES_PATH = '/stationVariables';
 
 export class GetStationVariablesEndpoint extends AbstractEndpoint<StationVariableRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Get,
     path: STATION_VARIABLES_PATH,
     querySchema: VariableAttributeQuerySchema,
@@ -42,7 +42,7 @@ export class GetStationVariablesEndpoint extends AbstractEndpoint<StationVariabl
 }
 
 export class DeleteStationVariablesEndpoint extends AbstractEndpoint<StationVariableRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: STATION_VARIABLES_PATH,
     querySchema: VariableAttributeQuerySchema,

@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {
   AbstractMessageEndpoint,
-  IMessageEndpointDeclaration,
+  IMessageEndpointMetadata,
 } from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
 
 export type MessageEndpointClass = (new (...args: never[]) => AbstractMessageEndpoint) & {
-  readonly route: IMessageEndpointDeclaration;
+  readonly route: IMessageEndpointMetadata;
 };
 
 export interface BuiltMessageEndpoint {
-  route: IMessageEndpointDeclaration;
+  route: IMessageEndpointMetadata;
   endpoint: AbstractMessageEndpoint;
 }

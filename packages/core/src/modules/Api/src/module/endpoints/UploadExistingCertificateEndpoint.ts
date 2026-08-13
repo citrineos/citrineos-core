@@ -4,7 +4,7 @@
 import {
   type AbstractEndpointDependencies,
   type IMessageQuerystring,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   DEFAULT_TENANT_ID,
   IMessageQuerystringSchema,
@@ -26,7 +26,7 @@ type UploadExistingCertificateEndpointRoute = {
 };
 
 export class UploadExistingCertificateEndpoint extends AbstractEndpoint<UploadExistingCertificateEndpointRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/uploadExistingCertificate',
     querySchema: IMessageQuerystringSchema,

@@ -7,7 +7,7 @@ import {
   type ICache,
   type IMessageConfirmation,
   type IOcppSender,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   UpdateChargingStationPasswordSchema,
 } from '@citrineos/base';
@@ -50,7 +50,7 @@ type SetStationPasswordEndpointRoute = {
 };
 
 export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPasswordEndpointRoute> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Post,
     path: '/setStationPassword',
     querySchema: UpdateChargingStationPasswordQuerySchema,

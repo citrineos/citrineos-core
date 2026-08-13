@@ -5,14 +5,14 @@ import type { OcppRequest, OCPPVersion } from '@citrineos/types';
 import {
   AbstractMessageEndpoint,
   type AbstractMessageEndpointDependencies,
-  type IPassthroughMessageEndpointDeclaration,
+  type IMessageEndpointMetadata,
 } from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
 import type { MessageEndpointClass } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
 
-interface PassthroughDependencies extends AbstractMessageEndpointDependencies {
+interface ForwardMessageDependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
 }
 
@@ -21,15 +21,13 @@ interface PassthroughDependencies extends AbstractMessageEndpointDependencies {
  * unchanged. Every route whose only behaviour is fan-out is declared as one of these
  * rather than as its own class.
  */
-export function passthroughMessageEndpoint(
-  route: IPassthroughMessageEndpointDeclaration,
-): MessageEndpointClass {
+export function forwardMessageEndpoint(route: IMessageEndpointMetadata): MessageEndpointClass {
   return class extends AbstractMessageEndpoint {
     static readonly route = route;
 
     private readonly _ocppSender: IOcppSender;
 
-    constructor({ logger, ocppSender }: PassthroughDependencies) {
+    constructor({ logger, ocppSender }: ForwardMessageDependencies) {
       super(logger);
       this._ocppSender = ocppSender;
     }

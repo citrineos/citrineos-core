@@ -6,7 +6,7 @@ import {
   type BootstrapConfig,
   type ConfigStore,
   type ICache,
-  type IEndpointDefinition,
+  type ICommandEndpointMetadata,
   AbstractEndpoint,
   BadRequestError,
   CacheNamespace,
@@ -31,7 +31,7 @@ interface Deps extends AbstractEndpointDependencies {
 type Route = { Querystring: WebsocketMappingQuerystring };
 
 export class DeleteWebsocketMappingEndpoint extends AbstractEndpoint<Route> {
-  static readonly route: IEndpointDefinition = {
+  static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: '/websocketMapping',
     querySchema: WebsocketMappingQuerySchema,

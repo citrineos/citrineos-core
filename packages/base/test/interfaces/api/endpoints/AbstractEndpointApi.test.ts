@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { AbstractEndpoint } from '../../../../src/interfaces/api/endpoints/AbstractEndpoint.js';
 import { AbstractEndpointApi } from '../../../../src/interfaces/api/endpoints/AbstractEndpointApi.js';
 import type { BuiltEndpoint } from '../../../../src/interfaces/api/endpoints/buildEndpoints.js';
-import type { IEndpointDefinition } from '../../../../src/interfaces/api/endpoints/EndpointDefinition.js';
+import type { ICommandEndpointMetadata } from '../../../../src/interfaces/api/endpoints/EndpointMetadata.js';
 import { BadRequestError } from '../../../../src/interfaces/api/exceptions/BadRequestError.js';
 import { NotFoundError } from '../../../../src/interfaces/api/exceptions/NotFoundError.js';
 
@@ -35,7 +35,7 @@ function aCapturingLogger(): { logger: Logger<ILogObj>; errors: ILogObj[] } {
 }
 
 async function buildApi(
-  route: IEndpointDefinition,
+  route: ICommandEndpointMetadata,
   behaviour: () => unknown = () => ({ ok: true }),
   prefix = '/commands',
 ) {
@@ -56,7 +56,7 @@ async function buildApi(
   return { server, routes, errors };
 }
 
-const A_ROUTE: IEndpointDefinition = {
+const A_ROUTE: ICommandEndpointMetadata = {
   method: HttpMethod.Post,
   path: '/setStationPassword',
 };
