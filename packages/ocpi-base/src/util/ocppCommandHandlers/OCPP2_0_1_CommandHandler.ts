@@ -162,11 +162,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
       });
       this.commandsClientApi
         .postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           unlockConnector.response_url,
           {
             result: CommandResultType.FAILED,
@@ -240,11 +236,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP2_0_1.RequestStartStopStatusEnumType.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -261,11 +253,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           statusInfo: validatedResponse.statusInfo,
         });
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.EVSE_OCCUPIED,
@@ -295,11 +283,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP2_0_1.RequestStartStopStatusEnumType.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -316,11 +300,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           statusInfo: validatedResponse.statusInfo,
         });
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.REJECTED,
@@ -350,11 +330,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP2_0_1.UnlockStatusEnumType.Unlocked:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -371,11 +347,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           statusInfo: validatedResponse.statusInfo,
         });
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.EVSE_OCCUPIED,
@@ -392,11 +364,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           statusInfo: validatedResponse.statusInfo,
         });
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.REJECTED,
@@ -413,11 +381,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           statusInfo: validatedResponse.statusInfo,
         });
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.FAILED,
