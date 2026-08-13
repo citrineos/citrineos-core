@@ -27,6 +27,10 @@ import {
 import { ChargingStation } from './Location/index.js';
 import { Tenant } from './Tenant.js';
 
+/**
+ * Range partitioned on "createdAt", one partition per ISO week, with a rolling
+ * retention window
+ */
 @Table
 export class OCPPMessage extends Model implements OCPPMessageDto {
   static readonly MODEL_NAME: string = Namespace.OCPPMessage;
@@ -84,7 +88,9 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
-  @ForeignKey(() => OCPPMessage)
+  // "OCPPMessages" is range partitioned on "createdAt", so its only unique key is (id, "createdAt") and a
+  // single-column FK cannot target it. ocpp_correlate_response() and
+  // ocpp_correlate_call() are the sole maintainers of this link;
   @Index
   @Column(DataType.INTEGER)
   declare requestMessageId?: number;
