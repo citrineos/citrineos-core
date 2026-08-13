@@ -236,11 +236,12 @@ export class MeterValueUtils {
   }
 
   /**
-   * Convert a sampled value to kWh, applying unit multipliers.
+   * Convert a sampled energy value to kWh, applying the unit multiplier and Wh→kWh factor.
+   * A missing unit is treated as Wh. Throws for a genuinely unknown energy unit.
    * @param value A SampledValueType entry.
-   * @returns The converted value in kWh, or null if unit is missing.
+   * @returns The converted value in kWh.
    */
-  private static normalizeToKwh(value: SampledValue): number | null {
+  public static normalizeToKwh(value: SampledValue): number | null {
     let powerOfTen = value.unitOfMeasure?.multiplier ?? 0;
     const unit = value.unitOfMeasure?.unit?.toUpperCase();
 

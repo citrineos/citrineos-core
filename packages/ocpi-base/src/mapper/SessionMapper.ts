@@ -25,6 +25,7 @@ import { LocationsService } from '../services/LocationsService.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
 import { OcpiGraphqlClient } from '../graphql/index.js';
+import { MeterValueUtils } from '@citrineos/base';
 
 @Service()
 export class SessionMapper extends BaseTransactionMapper {
@@ -383,20 +384,20 @@ export class SessionMapper extends BaseTransactionMapper {
           break;
         case OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register:
           if (!sampledValue.phase) {
-            cdrDimensions.push({
-              type: CdrDimensionType.ENERGY_IMPORT,
-              volume: Number(sampledValue.value),
-            });
-            const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
-            if (
-              previousEnergyImport !== undefined &&
-              !isNaN(Number(previousEnergyImport)) &&
-              !isNaN(Number(sampledValue.value))
-            ) {
+            // reading (commonly Wh) via the same conversion that feeds session.kwh.
+            const energyImportKwh = MeterValueUtils.normalizeToKwh(sampledValue);
+            if (energyImportKwh !== null && !isNaN(energyImportKwh)) {
               cdrDimensions.push({
-                type: CdrDimensionType.ENERGY,
-                volume: Number(sampledValue.value) - Number(previousEnergyImport),
+                type: CdrDimensionType.ENERGY_IMPORT,
+                volume: energyImportKwh,
               });
+              const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
+              if (previousEnergyImport !== undefined && !isNaN(previousEnergyImport)) {
+                cdrDimensions.push({
+                  type: CdrDimensionType.ENERGY,
+                  volume: energyImportKwh - previousEnergyImport,
+                });
+              }
             }
           }
           break;
@@ -415,14 +416,17 @@ export class SessionMapper extends BaseTransactionMapper {
     return cdrDimensions;
   }
 
-  private getEnergyImportForMeterValue(meterValue?: MeterValueDto) {
-    return (
-      meterValue?.sampledValue.find(
-        (sampledValue) =>
-          sampledValue.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register &&
-          !sampledValue.phase,
-      )?.value ?? undefined
+  private getEnergyImportForMeterValue(meterValue?: MeterValueDto): number | undefined {
+    const sampledValue = meterValue?.sampledValue.find(
+      (sampledValue) =>
+        sampledValue.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register &&
+        !sampledValue.phase,
     );
+    if (!sampledValue) {
+      return undefined;
+    }
+    // Return kWh to keep the ENERGY delta consistent with ENERGY_IMPORT.
+    return MeterValueUtils.normalizeToKwh(sampledValue) ?? undefined;
   }
 
   private getTimeElapsedForMeterValue(
