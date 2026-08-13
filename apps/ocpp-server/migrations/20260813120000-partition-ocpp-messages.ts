@@ -6,37 +6,7 @@
 import { QueryInterface, QueryTypes, Transaction } from 'sequelize';
 
 /**
- * Converts "OCPPMessages" to a weekly range-partitioned table with a rolling retention window.
- *
- * The table is the largest in the system (~127M rows, ~130 GB) and its retention requirement is two
- * weeks, so the migration is built to avoid rewriting it. A staging table is created, filled with
- * only the rows inside the retention window, indexed, and then swapped in by rename. The original
- * heap is never written to — it is only read, under ACCESS SHARE — and survives as
- * "OCPPMessages_old" so it can be archived and dropped out of band. ACCESS EXCLUSIVE is taken once,
- * at the rename, and held for the few catalog writes that follow.
- *
- * Rows are selected by primary-key watermark rather than by "createdAt", because there is no index
- * on "createdAt": a createdAt predicate would sequentially scan the entire heap. The watermark is
- * found by binary search over the primary key and then biased downward by ID_MARGIN, because id
- * order and "createdAt" order can disagree by the width of a concurrent transaction and a row
- * missed here would be lost when the old heap is dropped. The straggler check refuses to proceed if
- * that margin turns out to be too small.
- *
- * Three constraints follow from partitioning and are reflected in the models:
- *
- * - The primary key becomes the composite (id, "createdAt"); the partition key has to be in it.
- * - OCPPMessages_requestMessageId_fkey cannot be recreated, because a foreign key must target a
- *   complete unique key and (id) alone is no longer one. requestMessageId becomes a soft reference
- *   maintained solely by ocpp_correlate_response()/ocpp_correlate_call().
- * - No DEFAULT partition. It would swallow future-dated rows, block DETACH ... CONCURRENTLY, and
- *   force a scan of itself every time a new weekly partition is created. The oldest partition uses
- *   MINVALUE instead, which also absorbs the pre-cutoff rows the watermark margin pulls in.
- *
- * NOTE: this provisions WEEKS_AHEAD week(s) beyond the current one. With no DEFAULT partition,
- * inserts fail once that runway is exhausted. rotate_ocpp_messages_partitions() is created here for
- * that purpose but is NOT scheduled — it must be called periodically (pg_cron or an application
- * job) before the runway expires.
- *
+ * Weekly range partitions for "OCPPMessages" via staging table + rename swap: the heap is only read.
  * @type {import('sequelize-cli').Migration}
  */
 
@@ -59,10 +29,8 @@ const COLUMNS_QUALIFIED = `
   o."stationId", o.type, o.payload, o.raw`;
 
 /**
- * Largest id whose "createdAt" precedes the cutoff, minus ID_MARGIN.
- *
- * Probes the nearest EXISTING id at or above each midpoint: the key space has gaps, and testing a
- * single id and searching downward on a miss would move the upper bound past the real boundary.
+ * Largest id whose "createdAt" precedes the cutoff, minus ID_MARGIN. Used instead of a
+ * "createdAt" predicate, which would seq-scan the whole heap for want of an index.
  */
 async function findIdWatermark(
   queryInterface: QueryInterface,
@@ -73,8 +41,10 @@ async function findIdWatermark(
     `SELECT min(id)::text AS lo, max(id)::text AS hi FROM "OCPPMessages"`,
     { transaction, type: QueryTypes.SELECT },
   );
+  // the table exists but has no rows yet. 0 makes the copy a no-op while the rest of the
+  // migration still partitions the table.
   if (!bounds[0]?.lo) {
-    throw new Error('OCPPMessages is empty — refusing to guess a watermark');
+    return 0;
   }
 
   let lo = Number(bounds[0].lo);
@@ -83,14 +53,17 @@ async function findIdWatermark(
 
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
-    const probe = await queryInterface.sequelize.query<{ id: string; createdAt: Date }>(
-      `SELECT id::text AS id, "createdAt" FROM "OCPPMessages" WHERE id >= :mid ORDER BY id LIMIT 1`,
-      { transaction, type: QueryTypes.SELECT, replacements: { mid } },
+    const probe = await queryInterface.sequelize.query<{ id: string; isOlder: boolean }>(
+      `SELECT id::text AS id, ("createdAt" < :cutoff::timestamptz) AS "isOlder"
+         FROM "OCPPMessages"
+        WHERE id >= :mid AND id <= :hi
+        ORDER BY id LIMIT 1`,
+      { transaction, type: QueryTypes.SELECT, replacements: { mid, hi, cutoff } },
     );
 
     if (probe.length === 0) {
-      hi = mid - 1;
-    } else if (new Date(probe[0].createdAt) < new Date(cutoff)) {
+      hi = mid - 1; // no row exists in [mid, hi]
+    } else if (probe[0].isOlder) {
       watermark = Number(probe[0].id);
       lo = watermark + 1;
     } else {
@@ -130,7 +103,7 @@ export default {
       // it would be silently left behind. Index range scan over the margin band, not a seq scan.
       const [stragglers] = await queryInterface.sequelize.query<{ n: string }>(
         `SELECT count(*)::text AS n FROM "OCPPMessages"
-          WHERE id > :low AND id <= :watermark AND "createdAt" >= :cutoff`,
+          WHERE id > :low AND id <= :watermark AND "createdAt" >= :cutoff::timestamptz`,
         {
           transaction,
           type: QueryTypes.SELECT,
@@ -174,8 +147,10 @@ export default {
           PRIMARY KEY (id, "createdAt")
         ) PARTITION BY RANGE ("createdAt")`);
 
-      // The oldest partition uses MINVALUE so a late insert carrying an old "createdAt" — or a row
-      // pulled in by the watermark margin — still has somewhere to land instead of erroring.
+      // Oldest partition uses MINVALUE so an old "createdAt" — or a row pulled in by the
+      // watermark margin — still has somewhere to land. There is deliberately no DEFAULT
+      // partition, so inserts FAIL once WEEKS_AHEAD is exhausted:
+      // rotate_ocpp_messages_partitions() is created below but must be scheduled separately.
       await raw(
         `DO $$
         DECLARE
@@ -221,7 +196,9 @@ export default {
            ON "OCPPMessages_partition" ("tenantId", "ocppConnectionName", "correlationId")`,
       );
 
-      // Validated against only the copied rows. requestMessageId gets no foreign key — see header.
+      // Validated against only the copied rows. requestMessageId gets no foreign key: a FK must
+      // target a complete unique key, and (id) alone is no longer one. It becomes a soft
+      // reference maintained by ocpp_correlate_response()/ocpp_correlate_call().
       await raw(`
         ALTER TABLE "OCPPMessages_partition"
           ADD CONSTRAINT "OCPPMessages_tenantId_fkey" FOREIGN KEY ("tenantId")
@@ -355,12 +332,29 @@ export default {
         );
       }
 
-      // Carry back anything written since the swap, then discard the partitioned table.
+      // Carry back anything written since the swap. Triggers off for the copy:
+      // ocpp_correlate_call() takes an advisory lock per row, so a multi-row insert
+      // exhausts the lock table. The links are already resolved in the copied data.
+      // USER leaves the referential-integrity triggers active.
+      await raw(`ALTER TABLE "OCPPMessages_old" DISABLE TRIGGER USER`);
       await raw(`
         INSERT INTO "OCPPMessages_old" (${COLUMNS})
         SELECT ${COLUMNS} FROM "OCPPMessages" n
          WHERE NOT EXISTS (
            SELECT 1 FROM "OCPPMessages_old" o WHERE o.id = n.id)`);
+      await raw(`ALTER TABLE "OCPPMessages_old" ENABLE TRIGGER USER`);
+
+      // The sequence is OWNED BY the partitioned table's column, but
+      // "OCPPMessages_old".id still uses it as a DEFAULT, so the drop below is
+      // refused until ownership moves. Reassigning first also means the rename
+      // that follows leaves ownership already pointing at the right column.
+      const [seqMeta] = await queryInterface.sequelize.query<{ seq: string | null }>(
+        `SELECT pg_get_serial_sequence('"OCPPMessages"', 'id') AS seq`,
+        { transaction, type: QueryTypes.SELECT },
+      );
+      if (seqMeta?.seq) {
+        await raw(`ALTER SEQUENCE ${seqMeta.seq} OWNED BY "OCPPMessages_old".id`);
+      }
 
       await raw(`DROP TABLE "OCPPMessages"`);
       await raw(`ALTER TABLE "OCPPMessages_old" RENAME TO "OCPPMessages"`);
@@ -376,23 +370,27 @@ export default {
           END LOOP;
         END $$`);
 
-      const [meta] = await queryInterface.sequelize.query<{ seq: string }>(
-        `SELECT pg_get_serial_sequence('"OCPPMessages"', 'id') AS seq`,
-        { transaction, type: QueryTypes.SELECT },
-      );
-      if (meta?.seq) {
-        await raw(`ALTER SEQUENCE ${meta.seq} OWNED BY "OCPPMessages".id`);
-      }
+      // `up` leaves the original table's own constraints and triggers untouched, so the
+      // table restored above normally still carries them. Both restorations are therefore
+      // guarded rather than unconditional. CREATE TRIGGER and ADD CONSTRAINT would
+      // otherwise fail with "already exists".
+      await raw(`DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+             WHERE conname = 'OCPPMessages_requestMessageId_fkey'
+               AND conrelid = '"OCPPMessages"'::regclass
+          ) THEN
+            ALTER TABLE "OCPPMessages"
+              ADD CONSTRAINT "OCPPMessages_requestMessageId_fkey"
+              FOREIGN KEY ("requestMessageId") REFERENCES "OCPPMessages"(id)
+              ON UPDATE CASCADE ON DELETE SET NULL;
+          END IF;
+        END $$`);
 
-      // Restore the self-referencing foreign key the partitioned form could not carry.
+      // CREATE OR REPLACE TRIGGER is idempotent (PG14+).
       await raw(`
-        ALTER TABLE "OCPPMessages"
-          ADD CONSTRAINT "OCPPMessages_requestMessageId_fkey"
-          FOREIGN KEY ("requestMessageId") REFERENCES "OCPPMessages"(id)
-          ON UPDATE CASCADE ON DELETE SET NULL`);
-
-      await raw(`
-        CREATE TRIGGER "trg_ocpp_correlate_response"
+        CREATE OR REPLACE TRIGGER "trg_ocpp_correlate_response"
           BEFORE INSERT ON "OCPPMessages"
           FOR EACH ROW
           WHEN (
@@ -402,13 +400,13 @@ export default {
           )
           EXECUTE FUNCTION ocpp_correlate_response()`);
       await raw(`
-        CREATE TRIGGER "trg_ocpp_correlate_call"
+        CREATE OR REPLACE TRIGGER "trg_ocpp_correlate_call"
           AFTER INSERT ON "OCPPMessages"
           FOR EACH ROW
           WHEN (NEW."correlationId" IS NOT NULL AND NEW."type" = 2)
           EXECUTE FUNCTION ocpp_correlate_call()`);
       await raw(`
-        CREATE TRIGGER "trigger_populate_ocppmessages_station_id"
+        CREATE OR REPLACE TRIGGER "trigger_populate_ocppmessages_station_id"
           BEFORE INSERT OR UPDATE ON "OCPPMessages"
           FOR EACH ROW WHEN (NEW."stationId" IS NULL)
           EXECUTE FUNCTION populate_station_id()`);
