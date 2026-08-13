@@ -26,9 +26,16 @@ export const bootstrapConfigSchema = z.object({
         idle: z.number().int().positive().optional(),
       })
       .optional(),
+    schema: z.string().default('public'),
     sync: z.boolean().default(false),
     alter: z.boolean().default(false),
     force: z.boolean().default(false),
+    // Verify at startup that the live schema still matches the Sequelize models
+    // and refuse to start if it does not. `validateSchemaSeverity: 'warn'`
+    // reports drift without blocking startup, for rolling this out onto an
+    // existing deployment before switching it to a hard gate.
+    validateSchema: z.boolean().default(true),
+    validateSchemaSeverity: z.enum(['error', 'warn']).default('error'),
     maxRetries: z.number().int().positive().default(3),
     retryDelay: z.number().int().positive().default(1000),
     ssl: z
@@ -123,6 +130,11 @@ export function loadBootstrapConfig(): BootstrapConfig {
       dialect: getEnvVarValue('database_dialect'),
       username: getEnvVarValue('database_username'),
       password: getEnvVarValue('database_password'),
+      schema: getEnvVarValue('database_schema'),
+      validateSchema:
+        getEnvVarValue('database_validate_schema') &&
+        parseEnvValue(getEnvVarValue('database_validate_schema')!),
+      validateSchemaSeverity: getEnvVarValue('database_validate_schema_severity'),
       sync: getEnvVarValue('database_sync') && parseEnvValue(getEnvVarValue('database_sync')!),
       alter: getEnvVarValue('database_alter') && parseEnvValue(getEnvVarValue('database_alter')!),
       force: getEnvVarValue('database_force') && parseEnvValue(getEnvVarValue('database_force')!),

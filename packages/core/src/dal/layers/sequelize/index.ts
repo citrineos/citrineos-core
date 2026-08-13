@@ -101,6 +101,20 @@ export { SequelizeDeleteCertificateAttemptRepository } from './repository/Delete
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util.js';
+export {
+  assertSchemaMatches,
+  compareNullability,
+  compareTypes,
+  DEFAULT_SCHEMA,
+  formatReport,
+  SchemaValidationError,
+  validateSchema,
+  type SchemaFinding,
+  type SchemaFindingKind,
+  type SchemaFindingSeverity,
+  type SchemaValidationOptions,
+  type SchemaValidationReport,
+} from './SchemaValidator.js';
 
 // Sequelize Mappers
 export * as OCPP2_0_1_Mapper from './mapper/2.0.1/index.js';

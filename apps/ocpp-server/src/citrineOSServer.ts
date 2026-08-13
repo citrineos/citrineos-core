@@ -5,19 +5,19 @@
 import { asValue, type AwilixContainer } from 'awilix';
 import {
   type AbstractModule,
+  Ajv,
   type BootstrapConfig,
+  ConfigStoreFactory,
   type IApiAuthProvider,
+  type IAuthenticator,
   type ICache,
   type IFileStorage,
   type IMessageRouter,
   type IModule,
   type IModuleApi,
-  Ajv,
-  ConfigStoreFactory,
-  type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig, EventGroup, eventGroupFromString } from '@citrineos/types';
+import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
 import {
   AdminApi,
   apiAuthPluginFp,
@@ -31,6 +31,7 @@ import {
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RedisCache,
+  type SchemaValidationReport,
   sequelize,
   Sequelize,
   WebsocketNetworkConnection,
@@ -82,6 +83,7 @@ export class CitrineOSServer {
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
+  protected _schemaValidationReport: SchemaValidationReport | null = null;
 
   // Single source of truth mapping each module's EventGroup to the container
   // tokens + config flag needed to initialize it. initAllModules() and
@@ -436,7 +438,15 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
-    if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
+    // Throws on drift between the models and the live schema, aborting startup.
+    // Runs before anything else touches the database so a mismatch surfaces
+    // here rather than on whichever query happens to hit the bad column first.
+    this._schemaValidationReport = await sequelize.assertSchemaMatches(
+      this._sequelizeInstance,
+      this._config.database,
+      this._logger,
+    );
+    if (process.env.CITRINEOS_1USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
   }
@@ -453,6 +463,7 @@ export class CitrineOSServer {
       this._config.notReadyThresholdSeconds,
       this._logger,
     );
+    this._healthCheckService.setSchemaValidationReport(this._schemaValidationReport);
   }
 
   protected registerShutdownHandlers(): void {
