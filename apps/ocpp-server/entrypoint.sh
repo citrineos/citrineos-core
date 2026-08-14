@@ -15,6 +15,9 @@ else
     (cd "$SCRIPT_DIR" && pnpm run db:migrate)
 fi
 
+# "OCPPMessages" is partitioned by week; this runs every start.
+node "$SCRIPT_DIR/dist/scripts/provision-partitions.js"
+
 echo "Starting application..."
 exec node "$SCRIPT_DIR/dist/index.js"
 

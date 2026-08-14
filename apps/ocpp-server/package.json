@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "db:partitions": "(test -f ./dist/scripts/provision-partitions.js || (rm -f tsconfig.tsbuildinfo && pnpm run build)) && node ./dist/scripts/provision-partitions.js",
     "start": "cross-env APP_NAME=all APP_ENV=local BOOTSTRAP_CITRINEOS_CONFIG_FILENAME=config.json BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH=/data nodemon",
     "start:everest": "cd ./everest && cross-env OCPP_VERSION=2.1 EVEREST_IMAGE_TAG=2025.6.1-dt-esdp docker compose up -d",
     "start:everest:16": "cd ./everest && cross-env OCPP_VERSION=1.6 EVEREST_IMAGE_TAG=2025.6.1-dt-esdp docker compose up -d"
