@@ -384,9 +384,10 @@ export class SessionMapper extends BaseTransactionMapper {
           break;
         case OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register:
           if (!sampledValue.phase) {
+            // OCPI energy dimensions are expressed in kWh; normalize the raw meter
             // reading (commonly Wh) via the same conversion that feeds session.kwh.
             const energyImportKwh = MeterValueUtils.normalizeToKwh(sampledValue);
-            if (energyImportKwh !== null && !isNaN(energyImportKwh)) {
+            if (!isNaN(energyImportKwh)) {
               cdrDimensions.push({
                 type: CdrDimensionType.ENERGY_IMPORT,
                 volume: energyImportKwh,
@@ -426,7 +427,7 @@ export class SessionMapper extends BaseTransactionMapper {
       return undefined;
     }
     // Return kWh to keep the ENERGY delta consistent with ENERGY_IMPORT.
-    return MeterValueUtils.normalizeToKwh(sampledValue) ?? undefined;
+    return MeterValueUtils.normalizeToKwh(sampledValue);
   }
 
   private getTimeElapsedForMeterValue(
