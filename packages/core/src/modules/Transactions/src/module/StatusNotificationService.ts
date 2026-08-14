@@ -76,13 +76,21 @@ export class StatusNotificationService {
       const matchingEvse = chargingStation.evses?.find(
         (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
       );
+      // The request's connectorId is scoped to the EVSE, so it is matched against
+      // evseTypeConnectorId - the same key the transaction path uses
+      // (TransactionEvent.createOrUpdateTransactionByTransactionEventRequest).
+      // Matching it against Connector.connectorId, which is the station-wide 1.6
+      // numbering, makes every EVSE's "connector 1" resolve to the same row.
       const matchingConnector = (matchingEvse?.connectors as Connector[] | undefined)?.find(
-        (c) => c.connectorId === statusNotificationRequest.connectorId,
+        (c) => c.evseTypeConnectorId === statusNotificationRequest.connectorId,
       );
 
       const connector = {
         tenantId,
-        connectorId: statusNotificationRequest.connectorId,
+        // createOrUpdateConnector upserts on (ocppConnectionName, connectorId), so this has to be
+        // the matched row's station-wide number. Writing the EVSE-scoped one collapses a
+        // multi-EVSE station onto a single Connector row, last notification wins.
+        connectorId: matchingConnector?.connectorId ?? statusNotificationRequest.connectorId,
         ocppConnectionName: ocppConnectionName,
         evseId: matchingConnector?.evseId ?? matchingEvse?.id,
         evseTypeConnectorId: matchingConnector?.evseTypeConnectorId,
