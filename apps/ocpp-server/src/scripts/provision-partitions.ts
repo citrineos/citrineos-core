@@ -10,7 +10,7 @@ import { loadBootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
 /** Weeks of partitions to keep ahead of the current one. */
-const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 2);
+const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 1);
 
 async function main(): Promise<void> {
   const { host, port, database, username, password, ssl } = loadBootstrapConfig().database;
