@@ -25,6 +25,7 @@ WORKDIR /usr/local/apps/citrineos
 
 RUN chmod +x /usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh
 
-EXPOSE ${PORT}
+# REST API, websocket servers (security profiles 0-3)
+EXPOSE 8080 8081 8082 8443 8444
 
 ENTRYPOINT ["/usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh"]
