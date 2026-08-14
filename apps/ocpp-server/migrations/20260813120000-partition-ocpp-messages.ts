@@ -149,10 +149,10 @@ export default {
           PRIMARY KEY (id, "createdAt")
         ) PARTITION BY RANGE ("createdAt")`);
 
-      // Oldest partition uses MINVALUE so an old "createdAt" — or a row pulled in by the
-      // watermark margin — still has somewhere to land. There is deliberately no DEFAULT
-      // partition, so inserts FAIL once WEEKS_AHEAD is exhausted:
-      // rotate_ocpp_messages_partitions() is created below but must be scheduled separately.
+      // Oldest partition keeps MINVALUE purely as a safety net: with no DEFAULT partition, a row
+      // whose "createdAt" predates the cutoff would otherwise fail to insert. Nothing older than
+      // the cutoff is ever copied here, so it stays empty of old data — that lives in
+      // "OCPPMessages_old" until archived. Inserts FAIL once WEEKS_AHEAD is exhausted.
       await raw(
         `DO $$
         DECLARE
@@ -176,12 +176,15 @@ export default {
         END $$`,
       );
 
-      // Primary-key range scan over the live table under ACCESS SHARE. No triggers exist on the
-      // staging table yet, so requestMessageId links transfer verbatim rather than being re-derived.
+      // The id predicate is for SPEED (index range scan instead of a seq scan); the "createdAt"
+      // predicate is for CORRECTNESS. Without the latter, an ID_MARGIN wider than the table's id
+      // range clamps the watermark to 0 and the whole heap is copied — old data belongs only in
+      // "OCPPMessages_old". No triggers on the staging table yet, so links transfer verbatim.
       await raw(
         `INSERT INTO "OCPPMessages_partition" (${COLUMNS})
-         SELECT ${COLUMNS} FROM "OCPPMessages" WHERE id > :watermark`,
-        { watermark },
+         SELECT ${COLUMNS} FROM "OCPPMessages"
+          WHERE id > :watermark AND "createdAt" >= :cutoff::timestamptz`,
+        { watermark, cutoff },
       );
 
       await raw(
@@ -213,16 +216,18 @@ export default {
       await raw(`ALTER TABLE "OCPPMessages_partition" RENAME TO "OCPPMessages"`);
 
       // Rows written to the old heap after the bulk copy began. Anti-joined on the primary key
-      // rather than trusting the watermark alone, because concurrent inserts commit out of id order.
+      // rather than trusting the watermark alone, because concurrent inserts commit out of id
+      // order. Same "createdAt" bound as the bulk copy: only the retention window moves across.
       await raw(
         `INSERT INTO "OCPPMessages" (${COLUMNS})
          SELECT ${COLUMNS_QUALIFIED}
            FROM "OCPPMessages_old" o
           WHERE o.id > :watermark
+            AND o."createdAt" >= :cutoff::timestamptz
             AND NOT EXISTS (
               SELECT 1 FROM "OCPPMessages" n
                WHERE n.id = o.id AND n."createdAt" = o."createdAt")`,
-        { watermark },
+        { watermark, cutoff },
       );
 
       // The sequence still belongs to the old heap's column; dropping that table later would take
