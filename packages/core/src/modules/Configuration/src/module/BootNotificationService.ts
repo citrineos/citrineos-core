@@ -305,13 +305,11 @@ export class BootNotificationService {
     if (bootNotificationResponseStatus === OCPP1_6.BootNotificationResponseStatus.Accepted) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(
-          async (action) => {
-            if (action !== OCPP_CallAction.BootNotification) {
-              return this._cache.remove(action, ocppConnectionName);
-            }
-          },
-        );
+        const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(async (action) => {
+          if (action !== OCPP_CallAction.BootNotification) {
+            return this._cache.remove(action, ocppConnectionName);
+          }
+        });
         await Promise.all(promises);
         // Remove cached boot status
         await this._cache.remove(BOOT_STATUS, ocppConnectionName);
