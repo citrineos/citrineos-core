@@ -35,6 +35,10 @@ export interface RealTimeAuthorizationResponse {
   };
 }
 
+// The realtime-auth request runs inside Authorize/TransactionEvent handling, so a
+// hung endpoint would stall the charger's OCPP call past its own timeout.
+const REAL_TIME_AUTH_FETCH_TIMEOUT_MS = 30_000;
+
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
   private _config: SystemConfig;
@@ -165,6 +169,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(REAL_TIME_AUTH_FETCH_TIMEOUT_MS),
       });
 
       const responseJson = await response.json();
