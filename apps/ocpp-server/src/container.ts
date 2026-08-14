@@ -256,7 +256,15 @@ function registerMessaging(container: AwilixContainer): void {
     ).singleton(),
     routerHandler: asFunction(
       ({ config, channelManager, logger }) =>
-        new RabbitMqReceiver({ config, channelManager, logger }),
+        new RabbitMqReceiver({
+          config,
+          channelManager,
+          logger,
+          // Instance-scoped queue mode (one queue per router process instead of one
+          // per connected station) is opt-in: it only makes sense when the operator
+          // gives each process a stable identity, e.g. the pod name.
+          routerMode: !!config.util.messageBroker.amqp?.instanceIdentifier,
+        }),
     ).singleton(),
   });
 }
