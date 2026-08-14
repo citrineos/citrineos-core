@@ -7,6 +7,7 @@ import {
   type AuthorizationDto,
   type ChargingStationDto,
   type ChargingStationSequenceDto,
+  type EvseDto,
   AuthorizationProps,
   BaseProps,
   ChargingStationSequenceTypeEnum,
@@ -23,7 +24,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useCustom, useSelect, useTranslate } from '@refinedev/core';
+import { useCustom, useInvalidate, useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -36,6 +37,8 @@ import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface OCPP2_0_1_RemoteStartProps {
   station: ChargingStationDto;
+  /** Preselects the EVSE, for callers that already know which one - e.g. the per-EVSE start button. */
+  evse?: EvseDto;
 }
 
 export type RemoteStartFormData = {
@@ -44,10 +47,24 @@ export type RemoteStartFormData = {
   evse?: string;
 };
 
-export const OCPP2_0_1_RemoteStart = ({ station }: OCPP2_0_1_RemoteStartProps) => {
+/** Grace period for the charger to report the transaction actually started or ended. */
+const TRANSACTION_SETTLE_MS = 4000;
+
+export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
+  const invalidate = useInvalidate();
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Must match the option value EvseSelector builds, or the combobox has nothing to match against
+  // and renders its placeholder despite the form holding a value.
+  const preselectedEvse = useMemo(
+    () =>
+      evse?.id !== undefined
+        ? JSON.stringify({ id: evse.id, evseTypeId: evse.evseTypeId })
+        : '',
+    [evse],
+  );
 
   const tenantId = useTenantId();
 
@@ -70,7 +87,7 @@ export const OCPP2_0_1_RemoteStart = ({ station }: OCPP2_0_1_RemoteStartProps) =
     defaultValues: {
       remoteStartId: 0,
       authorization: '',
-      evse: '',
+      evse: preselectedEvse,
     },
   });
 
@@ -165,6 +182,11 @@ export const OCPP2_0_1_RemoteStart = ({ station }: OCPP2_0_1_RemoteStartProps) =
     }).then(() => {
       form.reset();
       dispatch(closeModal());
+      // Same reasoning as the remote stop modal: nothing refreshes the station's active
+      // transactions on its own, and RequestStartTransaction resolves on acceptance rather than on
+      // the charger's TransactionEvent(Started), so refetch once now and once after it settles.
+      invalidate({ invalidates: ['all'] });
+      setTimeout(() => invalidate({ invalidates: ['all'] }), TRANSACTION_SETTLE_MS);
     });
   };
 

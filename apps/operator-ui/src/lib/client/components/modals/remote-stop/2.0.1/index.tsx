@@ -14,21 +14,27 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useTranslate } from '@refinedev/core';
+import { useInvalidate, useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface OCPP2_0_1_RemoteStopProps {
   station: ChargingStationWithTransactionsDto;
+  /** Preselects the transaction, for callers that already know which one - e.g. a per-EVSE button. */
+  transactionId?: string;
 }
 
 type RemoteStopFormData = {
   transactionId: string;
 };
 
-export const OCPP2_0_1_RemoteStop = ({ station }: OCPP2_0_1_RemoteStopProps) => {
+/** Grace period for the charger to report the transaction actually started or ended. */
+const TRANSACTION_SETTLE_MS = 4000;
+
+export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_RemoteStopProps) => {
   const translate = useTranslate();
+  const invalidate = useInvalidate();
   const unknownEvse = translate('ChargingStations.remoteStopModal.unknownEvse');
   const evseMap: Map<number, EvseDto> = useMemo(() => {
     if (!station.evses) return new Map<number, EvseDto>();
@@ -68,15 +74,31 @@ export const OCPP2_0_1_RemoteStop = ({ station }: OCPP2_0_1_RemoteStopProps) => 
       setLoading,
     }).then(() => {
       dispatch(closeModal());
+      // The station's start/stop buttons are derived from its active transactions, and nothing
+      // refreshes them on its own: liveMode is inert here because the Hasura live provider has no
+      // gqlSubscription to subscribe with. Without this the operator is left looking at Stop for an
+      // EVSE that has already stopped.
+      //
+      // RequestStopTransaction only resolves to the charger's *acceptance*; the transaction is not
+      // closed until it sends TransactionEvent(Ended) a moment later. So refetch again shortly
+      // after - the first pass keeps the UI honest if the stop is rejected, the second picks up the
+      // actual end. This is a heuristic, and a page reload remains the guarantee.
+      invalidate({ invalidates: ['all'] });
+      setTimeout(() => invalidate({ invalidates: ['all'] }), TRANSACTION_SETTLE_MS);
     });
   };
 
-  // Set initial value when transactions are loaded
+  // Set initial value when transactions are loaded, preferring the caller's choice over the first
+  // one on the station - otherwise a per-EVSE stop button would arm the wrong transaction.
   useEffect(() => {
+    if (transactionId) {
+      form.setValue('transactionId', transactionId);
+      return;
+    }
     if (station.transactions && station.transactions.length > 0) {
       form.setValue('transactionId', station.transactions[0].transactionId);
     }
-  }, [station, form]);
+  }, [station, form, transactionId]);
 
   // Filter out inactive transactions
   const activeTransactions = station.transactions

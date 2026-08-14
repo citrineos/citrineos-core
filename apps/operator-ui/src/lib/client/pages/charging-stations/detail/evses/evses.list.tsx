@@ -3,13 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ChevronDown } from 'lucide-react';
-import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/types';
+import type { ConnectorDto, EvseDto } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
+import { ModalComponentType } from '@lib/client/components/modals/modal.types';
+import { openModal as openTransactionModal } from '@lib/utils/store/modal.slice';
+import { instanceToPlain } from 'class-transformer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@lib/client/components/ui/dialog';
 import { ConnectorsTable } from '@lib/client/pages/charging-stations/detail/connectors/connectors.table';
 import { ConnectorsUpsert } from '@lib/client/pages/charging-stations/detail/connectors/connectors.upsert';
 import { EvseUpsert } from '@lib/client/pages/charging-stations/detail/evses/evses.upsert';
-import { ChargingStationClass } from '@lib/cls/charging.station.dto';
+import {
+  ChargingStationClass,
+  type ChargingStationDetailsDto,
+} from '@lib/cls/charging.station.dto';
 import type { ConnectorClass } from '@lib/cls/connector.dto';
 import type { EvseClass } from '@lib/cls/evse.dto';
 import { CHARGING_STATIONS_GET_QUERY } from '@lib/queries/charging.stations';
@@ -26,6 +32,10 @@ interface EVSESListProps {
 
 export const evsesFormUpsertGrid = 'grid grid-cols-2 xs:grid-cols-1 gap-6';
 
+// The station detail query omits `station` and `location` from each transaction, so this is
+// narrower than TransactionDto. Derive it rather than restate it.
+type StationTransaction = NonNullable<ChargingStationDetailsDto['transactions']>[number];
+
 export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
   const translate = useTranslate();
   const dispatch = useDispatch();
@@ -36,7 +46,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
 
   const {
     query: { data, isLoading, refetch },
-  } = useOne<ChargingStationDto>({
+  } = useOne<ChargingStationDetailsDto>({
     resource: ResourceType.CHARGING_STATIONS,
     id,
     meta: {
@@ -46,9 +56,51 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
   });
 
   const station = React.useMemo(() => {
-    const station = { ...data?.data } as ChargingStationDto;
+    const station = { ...data?.data } as ChargingStationDetailsDto;
     return station;
   }, [data?.data]);
+
+  // Transaction.evseId is the Evses primary key, the same value keying these rows. The query
+  // already restricts the relation to active transactions, and an EVSE runs at most one.
+  const activeTransactionsByEvse = useMemo(() => {
+    const byEvse = new Map<number, StationTransaction>();
+    for (const transaction of station.transactions ?? []) {
+      if (transaction.evseId != null) byEvse.set(transaction.evseId, transaction);
+    }
+    return byEvse;
+  }, [station.transactions]);
+
+  const openStartTransaction = useCallback(
+    (evse: EvseDto) => {
+      dispatch(
+        openTransactionModal({
+          title: translate('ChargingStations.remoteStart'),
+          modalComponentType: ModalComponentType.remoteStart,
+          modalComponentProps: {
+            station: instanceToPlain(station),
+            evse: instanceToPlain(evse),
+          },
+        }),
+      );
+    },
+    [dispatch, station, translate],
+  );
+
+  const openStopTransaction = useCallback(
+    (transaction: StationTransaction) => {
+      dispatch(
+        openTransactionModal({
+          title: translate('ChargingStations.remoteStop'),
+          modalComponentType: ModalComponentType.remoteStop,
+          modalComponentProps: {
+            station: instanceToPlain(station),
+            transactionId: transaction.transactionId,
+          },
+        }),
+      );
+    },
+    [dispatch, station, translate],
+  );
 
   const openModal = useCallback(
     (
@@ -210,6 +262,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                 const evseId = evse.id;
                 if (evseId === undefined) return null;
                 const isExpanded = expandedRowKeys.includes(evseId);
+                const activeTransaction = activeTransactionsByEvse.get(evseId);
 
                 return (
                   <React.Fragment key={evseId}>
@@ -246,6 +299,24 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                           >
                             {translate('ChargingStations.connectors.addConnector')}
                           </Button>
+                          {activeTransaction ? (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={!station.isOnline}
+                              onClick={() => openStopTransaction(activeTransaction)}
+                            >
+                              {translate('ChargingStations.stopTransaction')}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              disabled={!station.isOnline}
+                              onClick={() => openStartTransaction(evse)}
+                            >
+                              {translate('ChargingStations.startTransaction')}
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
