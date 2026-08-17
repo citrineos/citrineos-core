@@ -9,7 +9,7 @@ import {
   type TariffDto,
   type TransactionDto,
   type TransactionEventDto,
-  OCPP2_0_1,
+  MeasurandEnum,
 } from '@citrineos/types';
 import { AuthMethod } from '../model/AuthMethod.js';
 import type { ChargingPeriod } from '../model/ChargingPeriod.js';
@@ -374,7 +374,7 @@ export class SessionMapper extends BaseTransactionMapper {
     const cdrDimensions: CdrDimension[] = [];
     for (const sampledValue of meterValue.sampledValue) {
       switch (sampledValue.measurand) {
-        case OCPP2_0_1.MeasurandEnumType.Current_Import:
+        case MeasurandEnum['Current.Import']:
           if (sampledValue.phase === 'N') {
             cdrDimensions.push({
               type: CdrDimensionType.CURRENT,
@@ -382,7 +382,7 @@ export class SessionMapper extends BaseTransactionMapper {
             });
           }
           break;
-        case OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register:
+        case MeasurandEnum['Energy.Active.Import.Register']:
           if (!sampledValue.phase) {
             // OCPI energy dimensions are expressed in kWh; normalize the raw meter
             // reading (commonly Wh) via the same conversion that feeds session.kwh.
@@ -400,7 +400,7 @@ export class SessionMapper extends BaseTransactionMapper {
             }
           }
           break;
-        case OCPP2_0_1.MeasurandEnumType.SoC:
+        case MeasurandEnum['SoC']:
           cdrDimensions.push({
             type: CdrDimensionType.STATE_OF_CHARGE,
             volume: Number(sampledValue.value),
@@ -418,7 +418,7 @@ export class SessionMapper extends BaseTransactionMapper {
   private getEnergyImportForMeterValue(meterValue?: MeterValueDto): number | undefined {
     const sampledValue = meterValue?.sampledValue.find(
       (sampledValue) =>
-        sampledValue.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register &&
+        sampledValue.measurand === MeasurandEnum['Energy.Active.Import.Register'] &&
         !sampledValue.phase,
     );
     if (!sampledValue) {
