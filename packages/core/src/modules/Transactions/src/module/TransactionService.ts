@@ -278,10 +278,11 @@ export class TransactionService {
   ): Promise<MeterValue[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
-        const hasPeriodic: boolean = meterValue.sampledValue?.some(
-          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-        );
-        if (transactionDbId && hasPeriodic) {
+        // A reading belongs to whichever transaction was running on the EVSE, whatever its
+        // reading context. Requiring Sample.Periodic here orphaned every other context —
+        // Sample.Clock, Transaction.Begin/End, Trigger — which is most of what a 1.6-era
+        // charger reports outside a TransactionEvent.
+        if (transactionDbId) {
           return await this._transactionEventRepository.createMeterValue(
             tenantId,
             meterValue,

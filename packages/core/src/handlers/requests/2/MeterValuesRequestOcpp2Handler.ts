@@ -5,6 +5,7 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
+  type BootstrapConfig,
   type IMessage,
   type IOcppSender,
   OcppError,
@@ -14,6 +15,7 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  type SystemConfig,
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
@@ -35,11 +37,13 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
   constructor({
     logger,
     ocppSender,
+    config,
     costNotifier,
     signedMeterValuesUtil,
     transactionEventRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
+    config: BootstrapConfig & SystemConfig;
     costNotifier: CostNotifier;
     ocppSender: IOcppSender;
     signedMeterValuesUtil: SignedMeterValuesUtil;
@@ -53,6 +57,8 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     this._signedMeterValuesUtil = signedMeterValuesUtil;
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
+
+    this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
   }
 
   async handle(
@@ -72,7 +78,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     const evseId = message.payload.evseId;
 
     // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
-    if (this._sendCostUpdatedOnMeterValue && evseId !== 0) {
+    if (evseId !== 0) {
       const activeTransaction: Transaction | undefined =
         await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
           tenantId,
@@ -97,11 +103,15 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
 
       if (activeTransaction) {
         await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
-        await this._costNotifier.calculateCostAndNotify(
-          activeTransaction,
-          message.context.tenantId,
-          message.protocol,
-        );
+        // Only the CostUpdated call is optional; attaching the reading to its transaction
+        // and keeping totalKwh current are not.
+        if (this._sendCostUpdatedOnMeterValue) {
+          await this._costNotifier.calculateCostAndNotify(
+            activeTransaction,
+            message.context.tenantId,
+            message.protocol,
+          );
+        }
       }
     } else {
       await this._transactionService.createMeterValues(tenantId, meterValues);
