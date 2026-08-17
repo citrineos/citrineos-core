@@ -387,18 +387,16 @@ export class SessionMapper extends BaseTransactionMapper {
             // OCPI energy dimensions are expressed in kWh; normalize the raw meter
             // reading (commonly Wh) via the same conversion that feeds session.kwh.
             const energyImportKwh = MeterValueUtils.normalizeToKwh(sampledValue);
-            if (!isNaN(energyImportKwh)) {
+            cdrDimensions.push({
+              type: CdrDimensionType.ENERGY_IMPORT,
+              volume: energyImportKwh,
+            });
+            const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
+            if (previousEnergyImport !== undefined) {
               cdrDimensions.push({
-                type: CdrDimensionType.ENERGY_IMPORT,
-                volume: energyImportKwh,
+                type: CdrDimensionType.ENERGY,
+                volume: energyImportKwh - previousEnergyImport,
               });
-              const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
-              if (previousEnergyImport !== undefined && !isNaN(previousEnergyImport)) {
-                cdrDimensions.push({
-                  type: CdrDimensionType.ENERGY,
-                  volume: energyImportKwh - previousEnergyImport,
-                });
-              }
             }
           }
           break;
