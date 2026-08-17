@@ -30,7 +30,6 @@ type RemoteStopFormData = {
 };
 
 /** Grace period for the charger to report the transaction actually started or ended. */
-const TRANSACTION_SETTLE_MS = 4000;
 
 export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_RemoteStopProps) => {
   const translate = useTranslate();
@@ -74,17 +73,7 @@ export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_Remot
       setLoading,
     }).then(() => {
       dispatch(closeModal());
-      // The station's start/stop buttons are derived from its active transactions, and nothing
-      // refreshes them on its own: liveMode is inert here because the Hasura live provider has no
-      // gqlSubscription to subscribe with. Without this the operator is left looking at Stop for an
-      // EVSE that has already stopped.
-      //
-      // RequestStopTransaction only resolves to the charger's *acceptance*; the transaction is not
-      // closed until it sends TransactionEvent(Ended) a moment later. So refetch again shortly
-      // after - the first pass keeps the UI honest if the stop is rejected, the second picks up the
-      // actual end. This is a heuristic, and a page reload remains the guarantee.
       invalidate({ invalidates: ['all'] });
-      setTimeout(() => invalidate({ invalidates: ['all'] }), TRANSACTION_SETTLE_MS);
     });
   };
 

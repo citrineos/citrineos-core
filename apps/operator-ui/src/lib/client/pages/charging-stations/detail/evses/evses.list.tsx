@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ChevronDown } from 'lucide-react';
+import { CanAccess } from '@refinedev/core';
 import type { ConnectorDto, EvseDto } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
 import { ModalComponentType } from '@lib/client/components/modals/modal.types';
@@ -19,7 +20,7 @@ import {
 import type { ConnectorClass } from '@lib/cls/connector.dto';
 import type { EvseClass } from '@lib/cls/evse.dto';
 import { CHARGING_STATIONS_GET_QUERY } from '@lib/queries/charging.stations';
-import { ResourceType } from '@lib/utils/access.types';
+import { ActionType, CommandType, ResourceType } from '@lib/utils/access.types';
 import { setSelectedChargingStation } from '@lib/utils/store/selected.charging.station.slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { useOne, useTranslate } from '@refinedev/core';
@@ -300,22 +301,40 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                             {translate('ChargingStations.connectors.addConnector')}
                           </Button>
                           {activeTransaction ? (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              disabled={!station.isOnline}
-                              onClick={() => openStopTransaction(activeTransaction)}
+                            <CanAccess
+                              resource={ResourceType.CHARGING_STATIONS}
+                              action={ActionType.COMMAND}
+                              params={{
+                                id: station.id,
+                                commandType: CommandType.STOP_TRANSACTION,
+                              }}
                             >
-                              {translate('ChargingStations.stopTransaction')}
-                            </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={!station.isOnline}
+                                onClick={() => openStopTransaction(activeTransaction)}
+                              >
+                                {translate('ChargingStations.stopTransaction')}
+                              </Button>
+                            </CanAccess>
                           ) : (
-                            <Button
-                              size="sm"
-                              disabled={!station.isOnline}
-                              onClick={() => openStartTransaction(evse)}
+                            <CanAccess
+                              resource={ResourceType.CHARGING_STATIONS}
+                              action={ActionType.COMMAND}
+                              params={{
+                                id: station.id,
+                                commandType: CommandType.START_TRANSACTION,
+                              }}
                             >
-                              {translate('ChargingStations.startTransaction')}
-                            </Button>
+                              <Button
+                                size="sm"
+                                disabled={!station.isOnline}
+                                onClick={() => openStartTransaction(evse)}
+                              >
+                                {translate('ChargingStations.startTransaction')}
+                              </Button>
+                            </CanAccess>
                           )}
                         </div>
                       </td>

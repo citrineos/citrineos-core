@@ -74,6 +74,9 @@ export const ChargingStationDetailCard = ({
   } = useOne<ChargingStationDetailsDto>({
     resource: ResourceType.CHARGING_STATIONS,
     id,
+    // The query selects the station's active transactions, so subscribing keeps the start/stop
+    // controls in step with the charger without the page having to poll or guess.
+    liveMode: 'auto',
     meta: {
       gqlQuery: CHARGING_STATIONS_GET_QUERY,
     },
@@ -478,7 +481,9 @@ export const ChargingStationDetailCard = ({
                 {canStart && (
                   <StartTransactionButton station={station} disabled={!station.isOnline} />
                 )}
-                {canStop && <StopTransactionButton station={station} disabled={!station.isOnline} />}
+                {canStop && (
+                  <StopTransactionButton station={station} disabled={!station.isOnline} />
+                )}
                 <ResetButton station={station} disabled={!station.isOnline} />
                 <Button onClick={showOtherCommandsModal} disabled={!station.isOnline}>
                   <MoreHorizontal className={buttonIconSize} />

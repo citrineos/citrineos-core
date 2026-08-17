@@ -15,6 +15,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField, FormField } from '@lib/client/components/form/field';
+import { buildEvseOptionValue } from '@lib/client/components/modals/shared/evse-selector/evse.option.value';
 import { EvseSelector } from '@lib/client/components/modals/shared/evse-selector/evse.selector';
 import { Input } from '@lib/client/components/ui/input';
 import { ChargingStationSequenceClass } from '@lib/cls/charging.station.sequence.dto';
@@ -48,7 +49,6 @@ export type RemoteStartFormData = {
 };
 
 /** Grace period for the charger to report the transaction actually started or ended. */
-const TRANSACTION_SETTLE_MS = 4000;
 
 export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartProps) => {
   const dispatch = useDispatch();
@@ -59,10 +59,7 @@ export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartPr
   // Must match the option value EvseSelector builds, or the combobox has nothing to match against
   // and renders its placeholder despite the form holding a value.
   const preselectedEvse = useMemo(
-    () =>
-      evse?.id !== undefined
-        ? JSON.stringify({ id: evse.id, evseTypeId: evse.evseTypeId })
-        : '',
+    () => (evse?.id !== undefined ? buildEvseOptionValue(evse) : ''),
     [evse],
   );
 
@@ -182,11 +179,7 @@ export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartPr
     }).then(() => {
       form.reset();
       dispatch(closeModal());
-      // Same reasoning as the remote stop modal: nothing refreshes the station's active
-      // transactions on its own, and RequestStartTransaction resolves on acceptance rather than on
-      // the charger's TransactionEvent(Started), so refetch once now and once after it settles.
       invalidate({ invalidates: ['all'] });
-      setTimeout(() => invalidate({ invalidates: ['all'] }), TRANSACTION_SETTLE_MS);
     });
   };
 
