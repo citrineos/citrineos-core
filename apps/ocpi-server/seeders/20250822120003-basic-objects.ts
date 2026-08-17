@@ -161,7 +161,9 @@ export default {
       ocppConnectionName: STATION_NAME,
       evseTypeId: 1,
       evseId: 'US*TST*E123456*1', // eMI3 compliant EVSE ID format
-      physicalReference: 'EVSE-001-PHYSICAL',
+      // OCPI caps physical_reference at 16 chars; keep the sample value inside it
+      // so the seeded data does not violate the spec it is used to demonstrate.
+      physicalReference: 'EVSE-001-PHYS',
       removed: false,
       tenantId: TENANT_ID,
       createdAt: now,

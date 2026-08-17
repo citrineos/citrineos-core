@@ -42,11 +42,13 @@ export class CommandBar {
   // by the parametric harness for modals not exposed as primary buttons.
   async openViaOtherCommands(commandNamePattern: RegExp): Promise<void> {
     await this.otherCommandsButton.click();
-    await this.page
+    await this.page.getByRole('dialog').first().waitFor({ state: 'visible', timeout: 30_000 });
+    const entry = this.page
       .getByRole('option', { name: commandNamePattern })
       .or(this.page.getByRole('menuitem', { name: commandNamePattern }))
       .or(this.page.getByRole('button', { name: commandNamePattern }))
-      .first()
-      .click();
+      .first();
+    await entry.waitFor({ state: 'visible', timeout: 30_000 });
+    await entry.click();
   }
 }

@@ -43,12 +43,16 @@ export class AuthorizationFormPage {
   }
 
   async gotoNew(): Promise<void> {
-    await this.page.goto(AuthorizationFormPage.newPath);
+    await this.page.goto(AuthorizationFormPage.newPath, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
   async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(AuthorizationFormPage.editPath(id));
+    await this.page.goto(AuthorizationFormPage.editPath(id), {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 
@@ -87,10 +91,14 @@ export class AuthorizationFormPage {
 
   async submit(): Promise<void> {
     await this.submitButton.click();
-    await this.page
-      .getByRole('region', { name: /notifications/i })
-      .getByText(/(success|created|updated|saved)/i)
-      .first()
-      .waitFor({ state: 'visible', timeout: 30_000 });
+    // Toast or redirect — the toast auto-dismisses and can be missed under load.
+    await Promise.any([
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .getByText(/(success|created|updated|saved)/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 }),
+      this.page.waitForURL(/\/authorizations\/\d+$/, { timeout: 30_000 }),
+    ]);
   }
 }

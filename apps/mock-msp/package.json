@@ -1,0 +1,42 @@
+{
+  "name": "@citrineos/mock-msp",
+  "version": "0.0.0",
+  "description": "Mock eMSP (OCPI 2.2.1) for testing CitrineOS CPO-side OCPI",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -b tsconfig.json --pretty",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "author": "S44",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/ocpi-base": "workspace:*",
+    "fastify": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@types/node": "^25.3.3",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  }
+}

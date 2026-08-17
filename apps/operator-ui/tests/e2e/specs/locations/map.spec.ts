@@ -39,6 +39,7 @@ test.describe('locations › map', () => {
 
     const list = new LocationsListPage(page);
     await list.goto();
+    await list.searchInput.fill(seededLocation.name);
     await expect(list.rowByName(seededLocation.name)).toBeVisible({
       timeout: 15_000,
     });

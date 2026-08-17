@@ -32,7 +32,7 @@ test.describe('charging-stations › list', () => {
     await list.goto();
     await list.searchInput.fill('e2e-nonexistent-cp-XXXXXXXX');
     await expect(list.noResultsMessage).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('row').filter({ hasText: 'e2e-' })).toHaveCount(0);
+    await expect(list.rowById('e2e-nonexistent-cp-XXXXXXXX')).toHaveCount(0);
   });
 
   test('E2E-045: Online indicator visible on @everest cp001 row @everest', async ({

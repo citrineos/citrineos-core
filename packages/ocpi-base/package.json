@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/ocpi-base",
-  "version": "3.0.0-beta2",
+  "version": "3.0.0-beta3",
   "description": "The base module for OCPI including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "type": "module",
   "main": "dist/index.js",

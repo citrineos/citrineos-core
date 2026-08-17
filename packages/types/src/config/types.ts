@@ -329,9 +329,6 @@ export const systemConfigInputSchema = z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().min(1).default(8085).optional(),
   }),
-  userPreferences: z.object({
-    telemetryConsent: z.boolean().default(false).optional(),
-  }),
   rbacRulesFileName: z.string().default('rbac-rules.json').optional(),
   rbacRulesDir: z.string().optional(),
   realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15).optional(),
@@ -671,9 +668,6 @@ export const systemConfigSchema = z
     ocpiServer: z.object({
       host: z.string(),
       port: z.number().int().min(1),
-    }),
-    userPreferences: z.object({
-      telemetryConsent: z.boolean().optional(),
     }),
     rbacRulesFileName: z.string().optional(),
     rbacRulesDir: z.string().optional(),

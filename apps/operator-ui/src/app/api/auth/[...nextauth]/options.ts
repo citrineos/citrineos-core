@@ -196,6 +196,11 @@ const authOptions: AuthOptions = {
     async session({ session, token }) {
       // Pass JWT info to client session
       if (session.user) {
+        // The subject claim is the only stable per-user identifier available to the
+        // client. Without it every user collapses onto the same fallback id, which
+        // makes anything keyed on identity (per-user modals, preferences) behave as
+        // though it were deployment-wide.
+        (session.user as any).sub = token.sub;
         (session.user as any).roles = token.roles;
         (session.user as any).tenantId = token.tenantId;
       }
