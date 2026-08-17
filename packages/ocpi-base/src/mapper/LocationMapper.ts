@@ -227,11 +227,11 @@ export class EvseMapper {
     return {
       uid: UID_FORMAT(station.ocppConnectionName, evse.id!),
       evse_id: evse.evseId,
-      status: connectors
-        ? EvseMapper.mapEvseStatusFromConnectors(
-            evse.connectors!.filter((c) => connectors.some((con) => con!.id === c.id!.toString())),
-          )
-        : EvseStatus.UNKNOWN,
+      // EVSE status is derived from the raw connector statuses, independent of
+      // whether each connector has complete metadata to render for OCPI. A busy
+      // connector that is dropped from the rendered list (e.g. missing
+      // max_voltage) still makes the EVSE report CHARGING rather than UNKNOWN.
+      status: EvseMapper.mapEvseStatusFromConnectors(evse.connectors ?? []),
       capabilities: station.capabilities
         ?.map((c) => EvseMapper.mapEvseCapabilities(c))
         .filter((c) => c !== null),
@@ -262,10 +262,9 @@ export class EvseMapper {
     return {
       evse_id: evse.evseId,
       status:
-        connectors &&
-        EvseMapper.mapEvseStatusFromConnectors(
-          evse.connectors!.filter((c) => connectors.some((con) => con!.id === c.id!.toString())),
-        ),
+        evse.connectors && evse.connectors.length > 0
+          ? EvseMapper.mapEvseStatusFromConnectors(evse.connectors)
+          : undefined,
       capabilities: station.capabilities
         ?.map((c) => EvseMapper.mapEvseCapabilities(c))
         .filter((c) => c !== null),
@@ -292,6 +291,7 @@ export class EvseMapper {
 
     const anyInUse = connectors.some(
       (c) =>
+        c.status === ConnectorStatusEnum.Occupied ||
         c.status === ConnectorStatusEnum.Preparing ||
         c.status === ConnectorStatusEnum.Charging ||
         c.status === ConnectorStatusEnum.SuspendedEVSE ||
