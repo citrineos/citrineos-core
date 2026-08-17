@@ -205,6 +205,67 @@ describe('MeterValueUtils', () => {
         ];
         expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(100); // 200kWh - 100kWh = 100kWh
       });
+
+      describe('Unrecognised units', () => {
+        // A charging station is not obliged to be well-formed. Throwing from deep inside the
+        // total takes out the whole MeterValues/TransactionEvent handler for that message.
+
+        it('ignores a reading whose unit is not an energy unit', () => {
+          const meterValues = [
+            makeMeterValue('2025-05-29T12:01:00Z', 'Energy.Active.Import.Register', 100, 'kWh'),
+            makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 16, 'A'),
+            makeMeterValue('2025-05-29T12:03:00Z', 'Energy.Active.Import.Register', 150, 'kWh'),
+          ];
+          expect(() => MeterValueUtils.getTotalKwh(meterValues, 0)).not.toThrow();
+          expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(50); // 150 - 100, ignoring the Amps
+        });
+
+        it('ignores a value with no measurand reported in Amps', () => {
+          // Measurand defaults to Energy.Active.Import.Register, so a charger that omits the
+          // measurand on a current sample sends what looks like an energy register in Amps.
+          const meterValues: MeterValueDto[] = [
+            {
+              timestamp: '2025-05-29T12:01:00Z',
+              sampledValue: [{ value: 16, unitOfMeasure: { unit: 'A', multiplier: 0 } }],
+            },
+          ];
+          expect(() => MeterValueUtils.getTotalKwh(meterValues, 0)).not.toThrow();
+          expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(0);
+        });
+
+        it('ignores an unrecognised unit when computing meterStart', () => {
+          const meterValues = [
+            makeMeterValue('2025-05-29T12:01:00Z', 'Energy.Active.Import.Register', 16, 'A'),
+            makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 5000, 'Wh'),
+          ];
+          expect(() => MeterValueUtils.getMeterStart(meterValues)).not.toThrow();
+          expect(MeterValueUtils.getMeterStart(meterValues)).toBe(5);
+        });
+
+        it('ignores an unrecognised unit among phased values', () => {
+          const meterValues: MeterValueDto[] = [
+            {
+              timestamp: '2025-05-29T12:01:00Z',
+              sampledValue: [
+                {
+                  measurand: 'Energy.Active.Import.Register',
+                  phase: 'L1',
+                  value: 10,
+                  unitOfMeasure: { unit: 'kWh', multiplier: 0 },
+                },
+                {
+                  measurand: 'Energy.Active.Import.Register',
+                  phase: 'L2',
+                  value: 99,
+                  unitOfMeasure: { unit: 'A', multiplier: 0 },
+                },
+              ],
+            },
+          ];
+          expect(() => MeterValueUtils.getTotalKwh(meterValues, 0, 4)).not.toThrow();
+          expect(MeterValueUtils.getTotalKwh(meterValues, 0, 4)).toBe(6); // 10 - 4, ignoring L2
+        });
+      });
     });
 
     it('returns 0 for empty meter values', () => {

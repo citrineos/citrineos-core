@@ -212,33 +212,36 @@ export class MeterValueUtils {
         return null;
       }
 
-      let sum = 0;
-      for (const value of phaseNeutralValues) {
-        const normalizedValue = this.normalizeToKwh(value);
-        if (normalizedValue !== null) {
-          sum += normalizedValue;
-        }
-      }
-
-      return sum;
+      return this.sumNormalized(phaseNeutralValues);
     }
 
     // Sum all the normalized phase values
+    return this.sumNormalized(phaseValues);
+  }
+
+  /**
+   * Sum a set of same-measurand sampled values in kWh, skipping any whose unit is not an energy
+   * unit. Returns null when none of them normalized, so that a phase set reported entirely in
+   * the wrong unit is treated as "no reading" rather than as a genuine 0 kWh.
+   */
+  private static sumNormalized(sampledValues: SampledValue[]): number | null {
     let sum = 0;
-    for (const value of phaseValues) {
+    let normalizedAny = false;
+    for (const value of sampledValues) {
       const normalizedValue = this.normalizeToKwh(value);
       if (normalizedValue !== null) {
         sum += normalizedValue;
+        normalizedAny = true;
       }
     }
 
-    return sum;
+    return normalizedAny ? sum : null;
   }
 
   /**
    * Convert a sampled value to kWh, applying unit multipliers.
    * @param value A SampledValueType entry.
-   * @returns The converted value in kWh, or null if unit is missing.
+   * @returns The converted value in kWh, or null when the unit is not an energy unit.
    */
   private static normalizeToKwh(value: SampledValue): number | null {
     let powerOfTen = value.unitOfMeasure?.multiplier ?? 0;
@@ -256,7 +259,11 @@ export class MeterValueUtils {
         powerOfTen -= 3;
         break;
       default:
-        throw new Error(`Unknown unit for energy measurement: ${unit}`);
+        // Not an energy unit, so this is not a reading we can total. A charging station that
+        // reports e.g. Amps under an energy measurand (or omits the measurand on a current
+        // sample, which defaults it to Energy.Active.Import.Register) is out of spec, but
+        // throwing here would abort handling of the whole message.
+        return null;
     }
 
     return value.value * 10 ** powerOfTen;
