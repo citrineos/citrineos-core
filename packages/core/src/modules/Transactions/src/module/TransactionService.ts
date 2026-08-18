@@ -328,7 +328,9 @@ export class TransactionService {
 
       // Check expiration and status
       if (!authorization.status) {
-        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
+        this._logger.error(
+          `Authorization ${authorization.id} for idToken ${idToken} has no status; rejecting.`,
+        );
         return response;
       }
 
