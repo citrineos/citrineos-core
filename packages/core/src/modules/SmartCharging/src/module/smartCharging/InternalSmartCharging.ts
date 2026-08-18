@@ -195,17 +195,21 @@ export class InternalSmartCharging implements ISmartCharging {
     }
   }
 
+  /**
+   * Picks the binding DC constraint and expresses it in its own unit. Per the OCPP 2.0.1
+   * DCChargingParametersType schema, evMaxPower is in W, evMaxCurrent in A and evMaxVoltage in V,
+   * and ChargingSchedulePeriod.limit is read in whichever unit chargingRateUnit names. So the two
+   * comparands are both W, but each limit must be returned as itself - not as the product.
+   */
   private _getChargingRateUnitAndLimit(
     evMaxCurrent: number,
     evMaxVoltage: number,
     evMaxPower?: number | null,
   ): [OCPP2_0_1.ChargingRateUnitEnumType, number] {
     if (evMaxPower && evMaxPower < evMaxCurrent * evMaxVoltage) {
-      // when charging rate unit is W, multiply by 1000
-      // based on OCPP 2.0.1 V3 Part 6 TC_K_57_CS
-      return [OCPP2_0_1.ChargingRateUnitEnumType.W, evMaxPower * 1000];
+      return [OCPP2_0_1.ChargingRateUnitEnumType.W, evMaxPower];
     }
-    return [OCPP2_0_1.ChargingRateUnitEnumType.A, evMaxCurrent * evMaxVoltage];
+    return [OCPP2_0_1.ChargingRateUnitEnumType.A, evMaxCurrent];
   }
 
   private async _findExistingChargingProfileWithHighestStackLevel(
