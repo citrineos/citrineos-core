@@ -117,6 +117,19 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       return;
     }
 
+    if (!transaction.isActive) {
+      // A charger that misses our CallResult retries the StopTransaction. It has already been
+      // acknowledged above, so the retry only needs to be dropped here: writing it again adds a
+      // second StopTransaction row and re-inserts every meter value in transactionData, which
+      // double-counts the session's readings. The 2.x handler already guards this.
+      this._logger.warn(
+        `Received StopTransaction for already-ended transaction ${request.transactionId} on ${ocppConnectionName}. Ignoring.`,
+      );
+      return;
+    }
+
+    const stoppedReason = request.reason || (request.idTag ? 'Remote' : 'Local');
+
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
       tenantId,
       transaction.id,
@@ -128,7 +141,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
           data as OCPP1_6.MeterValuesRequest['meterValue'][0],
         ),
       ) || [],
-      request.reason || (request.idTag ? 'Remote' : 'Local'),
+      stoppedReason,
       authorization?.id,
     );
 
@@ -147,7 +160,10 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       );
     }
     transaction.isActive = false;
-    transaction.stoppedReason = request.reason;
+    // OCPP 1.6 makes reason optional and an absent reason means Local, so assigning it straight
+    // through left stoppedReason null for the commonest case - a session the driver ended at the
+    // charger - and out of step with the StopTransaction row, which already defaulted it.
+    transaction.stoppedReason = stoppedReason;
     transaction.endTime = request.timestamp;
     await transaction.save();
   }
