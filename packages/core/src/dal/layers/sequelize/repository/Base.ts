@@ -50,7 +50,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string | number,
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
-    return await this.s.models[namespace].findByPk(key).then((row) => row as T);
+    const model = this.s.models[namespace];
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key };
+    // Tenants is the tenancy root and carries no tenantId column of its own.
+    if ('tenantId' in model.getAttributes()) {
+      where.tenantId = tenantId;
+    }
+    return await model.findOne({ where }).then((row) => (row ?? undefined) as T | undefined);
   }
 
   async readAllByQuery(
@@ -95,7 +101,13 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string,
     namespace: string = this.namespace,
   ): Promise<boolean> {
-    return await this.s.models[namespace].findByPk(key).then((row) => row !== null);
+    const model = this.s.models[namespace];
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key };
+    // Tenants is the tenancy root and carries no tenantId column of its own.
+    if ('tenantId' in model.getAttributes()) {
+      where.tenantId = tenantId;
+    }
+    return await model.findOne({ where }).then((row) => row !== null);
   }
 
   async existByQuery(
