@@ -227,10 +227,6 @@ export class EvseMapper {
     return {
       uid: UID_FORMAT(station.ocppConnectionName, evse.id!),
       evse_id: evse.evseId,
-      // EVSE status is derived from the raw connector statuses, independent of
-      // whether each connector has complete metadata to render for OCPI. A busy
-      // connector that is dropped from the rendered list (e.g. missing
-      // max_voltage) still makes the EVSE report CHARGING rather than UNKNOWN.
       status: EvseMapper.mapEvseStatusFromConnectors(evse.connectors ?? []),
       capabilities: station.capabilities
         ?.map((c) => EvseMapper.mapEvseCapabilities(c))
