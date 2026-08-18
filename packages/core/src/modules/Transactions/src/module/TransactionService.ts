@@ -136,8 +136,12 @@ export class TransactionService {
       };
       return response;
     } else {
+      // concurrentTransaction is a permission, not a trigger: true means this token MAY hold
+      // several sessions at once, so the check only has to run when it is not set. The 1.6 path
+      // below reads it the same way; the 2.x paths had it inverted, which both rejected a token
+      // deliberately granted concurrency and let every other token run unlimited sessions.
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
@@ -212,7 +216,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
