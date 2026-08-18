@@ -9,13 +9,14 @@ import { Variable } from '../model/DeviceModel/Variable.js';
 import { VariableMonitoring } from '../model/VariableMonitoring/VariableMonitoring.js';
 import { VariableMonitoringStatus } from '../model/VariableMonitoring/VariableMonitoringStatus.js';
 import type { IVariableMonitoringRepository } from '../../../interfaces/repositories.js';
-import { type OCPP2_common_types, CrudRepository } from '@citrineos/base';
+import { CrudRepository } from '@citrineos/base';
 import {
   type CallAction,
   type SetMonitoringStatusEnumType,
   OCPP2_0_1,
   OCPP_CallAction,
   SetMonitoringStatusEnum,
+  type OCPP2_common_types,
 } from '@citrineos/types';
 
 export class SequelizeVariableMonitoringRepository

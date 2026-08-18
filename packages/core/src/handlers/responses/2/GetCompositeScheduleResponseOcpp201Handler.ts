@@ -6,13 +6,13 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   GenericStatusEnum,
   type HandlerProperties,
   OCPP_CallAction,
   OCPPVersion,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';

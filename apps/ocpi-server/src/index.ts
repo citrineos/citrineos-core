@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { Constructable, ICache, IModule, IModuleApi } from '@citrineos/base';
+import type { Constructable, ICache, IModule } from '@citrineos/base';
 import { EventGroup, eventGroupFromString } from '@citrineos/types';
 import { MemoryCache, RedisCache } from '@citrineos/core';
 import {
@@ -33,7 +33,6 @@ export class CitrineOSServer {
    * Fields
    */
   private readonly modules: IModule[] = [];
-  private readonly apis: IModuleApi[] = [];
   private ocpiConfig?: OcpiConfig;
   private _logger?: Logger<ILogObj>;
   private _cache?: ICache;

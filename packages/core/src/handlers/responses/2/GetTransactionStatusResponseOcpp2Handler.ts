@@ -6,9 +6,13 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
-import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
+import {
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  OCPP2_response_types,
+} from '@citrineos/types';
 import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetTransactionStatus)

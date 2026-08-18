@@ -7,9 +7,6 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   EnergyTransferModeEnum,
@@ -19,6 +16,9 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,

@@ -7,7 +7,6 @@ import {
   type BootConfig,
   type ICache,
   type IMessageConfirmation,
-  type OCPP2_response_types,
   BOOT_STATUS,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
@@ -19,6 +18,7 @@ import {
   OCPP2_0_1,
   OCPP_CallAction,
   RegistrationStatusEnum,
+  type OCPP2_response_types,
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

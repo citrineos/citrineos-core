@@ -7,10 +7,14 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
   OCPP2_request_types,
   OCPP2_response_types,
-} from '@citrineos/base';
-import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
+} from '@citrineos/types';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyChargingLimit)
 export class NotifyChargingLimitRequestOcpp2Handler extends AbstractHandler {

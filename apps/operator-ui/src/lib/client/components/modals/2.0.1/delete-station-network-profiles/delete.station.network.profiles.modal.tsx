@@ -9,7 +9,7 @@ import { FormField, nestedFormRowFlex } from '@lib/client/components/form/field'
 import { Input } from '@lib/client/components/ui/input';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
+import { triggerCommandAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
@@ -80,17 +80,16 @@ export const DeleteStationNetworkProfilesModal = ({
 
     const uniqueSlots = [...new Set(values.configurationSlots.map((cs) => cs.slot))];
 
-    let url = `/configuration/serverNetworkProfile?ocppConnectionName=${parsedStation.ocppConnectionName}`;
+    let url = `/stationNetworkProfile?ocppConnectionName=${parsedStation.ocppConnectionName}`;
     for (const configurationSlot of uniqueSlots) {
       url += `&configurationSlot=${configurationSlot}`;
     }
 
-    triggerMessageAndHandleResponse<MessageConfirmation>({
+    triggerCommandAndHandleResponse<MessageConfirmation>({
       translate,
       url: url,
       data: undefined,
       setLoading,
-      ocppVersion: null,
       method: HttpMethod.Delete,
     }).then(() => {
       form.reset();

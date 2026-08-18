@@ -2,12 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type {
-  BootConfig,
-  CrudRepository,
-  OCPP2_common_types,
-  OCPP2_request_types,
-} from '@citrineos/base';
+import type { BootConfig, CrudRepository } from '@citrineos/base';
 import type {
   AuthorizationDto,
   CallAction,
@@ -25,6 +20,8 @@ import type {
   SubscriptionDto,
   TenantDto,
   UpdateEnumType,
+  OCPP2_common_types,
+  OCPP2_request_types,
 } from '@citrineos/types';
 import type {
   ChargingProfileInput,
@@ -53,6 +50,8 @@ import type { Variable } from '../layers/sequelize/model/DeviceModel/Variable.js
 import type { VariableAttribute } from '../layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { VariableCharacteristics } from '../layers/sequelize/model/DeviceModel/VariableCharacteristics.js';
 import type { ChargingStation } from '../layers/sequelize/model/Location/ChargingStation.js';
+import type { ChargingStationNetworkProfile } from '../layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
+import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
 import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
@@ -551,6 +550,21 @@ export interface IServerNetworkProfileRepository {
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
   ): Promise<ServerNetworkProfileDto>;
+}
+
+export interface IChargingStationNetworkProfileRepository
+  extends CrudRepository<ChargingStationNetworkProfile> {
+  deleteAllByStationIdAndConfigurationSlots(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number[],
+  ): Promise<ChargingStationNetworkProfile[]>;
+}
+
+export type SetNetworkProfileCreationAttributes = Parameters<typeof SetNetworkProfile.build>[0];
+
+export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkProfile> {
+  createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
 }
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {

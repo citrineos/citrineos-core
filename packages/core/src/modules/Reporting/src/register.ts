@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asClass, asFunction, type AwilixContainer } from 'awilix';
-import { DeviceModelService } from './module/services.js';
+import { asFunction, type AwilixContainer } from 'awilix';
 import {
   type AbstractHandler,
   buildHandlers,
@@ -54,7 +53,6 @@ const REPORTING_HANDLERS = [
  */
 export function registerReportingServices(container: AwilixContainer): void {
   container.register({
-    reportingDeviceModelService: asClass(DeviceModelService).scoped(),
     reportingHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, REPORTING_HANDLERS),
     ).scoped(),

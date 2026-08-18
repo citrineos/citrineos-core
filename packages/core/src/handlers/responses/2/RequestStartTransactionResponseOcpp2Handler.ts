@@ -8,9 +8,6 @@ import {
   type BootstrapConfig,
   type IMessage,
   type IOcppSender,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   ChargingLimitSourceEnum,
@@ -22,6 +19,9 @@ import {
   OCPP_CallAction,
   RequestStartStopStatusEnum,
   type SystemConfig,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import { IdGenerator } from '@util/index.js';
