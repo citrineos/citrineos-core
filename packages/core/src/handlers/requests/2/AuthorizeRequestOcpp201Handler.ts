@@ -194,8 +194,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
                 type: AttributeEnum.Actual,
               });
             for (const connectorType of connectorTypes) {
-              if (authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0) {
-                evseIds.add(connectorType.evse?.id as number);
+              if (authorization.allowedConnectorTypes.includes(connectorType.value as string)) {
+                evseIds.add(connectorType.component?.evse?.id as number);
               }
             }
           }
