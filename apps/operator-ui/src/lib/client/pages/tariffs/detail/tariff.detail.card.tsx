@@ -10,13 +10,12 @@ import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';
 import { heading2Style } from '@lib/client/styles/page';
 import { KeyValueDisplay } from '@lib/client/components/key-value-display';
-import { CanAccess, useTranslate } from '@refinedev/core';
+import { CanAccess, useDelete, useTranslate } from '@refinedev/core';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { NOT_APPLICABLE } from '@lib/utils/consts';
-import { ChevronLeft, Edit, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import { buttonIconSize } from '@lib/client/styles/icon';
-import { useDelete } from '@refinedev/core';
 import { useRouter } from 'next/navigation';
 
 export interface TariffDetailCardProps {
@@ -118,6 +117,12 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
           <KeyValueDisplay
             keyLabel={translate('Tariffs.detail.taxRate')}
             value={tariff.taxRate != null ? tariff.taxRate.toFixed(4) : NOT_APPLICABLE}
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Tariffs.detail.tariffAltText')}
+            value={
+              tariff.tariffAltText != null ? JSON.stringify(tariff.tariffAltText) : NOT_APPLICABLE
+            }
           />
         </div>
       </CardContent>

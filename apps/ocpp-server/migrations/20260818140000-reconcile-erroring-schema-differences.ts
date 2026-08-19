@@ -20,6 +20,8 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
  * 6. Column "LatestStatusNotifications"."ocppConnectionName" is VARCHAR(36), narrower than the
  * declared VARCHAR(255); values the model permits will be rejected
  *    - Resolved by changing the ocppConnectionName column from VARCHAR(36) to VARCHAR(255)
+ * 7. Column "Tariffs"."tariffAltText" has type VARCHAR(255) but the model declares JSONB
+ *    - Resolved by changing the tariffAltText column from VARCHAR(255) to JSONB
  */
 export default {
   up: async (queryInterface: QueryInterface) => {
@@ -91,6 +93,14 @@ export default {
         },
         { transaction },
       );
+
+      // Tariffs
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "Tariffs"
+           ALTER COLUMN "tariffAltText" TYPE JSONB
+           USING NULLIF(BTRIM("tariffAltText"), '')::jsonb;`,
+        { transaction },
+      );
     });
   },
 
@@ -146,6 +156,14 @@ export default {
         {
           type: 'VARCHAR(36)',
         },
+        { transaction },
+      );
+
+      // Tariffs
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "Tariffs"
+                 ALTER COLUMN "tariffAltText" TYPE VARCHAR(255)
+                 USING "tariffAltText"::text;`,
         { transaction },
       );
     });
