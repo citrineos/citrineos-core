@@ -514,7 +514,12 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
                     await this._ocppSender.sendCall({
                       ocppConnectionName,
                       tenantId,
-                      protocol: OCPPVersion.OCPP2_1,
+                      // This handler serves OCPP_2_VER_LIST, so the station may be 2.0.1, and
+                      // the profile above is built by the 2.0.1 mapper. Hard-coding 2.1 filed the
+                      // outbound SetChargingProfile against the wrong protocol in the message
+                      // audit and in the call metrics, and mapped its action through the wrong
+                      // action table.
+                      protocol: message.protocol,
                       action: OCPP_CallAction.SetChargingProfile,
                       eventGroup: EventGroup.Transactions,
                       payload: {
