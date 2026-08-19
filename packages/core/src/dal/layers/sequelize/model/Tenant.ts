@@ -85,7 +85,10 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
   })
   declare id: number;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare name: string;
 
   @Column(DataType.STRING)

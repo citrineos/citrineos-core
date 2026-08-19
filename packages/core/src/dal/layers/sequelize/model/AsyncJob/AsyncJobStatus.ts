@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { TenantDto, TenantPartnerDto, AsyncJobNameEnumType } from '@citrineos/types';
+import type { AsyncJobNameEnumType, TenantDto, TenantPartnerDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -37,11 +37,17 @@ export class AsyncJobStatus extends Model {
   @Column(DataType.STRING)
   declare jobId: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare jobName: AsyncJobNameEnumType;
 
   @ForeignKey(() => TenantPartner)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare tenantPartnerId: number;
 
   @BelongsTo(() => TenantPartner, { foreignKey: 'tenantPartnerId', as: 'asyncJobTenantPartner' })
@@ -54,14 +60,23 @@ export class AsyncJobStatus extends Model {
   declare stoppedAt?: Date | null;
 
   @Default(false)
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare stopScheduled: boolean;
 
   @Default(false)
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare isFailed: boolean;
 
-  @Column(DataType.JSON)
+  @Column({
+    type: DataType.JSON,
+    allowNull: false,
+  })
   declare paginationParams: PaginatedParams;
 
   @Column(DataType.INTEGER) // Total number of objects in the client's system

@@ -22,10 +22,16 @@ import { Tenant } from './Tenant.js';
 export class TenantPartner extends Model implements TenantPartnerDto {
   static readonly MODEL_NAME: string = 'TenantPartner';
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare partyId: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare countryCode: string;
 
   @Column(DataType.JSONB)
