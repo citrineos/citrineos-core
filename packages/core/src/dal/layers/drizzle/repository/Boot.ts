@@ -39,7 +39,7 @@ export function toBootDto(entity: BootEntity): BootDto {
 
 // Required to convert lastBootTime back into Date
 function toBootEntity(value: object): BootEntity {
-  const v = value as { lastBootTime?: unknown };
+  const v = value as { lastBootTime?: string | Date };
   if (typeof v.lastBootTime === 'string') {
     return { ...value, lastBootTime: new Date(v.lastBootTime) } as BootEntity;
   }
