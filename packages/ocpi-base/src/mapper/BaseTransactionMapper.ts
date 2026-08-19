@@ -79,11 +79,15 @@ export abstract class BaseTransactionMapper {
         }
       }
       if (transaction.authorization) {
-        const tokenDto = await TokensMapper.toDto(transaction.authorization);
-        if (tokenDto) {
+        // toDto throws for an authorization with no eMAID to use as contract_id; skip that
+        // transaction rather than failing the whole page.
+        try {
+          const tokenDto = await TokensMapper.toDto(transaction.authorization);
           transactionIdToTokenMap.set(transaction.transactionId!, tokenDto);
-        } else {
-          this.logger.debug(`Unmapped token for transaction ${transaction.id}`);
+        } catch (error) {
+          this.logger.debug(
+            `Unmapped token for transaction ${transaction.id}: ${error instanceof Error ? error.message : error}`,
+          );
         }
       } else {
         this.logger.debug(`No token for transaction ${transaction.id}`);
