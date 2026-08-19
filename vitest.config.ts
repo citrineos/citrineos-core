@@ -13,7 +13,17 @@ export default defineConfig({
     // operator-ui owns its own Playwright e2e specs; vitest can't run them
     // (they call @playwright/test's test.use(), which only works under the
     // Playwright runner). Run them via `pnpm --filter @citrineos/operator-ui test:e2e`.
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'apps/operator-ui/**'],
+    // mock-msp's Playwright specs and live-stack suites are run from the app
+    // (`pnpm --filter @citrineos/mock-msp test:e2e` / `test:live`); only its
+    // hermetic test/ dir belongs to this run.
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.next/**',
+      'apps/operator-ui/**',
+      'apps/mock-msp/e2e/**',
+      'apps/mock-msp/test-live/**',
+    ],
     // The testcontainers-backed integration suites annotate their beforeAll
     // with 90s but leave beforeEach/afterAll on the 5s/10s defaults, which CI
     // load intermittently blows (truncate cascade, container stop). Raised

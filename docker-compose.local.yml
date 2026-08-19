@@ -38,6 +38,11 @@ services:
     build:
       context: .
       dockerfile: ./apps/ocpi-server/deploy.Dockerfile
+    # The seeded partner endpoints point at host.docker.internal:8083 (the mock
+    # eMSP). Docker Desktop resolves that name on its own; plain Linux (CI) only
+    # does with this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Mock eMSP (OCPI 2.2.1) — impersonates the seeded partner US/TST
   # "TestMobilitySolutions" against Citrine's CPO-side OCPI. Comes up under the

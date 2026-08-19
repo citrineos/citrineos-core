@@ -1,0 +1,495 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# CI for apps/mock-msp (the OCPI 2.2.1 mock eMSP).
+#
+#   unit          build closure, typecheck, lint, shellcheck, hermetic vitest,
+#                 black-box process smoke
+#   docker-image  build the compose mock-msp service and boot it
+#   dashboard     Playwright against the dashboard (no Citrine behind the mock)
+#   live          real CitrineOS OCPI stack (compose) + native mock, vitest
+#   everest       live + EVerest simulated charger: the full charge loop.
+#                 Post-merge on next, nightly, on dispatch, or with the PR
+#                 label ci:mock-msp-everest. schedule/dispatch only fire once
+#                 this file exists on the default branch.
+#   mock-msp-ci   aggregate status for branch protection
+name: Mock eMSP
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [next]
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      run_live:
+        description: 'Run the live lane (compose stack + native mock)'
+        type: boolean
+        default: true
+      run_everest:
+        description: 'Run the EVerest charge-loop lane'
+        type: boolean
+        default: false
+
+concurrency:
+  group: mock-msp-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+env:
+  COMPOSE: docker compose -f docker-compose.yml -f docker-compose.local.yml --profile ocpi
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mock-msp: ${{ steps.filter.outputs.mock-msp }}
+      ocpi-base: ${{ steps.filter.outputs.ocpi-base }}
+      deps: ${{ steps.filter.outputs.deps }}
+      ocpi-server: ${{ steps.filter.outputs.ocpi-server }}
+      stack: ${{ steps.filter.outputs.stack }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+      shared: ${{ steps.filter.outputs.shared }}
+      # push / schedule / dispatch run everything regardless of paths
+      all: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            mock-msp:
+              - 'apps/mock-msp/**'
+            ocpi-base:
+              - 'packages/ocpi-base/**'
+            deps:
+              - 'packages/types/**'
+              - 'packages/base/**'
+              - 'packages/core/**'
+            ocpi-server:
+              - 'apps/ocpi-server/**'
+            stack:
+              - 'docker-compose.yml'
+              - 'docker-compose.local.yml'
+              - 'apps/ocpp-server/deploy.Dockerfile'
+              - 'apps/ocpi-server/deploy.Dockerfile'
+              - 'apps/ocpp-server/everest/**'
+            workflow:
+              - '.github/workflows/mock-msp.yml'
+              - 'apps/mock-msp/scripts/ci/**'
+            shared:
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - 'tsconfig*.json'
+              - 'vitest.config.ts'
+              - 'eslint.config.base.js'
+
+  unit:
+    needs: changes
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build mock-msp and its workspace deps
+        run: pnpm --filter "@citrineos/mock-msp..." run build
+      - run: bash apps/mock-msp/scripts/ci/alias-guard.sh
+      - name: Typecheck (src, test, test-live, e2e, scripts)
+        run: pnpm --filter @citrineos/mock-msp run typecheck:all
+      - name: Lint
+        run: pnpm --filter @citrineos/mock-msp run lint
+      - name: Shellcheck
+        run: shellcheck -S error apps/mock-msp/scripts/*.sh apps/mock-msp/scripts/ci/*.sh
+      - name: Hermetic tests
+        env:
+          CI: 'true'
+          NODE_OPTIONS: '--max_old_space_size=4096'
+        run: pnpm --filter @citrineos/mock-msp run test
+      - name: Process smoke (boot from scenario, play Citrine with curl)
+        env:
+          MOCK_MSP_PORT: '18083'
+          MOCK_MSP_NDJSON: '1'
+          MOCK_LOG: apps/mock-msp/reports/smoke.log
+        run: |
+          set -e
+          bash apps/mock-msp/scripts/ci/mock-up.sh
+          STEP_DELAY=0 BASE=http://127.0.0.1:18083 bash apps/mock-msp/scripts/demo-seed.sh
+          bash apps/mock-msp/scripts/ci/mock-down.sh
+      - name: Entrypoint failure paths
+        run: |
+          set +e
+          MOCK_MSP_PORT=18084 MOCK_MSP_SCENARIO=does-not-exist.json node apps/mock-msp/dist/index.js
+          code=$?
+          set -e
+          [ "$code" = "1" ] || { echo "expected exit 1 on a bad scenario path, got $code"; exit 1; }
+          MOCK_MSP_PORT=18084 MOCK_MSP_SCENARIO=apps/mock-msp/scenarios/unregistered.json MOCK_MSP_AUTO_REGISTER=1 \
+            CITRINE_OCPI_BASE_URL=http://127.0.0.1:1/ocpi MOCK_LOG=apps/mock-msp/reports/autoreg.log \
+            bash apps/mock-msp/scripts/ci/mock-up.sh
+          curl -fs http://127.0.0.1:18084/_mock/health | jq -e '.registration.status == "unregistered"'
+          bash apps/mock-msp/scripts/ci/mock-down.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock-msp-unit
+          path: apps/mock-msp/reports
+          retention-days: 7
+          if-no-files-found: warn
+
+  docker-image:
+    needs: changes
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' || needs.changes.outputs.stack == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
+      - run: bash apps/mock-msp/scripts/ci/port-audit.sh 8083
+      - run: df -h /
+      - name: Build the compose mock-msp image
+        # Docker Hub pulls intermittently fail with a transient "manifests ... unknown"
+        run: |
+          n=0
+          until $COMPOSE build mock-msp; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "image build failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::image build failed (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
+      - name: Boot the container alone and check it
+        run: |
+          set -e
+          $COMPOSE up -d --no-deps mock-msp
+          bash apps/mock-msp/scripts/ci/wait-for.sh http://127.0.0.1:8083/_mock/health 90
+          curl -fs http://127.0.0.1:8083/_mock/health | tee /dev/stderr \
+            | jq -e '.scenario == "preregistered" and .registration.status == "registered"'
+          curl -fs http://127.0.0.1:8083/ | grep -q 'id="covGrid"'
+          $COMPOSE exec -T mock-msp node -e "import('@citrineos/ocpi-base').then(() => process.exit(0))"
+      - name: Container logs
+        if: failure()
+        run: $COMPOSE logs mock-msp || true
+      - if: always()
+        run: $COMPOSE down -v
+
+  dashboard:
+    needs: changes
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build mock-msp and its workspace deps
+        run: pnpm --filter "@citrineos/mock-msp..." run build
+      - run: bash apps/mock-msp/scripts/ci/alias-guard.sh
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/mock-msp/package.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: apps/mock-msp
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: apps/mock-msp
+        run: pnpm exec playwright install-deps chromium
+      - name: Dashboard specs
+        env:
+          CI: 'true'
+          MOCK_MSP_CONTROL_SECRET: e2e-secret
+        run: pnpm --filter @citrineos/mock-msp run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock-msp-playwright-report
+          path: |
+            apps/mock-msp/playwright-report
+            apps/mock-msp/test-results
+            apps/mock-msp/reports
+          retention-days: 7
+          if-no-files-found: warn
+
+  live:
+    needs: changes
+    if: ${{ (needs.changes.outputs.all == 'true' && !(github.event_name == 'workflow_dispatch' && !inputs.run_live)) || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.ocpi-server == 'true' || needs.changes.outputs.stack == 'true' || needs.changes.outputs.workflow == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build mock-msp and its workspace deps
+        run: pnpm --filter "@citrineos/mock-msp..." run build
+      - run: bash apps/mock-msp/scripts/ci/alias-guard.sh
+      - run: bash apps/mock-msp/scripts/ci/port-audit.sh 8080 8081 8082 8083 8085 8090 5432 5672 15672 9000 9001
+      - name: Free up runner disk space
+        # the server + ocpi images are ~3 GB each on a ~14 GB runner
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/share/swift || true
+          df -h /
+      - name: Start CitrineOS + OCPI (no UI, no mock container)
+        run: |
+          n=0
+          until $COMPOSE up -d --build citrine citrineos-ocpi graphql-engine; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "stack failed to start after 3 attempts" >&2; exit 1; fi
+            echo "::warning::stack bring-up failed (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
+          df -h /
+      - name: Wait for backend healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8090/healthz >/dev/null \
+              && curl -fs http://localhost:8080/health >/dev/null \
+              && curl -fs http://localhost:8085/ocpi/health >/dev/null; then
+              echo "backend healthy after ${i} attempts"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "backend did not become healthy in time" >&2
+          exit 1
+      - name: Seed the OCPI tenant, partner and station
+        run: bash apps/mock-msp/scripts/ci/seed-citrine.sh
+      - name: Start the mock natively
+        env:
+          MOCK_MSP_PORT: '8083'
+          MOCK_MSP_HOST: '0.0.0.0'
+          MOCK_MSP_PUBLIC_BASE_URL: http://host.docker.internal:8083/ocpi
+          CITRINE_OCPI_BASE_URL: http://localhost:8085/ocpi
+          CITRINE_HASURA_URL: http://localhost:8090/v1/graphql
+          MOCK_MSP_NDJSON: '1'
+          MOCK_MSP_LOG_LEVEL: debug
+        run: bash apps/mock-msp/scripts/ci/mock-up.sh
+      - name: Live suite
+        env:
+          CI: 'true'
+          MOCK_MSP_BASE_URL: http://127.0.0.1:8083
+          HASURA_URL: http://localhost:8090/v1/graphql
+        run: pnpm --filter @citrineos/mock-msp run test:live
+      - name: Boot with auto-register from an unregistered scenario
+        env:
+          MOCK_MSP_PORT: '8083'
+          MOCK_MSP_HOST: '0.0.0.0'
+          MOCK_MSP_PUBLIC_BASE_URL: http://host.docker.internal:8083/ocpi
+          CITRINE_OCPI_BASE_URL: http://localhost:8085/ocpi
+          CITRINE_HASURA_URL: http://localhost:8090/v1/graphql
+          MOCK_MSP_SCENARIO: apps/mock-msp/scenarios/unregistered.json
+          MOCK_MSP_AUTO_REGISTER: '1'
+          MOCK_LOG: apps/mock-msp/reports/mock-msp-autoregister.log
+        run: |
+          set -e
+          bash apps/mock-msp/scripts/ci/mock-down.sh
+          bash apps/mock-msp/scripts/ci/partner-reset.sh
+          bash apps/mock-msp/scripts/ci/mock-up.sh
+          for i in $(seq 1 15); do
+            curl -fs http://127.0.0.1:8083/_mock/health | jq -e '.registration.status == "registered"' && exit 0
+            sleep 2
+          done
+          echo "auto-register did not complete" >&2
+          tail -50 apps/mock-msp/reports/mock-msp-autoregister.log
+          exit 1
+      - name: Capture diagnostics
+        if: always()
+        run: bash apps/mock-msp/scripts/ci/capture-diagnostics.sh apps/mock-msp/reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock-msp-live-report
+          path: apps/mock-msp/reports
+          retention-days: 14
+          if-no-files-found: warn
+      - if: always()
+        run: bash apps/mock-msp/scripts/ci/mock-down.sh
+      - if: always()
+        run: $COMPOSE down -v
+
+  everest:
+    needs: changes
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_everest) || contains(github.event.pull_request.labels.*.name, 'ci:mock-msp-everest') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build mock-msp and its workspace deps
+        run: pnpm --filter "@citrineos/mock-msp..." run build
+      - run: bash apps/mock-msp/scripts/ci/alias-guard.sh
+      - run: bash apps/mock-msp/scripts/ci/port-audit.sh 8080 8081 8082 8083 8085 8090 5432 5672 15672 9000 9001 1880 8888
+      - name: Free up runner disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/share/swift || true
+          df -h /
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/mock-msp/package.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: apps/mock-msp
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: apps/mock-msp
+        run: pnpm exec playwright install-deps chromium
+      - name: Start CitrineOS + OCPI (no UI, no mock container)
+        run: |
+          n=0
+          until $COMPOSE up -d --build citrine citrineos-ocpi graphql-engine; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "stack failed to start after 3 attempts" >&2; exit 1; fi
+            echo "::warning::stack bring-up failed (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
+          df -h /
+      - name: Wait for backend healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8090/healthz >/dev/null \
+              && curl -fs http://localhost:8080/health >/dev/null \
+              && curl -fs http://localhost:8085/ocpi/health >/dev/null; then
+              echo "backend healthy after ${i} attempts"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "backend did not become healthy in time" >&2
+          exit 1
+      - name: Seed the OCPI tenant, partner and station
+        run: bash apps/mock-msp/scripts/ci/seed-citrine.sh
+      - name: Pre-pull and build EVerest SIL images
+        # same as the operator-ui everest lane: fetch ahead of time, do not start
+        env:
+          OCPP_VERSION: '2.1'
+          EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
+        working-directory: apps/ocpp-server/everest
+        run: |
+          n=0
+          until docker compose build && docker compose pull mqtt-server nodered; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "EVerest image fetch failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::EVerest image build/pull failed (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
+          df -h /
+      - name: Start the mock natively
+        env:
+          MOCK_MSP_PORT: '8083'
+          MOCK_MSP_HOST: '0.0.0.0'
+          MOCK_MSP_PUBLIC_BASE_URL: http://host.docker.internal:8083/ocpi
+          CITRINE_OCPI_BASE_URL: http://localhost:8085/ocpi
+          CITRINE_HASURA_URL: http://localhost:8090/v1/graphql
+          MOCK_MSP_NDJSON: '1'
+          MOCK_MSP_LOG_LEVEL: debug
+        run: bash apps/mock-msp/scripts/ci/mock-up.sh
+      - name: Start EVerest (OCPP 2.0.1 profile) and wait for cp001 online
+        env:
+          OCPP_VERSION: '2.1'
+          EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
+          EVEREST_ONLINE_TIMEOUT: '300'
+        run: bash apps/mock-msp/scripts/everest-up.sh
+      - name: Charge loop suite
+        env:
+          CI: 'true'
+          MOCK_MSP_BASE_URL: http://127.0.0.1:8083
+          HASURA_URL: http://localhost:8090/v1/graphql
+        run: pnpm --filter @citrineos/mock-msp run test:everest
+      - name: Dashboard against the live stack
+        env:
+          CI: 'true'
+          E2E_MOCK_URL: http://127.0.0.1:8083
+        run: |
+          pnpm --filter @citrineos/mock-msp run test:e2e:live
+          pnpm --filter @citrineos/mock-msp run test:e2e:everest
+      - name: Capture diagnostics
+        if: always()
+        env:
+          COMPOSE_SERVICES: citrine citrineos-ocpi graphql-engine
+        run: |
+          bash apps/mock-msp/scripts/ci/capture-diagnostics.sh apps/mock-msp/reports
+          docker logs everest-manager-1 > apps/mock-msp/reports/everest-manager.log 2>&1 || true
+          docker logs everest-nodered-1 > apps/mock-msp/reports/everest-nodered.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock-msp-everest-report
+          path: |
+            apps/mock-msp/reports
+            apps/mock-msp/playwright-report
+            apps/mock-msp/test-results
+          retention-days: 14
+          if-no-files-found: warn
+      - if: always()
+        run: bash apps/mock-msp/scripts/ci/mock-down.sh
+      - name: Tear down EVerest
+        if: always()
+        working-directory: apps/ocpp-server/everest
+        run: docker compose down -v || true
+      - if: always()
+        run: $COMPOSE down -v
+
+  mock-msp-ci:
+    needs: [changes, unit, docker-image, dashboard, live, everest]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check lane results
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$RESULTS" | jq -e '[.[] | .result] | any(. == "failure" or . == "cancelled")' >/dev/null; then
+            exit 1
+          fi

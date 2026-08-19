@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.json",
+    "test/**/*.ts",
+    "test-live/**/*.ts",
+    "e2e/**/*.ts",
+    "scripts/**/*.ts",
+    "*.config.ts"
+  ],
+  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "sourceMap": false
+  },
+  "references": [
+    {
+      "path": "../../packages/base"
+    },
+    {
+      "path": "../../packages/ocpi-base"
+    }
+  ]
+}
