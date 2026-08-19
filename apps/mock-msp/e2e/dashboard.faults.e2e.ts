@@ -6,7 +6,13 @@
 // a rule from the builder and seeing it trip on a real inbound CDR, and the
 // per-rule / clear-all disarm buttons.
 import { expect, test } from '@playwright/test';
-import { armFault, ctlJson, functionalHeaders, resetKeepingScenario } from './support/arrange.js';
+import {
+  armFault,
+  ctlJson,
+  functionalHeaders,
+  resetKeepingScenario,
+  validCdr,
+} from './support/arrange.js';
 import { MockPage } from './support/mock-page.js';
 
 const PARAM_IDS: Record<string, string[]> = {
@@ -20,54 +26,6 @@ const PARAM_IDS: Record<string, string[]> = {
   dropHeaders: ['fbHdrs'],
   oversizeToken: [],
 };
-
-/** A schema-valid CDR (the one scripts/demo-seed.sh posts in its adversary step). */
-function validCdr(id: string): Record<string, unknown> {
-  return {
-    country_code: 'US',
-    party_id: 'S44',
-    id,
-    start_date_time: '2026-07-17T09:00:00.000Z',
-    end_date_time: '2026-07-17T10:00:00.000Z',
-    session_id: 'SESSION-DEMO-1',
-    cdr_token: {
-      uid: '04E7F5A2B37C80',
-      type: 'RFID',
-      contract_id: 'USTST-C-00042',
-      country_code: 'US',
-      party_id: 'TST',
-    },
-    auth_method: 'WHITELIST',
-    authorization_reference: 'AUTH-DEMO-0001',
-    cdr_location: {
-      id: 'LOC-DEMO-1',
-      name: 'Demo Depot',
-      address: '1 Market St',
-      city: 'San Francisco',
-      postal_code: '94105',
-      state: 'CA',
-      country: 'USA',
-      coordinates: { latitude: '37.774929', longitude: '-122.419418' },
-      evse_uid: 'EVSE-DEMO-1',
-      evse_id: 'US*S44*E00001',
-      connector_id: '1',
-      connector_standard: 'IEC_62196_T2',
-      connector_format: 'SOCKET',
-      connector_power_type: 'AC_3_PHASE',
-    },
-    currency: 'USD',
-    charging_periods: [
-      {
-        start_date_time: '2026-07-17T09:00:00.000Z',
-        dimensions: [{ type: 'ENERGY', volume: 18.5 }],
-      },
-    ],
-    total_cost: { excl_vat: 7.25, incl_vat: 8.7 },
-    total_energy: 18.5,
-    total_time: 1,
-    last_updated: '2026-07-17T10:00:05.000Z',
-  };
-}
 
 test.describe('dashboard fault builder', () => {
   let mock: MockPage;
