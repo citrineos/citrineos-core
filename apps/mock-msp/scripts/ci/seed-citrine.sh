@@ -18,6 +18,21 @@ HASURA_URL="${HASURA_URL:-http://localhost:8090/v1/graphql}"
 echo "seed-citrine: running db:seed in citrineos-ocpi"
 $COMPOSE exec -T -e OCPI_ENV=docker citrineos-ocpi pnpm run db:seed
 
+# The seeders insert with explicit ids, which leaves the id sequences behind:
+# on a fresh DB Citrine's first own insert (e.g. the Authorization behind a
+# token PUT) then collides with id 1. Move every seeded table's sequence past
+# its max id.
+echo "seed-citrine: bumping id sequences of the seeded tables"
+$COMPOSE exec -T ocpp-db psql -q -U citrine -d citrine -v ON_ERROR_STOP=1 <<'SQL'
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['Tenants','TenantPartners','Locations','ChargingStations','Tariffs','Evses','Connectors','Authorizations'] LOOP
+    EXECUTE format('SELECT setval(pg_get_serial_sequence(%L, ''id''), (SELECT COALESCE(MAX(id), 1) FROM %I))', quote_ident(t), t);
+  END LOOP;
+END $$;
+SQL
+
 HASURA_URL="$HASURA_URL" node --input-type=module - <<'EOF'
 const query = `{
   TenantPartners(where: {partyId: {_eq: "TST"}}) { id }
