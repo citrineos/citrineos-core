@@ -131,7 +131,14 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       // If Charging Station is not able to validate a contract certificate,
       // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
       // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06
-      if (request.certificate) {
+      // Only consulted while the hash data has not already refused the certificate: both results
+      // are written to the same field, so an unconditional call let a chain that still verifies
+      // overwrite a CertificateRevoked or CertificateExpired verdict from the OCSP data.
+      if (
+        request.certificate &&
+        (response.certificateStatus === undefined ||
+          response.certificateStatus === AuthorizeCertificateStatusEnum.Accepted)
+      ) {
         response.certificateStatus =
           await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
       }
