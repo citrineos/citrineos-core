@@ -215,11 +215,26 @@ jobs:
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: apps/mock-msp
-        run: pnpm exec playwright install --with-deps chromium
+        # apt behind --with-deps has been seen hanging on a dead ubuntu mirror
+        run: |
+          n=0
+          until timeout 300 pnpm exec playwright install --with-deps chromium; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "playwright install failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::playwright install failed or hung (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
       - name: Install Playwright system deps
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         working-directory: apps/mock-msp
-        run: pnpm exec playwright install-deps chromium
+        run: |
+          n=0
+          until timeout 300 pnpm exec playwright install-deps chromium; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "playwright install-deps failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::playwright install-deps failed or hung (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
       - name: Dashboard specs
         env:
           CI: 'true'
@@ -378,11 +393,26 @@ jobs:
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: apps/mock-msp
-        run: pnpm exec playwright install --with-deps chromium
+        # apt behind --with-deps has been seen hanging on a dead ubuntu mirror
+        run: |
+          n=0
+          until timeout 300 pnpm exec playwright install --with-deps chromium; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "playwright install failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::playwright install failed or hung (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
       - name: Install Playwright system deps
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         working-directory: apps/mock-msp
-        run: pnpm exec playwright install-deps chromium
+        run: |
+          n=0
+          until timeout 300 pnpm exec playwright install-deps chromium; do
+            n=$((n + 1))
+            if [ "$n" -ge 3 ]; then echo "playwright install-deps failed after 3 attempts" >&2; exit 1; fi
+            echo "::warning::playwright install-deps failed or hung (attempt ${n}/3), retrying in 15s"
+            sleep 15
+          done
       - name: Start CitrineOS + OCPI (no UI, no mock container)
         run: |
           n=0
