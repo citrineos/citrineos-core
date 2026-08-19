@@ -22,20 +22,18 @@ export function getSizeOfRequest(request: OcppRequest): number {
  * @return {map} A map with index as key and batch as value. Index is the position of the 1st batch element in the given
  * array. Batch is a subarray of the given array.
  */
-export function getBatches(
-  array: object[] | string[] | boolean[] | number[],
-  size: number,
-): Map<number, object[] | string[] | boolean[] | number[]> {
+export function getBatches<T>(array: readonly T[], size: number): Map<number, T[]> {
   if (!Number.isInteger(size) || size <= 0) {
     size = array.length;
   }
-  const batchMap = new Map();
+  const batchMap = new Map<number, T[]>();
   let lastIndex = 0;
-  while (array.length > 0) {
-    const batch = array.slice(0, size);
+  let remaining = array;
+  while (remaining.length > 0) {
+    const batch = remaining.slice(0, size);
     batchMap.set(lastIndex, batch);
     lastIndex += batch.length;
-    array = array.slice(size);
+    remaining = remaining.slice(size);
   }
 
   return batchMap;

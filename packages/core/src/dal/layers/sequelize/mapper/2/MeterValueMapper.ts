@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_common_types } from '@citrineos/base';
 import {
   LocationEnum,
   MeasurandEnum,
@@ -12,6 +11,7 @@ import {
   ReadingContextEnum,
   type MeterValueDto,
   type SampledValue,
+  OCPP2_common_types,
 } from '@citrineos/types';
 
 export class MeterValueMapper {

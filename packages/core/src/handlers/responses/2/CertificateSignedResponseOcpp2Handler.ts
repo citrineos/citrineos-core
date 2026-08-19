@@ -6,7 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type HandlerProperties,
@@ -16,6 +15,7 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@dal/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';

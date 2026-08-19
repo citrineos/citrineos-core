@@ -19,7 +19,9 @@ export class TariffsListPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(TariffsListPage.path);
+    await this.page.goto(TariffsListPage.path, {
+      waitUntil: 'domcontentloaded',
+    });
     await this.expectLoaded();
   }
 

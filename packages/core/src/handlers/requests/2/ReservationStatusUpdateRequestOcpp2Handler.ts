@@ -7,8 +7,6 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type HandlerProperties,
@@ -16,6 +14,8 @@ import {
   OCPP_CallAction,
   ReservationUpdateStatusEnum,
   type ReservationUpdateStatusEnumType,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IReservationRepository } from '@dal/interfaces/repositories.js';
 

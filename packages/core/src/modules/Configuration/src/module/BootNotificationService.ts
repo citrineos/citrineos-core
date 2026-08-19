@@ -4,13 +4,12 @@
 import type { IBootRepository } from '@dal/interfaces/repositories.js';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import {
-  BOOT_STATUS,
   type BootConfig,
   type ICache,
   type IMessageConfirmation,
+  BOOT_STATUS,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
-  type OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type BootDto,
@@ -20,6 +19,7 @@ import {
   RegistrationStatusEnum,
   type RegistrationStatusEnumType,
   type SystemConfig,
+  type OCPP2_response_types,
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

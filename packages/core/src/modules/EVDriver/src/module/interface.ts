@@ -3,12 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Interface for the EVDriver module.
- */
-
-export interface IEVDriverModuleApi {}
-
-/**
  * C25: Request body for the POST /evdriver/webpayment/initiate endpoint.
  * Used when a driver scans a QR code and the CSMS web page calls back
  * to initiate the web payment session.

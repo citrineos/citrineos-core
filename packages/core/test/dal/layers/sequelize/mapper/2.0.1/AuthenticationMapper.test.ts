@@ -10,7 +10,7 @@ import {
 } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
 import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.0.1';
-import { aAuthorization } from '../../../../providers/Authorization.js';
+import { aAuthorization } from '@test/dal/providers/Authorization.js';
 
 // Helper function to validate common structure
 const validateIdToken = (result: any, authorization: any) => {

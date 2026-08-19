@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type BootConfig, CrudRepository } from '@citrineos/base';
+import type { RegistrationStatusEnumType, OCPP2_common_types } from '@citrineos/types';
 import type { IBootRepository } from '../../../interfaces/repositories.js';
 import { Boot } from '../model/Boot.js';
 import { VariableAttribute } from '../model/DeviceModel/VariableAttribute.js';

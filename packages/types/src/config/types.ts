@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
-import { EventGroup } from '@interfaces/messages/internal-types.js';
 import { OCPP1_6 } from '@ocpp/model/index.js';
 import { OCPP_CallAction, OCPPVersion, type OCPPVersionType } from '@ocpp/rpc/message.js';
 import { z } from 'zod';
@@ -69,7 +68,6 @@ export const systemConfigInputSchema = z.object({
   modules: z.object({
     certificates: z
       .object({
-        endpointPrefix: z.string().default(EventGroup.Certificates).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
@@ -97,7 +95,7 @@ export const systemConfigInputSchema = z.object({
             .optional(), // Unknown chargers have no entry in BootConfig table
           getBaseReportOnPending: z.boolean().default(true).optional(),
           bootWithRejectedVariables: z.boolean().default(true).optional(),
-          autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+          autoAccept: z.boolean().default(true).optional(), // If false, the boot status is never promoted to Accepted automatically; it must be set out-of-band
         })
         .optional(),
       ocpp2_1: z
@@ -112,7 +110,7 @@ export const systemConfigInputSchema = z.object({
             .optional(), // Unknown chargers have no entry in BootConfig table
           getBaseReportOnPending: z.boolean().default(true).optional(),
           bootWithRejectedVariables: z.boolean().default(true).optional(),
-          autoAccept: z.boolean().default(true).optional(), // If false, only data endpoint can update boot status to accepted
+          autoAccept: z.boolean().default(true).optional(), // If false, the boot status is never promoted to Accepted automatically; it must be set out-of-band
         })
         .optional(),
       ocpp1_6: z
@@ -127,12 +125,10 @@ export const systemConfigInputSchema = z.object({
             .optional(), // Unknown chargers have no entry in BootConfig table
         })
         .optional(),
-      endpointPrefix: z.string().default(EventGroup.Configuration).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().min(1).default(8081).optional(),
     }),
     evdriver: z.object({
-      endpointPrefix: z.string().default(EventGroup.EVDriver).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
@@ -142,7 +138,6 @@ export const systemConfigInputSchema = z.object({
       enableGetChargingProfilesOnStartTransaction: z.boolean().default(true).optional(),
     }),
     monitoring: z.object({
-      endpointPrefix: z.string().default(EventGroup.Monitoring).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
@@ -151,7 +146,6 @@ export const systemConfigInputSchema = z.object({
       excludedResponses: z.array(CallActionSchema).optional(),
     }),
     reporting: z.object({
-      endpointPrefix: z.string().default(EventGroup.Reporting).optional(),
       host: z.string().default('localhost').optional(),
       port: z.number().int().min(1).default(8081).optional(),
       requests: z.array(CallActionSchema),
@@ -161,7 +155,6 @@ export const systemConfigInputSchema = z.object({
     }),
     smartcharging: z
       .object({
-        endpointPrefix: z.string().default(EventGroup.SmartCharging).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
@@ -172,7 +165,6 @@ export const systemConfigInputSchema = z.object({
       .optional(),
     tenant: z
       .object({
-        endpointPrefix: z.string().default(EventGroup.Tenant).optional(),
         host: z.string().default('localhost').optional(),
         port: z.number().int().min(1).default(8081).optional(),
         requests: z.array(CallActionSchema),
@@ -183,7 +175,6 @@ export const systemConfigInputSchema = z.object({
       })
       .optional(),
     transactions: z.object({
-      endpointPrefix: z.string().default(EventGroup.Transactions).optional(),
       requests: z.array(CallActionSchema),
       responses: z.array(CallActionSchema),
       excludedRequests: z.array(CallActionSchema).optional(),
@@ -261,7 +252,6 @@ export const systemConfigInputSchema = z.object({
       .object({
         path: z.string().default('/docs').optional(),
         logoPath: z.string(),
-        exposeData: z.boolean().default(true).optional(),
         exposeMessage: z.boolean().default(true).optional(),
       })
       .optional(),
@@ -329,9 +319,6 @@ export const systemConfigInputSchema = z.object({
     host: z.string().default('localhost').optional(),
     port: z.number().int().min(1).default(8085).optional(),
   }),
-  userPreferences: z.object({
-    telemetryConsent: z.boolean().default(false).optional(),
-  }),
   rbacRulesFileName: z.string().default('rbac-rules.json').optional(),
   rbacRulesDir: z.string().optional(),
   realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15).optional(),
@@ -396,7 +383,6 @@ export const systemConfigSchema = z
     modules: z.object({
       certificates: z
         .object({
-          endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
@@ -406,7 +392,6 @@ export const systemConfigSchema = z
         })
         .optional(),
       evdriver: z.object({
-        endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
@@ -429,7 +414,7 @@ export const systemConfigSchema = z
               getBaseReportOnPending: z.boolean(),
               bootWithRejectedVariables: z.boolean(),
               /**
-               * If false, only data endpoint can update boot status to accepted
+               * If false, the boot status is never promoted to Accepted automatically; it must be set out-of-band
                */
               autoAccept: z.boolean(),
             })
@@ -444,7 +429,7 @@ export const systemConfigSchema = z
               getBaseReportOnPending: z.boolean(),
               bootWithRejectedVariables: z.boolean(),
               /**
-               * If false, only data endpoint can update boot status to accepted
+               * If false, the boot status is never promoted to Accepted automatically; it must be set out-of-band
                */
               autoAccept: z.boolean(),
             })
@@ -458,7 +443,6 @@ export const systemConfigSchema = z
               ]), // Unknown chargers have no entry in BootConfig table
             })
             .optional(),
-          endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
@@ -470,7 +454,6 @@ export const systemConfigSchema = z
           message: 'A protocol configuration must be set',
         }), // Configuration module is required
       monitoring: z.object({
-        endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
@@ -479,7 +462,6 @@ export const systemConfigSchema = z
         excludedResponses: z.array(CallActionSchema).optional(),
       }),
       reporting: z.object({
-        endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
@@ -489,7 +471,6 @@ export const systemConfigSchema = z
       }),
       smartcharging: z
         .object({
-          endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().min(1).optional(),
           requests: z.array(CallActionSchema),
@@ -499,7 +480,6 @@ export const systemConfigSchema = z
         })
         .optional(),
       tenant: z.object({
-        endpointPrefix: z.string(),
         host: z.string().optional(),
         port: z.number().int().min(1).optional(),
         requests: z.array(CallActionSchema),
@@ -510,7 +490,6 @@ export const systemConfigSchema = z
       }),
       transactions: z
         .object({
-          endpointPrefix: z.string(),
           host: z.string().optional(),
           port: z.number().int().min(1).optional(),
           costUpdatedInterval: z.number().int().min(1).optional(),
@@ -594,7 +573,6 @@ export const systemConfigSchema = z
         .object({
           path: z.string(),
           logoPath: z.string(),
-          exposeData: z.boolean(),
           exposeMessage: z.boolean(),
         })
         .optional(),
@@ -671,9 +649,6 @@ export const systemConfigSchema = z
     ocpiServer: z.object({
       host: z.string(),
       port: z.number().int().min(1),
-    }),
-    userPreferences: z.object({
-      telemetryConsent: z.boolean().optional(),
     }),
     rbacRulesFileName: z.string().optional(),
     rbacRulesDir: z.string().optional(),

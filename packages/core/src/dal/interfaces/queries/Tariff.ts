@@ -4,6 +4,11 @@
 
 import { DEFAULT_TENANT_ID, QuerySchema } from '@citrineos/base';
 
+export interface TariffQueryString {
+  tenantId: number;
+  id?: string;
+}
+
 export const TariffQuerySchema = QuerySchema('TariffQuerySchema', [
   {
     key: 'tenantId',
@@ -16,8 +21,3 @@ export const TariffQuerySchema = QuerySchema('TariffQuerySchema', [
     type: 'string',
   },
 ]);
-
-export interface TariffQueryString {
-  tenantId: number;
-  id?: string;
-}

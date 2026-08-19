@@ -7,9 +7,6 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   ChargingProfileKindEnum,
@@ -19,6 +16,9 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import { Transaction } from '@/dal/index.js';
 import type {

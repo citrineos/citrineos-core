@@ -4,7 +4,12 @@
 
 import { z } from 'zod';
 import { BaseSchema } from './types/base.dto.js';
-import { MessageOriginSchema, MessageTypeSchema, OCPPVersionSchema } from './types/ocpp.message.js';
+import {
+  MessageOriginSchema,
+  MessageStateSchema,
+  MessageTypeSchema,
+  OCPPVersionSchema,
+} from './types/ocpp.message.js';
 
 export const OCPPMessageWithoutRequestResponseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -13,10 +18,23 @@ export const OCPPMessageWithoutRequestResponseSchema = BaseSchema.extend({
   correlationId: z.string().optional(),
   origin: MessageOriginSchema,
   type: MessageTypeSchema.optional(),
+  /**
+   * @deprecated Kept for backwards compatibility with consumers written against the
+   * pre-`type` schema. Derived from `type` on every write: Call -> Request,
+   * CallResult/CallError -> Response, unknown -> Unknown. Read `type` instead.
+   */
+  state: MessageStateSchema.optional(),
   protocol: OCPPVersionSchema,
   action: z.string().optional(),
   payload: z.any().optional(), // JSONB
   raw: z.string(),
+  /**
+   * @deprecated Kept for backwards compatibility with consumers written against the
+   * pre-`payload`/`raw` schema. Holds the whole RPC frame — e.g.
+   * `[2, "<id>", "BootNotification", {...}]` — of which `payload` is one element.
+   * Read `payload` (parsed payload) or `raw` (exact wire text) instead.
+   */
+  message: z.any().optional(), // JSONB
   timestamp: z.iso.datetime(),
 });
 
