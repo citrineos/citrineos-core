@@ -381,14 +381,15 @@ export function compareTypes(expected: CanonicalType, actual: CanonicalType): Co
  *     safe, only inserts can fail.
  *
  * An omitted `allowNull` is Sequelize's implicit `true`, and is treated the
- * same as an explicit one. A primary key is implicitly NOT NULL.
+ * same as an explicit one. A primary key is implicitly NOT NULL — except when
+ * the attribute also says `allowNull: true`, see below.
  */
 export function compareNullability(
   codeAllowNull: boolean | undefined,
   isPrimaryKey: boolean,
   dbIsNullable: boolean,
 ): 'ok' | 'code-stricter' | 'db-stricter' {
-  const codeRequiresValue = codeAllowNull === false || isPrimaryKey;
+  const codeRequiresValue = codeAllowNull === false || (isPrimaryKey && codeAllowNull !== true);
   if (codeRequiresValue && dbIsNullable) return 'code-stricter';
   if (!codeRequiresValue && !dbIsNullable) return 'db-stricter';
   return 'ok';
@@ -403,7 +404,7 @@ function tableNameOf(model: { getTableName: () => string | { tableName: string }
  * Introspects the live schema and compares it against every model registered
  * on the given Sequelize instance. Never throws on drift — returns findings.
  */
-export async function validateSchema(
+export async function validateSequelizeSchema(
   sequelize: Sequelize,
   options: SchemaValidationOptions = {},
 ): Promise<SchemaValidationReport> {
@@ -580,7 +581,7 @@ function normalizeType(sequelize: Sequelize, type: unknown): unknown {
 }
 
 /** Groups findings by table into indented, human-readable lines. */
-export function formatFindings(findings: SchemaFinding[]): string {
+function formatFindings(findings: SchemaFinding[]): string {
   const byTable = new Map<string, SchemaFinding[]>();
   for (const finding of findings) {
     const list = byTable.get(finding.table) ?? [];
@@ -598,7 +599,7 @@ export function formatFindings(findings: SchemaFinding[]): string {
   return lines.join('\n');
 }
 
-export function formatReport(report: SchemaValidationReport): string {
+function formatReport(report: SchemaValidationReport): string {
   return formatFindings([...report.errors, ...report.warnings]);
 }
 
@@ -619,7 +620,7 @@ function countByKind(findings: SchemaFinding[]): string {
  * just reshaped the database to match the models, so validating afterwards can
  * only produce noise.
  */
-export async function assertSchemaMatches(
+export async function assertSequelizeSchemaMatches(
   sequelize: Sequelize,
   databaseConfig: BootstrapConfig['database'],
   logger: Logger<ILogObj>,
@@ -638,7 +639,7 @@ export async function assertSchemaMatches(
     return null;
   }
 
-  const report = await validateSchema(sequelize, { schema: databaseConfig.schema });
+  const report = await validateSequelizeSchema(sequelize, { schema: databaseConfig.schema });
 
   const summary =
     `schema validation: ${report.errors.length} errors, ${report.warnings.length} warnings ` +

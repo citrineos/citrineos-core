@@ -4,7 +4,7 @@
 
 import type { ICache } from '@citrineos/base';
 import type { Sequelize } from '@dal/index.js';
-import type { SchemaValidationReport } from '@dal/layers/sequelize/SchemaValidator.js';
+import type { SchemaValidationReport } from '@dal/layers/sequelize/SequelizeSchemaValidator.js';
 import { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@util/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';

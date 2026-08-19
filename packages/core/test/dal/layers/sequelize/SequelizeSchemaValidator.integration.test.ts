@@ -7,7 +7,7 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import type { BootstrapConfig } from '@citrineos/base';
 import { DefaultSequelizeInstance } from '@dal/index.js';
-import { validateSchema } from '@dal/layers/sequelize/SchemaValidator.js';
+import { validateSequelizeSchema } from '@dal/layers/sequelize/SequelizeSchemaValidator.js';
 
 // ---------------------------------------------------------------------------
 // Acceptance coverage for the startup schema gate, against every real model.
@@ -64,9 +64,9 @@ afterAll(async () => {
   await pgContainer.stop();
 });
 
-describe('validateSchema against a synchronized schema', () => {
+describe('validateSequelizeSchema against a synchronized schema', () => {
   it('reports no errors', async () => {
-    const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+    const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
     // Printed rather than summarized: if this fails, the finding messages name
     // the exact table, column, expected type and actual type.
     expect(report.errors, JSON.stringify(report.errors, null, 2)).toEqual([]);
@@ -75,7 +75,7 @@ describe('validateSchema against a synchronized schema', () => {
   });
 
   it('reports no warnings', async () => {
-    const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+    const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
     // A sync-created schema matches the models exactly, so any warning means
     // the validator's canonicalization disagrees with Postgres about a type
     // used in this codebase — the same disagreement would produce noise on
@@ -84,11 +84,11 @@ describe('validateSchema against a synchronized schema', () => {
   });
 });
 
-describe('validateSchema detects drift', () => {
+describe('validateSequelizeSchema detects drift', () => {
   it('flags a column the models declare but the database has dropped', async () => {
     await sequelizeInstance.query('ALTER TABLE "Boots" DROP COLUMN "heartbeatInterval"');
     try {
-      const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+      const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
       const finding = report.errors.find(
         (f) => f.table === 'Boots' && f.column === 'heartbeatInterval',
       );
@@ -101,7 +101,7 @@ describe('validateSchema detects drift', () => {
   it('flags a column narrowed below what the models declare', async () => {
     await sequelizeInstance.query('ALTER TABLE "Boots" ALTER COLUMN "status" TYPE varchar(5)');
     try {
-      const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+      const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
       const finding = report.errors.find((f) => f.table === 'Boots' && f.column === 'status');
       expect(finding?.kind).toBe('length-narrower');
     } finally {
@@ -112,7 +112,7 @@ describe('validateSchema detects drift', () => {
   it('flags a NOT NULL dropped under an allowNull:false column', async () => {
     await sequelizeInstance.query('ALTER TABLE "Boots" ALTER COLUMN "tenantId" DROP NOT NULL');
     try {
-      const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+      const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
       const finding = report.errors.find((f) => f.table === 'Boots' && f.column === 'tenantId');
       expect(finding?.kind).toBe('nullability-code-stricter');
     } finally {
@@ -123,7 +123,7 @@ describe('validateSchema detects drift', () => {
   it('only warns about a column the database has but no model declares', async () => {
     await sequelizeInstance.query('ALTER TABLE "Boots" ADD COLUMN "legacyColumn" INTEGER');
     try {
-      const report = await validateSchema(sequelizeInstance, { schema: 'public' });
+      const report = await validateSequelizeSchema(sequelizeInstance, { schema: 'public' });
       expect(report.errors).toEqual([]);
       const finding = report.warnings.find(
         (f) => f.table === 'Boots' && f.column === 'legacyColumn',

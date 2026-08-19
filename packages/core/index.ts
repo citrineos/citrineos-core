@@ -27,12 +27,12 @@ export { loadSystemConfig } from './src/server/ConfigLoader.js';
 // Startup schema validation. Also reachable as `sequelize.*` via the @dal barrel;
 // re-exported here so apps can name the types without the namespace.
 export {
-  assertSchemaMatches,
+  assertSequelizeSchemaMatches,
   SchemaValidationError,
-  validateSchema,
+  validateSequelizeSchema,
   type SchemaFinding,
   type SchemaFindingKind,
   type SchemaFindingSeverity,
   type SchemaValidationOptions,
   type SchemaValidationReport,
-} from './src/dal/layers/sequelize/SchemaValidator.js';
+} from '@dal/layers/sequelize/SequelizeSchemaValidator.js';

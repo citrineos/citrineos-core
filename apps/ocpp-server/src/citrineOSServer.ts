@@ -441,7 +441,7 @@ export class CitrineOSServer {
     // Throws on drift between the models and the live schema, aborting startup.
     // Runs before anything else touches the database so a mismatch surfaces
     // here rather than on whichever query happens to hit the bad column first.
-    this._schemaValidationReport = await sequelize.assertSchemaMatches(
+    this._schemaValidationReport = await sequelize.assertSequelizeSchemaMatches(
       this._sequelizeInstance,
       this._config.database,
       this._logger,
