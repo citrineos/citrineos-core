@@ -342,7 +342,11 @@ class OcpiClientImpl implements OcpiClient {
     reg.cpoCredentialsUrl = credsEndpoint.url;
 
     // POST our credentials presenting TOKEN_A; ourToken becomes tokenWeAccept.
+    // Citrine fetches our version list/details with ourToken while it is still
+    // handling the POST, so it has to be accepted before the call goes out.
     const ourToken = uuid();
+    const previousToken = reg.tokenWeAccept;
+    reg.tokenWeAccept = ourToken;
     const postEx = await this.call({
       method: 'POST',
       url: credsEndpoint.url,
@@ -358,9 +362,11 @@ class OcpiClientImpl implements OcpiClient {
       presentToken: tokenA,
     });
     const respData = asData(postEx.response.body);
-    if (!respData?.token) throw new Error('CPO credentials response missing token');
+    if (!respData?.token) {
+      reg.tokenWeAccept = previousToken;
+      throw new Error('CPO credentials response missing token');
+    }
 
-    reg.tokenWeAccept = ourToken;
     reg.tokenWePresent = String(respData.token);
     reg.tokenA = undefined;
     reg.status = 'registered';
