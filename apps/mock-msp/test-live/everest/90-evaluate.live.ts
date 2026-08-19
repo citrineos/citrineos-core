@@ -1,0 +1,34 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+// After the cycles: status, coverage and the findings policy.
+import { describe, expect, it } from 'vitest';
+import { unexpectedErrors } from '../support/known-findings.js';
+import { ctl, ctlGet, findings } from '../support/live-client.js';
+
+describe('after the charge loop', () => {
+  it('status: charger up, station online, no active session left', async () => {
+    const r = await ctlGet<any>('/status?fresh=1');
+    expect(r.body.everest.state).toBe('up');
+    expect(r.body.citrine.station.state).toBe('online');
+    expect(r.body.mock.activeSession).toBeNull();
+  });
+
+  it('coverage: sessions and command results came in, commands went out', async () => {
+    const r = await ctlGet<any>('/coverage');
+    const cell = (m: string) => r.body.modules.find((x: any) => x.module === m);
+    expect(cell('sessions').inbound.count).toBeGreaterThan(0);
+    expect(cell('commands').inbound.count).toBeGreaterThan(0);
+    expect(cell('commands').outbound.count).toBeGreaterThan(0);
+    expect(cell('cdrs').inbound.count + cell('cdrs').outbound.count).toBeGreaterThan(0);
+  });
+
+  it('preregistered scenario evaluates clean and no unexplained error findings', async () => {
+    await ctl('/reregister', { discoverOnly: true });
+    const r = await ctl<any>('/scenarios/preregistered/evaluate', {});
+    expect(r.body.passed, JSON.stringify(r.body.results)).toBe(true);
+    const bad = unexpectedErrors(await findings());
+    expect(bad.map((f) => `${f.module}: ${f.detail}`)).toEqual([]);
+  });
+});
