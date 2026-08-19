@@ -816,8 +816,8 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 **In-repo (hermetic — no docker, no live Citrine):**
 
 - **Compiles clean** — `tsc -b apps/mock-msp/tsconfig.json` → exit 0.
-- **Self-tests pass** — `pnpm --filter @citrineos/mock-msp test` → **11 test
-  files, 68 tests**. Coverage: both credentials handshakes + rotation with the
+- **Self-tests pass** — `pnpm --filter @citrineos/mock-msp test` → **27 test
+  files, 248 tests**. Coverage: both credentials handshakes + rotation with the
   stale-token probe; fault injection (`ocpiStatus`/`httpStatus`/`malformBody`,
   scope `times`, disarm); functional RECEIVER/SENDER modules (good body stored +
   `validation.ok:true`, bad body → `Finding`; bad token → 401/2002; wrong
@@ -828,7 +828,19 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
   a stub CPO (incl. the CDR pull fallback and per-cycle seq floors); token
   push/patch/verify; coverage + provoke + status aggregation; and the `expect[]`
   oracle over every shipped fixture. The suite drives the app via
-  `app.inject()` with a stub CPO — nothing needs the live stack.
+  `app.inject()` with a stub CPO — nothing needs the live stack. The rest of
+  the control API (state/received/wait/scenario/authorize/register/pull…), the
+  control secret, every fault kind (abort/delay over a real socket), the
+  remaining OCPI receivers and readers, the dispatcher edge cases, the charge
+  flow's degraded branches, the spec probes, the scenario grammar, the Store
+  ring buffer, the wire log, `loadConfig`, the dashboard routes and the built
+  entrypoint (spawned `dist/index.js`) are covered the same way.
+- **Dashboard** — Playwright (`test:e2e`, 34 specs) against a mock it boots
+  itself: header/cards/coverage grid, the wire trace filters and detail rows,
+  the fault builder, the actor/charging/probe buttons with Citrine down, the
+  control secret, the poll loop surviving an outage.
+- **Live** — `test:live` (41 tests) and `test:everest` (10) run in CI against
+  the real stack; see the CI section.
 
 **Live against a running CitrineOS + EVerest (all reproduced on the dev stack):**
 
@@ -842,3 +854,49 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 - Every rough-edge in the list above that is marked as observed, including the
   coordinates finding, the CDR envelope inconsistency, and the PATCH-omits-
   `valid` token block.
+
+---
+
+## CI
+
+`.github/workflows/mock-msp.yml` (workflow name **Mock eMSP**) runs on pull
+requests, on every push to `next`, nightly and on `workflow_dispatch`. Lanes:
+
+| job | what | when (PR) |
+|---|---|---|
+| `unit` | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,core,ocpi-base}/**`, shared config |
+| `docker-image` | builds the compose `mock-msp` service from `deploy.Dockerfile`, boots it alone, checks `/_mock/health` + the dashboard | same + compose files |
+| `dashboard` | Playwright against the dashboard (`e2e/*.e2e.ts`, project `dashboard`); the mock is started by Playwright's `webServer`, no Citrine behind it | `apps/mock-msp/**`, shared config |
+| `live` | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts` | `apps/mock-msp/**`, `packages/ocpi-base/**`, `apps/ocpi-server/**`, compose files |
+| `everest` | `live` plus EVerest as `cp001`: `test-live/everest/*.live.ts` (plug → START_SESSION → Session → STOP_SESSION → CDR) and the `@live`/`@everest` dashboard specs | push to `next`, nightly, dispatch, or the PR label `ci:mock-msp-everest` |
+| `mock-msp-ci` | aggregate status — the one check to require on `next` | always |
+
+`schedule` and `workflow_dispatch` only fire once the workflow file exists on the
+repository's default branch (`main`); until then the label is the way to run the
+EVerest lane on a PR.
+
+Two things the live lanes need that nothing else in the repo does: the OCPI
+seeders (`docker compose … exec -e OCPI_ENV=docker citrineos-ocpi pnpm run db:seed`
+— the containers only migrate), and `host.docker.internal` resolvable from the
+`citrineos-ocpi` container (`extra_hosts` in `docker-compose.local.yml`; the
+partner seed hardcodes it).
+
+Run the same things locally:
+
+```bash
+pnpm --filter @citrineos/mock-msp test            # hermetic
+pnpm --filter @citrineos/mock-msp test:e2e        # dashboard (boots its own mock on :18083)
+docker compose -f docker-compose.yml -f docker-compose.local.yml --profile ocpi \
+  up -d --build citrine citrineos-ocpi graphql-engine   # stack without the mock container
+bash apps/mock-msp/scripts/ci/seed-citrine.sh     # once per fresh DB
+bash apps/mock-msp/scripts/ci/mock-up.sh          # native mock on :8083
+pnpm --filter @citrineos/mock-msp test:live       # test-live/pr
+bash apps/mock-msp/scripts/everest-up.sh && pnpm --filter @citrineos/mock-msp test:everest
+```
+
+Live runs tolerate the documented Citrine defects listed above through
+`test-live/support/known-findings.ts`; any other error-level finding fails the
+lane. When one of those defects gets fixed upstream, drop its entry there.
+Artifacts (`reports/`, `playwright-report/`) carry the junit files, the mock's
+NDJSON wire log, the `/_mock/exchanges|findings|coverage|probes|status` dumps and
+the compose logs.
