@@ -24,6 +24,7 @@ import { BaseTransactionMapper } from './BaseTransactionMapper.js';
 import { LocationsService } from '../services/LocationsService.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
+import { calculateTotalCdrCost } from './cdrCost.js';
 import { OcpiGraphqlClient } from '../graphql/index.js';
 
 @Service()
@@ -180,9 +181,17 @@ export class SessionMapper extends BaseTransactionMapper {
     if (tariff) {
       session.currency = tariff.currency;
       if (transaction.totalKwh !== undefined && transaction.endTime !== undefined) {
-        session.total_cost = transaction.endTime
-          ? this.calculateTotalCost(transaction.totalKwh || 0, tariff.pricePerKwh)
-          : null;
+        session.total_cost =
+          session.start_date_time && session.end_date_time
+            ? calculateTotalCdrCost(
+                {
+                  kwh: session.kwh ?? 0,
+                  start_date_time: session.start_date_time,
+                  end_date_time: session.end_date_time,
+                },
+                tariff,
+              )
+            : null;
       }
     }
 
@@ -272,7 +281,7 @@ export class SessionMapper extends BaseTransactionMapper {
     token: TokenDTO,
     tariff: TariffDto,
   ): Session {
-    return {
+    const session: Session = {
       country_code: location.country_code,
       party_id: location.party_id,
       id: transaction.transactionId!,
@@ -298,11 +307,11 @@ export class SessionMapper extends BaseTransactionMapper {
       last_updated: transaction.updatedAt!,
       // TODO: Fill in optional values
       authorization_reference: null,
-      total_cost: transaction.endTime
-        ? this.calculateTotalCost(transaction.totalKwh || 0, tariff.pricePerKwh)
-        : null,
+      total_cost: null,
       meter_id: null,
     };
+    session.total_cost = session.end_date_time ? calculateTotalCdrCost(session, tariff) : null;
+    return session;
   }
 
   private getLatestEvent(transactionEvents: TransactionEventDto[]): Date {
