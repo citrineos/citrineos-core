@@ -109,7 +109,8 @@ export class MeterValueMapper {
   static fromMeasurandEnumType(
     measurand?: OCPP2_0_1.MeasurandEnumType | OCPP2_1.MeasurandEnumType | null,
   ): keyof typeof MeasurandEnum | undefined {
-    if (!measurand) return undefined;
+    // Per OCPP, an omitted measurand defaults to Energy.Active.Import.Register.
+    if (!measurand) return 'Energy.Active.Import.Register';
     switch (measurand) {
       case OCPP2_0_1.MeasurandEnumType.Current_Export:
       case OCPP2_1.MeasurandEnumType.Current_Export:
@@ -186,8 +187,74 @@ export class MeterValueMapper {
       case OCPP2_0_1.MeasurandEnumType.Voltage:
       case OCPP2_1.MeasurandEnumType.Voltage:
         return 'Voltage';
+      // OCPP 2.1-only measurands
+      case OCPP2_1.MeasurandEnumType.Current_Export_Offered:
+        return 'Current.Export.Offered';
+      case OCPP2_1.MeasurandEnumType.Current_Export_Minimum:
+        return 'Current.Export.Minimum';
+      case OCPP2_1.MeasurandEnumType.Current_Import_Offered:
+        return 'Current.Import.Offered';
+      case OCPP2_1.MeasurandEnumType.Current_Import_Minimum:
+        return 'Current.Import.Minimum';
+      case OCPP2_1.MeasurandEnumType.Display_PresentSOC:
+        return 'Display.PresentSOC';
+      case OCPP2_1.MeasurandEnumType.Display_MinimumSOC:
+        return 'Display.MinimumSOC';
+      case OCPP2_1.MeasurandEnumType.Display_TargetSOC:
+        return 'Display.TargetSOC';
+      case OCPP2_1.MeasurandEnumType.Display_MaximumSOC:
+        return 'Display.MaximumSOC';
+      case OCPP2_1.MeasurandEnumType.Display_RemainingTimeToMinimumSOC:
+        return 'Display.RemainingTimeToMinimumSOC';
+      case OCPP2_1.MeasurandEnumType.Display_RemainingTimeToTargetSOC:
+        return 'Display.RemainingTimeToTargetSOC';
+      case OCPP2_1.MeasurandEnumType.Display_RemainingTimeToMaximumSOC:
+        return 'Display.RemainingTimeToMaximumSOC';
+      case OCPP2_1.MeasurandEnumType.Display_ChargingComplete:
+        return 'Display.ChargingComplete';
+      case OCPP2_1.MeasurandEnumType.Display_BatteryEnergyCapacity:
+        return 'Display.BatteryEnergyCapacity';
+      case OCPP2_1.MeasurandEnumType.Display_InletHot:
+        return 'Display.InletHot';
+      case OCPP2_1.MeasurandEnumType.Energy_Active_Import_CableLoss:
+        return 'Energy.Active.Import.CableLoss';
+      case OCPP2_1.MeasurandEnumType.Energy_Active_Import_LocalGeneration_Register:
+        return 'Energy.Active.Import.LocalGeneration.Register';
+      case OCPP2_1.MeasurandEnumType.Energy_Active_Setpoint_Interval:
+        return 'Energy.Active.Setpoint.Interval';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Target:
+        return 'EnergyRequest.Target';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Minimum:
+        return 'EnergyRequest.Minimum';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Maximum:
+        return 'EnergyRequest.Maximum';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Minimum_V2X:
+        return 'EnergyRequest.Minimum.V2X';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Maximum_V2X:
+        return 'EnergyRequest.Maximum.V2X';
+      case OCPP2_1.MeasurandEnumType.EnergyRequest_Bulk:
+        return 'EnergyRequest.Bulk';
+      case OCPP2_1.MeasurandEnumType.Power_Active_Setpoint:
+        return 'Power.Active.Setpoint';
+      case OCPP2_1.MeasurandEnumType.Power_Active_Residual:
+        return 'Power.Active.Residual';
+      case OCPP2_1.MeasurandEnumType.Power_Export_Minimum:
+        return 'Power.Export.Minimum';
+      case OCPP2_1.MeasurandEnumType.Power_Export_Offered:
+        return 'Power.Export.Offered';
+      case OCPP2_1.MeasurandEnumType.Power_Import_Offered:
+        return 'Power.Import.Offered';
+      case OCPP2_1.MeasurandEnumType.Power_Import_Minimum:
+        return 'Power.Import.Minimum';
+      case OCPP2_1.MeasurandEnumType.Voltage_Minimum:
+        return 'Voltage.Minimum';
+      case OCPP2_1.MeasurandEnumType.Voltage_Maximum:
+        return 'Voltage.Maximum';
       default:
-        return 'Energy.Active.Import.Register';
+        // A value not defined in the OCPP protocol (or one we haven't added yet). Warn and
+        // return undefined; downstream it is treated like an absent measurand.
+        console.warn(`Unknown OCPP measurand "${measurand}"; not represented`);
+        return undefined;
     }
   }
 
