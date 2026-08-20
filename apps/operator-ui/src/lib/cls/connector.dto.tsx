@@ -11,6 +11,6 @@ import type {
 export class ConnectorClass implements Partial<ConnectorDto> {
   id?: number;
   connectorId?: number;
-  status?: ConnectorStatusEnumType | null;
-  errorCode?: ConnectorErrorCodeEnumType | null;
+  status?: ConnectorStatusEnumType;
+  errorCode?: ConnectorErrorCodeEnumType;
 }
