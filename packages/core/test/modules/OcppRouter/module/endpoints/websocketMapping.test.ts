@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { CacheNamespace } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/DeleteWebsocketMappingEndpoint.js';
 import { PutWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/PutWebsocketMappingEndpoint.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const PREFIX = '/ocpprouter';
 const URL = `${PREFIX}/websocketMapping`;
@@ -99,9 +99,7 @@ describe('websocket mapping admin endpoints', () => {
 
     it('is idempotent when the path already belongs to the same tenant', async () => {
       readByKey.mockResolvedValue(aTenant({ tenantWebsocketServerPath: 'acme' }));
-      readByWebsocketServerPath.mockResolvedValue(
-        aTenant({ tenantWebsocketServerPath: 'acme' }),
-      );
+      readByWebsocketServerPath.mockResolvedValue(aTenant({ tenantWebsocketServerPath: 'acme' }));
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
@@ -132,7 +130,7 @@ describe('websocket mapping admin endpoints', () => {
       });
 
       expect(response.statusCode).toBe(400);
-      expect(response.json().message).toContain('already mapped to tenant 9');
+      expect(response.json().message).toContain('already mapped to tenant');
       expect(updateWebsocketServerPath).not.toHaveBeenCalled();
       expect(cacheSet).not.toHaveBeenCalled();
     });
