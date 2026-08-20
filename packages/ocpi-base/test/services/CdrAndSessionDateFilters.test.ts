@@ -81,6 +81,19 @@ describe('OCPI date_from / date_to filters', () => {
     expect(whereFrom(request).isActive).toEqual({ _eq: false });
   });
 
+  it('CdrsService excludes transactions that were never stopped', async () => {
+    // A stale transaction is deactivated with no endTime when a new one starts on the same EVSE.
+    // The mapper cannot build a CDR without an end_date_time, so the count has to exclude them too.
+    const { client, request } = aCapturingGraphqlClient();
+    const service = new CdrsService(client, {
+      mapTransactionsToCdrs: vi.fn().mockResolvedValue([]),
+    } as never);
+
+    await service.getCdrs('GB', 'ABC', 'GB', 'VLT');
+
+    expect(whereFrom(request).endTime).toEqual({ _is_null: false });
+  });
+
   it('SessionsService decides endedOnly on isActive, not on delivered energy', async () => {
     // totalKwh > 0 is not a completion signal: a session still running has delivered energy, and
     // one that ended without delivering any is still ended.

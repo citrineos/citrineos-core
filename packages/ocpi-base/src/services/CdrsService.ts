@@ -52,6 +52,10 @@ export class CdrsService {
       // after the fact, but the query and its aggregate count did not, so X-Total-Count counted
       // sessions that never become CDRs and every page came back short of its limit.
       isActive: { _eq: false },
+      // A transaction can lose its active flag without ever being stopped, and a CDR needs an
+      // end_date_time. The mapper drops those, so the aggregate count has to drop them too or the
+      // page comes back short of the total again.
+      endTime: { _is_null: false },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
     // OCPI defines date_from as inclusive and date_to as exclusive. _lte made the upper bound
