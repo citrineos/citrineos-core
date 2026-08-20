@@ -11,6 +11,8 @@ import type { Price } from '../model/Price.js';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { SignedData } from '../model/SignedData.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
+import type { ChargingPeriod } from '../model/ChargingPeriod.js';
+import { CdrDimensionType } from '../model/CdrDimensionType.js';
 import { BaseTransactionMapper } from './BaseTransactionMapper.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -107,8 +109,8 @@ export class CdrMapper extends BaseTransactionMapper {
       cdr_location: await this.createCdrLocation(location, session),
       meter_id: session.meter_id,
       currency: session.currency,
-      tariffs: [ocpiTariff],
-      charging_periods: session.charging_periods || [],
+      tariffs: ocpiTariff ? [ocpiTariff] : undefined,
+      charging_periods: this.getChargingPeriods(session, tariff),
       signed_data: await this.getSignedData(session),
       total_cost: calculateTotalCdrCost(session, tariff),
       total_fixed_cost: calculateFixedCost(tariff),
@@ -129,6 +131,27 @@ export class CdrMapper extends BaseTransactionMapper {
 
   private generateCdrId(session: Session): string {
     return session.id;
+  }
+
+  /**
+   * A CDR needs at least one charging period, and a station can deliver a whole session without
+   * ever sending a meter value. The session is then described as one period carrying the totals
+   * the CDR already states, rather than as none at all.
+   */
+  private getChargingPeriods(session: Session, tariff: TariffDto): ChargingPeriod[] {
+    if (session.charging_periods?.length) {
+      return session.charging_periods;
+    }
+    return [
+      {
+        start_date_time: session.start_date_time,
+        tariff_id: String(tariff.id),
+        dimensions: [
+          { type: CdrDimensionType.ENERGY, volume: session.kwh },
+          { type: CdrDimensionType.TIME, volume: calculateTotalTimeHours(session) },
+        ],
+      },
+    ];
   }
 
   private async createCdrLocation(location: LocationDTO, session: Session): Promise<CdrLocation> {

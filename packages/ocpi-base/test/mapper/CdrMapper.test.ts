@@ -78,9 +78,9 @@ function aTransaction(overrides: Partial<TransactionDto> = {}): TransactionDto {
   } as unknown as TransactionDto;
 }
 
-function cdrMapper(): CdrMapper {
+function cdrMapper(tariffLookup: TariffDto[] = [aTariff()]): CdrMapper {
   const logger = new Logger({ type: 'hidden' });
-  const graphql = { request: async () => ({ Tariffs: [aTariff()] }) } as never;
+  const graphql = { request: async () => ({ Tariffs: tariffLookup }) } as never;
   return new CdrMapper(
     logger,
     {} as never,
@@ -96,6 +96,31 @@ describe('CdrMapper.mapTransactionsToCdrs', () => {
     expect(cdrs).toHaveLength(1);
     expect(cdrs[0].end_date_time).toEqual(new Date('2026-08-20T11:00:00Z'));
     expect(cdrs[0].total_time).toBe(1);
+  });
+
+  it('describes a session with no meter values as a single charging period', async () => {
+    // OCPI requires at least one charging period on a CDR, and a station can deliver a whole
+    // session without sending a meter value.
+    const cdrs = await cdrMapper().mapTransactionsToCdrs([aTransaction()]);
+
+    expect(cdrs[0].charging_periods).toEqual([
+      {
+        start_date_time: new Date('2026-08-20T10:00:00Z'),
+        tariff_id: '7',
+        dimensions: [
+          { type: 'ENERGY', volume: 50 },
+          { type: 'TIME', volume: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it('leaves tariffs off the CDR when the tariff cannot be looked up', async () => {
+    // The transaction carries its tariff, so the first lookup succeeds from the row itself while
+    // the OCPI tariff query still finds nothing.
+    const cdrs = await cdrMapper([]).mapTransactionsToCdrs([aTransaction()]);
+
+    expect(cdrs[0].tariffs).toBeUndefined();
   });
 
   it('skips a transaction that was deactivated without ever being stopped', async () => {
