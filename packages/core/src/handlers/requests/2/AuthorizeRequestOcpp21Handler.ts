@@ -119,25 +119,19 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     // Validate Contract Certificates based on OCPP 2.1 Part 2 C07
     if (request.iso15118CertificateHashData || request.certificate) {
       // TODO - implement validation using cached OCSP data described in C07.FR.05
-      if (request.iso15118CertificateHashData && request.iso15118CertificateHashData.length > 0) {
+      // If Charging Station is not able to validate a contract certificate,
+      // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
+      // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06. The chain check runs
+      // OCSP over every certificate in it, so the hash data adds nothing when it is present, and
+      // iso15118CertificateHashData is documented as not needed in that case.
+      if (request.certificate) {
+        response.certificateStatus =
+          await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
+      } else if (request.iso15118CertificateHashData?.length) {
         response.certificateStatus =
           await this._certificateAuthorityService.validateCertificateHashData(
             request.iso15118CertificateHashData,
           );
-      }
-      // If Charging Station is not able to validate a contract certificate,
-      // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
-      // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06
-      // Only consulted while the hash data has not already refused the certificate: both results
-      // are written to the same field, so an unconditional call let a chain that still verifies
-      // overwrite a CertificateRevoked or CertificateExpired verdict from the OCSP data.
-      if (
-        request.certificate &&
-        (response.certificateStatus === undefined ||
-          response.certificateStatus === AuthorizeCertificateStatusEnum.Accepted)
-      ) {
-        response.certificateStatus =
-          await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
       }
       if (response.certificateStatus !== AuthorizeCertificateStatusEnum.Accepted) {
         response = {

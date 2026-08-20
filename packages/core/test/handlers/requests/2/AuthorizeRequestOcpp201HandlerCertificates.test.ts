@@ -109,17 +109,17 @@ describe('AuthorizeRequestOcpp201Handler contract certificate validation', () =>
     expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
   });
 
-  it('does not let a chain that still verifies overwrite a revoked OCSP result', async () => {
-    // C07 lets a station send OCSP hash data, and the PEM chain as well when it cannot validate
-    // that chain itself. Both results were assigned to the same field, so the second call won and
-    // a contract certificate the responder had revoked was accepted on the strength of the chain.
+  it('validates the chain instead of the responder the station nominated, when both are sent', async () => {
+    // validateCertificateChainPem runs OCSP over every certificate in the chain using each one's
+    // own AIA responder URL, so the hash data adds nothing here - and its responderURL comes from
+    // the station. Running both meant an outbound request to a station-supplied URL whose result
+    // was then discarded.
+    const validateCertificateHashData = vi.fn();
     const { handler, ocppSender } = makeHandler({
-      validateCertificateHashData: vi
-        .fn()
-        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateRevoked),
+      validateCertificateHashData,
       validateCertificateChainPem: vi
         .fn()
-        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted),
+        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError),
     } as unknown as Partial<CertificateAuthorityService>);
 
     await handler.handle(
@@ -128,6 +128,25 @@ describe('AuthorizeRequestOcpp201Handler contract certificate validation', () =>
         iso15118CertificateHashData: hashData,
         certificate: A_CONTRACT_CERTIFICATE_CHAIN,
       } as never),
+    );
+
+    expect(validateCertificateHashData).not.toHaveBeenCalled();
+    const response = sentResponse(ocppSender);
+    expect(response.certificateStatus).toBe(
+      OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError,
+    );
+    expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
+  });
+
+  it('refuses a certificate the chain check reports revoked', async () => {
+    const { handler, ocppSender } = makeHandler({
+      validateCertificateChainPem: vi
+        .fn()
+        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateRevoked),
+    } as unknown as Partial<CertificateAuthorityService>);
+
+    await handler.handle(
+      makeMessage({ ...request, certificate: A_CONTRACT_CERTIFICATE_CHAIN } as never),
     );
 
     const response = sentResponse(ocppSender);
@@ -137,28 +156,16 @@ describe('AuthorizeRequestOcpp201Handler contract certificate validation', () =>
     expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
   });
 
-  it('still validates the chain when the hash data accepted the certificate', async () => {
-    const validateCertificateChainPem = vi
-      .fn()
-      .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
+  it('refuses a request carrying neither a chain nor any hash data to check', async () => {
+    // iso15118CertificateHashData has minItems 1, so an empty list only reaches the handler if
+    // something bypassed schema validation. There is nothing to validate, so it fails closed.
     const { handler, ocppSender } = makeHandler({
-      validateCertificateHashData: vi
-        .fn()
-        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted),
-      validateCertificateChainPem,
+      validateCertificateHashData: vi.fn(),
+      validateCertificateChainPem: vi.fn(),
     } as unknown as Partial<CertificateAuthorityService>);
 
-    await handler.handle(
-      makeMessage({
-        ...request,
-        iso15118CertificateHashData: hashData,
-        certificate: A_CONTRACT_CERTIFICATE_CHAIN,
-      } as never),
-    );
+    await handler.handle(makeMessage({ ...request, iso15118CertificateHashData: [] } as never));
 
-    expect(validateCertificateChainPem).toHaveBeenCalledOnce();
-    expect(sentResponse(ocppSender).certificateStatus).toBe(
-      OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError,
-    );
+    expect(sentResponse(ocppSender).idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
   });
 });
