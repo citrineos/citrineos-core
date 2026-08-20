@@ -13,6 +13,7 @@ import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type {
   GetTransactionsQueryResult,
   GetTransactionsQueryVariables,
+  Timestamptz_Comparison_Exp,
   Transactions_Bool_Exp,
 } from '../graphql/index.js';
 import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
@@ -49,15 +50,21 @@ export class SessionsService {
         },
       },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
+    // OCPI defines date_from as inclusive and date_to as exclusive. _lte made the upper bound
+    // inclusive, so a record landing exactly on the boundary was returned both by the poll that
+    // ended there and by the poll that started there - the same record delivered twice.
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
-    if (dateTo) dateFilters._lte = dateTo.toISOString();
+    if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }
 
     if (endedOnly) {
-      where.totalKwh = { _gt: 0 };
+      // Delivered energy is not a completion signal: a session still running has some, and one
+      // that ended without delivering any has ended all the same. isActive is the actual flag,
+      // and it is what CdrMapper uses.
+      where.isActive = { _eq: false };
     }
     const queryOptions = {
       offset,

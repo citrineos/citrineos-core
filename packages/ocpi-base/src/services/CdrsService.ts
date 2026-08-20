@@ -12,6 +12,7 @@ import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type {
   GetTransactionsQueryResult,
   GetTransactionsQueryVariables,
+  Timestamptz_Comparison_Exp,
   Transactions_Bool_Exp,
 } from '../graphql/index.js';
 import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
@@ -47,10 +48,17 @@ export class CdrsService {
           partyId: { _eq: fromPartyId },
         },
       },
+      // A CDR only exists for a finished session. CdrMapper already drops active transactions
+      // after the fact, but the query and its aggregate count did not, so X-Total-Count counted
+      // sessions that never become CDRs and every page came back short of its limit.
+      isActive: { _eq: false },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
+    // OCPI defines date_from as inclusive and date_to as exclusive. _lte made the upper bound
+    // inclusive, so a record landing exactly on the boundary was returned both by the poll that
+    // ended there and by the poll that started there - the same record delivered twice.
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
-    if (dateTo) dateFilters._lte = dateTo.toISOString();
+    if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }
