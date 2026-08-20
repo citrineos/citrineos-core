@@ -35,6 +35,7 @@ import {
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  DrizzleVariableAttributeRepository,
 } from '../../drizzle/index.js';
 import type { Component } from '../model/DeviceModel/Component.js';
 import { SequelizeAuthorizationRepository } from './Authorization.js';
@@ -60,6 +61,7 @@ import { SequelizeTariffRepository } from './Tariff.js';
 import { SequelizeTenantRepository } from './Tenant.js';
 import { SequelizeTransactionEventRepository } from './TransactionEvent.js';
 import { SequelizeVariableMonitoringRepository } from './VariableMonitoring.js';
+import { DrizzleBootRepository } from '@dal/layers/drizzle/repository/Boot.js';
 
 export class RepositoryStore {
   sequelizeInstance: Sequelize;
@@ -97,7 +99,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
     this.certificateRepository = new SequelizeCertificateRepository({
       config,
       logger,
@@ -170,6 +171,11 @@ export class RepositoryStore {
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
+      this.bootRepository = new DrizzleBootRepository({
+        config,
+        logger,
+        variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
+      });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -183,6 +189,7 @@ export class RepositoryStore {
         logger,
         sequelizeInstance,
       });
+      this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
       this.securityEventRepository = new SequelizeSecurityEventRepository({
         config,
         logger,

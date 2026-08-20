@@ -5,6 +5,7 @@
 import type { BootConfig, CrudRepository } from '@citrineos/base';
 import type {
   AuthorizationDto,
+  BootDto,
   CallAction,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
@@ -14,7 +15,6 @@ import type {
   OCPP1_6,
   OCPPMessageDto,
   OCPPVersion,
-  RegistrationStatusEnumType,
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
@@ -29,7 +29,6 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type { Boot } from '../layers/sequelize/model/Boot.js';
 import type { Certificate } from '../layers/sequelize/model/Certificate/Certificate.js';
 import type {
   DeleteCertificateAttempt,
@@ -88,26 +87,16 @@ export interface IAuthorizationRepository {
 /**
  * Key is StationId
  */
-export interface IBootRepository extends CrudRepository<BootConfig> {
+export interface IBootRepository {
   createOrUpdateByKey: (
     tenantId: number,
     value: BootConfig,
     key: string,
-  ) => Promise<Boot | undefined>;
-  updateStatusByKey: (
-    tenantId: number,
-    status: RegistrationStatusEnumType,
-    statusInfo: OCPP2_common_types.StatusInfoType | undefined,
-    key: string,
-  ) => Promise<Boot | undefined>;
-  updateLastBootTimeByKey: (
-    tenantId: number,
-    lastBootTime: string,
-    key: string,
-  ) => Promise<Boot | undefined>;
-  readByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
+  ) => Promise<BootDto | undefined>;
+  updateByKey: (tenantId: number, value: object, key: string) => Promise<BootDto | undefined>;
+  readByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
   existsByKey: (tenantId: number, key: string) => Promise<boolean>;
-  deleteByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
+  deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
 }
 
 export interface IDeviceModelRepository
