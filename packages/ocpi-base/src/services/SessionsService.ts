@@ -51,9 +51,7 @@ export class SessionsService {
       },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
-    // OCPI defines date_from as inclusive and date_to as exclusive. _lte made the upper bound
-    // inclusive, so a record landing exactly on the boundary was returned both by the poll that
-    // ended there and by the poll that started there - the same record delivered twice.
+    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
     if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
@@ -61,9 +59,6 @@ export class SessionsService {
     }
 
     if (endedOnly) {
-      // Delivered energy is not a completion signal: a session still running has some, and one
-      // that ended without delivering any has ended all the same. isActive is the actual flag,
-      // and it is what CdrMapper uses.
       where.isActive = { _eq: false };
     }
     const queryOptions = {
