@@ -1,213 +1,228 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CacheNamespace, DEFAULT_TENANT_ID, type BootstrapConfig } from '@citrineos/base';
-import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
+import { CacheNamespace } from '@citrineos/base';
+import type { TenantDto } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/DeleteWebsocketMappingEndpoint.js';
 import { PutWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/PutWebsocketMappingEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
-import { aSystemConfig } from '@test/providers/systemConfig.js';
 
 const PREFIX = '/ocpprouter';
 const URL = `${PREFIX}/websocketMapping`;
+const TENANT_ID = 1;
 
-function aWebsocketServer(id: string): WebsocketServerConfig {
+function aTenant(overrides?: Partial<TenantDto>): TenantDto {
   return {
-    id,
-    host: '0.0.0.0',
-    port: 8081,
-    pingInterval: 60,
-    protocols: ['ocpp2.0.1'],
-    securityProfile: 0,
-    allowUnknownChargingStations: true,
-    dynamicTenantResolution: false,
-    tenantId: DEFAULT_TENANT_ID,
-  };
+    id: TENANT_ID,
+    name: 'tenant-1',
+    isUserTenant: false,
+    tenantWebsocketServerPath: null,
+    ...overrides,
+  } as TenantDto;
 }
 
 describe('websocket mapping admin endpoints', () => {
   const { container } = createTestContainer();
 
-  let config: BootstrapConfig & SystemConfig;
-  let saveConfig: ReturnType<typeof vi.fn>;
-  let fetchConfig: ReturnType<typeof vi.fn>;
-  let upsertServerNetworkProfile: ReturnType<typeof vi.fn>;
+  let readByKey: ReturnType<typeof vi.fn>;
+  let readByWebsocketServerPath: ReturnType<typeof vi.fn>;
+  let updateWebsocketServerPath: ReturnType<typeof vi.fn>;
   let cacheSet: ReturnType<typeof vi.fn>;
   let cacheRemove: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    config = aSystemConfig();
-    config.util.networkConnection.websocketServers = [aWebsocketServer('server-1')];
-    saveConfig = vi.fn().mockResolvedValue(undefined);
-    fetchConfig = vi.fn().mockResolvedValue(undefined);
-    upsertServerNetworkProfile = vi.fn().mockResolvedValue(undefined);
+    readByKey = vi.fn().mockResolvedValue(aTenant());
+    readByWebsocketServerPath = vi.fn().mockResolvedValue(undefined);
+    updateWebsocketServerPath = vi
+      .fn()
+      .mockImplementation((tenantId: number, path: string | null) =>
+        Promise.resolve(aTenant({ id: tenantId, tenantWebsocketServerPath: path })),
+      );
     cacheSet = vi.fn().mockResolvedValue(undefined);
-    cacheRemove = vi.fn().mockResolvedValue(undefined);
+    cacheRemove = vi.fn().mockResolvedValue(true);
   });
 
   const mount = (
     endpointClass: Parameters<typeof getTestInstance>[1],
   ): Promise<MountedEndpoint> => {
     const endpoint = getTestInstance(container, endpointClass, {
-      config,
-      configStore: { saveConfig, fetchConfig },
       cache: { set: cacheSet, remove: cacheRemove },
-      serverNetworkProfileRepository: { upsertServerNetworkProfile },
+      tenantRepository: {
+        readByKey,
+        readByWebsocketServerPath,
+        updateWebsocketServerPath,
+      },
     });
     return mountEndpoint(endpoint, endpointClass.route, PREFIX);
   };
 
-  const server = () => config.util.networkConnection.websocketServers[0];
-
   describe('PutWebsocketMappingEndpoint', () => {
-    it('adds the mapping, enables dynamic resolution and persists everything', async () => {
+    it('assigns the path to the tenant and caches it', async () => {
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'PUT',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
+        url: `${URL}?path=acme&tenantId=${TENANT_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
-      expect(server().tenantPathMapping).toEqual({ '/cs': 5 });
-      expect(server().dynamicTenantResolution).toBe(true);
-      expect(saveConfig).toHaveBeenCalledWith(config);
-      expect(upsertServerNetworkProfile).toHaveBeenCalledWith(
-        server(),
-        config.maxCallLengthSeconds,
+      expect(updateWebsocketServerPath).toHaveBeenCalledWith(TENANT_ID, 'acme');
+      expect(cacheSet).toHaveBeenCalledWith(
+        'acme',
+        String(TENANT_ID),
+        CacheNamespace.TenantPathMapping,
       );
+      expect(cacheRemove).not.toHaveBeenCalled();
+      expect(response.json().tenantWebsocketServerPath).toBe('acme');
     });
 
-    it('caches the mapping under the tenant path mapping namespace', async () => {
+    it('evicts the previous path from the cache when a tenant is re-mapped', async () => {
+      readByKey.mockResolvedValue(aTenant({ tenantWebsocketServerPath: 'old-path' }));
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
-      await mounted.server.inject({ method: 'PUT', url: `${URL}?id=server-1&path=/cs&tenantId=5` });
+      const response = await mounted.server.inject({
+        method: 'PUT',
+        url: `${URL}?path=new-path&tenantId=${TENANT_ID}`,
+      });
 
+      expect(response.statusCode).toBe(200);
+      expect(cacheRemove).toHaveBeenCalledWith('old-path', CacheNamespace.TenantPathMapping);
       expect(cacheSet).toHaveBeenCalledWith(
-        expect.stringContaining('server-1'),
-        '5',
+        'new-path',
+        String(TENANT_ID),
         CacheNamespace.TenantPathMapping,
       );
     });
 
-    it('refreshes from the config store before mutating', async () => {
-      const mounted = await mount(PutWebsocketMappingEndpoint);
-
-      await mounted.server.inject({ method: 'PUT', url: `${URL}?id=server-1&path=/cs&tenantId=5` });
-
-      expect(fetchConfig).toHaveBeenCalled();
-    });
-
-    it('is idempotent when the path already maps to the same tenant', async () => {
-      server().tenantPathMapping = { '/cs': 5 };
+    it('is idempotent when the path already belongs to the same tenant', async () => {
+      readByKey.mockResolvedValue(aTenant({ tenantWebsocketServerPath: 'acme' }));
+      readByWebsocketServerPath.mockResolvedValue(
+        aTenant({ tenantWebsocketServerPath: 'acme' }),
+      );
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'PUT',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
+        url: `${URL}?path=acme&tenantId=${TENANT_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
-      expect(server().tenantPathMapping).toEqual({ '/cs': 5 });
+      expect(updateWebsocketServerPath).toHaveBeenCalledWith(TENANT_ID, 'acme');
+      // Same path, so there is no stale entry to evict.
+      expect(cacheRemove).not.toHaveBeenCalled();
+      expect(cacheSet).toHaveBeenCalledWith(
+        'acme',
+        String(TENANT_ID),
+        CacheNamespace.TenantPathMapping,
+      );
     });
 
-    it('rejects remapping a path that belongs to another tenant', async () => {
-      server().tenantPathMapping = { '/cs': 9 };
+    it('rejects a path already mapped to another tenant', async () => {
+      readByWebsocketServerPath.mockResolvedValue(
+        aTenant({ id: 9, tenantWebsocketServerPath: 'acme' }),
+      );
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'PUT',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
+        url: `${URL}?path=acme&tenantId=${TENANT_ID}`,
       });
 
       expect(response.statusCode).toBe(400);
       expect(response.json().message).toContain('already mapped to tenant 9');
-      expect(saveConfig).not.toHaveBeenCalled();
+      expect(updateWebsocketServerPath).not.toHaveBeenCalled();
+      expect(cacheSet).not.toHaveBeenCalled();
     });
 
-    it('404s for an unknown server id', async () => {
+    // A multi-segment path would resolve to whatever its last segment is, letting a tenant
+    // register 'tenant2/tenant1' and have its connections land on tenant1.
+    it.each(['tenant2%2Ftenant1', '%2Fleading', 'trailing%2F', 'has%20space'])(
+      'rejects the path %j because it is not a single URL segment',
+      async (encodedPath) => {
+        const mounted = await mount(PutWebsocketMappingEndpoint);
+
+        const response = await mounted.server.inject({
+          method: 'PUT',
+          url: `${URL}?path=${encodedPath}&tenantId=${TENANT_ID}`,
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(updateWebsocketServerPath).not.toHaveBeenCalled();
+        expect(cacheSet).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects an empty path', async () => {
       const mounted = await mount(PutWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'PUT',
-        url: `${URL}?id=nope&path=/cs&tenantId=5`,
+        url: `${URL}?path=&tenantId=${TENANT_ID}`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(updateWebsocketServerPath).not.toHaveBeenCalled();
+      expect(cacheSet).not.toHaveBeenCalled();
+    });
+
+    it('404s when the tenant does not exist', async () => {
+      readByKey.mockResolvedValue(undefined);
+      const mounted = await mount(PutWebsocketMappingEndpoint);
+
+      const response = await mounted.server.inject({
+        method: 'PUT',
+        url: `${URL}?path=acme&tenantId=404`,
       });
 
       expect(response.statusCode).toBe(404);
-      expect(saveConfig).not.toHaveBeenCalled();
+      expect(updateWebsocketServerPath).not.toHaveBeenCalled();
+      expect(cacheSet).not.toHaveBeenCalled();
     });
   });
 
   describe('DeleteWebsocketMappingEndpoint', () => {
-    it('removes the mapping and evicts it from the cache', async () => {
-      server().tenantPathMapping = { '/cs': 5, '/other': 6 };
+    it('clears the mapping and removes the cached path', async () => {
+      readByKey.mockResolvedValue(aTenant({ tenantWebsocketServerPath: 'acme' }));
       const mounted = await mount(DeleteWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'DELETE',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
+        url: `${URL}?tenantId=${TENANT_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
-      expect(server().tenantPathMapping).toEqual({ '/other': 6 });
-      expect(cacheRemove).toHaveBeenCalledWith(
-        expect.stringContaining('server-1'),
-        CacheNamespace.TenantPathMapping,
-      );
-      expect(saveConfig).toHaveBeenCalledWith(config);
+      expect(updateWebsocketServerPath).toHaveBeenCalledWith(TENANT_ID, null);
+      expect(cacheRemove).toHaveBeenCalledWith('acme', CacheNamespace.TenantPathMapping);
+      expect(response.json().tenantWebsocketServerPath).toBeNull();
     });
 
-    it('404s when the path is not mapped', async () => {
-      server().tenantPathMapping = { '/other': 6 };
+    it('404s when the tenant has no mapping to delete', async () => {
       const mounted = await mount(DeleteWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'DELETE',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
+        url: `${URL}?tenantId=${TENANT_ID}`,
       });
 
       expect(response.statusCode).toBe(404);
-      expect(saveConfig).not.toHaveBeenCalled();
+      expect(updateWebsocketServerPath).not.toHaveBeenCalled();
+      expect(cacheRemove).not.toHaveBeenCalled();
     });
 
-    it('rejects deleting a mapping that belongs to another tenant', async () => {
-      server().tenantPathMapping = { '/cs': 9 };
+    it('404s when the tenant does not exist', async () => {
+      readByKey.mockResolvedValue(undefined);
       const mounted = await mount(DeleteWebsocketMappingEndpoint);
 
       const response = await mounted.server.inject({
         method: 'DELETE',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(server().tenantPathMapping).toEqual({ '/cs': 9 });
-      expect(saveConfig).not.toHaveBeenCalled();
-    });
-
-    it('404s for an unknown server id', async () => {
-      const mounted = await mount(DeleteWebsocketMappingEndpoint);
-
-      const response = await mounted.server.inject({
-        method: 'DELETE',
-        url: `${URL}?id=nope&path=/cs&tenantId=5`,
+        url: `${URL}?tenantId=404`,
       });
 
       expect(response.statusCode).toBe(404);
-    });
-
-    it('leaves an unmapped server untouched when it has no mapping table at all', async () => {
-      const mounted = await mount(DeleteWebsocketMappingEndpoint);
-
-      const response = await mounted.server.inject({
-        method: 'DELETE',
-        url: `${URL}?id=server-1&path=/cs&tenantId=5`,
-      });
-
-      expect(response.statusCode).toBe(200);
-      expect(saveConfig).not.toHaveBeenCalled();
+      expect(updateWebsocketServerPath).not.toHaveBeenCalled();
       expect(cacheRemove).not.toHaveBeenCalled();
     });
   });
