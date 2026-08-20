@@ -12,4 +12,15 @@ export class BaseMiddleware {
     const headers = context.req.headers;
     return headers[header.toLowerCase()];
   }
+
+  /**
+   * Sets a response header only when there is a value for it. Koa stringifies whatever it is
+   * given, so passing an absent header through would put the text "undefined" on the response.
+   */
+  protected setHeaderIfPresent(context: Context, header: string, value: unknown) {
+    if (value === undefined || value === null) {
+      return;
+    }
+    context.response.set(header, value);
+  }
 }

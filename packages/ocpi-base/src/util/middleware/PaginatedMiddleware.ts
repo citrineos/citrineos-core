@@ -19,7 +19,12 @@ import { OcpiHttpHeader } from '../OcpiHttpHeader.js';
 export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddlewareInterface {
   async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     await next();
-    const paginatedResponse = context.response.body as PaginatedResponse<any>;
+    const paginatedResponse = context.response.body as PaginatedResponse<any> | undefined;
+    // The endpoint is paginated but the response need not be: an exception handled downstream
+    // leaves an OCPI error body here, and a 204 leaves none at all.
+    if (!paginatedResponse || paginatedResponse.total === undefined) {
+      return;
+    }
     const link = this.createLink(context, paginatedResponse);
     if (link) {
       context.response.set(OcpiHttpHeader.Link, `<${link}>; rel="next"`);
