@@ -14,9 +14,6 @@ import {
   type IFileStorage,
   type IMessageRouter,
   type IModule,
-  Ajv,
-  ConfigStoreFactory,
-  type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
 import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
