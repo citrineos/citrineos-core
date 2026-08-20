@@ -119,6 +119,7 @@ export class SessionMapper extends BaseTransactionMapper {
     transactionIdToTariffMap: Map<string, TariffDto>,
   ): Promise<Session[]> {
     const result: Session[] = [];
+    const skipped: string[] = [];
     for (const transaction of transactions) {
       const location = transactionIdToLocationMap.get(transaction.transactionId!);
       const token = transactionIdToTokenMap.get(transaction.transactionId!);
@@ -127,8 +128,21 @@ export class SessionMapper extends BaseTransactionMapper {
       if (location && token && tariff) {
         result.push(this.mapTransactionWithContextToSession(transaction, location, token, tariff));
       } else {
-        this.logger.debug(`Skipped transaction ${transaction.transactionId}`);
+        const missing = [
+          ...(location ? [] : ['location']),
+          ...(token ? [] : ['token']),
+          ...(tariff ? [] : ['tariff']),
+        ];
+        skipped.push(`${transaction.transactionId} (no ${missing.join(', ')})`);
       }
+    }
+    if (skipped.length > 0) {
+      // Sessions and CDRs are counted by a separate aggregate query, so anything dropped here
+      // leaves the page short of the total it was advertised with, and the caller has no other
+      // way to find out which records are missing.
+      this.logger.warn(
+        `Skipped ${skipped.length} of ${transactions.length} transactions: ${skipped.join('; ')}`,
+      );
     }
     return result;
   }
