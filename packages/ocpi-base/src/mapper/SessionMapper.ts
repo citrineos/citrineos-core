@@ -208,8 +208,7 @@ export class SessionMapper extends BaseTransactionMapper {
       session.status = this.getTransactionStatus(transaction as TransactionDto);
     }
 
-    // Set default auth method
-    session.auth_method = AuthMethod.WHITELIST;
+    session.auth_method = this.getAuthMethod(transaction);
 
     // Set optional fields that are typically null in your implementation
     session.authorization_reference = null;
@@ -259,7 +258,7 @@ export class SessionMapper extends BaseTransactionMapper {
     }
 
     // Set defaults for fields that don't depend on external context
-    session.auth_method = AuthMethod.WHITELIST;
+    session.auth_method = this.getAuthMethod(transaction);
     session.authorization_reference = null;
     session.meter_id = null;
 
@@ -287,8 +286,7 @@ export class SessionMapper extends BaseTransactionMapper {
       end_date_time: transaction.endTime ? new Date(transaction.endTime) : null,
       kwh: transaction.totalKwh || 0,
       cdr_token: this.createCdrToken(token),
-      // TODO: Implement other auth methods
-      auth_method: AuthMethod.WHITELIST,
+      auth_method: this.getAuthMethod(transaction),
       location_id: this.getLocationId(location),
       evse_uid: this.getEvseUid(transaction),
       connector_id: transaction.connectorId!.toString(),
@@ -435,6 +433,14 @@ export class SessionMapper extends BaseTransactionMapper {
 
     // Convert milliseconds to hours
     return timeDiffMs / (1000 * 60 * 60); // 1000 ms/sec * 60 sec/min * 60 min/hour
+  }
+
+  /**
+   * COMMAND is the OCPI method for a session a Command started, which is what remoteStartId
+   * records. Anything else was authorised by the CSMS from its own token list.
+   */
+  private getAuthMethod(transaction: Partial<TransactionDto>): AuthMethod {
+    return transaction.remoteStartId != null ? AuthMethod.COMMAND : AuthMethod.WHITELIST;
   }
 
   private getTransactionStatus(transaction: TransactionDto): SessionStatus {
