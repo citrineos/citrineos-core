@@ -361,7 +361,13 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             payload: `chargingSchedulePeriod with phaseToUse requires numberPhases=1`,
           };
         }
-        if (!acPhaseSwitchingSupported.length) {
+        // Presence of the variable is not the same as support for the feature: a station that
+        // reports ACPhaseSwitchingSupported=false has a row, so testing only the length accepted
+        // the profile and forwarded it to hardware that cannot honour it. Read the value, and
+        // treat anything that is not an explicit true - including an absent row - as unsupported.
+        const phaseSwitchingSupported =
+          acPhaseSwitchingSupported[0]?.value?.toLowerCase() === 'true';
+        if (!phaseSwitchingSupported) {
           return {
             success: false,
             payload: `phaseToUse not allowed if AC phase switching is not supported by station ${ocppConnectionName}.`,
