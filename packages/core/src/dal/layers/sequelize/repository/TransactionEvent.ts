@@ -288,11 +288,16 @@ export class SequelizeTransactionEventRepository
       }
 
       const transactionDatabaseId = finalTransaction.id;
+      // Passed transactionCreatedAt explicitly because the
+      // models' @BeforeCreate fallback reads outside this sequelize transaction and so
+      // cannot see a Transaction created moments ago in it.
+      const transactionCreatedAt = finalTransaction.createdAt;
 
       let event = TransactionEvent.build({
         tenantId,
         ocppConnectionName: ocppConnectionName,
         transactionDatabaseId,
+        transactionCreatedAt,
         ...value,
       });
 
@@ -328,6 +333,7 @@ export class SequelizeTransactionEventRepository
                 tenantId,
                 transactionEventId: event.id,
                 transactionDatabaseId: transactionDatabaseId,
+                transactionCreatedAt,
                 transactionId: finalTransaction.transactionId,
                 tariffId: finalTransaction.tariffId,
                 ...meterValueType,
@@ -582,11 +588,13 @@ export class SequelizeTransactionEventRepository
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
+    transactionCreatedAt?: Date,
   ): Promise<MeterValue> {
     const meterValueType = MeterValueMapper.fromMeterValueType(meterValue);
     const savedMeterValue = await MeterValue.create({
       tenantId,
       transactionDatabaseId: transactionDatabaseId,
+      transactionCreatedAt,
       transactionId,
       tariffId,
       ...meterValueType,
@@ -626,6 +634,7 @@ export class SequelizeTransactionEventRepository
     await Promise.all(
       meterValues.map(async (meterValue) => {
         meterValue.transactionDatabaseId = transaction.id;
+        meterValue.transactionCreatedAt = transaction.createdAt;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
         const createdMeterValue = await MeterValue.create(meterValue);
@@ -731,6 +740,7 @@ export class SequelizeTransactionEventRepository
 
       // Store StartTransaction in db
       event.transactionDatabaseId = newTransaction.id;
+      event.transactionCreatedAt = newTransaction.createdAt;
       event = await event.save({ transaction: sequelizeTransaction });
       this.startTransaction.emit('created', [event]);
 
@@ -767,6 +777,7 @@ export class SequelizeTransactionEventRepository
       tenantId,
       ocppConnectionName: ocppConnectionName,
       transactionDatabaseId,
+      transactionCreatedAt: transaction.createdAt,
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
@@ -783,6 +794,7 @@ export class SequelizeTransactionEventRepository
         meterValues.map(async (meterValue) => {
           meterValue.tenantId = tenantId;
           meterValue.transactionDatabaseId = transactionDatabaseId;
+          meterValue.transactionCreatedAt = transaction.createdAt;
           const createdMeterValue = MeterValue.build(meterValue);
           createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
           await createdMeterValue.save();

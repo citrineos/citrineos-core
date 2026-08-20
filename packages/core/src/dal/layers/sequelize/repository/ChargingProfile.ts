@@ -191,6 +191,7 @@ export class SequelizeChargingProfileRepository
         ...chargingNeedsReq.chargingNeeds,
         evseId: activeTransaction.evseId,
         transactionDatabaseId: activeTransaction.id,
+        transactionCreatedAt: activeTransaction.createdAt,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
     );

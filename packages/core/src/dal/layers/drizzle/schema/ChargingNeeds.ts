@@ -4,7 +4,16 @@
 
 import type { ACChargingParametersType, DCChargingParametersType } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
-import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  primaryKey,
+  pgSchema,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -13,7 +22,7 @@ import { type z } from 'zod';
 function chargingNeedsColumns() {
   return {
     // Implicit auto-increment PK (model declares no @PrimaryKey).
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     acChargingParameters: jsonb('acChargingParameters').$type<ACChargingParametersType>(),
     dcChargingParameters: jsonb('dcChargingParameters').$type<DCChargingParametersType>(),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
@@ -22,6 +31,10 @@ function chargingNeedsColumns() {
     maxScheduleTuples: integer('maxScheduleTuples'),
     evseId: integer('evseId'),
     transactionDatabaseId: integer('transactionDatabaseId'),
+    // Partition key: mirrors the owning transaction's "createdAt"
+    transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
@@ -33,7 +46,9 @@ function chargingNeedsColumns() {
 }
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
-export const chargingNeedsTable = pgTable(TableName.ChargingNeeds, chargingNeedsColumns());
+export const chargingNeedsTable = pgTable(TableName.ChargingNeeds, chargingNeedsColumns(), (t) => [
+  primaryKey({ columns: [t.id, t.transactionCreatedAt] }),
+]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof chargingNeedsTable>();

@@ -3,14 +3,44 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Provisions upcoming "OCPPMessages" weekly partitions. Runs on every container start,
- * because the partitioning migration runs once but partitions must keep being created.
+ * Provisions upcoming partitions: "OCPPMessages" weekly, the "Transactions" cluster
+ * monthly. Runs on every container start, because the partitioning migrations run once
+ * but partitions must keep being created.
  */
 import { loadBootstrapConfig } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
-/** Weeks of partitions to keep ahead of the current one. */
+/** Weeks of "OCPPMessages" partitions to keep ahead of the current one. */
 const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 1);
+
+/**
+ * Months of "Transactions" cluster partitions to keep ahead of the current one. Nothing but
+ * a pod start provisions this cluster, so 1 leaves a runway of only until the end of next
+ * month; raise it where deployments run for longer than that without restarting.
+ */
+const FUTURE_MONTHS = Number(process.env.TRANSACTION_PARTITION_FUTURE_MONTHS ?? 1);
+
+/**
+ * retain is deliberately absurd: it puts the drop cutoff ~190 years in the past so nothing
+ * qualifies, making the call provision-only. Dropping partitions destroys data and belongs
+ * to the maintenance job that archives first, never to application startup.
+ */
+const NEVER_DROP = 9999;
+
+/** Skips silently when the procedure is absent. A pre-partitioning schema must still start. */
+async function rotate(sequelize: Sequelize, procedure: string, future: number): Promise<boolean> {
+  const [[{ exists }]] = (await sequelize.query(
+    `SELECT count(*) > 0 AS exists FROM pg_proc WHERE proname = :procedure`,
+    { replacements: { procedure } },
+  )) as unknown as [[{ exists: boolean }]];
+
+  if (!exists) {
+    console.log(`[provision-partitions] ${procedure} not present — skipping`);
+    return false;
+  }
+  await sequelize.query(`CALL ${procedure}(${NEVER_DROP}, ${future}, false)`);
+  return true;
+}
 
 async function main(): Promise<void> {
   const { host, port, database, username, password, ssl } = loadBootstrapConfig().database;
@@ -27,25 +57,15 @@ async function main(): Promise<void> {
   });
 
   try {
-    // Absent until the partitioning migration has run. Not an error: a deployment on the
-    // pre-partitioning schema must still be able to start.
-    const [[{ exists }]] = (await sequelize.query(
-      `SELECT count(*) > 0 AS exists FROM pg_proc WHERE proname = 'rotate_ocpp_messages_partitions'`,
-    )) as unknown as [[{ exists: boolean }]];
-
-    if (!exists) {
-      console.log('[provision-partitions] procedure not present — skipping');
-      return;
-    }
-
-    // Partition bounds are timestamptz literals and date_trunc('week', ...) resolves against
-    // the session timezone, so this must run in UTC or boundaries land on local midnight.
+    // Partition bounds are timestamptz literals and date_trunc() resolves against the
+    // session timezone, so this must run in UTC or boundaries land on local midnight.
     await sequelize.query(`SET timezone = 'UTC'`);
 
-    // retain_weeks is deliberately absurd: it puts the drop cutoff ~190 years in the past so
-    // nothing qualifies, making this provision-only. Dropping partitions destroys data and
-    // belongs to the maintenance job that archives first, never to application startup.
-    await sequelize.query(`CALL rotate_ocpp_messages_partitions(9999, ${FUTURE_WEEKS}, false)`);
+    await rotate(sequelize, 'rotate_transactions_partitions', FUTURE_MONTHS);
+
+    if (!(await rotate(sequelize, 'rotate_ocpp_messages_partitions', FUTURE_WEEKS))) {
+      return;
+    }
 
     const [rows] = (await sequelize.query(
       `SELECT count(*)::int AS weeks
@@ -63,7 +83,7 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   // Fail loudly: with no DEFAULT partition, starting without a partition for the current
-  // week means every message insert fails.
+  // period means every insert into a partitioned table fails.
   console.error('[provision-partitions] failed:', error);
   process.exit(1);
 });

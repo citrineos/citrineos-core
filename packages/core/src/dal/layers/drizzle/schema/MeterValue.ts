@@ -4,7 +4,16 @@
 
 import type { SampledValue } from '@citrineos/types';
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
-import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  primaryKey,
+  pgSchema,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -12,9 +21,12 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function meterValueColumns() {
   return {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     transactionEventId: integer('transactionEventId'),
     transactionDatabaseId: integer('transactionDatabaseId'),
+    transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     stopTransactionDatabaseId: integer('stopTransactionDatabaseId'),
     sampledValue: jsonb('sampledValue').$type<[SampledValue, ...SampledValue[]]>().notNull(),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
@@ -33,7 +45,9 @@ function meterValueColumns() {
 }
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
-export const meterValueTable = pgTable(TableName.MeterValues, meterValueColumns());
+export const meterValueTable = pgTable(TableName.MeterValues, meterValueColumns(), (t) => [
+  primaryKey({ columns: [t.id, t.transactionCreatedAt] }),
+]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof meterValueTable>();

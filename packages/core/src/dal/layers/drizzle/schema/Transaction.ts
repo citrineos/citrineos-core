@@ -10,11 +10,11 @@ import {
   integer,
   jsonb,
   numeric,
+  primaryKey,
   pgSchema,
   pgTable,
   serial,
   timestamp,
-  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -24,7 +24,7 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function transactionColumns() {
   return {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     locationId: integer('locationId'),
     stationId: integer('stationId').notNull(),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
@@ -59,7 +59,10 @@ function transactionColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const transactionTable = pgTable(TableName.Transactions, transactionColumns(), (t) => [
-  uniqueIndex('transactions_station_id_transaction_id').on(t.stationId, t.transactionId),
+  // Range partitioned on "createdAt", so the key must contain it and the old
+  // (stationId, transactionId) unique index cannot exist. The unpartitioned
+  // "TransactionKeys" registry enforces that pair globally instead.
+  primaryKey({ columns: [t.id, t.createdAt] }),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

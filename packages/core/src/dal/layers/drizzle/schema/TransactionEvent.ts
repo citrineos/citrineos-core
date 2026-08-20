@@ -9,6 +9,7 @@ import {
   integer,
   jsonb,
   numeric,
+  primaryKey,
   pgSchema,
   pgTable,
   serial,
@@ -22,7 +23,7 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function transactionEventColumns() {
   return {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
     // Enum stored as a string
     eventType: varchar('eventType', { length: 255 }).notNull(),
@@ -37,6 +38,11 @@ function transactionEventColumns() {
     cableMaxCurrent: numeric('cableMaxCurrent'),
     reservationId: integer('reservationId'),
     transactionDatabaseId: integer('transactionDatabaseId'),
+    // Partition key: mirrors the owning transaction's "createdAt", or now() when unlinked.
+    // Part of the primary key, so it must be supplied on insert.
+    transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     transactionInfo: jsonb('transactionInfo').$type<TransactionType>(),
     evseId: integer('evseId'),
     idTokenValue: varchar('idTokenValue', { length: 255 }),
@@ -55,6 +61,7 @@ function transactionEventColumns() {
 export const transactionEventTable = pgTable(
   TableName.TransactionEvents,
   transactionEventColumns(),
+  (t) => [primaryKey({ columns: [t.id, t.transactionCreatedAt] })],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

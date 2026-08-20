@@ -24,6 +24,7 @@ export function toChargingNeedsDto(entity: ChargingNeedsEntity): ChargingNeedsDt
     maxScheduleTuples: entity.maxScheduleTuples,
     evseId: entity.evseId!,
     transactionDatabaseId: entity.transactionDatabaseId!,
+    transactionCreatedAt: entity.transactionCreatedAt,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

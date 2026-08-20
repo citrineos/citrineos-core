@@ -5,6 +5,7 @@
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
 import {
   integer,
+  primaryKey,
   pgSchema,
   pgTable,
   serial,
@@ -19,13 +20,18 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function startTransactionColumns() {
   return {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
     meterStart: integer('meterStart').notNull(), // in Wh
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
     reservationId: integer('reservationId'),
     transactionDatabaseId: integer('transactionDatabaseId').notNull(),
+    // Partition key: mirrors the owning transaction's "createdAt", or now() when unlinked.
+    // Part of the primary key, so it must be supplied on insert.
+    transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     connectorDatabaseId: integer('connectorDatabaseId').notNull(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
@@ -41,7 +47,13 @@ function startTransactionColumns() {
 export const startTransactionTable = pgTable(
   TableName.StartTransactions,
   startTransactionColumns(),
-  (t) => [uniqueIndex('start_transactions_transaction_database_id').on(t.transactionDatabaseId)],
+  (t) => [
+    primaryKey({ columns: [t.id, t.transactionCreatedAt] }),
+    uniqueIndex('start_transactions_transaction_database_id').on(
+      t.transactionDatabaseId,
+      t.transactionCreatedAt,
+    ),
+  ],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

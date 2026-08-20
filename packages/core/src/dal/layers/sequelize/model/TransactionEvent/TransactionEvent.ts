@@ -68,8 +68,13 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   @Column(DataType.INTEGER)
   declare reservationId?: number | null;
 
-  @ForeignKey(() => Transaction)
+  // No @ForeignKey: the database constraint is composite
+  // (transactionDatabaseId, transactionCreatedAt) -> Transactions(id, "createdAt"),
   declare transactionDatabaseId?: number;
+
+  // Partition key
+  @Column(DataType.DATE)
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;
@@ -102,6 +107,15 @@ export class TransactionEvent extends Model implements TransactionEventDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: TransactionEvent): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

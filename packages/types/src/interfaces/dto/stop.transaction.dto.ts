@@ -10,6 +10,7 @@ export const StopTransactionSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   ocppConnectionName: z.string(),
   transactionDatabaseId: z.number(),
+  transactionCreatedAt: z.date().optional(),
   meterStop: z.number().int(),
   timestamp: z.iso.datetime(),
   reason: z.string().optional(),

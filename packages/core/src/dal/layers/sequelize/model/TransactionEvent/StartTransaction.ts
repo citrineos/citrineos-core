@@ -43,12 +43,21 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @Column(DataType.INTEGER)
   declare reservationId?: number | null;
 
-  @ForeignKey(() => Transaction)
+  // No @ForeignKey: the database constraint is composite
+  // (transactionDatabaseId, transactionCreatedAt) -> Transactions(id, "createdAt"),
+  // which sequelize-typescript cannot express. The association below is unaffected.
   @Column({
     type: DataType.INTEGER,
-    unique: true,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
   })
   declare transactionDatabaseId: number;
+
+  // Partition key
+  @Column({
+    type: DataType.DATE,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
+  })
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
@@ -70,6 +79,15 @@ export class StartTransaction extends Model implements StartTransactionDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: StartTransaction): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

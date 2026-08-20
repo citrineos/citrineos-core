@@ -22,6 +22,7 @@ export function toStartTransactionDto(entity: StartTransactionEntity): StartTran
     timestamp: entity.timestamp.toISOString(),
     reservationId: entity.reservationId ?? null,
     transactionDatabaseId: entity.transactionDatabaseId,
+    transactionCreatedAt: entity.transactionCreatedAt,
     connectorDatabaseId: entity.connectorDatabaseId,
     // Relation not present as a scalar column.
     connector: undefined,

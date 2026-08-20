@@ -18,6 +18,7 @@ export function toMeterValueDto(entity: MeterValueEntity): MeterValueDto {
     id: entity.id,
     transactionEventId: entity.transactionEventId ?? null,
     transactionDatabaseId: entity.transactionDatabaseId ?? null,
+    transactionCreatedAt: entity.transactionCreatedAt,
     sampledValue: entity.sampledValue as [SampledValue, ...SampledValue[]],
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp.toISOString(),
