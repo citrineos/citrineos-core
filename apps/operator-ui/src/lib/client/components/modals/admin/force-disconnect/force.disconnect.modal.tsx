@@ -6,7 +6,7 @@
 import { type ChargingStationDto, HttpMethod } from '@citrineos/types';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
+import { triggerAdminAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { plainToInstance } from 'class-transformer';
 import React, { useMemo, useState } from 'react';
@@ -29,12 +29,11 @@ export const ForceDisconnectModal = ({ station }: ForceDisconnectModalProps) => 
   ) as ChargingStationDto;
 
   const onOkay = async () => {
-    await triggerMessageAndHandleResponse<MessageConfirmation[]>({
+    await triggerAdminAndHandleResponse<MessageConfirmation[]>({
       translate,
-      url: `/ocpprouter/connection?ocppConnectionName=${parsedStation.ocppConnectionName}&tenantId=${parsedStation.tenantId}`,
+      url: `/connection?ocppConnectionName=${parsedStation.ocppConnectionName}&tenantId=${parsedStation.tenantId}`,
       data: undefined,
       setLoading,
-      ocppVersion: null,
       method: HttpMethod.Delete,
     });
 

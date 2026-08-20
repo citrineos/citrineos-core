@@ -27,7 +27,6 @@ export function createDockerConfig() {
     },
     modules: {
       certificates: {
-        endpointPrefix: '/certificates',
         responses: [
           OCPP_CallAction.CertificateSigned,
           OCPP_CallAction.DeleteCertificate,
@@ -75,10 +74,8 @@ export function createDockerConfig() {
         ocpp1_6: {
           unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
         },
-        endpointPrefix: '/configuration',
       },
       evdriver: {
-        endpointPrefix: '/evdriver',
         enableGetChargingProfilesOnStartTransaction: true,
         responses: [
           OCPP_CallAction.CancelReservation,
@@ -100,7 +97,6 @@ export function createDockerConfig() {
         ],
       },
       monitoring: {
-        endpointPrefix: '/monitoring',
         responses: [
           OCPP_CallAction.ClearVariableMonitoring,
           OCPP_CallAction.GetVariables,
@@ -113,7 +109,6 @@ export function createDockerConfig() {
         requests: [OCPP_CallAction.NotifyEvent],
       },
       reporting: {
-        endpointPrefix: '/reporting',
         responses: [
           OCPP_CallAction.CustomerInformation,
           OCPP_CallAction.GetLog,
@@ -130,7 +125,6 @@ export function createDockerConfig() {
         ],
       },
       smartcharging: {
-        endpointPrefix: '/smartcharging',
         responses: [
           OCPP_CallAction.ClearChargingProfile,
           OCPP_CallAction.GetChargingProfiles,
@@ -146,12 +140,10 @@ export function createDockerConfig() {
         ],
       },
       tenant: {
-        endpointPrefix: '/tenant',
         responses: [],
         requests: [],
       },
       transactions: {
-        endpointPrefix: '/transactions',
         costUpdatedInterval: 60,
         responses: [
           OCPP_CallAction.CostUpdated,
@@ -185,7 +177,6 @@ export function createDockerConfig() {
       swagger: {
         path: '/docs',
         logoPath: path.resolve(path.dirname(__filename), '../../assets/logo.png'),
-        exposeData: true,
         exposeMessage: true,
       },
       networkConnection: {

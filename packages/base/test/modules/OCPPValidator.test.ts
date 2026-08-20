@@ -11,7 +11,7 @@ import {
   OCPP2_0_1_CALL_SCHEMA_RECORD,
 } from '../../index.js';
 import { OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import { OCPPValidator } from '../../src/interfaces/modules/OCPPValidator.js';
+import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
 
 describe('OCPPValidator', () => {
   let validator: OCPPValidator;

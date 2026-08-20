@@ -4,7 +4,7 @@
 import { IdTokenEnum, OCPP2_1 } from '@citrineos/types';
 import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.1';
 import { describe, expect, it } from 'vitest';
-import { aAuthorization } from '../../../../providers/Authorization.js';
+import { aAuthorization } from '@test/dal/providers/Authorization.js';
 
 describe('AuthorizationMapper (2.1)', () => {
   describe('toIdTokenInfo', () => {

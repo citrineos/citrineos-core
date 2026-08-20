@@ -19,6 +19,11 @@ export { LocalStorage } from './files/localStorage.js';
 export * from './queue/index.js';
 export * from './networkconnection/index.js';
 export * from './certificate/index.js';
+export { DeviceModelService } from './deviceModel/DeviceModelService.js';
+export { resolveStationProtocol } from './station/stationProtocol.js';
+export type { ReadChargingStation, StationProtocolResolution } from './station/stationProtocol.js';
+export { NetworkProfileService } from './networkProfile/NetworkProfileService.js';
+export type { PersistSetNetworkProfileOptions } from './networkProfile/NetworkProfileService.js';
 
 export { initSwagger } from './util/swagger.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './util/parser.js';
@@ -42,9 +47,10 @@ export {
   validateMessageContentType,
   validatePEMEncodedCSR,
   validateTariffConditionsTimeFields,
+  type ChargingProfileTransactionContext,
+  type ChargingProfileValidation,
 } from './util/validator.js';
 export { IdGenerator } from './util/idGenerator.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';
-export { packageGroupCall } from './util/sendCall.js';
 export { SignedMeterValuesUtil } from './security/SignedMeterValuesUtil.js';
 export { TotpUtil } from './totp/index.js';

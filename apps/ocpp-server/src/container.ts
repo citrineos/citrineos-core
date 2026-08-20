@@ -20,76 +20,56 @@ import { type SystemConfig } from '@citrineos/types';
 // -- Infrastructure --
 import { type ILogObj, Logger } from 'tslog';
 
-// -- DB --
-// -- RabbitMQ --
-// -- Repositories --
-// -- Services --
-// -- API authentication --
-// -- Network Connection --
-// -- Modules --
-// -- Module-internal services (registered by each module package's own registrar) --
-// -- Module APIs --
-// -- Handlers --
-// -- Repositories --
-// -- Services --
-// -- Network Connection --
-// -- Modules --
-// -- Module-internal services (registered by each module package's own registrar) --
-// -- Module APIs --
+// -- Core: DB, messaging, repositories, services, network, modules, APIs, handlers --
 import {
   AdminApi,
   Authenticator,
   BasicAuthenticationFilter,
   BrokerAwareMessageSender,
   CertificateAuthorityService,
-  CertificatesDataApi,
   CertificatesModule,
-  CertificatesOcpp2Api,
-  ConfigurationDataApi,
+  CommandsApi,
   ConfigurationModule,
-  ConfigurationOcpp16Api,
-  ConfigurationOcpp2Api,
   ConnectedStationFilter,
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
+  DeviceModelService,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
-  EVDriverDataApi,
   EVDriverModule,
-  EVDriverOcpp16Api,
-  EVDriverOcpp2Api,
   IdGenerator,
   InternalSmartCharging,
   LocalBypassAuthProvider,
   MessageRouterImpl,
-  MonitoringDataApi,
   MonitoringModule,
-  MonitoringOcpp2Api,
   NetworkProfileFilter,
+  NetworkProfileService,
+  OcppMessageApi,
   OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RabbitMqReceiver,
   RabbitMqSender,
   RealTimeAuthorizer,
+  registerApiServices,
   registerCertificatesServices,
   registerConfigurationServices,
   registerEVDriverServices,
   registerMonitoringServices,
+  registerOcppRouterServices,
   registerReportingServices,
   registerSmartChargingServices,
   registerTransactionsServices,
   ReportingModule,
-  ReportingOcpp16Api,
-  ReportingOcpp2Api,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingProfileRepository,
+  SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
   SequelizeComponentRepository,
@@ -104,20 +84,17 @@ import {
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
   SequelizeServerNetworkProfileRepository,
+  SequelizeSetNetworkProfileRepository,
   SequelizeSubscriptionRepository,
   SequelizeTariffRepository,
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
   SmartChargingModule,
-  SmartChargingOcpp16Api,
-  SmartChargingOcpp2Api,
-  TenantDataApi,
   TenantModule,
-  TransactionsDataApi,
   TransactionsModule,
-  TransactionsOcpp2Api,
   UnknownStationFilter,
+  WebPaymentApi,
   WebhookDispatcher,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
@@ -141,15 +118,16 @@ type Prebuilt = {
  * - Repositories → registerRepositories
  * - Services     → registerServices (incl. apiAuthProvider) + registerModuleServices
  *                  (each module package's own register<Module>Services) + registerNetwork (adminApi)
- * - Modules      → registerModules + registerModuleApis
+ * - Modules      → registerModules
  *
  * Lifetime model:
  * - asValue: shared constants / prebuilt instances.
  * - singleton: one app-wide instance (repos, services, network stack, the router
  *   and its dedicated routerSender/routerHandler, the broker connection/channel).
  * - scoped: one-per-child-scope. Each module is resolved in its own scope (see
- *   CitrineOSServer.initModuleInScope) together with its sender/handler and APIs,
- *   so they share one instance per module without a singleton→transient leak.
+ *   CitrineOSServer.initModuleInScope) together with its sender/handler, and the
+ *   API unit in its own (CitrineOSServer.initApiInScope) together with its
+ *   endpoints, so they share one instance per scope without a singleton→transient leak.
  */
 export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt: Prebuilt) {
   const container = createContainer({
@@ -164,7 +142,7 @@ export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt:
   registerModuleServices(container);
   registerNetwork(container);
   registerModules(container);
-  registerModuleApis(container);
+  registerApis(container);
   registerHandlers(container);
 
   return container;
@@ -177,10 +155,12 @@ export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt:
 // Resolved per-module-scope alongside the module itself.
 // ============================================================
 function registerModuleServices(container: AwilixContainer): void {
+  registerApiServices(container);
   registerCertificatesServices(container);
   registerConfigurationServices(container);
   registerEVDriverServices(container);
   registerMonitoringServices(container);
+  registerOcppRouterServices(container);
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);
@@ -200,6 +180,7 @@ function registerPrimitives(
   container.register({
     config: asValue(config),
     fileStorage: asValue(ConfigStoreFactory.getInstance()),
+    configStore: asValue(ConfigStoreFactory.getInstance()),
     exchange: asValue(config.util.messageBroker.amqp!.exchange),
     amqpUrl: asValue(config.util.messageBroker.amqp!.url),
     maxCallLengthSeconds: asValue(config.maxCallLengthSeconds),
@@ -208,7 +189,7 @@ function registerPrimitives(
     ocppValidator: asValue(ocppValidator),
     cache: asValue(cache),
     sequelizeInstance: asValue(DefaultSequelizeInstance.getInstance(config, logger)),
-    // The Fastify server is shared as a value — module APIs resolve it to register routes.
+    // The Fastify server is shared as a value — the API classes resolve it to register routes.
     server: asValue(server),
   });
 }
@@ -295,7 +276,11 @@ function registerRepositories(container: AwilixContainer): void {
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
     reservationRepository: asClass(SequelizeReservationRepository).singleton(),
     securityEventRepository: asClass(SequelizeSecurityEventRepository).singleton(),
+    chargingStationNetworkProfileRepository: asClass(
+      SequelizeChargingStationNetworkProfileRepository,
+    ).singleton(),
     serverNetworkProfileRepository: asClass(SequelizeServerNetworkProfileRepository).singleton(),
+    setNetworkProfileRepository: asClass(SequelizeSetNetworkProfileRepository).singleton(),
     subscriptionRepository: asClass(SequelizeSubscriptionRepository).singleton(),
     tariffRepository: asClass(SequelizeTariffRepository).singleton(),
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
@@ -330,6 +315,8 @@ function registerServices(container: AwilixContainer): void {
   container.register({
     idGenerator: asClass(IdGenerator).singleton(),
     certificateAuthorityService: asClass(CertificateAuthorityService).singleton(),
+    deviceModelService: asClass(DeviceModelService).singleton(),
+    networkProfileService: asClass(NetworkProfileService).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizers: asValue([]),
@@ -373,7 +360,7 @@ function registerNetwork(container: AwilixContainer): void {
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),
-    adminApi: asClass(AdminApi).singleton(),
+    adminApi: asClass(AdminApi).scoped(),
   });
 }
 
@@ -396,25 +383,11 @@ function registerModules(container: AwilixContainer): void {
 // ============================================================
 // Module APIs — Resolved in the same per-module scope as their module
 // ============================================================
-function registerModuleApis(container: AwilixContainer): void {
+function registerApis(container: AwilixContainer): void {
   container.register({
-    certificatesOcpp2Api: asClass(CertificatesOcpp2Api).scoped(),
-    certificatesDataApi: asClass(CertificatesDataApi).scoped(),
-    configurationOcpp2Api: asClass(ConfigurationOcpp2Api).scoped(),
-    configurationOcpp16Api: asClass(ConfigurationOcpp16Api).scoped(),
-    configurationDataApi: asClass(ConfigurationDataApi).scoped(),
-    evDriverOcpp2Api: asClass(EVDriverOcpp2Api).scoped(),
-    evDriverOcpp16Api: asClass(EVDriverOcpp16Api).scoped(),
-    evDriverDataApi: asClass(EVDriverDataApi).scoped(),
-    monitoringOcpp2Api: asClass(MonitoringOcpp2Api).scoped(),
-    monitoringDataApi: asClass(MonitoringDataApi).scoped(),
-    reportingOcpp2Api: asClass(ReportingOcpp2Api).scoped(),
-    reportingOcpp16Api: asClass(ReportingOcpp16Api).scoped(),
-    smartChargingOcpp2Api: asClass(SmartChargingOcpp2Api).scoped(),
-    smartChargingOcpp16Api: asClass(SmartChargingOcpp16Api).scoped(),
-    transactionsOcpp2Api: asClass(TransactionsOcpp2Api).scoped(),
-    transactionsDataApi: asClass(TransactionsDataApi).scoped(),
-    tenantDataApi: asClass(TenantDataApi).scoped(),
+    commandsApi: asClass(CommandsApi).scoped(),
+    ocppMessageApi: asClass(OcppMessageApi).scoped(),
+    webPaymentApi: asClass(WebPaymentApi).scoped(),
   });
 }
 

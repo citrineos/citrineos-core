@@ -6,9 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type CertificateUseEnumType,
@@ -17,6 +14,9 @@ import {
   MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import {
   type IInstalledCertificateRepository,

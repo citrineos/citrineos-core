@@ -7,6 +7,10 @@ export * from '@dal/index.js';
 export * from '@util/index.js';
 
 // Module exports
+export { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
+export { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
+export { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
+export { registerApiServices } from '@modules/Api/src/register.js';
 export * from '@modules/Certificates/src/index.js';
 export * from '@modules/Configuration/src/index.js';
 export * from '@modules/EVDriver/src/index.js';

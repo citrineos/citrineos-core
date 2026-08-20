@@ -14,9 +14,6 @@ import {
   type IMessageConfirmation,
   type IOcppSender,
   type IWebsocketConnection,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -28,6 +25,9 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
