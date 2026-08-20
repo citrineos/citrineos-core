@@ -9,8 +9,8 @@ import { PaginatedParams } from './param/PaginatedParams.js';
 import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../model/PaginatedResponse.js';
 import { zodToOpenApiSchema } from '../openapi-spec-helper/zod.to.json.schema.js';
 import type { ZodTypeAny } from 'zod';
-import { Container } from 'typedi';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
+import type { OcpiDependencies } from '../dependencies.js';
 
 registerFormat('url', () => 'https://example.com');
 
@@ -45,7 +45,12 @@ export const generateMockOcpiPaginatedResponse = async (
 };
 
 export class BaseController {
-  protected logger = Container.get(Logger);
+  protected readonly logger: Logger<ILogObj>;
+
+  constructor({ logger }: OcpiDependencies) {
+    this.logger = logger;
+  }
+
   generateMockOcpiResponse = async (model: any, name: string): Promise<any> =>
     generateMockForSchema(model, name);
   generateMockOcpiPaginatedResponse = async (

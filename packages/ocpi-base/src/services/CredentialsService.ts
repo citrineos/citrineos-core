@@ -3,15 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { v4 as uuidv4 } from 'uuid';
-import { Service } from 'typedi';
 import { InternalServerError, NotFoundError } from 'routing-controllers';
-import { OcpiLogger } from '../util/OcpiLogger.js';
+import type { ILogObj, Logger } from 'tslog';
 import { VersionNumber } from '../model/VersionNumber.js';
-import { VersionsClientApi } from '../trigger/VersionsClientApi.js';
+import type { VersionsClientApi } from '../trigger/VersionsClientApi.js';
 import { AlreadyRegisteredException } from '../exception/AlreadyRegisteredException.js';
 import { NotRegisteredException } from '../exception/NotRegisteredException.js';
 import type { CredentialsRoleDTO } from '../model/DTO/CredentialsRoleDTO.js';
-import { CredentialsClientApi } from '../trigger/CredentialsClientApi.js';
+import type { CredentialsClientApi } from '../trigger/CredentialsClientApi.js';
 import type {
   DeleteTenantPartnerByServerTokenMutationResult,
   DeleteTenantPartnerByServerTokenMutationVariables,
@@ -24,7 +23,6 @@ import {
   DELETE_TENANT_PARTNER_BY_ID,
   DELETE_TENANT_PARTNER_BY_SERVER_TOKEN,
   GET_TENANT_PARTNER_BY_CPO_AND_AND_CLIENT,
-  OcpiGraphqlClient,
   UPDATE_TENANT_PARTNER_PROFILE,
 } from '../graphql/index.js';
 import type { CredentialsDTO } from '../model/DTO/CredentialsDTO.js';
@@ -33,6 +31,8 @@ import type { UnregisterClientRequestDTO } from '../model/UnregisterClientReques
 import type { AdminCredentialsRequestDTO } from '../model/DTO/AdminCredentialsRequestDTO.js';
 import type { TenantPartnerDto } from '@citrineos/types';
 import { RegistrationMapper } from '../mapper/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { OcpiGraphqlDependencies } from '../dependencies.js';
 
 // const CpoCredentialsRole = CredentialsRoleDTO.build(
 //   Role.CPO,
@@ -52,14 +52,28 @@ import { RegistrationMapper } from '../mapper/index.js';
 //   ),
 // );
 
-@Service()
+export interface CredentialsServiceDependencies extends OcpiGraphqlDependencies {
+  versionsClientApi: VersionsClientApi;
+  credentialsClientApi: CredentialsClientApi;
+}
+
 export class CredentialsService {
-  constructor(
-    readonly logger: OcpiLogger,
-    readonly ocpiGraphqlClient: OcpiGraphqlClient,
-    readonly versionsClientApi: VersionsClientApi,
-    readonly credentialsClientApi: CredentialsClientApi,
-  ) {}
+  readonly logger: Logger<ILogObj>;
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  readonly versionsClientApi: VersionsClientApi;
+  readonly credentialsClientApi: CredentialsClientApi;
+
+  constructor({
+    logger,
+    ocpiGraphqlClient,
+    versionsClientApi,
+    credentialsClientApi,
+  }: CredentialsServiceDependencies) {
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.versionsClientApi = versionsClientApi;
+    this.credentialsClientApi = credentialsClientApi;
+  }
 
   // async getClientTokenByClientCountryCodeAndPartyId(
   //   countryCode: string,

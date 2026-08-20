@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseClientApi } from './BaseClientApi.js';
-import { Service } from 'typedi';
 import { ModuleId } from '../model/ModuleId.js';
 import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
@@ -15,7 +14,6 @@ import type { LocationReferences } from '../model/LocationReferences.js';
 import type { AuthorizationInfoResponse } from '../model/AuthorizationInfo.js';
 import { AuthorizationInfoResponseSchema } from '../model/AuthorizationInfo.js';
 
-@Service()
 export class TokensClientApi extends BaseClientApi {
   CONTROLLER_PATH = ModuleId.Tokens;
 

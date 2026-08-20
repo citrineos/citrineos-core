@@ -3,26 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { RoutingControllersOptions } from 'routing-controllers';
-import { useContainer } from 'routing-controllers';
-import type { Constructable } from 'typedi';
-import { Container } from 'typedi';
+import type { AwilixContainer } from 'awilix';
+import type { OcpiModuleToken } from './container.js';
 import { OcpiModule } from './model/OcpiModule.js';
 import { KoaServer } from './util/KoaServer.js';
 import Koa from 'koa';
-import type { ICache } from '@citrineos/base';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { CacheWrapper } from './util/CacheWrapper.js';
-// import { SessionBroadcaster } from './broadcaster/SessionBroadcaster';
-// import { CdrBroadcaster } from './broadcaster/CdrBroadcaster';
 import * as packageJson from '../package.json' with { type: 'json' };
 import type { OcpiConfig } from './config/ocpi.types.js';
-import { OcpiConfigToken } from './config/ocpi.types.js';
 import type { IDtoModule } from './events/index.js';
-import { OcpiGraphqlClient } from './graphql/index.js';
 import { HealthController } from './util/KoaServerHealthController.js';
-import { Ajv } from 'ajv';
-import addFormats from 'ajv-formats';
 
 export * from './broadcaster/index.js';
 export * from './mapper/index.js';
@@ -48,12 +37,12 @@ export {
 export { PaginatedParams } from './controllers/param/PaginatedParams.js';
 export { Paginated } from './util/decorators/Paginated.js';
 export {
-  OCPP_COMMAND_HANDLER,
   OCPPCommandHandler,
   OCPP1_6_CommandHandler,
   OCPP2_0_1_CommandHandler,
   OCPP2_1_CommandHandler,
 } from './util/ocppCommandHandlers/index.js';
+export type { OcppCommandHandlerDependencies } from './util/ocppCommandHandlers/index.js';
 export type { ChargingPreferencesResponse } from './model/ChargingPreferencesResponse.js';
 export {
   ChargingPreferencesResponseSchema,
@@ -195,7 +184,6 @@ export { SessionMapper } from './mapper/SessionMapper.js';
 export { AsOcpiFunctionalEndpoint } from './util/decorators/AsOcpiFunctionalEndpoint.js';
 export { MultipleTypes } from './util/decorators/MultipleTypes.js';
 export { OcpiNamespace } from './util/OcpiNamespace.js';
-export { OcpiLogger } from './util/OcpiLogger.js';
 export { AsOcpiRegistrationEndpoint } from './util/decorators/AsOcpiRegistrationEndpoint.js';
 export { OcpiHeaders } from './model/OcpiHeaders.js';
 export { AuthToken } from './util/decorators/AuthToken.js';
@@ -211,8 +199,6 @@ export { ChargingProfilesService } from './services/ChargingProfilesService.js';
 // export { AsyncResponder } from './util/AsyncResponder.js';
 export { AsAdminEndpoint } from './util/decorators/AsAdminEndpoint.js';
 
-export { MessageSenderWrapper } from './util/MessageSenderWrapper.js';
-export { MessageHandlerWrapper } from './util/MessageHandlerWrapper.js';
 export { CacheWrapper } from './util/CacheWrapper.js';
 export { ResponseGenerator } from './util/response.generator.js';
 export { versionIdParam } from './util/decorators/VersionNumberParam.js';
@@ -296,50 +282,37 @@ export {
 } from './model/UnregisterClientRequestDTO.js';
 export * from './events/index.js';
 
-useContainer(Container);
-
-export { Container } from 'typedi';
 export { getDtoEventHandlerMetaData } from './events/AsDtoEventHandler.js';
 export { LocationsBroadcaster } from './broadcaster/LocationsBroadcaster.js';
 
 export class OcpiServer extends KoaServer {
   private readonly ocpiConfig: OcpiConfig;
-  private readonly cache: ICache;
-  private readonly logger: Logger<ILogObj>;
+  private readonly container: AwilixContainer;
   private _modules: (OcpiModule | IDtoModule)[] = [];
   get modules(): (OcpiModule | IDtoModule)[] {
     return this._modules;
   }
 
-  private moduleList: Constructable<OcpiModule | IDtoModule>[] = [];
+  private readonly moduleList: OcpiModuleToken[];
 
-  constructor(
-    ocpiConfig: OcpiConfig,
-    cache: ICache,
-    logger: Logger<ILogObj>,
-    moduleList: Constructable<OcpiModule | IDtoModule>[],
-  ) {
+  constructor(ocpiConfig: OcpiConfig, container: AwilixContainer, moduleList: OcpiModuleToken[]) {
     super();
 
     this.ocpiConfig = ocpiConfig;
-    this.cache = cache;
-    this.logger = logger;
+    this.container = container;
     this.moduleList = moduleList;
-    this.initContainer();
   }
 
   public async initialize() {
-    for (const moduleListElement of this.moduleList) {
-      const constructedModule = Container.get(moduleListElement) as OcpiModule & IDtoModule;
-      if (constructedModule) {
-        if (constructedModule.init) {
-          await constructedModule.init();
-        }
-        if (constructedModule.initHandlers) {
-          await constructedModule.initHandlers();
-        }
-        this._modules.push(constructedModule);
+    for (const moduleToken of this.moduleList) {
+      const constructedModule = this.container.resolve<OcpiModule & IDtoModule>(moduleToken);
+      if (constructedModule.init) {
+        await constructedModule.init();
       }
+      if (constructedModule.initHandlers) {
+        await constructedModule.initHandlers();
+      }
+      this._modules.push(constructedModule);
     }
     this.initKoaServer();
   }
@@ -373,39 +346,7 @@ export class OcpiServer extends KoaServer {
       process.exit(1);
     }
   }
-
-  private initContainer() {
-    Container.set(OcpiConfigToken, this.ocpiConfig);
-    Container.set(CacheWrapper, new CacheWrapper(this.cache));
-    Container.set(Logger, this.logger);
-
-    Container.set(
-      OcpiGraphqlClient,
-      new OcpiGraphqlClient(this.ocpiConfig.graphql.endpoint, this.ocpiConfig.graphql.headers),
-    );
-
-    const ajv = new Ajv({
-      removeAdditional: 'all',
-      useDefaults: true,
-      coerceTypes: 'array',
-      strict: false,
-    });
-    addFormats.default(ajv, {
-      mode: 'fast',
-      formats: ['date-time'],
-    });
-    Container.set(Ajv, ajv);
-
-    this.onContainerInitialized();
-  }
-
-  private onContainerInitialized() {
-    // Container.get(SessionBroadcaster); // init session broadcaster
-    // Container.get(CdrBroadcaster);
-  }
 }
-
-export { OcpiConfigToken };
 
 export { CommandResponseSchema, CommandResponseSchemaName } from './model/CommandResponse.js';
 export { ChargingProfileResponseSchemaName } from './model/ChargingProfileResponse.js';
@@ -418,3 +359,12 @@ export { PaginatedCdrResponseSchema, PaginatedCdrResponseSchemaName } from './mo
 // AbstractDtoModule, decorators, ...) are initialized before the module
 // classes that extend/decorate them evaluate within the import cycle.
 export * from './modules/index.js';
+
+export { buildOcpiContainer, type OcpiModuleToken, type OcpiPrebuilt } from './container.js';
+export type {
+  OcpiClientApiDependencies,
+  OcpiConfiguredDependencies,
+  OcpiDependencies,
+  OcpiGraphqlDependencies,
+  OcpiModuleDependencies,
+} from './dependencies.js';

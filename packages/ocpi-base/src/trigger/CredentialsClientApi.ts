@@ -6,14 +6,12 @@ import { BaseClientApi, MissingRequiredParamException } from './BaseClientApi.js
 import { ModuleId } from '../model/ModuleId.js';
 import type { CredentialsResponse } from '../model/CredentialsResponse.js';
 import { CredentialsResponseSchema } from '../model/CredentialsResponse.js';
-import { Service } from 'typedi';
 import type { OcpiEmptyResponse } from '../model/OcpiEmptyResponse.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
 import type { CredentialsDTO } from '../index.js';
 
-@Service()
 export class CredentialsClientApi extends BaseClientApi {
   CONTROLLER_PATH = ModuleId.Credentials;
 

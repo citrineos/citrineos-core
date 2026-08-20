@@ -8,10 +8,8 @@
 //   TariffKey,
 //   TariffsBroadcaster,
 // } from '../../../index.js';
-// import { Service } from 'typedi';
 // import { ITariffsModuleApi } from './ITariffsModuleApi';
 
-// @Service()
 // @JsonController(`/tariff-broadcasts`)
 // export class TariffsModuleApi
 //   extends BaseController
