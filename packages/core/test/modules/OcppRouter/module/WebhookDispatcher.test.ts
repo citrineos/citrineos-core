@@ -8,7 +8,7 @@ import {
   OCPPMessage,
   Subscription,
 } from '@citrineos/core';
-import { MessageOrigin, MessageTypeId } from '@citrineos/types';
+import { MessageOrigin, MessageState, MessageTypeId } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { WebhookDispatcher } from '@modules/OcppRouter/src';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
@@ -352,6 +352,9 @@ describe('WebhookDispatcher', () => {
           payload: { reason: 'PowerUp' },
           raw: JSON.stringify(rpcMessage),
           timestamp: timestamp,
+          // Deprecated mirrors of type/payload+raw, still written for old consumers.
+          state: MessageState.Request,
+          message: rpcMessage,
         }),
       );
     });
@@ -555,6 +558,9 @@ describe('WebhookDispatcher', () => {
           payload: { reason: 'PowerUp' },
           raw: JSON.stringify(rpcMessage),
           timestamp: timestamp,
+          // Deprecated mirrors of type/payload+raw, still written for old consumers.
+          state: MessageState.Request,
+          message: rpcMessage,
         }),
       );
     });
@@ -686,6 +692,9 @@ describe('WebhookDispatcher', () => {
           // Unparsed messages have no extractable payload — only the wire text is persisted.
           raw: message,
           timestamp: timestamp,
+          // No RPC frame to mirror into the deprecated `message` column, but `state` still
+          // follows from the type the router managed to read.
+          state: MessageState.Request,
         }),
       );
     });

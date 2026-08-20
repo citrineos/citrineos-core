@@ -167,7 +167,7 @@ export class VariableAttribute
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('generatedAt').toISOString();
+      return this.getDataValue('generatedAt')?.toISOString() ?? null;
     },
   })
   declare generatedAt: string;

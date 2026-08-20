@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig, IFileStorage, OCPP2_common_types } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/types';
+import type { BootstrapConfig, IFileStorage } from '@citrineos/base';
+import type { SystemConfig, OCPP2_common_types } from '@citrineos/types';
 import { sequelize } from '@dal/index.js';
 import type { IChargingStationSecurityInfoRepository } from '@dal/interfaces/repositories.js';
 import * as crypto from 'node:crypto';

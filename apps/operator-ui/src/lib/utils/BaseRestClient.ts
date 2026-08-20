@@ -5,7 +5,6 @@
 import { OCPPVersion } from '@citrineos/types';
 import { UnsuccessfulRequestException } from '@lib/exceptions/UnsuccessfulRequestException';
 import { authProvider } from '@lib/providers/auth-provider';
-import { incrementRequestCount } from '@lib/utils/telemetry';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import config from './config';
@@ -23,17 +22,18 @@ export class MissingRequiredParamException extends Error {
   }
 }
 
+export const COMMANDS_API_PATH = '/commands';
+export const ADMIN_API_PATH = '/ocpprouter';
+
+export const ocppApiPath = (version: OCPPVersion): string =>
+  `/ocpp/${version.replace(/^ocpp/, '')}`;
+
 export class BaseRestClient {
   private axiosInstance: AxiosInstance;
   private _baseUrl: string;
 
-  constructor(ocppVersion: OCPPVersion | null = OCPPVersion.OCPP2_0_1) {
-    if (ocppVersion === null) {
-      this._baseUrl = `${CITRINE_CORE_URL}/data`;
-    } else {
-      const version = ocppVersion.replace(/^ocpp/, '');
-      this._baseUrl = `${CITRINE_CORE_URL}/ocpp/${version}`;
-    }
+  constructor(basePath: string) {
+    this._baseUrl = `${CITRINE_CORE_URL}${basePath}`;
     this.axiosInstance = this.createAxiosInstance();
   }
 
@@ -55,32 +55,26 @@ export class BaseRestClient {
   }
 
   async getRaw<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    incrementRequestCount({ url: url });
     return this.axiosInstance.get<T>(url, config!);
   }
 
   async get<T>(path: string, config: AxiosRequestConfig): Promise<T> {
-    incrementRequestCount({ path: path });
     return this.getRaw<T>(path, config).then((response) => this.handleResponse<T>(response));
   }
 
   async delRaw<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    incrementRequestCount({ url: url });
     return this.axiosInstance.delete<T>(url, config!);
   }
 
   async del<T>(path: string, config: AxiosRequestConfig): Promise<T> {
-    incrementRequestCount({ path: path });
     return this.delRaw<T>(path, config).then((response) => this.handleResponse<T>(response));
   }
 
   async postRaw<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    incrementRequestCount({ url: url });
     return this.axiosInstance.post<T>(url, body, config!);
   }
 
   async post<T>(path: string, config: AxiosRequestConfig, body: any): Promise<T> {
-    incrementRequestCount({ path: path });
     return this.postRaw<T>(path, body, config).then((response) => this.handleResponse<T>(response));
   }
 
@@ -89,24 +83,20 @@ export class BaseRestClient {
     body: any,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    incrementRequestCount({ url: url });
     return this.axiosInstance.patch<T>(url, body, config!);
   }
 
   async patch<T>(path: string, config: AxiosRequestConfig, body: any): Promise<T> {
-    incrementRequestCount({ path: path });
     return this.patchRaw<T>(path, body, config).then((response) =>
       this.handleResponse<T>(response),
     );
   }
 
   async putRaw<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    incrementRequestCount({ url: url });
     return this.axiosInstance.put<T>(url, body, config!);
   }
 
   async put<T>(path: string, config: AxiosRequestConfig, body: any): Promise<T> {
-    incrementRequestCount({ path: path });
     return this.putRaw<T>(path, body, config).then((response) => this.handleResponse<T>(response));
   }
 

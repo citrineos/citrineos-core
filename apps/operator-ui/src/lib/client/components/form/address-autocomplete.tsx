@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Input } from '../ui/input';
+import { Input } from '@lib/client/components/ui/input';
 import debounce from 'lodash.debounce';
 import { autocompleteAddress } from '@lib/server/actions/map/autocompleteAddress';
 import { getPlaceDetails } from '@lib/server/actions/map/getPlaceDetails';

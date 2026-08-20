@@ -12,6 +12,8 @@ import {
   IdTokenEnum,
   OCPP2_0_1,
 } from '@citrineos/types';
+import { Container } from 'typedi';
+import { Logger } from 'tslog';
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
 import { TokenType } from '../model/TokenType.js';
 import { WhitelistType } from '../model/WhitelistType.js';
@@ -69,8 +71,14 @@ export class TokensMapper {
         return TokenType.APP_USER;
       case null:
         return TokenType.OTHER;
-      default:
-        throw new Error(`Unknown token type: ${type}`);
+      default: {
+        // OCPI has only 4 token types; every other OCPP idTokenType (Other, eMAID, ISO15693,
+        // KeyCode, MacAddress) maps to OTHER rather than throwing.
+        Container.get(Logger).warn(
+          `Unmapped OCPP idToken type "${type}"; defaulting to OCPI TokenType.OTHER`,
+        );
+        return TokenType.OTHER;
+      }
     }
   }
 
@@ -144,9 +152,12 @@ export class TokensMapper {
           ])
         : undefined;
 
-    const status: AuthorizationStatusEnumType = tokenDto.valid
-      ? AuthorizationStatusEnum.Accepted
-      : AuthorizationStatusEnum.Invalid;
+    const status: AuthorizationStatusEnumType | undefined =
+      tokenDto.valid === undefined
+        ? undefined
+        : tokenDto.valid
+          ? AuthorizationStatusEnum.Accepted
+          : AuthorizationStatusEnum.Invalid;
 
     const language1: string | undefined = tokenDto.language ?? undefined;
 

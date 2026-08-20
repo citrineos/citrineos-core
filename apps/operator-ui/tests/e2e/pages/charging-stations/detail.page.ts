@@ -49,20 +49,20 @@ export class ChargingStationDetailPage {
 
   async expectLoaded(): Promise<void> {
     // Detail page is interactive when the command bar's Reset button (always
-    // rendered for any non-deleted station) becomes visible. The 60s budget
-    // covers cold-route Next.js compilation + the useOne(ChargingStation)
-    // query. On heavy concurrency the dev server can hang for the full
-    // window without finishing its response — a one-shot reload unsticks it.
-    // The two attempts cap the wait at 120s but in practice the first
-    // attempt resolves in 5–20s.
+    // rendered for any non-deleted station) becomes visible. Under sustained
+    // load the server can hang for the full window without finishing its
+    // response — a one-shot reload unsticks it. Budgets mirror the overview
+    // page: 45 + 30 reload + 60 = 135s, inside the 150s test timeout (the
+    // old 60+60+60 shape overran it and died as a bare test timeout). In
+    // practice the first attempt resolves in 5–20s.
     try {
       await expect(this.commandBar.resetButton).toBeVisible({
-        timeout: 60_000,
+        timeout: 45_000,
       });
     } catch {
       await this.page.reload({
         waitUntil: 'domcontentloaded',
-        timeout: 60_000,
+        timeout: 30_000,
       });
       await expect(this.commandBar.resetButton).toBeVisible({
         timeout: 60_000,

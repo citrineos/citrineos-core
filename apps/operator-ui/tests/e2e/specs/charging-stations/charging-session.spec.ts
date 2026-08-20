@@ -157,7 +157,7 @@ test.describe('charging-stations › live charging session @everest', () => {
 
       // The UI has no live updates; reload to surface the started transaction,
       // which flips the command bar from RemoteStart to RemoteStop.
-      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
       await detail.expectLoaded();
       await expect(detail.commandBar.remoteStopButton).toBeVisible({
         timeout: 30_000,

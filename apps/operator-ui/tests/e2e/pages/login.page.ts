@@ -20,7 +20,9 @@ export class LoginPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(LoginPage.path);
+    await this.page.goto(LoginPage.path, {
+      waitUntil: 'domcontentloaded',
+    });
     // The first visit to /login on a dev server pays the cold-compile cost
     // (20–40s). Production builds are pre-compiled, so this budget is unused
     // on `next start`. Keep it for the dev-mode path that most contributors

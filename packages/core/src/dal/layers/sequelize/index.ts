@@ -95,7 +95,9 @@ export { SequelizeChargingStationSequenceRepository } from './repository/Chargin
 export { SequelizeChangeConfigurationRepository } from './repository/ChangeConfiguration.js';
 export { SequelizeTenantRepository } from './repository/Tenant.js';
 export { SequelizeAsyncJobStatusRepository } from './repository/AsyncJobStatus.js';
+export { SequelizeChargingStationNetworkProfileRepository } from './repository/ChargingStationNetworkProfile.js';
 export { SequelizeServerNetworkProfileRepository } from './repository/ServerNetworkProfile.js';
+export { SequelizeSetNetworkProfileRepository } from './repository/SetNetworkProfile.js';
 export { SequelizeInstallCertificateAttemptRepository } from './repository/InstallCertificateAttempt.js';
 export { SequelizeDeleteCertificateAttemptRepository } from './repository/DeleteCertificateAttempt.js';
 

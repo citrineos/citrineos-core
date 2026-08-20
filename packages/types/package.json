@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/types",
-  "version": "2.0.0-beta2",
+  "version": "2.0.0-beta3",
   "description": "Shared type definitions for CitrineOS: OCPP model types, DTO shapes, Zod schemas, enums, and protocol types. This package contains no server runtime and is safe to consume from browser apps.",
   "type": "module",
   "main": "dist/index.js",

@@ -29,12 +29,18 @@ function ocppMessageColumns() {
     // OCPP RPC messageTypeId (2 = Call, 3 = CallResult, 4 = CallError). Absent for messages
     // that could not be parsed far enough to determine it.
     type: integer('type'),
+    // Deprecated: superseded by `type`, kept in sync on every write for consumers written against
+    // the pre-`type` schema. varchar because MessageState is persisted as its numeric value in text.
+    state: varchar('state', { length: 255 }),
     protocol: varchar('protocol', { length: 255 }),
     action: varchar('action', { length: 255 }),
     // Parsed OCPP payload only — the surrounding RPC frame lives in `raw`.
     payload: jsonb('payload'),
     // Exact message as it appeared on the wire. text because messages routinely exceed 255 chars.
     raw: text('raw').notNull(),
+    // Deprecated: superseded by `payload` + `raw`, kept in sync on every write for consumers
+    // written against the pre-`payload` schema. Holds the whole RPC frame.
+    message: jsonb('message'),
     requestMessageId: integer('requestMessageId'),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),

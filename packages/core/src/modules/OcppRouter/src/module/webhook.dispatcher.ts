@@ -15,6 +15,7 @@ import {
   type SubscriptionDto,
   type SystemConfig,
   MessageOrigin,
+  MessageState,
   MessageTypeId,
 } from '@citrineos/types';
 import type {
@@ -140,6 +141,9 @@ export class WebhookDispatcher {
         action: action,
         raw: message,
         timestamp: timestamp,
+        // Unparsed messages never produced an RPC frame, so the deprecated `message` mirror
+        // stays null — `raw` is the only faithful record of what arrived.
+        state: this._messageStateFromType(type),
       });
 
       const promises: Promise<any>[] =
@@ -167,29 +171,38 @@ export class WebhookDispatcher {
 
     const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: ocppConnectionName,
-      correlationId: messageId,
-      origin: origin,
-      type: type,
-      action: action,
-      protocol: protocol as OCPPVersion,
-      raw: message,
-      payload: payload,
-      timestamp: timestamp,
-    });
+    let messageRecord;
+    try {
+      messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        correlationId: messageId,
+        origin: origin,
+        type: type,
+        action: action,
+        protocol: protocol as OCPPVersion,
+        raw: message,
+        payload: payload,
+        timestamp: timestamp,
+        state: this._messageStateFromType(type),
+        message: rpcMessage,
+      });
+    } catch (error) {
+      this._logger.error(
+        `Failed to persist OCPP message for ${identifier} with correlationId ${messageId}: ${error}`,
+      );
+    }
 
     if (action === undefined) {
-      this._logger.debug(
-        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
-      );
-      if (!messageRecord.action) {
+      if (!messageRecord?.action) {
         this._logger.error(
           `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
         );
         return;
       }
+      this._logger.debug(
+        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
+      );
       action = messageRecord.action;
     }
 
@@ -236,29 +249,38 @@ export class WebhookDispatcher {
 
     const payload = this._extractPayloadFromRpcMessage(rpcMessage, type);
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
-      tenantId: tenantId,
-      ocppConnectionName: ocppConnectionName,
-      correlationId: messageId,
-      origin: origin,
-      type: type,
-      action: action,
-      protocol: protocol as OCPPVersion,
-      raw: message,
-      payload: payload,
-      timestamp: timestamp,
-    });
+    let messageRecord;
+    try {
+      messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+        tenantId: tenantId,
+        ocppConnectionName: ocppConnectionName,
+        correlationId: messageId,
+        origin: origin,
+        type: type,
+        action: action,
+        protocol: protocol as OCPPVersion,
+        raw: message,
+        payload: payload,
+        timestamp: timestamp,
+        state: this._messageStateFromType(type),
+        message: rpcMessage,
+      });
+    } catch (error) {
+      this._logger.error(
+        `Failed to persist OCPP message for ${identifier} with correlationId ${messageId}: ${error}`,
+      );
+    }
 
     if (action === undefined) {
-      this._logger.debug(
-        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
-      );
-      if (!messageRecord.action) {
+      if (!messageRecord?.action) {
         this._logger.error(
           `No action found for correlationId ${messageId} and tenantId ${tenantId}. Cannot dispatch message.`,
         );
         return;
       }
+      this._logger.debug(
+        `Using action from stored message for correlationId ${messageId} and tenantId ${tenantId}: ${messageRecord.action}`,
+      );
       action = messageRecord.action;
     }
 
@@ -508,6 +530,23 @@ export class WebhookDispatcher {
            Event: ${requestBody.event}, ${error}`,
       );
       return false;
+    }
+  }
+
+  /**
+   * @deprecated Maps an RPC messageTypeId onto the deprecated `state` column so rows stay readable
+   * by consumers written before `type` existed. A message that could not be parsed far enough to
+   * have a role is Unknown, which is what the router used to pass here explicitly.
+   */
+  private _messageStateFromType(type?: MessageTypeId): MessageState {
+    switch (type) {
+      case MessageTypeId.Call:
+        return MessageState.Request;
+      case MessageTypeId.CallResult:
+      case MessageTypeId.CallError:
+        return MessageState.Response;
+      default:
+        return MessageState.Unknown;
     }
   }
 

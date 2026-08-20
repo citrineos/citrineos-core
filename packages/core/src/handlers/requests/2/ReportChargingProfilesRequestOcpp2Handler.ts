@@ -7,11 +7,15 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
+} from '@citrineos/base';
+import {
+  type HandlerProperties,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
-} from '@citrineos/base';
-import { type HandlerProperties, OCPP_2_VER_LIST, OCPP_CallAction } from '@citrineos/types';
+} from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 

@@ -6,7 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   type HandlerProperties,
@@ -15,6 +14,7 @@ import {
   OCPP_CallAction,
   ReserveNowStatusEnum,
   type ReserveNowStatusEnumType,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type {
   IOCPPMessageRepository,

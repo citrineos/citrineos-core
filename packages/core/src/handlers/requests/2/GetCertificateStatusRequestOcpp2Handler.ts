@@ -7,8 +7,6 @@ import {
   AsRequestHandler,
   type IMessage,
   type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   ErrorCode,
@@ -16,6 +14,8 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { sendOCSPRequest } from '@util/index.js';

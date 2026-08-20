@@ -2,12 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
+import {
+  AttributeEnum,
+  ChargingProfilePurposeEnum,
+  IdTokenEnum,
+  MessageFormatEnum,
+  OCPP2_1,
+  type IdTokenEnumType,
+  type OCPP2_common_types,
+} from '@citrineos/types';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
+import type { ChargingNeeds, EvseType, Transaction } from '@dal/layers/sequelize/index.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -31,6 +40,16 @@ export function validateLanguageTag(languageTag: string): boolean {
   );
 }
 
+export interface ChargingProfileTransactionContext {
+  transaction: Transaction;
+  evse: EvseType;
+  chargingNeeds: ChargingNeeds | undefined;
+}
+
+export interface ChargingProfileValidation {
+  transactionContext?: ChargingProfileTransactionContext;
+}
+
 /**
  * Validate constraints of ChargingProfileType defined in OCPP 2.0.1
  *
@@ -44,7 +63,7 @@ export function validateLanguageTag(languageTag: string): boolean {
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
-  chargingProfileType: OCPP2_0_1.ChargingProfileType | OCPP2_1.ChargingProfileType,
+  chargingProfileType: OCPP2_common_types.ChargingProfileType | OCPP2_1.ChargingProfileType,
   tenantId: number,
   ocppConnectionName: string,
   deviceModelRepository: IDeviceModelRepository,
@@ -52,22 +71,21 @@ export async function validateChargingProfileType(
   transactionEventRepository: ITransactionEventRepository,
   logger: Logger<ILogObj>,
   evseId?: number | null,
-): Promise<void> {
+): Promise<ChargingProfileValidation> {
   if (chargingProfileType.stackLevel < 0) {
     throw new Error('Lowest Stack level is 0');
   }
 
   if (
     chargingProfileType.chargingProfilePurpose ===
-      OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile &&
+      ChargingProfilePurposeEnum.ChargingStationMaxProfile &&
     evseId !== 0
   ) {
     throw new Error('When chargingProfilePurpose is ChargingStationMaxProfile, evseId SHALL be 0');
   }
 
   if (
-    chargingProfileType.chargingProfilePurpose !==
-      OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile &&
+    chargingProfileType.chargingProfilePurpose !== ChargingProfilePurposeEnum.TxProfile &&
     chargingProfileType.transactionId
   ) {
     throw new Error(
@@ -75,7 +93,8 @@ export async function validateChargingProfileType(
     );
   }
 
-  let receivedChargingNeeds;
+  let transactionContext: ChargingProfileTransactionContext | undefined;
+  let receivedChargingNeeds: ChargingNeeds | undefined;
   if (chargingProfileType.transactionId && evseId) {
     const transaction = await transactionEventRepository.readTransactionByStationIdAndTransactionId(
       tenantId,
@@ -99,6 +118,7 @@ export async function validateChargingProfileType(
         transaction.id,
       );
     logger.info(`Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`);
+    transactionContext = { transaction, evse, chargingNeeds: receivedChargingNeeds };
   }
 
   const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
@@ -108,7 +128,7 @@ export async function validateChargingProfileType(
       ocppConnectionName: ocppConnectionName,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
-      type: OCPP2_0_1.AttributeEnumType.Actual,
+      type: AttributeEnum.Actual,
     },
   );
   logger.info(`Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`);
@@ -183,6 +203,8 @@ export async function validateChargingProfileType(
       }
     }
   }
+
+  return { transactionContext };
 }
 
 /**
@@ -426,12 +448,9 @@ export function validateOcpp21IdToken(
  * ID token validator - routes to appropriate validator based on type
  * Returns validation result with detailed error message if invalid
  */
-export function validateIdToken(
-  idTokenType: OCPP2_0_1.IdTokenEnumType,
-  idToken: string,
-): ValidationResult {
+export function validateIdToken(idTokenType: IdTokenEnumType, idToken: string): ValidationResult {
   switch (idTokenType) {
-    case OCPP2_0_1.IdTokenEnumType.ISO15693:
+    case IdTokenEnum.ISO15693:
       if (validateISO15693IdToken(idToken)) {
         return { isValid: true };
       }
@@ -440,7 +459,7 @@ export function validateIdToken(
         errorMessage: 'ISO15693 tokens must be exactly 16 hexadecimal characters (0-9, A-F)',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.ISO14443:
+    case IdTokenEnum.ISO14443:
       if (validateISO14443IdToken(idToken)) {
         return { isValid: true };
       }
@@ -449,7 +468,7 @@ export function validateIdToken(
         errorMessage: 'ISO14443 tokens must be either 8 or 14 hexadecimal characters (0-9, A-F)',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.NoAuthorization:
+    case IdTokenEnum.NoAuthorization:
       if (validateNoAuthorizationIdToken(idToken)) {
         return { isValid: true };
       }
@@ -458,7 +477,7 @@ export function validateIdToken(
         errorMessage: 'NoAuthorization tokens must be empty',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.KeyCode:
+    case IdTokenEnum.KeyCode:
       if (validateIdentifierStringIdToken(idToken)) {
         return { isValid: true };
       }
@@ -468,7 +487,7 @@ export function validateIdToken(
           'KeyCode tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.Local:
+    case IdTokenEnum.Local:
       if (validateIdentifierStringIdToken(idToken)) {
         return { isValid: true };
       }
@@ -478,7 +497,7 @@ export function validateIdToken(
           'Local tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.MacAddress:
+    case IdTokenEnum.MacAddress:
       if (validateIdentifierStringIdToken(idToken)) {
         return { isValid: true };
       }
@@ -488,7 +507,7 @@ export function validateIdToken(
           'MacAddress tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.Central:
+    case IdTokenEnum.Central:
       if (validateIdentifierStringIdToken(idToken)) {
         return { isValid: true };
       }
@@ -498,7 +517,7 @@ export function validateIdToken(
           'Central tokens must contain only letters, numbers, and characters: * - _ = : + | @ .',
       };
 
-    case OCPP2_0_1.IdTokenEnumType.eMAID: {
+    case IdTokenEnum.eMAID: {
       const errors = validateEMAIDIdToken(idToken);
       if (errors.length === 0) {
         return { isValid: true };
@@ -650,7 +669,7 @@ export function validateMessageContent(
   content: string,
 ): ValidationResult {
   switch (format) {
-    case OCPP2_0_1.MessageFormatEnumType.ASCII:
+    case MessageFormatEnum.ASCII:
       if (validateASCIIContent(content)) {
         return { isValid: true };
       }
@@ -660,7 +679,7 @@ export function validateMessageContent(
           'ASCII format requires content to contain only printable ASCII characters (space through tilde)',
       };
 
-    case OCPP2_0_1.MessageFormatEnumType.HTML:
+    case MessageFormatEnum.HTML:
       if (validateHTMLContent(content)) {
         return { isValid: true };
       }
@@ -669,7 +688,7 @@ export function validateMessageContent(
         errorMessage: 'HTML format requires properly matched opening and closing tags',
       };
 
-    case OCPP2_0_1.MessageFormatEnumType.URI:
+    case MessageFormatEnum.URI:
       if (validateURIContent(content)) {
         return { isValid: true };
       }
@@ -678,7 +697,7 @@ export function validateMessageContent(
         errorMessage: 'URI format requires a valid URI that the Charging Station can download',
       };
 
-    case OCPP2_0_1.MessageFormatEnumType.UTF8:
+    case MessageFormatEnum.UTF8:
       if (validateUTF8Content(content)) {
         return { isValid: true };
       }

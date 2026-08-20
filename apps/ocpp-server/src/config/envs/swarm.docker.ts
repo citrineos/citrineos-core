@@ -28,7 +28,6 @@ export function createDockerConfig() {
     },
     modules: {
       certificates: {
-        endpointPrefix: 'certificates',
         host: '0.0.0.0',
         port: 8083,
         responses: [
@@ -84,12 +83,10 @@ export function createDockerConfig() {
         ocpp1_6: {
           unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Accepted,
         },
-        endpointPrefix: 'configuration',
         host: '0.0.0.0',
         port: 8084,
       },
       evdriver: {
-        endpointPrefix: 'evdriver',
         host: '0.0.0.0',
         port: 8085,
         enableGetChargingProfilesOnStartTransaction: true,
@@ -109,7 +106,6 @@ export function createDockerConfig() {
         requests: [OCPP_CallAction.Authorize, OCPP_CallAction.ReservationStatusUpdate],
       },
       monitoring: {
-        endpointPrefix: 'monitoring',
         host: '0.0.0.0',
         port: 8086,
         responses: [
@@ -124,7 +120,6 @@ export function createDockerConfig() {
         requests: [OCPP_CallAction.NotifyEvent],
       },
       reporting: {
-        endpointPrefix: 'reporting',
         host: '0.0.0.0',
         port: 8087,
         responses: [
@@ -143,7 +138,6 @@ export function createDockerConfig() {
         ],
       },
       smartcharging: {
-        endpointPrefix: 'smartcharging',
         host: '0.0.0.0',
         port: 8088,
         responses: [
@@ -161,14 +155,12 @@ export function createDockerConfig() {
         ],
       },
       tenant: {
-        endpointPrefix: 'tenant',
         host: '0.0.0.0',
         port: 8090,
         responses: [],
         requests: [],
       },
       transactions: {
-        endpointPrefix: 'transactions',
         host: '0.0.0.0',
         port: 8089,
         responses: [OCPP_CallAction.CostUpdated, OCPP_CallAction.GetTransactionStatus],
@@ -199,7 +191,6 @@ export function createDockerConfig() {
       swagger: {
         path: '/docs',
         logoPath: path.resolve(path.dirname(__filename), '../../assets/certificates/logo.png'),
-        exposeData: true,
         exposeMessage: true,
       },
       authProvider: {
@@ -260,9 +251,6 @@ export function createDockerConfig() {
     ocpiServer: {
       host: '0.0.0.0',
       port: 8085,
-    },
-    userPreferences: {
-      // None by default
     },
   });
 }

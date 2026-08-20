@@ -14,16 +14,31 @@ import type { ApiClient } from '../fixtures/api-client';
 export interface SchemaSnapshot {
   readonly operations: ReadonlyArray<string>;
   readonly columnsByType: Readonly<Record<string, ReadonlyArray<string>>>;
+  // Rendered arg signatures ("id: Int!") for the tracked tables' by-pk and
+  // insert-one operations. Optional so older snapshots keep validating —
+  // the check only runs once the snapshot is regenerated with this field.
+  // Without it a mutation declaring `$id: bigint!` against an `Int!` schema
+  // fails Hasura validation silently (that exact bug leaked every seeded
+  // location for weeks).
+  readonly argTypesByOperation?: Readonly<Record<string, ReadonlyArray<string>>>;
 }
 
 export interface SchemaDriftReport {
   readonly valid: boolean;
   readonly missingOperations: ReadonlyArray<string>;
   readonly missingColumns: ReadonlyArray<{ type: string; column: string }>;
+  readonly changedArgs: ReadonlyArray<{ operation: string; expected: string; actual: string }>;
+}
+
+interface IntrospectionTypeRef {
+  readonly kind: string;
+  readonly name: string | null;
+  readonly ofType?: IntrospectionTypeRef | null;
 }
 
 interface IntrospectionField {
   readonly name: string;
+  readonly args?: ReadonlyArray<{ readonly name: string; readonly type: IntrospectionTypeRef }>;
   readonly type?: {
     readonly name: string | null;
     readonly ofType?: { readonly name: string | null } | null;
@@ -52,6 +67,14 @@ const INTROSPECTION_QUERY = `
         kind
         fields {
           name
+          args {
+            name
+            type {
+              kind
+              name
+              ofType { kind name ofType { kind name ofType { kind name } } }
+            }
+          }
         }
       }
     }
@@ -74,6 +97,21 @@ const TRACKED_TABLES: ReadonlyArray<string> = [
   'TenantPartners',
 ];
 
+function renderTypeRef(ref: IntrospectionTypeRef | null | undefined): string {
+  if (!ref) return 'Unknown';
+  if (ref.kind === 'NON_NULL') return `${renderTypeRef(ref.ofType)}!`;
+  if (ref.kind === 'LIST') return `[${renderTypeRef(ref.ofType)}]`;
+  return ref.name ?? 'Unknown';
+}
+
+// The operations whose argument types we pin — the by-pk mutations are where
+// a wrong variable declaration fails Hasura validation before execution.
+const TRACKED_ARG_OPERATIONS: ReadonlyArray<string> = TRACKED_TABLES.flatMap((t) => [
+  `delete_${t}_by_pk`,
+  `update_${t}_by_pk`,
+  `insert_${t}_one`,
+]);
+
 export async function captureHasuraIntrospection(api: ApiClient): Promise<SchemaSnapshot> {
   const data = await api.gql<{ __schema: IntrospectionSchema }>(INTROSPECTION_QUERY);
   const schema = data.__schema;
@@ -91,9 +129,20 @@ export async function captureHasuraIntrospection(api: ApiClient): Promise<Schema
     columnsByType[tableName] = t.fields.map((f) => f.name).sort();
   }
 
+  const argTypesByOperation: Record<string, string[]> = {};
+  const rootFields = [...(queryType?.fields ?? []), ...(mutationType?.fields ?? [])];
+  for (const opName of TRACKED_ARG_OPERATIONS) {
+    const field = rootFields.find((f) => f.name === opName);
+    if (!field?.args?.length) continue;
+    argTypesByOperation[opName] = field.args
+      .map((a) => `${a.name}: ${renderTypeRef(a.type)}`)
+      .sort();
+  }
+
   return {
     operations: Array.from(operationNames).sort(),
     columnsByType,
+    argTypesByOperation,
   };
 }
 
@@ -112,10 +161,23 @@ export function validateSchemaDrift(
     }
   }
 
+  const changedArgs: { operation: string; expected: string; actual: string }[] = [];
+  if (baseline.argTypesByOperation) {
+    for (const [op, baselineArgs] of Object.entries(baseline.argTypesByOperation)) {
+      const currentArgs = current.argTypesByOperation?.[op];
+      if (!currentArgs) continue; // operation absence is already reported above
+      const expected = baselineArgs.join(', ');
+      const actual = currentArgs.join(', ');
+      if (expected !== actual) changedArgs.push({ operation: op, expected, actual });
+    }
+  }
+
   return {
-    valid: missingOperations.length === 0 && missingColumns.length === 0,
+    valid:
+      missingOperations.length === 0 && missingColumns.length === 0 && changedArgs.length === 0,
     missingOperations,
     missingColumns,
+    changedArgs,
   };
 }
 
@@ -127,6 +189,13 @@ export function formatDriftMessage(report: SchemaDriftReport): string {
   if (report.missingColumns.length > 0) {
     lines.push(
       `Missing columns: ${report.missingColumns.map((m) => `${m.type}.${m.column}`).join(', ')}`,
+    );
+  }
+  if (report.changedArgs.length > 0) {
+    lines.push(
+      `Changed argument types: ${report.changedArgs
+        .map((c) => `${c.operation} (expected ${c.expected}, got ${c.actual})`)
+        .join('; ')}`,
     );
   }
   return lines.join('\n');

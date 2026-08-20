@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type OCPP2_request_types, CrudRepository, MeterValueUtils } from '@citrineos/base';
+import { CrudRepository, MeterValueUtils } from '@citrineos/base';
 import {
   type MeterValueDto,
   ChargingStationSequenceTypeEnum,
   OCPP1_6,
   OCPP2_0_1,
+  type OCPP2_request_types,
 } from '@citrineos/types';
 import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';

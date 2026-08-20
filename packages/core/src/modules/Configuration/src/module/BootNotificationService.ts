@@ -2,23 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import {
   type BootConfig,
   type ICache,
   type IMessageConfirmation,
-  type OCPP2_response_types,
   BOOT_STATUS,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
-  type RegistrationStatusEnumType,
-  type SystemConfig,
+  type BootDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPP_CallAction,
   RegistrationStatusEnum,
+  type RegistrationStatusEnumType,
+  type SystemConfig,
+  type OCPP2_response_types,
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -50,7 +51,7 @@ export class BootNotificationService {
       : new Logger<ILogObj>({ name: this.constructor.name });
   }
 
-  determineBootStatus(bootConfig: Boot | undefined): RegistrationStatusEnumType {
+  determineBootStatus(bootConfig: BootDto | undefined): RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
       : this._config.ocpp2_0_1!.unknownChargerStatus;
@@ -101,8 +102,8 @@ export class BootNotificationService {
     bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<Boot> {
-    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.readByKey(
+  ): Promise<BootDto> {
+    let bootConfigDbEntity: BootDto | undefined = await this._bootRepository.readByKey(
       tenantId,
       ocppConnectionName,
     );
@@ -117,13 +118,18 @@ export class BootNotificationService {
         ocppConnectionName,
       );
     }
+
     if (!bootConfigDbEntity) {
       throw new Error('Unable to create/update BootConfig...');
     } else {
-      bootConfigDbEntity.lastBootTime = bootNotificationResponse.currentTime;
-      await bootConfigDbEntity.save();
+      bootConfigDbEntity = await this._bootRepository.updateByKey(
+        tenantId,
+        { lastBootTime: bootNotificationResponse.currentTime },
+        ocppConnectionName,
+      );
     }
-    return bootConfigDbEntity;
+
+    return bootConfigDbEntity!;
   }
 
   /**
@@ -337,7 +343,7 @@ export class BootNotificationService {
     response: OCPP1_6.BootNotificationResponse,
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<Boot> {
+  ): Promise<BootDto> {
     const heartbeatInterval =
       response.status === OCPP1_6.BootNotificationResponseStatus.Accepted
         ? response.interval
@@ -352,15 +358,15 @@ export class BootNotificationService {
       heartbeatInterval,
       bootRetryInterval,
     };
-    let bootConfigDbEntity: Boot | undefined = await this._bootRepository.createOrUpdateByKey(
+    let bootConfigDbEntity: BootDto | undefined = await this._bootRepository.createOrUpdateByKey(
       tenantId,
       unknownChargerBootConfig,
       ocppConnectionName,
     );
     if (bootConfigDbEntity) {
-      bootConfigDbEntity = await this._bootRepository.updateLastBootTimeByKey(
+      bootConfigDbEntity = await this._bootRepository.updateByKey(
         tenantId,
-        response.currentTime,
+        { lastBootTime: response.currentTime },
         ocppConnectionName,
       );
     }
@@ -369,5 +375,13 @@ export class BootNotificationService {
       throw new Error('Unable to create/update BootConfig...');
     }
     return bootConfigDbEntity;
+  }
+
+  async updateBoot(
+    tenantId: number,
+    value: object,
+    ocppConnectionName: string,
+  ): Promise<BootDto | undefined> {
+    return this._bootRepository.updateByKey(tenantId, value, ocppConnectionName);
   }
 }
