@@ -172,8 +172,6 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           } as OCPP2_response_types.AuthorizeResponse;
         } else {
           let evseIds: Set<number> | undefined = undefined;
-          // One flag for both checks below: an empty allowedConnectorTypes array is truthy but
-          // is not a restriction, and reading it as one left the permitted set empty.
           const allowedConnectorTypes = authorization.allowedConnectorTypes ?? [];
           const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
           if (hasConnectorTypeRestriction) {
@@ -187,8 +185,6 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                 type: AttributeEnum.Actual,
               });
             for (const connectorType of connectorTypes) {
-              // indexOf(...) > 0 dropped the type at index 0, so a single-entry allow list
-              // matched nothing and every driver was refused with NotAllowedTypeEVSE.
               if (allowedConnectorTypes.includes(connectorType.value as string)) {
                 evseIds.add(connectorType.component?.evse?.id as number);
               }
@@ -217,9 +213,6 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                   type: AttributeEnum.Actual,
                 });
               for (const evseIdAttribute of evseIdAttributes) {
-                // `some(startsWith(disallowedPrefix))` answers "is this EVSE disallowed", but the
-                // result was named and used as though it meant "allowed": the branches below
-                // admitted exactly the disallowed EVSEs and discarded the permitted ones.
                 const evseIdDisallowed: boolean = authorization.disallowedEvseIdPrefixes.some(
                   (disallowedEvseId: string) =>
                     (evseIdAttribute.value as string).startsWith(disallowedEvseId),
