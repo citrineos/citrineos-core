@@ -2,7 +2,8 @@ import { DataTypes, QueryInterface } from 'sequelize';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
 /**
- * Resolves the following errors when starting up CitrineOS due to missing columns:
+ * Resolves the following errors when starting up CitrineOS due to mismatches between the Sequelize
+ * models and database schema:
  *
  * 1. Column "AsyncJobStatuses"."tenantId" is declared by model AsyncJobStatus but does not exist
  *    - Resolved by adding the tenantId column to AsyncJobStatuses
@@ -13,7 +14,8 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
  * values the model permits will be rejected
  *    - Resolved by changing the ocppConnectionName column from VARCHAR(36) to VARCHAR(255)
  * 4. Column "MeterValues"."sampledValue" has type JSON but the model declares JSONB
- *    - Resolved by changing the ocppConnectionName column from VARCHAR(36) to VARCHAR(255)
+ *    - Resolved by changing the sampledValue column from JSON to JSONB
+ *    - NOTE: This is done accepting the risk that users with existing data may fail this migration!
  * 5. Column "StatusNotifications"."ocppConnectionName" is VARCHAR(36), narrower than the declared
  * VARCHAR(255); values the model permits will be rejected
  *    - Resolved by changing the ocppConnectionName column from VARCHAR(36) to VARCHAR(255)
@@ -22,6 +24,7 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
  *    - Resolved by changing the ocppConnectionName column from VARCHAR(36) to VARCHAR(255)
  * 7. Column "Tariffs"."tariffAltText" has type VARCHAR(255) but the model declares JSONB
  *    - Resolved by changing the tariffAltText column from VARCHAR(255) to JSONB
+ *    - NOTE: This is done accepting the risk that users with existing data may fail this migration!
  */
 export default {
   up: async (queryInterface: QueryInterface) => {

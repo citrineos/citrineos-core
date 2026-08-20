@@ -39,12 +39,6 @@ export class HealthCheckService {
     this._isShuttingDown = true;
   }
 
-  /**
-   * Records the startup schema validation result so drift is visible on
-   * /health/ready rather than only in the boot logs. Errors would have aborted
-   * startup already (unless `database.validateSchemaSeverity` is 'warn'), so in
-   * practice this surfaces the warning-level findings.
-   */
   setSchemaValidationReport(report: SchemaValidationReport | null) {
     this._schemaReport = report;
   }
@@ -128,11 +122,9 @@ export class HealthCheckService {
   }
 
   /**
-   * Never fails readiness. Schema drift is a startup gate, not a runtime
-   * condition: errors either aborted startup already, or the operator set
-   * `database.validateSchemaSeverity` to 'warn' precisely so the service keeps
-   * serving. Failing readiness here would pull the instance out of rotation and
-   * defeat that. Reported so drift is visible to whatever scrapes /health/ready.
+   * Never fails readiness given that (Sequelize <-> database) schema drift is a startup gate,
+   * not a runtime condition. Errors either aborted startup already, or the operator set
+   * `database.validateSchemaSeverity` to 'warn' so the service keeps serving.
    */
   private _checkSchema(): CheckResult | null {
     if (!this._schemaReport) return null;

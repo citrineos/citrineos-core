@@ -31,10 +31,10 @@ export const bootstrapConfigSchema = z.object({
     alter: z.boolean().default(false),
     force: z.boolean().default(false),
     // Verify at startup that the live schema still matches the Sequelize models
-    // and refuse to start if it does not. `validateSchemaSeverity: 'warn'`
-    // reports drift without blocking startup, for rolling this out onto an
-    // existing deployment before switching it to a hard gate.
+    // and refuse to start if it does not.
     validateSchema: z.boolean().default(true),
+    // 'warn' if you want to report drift without blocking startup, i.e., for rolling this out onto
+    // an existing deployment before switching it to a hard gate.
     validateSchemaSeverity: z.enum(['error', 'warn']).default('error'),
     maxRetries: z.number().int().positive().default(3),
     retryDelay: z.number().int().positive().default(1000),

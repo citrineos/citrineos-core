@@ -455,9 +455,8 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
-    // Throws on drift between the models and the live schema, aborting startup.
-    // Runs before anything else touches the database so a mismatch surfaces
-    // here rather than on whichever query happens to hit the bad column first.
+    // Throws on drift between the Sequelize models and database schema,
+    // which aborts startup.
     this._schemaValidationReport = await sequelize.assertSequelizeSchemaMatches(
       this._sequelizeInstance,
       this._config.database,

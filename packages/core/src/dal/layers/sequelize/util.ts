@@ -84,12 +84,8 @@ export class DefaultSequelizeInstance {
   }
 
   /**
-   * Establishes the database connection, retrying up to `database.maxRetries`.
-   *
-   * Throws once the retries are exhausted. This previously logged the failure
-   * and returned normally, which let the process continue booting with no
-   * usable database connection and deferred the failure to whichever query ran
-   * first.
+   * Attempts to establish a database connection, retrying up to `database.maxRetries`. If retries
+   * are exhausted, throws an error to prevent running the process with no usable database connection.
    */
   public static async initializeSequelize(_sync: boolean = false): Promise<void> {
     const maxRetries = this.config.database.maxRetries ?? this.DEFAULT_RETRIES;
