@@ -8,6 +8,7 @@ import {
   type ICache,
   type IMessageConfirmation,
   BOOT_STATUS,
+  createIdentifier,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
   OCPP2_1_CALL_SCHEMA_RECORD,
@@ -192,6 +193,7 @@ export class BootNotificationService {
   }
 
   async createGetBaseReportRequest(
+    tenantId: number,
     ocppConnectionName: string,
     maxCachingSeconds: number,
   ): Promise<OCPP2_0_1.GetBaseReportRequest> {
@@ -199,7 +201,12 @@ export class BootNotificationService {
     // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
     // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
     const requestId = 0;
-    await this._cache.set(requestId.toString(), 'ongoing', ocppConnectionName, maxCachingSeconds);
+    await this._cache.set(
+      requestId.toString(),
+      'ongoing',
+      createIdentifier(tenantId, ocppConnectionName),
+      maxCachingSeconds,
+    );
 
     return {
       requestId: requestId,
@@ -211,17 +218,20 @@ export class BootNotificationService {
    * Based on the GetBaseReportMessageConfirmation, checks the cache to ensure GetBaseReport truly succeeded.
    * If GetBaseReport did not succeed, this method will throw. Otherwise, it will finish without throwing.
    *
+   * @param tenantId - The tenant the charging station belongs to
    * @param ocppConnectionName - The connection name of the charging station
    * @param requestId
    * @param getBaseReportMessageConfirmation
    * @param maxCachingSeconds
    */
   async confirmGetBaseReportSuccess(
+    tenantId: number,
     ocppConnectionName: string,
     requestId: string,
     getBaseReportMessageConfirmation: IMessageConfirmation,
     maxCachingSeconds: number,
   ): Promise<void> {
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
     if (getBaseReportMessageConfirmation.success) {
       this._logger.debug(
         `GetBaseReport successfully sent to charger: ${getBaseReportMessageConfirmation}`,
@@ -231,14 +241,14 @@ export class BootNotificationService {
       let getBaseReportCacheValue = await this._cache.onChange(
         requestId,
         maxCachingSeconds,
-        ocppConnectionName,
+        identifier,
       );
 
       while (getBaseReportCacheValue === 'ongoing') {
         getBaseReportCacheValue = await this._cache.onChange(
           requestId,
           maxCachingSeconds,
-          ocppConnectionName,
+          identifier,
         );
       }
 
