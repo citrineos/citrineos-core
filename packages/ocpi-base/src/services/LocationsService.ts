@@ -67,7 +67,6 @@ export class LocationsService {
       },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
-    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (paginatedParams?.dateFrom) dateFilters._gte = paginatedParams.dateFrom.toISOString();
     if (paginatedParams?.dateTo) dateFilters._lt = paginatedParams.dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {

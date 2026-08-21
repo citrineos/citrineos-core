@@ -52,7 +52,6 @@ export class TariffsService {
       },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
-    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (paginationParams?.dateFrom) dateFilters._gte = paginationParams.dateFrom.toISOString();
     if (paginationParams?.dateTo) dateFilters._lt = paginationParams.dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
