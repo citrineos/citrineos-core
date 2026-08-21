@@ -105,10 +105,6 @@ export class OIDCAuthProvider implements IApiAuthProvider {
         throw new Error('Invalid token format');
       }
       const publicKey = await this.fetchPublicKey(decoded.header.kid);
-      // Verify the token with the public key. The issuer and audience are configured but were not
-      // being enforced: an identity provider signs every client in the realm with the same keys, so
-      // a token issued to an unrelated service verified here and authenticated its bearer with
-      // whatever roles it carried.
       const payload = jwt.verify(token, createPublicKey(publicKey), {
         issuer: this._config.issuer,
         ...(this._config.audience ? { audience: this._config.audience } : {}),
