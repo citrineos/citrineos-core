@@ -25,8 +25,6 @@ export const getTenantIdFromIdentifier = (identifier: string): number => {
   return Number.isInteger(tenantId) ? tenantId : DEFAULT_TENANT_ID;
 };
 export const getStationIdFromIdentifier = (identifier: string): string => {
-  // Only the first delimiter separates the tenant from the name; the rest belong to the name,
-  // which is the last segment of the connection URL and can contain anything.
   const delimiterIndex = identifier.indexOf(IDENTIFIER_DELIMITER);
   return delimiterIndex === -1 ? identifier : identifier.slice(delimiterIndex + 1);
 };
