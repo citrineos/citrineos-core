@@ -224,12 +224,6 @@ export class LocalAuthListService {
     }
   }
 
-  /**
-   * OCPP 1.6 variant: validate and persist a SendLocalListRequest, returning the persisted row.
-   * Mirrors the 2.0.1 path but uses flat idTag and the 1.6 update enum. The size limits come from
-   * the SendLocalListMaxLength and LocalAuthListMaxLength configuration keys rather than from the
-   * device model, and a key the station has not reported is not enforced.
-   */
   async persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest16(
     tenantId: number,
     stationId: string,
@@ -304,10 +298,6 @@ export class LocalAuthListService {
     );
   }
 
-  /**
-   * The number of idTags the station will hold once this request is applied. A Differential entry
-   * carrying no idTagInfo is a delete, so it frees a slot rather than filling one.
-   */
   private countUpdatedAuthList16(
     sendLocalListRequest: OCPP1_6.SendLocalListRequest,
     localListVersion?: LocalListVersion,
@@ -321,7 +311,6 @@ export class LocalAuthListService {
       (localListVersion?.localAuthorizationList ?? []).map((auth) => auth.idToken),
     );
     for (const entry of list) {
-      // createSendLocalListFromRequestData16 skips an entry with no idTag, so it never lands.
       if (!entry.idTag) {
         continue;
       }
@@ -334,7 +323,6 @@ export class LocalAuthListService {
     return idTags.size;
   }
 
-  /** Reads an OCPP 1.6 configuration key as a number, or null when the station has not reported it. */
   private async getOcpp16ConfigurationNumber(
     tenantId: number,
     ocppConnectionName: string,
