@@ -51,7 +51,6 @@ export class SessionsService {
       },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
-    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
     if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {

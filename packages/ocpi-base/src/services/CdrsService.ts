@@ -48,14 +48,10 @@ export class CdrsService {
           partyId: { _eq: fromPartyId },
         },
       },
-      // A CDR only exists for a finished session, and one that lost its active flag without ever
-      // being stopped has no end_date_time to carry. CdrMapper drops both, so the aggregate count
-      // behind X-Total-Count has to drop them as well.
       isActive: { _eq: false },
       endTime: { _is_null: false },
     };
     const dateFilters: Timestamptz_Comparison_Exp = {};
-    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
     if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
