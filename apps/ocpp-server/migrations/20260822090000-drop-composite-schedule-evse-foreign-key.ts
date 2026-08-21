@@ -6,9 +6,6 @@
 /** @type {import('sequelize-cli').Migration} */
 import { QueryInterface, QueryTypes } from 'sequelize';
 
-// CompositeSchedules.evseId holds the EVSE number a charging station reported, with 0 meaning the
-// whole grid connection. It is not a reference to an Evse row, and the association that made it one
-// has been removed; this drops the constraint it left behind.
 const TABLE_NAME = 'CompositeSchedules';
 const CONSTRAINT_NAME = 'CompositeSchedules_evseId_fkey';
 
@@ -31,8 +28,6 @@ export default {
     }
   },
 
-  // Restoring the constraint fails wherever a stored EVSE number does not happen to be an Evse id,
-  // which is the state it was wrong about in the first place.
   down: async (queryInterface: QueryInterface) => {
     if (!(await constraintExists(queryInterface))) {
       await queryInterface.sequelize.query(

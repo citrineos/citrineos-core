@@ -22,8 +22,6 @@ export class CompositeSchedule extends Model implements CompositeScheduleDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  // The EVSE number the station reported. 0 names the whole grid connection rather than an EVSE,
-  // and the numbering restarts on every station, so this is not a reference to an Evse row.
   @Column(DataType.INTEGER)
   declare evseId: number;
 
