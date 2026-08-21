@@ -171,10 +171,19 @@ export class TokensMapper {
     };
   }
 
-  public static getContractId(authorization: AuthorizationDto): string {
-    const contractId = authorization.additionalInfo?.find(
+  /**
+   * The eMAID an OCPI token carries as its contract_id, or undefined when the authorization has
+   * none. An authorization without one cannot be expressed as a token at all, so callers building
+   * a page of tokens use this to leave it out rather than to catch the failure.
+   */
+  public static findContractId(authorization: AuthorizationDto): string | undefined {
+    return authorization.additionalInfo?.find(
       (info) => info.type === OCPP2_0_1.IdTokenEnumType.eMAID,
     )?.additionalIdToken;
+  }
+
+  public static getContractId(authorization: AuthorizationDto): string {
+    const contractId = TokensMapper.findContractId(authorization);
     if (!contractId) {
       throw new Error(
         'Contract ID not found in authorization additional info, authorization is incomplete for OCPI token mapping. Please add additional info with type eMAID.',

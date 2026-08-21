@@ -79,15 +79,14 @@ export abstract class BaseTransactionMapper {
         }
       }
       if (transaction.authorization) {
-        // toDto throws for an authorization with no eMAID to use as contract_id; skip that
-        // transaction rather than failing the whole page.
-        try {
-          const tokenDto = await TokensMapper.toDto(transaction.authorization);
+        // An OCPI token carries an eMAID as its contract_id, and an authorization without one
+        // cannot be expressed as a token. That transaction is left out rather than failing the
+        // whole page; anything else that goes wrong here is still an error.
+        if (TokensMapper.findContractId(transaction.authorization)) {
+          const tokenDto = TokensMapper.toDto(transaction.authorization);
           transactionIdToTokenMap.set(transaction.transactionId!, tokenDto);
-        } catch (error) {
-          this.logger.debug(
-            `Unmapped token for transaction ${transaction.id}: ${error instanceof Error ? error.message : error}`,
-          );
+        } else {
+          this.logger.debug(`No contract id for transaction ${transaction.id}; token omitted`);
         }
       } else {
         this.logger.debug(`No token for transaction ${transaction.id}`);

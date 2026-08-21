@@ -92,4 +92,18 @@ describe('BaseTransactionMapper.getTokensForTransactions', () => {
     expect(tokens.has('tx-1')).toBe(false);
     expect(tokens.get('tx-2')?.contract_id).toBe('GB-VLT-C12345678-9');
   });
+
+  it('still raises anything other than a missing contract id', async () => {
+    // Only an authorization that cannot carry a contract_id is left out. A genuine fault - here a
+    // transaction whose partner never loaded - has to surface rather than be absorbed as one more
+    // unmappable token.
+    const brokenPartner = {
+      ...anOcpiAuthorization(),
+      tenantPartner: undefined,
+    } as unknown as AuthorizationDto;
+
+    await expect(
+      new TestTransactionMapper().tokensFor([aTransaction('tx-broken', brokenPartner)]),
+    ).rejects.toThrow();
+  });
 });
