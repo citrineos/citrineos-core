@@ -40,9 +40,6 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       this.config.commands.ocpiBaseUrl +
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.START_SESSION}/${commandId}`;
     options.queryParameters = queryParameters;
-    // connector_id is optional on StartSession, and connectorId is optional on
-    // RemoteStartTransaction, so an omitted one is passed on as omitted and the station chooses.
-    // Only a connector that was named and does not exist is a failed command.
     let connectorId: number | undefined;
     if (startSession.connector_id !== null && startSession.connector_id !== undefined) {
       connectorId = this.resolveOcpp16ConnectorId(chargingStation, startSession.connector_id);
@@ -149,11 +146,6 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     );
   }
 
-  /**
-   * OCPI addresses a connector by its database id; OCPP 1.6 addresses it by the per-station serial
-   * number held in Connector.connectorId. Returns undefined when the connector is not on the
-   * station, which the caller must treat as a failed command rather than a guess.
-   */
   private resolveOcpp16ConnectorId(
     chargingStation: ChargingStationDto,
     ocpiConnectorId: string | null | undefined,
