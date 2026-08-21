@@ -33,6 +33,9 @@ import { EvseType } from './EvseType.js';
 import { Variable } from './Variable.js';
 import { VariableAttribute } from './VariableAttribute.js';
 
+// A station names the same component once per EVSE, so the EVSE is part of a component's identity.
+// Both instance and evseDatabaseId are optional, and Postgres treats nulls in a unique constraint as
+// distinct, so each combination that leaves one out needs its own partial index.
 @Table({
   indexes: [
     {
@@ -41,6 +44,23 @@ import { VariableAttribute } from './VariableAttribute.js';
       fields: ['tenantId', 'name'],
       where: {
         instance: null,
+        evseDatabaseId: null,
+      },
+    },
+    {
+      unique: true,
+      name: 'components_tenantId_name_evseDatabaseId',
+      fields: ['tenantId', 'name', 'evseDatabaseId'],
+      where: {
+        instance: null,
+      },
+    },
+    {
+      unique: true,
+      name: 'components_tenantId_name_instance',
+      fields: ['tenantId', 'name', 'instance'],
+      where: {
+        evseDatabaseId: null,
       },
     },
   ],
@@ -54,13 +74,13 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
 
   @Column({
     type: DataType.STRING,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evse',
   })
   declare name: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evse',
   })
   declare instance?: string | null;
 
@@ -72,7 +92,10 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
   declare evse?: EvseType;
 
   @ForeignKey(() => EvseType)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'tenantId_name_instance_evse',
+  })
   declare evseDatabaseId?: number | null;
 
   @BelongsToMany(() => Variable, { through: () => ComponentVariable, foreignKey: 'componentId' })
@@ -97,7 +120,7 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evse',
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
   })

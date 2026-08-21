@@ -231,21 +231,16 @@ export class SequelizeDeviceModelRepository
         )[0]
       : undefined;
 
+    // A station names the same component once per EVSE, so the EVSE is part of the identity. Leaving
+    // it out returns one row for every EVSE and rewrites its evse to whichever reported last.
     const [component, componentCreated] = await this.component.readOrCreateByQuery(tenantId, {
       where: {
         tenantId,
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        evseDatabaseId: evse?.databaseId ?? null,
       },
     });
-    // Note: this permits changing the evse related to the component
-    if (component.evseDatabaseId !== evse?.databaseId && evse) {
-      await this.component.updateByKey(
-        tenantId,
-        { evseDatabaseId: evse.databaseId },
-        component.get('id'),
-      );
-    }
 
     if (componentCreated && ocppConnectionName) {
       const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
@@ -507,6 +502,17 @@ export class SequelizeDeviceModelRepository
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
       },
+      include: componentType.evse
+        ? [
+            {
+              model: EvseType,
+              where: {
+                id: componentType.evse.id,
+                connectorId: componentType.evse.connectorId ?? null,
+              },
+            },
+          ]
+        : [EvseType],
     });
     const variable = await this.variable.readOnlyOneByQuery(tenantId, {
       where: {
