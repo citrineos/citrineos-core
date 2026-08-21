@@ -78,9 +78,6 @@ export class CdrMapper extends BaseTransactionMapper {
   ): Promise<Cdr[]> {
     return Promise.all(
       sessions
-        // A CDR needs a tariff and at least one charging period. A session missing either cannot
-        // be described faithfully, so it is left out rather than filled in; the caller reports
-        // which sessions were dropped.
         .filter(
           (session): session is Session & { charging_periods: ChargingPeriod[] } =>
             transactionIdToTariffMap.has(session.id) && !!session.charging_periods?.length,
@@ -226,11 +223,6 @@ export class CdrMapper extends BaseTransactionMapper {
     return undefined;
   }
 
-  /**
-   * A CDR requires an end_date_time, so a transaction that lost its active flag without ever being
-   * stopped is not billable. That happens when a new transaction starts on an EVSE that still had
-   * a stale one open.
-   */
   private getCompletedTransactions(transactions: TransactionDto[]): TransactionDto[] {
     return transactions.filter((transaction) => !transaction.isActive && !!transaction.endTime);
   }
