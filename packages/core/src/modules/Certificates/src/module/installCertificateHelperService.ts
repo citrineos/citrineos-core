@@ -253,6 +253,7 @@ export class InstallCertificateHelperService {
     ocppConnectionName: string,
     status: InstallCertificateStatusEnumType,
     requestId?: number,
+    certificateType?: CertificateUseEnumType,
   ) {
     const existingPendingInstallCertificateAttempt =
       await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
@@ -260,6 +261,7 @@ export class InstallCertificateHelperService {
           ocppConnectionName: ocppConnectionName,
           status: null,
           ...(requestId != null ? { requestId } : {}),
+          ...(certificateType != null ? { certificateType } : {}),
         },
       });
     // should always be true
