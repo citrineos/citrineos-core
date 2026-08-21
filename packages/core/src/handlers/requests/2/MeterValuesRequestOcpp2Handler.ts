@@ -103,8 +103,6 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
 
       if (activeTransaction) {
         await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
-        // Only the CostUpdated call is optional; attaching the reading to its transaction
-        // and keeping totalKwh current are not.
         if (this._sendCostUpdatedOnMeterValue) {
           await this._costNotifier.calculateCostAndNotify(
             activeTransaction,
