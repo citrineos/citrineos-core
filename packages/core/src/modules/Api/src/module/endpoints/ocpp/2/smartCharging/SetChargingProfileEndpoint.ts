@@ -361,9 +361,6 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             payload: `chargingSchedulePeriod with phaseToUse requires numberPhases=1`,
           };
         }
-        // Presence of the variable is not the same as support for the feature, so read the value
-        // and treat anything that is not an explicit true - including an absent row - as
-        // unsupported.
         const phaseSwitchingSupported =
           acPhaseSwitchingSupported[0]?.value?.toLowerCase() === 'true';
         if (!phaseSwitchingSupported) {
