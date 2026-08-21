@@ -42,7 +42,11 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
     }
 
     const setNetworkProfile = await SetNetworkProfile.findOne({
-      where: { tenantId: message.context.tenantId, correlationId: message.context.correlationId },
+      where: {
+        tenantId: message.context.tenantId,
+        correlationId: message.context.correlationId,
+        ocppConnectionName: message.context.ocppConnectionName,
+      },
     });
     if (!setNetworkProfile) {
       return;
