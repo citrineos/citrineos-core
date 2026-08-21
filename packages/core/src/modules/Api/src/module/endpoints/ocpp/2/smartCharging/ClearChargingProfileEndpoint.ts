@@ -74,8 +74,6 @@ export class ClearChargingProfileEndpoint extends AbstractMessageEndpoint {
   ): IMessageConfirmation | undefined {
     const criteria = request.chargingProfileCriteria;
 
-    // Zero is a value, not an omission: evseId 0 means the charging station as a whole and
-    // stackLevel 0 is the lowest the schema allows, so both are matched on presence.
     if (request.chargingProfileId === undefined || request.chargingProfileId === null) {
       if (!criteria) {
         return {

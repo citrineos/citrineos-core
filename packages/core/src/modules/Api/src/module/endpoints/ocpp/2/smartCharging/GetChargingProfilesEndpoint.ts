@@ -49,7 +49,6 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
   ): Promise<IMessageConfirmation[]> {
     const chargingProfile = request.chargingProfile;
 
-    // stackLevel 0 is the lowest the schema allows, so criteria are matched on presence.
     if (chargingProfile.chargingProfileId) {
       if (
         chargingProfile.chargingProfilePurpose ||
