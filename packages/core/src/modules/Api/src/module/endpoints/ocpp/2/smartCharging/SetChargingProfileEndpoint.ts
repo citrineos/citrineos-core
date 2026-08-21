@@ -156,10 +156,6 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     return undefined;
   }
 
-  /**
-   * Two profiles are valid at the same time unless one window ends before the other begins. An
-   * absent validFrom means valid on receipt, and an absent validTo means valid until replaced.
-   */
   private static _overlaps(
     left: { validFrom?: string | null; validTo?: string | null },
     right: { validFrom?: string | null; validTo?: string | null },
