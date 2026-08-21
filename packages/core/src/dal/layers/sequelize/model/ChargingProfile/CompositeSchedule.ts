@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CompositeScheduleDto, EvseDto, TenantDto } from '@citrineos/types';
+import type { CompositeScheduleDto, TenantDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -13,7 +13,6 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Evse } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
@@ -23,12 +22,10 @@ export class CompositeSchedule extends Model implements CompositeScheduleDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @ForeignKey(() => Evse)
+  // The EVSE number the station reported. 0 names the whole grid connection rather than an EVSE,
+  // and the numbering restarts on every station, so this is not a reference to an Evse row.
   @Column(DataType.INTEGER)
   declare evseId: number;
-
-  @BelongsTo(() => Evse, 'evseId')
-  declare evse?: EvseDto;
 
   @Column(DataType.INTEGER)
   declare duration: number;
