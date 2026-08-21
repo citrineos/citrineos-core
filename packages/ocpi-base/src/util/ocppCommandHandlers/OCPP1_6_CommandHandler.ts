@@ -40,19 +40,25 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       this.config.commands.ocpiBaseUrl +
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.START_SESSION}/${commandId}`;
     options.queryParameters = queryParameters;
-    const connectorId = this.resolveOcpp16ConnectorId(chargingStation, startSession.connector_id);
-    if (connectorId === undefined) {
-      this.reportConnectorNotFound(
-        'StartSession',
-        startSession,
-        tenantPartner,
-        startSession.response_url,
-        commandId,
-      );
-      return;
+    // connector_id is optional on StartSession, and connectorId is optional on
+    // RemoteStartTransaction, so an omitted one is passed on as omitted and the station chooses.
+    // Only a connector that was named and does not exist is a failed command.
+    let connectorId: number | undefined;
+    if (startSession.connector_id !== null && startSession.connector_id !== undefined) {
+      connectorId = this.resolveOcpp16ConnectorId(chargingStation, startSession.connector_id);
+      if (connectorId === undefined) {
+        this.reportConnectorNotFound(
+          'StartSession',
+          startSession,
+          tenantPartner,
+          startSession.response_url,
+          commandId,
+        );
+        return;
+      }
     }
     const remoteStartTransactionRequest: OCPP1_6.RemoteStartTransactionRequest = {
-      connectorId,
+      ...(connectorId !== undefined ? { connectorId } : {}),
       idTag: startSession.token.uid,
     };
     await this.sendOCPPMessage(

@@ -94,7 +94,7 @@ function aHandler() {
   return { handler, sent, postCommandResult };
 }
 
-const aStartSession = (connectorId: string) =>
+const aStartSession = (connectorId?: string | null) =>
   ({
     connector_id: connectorId,
     token: { uid: 'TAG001' },
@@ -118,6 +118,26 @@ describe('OCPP1_6_CommandHandler.sendStartSessionCommand', () => {
       idTag: 'TAG001',
     });
   });
+
+  it.each([undefined, null])(
+    'lets the station choose when connector_id is %s, which OCPI allows',
+    async (connectorId) => {
+      // connector_id is optional on StartSession and connectorId is optional on
+      // RemoteStartTransaction, so an omitted connector is a valid command, not a missing one.
+      const { handler, sent, postCommandResult } = aHandler();
+
+      await handler.sendStartSessionCommand(
+        aStartSession(connectorId),
+        tenantPartner,
+        chargingStation,
+        'cmd-3',
+      );
+
+      expect(postCommandResult).not.toHaveBeenCalled();
+      expect(sent).toHaveLength(1);
+      expect(sent[0].payload).toEqual({ idTag: 'TAG001' });
+    },
+  );
 
   it('reports FAILED rather than guessing when the connector is not on the station', async () => {
     const { handler, sent, postCommandResult } = aHandler();
