@@ -132,9 +132,7 @@ export class BootNotificationService {
    * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
    * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
    *
-   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`.
-   *     MessageRouterImpl reads these entries back under the same namespace, so the caller must
-   *     pass createIdentifier(tenantId, ocppConnectionName) and not the bare station name.
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
    * @param cachedBootStatus
    * @param bootNotificationResponseStatus
    */
@@ -294,9 +292,7 @@ export class BootNotificationService {
    * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
    * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
    *
-   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`.
-   *     MessageRouterImpl reads these entries back under the same namespace, so the caller must
-   *     pass createIdentifier(tenantId, ocppConnectionName) and not the bare station name.
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
    * @param cachedBootStatus
    * @param bootNotificationResponseStatus
    */
