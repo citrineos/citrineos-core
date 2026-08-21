@@ -33,9 +33,6 @@ import { EvseType } from './EvseType.js';
 import { Variable } from './Variable.js';
 import { VariableAttribute } from './VariableAttribute.js';
 
-// A station names the same component once per EVSE, so the EVSE is part of a component's identity.
-// Both instance and evseDatabaseId are optional, and Postgres treats nulls in a unique constraint as
-// distinct, so each combination that leaves one out needs its own partial index.
 @Table({
   indexes: [
     {

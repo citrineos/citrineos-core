@@ -6,14 +6,8 @@
 /** @type {import('sequelize-cli').Migration} */
 import { QueryInterface, QueryTypes } from 'sequelize';
 
-// A charging station names the same component once per EVSE, so the EVSE belongs in a component's
-// identity. Widening the key can only reduce collisions, so no existing row can violate it. Rows
-// written before this migration keep whichever EVSE reported last; a fresh GetBaseReport repopulates
-// them one per EVSE.
 const TABLE_NAME = 'Components';
 
-// Both instance and evseDatabaseId are optional, and Postgres treats nulls in a unique constraint as
-// distinct, so each combination that leaves one out needs its own partial index.
 const OLD_INDEXES = ['components_tenantId_name'];
 const OLD_CONSTRAINTS = ['Components_tenantId_name_instance_key', 'Components_name_instance_key'];
 
@@ -81,8 +75,6 @@ export default {
     }
   },
 
-  // Narrowing the key back fails wherever a station has reported the same component for more than
-  // one EVSE, which is the state it was wrong about in the first place.
   down: async (queryInterface: QueryInterface) => {
     for (const index of NEW_INDEXES) {
       await queryInterface.sequelize.query(`DROP INDEX IF EXISTS "${index.name}"`, {

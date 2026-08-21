@@ -231,8 +231,6 @@ export class SequelizeDeviceModelRepository
         )[0]
       : undefined;
 
-    // A station names the same component once per EVSE, so the EVSE is part of the identity. Leaving
-    // it out returns one row for every EVSE and rewrites its evse to whichever reported last.
     const [component, componentCreated] = await this.component.readOrCreateByQuery(tenantId, {
       where: {
         tenantId,
