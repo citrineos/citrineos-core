@@ -87,8 +87,6 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
-    // Boot status and the charger-action blacklist are read back by MessageRouterImpl under
-    // the tenant-scoped identifier, so they must be written under the same namespace.
     const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const bootNotificationResponse: OCPP2_response_types.BootNotificationResponse =

@@ -83,8 +83,6 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const tenantId = message.context.tenantId;
     const request = message.payload;
-    // Boot status and the charger-action blacklist are read back by MessageRouterImpl under
-    // the tenant-scoped identifier, so they must be written under the same namespace.
     const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     // 1. Send BootNotification response
