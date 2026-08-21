@@ -136,9 +136,6 @@ export class TransactionService {
       };
       return response;
     } else {
-      // concurrentTransaction is a permission, not a trigger: true means this token MAY hold
-      // several sessions at once, so the check only has to run when it is not set. The 1.6 path
-      // below reads it the same way.
       if (
         authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
@@ -425,7 +422,6 @@ export class TransactionService {
     let evseTypeId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
-      // OCPP 1.6: evseIdentifier is a connector ID — resolve to EVSE type ID
       const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
         tenantId,
         ocppConnectionName,
@@ -433,7 +429,6 @@ export class TransactionService {
       );
       evseTypeId = connector?.evse?.evseTypeId;
     } else {
-      // OCPP 2.0.1: evseIdentifier is an EVSEType — use evse.id directly
       evseTypeId = evseIdentifier.id;
     }
 
