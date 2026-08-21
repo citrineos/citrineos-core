@@ -260,7 +260,12 @@ export class LocalAuthListService {
       stationId,
       'SendLocalListMaxLength',
     );
-    if (sendLocalListMaxLength !== null && list.length > sendLocalListMaxLength) {
+    if (sendLocalListMaxLength === null) {
+      this._logger.warn(
+        `Station ${stationId} has not reported SendLocalListMaxLength; forwarding SendLocalList ` +
+          `without enforcing the per-message length.`,
+      );
+    } else if (list.length > sendLocalListMaxLength) {
       throw new Error(
         `Number of authorizations (${list.length}) in SendLocalListRequest exceeds ` +
           `SendLocalListMaxLength (${sendLocalListMaxLength}) reported by ${stationId} ` +
