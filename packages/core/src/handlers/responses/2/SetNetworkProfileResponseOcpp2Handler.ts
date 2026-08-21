@@ -48,9 +48,12 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const serverNetworkProfile = await ServerNetworkProfile.findByPk(
-      setNetworkProfile.websocketServerConfigId!,
-    );
+    const serverNetworkProfile = await ServerNetworkProfile.findOne({
+      where: {
+        id: setNetworkProfile.websocketServerConfigId!,
+        tenantId: message.context.tenantId,
+      },
+    });
     if (!serverNetworkProfile) {
       return;
     }
