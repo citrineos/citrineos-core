@@ -83,6 +83,9 @@ describe('StatusNotificationService', () => {
       createOrUpdateConnector: vi.fn(),
       createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
+      commissionEvseForOcpp201Connector: vi
+        .fn()
+        .mockResolvedValue({ evseId: 1, connectorId: 1, evseTypeConnectorId: 1 }),
       updateAllConnectorsByQuery: vi.fn(),
     } as unknown as Mocked<ILocationRepository>;
 

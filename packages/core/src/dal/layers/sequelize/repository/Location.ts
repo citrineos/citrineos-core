@@ -416,6 +416,40 @@ export class SequelizeLocationRepository
     });
   }
 
+  async commissionEvseForOcpp201Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+    ocpp201ConnectorId: number,
+  ): Promise<{ evseId: number; connectorId: number; evseTypeConnectorId: number }> {
+    return await this.s.transaction(async (sequelizeTransaction) => {
+      // The EvseType catalogue entry is what device model components hang off. The Evse's stationId
+      // FK is auto-resolved from ocppConnectionName by the BeforeCreate hook on the Evse model.
+      await EvseType.findOrCreate({
+        where: { tenantId, id: ocpp201EvseId, connectorId: null },
+        defaults: { tenantId, id: ocpp201EvseId, connectorId: null },
+        transaction: sequelizeTransaction,
+      });
+      const [evse] = await Evse.findOrCreate({
+        where: { tenantId, ocppConnectionName, evseTypeId: ocpp201EvseId },
+        defaults: { tenantId, ocppConnectionName, evseTypeId: ocpp201EvseId },
+        transaction: sequelizeTransaction,
+      });
+      // A 2.0.1 connectorId is scoped to its EVSE, so every EVSE of a station numbers its first
+      // connector 1. Connector.connectorId is the station-wide OCPP 1.6 numbering, so a connector
+      // met for the first time takes the next number free on the station.
+      const highestConnectorNumber = (await Connector.max('connectorId', {
+        where: { tenantId, ocppConnectionName },
+        transaction: sequelizeTransaction,
+      })) as number | null;
+      return {
+        evseId: evse.id,
+        connectorId: (highestConnectorNumber ?? 0) + 1,
+        evseTypeConnectorId: ocpp201ConnectorId,
+      };
+    });
+  }
+
   async updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,

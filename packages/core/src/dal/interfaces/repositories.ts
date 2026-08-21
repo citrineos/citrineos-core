@@ -288,6 +288,12 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppConnectionName: string,
     connectorId: number,
   ): Promise<{ evseId: number; evseTypeConnectorId: number }>;
+  commissionEvseForOcpp201Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+    ocpp201ConnectorId: number,
+  ): Promise<{ evseId: number; connectorId: number; evseTypeConnectorId: number }>;
   updateAllConnectorsByQuery(
     tenantId: number,
     value: Partial<Connector>,

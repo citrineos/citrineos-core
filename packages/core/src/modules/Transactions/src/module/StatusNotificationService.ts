@@ -78,7 +78,7 @@ export class StatusNotificationService {
       statusNotification,
     );
 
-    let matchingEvse = chargingStation.evses?.find(
+    const matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
     );
     let matchingConnector: ConnectorDto | undefined = (
@@ -100,30 +100,20 @@ export class StatusNotificationService {
         return;
       }
     } else if (!matchingConnector) {
-      if (!matchingEvse) {
-        matchingEvse = await this._locationRepository.createOrUpdateEvse(tenantId, {
-          evseTypeId: statusNotificationRequest.evseId,
-          ocppConnectionName,
-        });
-      }
+      const reference = await this._locationRepository.commissionEvseForOcpp201Connector(
+        tenantId,
+        ocppConnectionName,
+        statusNotificationRequest.evseId,
+        statusNotificationRequest.connectorId,
+      );
       matchingConnector = {
         tenantId,
         stationId: chargingStation.id,
-        evseId: matchingEvse.id!,
-        evseTypeConnectorId: statusNotificationRequest.connectorId,
-        /**
-         * Note: This is the OCPP 1.6 connectorId, which is NOT the same as the evseTypeConnectorId
-         * for OCPP 2.0.1 -- it is possible this will collide with an existing connectorId on a
-         * multi-evse station. Do not autocommission multi-evse stations.
-         */
-        connectorId: statusNotificationRequest.connectorId,
+        evseId: reference.evseId,
+        evseTypeConnectorId: reference.evseTypeConnectorId,
+        connectorId: reference.connectorId,
         ocppConnectionName: ocppConnectionName,
       };
-      if (matchingEvse.evseTypeId! > 1) {
-        this._logger.warn(
-          `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is true, but the EVSE has evseTypeId ${matchingEvse.evseTypeId}. This may cause a collision with an existing connectorId on a multi-evse station.`,
-        );
-      }
     }
 
     await this._locationRepository.createOrUpdateConnector(tenantId, matchingConnector);
