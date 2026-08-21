@@ -26,7 +26,7 @@ export interface OIDCConfig {
   issuer: string;
 
   // Expected audience of tokens (usually the client ID)
-  audience?: string;
+  audience: string;
 
   // How long to cache keys (ms)
   cacheTime?: number;
@@ -107,7 +107,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       const publicKey = await this.fetchPublicKey(decoded.header.kid);
       const payload = jwt.verify(token, createPublicKey(publicKey), {
         issuer: this._config.issuer,
-        ...(this._config.audience ? { audience: this._config.audience } : {}),
+        audience: this._config.audience,
       }) as JwtPayload;
 
       // Extract user info from the decoded token
