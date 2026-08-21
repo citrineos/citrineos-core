@@ -78,7 +78,13 @@ export class CdrMapper extends BaseTransactionMapper {
   ): Promise<Cdr[]> {
     return Promise.all(
       sessions
-        .filter((session) => transactionIdToTariffMap.has(session.id))
+        // A CDR needs a tariff and at least one charging period. A session missing either cannot
+        // be described faithfully, so it is left out rather than filled in; the caller reports
+        // which sessions were dropped.
+        .filter(
+          (session): session is Session & { charging_periods: ChargingPeriod[] } =>
+            transactionIdToTariffMap.has(session.id) && !!session.charging_periods?.length,
+        )
         .map((session) =>
           this.mapSessionToCDR(
             session,
@@ -91,7 +97,7 @@ export class CdrMapper extends BaseTransactionMapper {
   }
 
   private async mapSessionToCDR(
-    session: Session,
+    session: Session & { charging_periods: ChargingPeriod[] },
     location: LocationDTO,
     tariff: TariffDto,
     ocpiTariff: OcpiTariff,
@@ -110,7 +116,7 @@ export class CdrMapper extends BaseTransactionMapper {
       meter_id: session.meter_id,
       currency: session.currency,
       tariffs: ocpiTariff ? [ocpiTariff] : undefined,
-      charging_periods: this.getChargingPeriods(session, tariff),
+      charging_periods: session.charging_periods,
       signed_data: await this.getSignedData(session),
       total_cost: calculateTotalCdrCost(session, tariff),
       total_fixed_cost: calculateFixedCost(tariff),
@@ -131,27 +137,6 @@ export class CdrMapper extends BaseTransactionMapper {
 
   private generateCdrId(session: Session): string {
     return session.id;
-  }
-
-  /**
-   * A CDR needs at least one charging period, and a station can deliver a whole session without
-   * ever sending a meter value. The session is then described as one period carrying the totals
-   * the CDR already states, rather than as none at all.
-   */
-  private getChargingPeriods(session: Session, tariff: TariffDto): ChargingPeriod[] {
-    if (session.charging_periods?.length) {
-      return session.charging_periods;
-    }
-    return [
-      {
-        start_date_time: session.start_date_time,
-        tariff_id: String(tariff.id),
-        dimensions: [
-          { type: CdrDimensionType.ENERGY, volume: session.kwh },
-          { type: CdrDimensionType.TIME, volume: calculateTotalTimeHours(session) },
-        ],
-      },
-    ];
   }
 
   private async createCdrLocation(location: LocationDTO, session: Session): Promise<CdrLocation> {

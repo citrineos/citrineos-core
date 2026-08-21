@@ -56,6 +56,19 @@ function anAuthorization(): AuthorizationDto {
   } as unknown as AuthorizationDto;
 }
 
+function aMeterValue() {
+  return {
+    timestamp: '2026-08-20T10:30:00Z',
+    sampledValue: [
+      {
+        measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
+        unitOfMeasure: { unit: 'kWh' },
+        value: 50,
+      },
+    ],
+  };
+}
+
 function aTransaction(overrides: Partial<TransactionDto> = {}): TransactionDto {
   return {
     id: 1,
@@ -69,7 +82,7 @@ function aTransaction(overrides: Partial<TransactionDto> = {}): TransactionDto {
     ocppConnectionName: 'cs-001',
     locationId: 1,
     updatedAt: UPDATED_AT,
-    meterValues: [],
+    meterValues: [aMeterValue()],
     tenant: { countryCode: 'GB', partyId: 'VLT' },
     location: aLocation(),
     authorization: anAuthorization(),
@@ -98,21 +111,26 @@ describe('CdrMapper.mapTransactionsToCdrs', () => {
     expect(cdrs[0].total_time).toBe(1);
   });
 
-  it('describes a session with no meter values as a single charging period', async () => {
-    // OCPI requires at least one charging period on a CDR, and a station can deliver a whole
-    // session without sending a meter value.
+  it('carries the charging periods the meter values produced', async () => {
     const cdrs = await cdrMapper().mapTransactionsToCdrs([aTransaction()]);
 
-    expect(cdrs[0].charging_periods).toEqual([
-      {
-        start_date_time: new Date('2026-08-20T10:00:00Z'),
-        tariff_id: '7',
-        dimensions: [
-          { type: 'ENERGY', volume: 50 },
-          { type: 'TIME', volume: 1 },
-        ],
-      },
-    ]);
+    expect(cdrs[0].charging_periods).toHaveLength(1);
+    expect(cdrs[0].charging_periods[0]).toMatchObject({
+      start_date_time: new Date('2026-08-20T10:30:00Z'),
+      tariff_id: '7',
+    });
+  });
+
+  it('drops a session that has no charging periods rather than inventing one', async () => {
+    // OCPI requires at least one charging period on a CDR, and a station can deliver a whole
+    // session without ever sending a meter value. Describing it as one period built from the
+    // totals would read as measured detail that was never measured, so the session is left out
+    // and the caller reports it as dropped.
+    const unmetered = aTransaction({ meterValues: [] } as Partial<TransactionDto>);
+
+    const cdrs = await cdrMapper().mapTransactionsToCdrs([unmetered]);
+
+    expect(cdrs).toHaveLength(0);
   });
 
   it('leaves tariffs off the CDR when the tariff cannot be looked up', async () => {
