@@ -14,6 +14,7 @@ import moment from 'moment';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
+import { sendToPublicOcspResponder } from './ocsp-responder-url.js';
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import X509 = jsrsasign.X509;
@@ -306,26 +307,28 @@ export function createOcspRequest(reqData: {
   return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
 }
 
+/** How long the CSMS will wait on a responder before giving up, in milliseconds. */
+const OCSP_REQUEST_TIMEOUT_MS = 10_000;
+
 export async function sendOCSPRequest(
   ocspRequest: OCSPRequest | Request,
   responderURL: string,
 ): Promise<string> {
-  const response = await fetch(responderURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/ocsp-request',
-      Accept: 'application/ocsp-response',
-    },
-    body: ocspRequest.getEncodedHex(),
-  });
+  // The responder URL is chosen by the charging station, so it is checked and then reached at the
+  // address that was checked, rather than by a name that could resolve elsewhere the second time.
+  const response = await sendToPublicOcspResponder(
+    responderURL,
+    ocspRequest.getEncodedHex(),
+    OCSP_REQUEST_TIMEOUT_MS,
+  );
 
-  if (!response.ok) {
+  if (response.status < 200 || response.status > 299) {
     throw new Error(
-      `Failed to fetch OCSP response from ${responderURL}: ${response.status} with error: ${await response.text()}`,
+      `Failed to fetch OCSP response from ${responderURL}: ${response.status} with error: ${response.body}`,
     );
   }
 
-  return await response.text();
+  return response.body;
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {

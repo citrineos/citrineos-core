@@ -13,9 +13,12 @@ import {
 import jsrsasign from 'jsrsasign';
 import { faker } from '@faker-js/faker';
 import { readFile } from '../../utils/file-util.js';
-import { describe, expect, it, Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+
+const sendToPublicOcspResponder = vi.hoisted(() => vi.fn());
+vi.mock('@/services/certificate/ocsp-responder-url.js', () => ({ sendToPublicOcspResponder }));
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
@@ -78,8 +81,6 @@ describe('CertificateUtil', () => {
   });
 
   describe('sendOCSPRequest', () => {
-    global.fetch = vi.fn();
-
     const issuerCertPem = readFile('SubCACertificateSample.pem');
     const subjectCertPem = readFile('LeafCertificateSample.pem');
     const givenRequest = new OCSPRequest({
@@ -90,42 +91,45 @@ describe('CertificateUtil', () => {
         },
       ],
     });
-    const givenResponderURL = faker.internet.url();
+    const givenResponderURL = 'https://ocsp.example.com/ocsp';
+
+    beforeEach(() => {
+      sendToPublicOcspResponder.mockReset();
+    });
 
     it('success', async () => {
       const mockResult = faker.lorem.word();
-      (fetch as Mock).mockReturnValueOnce(
-        Promise.resolve({
-          ok: true,
-          text: () => mockResult,
-        }),
-      );
+      sendToPublicOcspResponder.mockResolvedValueOnce({ status: 200, body: mockResult });
 
       const actualResult = await sendOCSPRequest(givenRequest, givenResponderURL);
 
       expect(actualResult).toBe(mockResult);
-      const expectedInit: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/ocsp-request',
-          Accept: 'application/ocsp-response',
-        },
-        body: givenRequest.getEncodedHex(),
-      };
-      expect(fetch).toHaveBeenCalledWith(givenResponderURL, expectedInit);
+      // The responder is reached through the checked sender, never by a bare fetch of the URL.
+      expect(sendToPublicOcspResponder).toHaveBeenCalledWith(
+        givenResponderURL,
+        givenRequest.getEncodedHex(),
+        expect.any(Number),
+      );
     });
 
     it('fails due to internal server error', async () => {
-      (fetch as Mock).mockReturnValueOnce(
-        Promise.resolve({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve('Internal Server Error'),
-        }),
-      );
+      sendToPublicOcspResponder.mockResolvedValueOnce({
+        status: 500,
+        body: 'Internal Server Error',
+      });
 
       await expect(() => sendOCSPRequest(givenRequest, givenResponderURL)).rejects.toThrow(
         `Failed to fetch OCSP response from ${givenResponderURL}: 500 with error: Internal Server Error`,
+      );
+    });
+
+    it('propagates a refusal from the responder check', async () => {
+      sendToPublicOcspResponder.mockRejectedValueOnce(
+        new Error('Refusing OCSP responder URL on a private address: http://169.254.169.254/'),
+      );
+
+      await expect(() => sendOCSPRequest(givenRequest, 'http://169.254.169.254/')).rejects.toThrow(
+        /private address/,
       );
     });
   });
