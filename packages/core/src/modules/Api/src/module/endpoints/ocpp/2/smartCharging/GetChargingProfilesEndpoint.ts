@@ -49,10 +49,11 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
   ): Promise<IMessageConfirmation[]> {
     const chargingProfile = request.chargingProfile;
 
+    // stackLevel 0 is the lowest the schema allows, so criteria are matched on presence.
     if (chargingProfile.chargingProfileId) {
       if (
         chargingProfile.chargingProfilePurpose ||
-        chargingProfile.stackLevel ||
+        chargingProfile.stackLevel !== undefined ||
         chargingProfile.chargingLimitSource
       ) {
         return identifiers.map(() => ({
@@ -63,7 +64,7 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
       }
     } else if (
       !chargingProfile.chargingProfilePurpose &&
-      !chargingProfile.stackLevel &&
+      chargingProfile.stackLevel === undefined &&
       !chargingProfile.chargingLimitSource
     ) {
       return identifiers.map(() => ({

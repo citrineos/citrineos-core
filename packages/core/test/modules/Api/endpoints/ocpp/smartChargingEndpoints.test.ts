@@ -63,6 +63,29 @@ describe('smartCharging message endpoints', () => {
       expect(sendCall).not.toHaveBeenCalled();
     });
 
+    it('sends for the whole station when the criteria name evseId 0', async () => {
+      // The spec: "An evseId of zero (0) specifies the charging profile for the overall
+      // Charging Station."
+      const confirmations = await handle({ chargingProfileCriteria: { evseId: 0 } });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('sends when the criteria name stack level 0, the lowest the schema allows', async () => {
+      const confirmations = await handle({ chargingProfileCriteria: { stackLevel: 0 } });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('treats charging profile id 0 as an id, not as an absent one', async () => {
+      const confirmations = await handle({ chargingProfileId: 0 });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
     it('refuses criteria alongside an id as redundant', async () => {
       const confirmations = await handle({
         chargingProfileId: 1,
@@ -128,6 +151,26 @@ describe('smartCharging message endpoints', () => {
       });
 
       expect(confirmations[0].success).toBe(true);
+    });
+
+    it('sends when queried by stack level 0', async () => {
+      const confirmations = await handle({
+        requestId: 1,
+        chargingProfile: { stackLevel: 0 },
+      });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('refuses stack level 0 alongside a profile id, like any other criterion', async () => {
+      const confirmations = await handle({
+        requestId: 1,
+        chargingProfile: { chargingProfileId: [1], stackLevel: 0 },
+      });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(sendCall).not.toHaveBeenCalled();
     });
 
     it('refuses mixing profile ids with other criteria', async () => {
