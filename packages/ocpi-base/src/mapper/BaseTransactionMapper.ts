@@ -45,7 +45,11 @@ export abstract class BaseTransactionMapper {
         const result = await this.ocpiGraphqlClient.request<
           GetLocationByIdQueryResult,
           GetLocationByIdQueryVariables
-        >(GET_LOCATION_BY_ID_QUERY, { id: transaction.locationId });
+        >(GET_LOCATION_BY_ID_QUERY, {
+          id: transaction.locationId,
+          countryCode: transaction.tenant!.countryCode!,
+          partyId: transaction.tenant!.partyId!,
+        });
         transaction.location = result.Locations[0] as LocationDto;
       }
       const location = transaction.location;

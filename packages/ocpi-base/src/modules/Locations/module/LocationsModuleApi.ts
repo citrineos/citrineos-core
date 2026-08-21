@@ -101,9 +101,10 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getLocationById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
   ): Promise<LocationResponse> {
-    return this.locationsService.getLocationById(locationId);
+    return this.locationsService.getLocationById(ocpiHeaders, locationId);
   }
 
   @Get('/:location_id/:evse_uid')
@@ -117,13 +118,14 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getEvseById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
   ): Promise<EvseResponse> {
     const stationId = EXTRACT_STATION_ID(evseUid);
     const evseId = EXTRACT_EVSE_ID(evseUid);
 
-    return this.locationsService.getEvseById(locationId, stationId, Number(evseId));
+    return this.locationsService.getEvseById(ocpiHeaders, locationId, stationId, Number(evseId));
   }
 
   @Get('/:location_id/:evse_uid/:connector_id')
@@ -137,6 +139,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getConnectorById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
     @Param('connector_id') connectorId: string,
@@ -145,6 +148,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
     const evseId = EXTRACT_EVSE_ID(evseUid);
 
     return this.locationsService.getConnectorById(
+      ocpiHeaders,
       locationId,
       stationId,
       Number(evseId),

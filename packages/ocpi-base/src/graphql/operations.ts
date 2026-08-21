@@ -254,6 +254,8 @@ export type GetLocationsQueryResult = {
 
 export type GetLocationByIdQueryVariables = Exact<{
   id: Scalars['Int']['input'];
+  countryCode: Scalars['String']['input'];
+  partyId: Scalars['String']['input'];
 }>;
 
 export type GetLocationByIdQueryResult = {
@@ -340,6 +342,8 @@ export type GetEvseByIdQueryVariables = Exact<{
   locationId: Scalars['Int']['input'];
   stationId: Scalars['String']['input'];
   evseId: Scalars['Int']['input'];
+  countryCode: Scalars['String']['input'];
+  partyId: Scalars['String']['input'];
 }>;
 
 export type GetEvseByIdQueryResult = {
@@ -384,6 +388,8 @@ export type GetConnectorByIdQueryVariables = Exact<{
   stationId: Scalars['String']['input'];
   evseId: Scalars['Int']['input'];
   connectorId: Scalars['Int']['input'];
+  countryCode: Scalars['String']['input'];
+  partyId: Scalars['String']['input'];
 }>;
 
 export type GetConnectorByIdQueryResult = {
