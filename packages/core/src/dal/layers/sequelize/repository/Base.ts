@@ -16,10 +16,6 @@ import { type Model, type Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { DefaultSequelizeInstance } from '../util.js';
 
-/**
- * Dependencies every Sequelize repository takes. `logger` and `sequelizeInstance`
- * are optional — the base falls back to a default logger and the shared instance.
- */
 export interface SequelizeRepositoryDependencies {
   config: BootstrapConfig;
   logger?: Logger<ILogObj>;
