@@ -74,9 +74,8 @@ export class TokensMapper {
         return TokenType.OTHER;
       default: {
         // OCPI has only 4 token types; every other OCPP idTokenType (eMAID, ISO15693, KeyCode,
-        // MacAddress) maps to OTHER rather than throwing. Other is deliberately not warned about:
-        // it is what mapOcpiTokenTypeToOcppIdTokenType produces for TokenType.OTHER, so warning on
-        // it fired for ordinary tokens and buried the types that genuinely cannot round-trip.
+        // MacAddress) maps to OTHER rather than throwing. Other is handled above, without a
+        // warning: it is what mapOcpiTokenTypeToOcppIdTokenType produces for TokenType.OTHER.
         Container.get(Logger).warn(
           `Unmapped OCPP idToken type "${type}"; defaulting to OCPI TokenType.OTHER`,
         );
