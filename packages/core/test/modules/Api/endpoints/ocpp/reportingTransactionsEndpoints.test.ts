@@ -137,6 +137,31 @@ describe('reporting and transactions message endpoints', () => {
       }
     });
 
+    it('reads its limits from MonitoringCtrlr, not the GetReport ones', async () => {
+      // GetMonitoringReport has its own ItemsPerMessage and BytesPerMessage on MonitoringCtrlr.
+      // Reading DeviceDataCtrlr/GetReport applies the limit configured for a different message.
+      await handle({ requestId: 1, componentVariable: [aComponentVariable('A')] });
+
+      expect(getItemsPerMessage).toHaveBeenCalledWith(
+        'MonitoringCtrlr',
+        OCPP_CallAction.GetMonitoringReport,
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
+    });
+
+    it('refuses a request larger than the station byte limit', async () => {
+      getBytesPerMessage.mockResolvedValue(1);
+
+      const confirmations = await handle({
+        requestId: 1,
+        componentVariable: [aComponentVariable('A')],
+      });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
     it('captures a send failure as an unsuccessful batch', async () => {
       getItemsPerMessage.mockResolvedValue(1);
       sendCall.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({
