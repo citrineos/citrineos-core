@@ -12,10 +12,6 @@ import { OCPP2_0_1_RemoteStart } from './2.0.1';
 
 export interface RemoteStartTransactionModalProps {
   station: any;
-  /**
-   * Preselects the EVSE. OCPP 1.6 has no EVSE concept and ignores this - its modal selects a
-   * connector instead.
-   */
   evse?: EvseDto;
 }
 

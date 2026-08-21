@@ -14,14 +14,13 @@ import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useInvalidate, useTranslate } from '@refinedev/core';
+import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface OCPP2_0_1_RemoteStopProps {
   station: ChargingStationWithTransactionsDto;
-  /** Preselects the transaction, for callers that already know which one - e.g. a per-EVSE button. */
   transactionId?: string;
 }
 
@@ -29,11 +28,8 @@ type RemoteStopFormData = {
   transactionId: string;
 };
 
-/** Grace period for the charger to report the transaction actually started or ended. */
-
 export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_RemoteStopProps) => {
   const translate = useTranslate();
-  const invalidate = useInvalidate();
   const unknownEvse = translate('ChargingStations.remoteStopModal.unknownEvse');
   const evseMap: Map<number, EvseDto> = useMemo(() => {
     if (!station.evses) return new Map<number, EvseDto>();
@@ -73,12 +69,9 @@ export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_Remot
       setLoading,
     }).then(() => {
       dispatch(closeModal());
-      invalidate({ invalidates: ['all'] });
     });
   };
 
-  // Set initial value when transactions are loaded, preferring the caller's choice over the first
-  // one on the station - otherwise a per-EVSE stop button would arm the wrong transaction.
   useEffect(() => {
     if (transactionId) {
       form.setValue('transactionId', transactionId);

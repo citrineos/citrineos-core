@@ -25,7 +25,7 @@ import { ResourceType } from '@lib/utils/access.types';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
-import { useCustom, useInvalidate, useSelect, useTranslate } from '@refinedev/core';
+import { useCustom, useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -38,7 +38,6 @@ import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface OCPP2_0_1_RemoteStartProps {
   station: ChargingStationDto;
-  /** Preselects the EVSE, for callers that already know which one - e.g. the per-EVSE start button. */
   evse?: EvseDto;
 }
 
@@ -48,16 +47,11 @@ export type RemoteStartFormData = {
   evse?: string;
 };
 
-/** Grace period for the charger to report the transaction actually started or ended. */
-
 export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
-  const invalidate = useInvalidate();
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Must match the option value EvseSelector builds, or the combobox has nothing to match against
-  // and renders its placeholder despite the form holding a value.
   const preselectedEvse = useMemo(
     () => (evse?.id !== undefined ? buildEvseOptionValue(evse) : ''),
     [evse],
@@ -179,7 +173,6 @@ export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartPr
     }).then(() => {
       form.reset();
       dispatch(closeModal());
-      invalidate({ invalidates: ['all'] });
     });
   };
 

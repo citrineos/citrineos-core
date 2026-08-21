@@ -8,10 +8,6 @@ import {
   type TransactionCommandAvailabilityInput,
 } from './transaction.command.availability';
 
-/**
- * Only the relation lengths are read, so the elements stand in for rows the station queries would
- * have selected.
- */
 const aStation = (evseCount: number, activeTransactionCount: number) =>
   ({
     evses: Array.from({ length: evseCount }, (_, i) => ({ id: i + 1 })),

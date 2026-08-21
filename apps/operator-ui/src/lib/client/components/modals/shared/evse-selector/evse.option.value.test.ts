@@ -13,9 +13,6 @@ describe('buildEvseOptionValue', () => {
   });
 
   it('should give the same value for a full EVSE row as for the two keys alone', () => {
-    // EvseSelector encodes rows straight from the EVSE query while the per-EVSE start button
-    // encodes one off the station detail. Those objects carry different extra fields, and the
-    // combobox matches on the string, so any leakage of those fields would break the match.
     const fromQuery = {
       id: 7,
       evseTypeId: 1,
@@ -42,9 +39,6 @@ describe('buildEvseOptionValue', () => {
   });
 
   it('should omit evseTypeId when the row does not carry one', () => {
-    // JSON.stringify drops undefined values, so such a value can only ever match an option built
-    // from an equally incomplete row. Documented rather than guarded: the callers check id, and a
-    // row selected without evseTypeId is a query defect upstream of here.
     const value = buildEvseOptionValue({ id: 5, evseTypeId: undefined });
 
     expect(value).toBe('{"id":5}');

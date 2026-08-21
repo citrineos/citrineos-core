@@ -20,7 +20,6 @@ export type ChargingStationWithTransactionsDto = z.infer<
 
 export interface RemoteStopTransactionModalProps {
   station: ChargingStationWithTransactionsDto;
-  /** Preselects the transaction, for callers that already know which one - e.g. a per-EVSE button. */
   transactionId?: string;
 }
 

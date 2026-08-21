@@ -33,8 +33,6 @@ interface EVSESListProps {
 
 export const evsesFormUpsertGrid = 'grid grid-cols-2 xs:grid-cols-1 gap-6';
 
-// The station detail query omits `station` and `location` from each transaction, so this is
-// narrower than TransactionDto. Derive it rather than restate it.
 type StationTransaction = NonNullable<ChargingStationDetailsDto['transactions']>[number];
 
 export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
@@ -61,8 +59,6 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
     return station;
   }, [data?.data]);
 
-  // Transaction.evseId is the Evses primary key, the same value keying these rows. The query
-  // already restricts the relation to active transactions, and an EVSE runs at most one.
   const activeTransactionsByEvse = useMemo(() => {
     const byEvse = new Map<number, StationTransaction>();
     for (const transaction of station.transactions ?? []) {
