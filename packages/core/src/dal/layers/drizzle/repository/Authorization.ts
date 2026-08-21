@@ -17,6 +17,12 @@ import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
 import type { AuthorizationQuerystring, IAuthorizationRepository } from '@/dal/index.js';
 import { and, eq, isNotNull } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { type TariffEntity, tariffTable } from '../schema/Tariff.js';
+import { toTariffDto } from './Tariff.js';
+
+// Self-join target for the group Authorization a token belongs to.
+const groupAuthorizationTable = alias(authorizationTable, 'groupAuthorization');
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external AuthorizationDto contract.
@@ -105,12 +111,23 @@ export class DrizzleAuthorizationRepository
   ): Promise<AuthorizationDto[]> {
     const conditions = this.createAuthorizationConditions(tenantId, query);
 
+    // The group Authorization is joined rather than left to the caller: it is what
+    // TransactionService turns into IdTokenInfo.groupIdToken.
     const rows = await this.db
-      .select()
+      .select({ authorization: authorizationTable, groupAuthorization: groupAuthorizationTable })
       .from(authorizationTable)
+      .leftJoin(
+        groupAuthorizationTable,
+        eq(authorizationTable.groupAuthorizationId, groupAuthorizationTable.id),
+      )
       .where(and(...conditions));
 
-    return rows.map((row) => this.toDto(row as AuthorizationEntity));
+    return rows.map(({ authorization, groupAuthorization }) => ({
+      ...this.toDto(authorization as AuthorizationEntity),
+      groupAuthorization: groupAuthorization
+        ? this.toDto(groupAuthorization as AuthorizationEntity)
+        : undefined,
+    }));
   }
 
   async readOnlyOneByQuerystring(
@@ -127,13 +144,19 @@ export class DrizzleAuthorizationRepository
   }
 
   async findAllAuthorizationsWithTariffs(tenantId: number): Promise<AuthorizationDto[]> {
+    // Inner join: callers read authorization.tariff and skip the row when it is unset, so an
+    // authorization whose tariffId no longer resolves must not be returned as though it had one.
     const rows = await this.db
-      .select()
+      .select({ authorization: authorizationTable, tariff: tariffTable })
       .from(authorizationTable)
+      .innerJoin(tariffTable, eq(authorizationTable.tariffId, tariffTable.id))
       .where(
         and(eq(authorizationTable.tenantId, tenantId), isNotNull(authorizationTable.tariffId)),
       );
 
-    return rows.map((row) => this.toDto(row as AuthorizationEntity));
+    return rows.map(({ authorization, tariff }) => ({
+      ...this.toDto(authorization as AuthorizationEntity),
+      tariff: toTariffDto(tariff as TariffEntity),
+    }));
   }
 }
