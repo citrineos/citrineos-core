@@ -7,19 +7,9 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, type QueryInterface } from 'sequelize';
 import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Authorization, DefaultSequelizeInstance, Tenant } from '@dal/index.js';
+import { Authorization, DefaultSequelizeInstance, Tenant } from '@citrineos/dal';
 import migration from '../../migrations/20260821120000-authorization-unique-constraint-nulls-not-distinct.js';
 
-/**
- * Uniqueness on Authorizations was a unique INDEX over (tenantId, idToken, idTokenType). Postgres
- * treats NULLs in a unique index as distinct, and idTokenType is nullable, so the index permitted
- * unlimited copies of a token enrolled without a type. OCPP 1.6 resolves an idTag against every row
- * carrying that string and refuses once more than one is returned, so a duplicate deauthorises the
- * token permanently.
- *
- * The tests start from the pre-migration shape a deployed database is actually in, so the defect is
- * demonstrated on the same schema the migration then repairs.
- */
 const TOKEN = 'DEPOT-TOKEN-1';
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
 
@@ -63,7 +53,6 @@ afterAll(async () => {
   await pgContainer?.stop();
 });
 
-/** Puts the table back into the shape 20260413000000 left it in: a unique index, not a constraint. */
 async function restorePreMigrationShape() {
   await sequelizeInstance.query(
     'ALTER TABLE "Authorizations" DROP CONSTRAINT IF EXISTS "idToken_type"',
@@ -122,7 +111,6 @@ describe('Authorizations uniqueness across a nullable idTokenType', () => {
   });
 
   it('still allows one token under two different types', async () => {
-    // 2.0.1 resolves on the pair, so this remains a legitimate pair of rows.
     await migration.up(queryInterface);
 
     await enrol(TOKEN, 'MacAddress');
@@ -139,8 +127,6 @@ describe('Authorizations uniqueness across a nullable idTokenType', () => {
   });
 
   it('leaves uniqueness as a named constraint, which is what on_conflict resolves against', async () => {
-    // Hasura resolves `on_conflict` against unique constraints; a unique index of the same name is
-    // not one, so an upsert naming it fails at runtime.
     await migration.up(queryInterface);
 
     expect(await uniqueConstraintNames()).toContain('idToken_type');

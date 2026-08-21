@@ -10,8 +10,6 @@ const TABLE_NAME = 'Authorizations';
 const NAME = 'idToken_type';
 const COLUMNS = '"tenantId", "idToken", "idTokenType"';
 
-// sync() names the constraint it derives from the model's `unique: 'idToken_type'` group after the
-// table and columns, so a database built that way carries a different name from a migrated one.
 const SYNC_DERIVED_NAME = 'Authorizations_idToken_idTokenType_tenantId_key';
 
 const constraintExists = async (queryInterface: QueryInterface, name: string): Promise<boolean> => {
@@ -32,23 +30,10 @@ const dropUniqueness = async (queryInterface: QueryInterface) => {
       );
     }
   }
-  // A plain unique index shares the namespace but is not a constraint, so it needs its own drop.
   await queryInterface.sequelize.query(`DROP INDEX IF EXISTS "${NAME}"`, { type: QueryTypes.RAW });
 };
 
 export default {
-  // Two defects share one cause: uniqueness was expressed as a unique INDEX over three columns,
-  // one of which is nullable.
-  //
-  // Postgres treats NULLs in a unique index as distinct from one another, so the index does not
-  // constrain rows whose idTokenType is null - the same token can be inserted repeatedly. OCPP 1.6
-  // then resolves an idTag against every row carrying that string and refuses the token outright
-  // once more than one comes back, so a duplicate silently and permanently deauthorises it.
-  //
-  // Separately, Hasura resolves `on_conflict` against unique CONSTRAINTS. An index is not one, so
-  // an upsert naming this target fails at runtime and callers are pushed into a query-then-insert
-  // that races. NULLS NOT DISTINCT closes the first; expressing it as a constraint closes the
-  // second.
   up: async (queryInterface: QueryInterface) => {
     const duplicates = await queryInterface.sequelize.query<{
       tenantId: number;
