@@ -628,6 +628,10 @@ export class SequelizeTransactionEventRepository
         meterValue.transactionDatabaseId = transaction.id;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
+        // MeterValue.connectorId references Connector.id, while a MeterValues message names the
+        // station's own connector number. They are different numbers of the same type, so the
+        // reference comes from the transaction rather than from the message.
+        meterValue.connectorId = transaction.connectorId ?? undefined;
         const createdMeterValue = await MeterValue.create(meterValue);
         this.meterValue.emit('created', [createdMeterValue]);
       }),
