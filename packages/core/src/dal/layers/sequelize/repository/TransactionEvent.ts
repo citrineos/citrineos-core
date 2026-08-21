@@ -144,15 +144,12 @@ export class SequelizeTransactionEventRepository
               evseTypeId: value.evse.id,
             },
           });
-          const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
-            where: {
-              tenantId,
-              ocppConnectionName: ocppConnectionName,
-              evseId: evse.id,
-              evseTypeConnectorId: value.evse.connectorId,
-            },
-            include: [Tariff],
-          });
+          const connector = await this._readOrCreateConnectorForEvse(
+            tenantId,
+            ocppConnectionName,
+            evse.id,
+            value.evse.connectorId,
+          );
           connectorId = connector.id;
           tariffId = connector.tariff?.id;
         }
@@ -224,16 +221,12 @@ export class SequelizeTransactionEventRepository
           });
           newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
-            const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
-              where: {
-                tenantId,
-                ocppConnectionName: ocppConnectionName,
-                evseId: evse.id,
-                evseTypeConnectorId: value.evse.connectorId,
-              },
-              defaults: { connectorId: value.evse.connectorId },
-              include: [Tariff],
-            });
+            const connector = await this._readOrCreateConnectorForEvse(
+              tenantId,
+              ocppConnectionName,
+              evse.id,
+              value.evse.connectorId,
+            );
             newTransaction.set('connectorId', connector.id);
             if (infoTariffId) {
               const tariff = await Tariff.findOne({
@@ -373,6 +366,36 @@ export class SequelizeTransactionEventRepository
 
       return finalTransaction;
     });
+  }
+
+  /**
+   * OCPP 2.0.1 numbers a connector within its EVSE, so every EVSE of a station numbers its first
+   * connector 1. Connector.connectorId is the station-wide OCPP 1.6 numbering and is unique per
+   * station, so a connector the CSMS has not recorded before is given the next number free on that
+   * station rather than the one the EVSE calls it.
+   */
+  private async _readOrCreateConnectorForEvse(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseDatabaseId: number,
+    ocpp201ConnectorId: number,
+  ): Promise<Connector> {
+    const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
+      where: {
+        tenantId,
+        ocppConnectionName,
+        evseId: evseDatabaseId,
+        evseTypeConnectorId: ocpp201ConnectorId,
+      },
+      defaults: {
+        connectorId: await this.connector.readNextValue(tenantId, 'connectorId', {
+          where: { tenantId, ocppConnectionName },
+        }),
+        timestamp: new Date().toISOString(),
+      },
+      include: [Tariff],
+    });
+    return connector;
   }
 
   async readAllByStationIdAndTransactionId(
