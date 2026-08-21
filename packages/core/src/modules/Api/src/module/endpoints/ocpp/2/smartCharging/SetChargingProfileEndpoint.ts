@@ -141,19 +141,35 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     const validFrom = chargingProfile.validFrom ? new Date(chargingProfile.validFrom) : null;
     const validTo = chargingProfile.validTo ? new Date(chargingProfile.validTo) : null;
 
-    if (validFrom && validFrom.getTime() > now) {
-      return {
-        success: false,
-        payload: `chargingProfile validFrom ${chargingProfile.validFrom} should not be in the future.`,
-      };
-    }
     if (validTo && validTo.getTime() <= now) {
       return {
         success: false,
         payload: `chargingProfile validTo ${chargingProfile.validTo} should be in the future.`,
       };
     }
+    if (validFrom && validTo && validFrom.getTime() >= validTo.getTime()) {
+      return {
+        success: false,
+        payload: `chargingProfile validFrom ${chargingProfile.validFrom} should be before validTo ${chargingProfile.validTo}.`,
+      };
+    }
     return undefined;
+  }
+
+  /**
+   * Two profiles are valid at the same time unless one window ends before the other begins. An
+   * absent validFrom means valid on receipt, and an absent validTo means valid until replaced.
+   */
+  private static _overlaps(
+    left: { validFrom?: string | null; validTo?: string | null },
+    right: { validFrom?: string | null; validTo?: string | null },
+    now: number,
+  ): boolean {
+    const from = (profile: { validFrom?: string | null }) =>
+      profile.validFrom ? new Date(profile.validFrom).getTime() : now;
+    const to = (profile: { validTo?: string | null }) =>
+      profile.validTo ? new Date(profile.validTo).getTime() : Number.POSITIVE_INFINITY;
+    return from(left) < to(right) && from(right) < to(left);
   }
 
   private async _rejectOnPurpose(
@@ -204,24 +220,17 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     this._logger.info(
       `Found existing charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
     );
-    if (existedChargingProfiles.length === 0) {
-      return undefined;
-    }
-
-    const overlapping = {
-      success: false,
-      payload:
-        'No two charging profiles with the same stack level and purpose can be valid at the same time.',
-    };
-    const validTo = chargingProfile.validTo ? new Date(chargingProfile.validTo) : null;
-    if (!validTo) {
-      return overlapping;
-    }
-    for (const existedProfile of existedChargingProfiles) {
-      const existedValidTo = existedProfile.validTo ? new Date(existedProfile.validTo) : null;
-      if (!existedValidTo || existedValidTo.getTime() >= validTo.getTime()) {
-        return overlapping;
-      }
+    const now = Date.now();
+    if (
+      existedChargingProfiles.some((existedProfile) =>
+        SetChargingProfileEndpoint._overlaps(chargingProfile, existedProfile, now),
+      )
+    ) {
+      return {
+        success: false,
+        payload:
+          'No two charging profiles with the same stack level and purpose can be valid at the same time.',
+      };
     }
     return undefined;
   }
