@@ -58,8 +58,6 @@ export class MeterValueUtils {
       return netMap.get(latestTimestamp)!;
     }
 
-    // No energy measurand in this batch (e.g. a TransactionEvent carrying only SoC, or
-    // MeterValues carrying only Current/Voltage). The session total is unchanged.
     return currentTotal;
   }
 
