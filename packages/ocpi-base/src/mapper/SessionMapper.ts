@@ -137,9 +137,6 @@ export class SessionMapper extends BaseTransactionMapper {
       }
     }
     if (skipped.length > 0) {
-      // Sessions and CDRs are counted by a separate aggregate query, so anything dropped here
-      // leaves the page short of the total it was advertised with, and the caller has no other
-      // way to find out which records are missing.
       this.logger.warn(
         `Skipped ${skipped.length} of ${transactions.length} transactions: ${skipped.join('; ')}`,
       );
