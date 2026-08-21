@@ -228,7 +228,6 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
                 if (evseIdDisallowed) {
                   evseIds.delete(evseIdAttribute.component?.evse?.id as number);
                 } else if (!hasConnectorTypeRestriction) {
-                  // With no connector-type filter, this list alone decides the permitted set.
                   evseIds.add(evseIdAttribute.component?.evse?.id as number);
                 }
               }
