@@ -6,9 +6,6 @@
 /** @type {import('sequelize-cli').Migration} */
 import { QueryInterface, QueryTypes } from 'sequelize';
 
-// Both columns hold a connector number reported by a charging station, not a reference to a
-// Connector row. The associations that made them foreign keys have been removed; these drop the
-// constraints they left behind.
 const CONSTRAINTS: { table: string; name: string; columns: string }[] = [
   {
     table: 'StatusNotifications',
@@ -42,8 +39,6 @@ export default {
     }
   },
 
-  // Restoring the constraints fails wherever a stored connector number does not happen to be a
-  // Connector id, which is the state they were wrong about in the first place.
   down: async (queryInterface: QueryInterface) => {
     for (const { table, name, columns } of CONSTRAINTS) {
       if (!(await constraintExists(queryInterface, table, name))) {
