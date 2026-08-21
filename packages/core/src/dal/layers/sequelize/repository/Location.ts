@@ -15,7 +15,6 @@ import { Location } from '../model/Location/Location.js';
 import { StatusNotification } from '../model/Location/StatusNotification.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
-/** OCPP 2.0.1 numbers a connector within its EVSE, starting at 1. */
 const OCPP_2_0_1_FIRST_CONNECTOR = 1;
 
 export class SequelizeLocationRepository
@@ -368,7 +367,6 @@ export class SequelizeLocationRepository
         defaults: { tenantId, ocppConnectionName, evseTypeId: connectorId },
         transaction: sequelizeTransaction,
       });
-      // The EVSE holds this one connector, so its number within that EVSE is 1.
       return { evseId: evse.id, evseTypeConnectorId: OCPP_2_0_1_FIRST_CONNECTOR };
     });
   }
