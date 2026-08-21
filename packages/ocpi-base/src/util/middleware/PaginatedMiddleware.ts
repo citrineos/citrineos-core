@@ -20,8 +20,6 @@ export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddleware
   async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     await next();
     const paginatedResponse = context.response.body as PaginatedResponse<any> | undefined;
-    // The endpoint is paginated but the response need not be: an exception handled downstream
-    // leaves an OCPI error body here, and a 204 leaves none at all.
     if (!paginatedResponse || paginatedResponse.total === undefined) {
       return;
     }
