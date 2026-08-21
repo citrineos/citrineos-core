@@ -435,10 +435,6 @@ export class SessionMapper extends BaseTransactionMapper {
     return timeDiffMs / (1000 * 60 * 60); // 1000 ms/sec * 60 sec/min * 60 min/hour
   }
 
-  /**
-   * COMMAND is the OCPI method for a session a Command started, which is what remoteStartId
-   * records. Anything else was authorised by the CSMS from its own token list.
-   */
   private getAuthMethod(transaction: Partial<TransactionDto>): AuthMethod {
     return transaction.remoteStartId != null ? AuthMethod.COMMAND : AuthMethod.WHITELIST;
   }
