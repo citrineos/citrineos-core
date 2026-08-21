@@ -22,7 +22,7 @@ import {
   type TenantDto,
   HttpMethod,
 } from '@citrineos/types';
-import { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/index.js';
+import { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/LocationMapper.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 
 @Service()

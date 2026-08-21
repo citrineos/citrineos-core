@@ -2,12 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import 'reflect-metadata';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SRC = fileURLToPath(new URL('../src', import.meta.url));
+
+/**
+ * Modules a test is likely to name as its first import. Each has to be able to load as the entry
+ * point of the graph, not only once something else has pulled its dependencies in.
+ */
+const ENTRY_POINTS = [
+  join('mapper', 'CdrMapper.ts'),
+  join('mapper', 'SessionMapper.ts'),
+  join('services', 'CdrsService.ts'),
+  join('services', 'CommandsService.ts'),
+  join('services', 'LocationsService.ts'),
+  join('services', 'SessionsService.ts'),
+  join('util', 'ocppCommandHandlers', 'OCPP1_6_CommandHandler.ts'),
+  join('util', 'ocppCommandHandlers', 'OCPP2_0_1_CommandHandler.ts'),
+];
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -21,11 +36,25 @@ function sourceFiles(dir: string, found: string[] = []): string[] {
   return found;
 }
 
+async function importFailure(file: string): Promise<string | undefined> {
+  try {
+    await import(pathToFileURL(file).href);
+    return undefined;
+  } catch (error) {
+    return `${relative(SRC, file)}: ${(error as Error).message.split('\n')[0]}`;
+  }
+}
+
 /**
- * typedi evaluates its decorators when a class is defined, so a container wiring mistake surfaces
- * as an exception on import rather than on resolution. A parameterless `@Inject()` is the usual
- * cause: it needs the `design:type` metadata that only tsc emits, and the transform used for tests
- * does not, so one such decorator makes every module that reaches it unloadable.
+ * Two faults in this package show up only as an exception on import, so nothing that imports the
+ * offending module can be tested at all.
+ *
+ * typedi evaluates its decorators when a class is defined, and a parameterless `@Inject()` needs
+ * the `design:type` metadata that only tsc emits, so it throws under any other transform.
+ *
+ * A module that reaches its own barrel closes an import cycle, and a class whose base class is
+ * still initialising extends `undefined`. That one depends on where the graph is entered, which is
+ * why the entry points are also loaded on their own below.
  */
 describe('module loading', () => {
   it('imports the package barrel', async () => {
@@ -36,13 +65,18 @@ describe('module loading', () => {
     const unloadable: string[] = [];
 
     for (const file of sourceFiles(SRC)) {
-      try {
-        await import(pathToFileURL(file).href);
-      } catch (error) {
-        unloadable.push(`${relative(SRC, file)}: ${(error as Error).message.split('\n')[0]}`);
+      const failure = await importFailure(file);
+      if (failure) {
+        unloadable.push(failure);
       }
     }
 
     expect(unloadable).toEqual([]);
+  });
+
+  it.each(ENTRY_POINTS)('imports %s as the entry point of a fresh graph', async (entryPoint) => {
+    vi.resetModules();
+
+    expect(await importFailure(join(SRC, entryPoint))).toBeUndefined();
   });
 });

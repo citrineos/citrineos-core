@@ -4,8 +4,14 @@
 
 import { type IMessageConfirmation } from '@citrineos/base';
 import { type ChargingStationDto, type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
-import type { OcpiConfig, StartSession, StopSession, UnlockConnector } from '../../index.js';
-import { CommandResultType, CommandType, ModuleId, OcpiConfigToken } from '../../index.js';
+import type { OcpiConfig } from '../../config/ocpi.types.js';
+import { OcpiConfigToken } from '../../config/ocpi.types.js';
+import type { StartSession } from '../../model/StartSession.js';
+import type { StopSession } from '../../model/StopSession.js';
+import type { UnlockConnector } from '../../model/UnlockConnector.js';
+import { CommandResultType } from '../../model/CommandResult.js';
+import { CommandType } from '../../model/CommandType.js';
+import { ModuleId } from '../../model/ModuleId.js';
 import type { IRequestOptions } from 'typed-rest-client';
 import { RestClient } from 'typed-rest-client';
 import type { ILogObj } from 'tslog';
