@@ -21,11 +21,8 @@ import { alias } from 'drizzle-orm/pg-core';
 import { type TariffEntity, tariffTable } from '../schema/Tariff.js';
 import { toTariffDto } from './Tariff.js';
 
-// Self-join target for the group Authorization a token belongs to.
 const groupAuthorizationTable = alias(authorizationTable, 'groupAuthorization');
 
-// ─── Mapper ──────────────────────────────────────────────────────────────────
-// Maps a Drizzle entity (DB row) to the external AuthorizationDto contract.
 export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDto {
   const dto: Explicit<AuthorizationDto> = {
     id: entity.id,
@@ -47,7 +44,6 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     customData: undefined,
     concurrentTransaction: entity.concurrentTransaction ?? undefined,
     isPrepaid: entity.isPrepaid ?? undefined,
-    // Sequelize DECIMAL → numeric returns string; DTO contract is number.
     prepaidBalance: entity.prepaidBalance != null ? Number(entity.prepaidBalance) : null,
     realTimeAuth: entity.realTimeAuth as AuthorizationWhitelistEnumType | null,
     realTimeAuthLastAttempt: entity.realTimeAuthLastAttempt,
@@ -103,16 +99,12 @@ export class DrizzleAuthorizationRepository
     return conditions;
   }
 
-  // ─── IAuthorizationRepository methods ────────────────────────────────────
-
   async readAllByQuerystring(
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<AuthorizationDto[]> {
     const conditions = this.createAuthorizationConditions(tenantId, query);
 
-    // The group Authorization is joined rather than left to the caller: it is what
-    // TransactionService turns into IdTokenInfo.groupIdToken.
     const rows = await this.db
       .select({ authorization: authorizationTable, groupAuthorization: groupAuthorizationTable })
       .from(authorizationTable)
@@ -144,8 +136,6 @@ export class DrizzleAuthorizationRepository
   }
 
   async findAllAuthorizationsWithTariffs(tenantId: number): Promise<AuthorizationDto[]> {
-    // Inner join: callers read authorization.tariff and skip the row when it is unset, so an
-    // authorization whose tariffId no longer resolves must not be returned as though it had one.
     const rows = await this.db
       .select({ authorization: authorizationTable, tariff: tariffTable })
       .from(authorizationTable)
