@@ -57,6 +57,7 @@ export type Authorizations_Bool_Exp = {
 };
 export type Timestamptz_Comparison_Exp = {
   _gte?: InputMaybe<Scalars['timestamptz']['input']>;
+  _lt?: InputMaybe<Scalars['timestamptz']['input']>;
   _lte?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 export type Numeric_Comparison_Exp = {

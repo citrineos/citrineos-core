@@ -28,6 +28,7 @@ import type {
   GetLocationsQueryResult,
   GetLocationsQueryVariables,
   Locations_Bool_Exp,
+  Timestamptz_Comparison_Exp,
 } from '../graphql/index.js';
 import {
   GET_CONNECTOR_BY_ID_QUERY,
@@ -65,9 +66,10 @@ export class LocationsService {
         partyId: { _eq: ocpiHeaders.toPartyId },
       },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
+    // OCPI defines date_from as inclusive and date_to as exclusive.
     if (paginatedParams?.dateFrom) dateFilters._gte = paginatedParams.dateFrom.toISOString();
-    if (paginatedParams?.dateTo) dateFilters._lte = paginatedParams?.dateTo.toISOString();
+    if (paginatedParams?.dateTo) dateFilters._lt = paginatedParams.dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }
