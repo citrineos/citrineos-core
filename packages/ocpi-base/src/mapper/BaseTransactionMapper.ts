@@ -79,9 +79,6 @@ export abstract class BaseTransactionMapper {
         }
       }
       if (transaction.authorization) {
-        // An OCPI token carries an eMAID as its contract_id, and an authorization without one
-        // cannot be expressed as a token. That transaction is left out rather than failing the
-        // whole page; anything else that goes wrong here is still an error.
         if (TokensMapper.findContractId(transaction.authorization)) {
           const tokenDto = TokensMapper.toDto(transaction.authorization);
           transactionIdToTokenMap.set(transaction.transactionId!, tokenDto);

@@ -171,11 +171,6 @@ export class TokensMapper {
     };
   }
 
-  /**
-   * The eMAID an OCPI token carries as its contract_id, or undefined when the authorization has
-   * none. An authorization without one cannot be expressed as a token at all, so callers building
-   * a page of tokens use this to leave it out rather than to catch the failure.
-   */
   public static findContractId(authorization: AuthorizationDto): string | undefined {
     return authorization.additionalInfo?.find(
       (info) => info.type === OCPP2_0_1.IdTokenEnumType.eMAID,
