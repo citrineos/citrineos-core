@@ -137,17 +137,15 @@ describe('reporting and transactions message endpoints', () => {
       }
     });
 
-    it('reads its limits from MonitoringCtrlr, not the GetReport ones', async () => {
-      // GetMonitoringReport has its own ItemsPerMessage and BytesPerMessage on MonitoringCtrlr.
-      // Reading DeviceDataCtrlr/GetReport applies the limit configured for a different message.
+    it('reads its byte limit from the same variable as its item limit', async () => {
+      // ItemsPerMessageGetReport and BytesPerMessageGetReport both sit on DeviceDataCtrlr under the
+      // GetReport instance, and each is defined as constraining GetReportRequest or
+      // GetMonitoringReportRequest, so both messages share them.
       await handle({ requestId: 1, componentVariable: [aComponentVariable('A')] });
 
-      expect(getItemsPerMessage).toHaveBeenCalledWith(
-        'MonitoringCtrlr',
-        OCPP_CallAction.GetMonitoringReport,
-        DEFAULT_TENANT_ID,
-        STATION,
-      );
+      const expected = ['DeviceDataCtrlr', OCPP_CallAction.GetReport, DEFAULT_TENANT_ID, STATION];
+      expect(getItemsPerMessage).toHaveBeenCalledWith(...expected);
+      expect(getBytesPerMessage).toHaveBeenCalledWith(...expected);
     });
 
     it('refuses a request larger than the station byte limit', async () => {
