@@ -14,6 +14,18 @@ export class SequelizeTenantRepository
     super({ config, namespace: Tenant.MODEL_NAME, logger, sequelizeInstance });
   }
 
+  /**
+   * A tenant is the scope rather than something inside one, so it is read by its own key. Narrowing
+   * by tenantId as every other model does would query a column Tenants does not have.
+   */
+  override async readByKey(_tenantId: number, key: string | number): Promise<Tenant | undefined> {
+    return (await Tenant.findByPk(key)) ?? undefined;
+  }
+
+  override async existsByKey(_tenantId: number, key: string): Promise<boolean> {
+    return (await Tenant.findByPk(key)) !== null;
+  }
+
   async createTenant(tenant: Tenant): Promise<Tenant> {
     const newTenant = Tenant.build({
       name: tenant.name,

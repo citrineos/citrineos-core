@@ -51,11 +51,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
     const model = this.s.models[namespace];
-    const where: WhereOptions = { [model.primaryKeyAttribute]: key };
-    // Tenants is the tenancy root and carries no tenantId column of its own.
-    if ('tenantId' in model.getAttributes()) {
-      where.tenantId = tenantId;
-    }
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key, tenantId };
     return await model.findOne({ where }).then((row) => (row ?? undefined) as T | undefined);
   }
 
@@ -102,11 +98,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     namespace: string = this.namespace,
   ): Promise<boolean> {
     const model = this.s.models[namespace];
-    const where: WhereOptions = { [model.primaryKeyAttribute]: key };
-    // Tenants is the tenancy root and carries no tenantId column of its own.
-    if ('tenantId' in model.getAttributes()) {
-      where.tenantId = tenantId;
-    }
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key, tenantId };
     return await model.findOne({ where }).then((row) => row !== null);
   }
 
