@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { DataTypes, QueryInterface } from 'sequelize';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 
