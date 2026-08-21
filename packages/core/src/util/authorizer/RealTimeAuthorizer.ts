@@ -35,10 +35,6 @@ export interface RealTimeAuthorizationResponse {
   };
 }
 
-// The realtime-auth request runs inside Authorize/TransactionEvent handling, so a
-// hung endpoint would stall the charger's OCPP call past its own timeout.
-const REAL_TIME_AUTH_FETCH_TIMEOUT_MS = 30_000;
-
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
   private _config: SystemConfig;
@@ -165,11 +161,16 @@ export class RealTimeAuthorizer implements IAuthorizer {
         }
       }
 
+      // The realtime-auth request runs inside Authorize/TransactionEvent handling, so a
+      // hung endpoint would stall the charger's OCPP call past its own timeout.
+      const timeoutSeconds =
+        authorization.realTimeAuthTimeout ?? this._config.realTimeAuthDefaultTimeoutSeconds;
+
       const response = await fetch(authorization.realTimeAuthUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(REAL_TIME_AUTH_FETCH_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutSeconds * 1000),
       });
 
       const responseJson = await response.json();
