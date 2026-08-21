@@ -78,48 +78,35 @@ import {
   RealTimeAuthorizer,
   UnknownStationFilter,
   WebsocketNetworkConnection,
+  DeviceModelService,
 } from '@util/index.js';
-import {
-  CommandsApi,
-  OcppMessageApi,
-  registerApiServices,
-  WebPaymentApi,
-} from '@modules/Api/src/index.js';
+import { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
+import { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
+import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
+import { registerApiServices } from '@modules/Api/src/register.js';
 import {
   CertificatesModule,
   registerCertificatesServices,
 } from '@modules/Certificates/src/index.js';
 import {
   ConfigurationModule,
-  DeviceModelService,
   registerConfigurationServices,
 } from '@modules/Configuration/src/index.js';
-import {
-  EVDriverModule,
-  registerEVDriverServices,
-} from '@modules/EVDriver/src/index.js';
-import {
-  MonitoringModule,
-  registerMonitoringServices,
-} from '@modules/Monitoring/src/index.js';
+import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/src/index.js';
+import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/src/index.js';
 import {
   AdminApi,
   MessageRouterImpl,
   registerOcppRouterServices,
   WebhookDispatcher,
 } from '@modules/OcppRouter/src/index.js';
-import {
-  registerReportingServices,
-  ReportingModule,
-} from '@modules/Reporting/src/index.js';
+import { registerReportingServices, ReportingModule } from '@modules/Reporting/src/index.js';
 import {
   InternalSmartCharging,
   registerSmartChargingServices,
   SmartChargingModule,
 } from '@modules/SmartCharging/src/index.js';
-import {
-  TenantModule,
-} from '@modules/Tenant/src/index.js';
+import { TenantModule } from '@modules/Tenant/src/index.js';
 import {
   registerTransactionsServices,
   TransactionsModule,
