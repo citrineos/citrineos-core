@@ -104,9 +104,6 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
         const certificateHashData = certificateHashDataWrap.certificateHashData;
         const certificateType =
           certificateHashDataWrap.certificateType as unknown as CertificateUseEnumType;
-        // A station holds more than one certificate of a type - several trusted V2G roots is the
-        // ordinary case - so each reported certificate is matched on the hash data that identifies
-        // it. Matching on the type alone finds a sibling, and then one root overwrites the other.
         const existingInstalledCertificate =
           await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
             where: {
