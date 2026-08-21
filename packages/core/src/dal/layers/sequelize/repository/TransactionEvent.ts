@@ -368,12 +368,6 @@ export class SequelizeTransactionEventRepository
     });
   }
 
-  /**
-   * OCPP 2.0.1 numbers a connector within its EVSE, so every EVSE of a station numbers its first
-   * connector 1. Connector.connectorId is the station-wide OCPP 1.6 numbering and is unique per
-   * station, so a connector the CSMS has not recorded before is given the next number free on that
-   * station rather than the one the EVSE calls it.
-   */
   private async _readOrCreateConnectorForEvse(
     tenantId: number,
     ocppConnectionName: string,
