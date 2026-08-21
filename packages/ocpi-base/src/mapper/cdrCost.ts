@@ -8,7 +8,6 @@ import type { Price } from '../model/Price.js';
 import type { Session } from '../model/Session.js';
 import { MINUTES_IN_HOUR } from '../util/Consts.js';
 
-/** The part of a session that determines what it costs. */
 export type PricedSession = Pick<Session, 'kwh' | 'start_date_time' | 'end_date_time'>;
 
 export function buildPrice(amount: number, currency: string, taxRate?: number | null): Price {
