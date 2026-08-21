@@ -21,7 +21,6 @@ import { Location } from '../model/Location/Location.js';
 import { StatusNotification } from '../model/Location/StatusNotification.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 
-/** OCPP 2.0.1 numbers a connector within its EVSE, starting at 1. */
 const OCPP_2_0_1_FIRST_CONNECTOR = 1;
 
 export class SequelizeLocationRepository
@@ -411,7 +410,6 @@ export class SequelizeLocationRepository
         defaults: { tenantId, ocppConnectionName, evseTypeId: connectorId },
         transaction: sequelizeTransaction,
       });
-      // The EVSE holds this one connector, so its number within that EVSE is 1.
       return { evseId: evse.id, evseTypeConnectorId: OCPP_2_0_1_FIRST_CONNECTOR };
     });
   }
@@ -423,8 +421,6 @@ export class SequelizeLocationRepository
     ocpp201ConnectorId: number,
   ): Promise<{ evseId: number; connectorId: number; evseTypeConnectorId: number }> {
     return await this.s.transaction(async (sequelizeTransaction) => {
-      // The EvseType catalogue entry is what device model components hang off. The Evse's stationId
-      // FK is auto-resolved from ocppConnectionName by the BeforeCreate hook on the Evse model.
       await EvseType.findOrCreate({
         where: { tenantId, id: ocpp201EvseId, connectorId: null },
         defaults: { tenantId, id: ocpp201EvseId, connectorId: null },
@@ -435,9 +431,6 @@ export class SequelizeLocationRepository
         defaults: { tenantId, ocppConnectionName, evseTypeId: ocpp201EvseId },
         transaction: sequelizeTransaction,
       });
-      // A 2.0.1 connectorId is scoped to its EVSE, so every EVSE of a station numbers its first
-      // connector 1. Connector.connectorId is the station-wide OCPP 1.6 numbering, so a connector
-      // met for the first time takes the next number free on the station.
       const highestConnectorNumber = (await Connector.max('connectorId', {
         where: { tenantId, ocppConnectionName },
         transaction: sequelizeTransaction,

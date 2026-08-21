@@ -209,8 +209,6 @@ export class StatusNotificationService {
       } as Connector;
 
       if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
-        // update all connectors at this station — connectorId stripped so we
-        // don't overwrite the per-row connectorId values
         await this._locationRepository.updateAllConnectorsByQuery(
           tenantId,
           {
