@@ -50,8 +50,6 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    // The station can have more than one certificate in flight, and the response says only whether
-    // it was accepted. The certificate it answers for is on the request that was sent out.
     const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         ocppConnectionName,

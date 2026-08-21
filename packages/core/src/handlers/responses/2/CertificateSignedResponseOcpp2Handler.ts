@@ -52,8 +52,6 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    // The station can have more than one certificate in flight, so the attempt to settle is the one
-    // for the certificate this response answers for. Both are on the request that was sent out.
     const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         ocppConnectionName,
