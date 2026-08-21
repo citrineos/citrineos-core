@@ -29,11 +29,11 @@ import { OCPP_COMMAND_HANDLER, OCPPCommandHandler } from './ocppCommandHandlers/
 
 @Service()
 export class CommandExecutor {
-  @Inject()
+  @Inject(() => Logger)
   protected logger!: Logger<ILogObj>;
-  @Inject()
+  @Inject(() => OcpiGraphqlClient)
   protected ocpiGraphqlClient!: OcpiGraphqlClient;
-  @Inject()
+  @Inject(() => CommandsClientApi)
   protected commandsClientApi!: CommandsClientApi;
   @Inject(OcpiConfigToken)
   protected config!: OcpiConfig;
@@ -42,7 +42,7 @@ export class CommandExecutor {
   private handlerRegistry = new Map<OCPPVersion, OCPPCommandHandler>();
 
   constructor(
-    @Inject() cacheWrapper: CacheWrapper,
+    @Inject(() => CacheWrapper) cacheWrapper: CacheWrapper,
     @InjectMany(OCPP_COMMAND_HANDLER) handlers: OCPPCommandHandler[],
   ) {
     this.cache = cacheWrapper.cache;

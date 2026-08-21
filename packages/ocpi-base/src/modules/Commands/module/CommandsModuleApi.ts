@@ -89,7 +89,7 @@ for (const [commandType, { schema, name }] of Object.entries(COMMAND_REQUEST_SCH
 @JsonController(`/:${versionIdParam}/${ModuleId.Commands}`)
 @Service()
 export class CommandsModuleApi extends BaseController implements ICommandsModuleApi {
-  @Inject()
+  @Inject(() => CommandExecutor)
   private commandsExecutor!: CommandExecutor;
 
   constructor(readonly commandsService: CommandsService) {

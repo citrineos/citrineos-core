@@ -71,9 +71,9 @@ export interface TriggerRequestOptions extends IRequestOptions {
 }
 
 export abstract class BaseClientApi {
-  @Inject()
+  @Inject(() => Logger)
   protected logger!: Logger<ILogObj>;
-  @Inject()
+  @Inject(() => OcpiGraphqlClient)
   protected ocpiGraphqlClient!: OcpiGraphqlClient;
 
   CONTROLLER_PATH = 'null';

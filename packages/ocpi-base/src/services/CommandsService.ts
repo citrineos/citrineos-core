@@ -34,13 +34,13 @@ import { EXTRACT_STATION_ID } from '../model/DTO/EvseDTO.js';
 
 @Service()
 export class CommandsService {
-  @Inject()
+  @Inject(() => Logger)
   protected logger!: Logger<ILogObj>;
 
-  @Inject()
+  @Inject(() => OcpiGraphqlClient)
   protected ocpiGraphqlClient!: OcpiGraphqlClient;
 
-  @Inject()
+  @Inject(() => CommandExecutor)
   protected commandExecutor!: CommandExecutor;
 
   @Inject(OcpiConfigToken) readonly config!: OcpiConfig;

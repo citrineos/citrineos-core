@@ -21,16 +21,16 @@ export const OCPP_COMMAND_HANDLER = new Token<OCPPCommandHandler>('OCPP_COMMAND_
 export abstract class OCPPCommandHandler {
   abstract readonly supportedVersion: OCPPVersion;
 
-  @Inject()
+  @Inject(() => Ajv)
   private ajv!: Ajv;
 
-  @Inject()
+  @Inject(() => Logger)
   protected logger!: Logger<ILogObj>;
 
-  @Inject()
+  @Inject(() => OcpiGraphqlClient)
   protected ocpiGraphqlClient!: OcpiGraphqlClient;
 
-  @Inject()
+  @Inject(() => CommandsClientApi)
   protected commandsClientApi!: CommandsClientApi;
 
   @Inject(OcpiConfigToken)

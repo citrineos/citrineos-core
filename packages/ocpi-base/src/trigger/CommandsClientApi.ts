@@ -20,7 +20,7 @@ import { CacheWrapper } from '../util/CacheWrapper.js';
 export class CommandsClientApi extends BaseClientApi {
   protected cache!: ICache;
 
-  constructor(@Inject() cacheWrapper: CacheWrapper) {
+  constructor(@Inject(() => CacheWrapper) cacheWrapper: CacheWrapper) {
     super();
     this.cache = cacheWrapper.cache;
   }
