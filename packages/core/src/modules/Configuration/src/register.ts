@@ -40,10 +40,6 @@ import {
 import { BootNotificationService } from './module/BootNotificationService.js';
 import { DeviceModelService } from './module/DeviceModelService.js';
 
-/**
- * The handlers this module owns. This list is what the module subscribes to — each handler declares
- * the actions and protocols it serves on itself, and config can only exclude from that.
- */
 const CONFIGURATION_HANDLERS = [
   BootNotificationRequestOcpp16Handler,
   BootNotificationRequestOcpp2Handler,
@@ -73,10 +69,6 @@ const CONFIGURATION_HANDLERS = [
   UpdateFirmwareResponseOcpp2Handler,
 ] satisfies ReadonlyArray<HandlerClass>;
 
-/**
- * Registers the Configuration module's internal services as scoped dependencies.
- * The service classes stay private to this package — only this registrar is exported.
- */
 export function registerConfigurationServices(container: AwilixContainer): void {
   container.register({
     configurationDeviceModelService: asClass(DeviceModelService).scoped(),
