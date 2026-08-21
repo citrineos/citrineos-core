@@ -4,7 +4,6 @@
 import type {
   ChargingStationDto,
   ConnectorStatusEnumType,
-  ConnectorDto,
   StatusNotificationDto,
   TenantDto,
 } from '@citrineos/types';
@@ -20,7 +19,6 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { ChargingStation } from './ChargingStation.js';
-import { Connector } from './Connector.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
@@ -68,9 +66,6 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   declare vendorErrorCode?: string | null;
 
   declare customData?: object | null;
-
-  @BelongsTo(() => Connector, 'connectorId')
-  declare connector?: ConnectorDto;
 
   @ForeignKey(() => Tenant)
   @Column({

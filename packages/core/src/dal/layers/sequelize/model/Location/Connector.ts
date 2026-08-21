@@ -10,10 +10,8 @@ import type {
   ConnectorStatusEnumType,
   ConnectorTypeEnumType,
   EvseDto,
-  EvseTypeDto,
   MeterValueDto,
   StartTransactionDto,
-  StatusNotificationDto,
   TariffDto,
   TenantDto,
   TransactionDto,
@@ -30,7 +28,6 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { EvseType } from '../DeviceModel/EvseType.js';
 import { Tariff } from '../Tariff/Tariffs.js';
 import { Tenant } from '../Tenant.js';
 import { MeterValue } from '../TransactionEvent/MeterValue.js';
@@ -38,7 +35,6 @@ import { StartTransaction } from '../TransactionEvent/StartTransaction.js';
 import { Transaction } from '../TransactionEvent/Transaction.js';
 import { ChargingStation } from './ChargingStation.js';
 import { Evse } from './Evse.js';
-import { StatusNotification } from './StatusNotification.js';
 
 @Table
 export class Connector extends Model implements ConnectorDto {
@@ -136,9 +132,6 @@ export class Connector extends Model implements ConnectorDto {
   @BelongsTo(() => Evse, 'evseId')
   declare evse?: EvseDto;
 
-  @HasMany(() => EvseType, 'connectorId')
-  declare evseTypes?: EvseTypeDto[];
-
   @ForeignKey(() => Tariff)
   @Column({
     type: DataType.INTEGER,
@@ -150,9 +143,6 @@ export class Connector extends Model implements ConnectorDto {
 
   @BelongsTo(() => Tariff, 'tariffId')
   declare tariff?: TariffDto | null;
-
-  @HasMany(() => StatusNotification, 'connectorId')
-  declare statusNotifications?: StatusNotificationDto[];
 
   @HasMany(() => MeterValue, 'connectorId')
   declare meterValues?: MeterValueDto[];
