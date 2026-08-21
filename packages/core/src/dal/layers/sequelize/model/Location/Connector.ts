@@ -13,7 +13,6 @@ import type {
   EvseTypeDto,
   MeterValueDto,
   StartTransactionDto,
-  StatusNotificationDto,
   TariffDto,
   TenantDto,
   TransactionDto,
@@ -38,7 +37,6 @@ import { StartTransaction } from '../TransactionEvent/StartTransaction.js';
 import { Transaction } from '../TransactionEvent/Transaction.js';
 import { ChargingStation } from './ChargingStation.js';
 import { Evse } from './Evse.js';
-import { StatusNotification } from './StatusNotification.js';
 
 @Table
 export class Connector extends Model implements ConnectorDto {
@@ -140,9 +138,6 @@ export class Connector extends Model implements ConnectorDto {
   @BelongsTo(() => EvseType, 'evseTypeConnectorId')
   declare evseTypeByConnector?: EvseTypeDto;
 
-  @HasMany(() => EvseType, 'connectorId')
-  declare evseTypes?: EvseTypeDto[];
-
   @ForeignKey(() => Tariff)
   @Column({
     type: DataType.INTEGER,
@@ -154,9 +149,6 @@ export class Connector extends Model implements ConnectorDto {
 
   @BelongsTo(() => Tariff, 'tariffId')
   declare tariff?: TariffDto | null;
-
-  @HasMany(() => StatusNotification, 'connectorId')
-  declare statusNotifications?: StatusNotificationDto[];
 
   @HasMany(() => MeterValue, 'connectorId')
   declare meterValues?: MeterValueDto[];
