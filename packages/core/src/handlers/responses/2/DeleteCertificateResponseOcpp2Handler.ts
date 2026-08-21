@@ -57,9 +57,6 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    // The response says only whether the station accepted, so the certificate it answers for comes
-    // from the request that was sent out. Without it, a station with more than one delete in flight
-    // settles the wrong attempt and destroys the record of a certificate it still holds.
     const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         ocppConnectionName,
