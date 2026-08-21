@@ -21,7 +21,6 @@ import { type RequestOptions, request as httpsRequest } from 'node:https';
  * expects and TLS is still verified against it.
  */
 
-/** A responder lives on the public internet; nothing else is a legitimate target. */
 const ALLOWED_PROTOCOLS = ['http:', 'https:'];
 
 function isPrivateIPv4(address: string): boolean {
@@ -40,7 +39,6 @@ function isPrivateIPv6(address: string): boolean {
   if (normalised === '::1' || normalised === '::') return true;
   if (normalised.startsWith('fe80')) return true; // link-local
   if (/^f[cd]/.test(normalised)) return true; // unique local
-  // An IPv4-mapped address reaches the same host, so it gets the same test.
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(normalised);
   return mapped ? isPrivateIPv4(mapped[1]) : false;
 }
@@ -54,15 +52,9 @@ export function isPrivateAddress(address: string): boolean {
 
 export interface PinnedResponder {
   url: URL;
-  /** The address the request will be sent to, already checked. */
   address: string;
 }
 
-/**
- * Resolves a responder URL to the single public address the request may go to, refusing anything
- * that is not an http(s) URL naming a public host. Every address a name resolves to is checked, so
- * a name answering with one public and one private address is refused rather than half-accepted.
- */
 export async function resolvePublicOcspResponder(responderURL: string): Promise<PinnedResponder> {
   let url: URL;
   try {
@@ -75,7 +67,6 @@ export async function resolvePublicOcspResponder(responderURL: string): Promise<
     throw new Error(`Refusing OCSP responder URL with protocol ${url.protocol}: ${responderURL}`);
   }
 
-  // A bracketed IPv6 literal keeps its brackets in url.hostname.
   const host = url.hostname.replace(/^\[|]$/g, '');
 
   if (isIP(host)) {
@@ -110,12 +101,6 @@ export interface OcspResponderReply {
   body: string;
 }
 
-/**
- * Sends one OCSP request to a station-named responder, having first established that it is public,
- * and sends it to the address that was established rather than to the name. Redirects are not
- * followed: the caller treats any non-2xx as a failure, and following one would reach an address
- * that was never checked.
- */
 export async function sendToPublicOcspResponder(
   responderURL: string,
   body: string,
@@ -133,14 +118,11 @@ export async function sendToPublicOcspResponder(
       'Content-Type': 'application/ocsp-request',
       Accept: 'application/ocsp-response',
       'Content-Length': Buffer.byteLength(body),
-      // The responder is reached by address, so it is told the name it was asked for.
       Host: url.host,
     },
     timeout: timeoutMs,
   };
   if (isSecure) {
-    // Both SNI and the certificate identity check use this, so TLS is still verified against the
-    // name rather than against the address the connection went to.
     options.servername = url.hostname.replace(/^\[|]$/g, '');
   }
 

@@ -307,7 +307,6 @@ export function createOcspRequest(reqData: {
   return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
 }
 
-/** How long the CSMS will wait on a responder before giving up, in milliseconds. */
 const OCSP_REQUEST_TIMEOUT_MS = 10_000;
 
 export async function sendOCSPRequest(
