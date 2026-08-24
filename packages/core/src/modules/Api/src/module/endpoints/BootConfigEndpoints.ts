@@ -17,9 +17,6 @@ import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
   bootRepository: IBootRepository;
-}
-
-interface BootConfigWriteEndpointDependencies extends BootConfigEndpointDependencies {
   locationRepository: ILocationRepository;
 }
 
@@ -43,7 +40,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
   private readonly _bootRepository: IBootRepository;
   private readonly _locationRepository: ILocationRepository;
 
-  constructor({ logger, bootRepository, locationRepository }: BootConfigWriteEndpointDependencies) {
+  constructor({ logger, bootRepository, locationRepository }: BootConfigEndpointDependencies) {
     super(logger);
     this._bootRepository = bootRepository;
     this._locationRepository = locationRepository;
