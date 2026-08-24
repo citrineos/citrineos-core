@@ -424,7 +424,7 @@ jobs:
       - name: Pre-pull and build EVerest SIL images
         # same as the operator-ui everest lane: fetch ahead of time, do not start
         env:
-          OCPP_VERSION: '2.1'
+          OCPP_VERSION: '2.0.1'
           EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
         working-directory: apps/ocpp-server/everest
         run: |
@@ -447,8 +447,13 @@ jobs:
           MOCK_MSP_LOG_LEVEL: debug
         run: bash apps/mock-msp/scripts/ci/mock-up.sh
       - name: Start EVerest (OCPP 2.0.1 profile) and wait for cp001 online
+        # 2.0.1, not 2.1: core now accepts an OCPP 2.1 connection and records the
+        # station as ocpp2.1, but the OCPI command config only maps handlers for
+        # ocpp1.6 / ocpp2.0.1 (apps/ocpi-server/src/config/envs/docker.ts), so a
+        # 2.1 station answers every command with "Charging station
+        # communication failed". The seeded station row is ocpp2.0.1 too.
         env:
-          OCPP_VERSION: '2.1'
+          OCPP_VERSION: '2.0.1'
           EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
           EVEREST_ONLINE_TIMEOUT: '300'
         run: bash apps/mock-msp/scripts/everest-up.sh

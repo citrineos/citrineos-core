@@ -15,9 +15,11 @@
 # What it does (ports the proven logic from
 # apps/operator-ui/tests/e2e/fixtures/everest.ts):
 #   1. docker compose up the everest project (manager / mqtt / nodered).
-#   2. Patch the device-model profile to OCPP20 + pin the CSMS URL. The
-#      start.sh default bakes OCPP21 (from OCPP_VERSION=2.1), but CitrineOS
-#      speaks OCPP 2.0.1 — without this the station never registers.
+#   2. Patch the device-model profile to OCPP20 + pin the CSMS URL, for a tree
+#      whose device model was baked at OCPP21. Default OCPP_VERSION here is
+#      2.0.1: core will happily accept a 2.1 connection and record the station
+#      as ocpp2.1, but OCPI only maps command handlers for ocpp1.6/ocpp2.0.1,
+#      so a 2.1 station fails every command with "communication failed".
 #   3. Wait until Hasura reports cp001 isOnline=true.
 #
 # Prereqs: the main OCPI stack must already be up (pnpm citrine --ocpi --local),
@@ -31,7 +33,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 . "$SCRIPT_DIR/demo-lib.sh"
 
 EVEREST_DIR="$REPO_ROOT/apps/ocpp-server/everest"
-OCPP_VERSION="${OCPP_VERSION:-2.1}"
+OCPP_VERSION="${OCPP_VERSION:-2.0.1}"
 EVEREST_IMAGE_TAG="${EVEREST_IMAGE_TAG:-2025.6.1-dt-esdp}"
 HASURA_URL="${CITRINE_HASURA_URL:-http://localhost:8090/v1/graphql}"
 STATION="${EVEREST_STATION:-cp001}"
