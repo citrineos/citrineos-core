@@ -22,7 +22,7 @@ test.describe('dashboard resilience', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('shows server down while the control api is unreachable and recovers', async ({ page }) => {

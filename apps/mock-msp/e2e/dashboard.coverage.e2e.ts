@@ -44,7 +44,7 @@ test.describe('dashboard coverage matrix', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('inbound cells follow the last exchange per module, outbound stays grey', async () => {

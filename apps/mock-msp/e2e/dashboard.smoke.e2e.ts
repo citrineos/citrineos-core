@@ -30,7 +30,7 @@ test.describe('dashboard smoke', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('serves the dashboard at / and /_mock/ui', async ({ page }) => {

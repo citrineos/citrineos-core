@@ -22,7 +22,10 @@ test.describe('dashboard charging panel against everest', () => {
         query: '{ ChargingStations(where: {ocppConnectionName: {_eq: "cp001"}}) { protocol } }',
       },
     });
-    const protocol = (await res.json())?.data?.ChargingStations?.[0]?.protocol;
+    const body = await res.json();
+    const protocol = body?.data?.ChargingStations?.[0]?.protocol;
+    // only a genuinely uncommandable protocol may skip; anything else is a fault
+    expect(protocol, `could not read cp001's protocol: ${JSON.stringify(body)}`).toBeTruthy();
     test.skip(
       !['ocpp1.6', 'ocpp2.0.1'].includes(protocol),
       `cp001 negotiated ${protocol}; OCPI has no command handler for it`,
@@ -34,7 +37,7 @@ test.describe('dashboard charging panel against everest', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('@everest discover, plug, start, stop and unplug a simulated session', async () => {

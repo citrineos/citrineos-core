@@ -20,7 +20,7 @@ test.describe('dashboard control secret', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('typing a secret stores it, sends it, and survives a reload', async ({ page }) => {

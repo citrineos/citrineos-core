@@ -17,7 +17,7 @@ test.describe('dashboard redesign preview', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('GET /_mock/ui2 renders and survives a few polls', async ({ page, request }) => {

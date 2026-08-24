@@ -37,7 +37,7 @@ test.describe('dashboard fault builder', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('each fault kind renders only its own parameter inputs', async ({ page }) => {

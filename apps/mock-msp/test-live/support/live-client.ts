@@ -148,20 +148,30 @@ const COMMANDABLE = ['ocpp1.6', 'ocpp2.0.1'];
  * back FAILED "Charging station communication failed". Charge tests check this
  * first and skip with the reason rather than failing opaquely.
  */
-export async function stationProtocol(): Promise<string | null> {
+export async function stationProtocol(): Promise<string> {
   const r = await hasura<any>(
     '{ ChargingStations(where: {ocppConnectionName: {_eq: "cp001"}}) { protocol } }',
   );
-  return r.data?.ChargingStations?.[0]?.protocol ?? null;
+  if (r.errors) throw new Error(`hasura rejected the station query: ${JSON.stringify(r.errors)}`);
+  const rows = r.data?.ChargingStations;
+  if (!Array.isArray(rows) || rows.length === 0)
+    throw new Error('no cp001 row in ChargingStations');
+  const protocol = rows[0]?.protocol;
+  if (!protocol) throw new Error('cp001 has no protocol recorded - has it connected yet?');
+  return protocol;
 }
 
+/**
+ * Throws when the answer cannot be determined: only a station that really is on
+ * a protocol OCPI cannot command may skip a test, never a broken environment.
+ */
 export async function commandableProtocol(): Promise<{ ok: boolean; reason: string }> {
   const protocol = await stationProtocol();
-  if (protocol && COMMANDABLE.includes(protocol)) return { ok: true, reason: '' };
+  if (COMMANDABLE.includes(protocol)) return { ok: true, reason: '' };
   return {
     ok: false,
     reason:
-      `cp001 negotiated ${protocol ?? 'an unknown protocol'}; OCPI only maps command ` +
-      `handlers for ${COMMANDABLE.join(' / ')}, so commands cannot reach it`,
+      `cp001 negotiated ${protocol}; OCPI only maps command handlers for ` +
+      `${COMMANDABLE.join(' / ')}, so commands cannot reach it`,
   };
 }

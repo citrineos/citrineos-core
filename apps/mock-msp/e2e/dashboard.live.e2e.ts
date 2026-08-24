@@ -41,7 +41,7 @@ test.describe('dashboard against a live stack', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('@live pull all lights up the outbound coverage column', async () => {

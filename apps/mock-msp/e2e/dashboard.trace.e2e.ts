@@ -24,7 +24,7 @@ test.describe('dashboard wire trace', () => {
   });
 
   test.afterEach(() => {
-    expect(mock.pageErrors).toEqual([]);
+    expect(mock?.pageErrors ?? []).toEqual([]);
   });
 
   test('shows the three exchanges newest first with their verdicts', async () => {
