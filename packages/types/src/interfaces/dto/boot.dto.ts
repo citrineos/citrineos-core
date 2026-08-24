@@ -43,7 +43,7 @@ export const BootUpdateSchema = BootSchema.partial()
     createdAt: true,
     pendingBootSetVariables: true,
   })
-  .required({ ocppConnectionName: true, tenantId: true });
+  .required({ stationId: true, tenantId: true });
 
 export type BootUpdate = z.infer<typeof BootUpdateSchema>;
 
