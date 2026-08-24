@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // After the cycles: status, coverage and the findings policy.
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { unexpectedErrors } from '../support/known-findings.js';
-import { ctl, ctlGet, findings } from '../support/live-client.js';
+import { commandableProtocol, ctl, ctlGet, findings } from '../support/live-client.js';
 
 describe('after the charge loop', () => {
+  let commandable = { ok: true, reason: '' };
+
+  beforeAll(async () => {
+    commandable = await commandableProtocol();
+  });
+
   it('status: charger up, station online, no active session left', async () => {
     const r = await ctlGet<any>('/status?fresh=1');
     expect(r.body.everest.state).toBe('up');
@@ -21,7 +27,8 @@ describe('after the charge loop', () => {
       .toBeNull();
   });
 
-  it('coverage: sessions and command results came in, commands went out', async () => {
+  it('coverage: sessions and command results came in, commands went out', async (ctx) => {
+    if (!commandable.ok) ctx.skip(commandable.reason);
     const r = await ctlGet<any>('/coverage');
     const cell = (m: string) => r.body.modules.find((x: any) => x.module === m);
     expect(cell('sessions').inbound.count).toBeGreaterThan(0);

@@ -4,15 +4,22 @@
 
 // A second plug/start/stop/unplug cycle: the mock must hand back this cycle's
 // Session, not the one already in its domain state (seq floors).
-import { describe, expect, it } from 'vitest';
-import { ctl, ctlGet, sleep } from '../support/live-client.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { commandableProtocol, ctl, ctlGet, sleep } from '../support/live-client.js';
 
 const LONG = 150_000;
 
 describe('second cycle', () => {
+  let commandable = { ok: true, reason: '' };
+
+  beforeAll(async () => {
+    commandable = await commandableProtocol();
+  });
+
   it(
     'start returns a new session, stop and unplug end it',
-    async () => {
+    async (ctx) => {
+      if (!commandable.ok) ctx.skip(commandable.reason);
       const before = Object.keys((await ctlGet<any>('/state/sessions')).body);
       await sleep(5_000);
       const plug = await ctl<any>('/everest/plug', {});

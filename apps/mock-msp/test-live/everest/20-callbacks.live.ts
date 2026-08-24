@@ -4,11 +4,18 @@
 
 // What Citrine called back on us during the cycles: the async command results
 // and, if real-time auth went through the mock, the authorize calls.
-import { describe, expect, it } from 'vitest';
-import { exchanges } from '../support/live-client.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { commandableProtocol, exchanges } from '../support/live-client.js';
 
 describe('callbacks', () => {
-  it('command results came back for START and STOP', async () => {
+  let commandable = { ok: true, reason: '' };
+
+  beforeAll(async () => {
+    commandable = await commandableProtocol();
+  });
+
+  it('command results came back for START and STOP', async (ctx) => {
+    if (!commandable.ok) ctx.skip(commandable.reason);
     const results = await exchanges({ direction: 'inbound', module: 'commands' });
     const types = results.map((e) => e.request.path.split('/').slice(-2)[0]);
     expect(types).toContain('START_SESSION');

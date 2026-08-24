@@ -137,3 +137,31 @@ export async function hasura<T = any>(
 }
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** Protocols OCPI can actually dispatch a command to (CommandExecutor.handlerRegistry). */
+const COMMANDABLE = ['ocpp1.6', 'ocpp2.0.1'];
+
+/**
+ * The protocol cp001 negotiated. Core advertises every version in
+ * OCPP_VERSION_LIST on :8081, so a current EVerest lands on ocpp2.1 - and OCPI
+ * registers command handlers for 1.6 and 2.0.1 only, so every command comes
+ * back FAILED "Charging station communication failed". Charge tests check this
+ * first and skip with the reason rather than failing opaquely.
+ */
+export async function stationProtocol(): Promise<string | null> {
+  const r = await hasura<any>(
+    '{ ChargingStations(where: {ocppConnectionName: {_eq: "cp001"}}) { protocol } }',
+  );
+  return r.data?.ChargingStations?.[0]?.protocol ?? null;
+}
+
+export async function commandableProtocol(): Promise<{ ok: boolean; reason: string }> {
+  const protocol = await stationProtocol();
+  if (protocol && COMMANDABLE.includes(protocol)) return { ok: true, reason: '' };
+  return {
+    ok: false,
+    reason:
+      `cp001 negotiated ${protocol ?? 'an unknown protocol'}; OCPI only maps command ` +
+      `handlers for ${COMMANDABLE.join(' / ')}, so commands cannot reach it`,
+  };
+}

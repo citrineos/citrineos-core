@@ -13,6 +13,20 @@ test.describe('dashboard charging panel against everest', () => {
 
   test.beforeEach(async ({ page, request }) => {
     test.skip(!process.env.E2E_MOCK_URL, 'needs E2E_MOCK_URL pointing at a mock wired to Citrine');
+    // core advertises every OCPP version on :8081, so a current EVerest can land
+    // on ocpp2.1 - and OCPI only maps command handlers for 1.6 / 2.0.1, which
+    // makes every charging button fail with a generic communication error
+    const hasura = process.env.HASURA_URL ?? 'http://localhost:8090/v1/graphql';
+    const res = await request.post(hasura, {
+      data: {
+        query: '{ ChargingStations(where: {ocppConnectionName: {_eq: "cp001"}}) { protocol } }',
+      },
+    });
+    const protocol = (await res.json())?.data?.ChargingStations?.[0]?.protocol;
+    test.skip(
+      !['ocpp1.6', 'ocpp2.0.1'].includes(protocol),
+      `cp001 negotiated ${protocol}; OCPI has no command handler for it`,
+    );
     await ctlJson(request, '/reset', { keepRegistration: true });
     mock = new MockPage(page);
     await mock.open();

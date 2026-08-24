@@ -4,13 +4,25 @@
 
 // The full loop against EVerest (cp001 online, patched to OCPP 2.0.1):
 // plug -> START_SESSION -> Session push -> STOP_SESSION -> CDR -> unplug.
-import { describe, expect, it } from 'vitest';
-import { ctl, ctlGet, maxSeq, sleep, waitFor } from '../support/live-client.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  commandableProtocol,
+  ctl,
+  ctlGet,
+  maxSeq,
+  sleep,
+  waitFor,
+} from '../support/live-client.js';
 
 const LONG = 150_000;
 let sessionId: string | undefined;
+let commandable = { ok: true, reason: '' };
 
 describe('charge loop', () => {
+  beforeAll(async () => {
+    commandable = await commandableProtocol();
+  });
+
   it('station is online and the EVSE resolves', async () => {
     const st = await ctlGet<any>('/status?fresh=1');
     expect(st.body.everest.state).toBe('up');
@@ -21,7 +33,8 @@ describe('charge loop', () => {
 
   it(
     'plug in, start: ACCEPTED, async result, Session pushed',
-    async () => {
+    async (ctx) => {
+      if (!commandable.ok) ctx.skip(commandable.reason);
       const plug = await ctl<any>('/everest/plug', {});
       expect(plug.status, JSON.stringify(plug.body)).toBe(200);
       expect(plug.body.plugged).toBe(true);
@@ -41,7 +54,8 @@ describe('charge loop', () => {
 
   it(
     'stop: async result, CDR by push or pull',
-    async () => {
+    async (ctx) => {
+      if (!commandable.ok) ctx.skip(commandable.reason);
       expect(sessionId).toBeDefined();
       const r = await ctl<any>('/charge/stop', { session_id: sessionId, timeoutMs: 45_000 });
       expect(r.status).toBe(200);
@@ -57,7 +71,8 @@ describe('charge loop', () => {
 
   it(
     'unplug ends the session and a CDR exists for it',
-    async () => {
+    async (ctx) => {
+      if (!commandable.ok) ctx.skip(commandable.reason);
       const floor = await maxSeq();
       const u = await ctl<any>('/everest/unplug', {});
       expect(u.status).toBe(200);
