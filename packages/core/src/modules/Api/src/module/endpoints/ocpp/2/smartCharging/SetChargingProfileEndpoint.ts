@@ -162,7 +162,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     now: number,
   ): boolean {
     const from = (profile: { validFrom?: string | null }) =>
-      profile.validFrom ? new Date(profile.validFrom).getTime() : now;
+      Math.max(profile.validFrom ? new Date(profile.validFrom).getTime() : now, now);
     const to = (profile: { validTo?: string | null }) =>
       profile.validTo ? new Date(profile.validTo).getTime() : Number.POSITIVE_INFINITY;
     return from(left) < to(right) && from(right) < to(left);
@@ -218,8 +218,10 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     );
     const now = Date.now();
     if (
-      existedChargingProfiles.some((existedProfile) =>
-        SetChargingProfileEndpoint._overlaps(chargingProfile, existedProfile, now),
+      existedChargingProfiles.some(
+        (existedProfile) =>
+          existedProfile.id !== chargingProfile.id &&
+          SetChargingProfileEndpoint._overlaps(chargingProfile, existedProfile, now),
       )
     ) {
       return {

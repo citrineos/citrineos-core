@@ -384,5 +384,36 @@ describe('smartCharging message endpoints', () => {
       expect(confirmations[0].success).toBe(true);
       expect(sendCall).toHaveBeenCalled();
     });
+
+    it('sends a profile whose window only met the stored one before now', async () => {
+      readAllByQuery.mockResolvedValue([
+        { validTo: new Date(Date.now() - 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({
+          validFrom: new Date(Date.now() - 120 * 60_000).toISOString(),
+          validTo: new Date(Date.now() + 60 * 60_000).toISOString(),
+        }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
+    });
+
+    it('sends an update to the profile already stored under the same id', async () => {
+      // Re-sending an id the station already holds replaces that profile, so its stored copy is
+      // not a second profile to be valid at the same time as itself.
+      readAllByQuery.mockResolvedValue([
+        { id: 1, validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({ id: 1, validTo: new Date(Date.now() + 120 * 60_000).toISOString() }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
+    });
   });
 });
