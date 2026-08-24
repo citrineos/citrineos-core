@@ -4,15 +4,28 @@
 import { Money } from '../money/Money.js';
 import type { Price } from '../money/Price.js';
 
+/**
+ * Builds a rounded {@link Price} from a unit price and quantity.
+ *
+ * The unit price is multiplied by the quantity using decimal arithmetic to avoid
+ * floating-point rounding errors, then rounded down to the currency's scale.
+ *
+ * @param unitPrice - The price per unit (e.g. per kWh, per minute, or a flat fee). Returns undefined when null.
+ * @param currency - The ISO currency code used for arithmetic and rounding.
+ * @param taxRate - Optional tax rate as a percentage; when set, populates `incl_vat`.
+ * @param quantity - The number of units to multiply by. Defaults to 1.
+ * @returns The rounded price, or undefined when `unitPrice` is null.
+ */
 export function buildPrice(
-  amount: number | undefined,
+  unitPrice: number | undefined,
   currency: string,
   taxRate?: number | null,
+  quantity: number = 1,
 ): Price | undefined {
-  if (amount == null) {
+  if (unitPrice == null) {
     return undefined;
   }
-  const money = Money.of(amount, currency);
+  const money = Money.of(unitPrice, currency).multiply(quantity);
   const price: Price = { excl_vat: money.roundToCurrencyScale().toNumber() };
   if (taxRate != null) {
     price.incl_vat = money
@@ -63,7 +76,7 @@ export function baseCalculateEnergyCost(
   if (feePerKwh == null) {
     return undefined;
   }
-  return buildPrice(feePerKwh * totalKwh, currency, taxRate);
+  return buildPrice(feePerKwh, currency, taxRate, totalKwh);
 }
 
 export function baseCalculateTimeCost(
@@ -75,7 +88,7 @@ export function baseCalculateTimeCost(
   if (feePerMinute == null) {
     return undefined;
   }
-  return buildPrice(totalMinutes * feePerMinute, currency, taxRate);
+  return buildPrice(feePerMinute, currency, taxRate, totalMinutes);
 }
 
 export function baseCalculateTotalCost(
