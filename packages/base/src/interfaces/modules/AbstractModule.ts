@@ -18,7 +18,7 @@ import {
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
 import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
-import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+import type { IHandlerMetadata } from '@interfaces/handlers/HandlerMetadata.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type {
   IMessage,
@@ -116,7 +116,7 @@ export abstract class AbstractModule implements IModule {
 
     for (const instance of handlers) {
       const definitions = (Reflect.getMetadata(AS_HANDLER_CLASS_METADATA, instance.constructor) ??
-        []) as IHandlerClassDefinition[];
+        []) as IHandlerMetadata[];
       for (const definition of definitions) {
         const key = AbstractModule._handlerKey(
           definition.protocol,

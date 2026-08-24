@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { HttpMethod, OCPPVersion } from '@citrineos/types';
-import { BaseRestClient } from '@lib/utils/BaseRestClient';
+import {
+  BaseRestClient,
+  COMMANDS_API_PATH,
+  ADMIN_API_PATH,
+  ocppApiPath,
+} from '@lib/utils/BaseRestClient';
 import { MessageConfirmation } from '@lib/utils/MessageConfirmation';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import store from '@lib/utils/store/store';
@@ -32,31 +37,50 @@ export const showError = (msg: string, translate?: TranslateFn) => {
   });
 };
 
-export interface TriggerMessageAndHandleResponseProps<T> {
+export interface TriggerRequestProps<T> {
   url: string;
   data: any;
-  ocppVersion?: OCPPVersion | null;
   method?: HttpMethod;
   setLoading?: (loading: boolean) => void;
   responseSuccessCheck?: (response: T) => boolean;
   translate?: TranslateFn;
 }
 
+export interface TriggerMessageAndHandleResponseProps<T> extends TriggerRequestProps<T> {
+  ocppVersion?: OCPPVersion | null;
+}
+
 type MessageConfirmationOrArray = MessageConfirmation | MessageConfirmation[];
 
 export const triggerMessageAndHandleResponse = async <T extends MessageConfirmationOrArray>({
-  url,
-  data,
-  ocppVersion = OCPPVersion.OCPP2_0_1,
-  method = HttpMethod.Post,
-  setLoading,
-  responseSuccessCheck,
-  translate,
-}: TriggerMessageAndHandleResponseProps<T>) => {
+  ocppVersion,
+  ...props
+}: TriggerMessageAndHandleResponseProps<T>) =>
+  triggerRequest(ocppApiPath(ocppVersion ?? OCPPVersion.OCPP2_0_1), props);
+
+export const triggerCommandAndHandleResponse = async <T extends MessageConfirmationOrArray>(
+  props: TriggerRequestProps<T>,
+) => triggerRequest(COMMANDS_API_PATH, props);
+
+export const triggerAdminAndHandleResponse = async <T extends MessageConfirmationOrArray>(
+  props: TriggerRequestProps<T>,
+) => triggerRequest(ADMIN_API_PATH, props);
+
+const triggerRequest = async <T extends MessageConfirmationOrArray>(
+  basePath: string,
+  {
+    url,
+    data,
+    method = HttpMethod.Post,
+    setLoading,
+    responseSuccessCheck,
+    translate,
+  }: TriggerRequestProps<T>,
+) => {
   try {
     setLoading?.(true);
 
-    const client = new BaseRestClient(ocppVersion);
+    const client = new BaseRestClient(basePath);
     let response = undefined;
     switch (method) {
       case HttpMethod.Post:

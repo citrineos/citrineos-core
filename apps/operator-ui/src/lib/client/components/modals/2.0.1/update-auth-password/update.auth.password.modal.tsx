@@ -10,7 +10,7 @@ import { CheckboxFormField, FormField } from '@lib/client/components/form/field'
 import { Input } from '@lib/client/components/ui/input';
 import { ChargingStationClass } from '@lib/cls/charging.station.dto';
 import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
+import { triggerCommandAndHandleResponse } from '@lib/utils/messages.utils';
 import { closeModal } from '@lib/utils/store/modal.slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
@@ -72,12 +72,11 @@ export const UpdateAuthPasswordModal = ({ station }: UpdateAuthPasswordModalProp
       ocppConnectionName: parsedStation.ocppConnectionName,
     };
 
-    triggerMessageAndHandleResponse<MessageConfirmation>({
+    triggerCommandAndHandleResponse<MessageConfirmation>({
       translate,
-      url: `/configuration/password`,
+      url: `/setStationPassword`,
       data,
       setLoading,
-      ocppVersion: null,
     }).then(() => {
       form.reset();
       dispatch(closeModal());

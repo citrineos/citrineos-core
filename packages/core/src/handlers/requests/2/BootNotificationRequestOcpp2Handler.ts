@@ -12,11 +12,9 @@ import {
   type IMessageConfirmation,
   type IOcppSender,
   type IWebsocketConnection,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
+  type BootDto,
   EventGroup,
   type HandlerProperties,
   OCPP_2_VER_LIST,
@@ -26,9 +24,12 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
-import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
+import { ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import type { DeviceModelService } from '@modules/Configuration/src/module/DeviceModelService.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -170,7 +171,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: Boot = await this._bootService.updateBootConfig(
+    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
@@ -213,8 +214,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-      bootConfigDbEntity.getBaseReportOnPending = false;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { getBaseReportOnPending: false },
+        ocppConnectionName,
+      );
     }
 
     // SetVariables
@@ -292,23 +296,34 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
-        bootConfigDbEntity.status = RegistrationStatusEnum.Rejected;
-        await bootConfigDbEntity.save();
-        // No more to do.
+        await this._bootService.updateBoot(
+          tenantId,
+          { status: RegistrationStatusEnum.Rejected },
+          ocppConnectionName,
+        );
         return;
       }
     }
 
+<<<<<<< HEAD
     if (this._config.ocpp.autoAccept) {
       //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       // Update boot config with status accepted
+=======
+    if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
+      // TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
+>>>>>>> next
       // TODO: Determine how/if StatusInfo should be generated
-      bootConfigDbEntity.status = RegistrationStatusEnum.Accepted;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { status: RegistrationStatusEnum.Accepted },
+        ocppConnectionName,
+      );
     }
 
     if (rebootSetVariable) {
-      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
+      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it
+      // is appropriate to send an Immediate Reset
       await this._ocppSender.sendCall({
         ocppConnectionName,
         tenantId,

@@ -41,9 +41,9 @@ function OcppTransformObject({
             if (!method.tags) {
               // Get tag index
               // e.g, '/ocpp/1.6/evdriver' -> 'evdriver'
-              // e.g, '/data/evdriver' -> 'evdriver'
+              // e.g, '/commands/setStationPassword' -> 'commands'
               const pathSegments = pathKey.split('/');
-              const tagIndex = pathSegments.find((segment) => segment === 'data') ? 2 : 3;
+              const tagIndex = pathSegments[1] === 'ocpp' ? 3 : 1;
               method.tags = pathKey
                 .split('/')
                 .slice(tagIndex, -1)

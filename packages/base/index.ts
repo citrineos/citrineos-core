@@ -6,16 +6,32 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-export { AbstractModuleApi } from './src/interfaces/api/AbstractModuleApi.js';
-export { AsDataEndpoint } from './src/interfaces/api/AsDataEndpoint.js';
-export { AsMessageEndpoint } from './src/interfaces/api/AsMessageEndpoint.js';
 export { ApiAuthenticationResult } from './src/interfaces/api/auth/ApiAuthenticationResult.js';
 export { ApiAuthorizationResult } from './src/interfaces/api/auth/ApiAuthorizationResult.js';
 export type { IApiAuthProvider } from './src/interfaces/api/auth/IApiAuthProvider.js';
 export type { UserInfo } from './src/interfaces/api/auth/UserInfo.js';
+export { AbstractEndpoint } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
+export type { AbstractEndpointDependencies } from './src/interfaces/api/endpoints/AbstractEndpoint.js';
+export { AbstractEndpointApi } from './src/interfaces/api/endpoints/AbstractEndpointApi.js';
+export { AbstractMessageEndpoint } from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
+export type {
+  AbstractMessageEndpointDependencies,
+  IMessageEndpointMetadata,
+} from './src/interfaces/api/endpoints/AbstractMessageEndpoint.js';
+export { AbstractMessageEndpointApi } from './src/interfaces/api/endpoints/AbstractMessageEndpointApi.js';
+export type {
+  BuiltEndpoint,
+  EndpointClass,
+  EndpointResolverCradle,
+  IEndpointBuilder,
+} from './src/interfaces/api/endpoints/buildEndpoints.js';
+export type {
+  BuiltMessageEndpoint,
+  MessageEndpointClass,
+} from './src/interfaces/api/endpoints/buildMessageEndpoints.js';
+export type { ICommandEndpointMetadata } from './src/interfaces/api/endpoints/EndpointMetadata.js';
 export { BadRequestError } from './src/interfaces/api/exceptions/BadRequestError.js';
 export { NotFoundError } from './src/interfaces/api/exceptions/NotFoundError.js';
-export type { IModuleApi } from './src/interfaces/api/ModuleApi.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
 export type { ICache } from './src/interfaces/cache/cache.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';
@@ -51,19 +67,21 @@ export type { IAuthenticator } from './src/interfaces/router/Authenticator.js';
 export type { INetworkConnection } from './src/interfaces/router/INetworkConnection.js';
 export type { IMessageRouter } from './src/interfaces/router/Router.js';
 export type { IVatProvider } from './src/interfaces/vat/index.js';
+export { buildEndpoints } from './src/util/endpoints/buildEndpoints.js';
+export { buildMessageEndpoints } from './src/util/endpoints/buildMessageEndpoints.js';
+export { forwardMessageEndpoint } from './src/util/endpoints/forwardMessageEndpoint.js';
 
 export {
   AbstractHandler,
   type AbstractHandlerDependencies,
 } from './src/interfaces/handlers/AbstractHandler.js';
-export { AsRequestHandler, AsResponseHandler } from './src/interfaces/handlers/AsHandlerClass.js';
 export { buildHandlers } from './src/interfaces/handlers/buildHandlers.js';
 export type {
   HandlerClass,
   HandlerResolverCradle,
   IHandlerBuilder,
 } from './src/interfaces/handlers/buildHandlers.js';
-export type { IHandlerClassDefinition } from './src/interfaces/handlers/HandlerClassDefinition.js';
+export type { IHandlerMetadata } from './src/interfaces/handlers/HandlerMetadata.js';
 export type { IOcppSender } from './src/interfaces/handlers/IOcppSender.js';
 export { OcppSender } from './src/interfaces/handlers/OcppSender.js';
 
@@ -115,10 +133,7 @@ export declare type Constructable<T> = new (...args: any[]) => T;
 export { IMessageQuerystringSchema } from './src/interfaces/api/MessageQuerystring.js';
 export type { IMessageQuerystring } from './src/interfaces/api/MessageQuerystring.js';
 
-export * as OCPP2_request_types from './src/ocpp/rpc/2/requests.js';
-export * as OCPP2_response_types from './src/ocpp/rpc/2/responses.js';
 export { getOcpp2Schema } from './src/ocpp/rpc/2/schemas.js';
-export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
 
 // OCPP RPC messages: the model objects wrapping the wire frames declared in
 // @citrineos/types, plus the validation that turns one into the other.

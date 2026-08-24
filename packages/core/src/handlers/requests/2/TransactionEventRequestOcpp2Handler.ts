@@ -10,8 +10,6 @@ import {
   type ICache,
   type IMessage,
   type IOcppSender,
-  OCPP2_request_types,
-  OCPP2_response_types,
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
@@ -27,6 +25,8 @@ import {
   OCPPVersion,
   type SystemConfig,
   TransactionEventEnum,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import {
   ChargingSchedule,

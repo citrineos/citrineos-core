@@ -4,10 +4,10 @@
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
 
-import type { DeviceModelService } from './services.js';
+import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
 
 export interface ReportingModuleDependencies extends OcppModuleDependencies {
-  reportingDeviceModelService: DeviceModelService;
+  deviceModelService: DeviceModelService;
   reportingHandlers: AbstractHandler[];
 }
 
@@ -31,7 +31,7 @@ export class ReportingModule extends AbstractModule {
     logger,
     ocppValidator,
     ocppSender,
-    reportingDeviceModelService,
+    deviceModelService,
     reportingHandlers,
   }: ReportingModuleDependencies) {
     super(
@@ -46,7 +46,7 @@ export class ReportingModule extends AbstractModule {
       reportingHandlers,
     );
 
-    this._deviceModelService = reportingDeviceModelService;
+    this._deviceModelService = deviceModelService;
   }
 
   get deviceModelService() {

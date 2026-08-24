@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/operator-ui",
-  "version": "1.3.0-beta2",
+  "version": "1.3.0-beta3",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max_old_space_size=4096 refine dev",

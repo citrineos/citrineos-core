@@ -18,7 +18,7 @@ import {
   OcppError,
   readMessageId,
   UNREADABLE_MESSAGE_ID,
-} from '../../../src/ocpp/rpc/message.js';
+} from '@ocpp/rpc/message.js';
 
 const MESSAGE_ID = 'msg-123';
 

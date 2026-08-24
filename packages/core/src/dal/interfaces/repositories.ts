@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CrudRepository, OCPP2_common_types, OCPP2_request_types } from '@citrineos/base';
+import type { CrudRepository } from '@citrineos/base';
 import type {
   AuthorizationDto,
   BootCreate,
@@ -14,9 +14,10 @@ import type {
   ChargingStationSequenceTypeEnumType,
   MeterValueDto,
   OCPP1_6,
+  OCPP2_common_types,
+  OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
-  RegistrationStatusEnumType,
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
@@ -29,7 +30,6 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type { Boot } from '../layers/sequelize/model/Boot.js';
 import type { Certificate } from '../layers/sequelize/model/Certificate/Certificate.js';
 import type {
   DeleteCertificateAttempt,
@@ -50,9 +50,11 @@ import type { Variable } from '../layers/sequelize/model/DeviceModel/Variable.js
 import type { VariableAttribute } from '../layers/sequelize/model/DeviceModel/VariableAttribute.js';
 import type { VariableCharacteristics } from '../layers/sequelize/model/DeviceModel/VariableCharacteristics.js';
 import type { ChargingStation } from '../layers/sequelize/model/Location/ChargingStation.js';
+import type { ChargingStationNetworkProfile } from '../layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
 import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
+import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
@@ -86,24 +88,14 @@ export interface IAuthorizationRepository {
 /**
  * Key is StationId
  */
-export interface IBootRepository extends CrudRepository<BootDto> {
+export interface IBootRepository {
   createOrUpdateByKey: (
     tenantId: number,
     value: BootCreate,
     key: string,
-  ) => Promise<Boot | undefined>;
-  updateStatusByKey: (
-    tenantId: number,
-    status: RegistrationStatusEnumType,
-    statusInfo: OCPP2_common_types.StatusInfoType | undefined,
-    key: string,
   ) => Promise<BootDto | undefined>;
-  updateLastBootTimeByKey: (
-    tenantId: number,
-    lastBootTime: string,
-    key: string,
-  ) => Promise<BootDto | undefined>;
-  readByKey: (tenantId: number, key: string) => Promise<Boot | undefined>;
+  updateByKey: (tenantId: number, value: object, key: string) => Promise<BootDto | undefined>;
+  readByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
   existsByKey: (tenantId: number, key: string) => Promise<boolean>;
   deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
 }
@@ -548,6 +540,21 @@ export interface IServerNetworkProfileRepository {
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
   ): Promise<ServerNetworkProfileDto>;
+}
+
+export interface IChargingStationNetworkProfileRepository
+  extends CrudRepository<ChargingStationNetworkProfile> {
+  deleteAllByStationIdAndConfigurationSlots(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number[],
+  ): Promise<ChargingStationNetworkProfile[]>;
+}
+
+export type SetNetworkProfileCreationAttributes = Parameters<typeof SetNetworkProfile.build>[0];
+
+export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkProfile> {
+  createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
 }
 
 export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {

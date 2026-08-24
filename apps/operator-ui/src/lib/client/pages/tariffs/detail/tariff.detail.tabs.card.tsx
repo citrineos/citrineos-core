@@ -22,7 +22,7 @@ import {
 } from '@lib/queries/tariffs';
 import { getTransactionsColumns } from '@lib/client/pages/transactions/columns';
 import { getChargingStationsColumns } from '@lib/client/pages/charging-stations/columns';
-import { useColumnPreferences } from '../../../hooks/useColumnPreferences';
+import { useColumnPreferences } from '@lib/client/hooks/useColumnPreferences';
 
 export const TariffDetailTabsCard = ({ tariff }: { tariff: TariffDto }) => {
   const translate = useTranslate();
