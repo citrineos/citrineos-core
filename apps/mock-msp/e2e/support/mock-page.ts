@@ -88,6 +88,16 @@ export class MockPage {
     await expect(this.identity).not.toHaveText('…');
   }
 
+  /**
+   * Stop the 2s poll. renderRows()/renderFaults() replace #rows and #faultList
+   * wholesale via innerHTML, so a click can race the rebuild; freeze first when
+   * the data is already arranged and only the interaction matters.
+   */
+  async freezePolling(): Promise<void> {
+    await this.autoChk.uncheck();
+    await expect(this.autoChk).not.toBeChecked();
+  }
+
   /** Click refresh and wait for the next poll to land. */
   async refresh(): Promise<void> {
     const before = await this.stamp.textContent();

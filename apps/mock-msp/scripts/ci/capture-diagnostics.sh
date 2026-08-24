@@ -35,7 +35,9 @@ grab health health.json
 
 if command -v docker >/dev/null 2>&1; then
   # shellcheck disable=SC2086
-  $COMPOSE logs --no-color --timestamps $services >"$out/compose.log" 2>&1 || true
+  # bounded: a debug-level run with hasura query logging produces a log big
+  # enough to time the upload out, which is exactly when we need it
+  $COMPOSE logs --no-color --timestamps --tail 2000 $services >"$out/compose.log" 2>&1 || true
   docker ps -a >"$out/docker-ps.txt" 2>&1 || true
 fi
 df -h / >"$out/df.txt" 2>&1 || true

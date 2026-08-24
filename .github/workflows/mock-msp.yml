@@ -52,6 +52,7 @@ jobs:
       ocpi-server: ${{ steps.filter.outputs.ocpi-server }}
       stack: ${{ steps.filter.outputs.stack }}
       workflow: ${{ steps.filter.outputs.workflow }}
+      everest: ${{ steps.filter.outputs.everest }}
       shared: ${{ steps.filter.outputs.shared }}
       # push / schedule / dispatch run everything regardless of paths
       all: ${{ github.event_name != 'pull_request' }}
@@ -81,6 +82,12 @@ jobs:
             workflow:
               - '.github/workflows/mock-msp.yml'
               - 'apps/mock-msp/scripts/ci/**'
+            everest:
+              - 'apps/mock-msp/scripts/everest-up.sh'
+              - 'apps/mock-msp/scripts/everest-plug.sh'
+              - 'apps/mock-msp/test-live/everest/**'
+              - 'apps/mock-msp/e2e/dashboard.everest.e2e.ts'
+              - 'apps/ocpp-server/everest/**'
             shared:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -188,7 +195,7 @@ jobs:
 
   dashboard:
     needs: changes
-    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -222,7 +229,7 @@ jobs:
         # more than once. if a lib really were missing the browser launch below
         # fails with a clear message.
         working-directory: apps/mock-msp
-        run: timeout 180 pnpm exec playwright install-deps chromium || echo "::warning::playwright install-deps did not complete, continuing with the runner's own libraries"
+        run: timeout --kill-after=20 --signal=INT 180 pnpm exec playwright install-deps chromium || echo "::warning::playwright install-deps did not complete, continuing with the runner's own libraries"
       - name: Dashboard specs
         env:
           CI: 'true'
@@ -323,7 +330,7 @@ jobs:
           bash apps/mock-msp/scripts/ci/mock-down.sh
           bash apps/mock-msp/scripts/ci/partner-reset.sh
           bash apps/mock-msp/scripts/ci/mock-up.sh
-          for i in $(seq 1 15); do
+          for i in $(seq 1 45); do
             curl -fs http://127.0.0.1:8083/_mock/health | jq -e '.registration.status == "registered"' && exit 0
             sleep 2
           done
@@ -347,7 +354,7 @@ jobs:
 
   everest:
     needs: changes
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_everest) || contains(github.event.pull_request.labels.*.name, 'ci:mock-msp-everest') }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_everest) || contains(github.event.pull_request.labels.*.name, 'ci:mock-msp-everest') || needs.changes.outputs.everest == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -388,7 +395,7 @@ jobs:
         # more than once. if a lib really were missing the browser launch below
         # fails with a clear message.
         working-directory: apps/mock-msp
-        run: timeout 180 pnpm exec playwright install-deps chromium || echo "::warning::playwright install-deps did not complete, continuing with the runner's own libraries"
+        run: timeout --kill-after=20 --signal=INT 180 pnpm exec playwright install-deps chromium || echo "::warning::playwright install-deps did not complete, continuing with the runner's own libraries"
       - name: Start CitrineOS + OCPI (no UI, no mock container)
         run: |
           n=0
@@ -455,9 +462,9 @@ jobs:
         env:
           CI: 'true'
           E2E_MOCK_URL: http://127.0.0.1:8083
-        run: |
-          pnpm --filter @citrineos/mock-msp run test:e2e:live
-          pnpm --filter @citrineos/mock-msp run test:e2e:everest
+        # one invocation: run separately, the second project's report would
+        # overwrite the first's before the artifact upload collects it
+        run: pnpm --filter @citrineos/mock-msp exec playwright test --project=dashboard-live --project=dashboard-everest
       - name: Capture diagnostics
         if: always()
         env:

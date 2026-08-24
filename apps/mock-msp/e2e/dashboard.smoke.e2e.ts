@@ -79,14 +79,26 @@ test.describe('dashboard smoke', () => {
     await expect(mock.stamp).not.toHaveText(first ?? '');
 
     await mock.autoChk.uncheck();
-    // let any poll that was already in flight land before sampling
-    await page.waitForTimeout(500);
-    const frozen = await mock.stamp.textContent();
+    // a poll may already be in flight, so settle on a stable value instead of
+    // guessing how long it takes to land
+    let frozen = '';
+    await expect
+      .poll(
+        async () => {
+          const a = await mock.stamp.textContent();
+          await page.waitForTimeout(600);
+          const b = await mock.stamp.textContent();
+          frozen = b ?? '';
+          return a === b;
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(true);
     await page.waitForTimeout(3000);
-    await expect(mock.stamp).toHaveText(frozen ?? '');
+    await expect(mock.stamp).toHaveText(frozen);
 
     await mock.refresh();
-    await expect(mock.stamp).not.toHaveText(frozen ?? '');
+    await expect(mock.stamp).not.toHaveText(frozen);
   });
 
   test('command payload is seeded per command type', async () => {

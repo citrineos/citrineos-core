@@ -12,7 +12,13 @@ describe('after the charge loop', () => {
     const r = await ctlGet<any>('/status?fresh=1');
     expect(r.body.everest.state).toBe('up');
     expect(r.body.citrine.station.state).toBe('online');
-    expect(r.body.mock.activeSession).toBeNull();
+    // the last cycle's COMPLETED push can still be in flight after the unplug
+    await expect
+      .poll(async () => (await ctlGet<any>('/status?fresh=1')).body.mock.activeSession, {
+        timeout: 60_000,
+        interval: 2_000,
+      })
+      .toBeNull();
   });
 
   it('coverage: sessions and command results came in, commands went out', async () => {

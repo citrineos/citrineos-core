@@ -92,6 +92,7 @@ test.describe('dashboard wire trace', () => {
   });
 
   test('clicking a row opens its detail and clicking again closes it', async () => {
+    await mock.freezePolling();
     const location = mock.rows.filter({ hasText: 'locations' });
     await location.click();
 

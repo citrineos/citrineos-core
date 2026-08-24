@@ -102,6 +102,7 @@ test.describe('dashboard fault builder', () => {
     await expect(row.locator('td').nth(9)).toHaveText('✓');
     await expect(row.locator('td').nth(10)).toContainText('fault:ocpiStatus');
 
+    await mock.freezePolling();
     await mock.faultEntries().first().getByRole('button', { name: '✕' }).click();
     await expect(mock.toast.filter({ hasText: 'disarm ✓' })).toBeVisible();
     await expect(mock.faultEntries()).toHaveCount(0);
