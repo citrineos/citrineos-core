@@ -408,11 +408,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
           transaction.totalKwh &&
           this._sendCostUpdatedOnMeterValue
         ) {
-          response.totalCost = await this._costCalculator.calculateTotalCost(
-            tenantId,
-            transaction.connectorId,
-            transaction.totalKwh,
-          );
+          response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
         }
 
         // C23: Increasing authorization amount
@@ -551,11 +547,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
 
       if (message.payload.eventType === TransactionEventEnum.Ended && transaction.totalKwh) {
-        response.totalCost = await this._costCalculator.calculateTotalCost(
-          tenantId,
-          transaction.connectorId,
-          transaction.totalKwh,
-        );
+        response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
       }
 
       // OCPP 2.1 C20 Cancel transaction after start of transaction before costs has been incurred
