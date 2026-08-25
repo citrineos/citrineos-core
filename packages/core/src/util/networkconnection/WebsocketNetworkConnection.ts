@@ -161,6 +161,15 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     return JSON.parse(configString) as WebsocketServerConfig[];
   }
 
+  public async saveWebsocketServersConfig(
+    websocketServers: WebsocketServerConfig[],
+  ): Promise<void> {
+    await this._fileStorage.saveFile(
+      this._config.websocketServerConfigFile,
+      Buffer.from(JSON.stringify(websocketServers)),
+    );
+  }
+
   /**
    * Reloads the TLS certificates (from disk) for the websocket server with the given ID.
    * This is useful when certificates are renewed and need to be updated without restarting the server.

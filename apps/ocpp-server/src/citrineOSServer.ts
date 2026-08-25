@@ -165,6 +165,7 @@ export class CitrineOSServer {
     this._container = buildContainer(this._config, {
       logger: this._logger,
       cache: this._cache,
+      fileStorage: this._fileStorage,
       ocppValidator: this._ocppValidator,
       server: this._server,
     });

@@ -8,10 +8,9 @@ import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
 import {
-  type BootstrapConfig,
-  ConfigStoreFactory,
   type IApiAuthProvider,
   type ICache,
+  type IFileStorage,
   OcppSender,
   OCPPValidator,
 } from '@citrineos/base';
@@ -97,14 +96,15 @@ import {
   TenantModule,
   TransactionsModule,
   UnknownStationFilter,
-  WebPaymentApi,
   WebhookDispatcher,
+  WebPaymentApi,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
 
 type Prebuilt = {
   logger: Logger<ILogObj>;
   cache: ICache;
+  fileStorage: IFileStorage;
   ocppValidator: OCPPValidator;
   server: FastifyInstance;
 };
@@ -131,7 +131,7 @@ type Prebuilt = {
  *   API unit in its own (CitrineOSServer.initApiInScope) together with its
  *   endpoints, so they share one instance per scope without a singleton→transient leak.
  */
-export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt: Prebuilt) {
+export function buildContainer(config: SystemConfig, prebuilt: Prebuilt) {
   const container = createContainer({
     injectionMode: InjectionMode.PROXY,
     strict: true,
@@ -174,19 +174,18 @@ function registerModuleServices(container: AwilixContainer): void {
 // ============================================================
 function registerPrimitives(
   container: AwilixContainer,
-  config: BootstrapConfig & SystemConfig,
+  config: SystemConfig,
   prebuilt: Prebuilt,
 ): void {
-  const { logger, cache, ocppValidator, server } = prebuilt;
+  const { logger, cache, fileStorage, ocppValidator, server } = prebuilt;
 
   container.register({
     config: asValue(config),
-    fileStorage: asValue(ConfigStoreFactory.getInstance()),
-    configStore: asValue(ConfigStoreFactory.getInstance()),
-    exchange: asValue(config.util.messageBroker.amqp!.exchange),
-    amqpUrl: asValue(config.util.messageBroker.amqp!.url),
-    maxCallLengthSeconds: asValue(config.maxCallLengthSeconds),
-    maxReconnectDelay: asValue(config.maxReconnectDelay),
+    fileStorage: asValue(fileStorage),
+    exchange: asValue(config.messageBroker.amqp!.exchange),
+    amqpUrl: asValue(config.messageBroker.amqp!.url),
+    maxCallLengthSeconds: asValue(config.timeouts.maxCallLengthSeconds),
+    maxReconnectDelay: asValue(config.messageBroker.amqp!.maxReconnectDelaySeconds),
     logger: asValue(logger),
     ocppValidator: asValue(ocppValidator),
     cache: asValue(cache),

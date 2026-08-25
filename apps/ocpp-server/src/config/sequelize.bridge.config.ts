@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { loadBootstrapConfig } from '@citrineos/base';
+import { ConfigLoader } from '@citrineos/base';
 import 'ts-node/register';
 
 export default (async () => {
   try {
-    const bootstrapConfig = loadBootstrapConfig();
+    const bootstrapConfig = await new ConfigLoader().loadConfig();
 
     const { host, port, database, dialect, username, password, ssl } = bootstrapConfig.database;
 

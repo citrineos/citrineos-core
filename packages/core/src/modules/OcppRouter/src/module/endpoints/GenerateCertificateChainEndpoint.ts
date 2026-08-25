@@ -1,15 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { WebsocketNetworkConnection } from '@/util/index.js';
 import {
   type AbstractEndpointDependencies,
   type ICommandEndpointMetadata,
-  type INetworkConnection,
+  type IFileStorage,
   AbstractEndpoint,
   BadRequestError,
   NotFoundError,
 } from '@citrineos/base';
-import { type SystemConfig, HttpMethod } from '@citrineos/types';
+import { type SystemConfig, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
 import type {
   GenerateCertificateChainQueryString,
   GenerateCertificateChainRequest,
@@ -26,7 +27,8 @@ import type { FastifyRequest } from 'fastify';
 
 interface Deps extends AbstractEndpointDependencies {
   config: SystemConfig;
-  networkConnection: INetworkConnection;
+  networkConnection: WebsocketNetworkConnection;
+  fileStorage: IFileStorage;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
   installCertificateHelperService: InstallCertificateHelperService;
 }
@@ -52,7 +54,9 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
   };
 
   private readonly _config: SystemConfig;
-  private readonly _networkConnection: INetworkConnection;
+  private readonly _networkConnection: WebsocketNetworkConnection;
+  private readonly _websocketConfigs: WebsocketServerConfig[];
+  private readonly _fileStorage: IFileStorage;
   private readonly _serverNetworkProfileRepository: IServerNetworkProfileRepository;
   private readonly _installCertificateHelperService: InstallCertificateHelperService;
 
@@ -60,12 +64,15 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
     logger,
     config,
     networkConnection,
+    fileStorage,
     serverNetworkProfileRepository,
     installCertificateHelperService,
   }: Deps) {
     super(logger);
     this._config = config;
     this._networkConnection = networkConnection;
+    this._websocketConfigs = this._networkConnection.getWebsocketServers();
+    this._fileStorage = fileStorage;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
     this._installCertificateHelperService = installCertificateHelperService;
   }
@@ -98,9 +105,7 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
       : [request.query.serverId];
 
     const websocketConfigs = serverIds.map((serverId) => {
-      const websocketConfig = this._config.util.networkConnection.websocketServers.find(
-        (ws) => ws.id === serverId,
-      );
+      const websocketConfig = this._websocketConfigs.find((ws) => ws.id === serverId);
       if (!websocketConfig) {
         throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
       }
@@ -135,11 +140,11 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
           this._filePathsForSecurityProfile(filePaths, websocketConfig.securityProfile),
         );
       }
-      await this._configStore.saveConfig(this._config);
+      await this._networkConnection.saveWebsocketServersConfig(this._websocketConfigs);
       for (const websocketConfig of group) {
         await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
           { ...websocketConfig, ...filePaths },
-          this._config.maxCallLengthSeconds,
+          this._config.timeouts.maxCallLengthSeconds,
         );
         await this._networkConnection.reloadTlsCertificates?.(websocketConfig.id);
       }

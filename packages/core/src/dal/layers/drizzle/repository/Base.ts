@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SystemConfig } from '@citrineos/types/src/config/types.js';
+import type { SystemConfig } from '@citrineos/types';
 import { and, count, eq, type Column, type InferSelectModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
