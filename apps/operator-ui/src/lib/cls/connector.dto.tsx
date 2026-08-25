@@ -10,7 +10,7 @@ import type {
 
 export class ConnectorClass implements Partial<ConnectorDto> {
   id?: number;
-  connectorId?: number;
+  connectorId?: number | null;
   status?: ConnectorStatusEnumType | null;
   errorCode?: ConnectorErrorCodeEnumType | null;
 }

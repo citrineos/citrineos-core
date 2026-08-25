@@ -108,7 +108,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     const ocpp1_6ConnectorId = Array.from(chargingStation.connectors || []).find(
       (connector) => connector.id === Number(unlockConnector.connector_id),
     )?.connectorId;
-    if (ocpp1_6ConnectorId === undefined) {
+    if (ocpp1_6ConnectorId == null) {
       this.logger.error('UnlockConnector failed, Connector not found', {
         unlockConnector,
       });

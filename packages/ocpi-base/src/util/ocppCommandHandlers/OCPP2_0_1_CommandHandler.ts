@@ -156,7 +156,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
     const evseTypeConnectorId = Array.from(chargingStation.connectors || []).find(
       (connector) => connector.id === Number(unlockConnector.connector_id),
     )?.evseTypeConnectorId;
-    if (evseTypeId === undefined || evseTypeConnectorId === undefined) {
+    if (evseTypeId == null || evseTypeConnectorId == null) {
       this.logger.error('UnlockConnector failed, EVSE or Connector not found', {
         unlockConnector,
       });

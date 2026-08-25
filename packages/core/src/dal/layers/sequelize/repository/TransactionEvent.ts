@@ -231,7 +231,6 @@ export class SequelizeTransactionEventRepository
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
-              defaults: { connectorId: value.evse.connectorId },
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);

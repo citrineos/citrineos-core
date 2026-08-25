@@ -23,11 +23,11 @@ function connectorColumns() {
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
-    evseId: integer('evseId').notNull(),
+    evseId: integer('evseId'),
     // Serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per station.
-    connectorId: integer('connectorId').notNull(),
+    connectorId: integer('connectorId'),
     // Serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
-    evseTypeConnectorId: integer('evseTypeConnectorId').notNull(),
+    evseTypeConnectorId: integer('evseTypeConnectorId'),
     status: varchar('status', { length: 255 }).default('Unknown'),
     type: varchar('type', { length: 255 }),
     format: varchar('format', { length: 255 }),

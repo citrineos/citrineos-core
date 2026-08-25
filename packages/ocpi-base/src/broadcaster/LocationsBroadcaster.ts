@@ -127,7 +127,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!locationId) throw new Error('Location ID missing in Connector data');
     const connector = ConnectorMapper.fromGraphql(connectorDto);
     if (!connector) throw new Error('Failed to map Connector data');
-    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName, connectorDto.evseId)}/${connectorDto.id}`;
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName, connectorDto.evseId!)}/${connectorDto.id}`;
     await this.broadcastConnector(tenant, connector, HttpMethod.Put, path);
   }
 

@@ -87,13 +87,11 @@ export class StatusNotificationService {
 
       const connector = {
         tenantId,
-        // createOrUpdateConnector upserts on (ocppConnectionName, connectorId), so this has to be
-        // the matched row's station-wide number. Writing the EVSE-scoped one collapses a
-        // multi-EVSE station onto a single Connector row, last notification wins.
-        connectorId: matchingConnector?.connectorId ?? statusNotificationRequest.connectorId,
+        connectorId: matchingConnector?.connectorId ?? null,
         ocppConnectionName: ocppConnectionName,
         evseId: matchingConnector?.evseId ?? matchingEvse?.id,
-        evseTypeConnectorId: matchingConnector?.evseTypeConnectorId,
+        evseTypeConnectorId:
+          matchingConnector?.evseTypeConnectorId ?? statusNotificationRequest.connectorId,
         status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
           statusNotificationRequest.connectorStatus,
         ),
@@ -120,11 +118,11 @@ export class StatusNotificationService {
         }
       }
 
-      if (connector.evseId != null) {
+      if (connector.evseId != null && connector.evseTypeConnectorId != null) {
         await this._locationRepository.createOrUpdateConnector(tenantId, connector);
       } else {
         this._logger.warn(
-          `Could not resolve evseId for connector ${statusNotificationRequest.connectorId} on EVSE ${statusNotificationRequest.evseId} at station ${ocppConnectionName}. Skipping connector update.`,
+          `Could not resolve evseId/evseTypeConnectorId for connector ${statusNotificationRequest.connectorId} on EVSE ${statusNotificationRequest.evseId} at station ${ocppConnectionName}. Skipping connector update.`,
         );
       }
 

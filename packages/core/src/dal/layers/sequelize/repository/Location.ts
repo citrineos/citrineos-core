@@ -306,14 +306,23 @@ export class SequelizeLocationRepository
   ): Promise<Connector | undefined> {
     let result;
     await this.s.transaction(async (sequelizeTransaction) => {
+      const where =
+        connector.connectorId != null
+          ? {
+              tenantId,
+              ocppConnectionName: connector.ocppConnectionName,
+              connectorId: connector.connectorId,
+            }
+          : {
+              tenantId,
+              ocppConnectionName: connector.ocppConnectionName,
+              evseId: connector.evseId,
+              evseTypeConnectorId: connector.evseTypeConnectorId,
+            };
       const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
         tenantId,
         {
-          where: {
-            tenantId,
-            ocppConnectionName: connector.ocppConnectionName,
-            connectorId: connector.connectorId,
-          },
+          where,
           defaults: {
             ...connector,
           },
