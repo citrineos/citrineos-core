@@ -1,42 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-<<<<<<< HEAD
-=======
-import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
->>>>>>> next
 import {
+  CacheNamespace,
   type ICache,
   type IMessageConfirmation,
-<<<<<<< HEAD
-  type OCPP2_response_types,
-  CacheNamespace,
-=======
-  BOOT_STATUS,
->>>>>>> next
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
-<<<<<<< HEAD
   type BootCreate,
   type BootDto,
-  type RegistrationStatusEnumType,
-  type SystemConfig,
-=======
-  type BootDto,
->>>>>>> next
   OCPP1_6,
   OCPP2_0_1,
+  type OCPP2_response_types,
   OCPP_CallAction,
   RegistrationStatusEnum,
   type RegistrationStatusEnumType,
   type SystemConfig,
-  type OCPP2_response_types,
 } from '@citrineos/types';
 import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import { Boot, OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

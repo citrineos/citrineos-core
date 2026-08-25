@@ -15,11 +15,9 @@ import { Logger } from 'tslog';
 export class LocalStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
   private defaultRoot: string;
-  private configBucket: string | undefined;
 
-  constructor(defaultRoot: string, defaultBucket?: string, logger?: Logger<ILogObj>) {
+  constructor(defaultRoot: string, logger?: Logger<ILogObj>) {
     this.defaultRoot = defaultRoot;
-    this.configBucket = defaultBucket;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });

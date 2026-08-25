@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, VariableAttributeDto } from '@citrineos/types';
+import { type IBootRepository } from '@/dal/index.js';
+import type { BootCreate, BootDto, VariableAttributeDto } from '@citrineos/types';
+import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
+import { and, eq } from 'drizzle-orm';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository, type DrizzleRepositoryDependencies } from './Base.js';
-import { type IBootRepository } from '@/dal/index.js';
-import { and, eq } from 'drizzle-orm';
-import type { BootConfig } from '@citrineos/base';
-import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external BootDto contract.
@@ -95,7 +94,7 @@ export class DrizzleBootRepository
 
   async createOrUpdateByKey(
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ): Promise<BootDto | undefined> {
     // Wrapping in a transaction to match the Sequelize repo and "just in case" - unfortunately

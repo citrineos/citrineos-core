@@ -54,6 +54,7 @@ import { TlsCredentialManager } from './TlsCertificateManager.js';
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
+  protected _websocketServers: WebsocketServerConfig[] = [];
   protected _logger: Logger<ILogObj>;
   private _identifierConnections: Map<string, WebSocket> = new Map();
   private _pingTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -123,16 +124,16 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   public async initialize(): Promise<void> {
-    const websocketServersConfig = await this.loadWebsocketServersConfig();
+    this._websocketServers = await this.loadWebsocketServersConfig();
     if (
-      websocketServersConfig.some(
+      this._websocketServers.some(
         (websocketServerConfig) => websocketServerConfig.dynamicTenantResolution,
       )
     ) {
       this._warmTenantPathCache();
     }
 
-    for (const websocketServerConfig of websocketServersConfig) {
+    for (const websocketServerConfig of this._websocketServers) {
       const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
       if (websocketServerConfig.securityProfile > 1) {
@@ -144,6 +145,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         this._certManagersMap.set(websocketServerConfig.id, certManager);
       }
     }
+  }
+
+  public getWebsocketServers(): WebsocketServerConfig[] {
+    return this._websocketServers;
   }
 
   private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {

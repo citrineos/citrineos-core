@@ -3,14 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type BootstrapConfig,
-  type ConfigStore,
   type ICache,
   type ICommandEndpointMetadata,
   AbstractEndpoint,
   BadRequestError,
   CacheNamespace,
-  getCacheTenantPathMappingKey,
   NotFoundError,
 } from '@citrineos/base';
 import { type SystemConfig, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
@@ -22,8 +19,7 @@ import { WebsocketMappingQuerySchema } from '@dal/interfaces/index.js';
 import type { FastifyRequest } from 'fastify';
 
 interface Deps extends AbstractEndpointDependencies {
-  config: BootstrapConfig & SystemConfig;
-  configStore: ConfigStore;
+  config: SystemConfig;
   cache: ICache;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
 }
@@ -37,34 +33,15 @@ export class DeleteWebsocketMappingEndpoint extends AbstractEndpoint<Route> {
     querySchema: WebsocketMappingQuerySchema,
   };
 
-  private readonly _config: BootstrapConfig & SystemConfig;
-  private readonly _configStore: ConfigStore;
+  private readonly _config: SystemConfig;
   private readonly _cache: ICache;
   private readonly _serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
-  constructor({ logger, config, configStore, cache, serverNetworkProfileRepository }: Deps) {
+  constructor({ logger, config, cache, serverNetworkProfileRepository }: Deps) {
     super(logger);
     this._config = config;
-    this._configStore = configStore;
     this._cache = cache;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
-  }
-
-  protected async refreshConfigFromStore(): Promise<void> {
-    const stored = await this._configStore.fetchConfig();
-    if (stored) {
-      Object.assign(this._config, stored);
-    }
-  }
-
-  protected findWebsocketConfig(serverId: string): WebsocketServerConfig {
-    const websocketConfig = this._config.util.networkConnection.websocketServers.find(
-      (ws) => ws.id === serverId,
-    );
-    if (!websocketConfig) {
-      throw new NotFoundError(`Websocket configuration with id ${serverId} not found`);
-    }
-    return websocketConfig;
   }
 
   async handle(request: FastifyRequest<Route>): Promise<WebsocketServerConfig> {

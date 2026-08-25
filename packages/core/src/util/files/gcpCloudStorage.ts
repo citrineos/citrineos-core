@@ -11,7 +11,7 @@ import { Logger } from 'tslog';
 export class GcpCloudStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
   private storageClient: Storage;
-  private configBucketName: string;
+  private defaultBucketName: string;
 
   constructor(
     config: SystemConfig['fileAccess']['gcp'],
@@ -25,7 +25,7 @@ export class GcpCloudStorage implements IFileStorage {
       projectId: config.projectId,
       credentials: config.credentials,
     });
-    this.configBucketName = defaultBucket || config.defaultBucketName;
+    this.defaultBucketName = defaultBucket || config.defaultBucketName;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -40,7 +40,7 @@ export class GcpCloudStorage implements IFileStorage {
    * @returns The key used to store the object.
    */
   async saveFile(key: string, content: Buffer, bucket?: string): Promise<string> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Saving file to ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
@@ -70,7 +70,7 @@ export class GcpCloudStorage implements IFileStorage {
    * @returns Object content, or undefined if the key does not exist.
    */
   async getFile(key: string, bucket?: string): Promise<string | undefined> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Getting file from ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
@@ -98,7 +98,7 @@ export class GcpCloudStorage implements IFileStorage {
    * @returns True if the object exists.
    */
   async exists(key: string, bucket?: string): Promise<boolean> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Checking existence of ${bucketName}/${key}`);
     try {
       const [exists] = await this.getBucket(bucketName).file(key).exists();
@@ -123,7 +123,7 @@ export class GcpCloudStorage implements IFileStorage {
     _bucket?: string,
     _options?: { recursive?: boolean },
   ): Promise<void> {
-    this._logger.debug(`Creating directory ${_bucket ?? this.configBucketName}/${_key}`);
+    this._logger.debug(`Creating directory ${_bucket ?? this.defaultBucketName}/${_key}`);
     return;
   }
 
@@ -138,7 +138,7 @@ export class GcpCloudStorage implements IFileStorage {
     bucket?: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Deleting ${bucketName}/${key}`);
     try {
       if (options?.recursive) {

@@ -92,6 +92,9 @@ export type WebsocketServersConfig = z.infer<typeof websocketServersConfigSchema
 export const configSchema = z.object({
   env: z.enum(['development', 'production']).default('development'),
 
+  host: z.string().default('localhost'),
+  port: z.number().int().positive().default(8080),
+
   database: z
     .object({
       host: z.string().default('localhost'),

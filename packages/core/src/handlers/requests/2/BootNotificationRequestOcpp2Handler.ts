@@ -17,6 +17,9 @@ import {
   type BootDto,
   EventGroup,
   type HandlerProperties,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   RegistrationStatusEnum,
@@ -24,9 +27,6 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import { ChargingStation } from '@dal/layers/sequelize/index.js';
@@ -305,14 +305,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       }
     }
 
-<<<<<<< HEAD
     if (this._config.ocpp.autoAccept) {
-      //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
-      // Update boot config with status accepted
-=======
-    if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
-      // TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
->>>>>>> next
       // TODO: Determine how/if StatusInfo should be generated
       await this._bootService.updateBoot(
         tenantId,

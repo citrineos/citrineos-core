@@ -10,7 +10,7 @@ import {
 import type { MessageEndpointClass } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
 import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
-import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
+import { DEFAULT_TENANT_ID } from '../../../index.js';
 
 interface ForwardMessageDependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;

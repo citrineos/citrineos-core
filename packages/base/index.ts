@@ -75,6 +75,7 @@ export {
   AbstractHandler,
   type AbstractHandlerDependencies,
 } from './src/interfaces/handlers/AbstractHandler.js';
+export { AsRequestHandler, AsResponseHandler } from './src/interfaces/handlers/AsHandlerClass.js';
 export { buildHandlers } from './src/interfaces/handlers/buildHandlers.js';
 export type {
   HandlerClass,

@@ -22,12 +22,7 @@ export class S3Storage implements IFileStorage {
   private s3Client: S3Client;
   private defaultBucketName: string;
 
-  constructor(
-    config: SystemConfig['fileAccess']['s3'],
-    configFileName: string,
-    configBucket?: string,
-    logger?: Logger<ILogObj>,
-  ) {
+  constructor(config: SystemConfig['fileAccess']['s3'], logger?: Logger<ILogObj>) {
     this.s3Client = new S3Client({
       // Endpoint required for Minio
       ...(config!.endpoint ? { endpoint: config!.endpoint } : {}),

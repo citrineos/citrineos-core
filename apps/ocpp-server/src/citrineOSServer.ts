@@ -17,14 +17,17 @@ import {
   apiAuthPluginFp,
   BrokerAwareMessageSender,
   DefaultDrizzleInstance,
+  GcpCloudStorage,
   type HealthCheckResult,
   HealthCheckService,
   initSwagger,
   type IServerNetworkProfileRepository,
+  LocalStorage,
   MemoryCache,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RedisCache,
+  S3Storage,
   sequelize,
   Sequelize,
   WebsocketNetworkConnection,
@@ -47,7 +50,6 @@ import { buildContainer } from './container.js';
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {
   moduleToken: string;
-  configKey: keyof SystemConfig['modules'];
 }
 
 interface ApiInitSpec {
@@ -58,7 +60,7 @@ export class CitrineOSServer {
   /**
    * Fields
    */
-  protected readonly _config: BootstrapConfig & SystemConfig;
+  protected readonly _config: SystemConfig;
   protected readonly _logger: Logger<ILogObj>;
   protected readonly _server: FastifyInstance;
   protected readonly _cache: ICache;
@@ -67,8 +69,6 @@ export class CitrineOSServer {
   protected readonly _fileStorage: IFileStorage;
   protected readonly modules: IModule[] = [];
   protected _sequelizeInstance!: Sequelize;
-  protected host?: string;
-  protected port?: number;
   protected eventGroup?: EventGroup;
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
@@ -87,35 +87,27 @@ export class CitrineOSServer {
   private static readonly MODULE_SPECS: Partial<Record<EventGroup, ModuleInitSpec>> = {
     [EventGroup.Certificates]: {
       moduleToken: 'certificatesModule',
-      configKey: 'certificates',
     },
     [EventGroup.Configuration]: {
       moduleToken: 'configurationModule',
-      configKey: 'configuration',
     },
     [EventGroup.EVDriver]: {
       moduleToken: 'evDriverModule',
-      configKey: 'evdriver',
     },
     [EventGroup.Monitoring]: {
       moduleToken: 'monitoringModule',
-      configKey: 'monitoring',
     },
     [EventGroup.Reporting]: {
       moduleToken: 'reportingModule',
-      configKey: 'reporting',
     },
     [EventGroup.SmartCharging]: {
       moduleToken: 'smartChargingModule',
-      configKey: 'smartcharging',
     },
     [EventGroup.Transactions]: {
       moduleToken: 'transactionsModule',
-      configKey: 'transactions',
     },
     [EventGroup.Tenant]: {
       moduleToken: 'tenantModule',
-      configKey: 'tenant',
     },
   };
 
@@ -128,20 +120,19 @@ export class CitrineOSServer {
   // todo rename event group to type
   constructor(
     appName: string,
-    bootstrapConfig: BootstrapConfig,
     systemConfig: SystemConfig,
     server?: FastifyInstance,
     ajv?: Ajv.Ajv,
     cache?: ICache,
   ) {
     // TODO: Create and export config schemas for each util module, such as amqp, redis, etc, to avoid passing them possibly invalid configuration
-    if (!systemConfig.util.messageBroker.amqp) {
+    if (!systemConfig.messageBroker.amqp) {
       throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
 
     // Create the prebuilt primitives the container depends on, then build it.
     this.appName = appName;
-    this._config = { ...bootstrapConfig, ...systemConfig };
+    this._config = systemConfig;
     this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
 
     // enable cors
@@ -167,7 +158,7 @@ export class CitrineOSServer {
     this._cache = this.initCache(cache);
 
     // Initialize File Access Implementation
-    this._fileStorage = ConfigStoreFactory.getInstance();
+    this._fileStorage = this.initFileStorage();
 
     // Build the DI container from the prebuilt primitives. Everything else is
     // resolved from / wired through it in initialize().
@@ -185,8 +176,8 @@ export class CitrineOSServer {
       await this._syncWebsocketConfig();
       await this._server
         .listen({
-          host: this.host,
-          port: this.port,
+          host: this._config.host,
+          port: this._config.port,
         })
         .then((address) => {
           this._logger?.info(`Server listening at ${address}`);
@@ -222,7 +213,7 @@ export class CitrineOSServer {
     const forceExit = setTimeout(() => {
       console.log('Shutdown timed out, forcing exit');
       process.exit(1);
-    }, this._config.shutdownGracePeriodSeconds * 1000); // Default is 30 seconds
+    }, this._config.timeouts.shutdownGracePeriodSeconds * 1000); // Default is 30 seconds
     forceExit.unref();
 
     this._logger.info('Closing HTTP server...');
@@ -262,19 +253,25 @@ export class CitrineOSServer {
 
   protected initCache(cache?: ICache): ICache {
     if (cache) return cache;
-    if (this._config.util.cache.redis) {
-      const redisClientOptions: RedisClientOptions =
-        'url' in this._config.util.cache.redis
-          ? { url: this._config.util.cache.redis.url }
-          : {
-              socket: {
-                host: this._config.util.cache.redis.host,
-                port: this._config.util.cache.redis.port,
-              },
-            };
+    if (this._config.cache.type === 'redis') {
+      const redisClientOptions: RedisClientOptions = { url: this._config.cache.url };
+
       return new RedisCache(redisClientOptions, this._logger);
     }
     return new MemoryCache();
+  }
+
+  protected initFileStorage(): IFileStorage {
+    switch (this._config.fileAccess.type) {
+      case 'local':
+        return new LocalStorage(this._config.fileAccess.local!.defaultFilePath);
+      case 's3':
+        return new S3Storage(this._config.fileAccess.s3!);
+      case 'gcp':
+        return new GcpCloudStorage(this._config.fileAccess.gcp!);
+      default:
+        throw new Error(`Unsupported file access type: ${this._config.fileAccess.type}`);
+    }
   }
 
   /**
@@ -297,7 +294,7 @@ export class CitrineOSServer {
   }
 
   protected async initSwagger() {
-    if (this._config.util.swagger) {
+    if (this._config.swagger) {
       await initSwagger(this._config, this._server);
     }
   }
@@ -362,9 +359,6 @@ export class CitrineOSServer {
   protected async initSystem() {
     this.eventGroup = eventGroupFromString(this.appName);
 
-    this.host = this._config.centralSystem.host;
-    this.port = this._config.centralSystem.port;
-
     if (this.eventGroup === EventGroup.All) {
       this._logger.info('Initializing in ALL mode: WebSocket server, all modules and all APIs');
       await this.initNetworkConnection();
@@ -403,9 +397,7 @@ export class CitrineOSServer {
 
   protected async initAllModules() {
     for (const spec of Object.values(CitrineOSServer.MODULE_SPECS)) {
-      if (spec && this._config.modules[spec.configKey]) {
-        await this.initModuleInScope(spec.moduleToken);
-      }
+      await this.initModuleInScope(spec.moduleToken);
     }
   }
 
@@ -467,7 +459,7 @@ export class CitrineOSServer {
       this._connectionManager,
       this._cache,
       this._sequelizeInstance,
-      this._config.notReadyThresholdSeconds,
+      this._config.timeouts.notReadyThresholdSeconds,
       this._logger,
     );
   }
@@ -488,10 +480,10 @@ export class CitrineOSServer {
     const serverNetworkProfileRepository = this._container.resolve<IServerNetworkProfileRepository>(
       'serverNetworkProfileRepository',
     );
-    for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
+    for (const websocketServerConfig of this._networkConnection?.getWebsocketServers() ?? []) {
       await serverNetworkProfileRepository.upsertServerNetworkProfile(
         websocketServerConfig,
-        this._config.maxCallLengthSeconds,
+        this._config.timeouts.maxCallLengthSeconds,
       );
     }
   }
