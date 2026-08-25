@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type AbstractEndpointDependencies,
-  type BootstrapConfig,
-  type ConfigStore,
   type ICommandEndpointMetadata,
   type INetworkConnection,
   AbstractEndpoint,
@@ -27,8 +25,7 @@ import type { InstallCertificateHelperService } from '@modules/Certificates/src/
 import type { FastifyRequest } from 'fastify';
 
 interface Deps extends AbstractEndpointDependencies {
-  config: BootstrapConfig & SystemConfig;
-  configStore: ConfigStore;
+  config: SystemConfig;
   networkConnection: INetworkConnection;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
   installCertificateHelperService: InstallCertificateHelperService;
@@ -54,8 +51,7 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
     bodySchema: GenerateCertificateChainSchema,
   };
 
-  private readonly _config: BootstrapConfig & SystemConfig;
-  private readonly _configStore: ConfigStore;
+  private readonly _config: SystemConfig;
   private readonly _networkConnection: INetworkConnection;
   private readonly _serverNetworkProfileRepository: IServerNetworkProfileRepository;
   private readonly _installCertificateHelperService: InstallCertificateHelperService;
@@ -63,14 +59,12 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
   constructor({
     logger,
     config,
-    configStore,
     networkConnection,
     serverNetworkProfileRepository,
     installCertificateHelperService,
   }: Deps) {
     super(logger);
     this._config = config;
-    this._configStore = configStore;
     this._networkConnection = networkConnection;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
     this._installCertificateHelperService = installCertificateHelperService;

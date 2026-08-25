@@ -77,7 +77,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
         'Not all certificate files found in configured file storage, falling back to direct path lookup',
       );
     }
-    const diskStorage = new LocalStorage('', '');
+    const diskStorage = new LocalStorage('');
     const storage: IFileStorage = allExistInFileStorage ? fileStorage : diskStorage;
 
     const securityCertChainKeyMap = new Map<string, [string, string]>();

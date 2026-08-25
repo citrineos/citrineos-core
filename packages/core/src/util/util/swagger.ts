@@ -84,7 +84,7 @@ const registerSwaggerUi = async (systemConfig: SystemConfig, server: FastifyInst
   };
 
   if (systemConfig.swagger?.logoPath) {
-    const storage = new LocalStorage('', '');
+    const storage = new LocalStorage('');
     const logoContent = await storage.getFile(systemConfig.swagger.logoPath, undefined, {
       trusted: true,
     });

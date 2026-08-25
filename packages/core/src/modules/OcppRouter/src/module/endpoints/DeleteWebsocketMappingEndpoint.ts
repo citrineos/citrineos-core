@@ -6,72 +6,60 @@ import {
   type ICache,
   type ICommandEndpointMetadata,
   AbstractEndpoint,
-  BadRequestError,
   CacheNamespace,
   NotFoundError,
 } from '@citrineos/base';
-import { type SystemConfig, type WebsocketServerConfig, HttpMethod } from '@citrineos/types';
+import { type TenantDto, HttpMethod } from '@citrineos/types';
 import type {
-  IServerNetworkProfileRepository,
-  WebsocketMappingQuerystring,
+  ITenantRepository,
+  WebsocketMappingDeleteQuerystring,
 } from '@dal/interfaces/index.js';
-import { WebsocketMappingQuerySchema } from '@dal/interfaces/index.js';
+import { WebsocketMappingDeleteQuerySchema } from '@dal/interfaces/index.js';
 import type { FastifyRequest } from 'fastify';
 
 interface Deps extends AbstractEndpointDependencies {
-  config: SystemConfig;
   cache: ICache;
-  serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  tenantRepository: ITenantRepository;
 }
 
-type Route = { Querystring: WebsocketMappingQuerystring };
+type Route = { Querystring: WebsocketMappingDeleteQuerystring };
 
 export class DeleteWebsocketMappingEndpoint extends AbstractEndpoint<Route> {
   static readonly route: ICommandEndpointMetadata = {
     method: HttpMethod.Delete,
     path: '/websocketMapping',
-    querySchema: WebsocketMappingQuerySchema,
+    querySchema: WebsocketMappingDeleteQuerySchema,
   };
 
-  private readonly _config: SystemConfig;
   private readonly _cache: ICache;
-  private readonly _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  private readonly _tenantRepository: ITenantRepository;
 
-  constructor({ logger, config, cache, serverNetworkProfileRepository }: Deps) {
+  constructor({ logger, cache, tenantRepository }: Deps) {
     super(logger);
-    this._config = config;
     this._cache = cache;
-    this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._tenantRepository = tenantRepository;
   }
 
-  async handle(request: FastifyRequest<Route>): Promise<WebsocketServerConfig> {
-    const { id: serverId, path, tenantId } = request.query;
+  async handle(request: FastifyRequest<Route>): Promise<TenantDto> {
+    const { tenantId } = request.query;
 
-    await this.refreshConfigFromStore();
-    const websocketConfig = this.findWebsocketConfig(serverId);
-
-    if (websocketConfig.tenantPathMapping) {
-      if (websocketConfig.tenantPathMapping[path] === undefined) {
-        throw new NotFoundError(
-          `Mapping for path ${path} not found in websocket configuration ${serverId}`,
-        );
-      } else if (websocketConfig.tenantPathMapping[path] !== tenantId) {
-        throw new BadRequestError(`Mapping for path ${path} is not mapped to tenant ${tenantId}`);
-      } else if (websocketConfig.tenantPathMapping[path] === tenantId) {
-        delete websocketConfig.tenantPathMapping[path];
-      }
-
-      await this._configStore.saveConfig(this._config);
-      await this._serverNetworkProfileRepository.upsertServerNetworkProfile(
-        websocketConfig,
-        this._config.maxCallLengthSeconds,
-      );
-      await this._cache.remove(
-        getCacheTenantPathMappingKey(websocketConfig.id, path),
-        CacheNamespace.TenantPathMapping,
-      );
+    const tenant = await this._tenantRepository.readByKey(tenantId, tenantId);
+    if (!tenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
     }
 
-    return websocketConfig;
+    if (!tenant.tenantWebsocketServerPath) {
+      throw new NotFoundError(`Tenant with id ${tenantId} has no websocket path mapping`);
+    }
+
+    const removedPath = tenant.tenantWebsocketServerPath;
+    const updatedTenant = await this._tenantRepository.updateWebsocketServerPath(tenantId, null);
+    if (!updatedTenant) {
+      throw new NotFoundError(`Tenant with id ${tenantId} not found`);
+    }
+
+    await this._cache.remove(removedPath, CacheNamespace.TenantPathMapping);
+
+    return updatedTenant;
   }
 }
