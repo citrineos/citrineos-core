@@ -3,15 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/layers/sequelize/model/TableName.js';
-import {
-  boolean,
-  integer,
-  jsonb,
-  pgSchema,
-  pgTable,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { boolean, integer, pgSchema, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -30,7 +22,6 @@ function serverNetworkProfileColumns() {
     securityProfile: integer('securityProfile').notNull(),
     allowUnknownChargingStations: boolean('allowUnknownChargingStations').notNull(),
     dynamicTenantResolution: boolean('dynamicTenantResolution').notNull().default(false),
-    tenantPathMapping: jsonb('tenantPathMapping').$type<Record<string, number>>(),
     tlsKeyFilePath: varchar('tlsKeyFilePath', { length: 255 }),
     tlsCertificateChainFilePath: varchar('tlsCertificateChainFilePath', { length: 255 }),
     mtlsCertificateAuthorityKeyFilePath: varchar('mtlsCertificateAuthorityKeyFilePath', {

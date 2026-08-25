@@ -199,7 +199,6 @@ constructor({ monitoringService }: { /* … */ }) {
 2. Register the module in `container.ts` (`registerModules`).
 3. Add one row to `MODULE_SPECS` in `citrineOSServer.ts`: `{ moduleToken, configKey }`.
 
-
 **Example** — the Tenant module (no internal services, so no `register.ts`). Its module is registered in `container.ts`:
 
 ```ts
