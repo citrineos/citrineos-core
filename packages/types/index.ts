@@ -41,6 +41,7 @@ export {
   OCPP_VERSION_LIST,
   RbacRulesSchema,
   signedMeterValuesSigningMethods,
+  websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
   RbacRules,
@@ -51,9 +52,9 @@ export type {
 
 export * from './src/ocpp/model/index.js';
 
-export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
 export * as OCPP2_request_types from './src/ocpp/rpc/2/requests.js';
 export * as OCPP2_response_types from './src/ocpp/rpc/2/responses.js';
+export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
 
 export type { UpdateChargingStationPasswordRequest } from './src/ocpp/model/UpdateChargingStationPasswordRequest.js';
 

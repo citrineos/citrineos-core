@@ -1,0 +1,52 @@
+[
+  {
+    "id": "0",
+    "securityProfile": 0,
+    "allowUnknownChargingStations": true,
+    "pingInterval": 60,
+    "host": "0.0.0.0",
+    "port": 8081,
+    "protocols": ["ocpp2.1", "ocpp2.0.1", "ocpp1.6"],
+    "tenantId": 1,
+    "dynamicTenantResolution": false
+  },
+  {
+    "id": "1",
+    "securityProfile": 1,
+    "allowUnknownChargingStations": false,
+    "pingInterval": 60,
+    "host": "0.0.0.0",
+    "port": 8082,
+    "protocols": ["ocpp2.1", "ocpp2.0.1", "ocpp1.6"],
+    "tenantId": 1,
+    "dynamicTenantResolution": false
+  },
+  {
+    "id": "2",
+    "securityProfile": 2,
+    "allowUnknownChargingStations": false,
+    "pingInterval": 60,
+    "host": "0.0.0.0",
+    "port": 8443,
+    "protocols": ["ocpp2.1", "ocpp2.0.1", "ocpp1.6"],
+    "tlsKeyFilePath": "certificates/leafKey.pem",
+    "tlsCertificateChainFilePath": "certificates/certChain.pem",
+    "rootCACertificateFilePath": "certificates/rootCertificate.pem",
+    "tenantId": 1,
+    "dynamicTenantResolution": false
+  },
+  {
+    "id": "3",
+    "securityProfile": 3,
+    "allowUnknownChargingStations": false,
+    "pingInterval": 60,
+    "host": "0.0.0.0",
+    "port": 8444,
+    "protocols": ["ocpp2.1", "ocpp2.0.1", "ocpp1.6"],
+    "tlsKeyFilePath": "certificates/leafKey.pem",
+    "tlsCertificateChainFilePath": "certificates/certChain.pem",
+    "rootCACertificateFilePath": "certificates/rootCertificate.pem",
+    "tenantId": 1,
+    "dynamicTenantResolution": false
+  }
+]

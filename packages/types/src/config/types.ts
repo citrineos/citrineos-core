@@ -85,14 +85,12 @@ export const websocketServersConfigSchema = z
     message: 'Websocket server ids must be unique',
   });
 
-export type WebsocketServersConfig = z.infer<typeof websocketServersConfigSchema>;
-
 // ─── Main static config ───
 
 export const configSchema = z.object({
   env: z.enum(['development', 'production']).default('development'),
 
-  host: z.string().default('localhost'),
+  host: z.string().default('0.0.0.0'),
   port: z.number().int().positive().default(8080),
 
   database: z
@@ -176,7 +174,7 @@ export const configSchema = z.object({
     .refine((o) => (o.type === 'local' ? !!o.local : o.type === 's3' ? !!o.s3 : !!o.gcp), {
       message: 'Config for the selected fileAccess.type must be provided',
     })
-    .default({ type: 'local', local: { defaultFilePath: 'data' } }),
+    .default({ type: 'local', local: { defaultFilePath: 'src/assets' } }),
 
   websocketServerConfigFile: z.string().default('websocket-servers.json'),
 

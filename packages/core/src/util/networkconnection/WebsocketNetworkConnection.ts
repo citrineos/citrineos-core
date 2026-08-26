@@ -24,7 +24,10 @@ import {
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
 import type { OCPPVersionType, SystemConfig, WebsocketServerConfig } from '@citrineos/types';
-import { TENANT_WEBSOCKET_SERVER_PATH_PATTERN } from '@citrineos/types';
+import {
+  TENANT_WEBSOCKET_SERVER_PATH_PATTERN,
+  websocketServersConfigSchema,
+} from '@citrineos/types';
 import * as http from 'http';
 import * as https from 'https';
 import { performance } from 'node:perf_hooks';
@@ -158,16 +161,22 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         `Websocket servers config file not found: ${this._config.websocketServerConfigFile}`,
       );
     }
-    return JSON.parse(configString) as WebsocketServerConfig[];
+    const websocketServersConfig = websocketServersConfigSchema.parse(JSON.parse(configString));
+    return websocketServersConfig;
   }
 
   public async saveWebsocketServersConfig(
     websocketServers: WebsocketServerConfig[],
   ): Promise<void> {
-    await this._fileStorage.saveFile(
-      this._config.websocketServerConfigFile,
-      Buffer.from(JSON.stringify(websocketServers)),
-    );
+    try {
+      websocketServersConfigSchema.parse(websocketServers);
+      await this._fileStorage.saveFile(
+        this._config.websocketServerConfigFile,
+        Buffer.from(JSON.stringify(websocketServers)),
+      );
+    } catch (error) {
+      this._logger.error('Failed to save websocket servers config', error);
+    }
   }
 
   /**
