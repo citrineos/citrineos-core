@@ -151,4 +151,4 @@ export type { RpcMessage } from './src/ocpp/rpc/message.js';
 
 // Constants
 
-export const DEFAULT_TENANT_ID = 1;
+export { DEFAULT_TENANT_ID } from './src/util/identifiers.js';

@@ -14,7 +14,7 @@ import {
   OcppSender,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig, type TenantDto } from '@citrineos/types';
+import { type SystemConfig, type TenantDto, type WebsocketServerConfig } from '@citrineos/types';
 
 // -- Infrastructure --
 import { type ILogObj, Logger } from 'tslog';
@@ -107,6 +107,9 @@ type Prebuilt = {
   fileStorage: IFileStorage;
   ocppValidator: OCPPValidator;
   server: FastifyInstance;
+  // Loaded from a file through fileStorage, so it cannot be resolved lazily from
+  // the container (Awilix is synchronous) and has to be read before wiring.
+  websocketServersConfig: WebsocketServerConfig[];
 };
 
 /**
@@ -177,11 +180,15 @@ function registerPrimitives(
   config: SystemConfig,
   prebuilt: Prebuilt,
 ): void {
-  const { logger, cache, fileStorage, ocppValidator, server } = prebuilt;
+  const { logger, cache, fileStorage, ocppValidator, server, websocketServersConfig } = prebuilt;
 
   container.register({
     config: asValue(config),
     fileStorage: asValue(fileStorage),
+    // Startup snapshot of the websocket servers this pod hosts. Consumed by
+    // certificateAuthorityService, which needs it in every app mode — including the
+    // module-only modes that never construct a WebsocketNetworkConnection.
+    websocketServersConfig: asValue(websocketServersConfig),
     exchange: asValue(config.messageBroker.amqp!.exchange),
     amqpUrl: asValue(config.messageBroker.amqp!.url),
     maxCallLengthSeconds: asValue(config.timeouts.maxCallLengthSeconds),
@@ -324,10 +331,15 @@ function registerServices(container: AwilixContainer): void {
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizers: asValue([]),
     apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-      if (config.util.authProvider.oidc) {
-        return new OIDCAuthProvider(config.util.authProvider.oidc, logger);
+      const oidc = (config as SystemConfig).auth.oidc;
+      if (oidc) {
+        const { cacheTimeSeconds, ...rest } = oidc;
+        return new OIDCAuthProvider(
+          { ...rest, ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }) },
+          logger,
+        );
       }
-      if (config.util.authProvider.localByPass) {
+      if ((config as SystemConfig).auth.localBypass) {
         return new LocalBypassAuthProvider(logger);
       }
       throw new Error('No valid API authentication provider configured');

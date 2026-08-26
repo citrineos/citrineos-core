@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
-import { OCPP_CallAction, OCPPVersion, type OCPPVersionType } from '@ocpp/rpc/message.js';
+import { OCPPVersion, type OCPPVersionType } from '@ocpp/rpc/message.js';
 import { z } from 'zod';
-
-const CallActionSchema = z.nativeEnum(OCPP_CallAction);
 
 export const oidcClientConfigSchema = z
   .object({
@@ -207,6 +205,7 @@ export const configSchema = z.object({
   integrations: z
     .object({
       // Opt-in, but zero-config: `v2gCA: {}` yields the Hubject test PKI.
+      // From the environment: CITRINEOS_INTEGRATIONS_V2GCA='{}'
       v2gCA: z
         .object({
           name: z.literal('hubject').default('hubject'),
@@ -220,14 +219,19 @@ export const configSchema = z.object({
             .prefault({}),
         })
         .optional(),
+      // Opt-in, but zero-config: `chargingStationCA: {}` yields ACME against the
+      // Let's Encrypt staging directory.
+      // From the environment: CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA='{}'
       chargingStationCA: z
         .object({
           name: z.literal('acme').default('acme'),
-          acme: z.object({
-            env: z.enum(['staging', 'production']).default('staging'),
-            accountKeyFilePath: z.string(),
-            email: z.string().email(),
-          }),
+          acme: z
+            .object({
+              env: z.enum(['staging', 'production']).default('staging'),
+              accountKeyFilePath: z.string().default('certificates/acme_account_key.pem'),
+              email: z.string().email().default('test@citrineos.com'),
+            })
+            .prefault({}),
         })
         .optional(),
     })
@@ -240,14 +244,16 @@ export const configSchema = z.object({
     })
     .optional(),
 
+  // logoPath is resolved from the process working directory, not from fileAccess.
   swagger: z
     .object({
+      enabled: z.boolean().default(true),
       path: z.string().default('/docs'),
-      logoPath: z.string(),
+      logoPath: z.string().default('src/assets/logo.png'),
       exposeData: z.boolean().default(true),
       exposeMessage: z.boolean().default(true),
     })
-    .optional(),
+    .prefault({}),
 
   // ─── Tunables ───
 
@@ -312,9 +318,7 @@ export const configSchema = z.object({
     .object({
       enableGetChargingProfilesOnStartTransaction: z.boolean().default(false),
     })
-    .default({
-      enableGetChargingProfilesOnStartTransaction: false,
-    }),
+    .prefault({}),
 });
 
 /** Post-parse config: every defaulted field is present. What `configSchema.parse()` returns. */

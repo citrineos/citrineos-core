@@ -38,8 +38,8 @@ const cryptoEngine = new pkijs.CryptoEngine({
 pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 export class CertificateAuthorityService {
-  private readonly _v2gClient: IV2GCertificateAuthorityClient;
-  private readonly _chargingStationClientPromise: Promise<IChargingStationCertificateAuthorityClient>;
+  private readonly _v2gClient?: IV2GCertificateAuthorityClient;
+  private readonly _chargingStationClientPromise?: Promise<IChargingStationCertificateAuthorityClient>;
   private readonly _logger: Logger<ILogObj>;
   private readonly _fileStorage: IFileStorage;
 
@@ -58,14 +58,31 @@ export class CertificateAuthorityService {
   }) {
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     this._fileStorage = fileStorage;
-    this._v2gClient = CertificateAuthorityService._instantiateV2GClient(config, cache, logger);
-    this._chargingStationClientPromise =
-      CertificateAuthorityService._instantiateChargingStationClient(
-        config,
-        websocketServersConfig,
-        this._fileStorage,
-        logger,
-      );
+    if (config.integrations.v2gCA) {
+      this._v2gClient = CertificateAuthorityService._instantiateV2GClient(config, cache, logger);
+    }
+    if (config.integrations.chargingStationCA) {
+      this._chargingStationClientPromise =
+        CertificateAuthorityService._instantiateChargingStationClient(
+          config,
+          websocketServersConfig,
+          this._fileStorage,
+          logger,
+        );
+    }
+  }
+
+  /**
+   * The charging station CA client, or a throw if `integrations.chargingStationCA` is
+   * not configured. Kept behind a getter so the unconfigured case fails at the call
+   * site — the same way {@link _v2gClient} does — rather than leaving the constructor
+   * holding a rejected promise nobody awaits.
+   */
+  private get _chargingStationClient(): Promise<IChargingStationCertificateAuthorityClient> {
+    if (!this._chargingStationClientPromise) {
+      throw new Error('Charging station CA client not initialized');
+    }
+    return this._chargingStationClientPromise;
   }
 
   /**
@@ -81,6 +98,9 @@ export class CertificateAuthorityService {
     ocppConnectionName: string,
     certificateType?: CertificateSigningUseEnumType | null,
   ): Promise<string> {
+    if (!this._v2gClient) {
+      throw new Error(`V2G client not initialized`);
+    }
     this._logger.info(
       `Getting certificate chain for certificateType: ${certificateType} and ocppConnectionName: ${ocppConnectionName}`,
     );
@@ -95,7 +115,7 @@ export class CertificateAuthorityService {
         return this._createCertificateChainWithoutRootCA(signedCert, caCerts);
       }
       case OCPP2_1.CertificateSigningUseEnumType.ChargingStationCertificate: {
-        return await (await this._chargingStationClientPromise).getCertificateChain(csrString);
+        return await (await this._chargingStationClient).getCertificateChain(csrString);
       }
       default: {
         throw new Error(`Unsupported certificate type: ${certificateType}`);
@@ -104,16 +124,22 @@ export class CertificateAuthorityService {
   }
 
   async signedSubCaCertificateByExternalCA(csrString: string): Promise<string> {
-    return await (await this._chargingStationClientPromise).signCertificateByExternalCA(csrString);
+    return await (await this._chargingStationClient).signCertificateByExternalCA(csrString);
   }
 
   async getSignedContractData(iso15118SchemaVersion: string, exiRequest: string): Promise<string> {
+    if (!this._v2gClient) {
+      throw new Error(`V2G client not initialized`);
+    }
     return await this._v2gClient.getSignedContractData(iso15118SchemaVersion, exiRequest);
   }
 
   async getRootCACertificateFromExternalCA(
     certificateType: OCPP2_1.InstallCertificateUseEnumType,
   ): Promise<string> {
+    if (!this._v2gClient) {
+      throw new Error(`V2G client not initialized`);
+    }
     switch (certificateType) {
       case OCPP2_1.InstallCertificateUseEnumType.V2GRootCertificate: {
         const caCerts = await this._v2gClient.getCACertificates();
@@ -125,7 +151,7 @@ export class CertificateAuthorityService {
         }
       }
       case OCPP2_1.InstallCertificateUseEnumType.CSMSRootCertificate:
-        return await (await this._chargingStationClientPromise).getRootCACertificate();
+        return await (await this._chargingStationClient).getRootCACertificate();
       default:
         throw new Error(`Certificate type: ${certificateType} not implemented.`);
     }
@@ -136,7 +162,7 @@ export class CertificateAuthorityService {
     certificateChain: string,
     privateKey: string,
   ): Promise<void> {
-    (await this._chargingStationClientPromise).updateCertificateChainKeyMap(
+    (await this._chargingStationClient).updateCertificateChainKeyMap(
       serverId,
       certificateChain,
       privateKey,
@@ -152,6 +178,9 @@ export class CertificateAuthorityService {
   public async validateCertificateChainPem(
     certificateChainPem: string,
   ): Promise<OCPP2_1.AuthorizeCertificateStatusEnumType> {
+    if (!this._v2gClient) {
+      throw new Error(`V2G client not initialized`);
+    }
     const certificatePems: string[] = parseCertificateChainPem(certificateChainPem);
     this._logger.debug(`Found ${certificatePems.length} certificates in chain.`);
     if (certificatePems.length < 1) {

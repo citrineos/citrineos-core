@@ -53,6 +53,7 @@ import {
 import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 import { TlsCredentialManager } from './TlsCertificateManager.js';
+import { loadWebsocketServersConfig } from './websocketServersConfig.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
@@ -155,14 +156,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {
-    const configString = await this._fileStorage.getFile(this._config.websocketServerConfigFile);
-    if (!configString) {
-      throw new Error(
-        `Websocket servers config file not found: ${this._config.websocketServerConfigFile}`,
-      );
-    }
-    const websocketServersConfig = websocketServersConfigSchema.parse(JSON.parse(configString));
-    return websocketServersConfig;
+    return loadWebsocketServersConfig(this._fileStorage, this._config.websocketServerConfigFile);
   }
 
   public async saveWebsocketServersConfig(

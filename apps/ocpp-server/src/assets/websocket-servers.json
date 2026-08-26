@@ -45,6 +45,7 @@
     "protocols": ["ocpp2.1", "ocpp2.0.1", "ocpp1.6"],
     "tlsKeyFilePath": "certificates/leafKey.pem",
     "tlsCertificateChainFilePath": "certificates/certChain.pem",
+    "mtlsCertificateAuthorityKeyFilePath": "certificates/subCAKey.pem",
     "rootCACertificateFilePath": "certificates/rootCertificate.pem",
     "tenantId": 1,
     "dynamicTenantResolution": false

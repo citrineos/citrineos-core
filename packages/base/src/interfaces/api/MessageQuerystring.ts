@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '../../../index.js';
+import { DEFAULT_TENANT_ID } from '../../util/identifiers.js';
 
 /**
  * The message querystring interface, used for every OCPP message endpoint to validate query parameters.

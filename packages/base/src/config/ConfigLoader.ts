@@ -81,7 +81,16 @@ export class ConfigLoader {
         }
 
         const finalPart = path[path.length - 1];
-        const keyToUse = currentConfigKeyMap[finalPart.toLowerCase()] || finalPart;
+        const mapped = currentConfigKeyMap[finalPart.toLowerCase()];
+        // Leaf keys map to their real (camelCase) schema key. A non-string means the
+        // env var targets a whole subtree (e.g. CITRINEOS_DATABASE='{"host":"..."}'),
+        // so recover the schema key from the map's own key casing instead.
+        const keyToUse =
+          typeof mapped === 'string'
+            ? mapped
+            : (Object.keys(currentConfigKeyMap).find(
+                (key) => key.toLowerCase() === finalPart.toLowerCase(),
+              ) ?? finalPart);
 
         try {
           currentConfigPart[keyToUse] = JSON.parse(value as string);
@@ -104,12 +113,27 @@ export class ConfigLoader {
   // }
 
   private getZodSchemaKeyMap(schema: z.ZodTypeAny): Record<string, any> {
-    if (schema instanceof z.ZodNullable || schema instanceof z.ZodOptional) {
-      return this.getZodSchemaKeyMap((schema as z.ZodNullable<any> | z.ZodOptional<any>).unwrap());
+    if (
+      schema instanceof z.ZodNullable ||
+      schema instanceof z.ZodOptional ||
+      schema instanceof z.ZodDefault ||
+      schema instanceof z.ZodPrefault ||
+      schema instanceof z.ZodNonOptional ||
+      schema instanceof z.ZodCatch ||
+      schema instanceof z.ZodReadonly
+    ) {
+      return this.getZodSchemaKeyMap(schema.unwrap() as z.ZodTypeAny);
     }
 
     if (schema instanceof z.ZodArray) {
       return this.getZodSchemaKeyMap(schema.element as z.ZodTypeAny);
+    }
+
+    if (schema instanceof z.ZodUnion) {
+      return (schema.options as z.ZodTypeAny[]).reduce(
+        (acc, option) => Object.assign(acc, this.getZodSchemaKeyMap(option)),
+        {} as Record<string, any>,
+      );
     }
 
     if (schema instanceof z.ZodObject) {

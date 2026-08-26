@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { LocalStorage } from '@/util/files/localStorage.js';
 import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import {
@@ -69,26 +68,19 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     const existResults = await Promise.all(
       requiredPaths.map((p) => fileStorage.exists(p, undefined, { trusted: true })),
     );
-    const allExistInFileStorage = existResults.every(Boolean);
-    if (allExistInFileStorage) {
-      log.debug('Loading certificate files from configured file storage');
-    } else {
-      log.debug(
-        'Not all certificate files found in configured file storage, falling back to direct path lookup',
-      );
+    if (!existResults.every(Boolean)) {
+      throw new Error('Required certificate files missing in configured file storage.');
     }
-    const diskStorage = new LocalStorage('');
-    const storage: IFileStorage = allExistInFileStorage ? fileStorage : diskStorage;
 
     const securityCertChainKeyMap = new Map<string, [string, string]>();
     for (const server of securityProfile3Servers) {
       try {
-        const certChain = await storage.getFile(
+        const certChain = await fileStorage.getFile(
           server.tlsCertificateChainFilePath as string,
           undefined,
           { trusted: true },
         );
-        const mtlsKey = await storage.getFile(
+        const mtlsKey = await fileStorage.getFile(
           server.mtlsCertificateAuthorityKeyFilePath as string,
           undefined,
           { trusted: true },
@@ -117,7 +109,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     if (!resolvedClient) {
       const accountKeyFilePath = config.integrations.chargingStationCA?.acme
         ?.accountKeyFilePath as string;
-      const accountKeyStr = await diskStorage.getFile(accountKeyFilePath, undefined, {
+      const accountKeyStr = await fileStorage.getFile(accountKeyFilePath, undefined, {
         trusted: true,
       });
       if (!accountKeyStr) {

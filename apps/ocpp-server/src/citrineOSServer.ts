@@ -22,6 +22,7 @@ import {
   HealthCheckService,
   initSwagger,
   type IServerNetworkProfileRepository,
+  loadWebsocketServersConfig,
   LocalStorage,
   MemoryCache,
   RabbitMQChannelManager,
@@ -159,16 +160,6 @@ export class CitrineOSServer {
 
     // Initialize File Access Implementation
     this._fileStorage = this.initFileStorage();
-
-    // Build the DI container from the prebuilt primitives. Everything else is
-    // resolved from / wired through it in initialize().
-    this._container = buildContainer(this._config, {
-      logger: this._logger,
-      cache: this._cache,
-      fileStorage: this._fileStorage,
-      ocppValidator: this._ocppValidator,
-      server: this._server,
-    });
   }
 
   async run(): Promise<void> {
@@ -196,6 +187,7 @@ export class CitrineOSServer {
 
   // Wire everything that depends on the container, as an ordered sequence.
   async initialize(): Promise<void> {
+    await this.initContainer();
     await this.registerHttpPlugins();
     this.initSequelizeInstance();
     await this.initMessageBrokerConnection();
@@ -295,7 +287,7 @@ export class CitrineOSServer {
   }
 
   protected async initSwagger() {
-    if (this._config.swagger) {
+    if (this._config.swagger.enabled) {
       await initSwagger(this._config, this._server);
     }
   }
@@ -345,6 +337,32 @@ export class CitrineOSServer {
     this._server.get('/health', liveness);
     this._server.get('/health/live', liveness);
     this._server.get('/health/ready', readiness);
+  }
+
+  /**
+   * Builds the DI container from the prebuilt primitives. Everything else is resolved
+   * from / wired through it by the rest of initialize().
+   *
+   * Separate from the constructor because the websocket servers config is read
+   * asynchronously through fileStorage, and Awilix resolution is synchronous — so it
+   * has to be loaded before any registration can hand it out. It is loaded here rather
+   * than by the network connection so that module-only modes, which never construct
+   * one, can still resolve services that depend on it (certificateAuthorityService).
+   */
+  protected async initContainer(): Promise<void> {
+    const websocketServersConfig = await loadWebsocketServersConfig(
+      this._fileStorage,
+      this._config.websocketServerConfigFile,
+    );
+
+    this._container = buildContainer(this._config, {
+      logger: this._logger,
+      cache: this._cache,
+      fileStorage: this._fileStorage,
+      ocppValidator: this._ocppValidator,
+      server: this._server,
+      websocketServersConfig,
+    });
   }
 
   protected initSequelizeInstance() {
