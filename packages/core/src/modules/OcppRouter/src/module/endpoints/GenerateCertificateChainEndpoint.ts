@@ -11,7 +11,7 @@ import {
   BadRequestError,
   NotFoundError,
 } from '@citrineos/base';
-import { type SystemConfig, HttpMethod } from '@citrineos/types';
+import { type CertificateDto, type SystemConfig, HttpMethod } from '@citrineos/types';
 import type {
   GenerateCertificateChainQueryString,
   GenerateCertificateChainRequest,
@@ -22,7 +22,6 @@ import {
   GenerateCertificateChainQuerySchema,
   GenerateCertificateChainSchema,
 } from '@dal/interfaces/index.js';
-import type { Certificate } from '@dal/layers/sequelize/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import type { FastifyRequest } from 'fastify';
 
@@ -79,8 +78,8 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
   async handle(
     request: FastifyRequest<Route>,
   ): Promise<
-    | { serverIds: string[]; certificates: Certificate[] }[]
-    | { filePaths: CertificateFilePaths; certificates: Certificate[] }
+    | { serverIds: string[]; certificates: CertificateDto[] }[]
+    | { filePaths: CertificateFilePaths; certificates: CertificateDto[] }
   > {
     const tenantId = request.query.tenantId;
 
@@ -125,7 +124,7 @@ export class GenerateCertificateChainEndpoint extends AbstractEndpoint<Route> {
       generationScope,
     );
 
-    const results: { serverIds: string[]; certificates: Certificate[] }[] = [];
+    const results: { serverIds: string[]; certificates: CertificateDto[] }[] = [];
     for (const group of groups) {
       const [representative] = group;
       const { certificates, filePaths } =

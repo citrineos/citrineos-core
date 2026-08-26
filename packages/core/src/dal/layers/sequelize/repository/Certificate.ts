@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { CertificateCreate, CertificateDto } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ICertificateRepository } from '../../../interfaces/repositories.js';
 import { Certificate } from '../model/Certificate/Certificate.js';
@@ -14,29 +15,48 @@ export class SequelizeCertificateRepository
     super({ config, namespace: Certificate.MODEL_NAME, logger, sequelizeInstance });
   }
 
+  async findByFileHash(tenantId: number, hash: string): Promise<CertificateDto | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
+      where: { certificateFileHash: hash },
+    });
+  }
+
+  async findById(tenantId: number, id: number): Promise<CertificateDto | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
+      where: { id },
+    });
+  }
+
+  async createCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto> {
+    const certificate = Certificate.build({ ...input, tenantId });
+    const savedCertificate = await certificate.save();
+    this.emit('created', [savedCertificate]);
+    return savedCertificate;
+  }
+
   async createOrUpdateCertificate(
     tenantId: number,
-    certificate: Certificate,
-  ): Promise<Certificate> {
-    certificate.tenantId = tenantId;
+    input: CertificateCreate,
+  ): Promise<CertificateDto> {
     return await this.s.transaction(async (transaction) => {
       const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
         where: {
-          serialNumber: certificate.serialNumber,
-          issuerName: certificate.issuerName,
+          serialNumber: input.serialNumber,
+          issuerName: input.issuerName,
         },
         transaction,
       });
       if (!savedCert) {
+        const certificate = Certificate.build({ ...input, tenantId });
         const savedCertificate = await certificate.save({ transaction });
         this.emit('created', [savedCertificate]);
         return savedCertificate;
       } else {
         return (
-          await this.updateAllByQuery(tenantId, certificate, {
+          await this.updateAllByQuery(tenantId, { ...input, tenantId } as Partial<Certificate>, {
             where: {
-              serialNumber: certificate.serialNumber,
-              issuerName: certificate.issuerName,
+              serialNumber: input.serialNumber,
+              issuerName: input.issuerName,
             },
             transaction,
           })

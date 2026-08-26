@@ -6,6 +6,7 @@ import {
   AttributeEnum,
   CertificateUseEnum,
   InstallCertificateStatusEnum,
+  type CertificateCreate,
   type CertificateDto,
   type CertificateUseEnumType,
   type InstallCertificateStatusEnumType,
@@ -48,6 +49,8 @@ export const enum PemType {
   SubCA = 'SubCA',
   Leaf = 'Leaf',
 }
+
+type CertificateWorkingInput = Omit<CertificateCreate, 'issuerName'> & { issuerName?: string };
 
 export class InstallCertificateHelperService {
   protected certificateRepository: ICertificateRepository;
@@ -130,13 +133,10 @@ export class InstallCertificateHelperService {
         validBefore,
         signatureAlgorithm,
       } = extractCertificateDetails(certificate);
-      let existingCertificate = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          certificateFileHash: hash,
-        },
-      });
+      let existingCertificate = await this.certificateRepository.findByFileHash(tenantId, hash);
       if (!existingCertificate) {
         existingCertificate = await this.createNewCertificate(
+          tenantId,
           certificate,
           serialNumber,
           issuerName,
@@ -150,7 +150,7 @@ export class InstallCertificateHelperService {
       const installCertificateAttempt = new InstallCertificateAttempt();
       installCertificateAttempt.ocppConnectionName = ocppConnectionName;
       installCertificateAttempt.certificateType = certificateType;
-      installCertificateAttempt.certificateId = existingCertificate!.id;
+      installCertificateAttempt.certificateId = existingCertificate!.id!;
       if (requestId != null) {
         installCertificateAttempt.requestId = requestId;
       }
@@ -308,6 +308,7 @@ export class InstallCertificateHelperService {
   }
 
   async createNewCertificate(
+    tenantId: number,
     certificate: string,
     serialNumber: number | null,
     issuerName: string | null,
@@ -316,22 +317,23 @@ export class InstallCertificateHelperService {
     countryName: CountryNameEnumType | null,
     validBefore: Date | null,
     signatureAlgorithm: SignatureAlgorithmEnumType | null,
-  ) {
+  ): Promise<CertificateDto> {
     const certificateHash = this.getCertificateHash(certificate);
-    const newCertificate = new Certificate();
-    newCertificate.serialNumber = serialNumber!;
-    newCertificate.issuerName = issuerName!;
-    newCertificate.organizationName = organizationName!;
-    newCertificate.commonName = commonName!;
-    newCertificate.countryName = countryName!;
-    newCertificate.validBefore = validBefore?.toISOString();
-    newCertificate.signatureAlgorithm = signatureAlgorithm!;
-    newCertificate.certificateFileId = await this.fileStorage.saveFile(
+    const certificateFileId = await this.fileStorage.saveFile(
       `Existing_Cert_${serialNumber}.pem`,
       Buffer.from(certificate),
     );
-    newCertificate.certificateFileHash = certificateHash;
-    return await newCertificate.save();
+    return await this.certificateRepository.createCertificate(tenantId, {
+      serialNumber: serialNumber!,
+      issuerName: issuerName!,
+      organizationName: organizationName!,
+      commonName: commonName!,
+      countryName: countryName!,
+      validBefore: validBefore ? validBefore.toISOString() : null,
+      signatureAlgorithm: signatureAlgorithm!,
+      certificateFileId,
+      certificateFileHash: certificateHash,
+    });
   }
 
   async handleUploadExistingCertificate(
@@ -377,19 +379,19 @@ export class InstallCertificateHelperService {
             : `Existing_Key_${serialNumber}.pem`,
           Buffer.from(certificate),
         );
-        await Certificate.create({
+        await this.certificateRepository.createCertificate(tenantId, {
           ...existingCertificate,
         });
       } else {
         // check if certificate record exists but not tied to installed certificate
-        existingCertificate = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-          where: {
-            certificateFileHash: this.getCertificateHash(certificate),
-          },
-        });
+        existingCertificate = await this.certificateRepository.findByFileHash(
+          tenantId,
+          this.getCertificateHash(certificate),
+        );
         if (!existingCertificate) {
           // create new certificate record
           existingCertificate = await this.createNewCertificate(
+            tenantId,
             certificate,
             serialNumber,
             issuerName,
@@ -400,19 +402,19 @@ export class InstallCertificateHelperService {
             signatureAlgorithm,
           );
         }
-        existingInstalledCertificate.certificateId = existingCertificate.id;
+        existingInstalledCertificate.certificateId = existingCertificate.id!;
         existingInstalledCertificate = await existingInstalledCertificate.save();
       }
     } else {
       // check if certificate record exists
-      let existingCertificate = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          certificateFileHash: this.getCertificateHash(certificate),
-        },
-      });
+      let existingCertificate = await this.certificateRepository.findByFileHash(
+        tenantId,
+        this.getCertificateHash(certificate),
+      );
       // create new certificate record
       if (!existingCertificate) {
         existingCertificate = await this.createNewCertificate(
+          tenantId,
           certificate,
           serialNumber,
           issuerName,
@@ -425,7 +427,7 @@ export class InstallCertificateHelperService {
       }
       existingInstalledCertificate = new InstalledCertificate();
       existingInstalledCertificate.ocppConnectionName = identifier;
-      existingInstalledCertificate.certificateId = existingCertificate.id;
+      existingInstalledCertificate.certificateId = existingCertificate.id!;
       existingInstalledCertificate.certificateType = uploadExistingCertificate.certificateType;
       existingInstalledCertificate = await existingInstalledCertificate.save();
     }
@@ -439,7 +441,7 @@ export class InstallCertificateHelperService {
    * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
    */
   async generateSubCACertificateSignedByCAServer(
-    certificate: Certificate,
+    certificate: CertificateWorkingInput,
   ): Promise<[string, string]> {
     const [csrPem, privateKeyPem] = generateCSR(certificate);
     const signedCertificate =
@@ -459,12 +461,12 @@ export class InstallCertificateHelperService {
    */
   async storeCertificateAndKey(
     tenantId: number,
-    certificateEntity: Certificate,
+    certificateEntity: CertificateWorkingInput,
     certPem: string,
     keyPem: string,
     filePrefix: PemType,
     filePath?: string,
-  ): Promise<Certificate> {
+  ): Promise<CertificateDto> {
     const certificateHash = this.getCertificateHash(certPem);
     // Store certificate and private key in file storage
     const keyPrefix = filePath ? `${filePath}/` : '';
@@ -482,7 +484,11 @@ export class InstallCertificateHelperService {
     certObj.readCertPEM(certPem);
     certificateEntity.issuerName = certObj.getIssuerString();
     certificateEntity.tenantId = tenantId;
-    return await this.certificateRepository.createOrUpdateCertificate(tenantId, certificateEntity);
+    // issuerName is now populated, so this satisfies the CertificateCreate contract.
+    return await this.certificateRepository.createOrUpdateCertificate(
+      tenantId,
+      certificateEntity as CertificateCreate,
+    );
   }
 
   /**
@@ -548,7 +554,7 @@ export class InstallCertificateHelperService {
     websocketConfig: WebsocketServerConfig,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
-    certificates: Certificate[];
+    certificates: CertificateDto[];
     filePaths: {
       tlsKeyFilePath: string;
       tlsCertificateChainFilePath: string;
@@ -577,7 +583,7 @@ export class InstallCertificateHelperService {
     tenantId: number,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
-    certificates: Certificate[];
+    certificates: CertificateDto[];
     filePaths: {
       tlsKeyFilePath: string;
       tlsCertificateChainFilePath: string;
@@ -593,7 +599,7 @@ export class InstallCertificateHelperService {
     websocketConfig: WebsocketServerConfig,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
-    certificates: Certificate[];
+    certificates: CertificateDto[];
     filePaths: { tlsKeyFilePath: string; tlsCertificateChainFilePath: string };
   }> {
     const subCACertPem = await this._readCurrentSubCACertPem(websocketConfig);
@@ -613,7 +619,7 @@ export class InstallCertificateHelperService {
       websocketConfig.id,
     );
 
-    const leafEntity = this._buildLeafEntity(certRequest, subCARecord.id, moment().valueOf());
+    const leafEntity = this._buildLeafEntity(certRequest, subCARecord.id!, moment().valueOf());
     const [leafCertPem, leafKeyPem] = generateCertificate(
       leafEntity,
       this.logger,
@@ -648,7 +654,7 @@ export class InstallCertificateHelperService {
     websocketConfig: WebsocketServerConfig,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
-    certificates: Certificate[];
+    certificates: CertificateDto[];
     filePaths: {
       tlsKeyFilePath: string;
       tlsCertificateChainFilePath: string;
@@ -684,7 +690,7 @@ export class InstallCertificateHelperService {
     );
 
     const subCASerialNumber = moment().valueOf();
-    const subCAEntity = this._buildSubCAEntity(certRequest, rootRecord.id, subCASerialNumber);
+    const subCAEntity = this._buildSubCAEntity(certRequest, rootRecord.id!, subCASerialNumber);
     const [subCACertPem, subCAKeyPem] = generateCertificate(
       subCAEntity,
       this.logger,
@@ -700,7 +706,7 @@ export class InstallCertificateHelperService {
       certRequest.filePath,
     );
 
-    const leafEntity = this._buildLeafEntity(certRequest, storedSubCA.id, subCASerialNumber + 1);
+    const leafEntity = this._buildLeafEntity(certRequest, storedSubCA.id!, subCASerialNumber + 1);
     const [leafCertPem, leafKeyPem] = generateCertificate(
       leafEntity,
       this.logger,
@@ -736,7 +742,7 @@ export class InstallCertificateHelperService {
     websocketConfig: WebsocketServerConfig | undefined,
     certRequest: GenerateCertificateChainRequest,
   ): Promise<{
-    certificates: Certificate[];
+    certificates: CertificateDto[];
     filePaths: {
       tlsKeyFilePath: string;
       tlsCertificateChainFilePath: string;
@@ -751,8 +757,8 @@ export class InstallCertificateHelperService {
 
     let subCACertPem: string;
     let subCAKeyPem: string;
-    let storedSubCA: Certificate;
-    let storedRoot: Certificate | undefined;
+    let storedSubCA: CertificateDto;
+    let storedRoot: CertificateDto | undefined;
 
     if (selfSigned) {
       // OCPP 2.0.1 M05.FR.11: sign the new root with the previous root, so charging stations
@@ -786,7 +792,7 @@ export class InstallCertificateHelperService {
         certRequest.filePath,
       );
 
-      const subCAEntity = this._buildSubCAEntity(certRequest, storedRoot.id, rootSerialNumber + 1);
+      const subCAEntity = this._buildSubCAEntity(certRequest, storedRoot.id!, rootSerialNumber + 1);
       const [subCertPem, subKeyPem] = generateCertificate(
         subCAEntity,
         this.logger,
@@ -805,17 +811,18 @@ export class InstallCertificateHelperService {
       subCAKeyPem = subKeyPem;
     } else {
       const defaults = this._buildCertificateDefaults(certRequest);
-      const subCAEntity = new Certificate();
-      subCAEntity.serialNumber = moment().valueOf();
-      subCAEntity.keyLength = defaults.keyLength;
-      subCAEntity.organizationName = certRequest.organizationName;
-      // Must be a valid domain name, unlike the self-signed branch's suffixed commonName.
-      subCAEntity.commonName = certRequest.commonName;
-      subCAEntity.validBefore = defaults.validBefore;
-      subCAEntity.countryName = defaults.countryName;
-      subCAEntity.signatureAlgorithm = defaults.signatureAlgorithm;
-      subCAEntity.isCA = true;
-      subCAEntity.pathLen = 0;
+      const subCAEntity: CertificateWorkingInput = {
+        serialNumber: moment().valueOf(),
+        keyLength: defaults.keyLength,
+        organizationName: certRequest.organizationName,
+        // Must be a valid domain name, unlike the self-signed branch's suffixed commonName.
+        commonName: certRequest.commonName,
+        validBefore: defaults.validBefore,
+        countryName: defaults.countryName,
+        signatureAlgorithm: defaults.signatureAlgorithm,
+        isCA: true,
+        pathLen: 0,
+      };
       const [certPem, keyPem] = await this.generateSubCACertificateSignedByCAServer(subCAEntity);
       storedSubCA = await this.storeCertificateAndKey(
         tenantId,
@@ -831,7 +838,7 @@ export class InstallCertificateHelperService {
 
     const leafEntity = this._buildLeafEntity(
       certRequest,
-      storedSubCA.id,
+      storedSubCA.id!,
       storedSubCA.serialNumber + 1,
     );
     const [leafCertPem, leafKeyPem] = generateCertificate(
@@ -892,69 +899,67 @@ export class InstallCertificateHelperService {
   private _buildRootEntity(
     certRequest: GenerateCertificateChainRequest,
     serialNumber: number,
-  ): Certificate {
+  ): CertificateWorkingInput {
     const defaults = this._buildCertificateDefaults(certRequest);
-    const root = new Certificate();
-    root.serialNumber = serialNumber;
-    root.keyLength = defaults.keyLength;
-    root.organizationName = certRequest.organizationName;
-    root.commonName = `${certRequest.commonName} ${PemType.Root}`;
-    root.validBefore = defaults.validBefore;
-    root.countryName = defaults.countryName;
-    root.signatureAlgorithm = defaults.signatureAlgorithm;
-    root.isCA = true;
-    root.pathLen = certRequest.pathLen ? certRequest.pathLen : 1;
-    return root;
+    return {
+      serialNumber,
+      keyLength: defaults.keyLength,
+      organizationName: certRequest.organizationName,
+      commonName: `${certRequest.commonName} ${PemType.Root}`,
+      validBefore: defaults.validBefore,
+      countryName: defaults.countryName,
+      signatureAlgorithm: defaults.signatureAlgorithm,
+      isCA: true,
+      pathLen: certRequest.pathLen ? certRequest.pathLen : 1,
+    };
   }
 
   private _buildSubCAEntity(
     certRequest: GenerateCertificateChainRequest,
     signedByCertificateId: number,
     serialNumber: number,
-  ): Certificate {
+  ): CertificateWorkingInput {
     const defaults = this._buildCertificateDefaults(certRequest);
-    const subCA = new Certificate();
-    subCA.serialNumber = serialNumber;
-    subCA.keyLength = defaults.keyLength;
-    subCA.organizationName = certRequest.organizationName;
-    subCA.commonName = `${certRequest.commonName} ${PemType.SubCA}`;
-    subCA.validBefore = defaults.validBefore;
-    subCA.countryName = defaults.countryName;
-    subCA.signatureAlgorithm = defaults.signatureAlgorithm;
-    subCA.isCA = true;
-    subCA.pathLen = 0;
-    subCA.signedBy = signedByCertificateId;
-    return subCA;
+    return {
+      serialNumber,
+      keyLength: defaults.keyLength,
+      organizationName: certRequest.organizationName,
+      commonName: `${certRequest.commonName} ${PemType.SubCA}`,
+      validBefore: defaults.validBefore,
+      countryName: defaults.countryName,
+      signatureAlgorithm: defaults.signatureAlgorithm,
+      isCA: true,
+      pathLen: 0,
+      signedBy: signedByCertificateId,
+    };
   }
 
   private _buildLeafEntity(
     certRequest: GenerateCertificateChainRequest,
     signedByCertificateId: number,
     serialNumber: number,
-  ): Certificate {
+  ): CertificateWorkingInput {
     const defaults = this._buildCertificateDefaults(certRequest);
-    const leaf = new Certificate();
-    leaf.serialNumber = serialNumber;
-    leaf.keyLength = defaults.keyLength;
-    leaf.organizationName = certRequest.organizationName;
-    leaf.commonName = certRequest.commonName;
-    leaf.validBefore = defaults.validBefore;
-    leaf.countryName = defaults.countryName;
-    leaf.signatureAlgorithm = defaults.signatureAlgorithm;
-    leaf.isCA = false;
-    leaf.signedBy = signedByCertificateId;
-    return leaf;
+    return {
+      serialNumber,
+      keyLength: defaults.keyLength,
+      organizationName: certRequest.organizationName,
+      commonName: certRequest.commonName,
+      validBefore: defaults.validBefore,
+      countryName: defaults.countryName,
+      signatureAlgorithm: defaults.signatureAlgorithm,
+      isCA: false,
+      signedBy: signedByCertificateId,
+    };
   }
 
   private async _findCertificateByPem(
     tenantId: number,
     certPem: string,
     serverId: string,
-  ): Promise<Certificate> {
+  ): Promise<CertificateDto> {
     const hash = this.getCertificateHash(certPem);
-    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-      where: { certificateFileHash: hash },
-    });
+    const record = await this.certificateRepository.findByFileHash(tenantId, hash);
     if (!record) {
       throw new BadRequestError(
         `Could not find a certificate record matching the currently configured certificate for server ${serverId}: run a FullChain generation first to establish a trackable certificate lineage.`,
@@ -963,10 +968,8 @@ export class InstallCertificateHelperService {
     return record;
   }
 
-  private async _findCertificateById(tenantId: number, id: number): Promise<Certificate> {
-    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-      where: { id },
-    });
+  private async _findCertificateById(tenantId: number, id: number): Promise<CertificateDto> {
+    const record = await this.certificateRepository.findById(tenantId, id);
     if (!record) {
       throw new BadRequestError(`Could not find a certificate record with id ${id}.`);
     }
@@ -999,9 +1002,10 @@ export class InstallCertificateHelperService {
       : await this._readPemFile(trustedRootFilePath!, 'previous root certificate', contextId, {
           trusted: true,
         });
-    const record = await this.certificateRepository.readOnlyOneByQuery(tenantId, {
-      where: { certificateFileHash: this.getCertificateHash(certPem) },
-    });
+    const record = await this.certificateRepository.findByFileHash(
+      tenantId,
+      this.getCertificateHash(certPem),
+    );
     if (!record) {
       throw new BadRequestError(
         `Cannot sign the new root certificate for ${contextId} with the previous root at ${resolvedFilePath}: cannot find record from db.`,
@@ -1017,7 +1021,7 @@ export class InstallCertificateHelperService {
       'previous root private key',
       contextId,
     );
-    return { certPem, keyPem, certificateId: record.id };
+    return { certPem, keyPem, certificateId: record.id! };
   }
 
   /**
