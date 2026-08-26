@@ -210,6 +210,7 @@ export const systemConfigInputSchema = z.object({
             z.object({
               host: z.string().default('localhost').optional(),
               port: z.number().int().min(1).default(6379).optional(),
+              password: z.string().optional(),
             }),
           ])
           .optional(),
@@ -526,6 +527,7 @@ export const systemConfigSchema = z
               z.object({
                 host: z.string(),
                 port: z.number().int().min(1),
+                password: z.string().optional(),
               }),
               z.object({
                 url: z.url().refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {

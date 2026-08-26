@@ -273,6 +273,7 @@ export class CitrineOSServer {
                 host: this._config.util.cache.redis.host,
                 port: this._config.util.cache.redis.port,
               },
+              password: this._config.util.cache.redis.password,
             };
       return new RedisCache(redisClientOptions, this._logger);
     }
