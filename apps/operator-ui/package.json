@@ -118,7 +118,8 @@
     "prettier": "catalog:",
     "tailwindcss": "4",
     "typescript": "^6.0.0",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "^3.0.0"
   },
   "refine": {
     "projectId": "EoX1xN-qak0Xy-elp4R9"

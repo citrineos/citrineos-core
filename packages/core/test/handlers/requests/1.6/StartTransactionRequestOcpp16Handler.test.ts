@@ -110,6 +110,50 @@ describe('StartTransactionRequestOcpp16Handler', () => {
       );
     });
 
+    it('does NOT call deactivateOtherActiveTransactionsAtEvse when authorization is rejected', async () => {
+      const { handler, transactionService, transactionEventRepository } = makeHandler({
+        transactionService: {
+          authorizeOcpp16IdToken: vi.fn().mockResolvedValue({
+            idTagInfo: { status: OCPP1_6.StartTransactionResponseStatus.ConcurrentTx },
+            transactionId: 0,
+          }),
+        },
+      });
+
+      const payload: OCPP1_6.StartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TAG001',
+        meterStart: 0,
+        timestamp: new Date().toISOString(),
+      };
+
+      await handler.handle(makeMessage(payload));
+
+      expect(transactionEventRepository.createTransactionByStartTransaction).not.toHaveBeenCalled();
+      expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+
+    it('does NOT call deactivateOtherActiveTransactionsAtEvse when transaction creation errors', async () => {
+      const { handler, transactionService } = makeHandler({
+        transactionEventRepository: {
+          createTransactionByStartTransaction: vi
+            .fn()
+            .mockRejectedValue(new Error('transient db error')),
+        },
+      });
+
+      const payload: OCPP1_6.StartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TAG001',
+        meterStart: 0,
+        timestamp: new Date().toISOString(),
+      };
+
+      await handler.handle(makeMessage(payload));
+
+      expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+
     it('throws and does NOT call deactivateOtherActiveTransactionsAtEvse when connector is not found', async () => {
       const { handler, locationRepository, transactionService } = makeHandler();
       (

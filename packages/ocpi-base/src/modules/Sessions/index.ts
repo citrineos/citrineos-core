@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  GetTransactionByTransactionIdQueryResult,
-  GetTransactionByTransactionIdQueryVariables,
+  GetTransactionByIdQueryResult,
+  GetTransactionByIdQueryVariables,
   IDtoEvent,
   OcpiConfig,
 } from '../../index.js';
@@ -13,7 +13,7 @@ import {
   CdrBroadcaster,
   DtoEventObjectType,
   DtoEventType,
-  GET_TRANSACTION_BY_TRANSACTION_ID_QUERY,
+  GET_TRANSACTION_BY_ID_QUERY,
   OcpiConfigToken,
   OcpiGraphqlClient,
   OcpiModule,
@@ -85,21 +85,28 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
     if (transactionDto.isActive === false) {
       this._logger.debug(`Transaction is no longer active: ${event._eventId}`);
 
-      const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
-        GetTransactionByTransactionIdQueryResult,
-        GetTransactionByTransactionIdQueryVariables
-      >(GET_TRANSACTION_BY_TRANSACTION_ID_QUERY, {
-        transactionId: transactionDto.transactionId!,
-      });
-
-      if (!fullTransactionDtoResponse.Transactions[0]) {
+      if (transactionDto.id === undefined || transactionDto.id === null) {
         this._logger.error(
-          `Full Transaction DTO not found for ID ${transactionDto.transactionId}, cannot broadcast.`,
+          `Transaction id missing in ${event._context.eventType} notification for ${event._context.objectType} ${transactionDto.transactionId}, cannot broadcast.`,
         );
         return;
       }
 
-      const fullTransactionDto = fullTransactionDtoResponse.Transactions[0] as TransactionDto;
+      const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
+        GetTransactionByIdQueryResult,
+        GetTransactionByIdQueryVariables
+      >(GET_TRANSACTION_BY_ID_QUERY, {
+        id: transactionDto.id,
+      });
+
+      if (!fullTransactionDtoResponse.Transactions_by_pk) {
+        this._logger.error(
+          `Full Transaction DTO not found for id ${transactionDto.id}, cannot broadcast.`,
+        );
+        return;
+      }
+
+      const fullTransactionDto = fullTransactionDtoResponse.Transactions_by_pk as TransactionDto;
       await this.cdrBroadcaster.broadcastPostCdr(fullTransactionDto);
     }
   }

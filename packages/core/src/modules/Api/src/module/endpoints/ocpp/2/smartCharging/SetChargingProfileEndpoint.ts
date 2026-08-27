@@ -361,7 +361,9 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             payload: `chargingSchedulePeriod with phaseToUse requires numberPhases=1`,
           };
         }
-        if (!acPhaseSwitchingSupported.length) {
+        const phaseSwitchingSupported =
+          acPhaseSwitchingSupported[0]?.value?.toLowerCase() === 'true';
+        if (!phaseSwitchingSupported) {
           return {
             success: false,
             payload: `phaseToUse not allowed if AC phase switching is not supported by station ${ocppConnectionName}.`,
