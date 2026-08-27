@@ -10,6 +10,7 @@ import {
   BOOT_STATUS,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
+  OCPP2_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
   type BootDto,
@@ -133,17 +134,31 @@ export class BootNotificationService {
   }
 
   /**
+   * Every action a station on OCPP 2.x can send. B01.FR.10, B02.FR.09 and B03.FR.07 answer anything
+   * other than BootNotification with SecurityError while the boot is Rejected or Pending, and this
+   * blacklist is what enforces that, so it has to cover 2.1's own actions as well as 2.0.1's - the
+   * same handler serves both versions. Blacklisting an action a 2.0.1 station will never send costs
+   * nothing.
+   */
+  private static readonly OCPP2_CHARGER_ACTIONS: readonly string[] = Array.from(
+    new Set([
+      ...Object.keys(OCPP2_0_1_CALL_SCHEMA_RECORD),
+      ...Object.keys(OCPP2_1_CALL_SCHEMA_RECORD),
+    ]),
+  );
+
+  /**
    * Determines whether to blacklist or whitelist charger actions based on its boot status.
    *
    * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
    * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
    *
-   * @param ocppConnectionName - The connection name of the charging station
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
    * @param cachedBootStatus
    * @param bootNotificationResponseStatus
    */
   async cacheChargerActionsPermissions(
-    ocppConnectionName: string,
+    identifier: string,
     cachedBootStatus: RegistrationStatusEnumType | null,
     bootNotificationResponseStatus: OCPP2_0_1.RegistrationStatusEnumType,
   ): Promise<void> {
@@ -151,16 +166,14 @@ export class BootNotificationService {
     if (bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(Object.keys(OCPP2_0_1_CALL_SCHEMA_RECORD)).map(
-          async (action) => {
-            if (action !== OCPP_CallAction.BootNotification) {
-              return this._cache.remove(action, ocppConnectionName);
-            }
-          },
-        );
+        const promises = BootNotificationService.OCPP2_CHARGER_ACTIONS.map(async (action) => {
+          if (action !== OCPP_CallAction.BootNotification) {
+            return this._cache.remove(action, identifier);
+          }
+        });
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, ocppConnectionName);
+        await this._cache.remove(BOOT_STATUS, identifier);
         this._logger.debug('Cached boot status removed: ', cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -169,9 +182,9 @@ export class BootNotificationService {
       // Blacklist all charger-originated actions except BootNotification
       // GetReport messages will need to un-blacklist NotifyReport
       // TriggerMessage will need to un-blacklist the message it triggers
-      const promises = Array.from(Object.keys(OCPP2_0_1_CALL_SCHEMA_RECORD)).map(async (action) => {
+      const promises = BootNotificationService.OCPP2_CHARGER_ACTIONS.map(async (action) => {
         if (action !== OCPP_CallAction.BootNotification) {
-          return this._cache.set(action, 'blacklisted', ocppConnectionName);
+          return this._cache.set(action, 'blacklisted', identifier);
         }
       });
       await Promise.all(promises);
@@ -298,12 +311,12 @@ export class BootNotificationService {
    * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
    * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
    *
-   * @param ocppConnectionName - The connection name of the charging station
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
    * @param cachedBootStatus
    * @param bootNotificationResponseStatus
    */
   async cacheOcpp16ChargerActionsPermissions(
-    ocppConnectionName: string,
+    identifier: string,
     cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null,
     bootNotificationResponseStatus: OCPP1_6.BootNotificationResponseStatus,
   ): Promise<void> {
@@ -311,19 +324,15 @@ export class BootNotificationService {
     if (bootNotificationResponseStatus === OCPP1_6.BootNotificationResponseStatus.Accepted) {
       if (cachedBootStatus) {
         // Undo blacklisting of charger-originated actions
-        const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(
-          async ([action]) => {
-            if (action !== OCPP_CallAction.BootNotification) {
-              return this._cache.remove(action, ocppConnectionName);
-            }
-          },
-        );
+        const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(async (action) => {
+          if (action !== OCPP_CallAction.BootNotification) {
+            return this._cache.remove(action, identifier);
+          }
+        });
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, ocppConnectionName);
-        this._logger.debug(
-          `Cached boot status ${cachedBootStatus} removed for station ${ocppConnectionName}.`,
-        );
+        await this._cache.remove(BOOT_STATUS, identifier);
+        this._logger.debug(`Cached boot status ${cachedBootStatus} removed for ${identifier}.`);
       }
     } else if (!cachedBootStatus) {
       // Status is not Accepted; i.e. Status is Rejected or Pending.
@@ -332,7 +341,7 @@ export class BootNotificationService {
       // ChangeConfiguration, GetConfiguration and TriggerMessage will need to un-blacklist the message it triggers
       const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(async (action) => {
         if (action !== OCPP_CallAction.BootNotification) {
-          return this._cache.set(action, 'blacklisted', ocppConnectionName);
+          return this._cache.set(action, 'blacklisted', identifier);
         }
       });
       await Promise.all(promises);

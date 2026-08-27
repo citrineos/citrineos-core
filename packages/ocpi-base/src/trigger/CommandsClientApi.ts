@@ -8,7 +8,7 @@ import type { OcpiEmptyResponse } from '../model/OcpiEmptyResponse.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 import { ModuleId } from '../model/ModuleId.js';
 import type { ICache } from '@citrineos/base';
-import { type PartnerProfile, HttpMethod } from '@citrineos/types';
+import { type TenantPartnerDto, HttpMethod } from '@citrineos/types';
 import type { CommandResult } from '../model/CommandResult.js';
 import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
@@ -32,11 +32,7 @@ export class CommandsClientApi extends BaseClientApi {
   }
 
   async postCommandResult(
-    fromCountryCode: string,
-    fromPartyId: string,
-    toCountryCode: string,
-    toPartyId: string,
-    partnerProfile: PartnerProfile,
+    tenantPartner: TenantPartnerDto,
     url: string, // Provided in the command
     body: CommandResult,
     commandId: string,
@@ -48,14 +44,18 @@ export class CommandsClientApi extends BaseClientApi {
       5, // Flush the resolution after a few seconds so that it doesn't stay in cache indefinitely
     );
 
+    // A CommandResult flows from the CPO (us) to the eMSP counterparty, so the OCPI
+    // routing headers must be from=CPO, to=eMSP. tenantPartner.tenant is the CPO;
+    // tenantPartner itself is the eMSP. Deriving the direction here (rather than at each
+    // call site) keeps it a single source of truth and prevents the pairs being inverted.
     return this.request(
-      fromCountryCode,
-      fromPartyId,
-      toCountryCode,
-      toPartyId,
+      tenantPartner.tenant!.countryCode!, // from = CPO
+      tenantPartner.tenant!.partyId!,
+      tenantPartner.countryCode!, // to = eMSP
+      tenantPartner.partyId!,
       HttpMethod.Post,
       OcpiEmptyResponseSchema,
-      partnerProfile,
+      tenantPartner.partnerProfileOCPI!,
       true,
       url,
       body,

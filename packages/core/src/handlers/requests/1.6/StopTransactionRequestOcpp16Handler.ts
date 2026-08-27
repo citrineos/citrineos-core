@@ -117,6 +117,15 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       return;
     }
 
+    if (!transaction.isActive) {
+      this._logger.warn(
+        `Received StopTransaction for already-ended transaction ${request.transactionId} on ${ocppConnectionName}. Ignoring.`,
+      );
+      return;
+    }
+
+    const stoppedReason = request.reason || (request.idTag ? 'Remote' : 'Local');
+
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
       tenantId,
       transaction.id,
@@ -128,7 +137,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
           data as OCPP1_6.MeterValuesRequest['meterValue'][0],
         ),
       ) || [],
-      request.reason || (request.idTag ? 'Remote' : 'Local'),
+      stoppedReason,
       authorization?.id,
     );
 
@@ -147,7 +156,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       );
     }
     transaction.isActive = false;
-    transaction.stoppedReason = request.reason;
+    transaction.stoppedReason = stoppedReason;
     transaction.endTime = request.timestamp;
     await transaction.save();
   }

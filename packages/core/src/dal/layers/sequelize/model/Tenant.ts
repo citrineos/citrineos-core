@@ -58,12 +58,14 @@ import { EventData } from './VariableMonitoring/EventData.js';
 
 export enum TenantAttributeProps {
   id = 'id',
+  tenantWebsocketServerPath = 'tenantWebsocketServerPath',
   createdAt = 'createdAt',
   updatedAt = 'updatedAt',
 }
 
 export interface TenantAttributes {
   [TenantAttributeProps.id]: string;
+  [TenantAttributeProps.tenantWebsocketServerPath]?: string | null;
   [TenantAttributeProps.createdAt]: Date;
   [TenantAttributeProps.updatedAt]: Date;
 }
@@ -111,6 +113,18 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
     allowNull: true,
   })
   declare maxChargingStations: number | null;
+
+  /**
+   * URL path segment this tenant is reachable under on every websocket server with
+   * dynamicTenantResolution enabled. Unique so a path resolves to exactly one tenant.
+   */
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    unique: true,
+  })
+  declare tenantWebsocketServerPath: string | null;
+
   /**
    * Relationships
    */

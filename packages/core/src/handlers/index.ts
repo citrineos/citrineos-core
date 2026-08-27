@@ -12,6 +12,7 @@ export { ClearedChargingLimitRequestOcpp2Handler } from './requests/2/ClearedCha
 export { DataTransferRequestOcpp16Handler } from './requests/1.6/DataTransferRequestOcpp16Handler.js';
 export { DataTransferRequestOcpp2Handler } from './requests/2/DataTransferRequestOcpp2Handler.js';
 export { DiagnosticsStatusNotificationRequestOcpp16Handler } from './requests/1.6/DiagnosticsStatusNotificationRequestOcpp16Handler.js';
+export { FirmwareStatusNotificationRequestOcpp16Handler } from './requests/1.6/FirmwareStatusNotificationRequestOcpp16Handler.js';
 export { FirmwareStatusNotificationRequestOcpp2Handler } from './requests/2/FirmwareStatusNotificationRequestOcpp2Handler.js';
 export { Get15118EVCertificateRequestOcpp2Handler } from './requests/2/Get15118EVCertificateRequestOcpp2Handler.js';
 export { GetCertificateStatusRequestOcpp2Handler } from './requests/2/GetCertificateStatusRequestOcpp2Handler.js';

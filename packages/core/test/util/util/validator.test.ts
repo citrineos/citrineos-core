@@ -29,7 +29,6 @@ import {
   aConsumptionCost,
   aCost,
   aMessageContent,
-  anEvse,
   aSalesTariff,
   aSalesTariffEntry,
   aTransactionEvent,
@@ -300,7 +299,6 @@ describe('validateChargingProfileType', () => {
 
     // Default mock returns
     mockDeviceModelRepo.readAllByQuerystring.mockResolvedValue([]);
-    mockDeviceModelRepo.findEvseByIdAndConnectorId.mockResolvedValue(null);
     mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId.mockResolvedValue(null);
     mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(null);
   });
@@ -435,35 +433,38 @@ describe('validateChargingProfileType', () => {
       ).rejects.toThrow(`Transaction ${transactionId} not found on station ${testStationId}.`);
     });
 
-    it('should throw error when evse is not found', async () => {
+    it('should read charging needs for the evse the transaction is on', async () => {
       const transactionId = faker.string.uuid();
-      const evseId = 1;
+      const evseDatabaseId = 42;
+      const transaction = aTransactionEvent({
+        evseId: evseDatabaseId,
+        transactionInfo: {
+          transactionId,
+        } as OCPP2_0_1.TransactionType,
+      });
       const chargingProfile = aChargingProfileType({
         chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
         transactionId,
       });
 
       mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(
-        aTransactionEvent({
-          transactionInfo: {
-            transactionId,
-          } as OCPP2_0_1.TransactionType,
-        }),
+        transaction,
       );
-      mockDeviceModelRepo.findEvseByIdAndConnectorId.mockResolvedValue(null);
 
-      await expect(
-        validateChargingProfileType(
-          chargingProfile,
-          testTenantId,
-          testStationId,
-          mockDeviceModelRepo,
-          mockChargingProfileRepo,
-          mockTransactionEventRepo,
-          mockLogger,
-          evseId,
-        ),
-      ).rejects.toThrow(`Evse ${evseId} not found.`);
+      await validateChargingProfileType(
+        chargingProfile,
+        testTenantId,
+        testStationId,
+        mockDeviceModelRepo,
+        mockChargingProfileRepo,
+        mockTransactionEventRepo,
+        mockLogger,
+        1,
+      );
+
+      expect(
+        mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId,
+      ).toHaveBeenCalledWith(testTenantId, evseDatabaseId, transaction.id);
     });
   });
 
@@ -614,17 +615,16 @@ describe('validateChargingProfileType', () => {
       });
 
       const mockTransaction = aTransactionEvent({
+        evseId,
         transactionInfo: {
           transactionId,
         } as OCPP2_0_1.TransactionType,
       });
-      const mockEvse = anEvse({ id: evseId });
       const mockChargingNeeds = aChargingNeeds({ maxScheduleTuples: maxTuples });
 
       mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(
         mockTransaction,
       );
-      mockDeviceModelRepo.findEvseByIdAndConnectorId.mockResolvedValue(mockEvse);
       mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId.mockResolvedValue(
         mockChargingNeeds,
       );
@@ -742,11 +742,11 @@ describe('validateChargingProfileType', () => {
       });
 
       const mockTransaction = aTransactionEvent({
+        evseId,
         transactionInfo: {
           transactionId,
         } as OCPP2_0_1.TransactionType,
       });
-      const mockEvse = anEvse({ id: evseId });
       const mockChargingNeeds = aChargingNeeds({
         acChargingParameters: {
           energyAmount: 10000,
@@ -760,7 +760,6 @@ describe('validateChargingProfileType', () => {
       mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(
         mockTransaction,
       );
-      mockDeviceModelRepo.findEvseByIdAndConnectorId.mockResolvedValue(mockEvse);
       mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId.mockResolvedValue(
         mockChargingNeeds,
       );
@@ -799,11 +798,11 @@ describe('validateChargingProfileType', () => {
       });
 
       const mockTransaction = aTransactionEvent({
+        evseId,
         transactionInfo: {
           transactionId,
         } as OCPP2_0_1.TransactionType,
       });
-      const mockEvse = anEvse({ id: evseId });
       const mockChargingNeeds = aChargingNeeds({
         acChargingParameters: undefined,
         dcChargingParameters: {
@@ -816,7 +815,6 @@ describe('validateChargingProfileType', () => {
       mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(
         mockTransaction,
       );
-      mockDeviceModelRepo.findEvseByIdAndConnectorId.mockResolvedValue(mockEvse);
       mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId.mockResolvedValue(
         mockChargingNeeds,
       );
