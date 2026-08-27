@@ -48,7 +48,9 @@ export type Tariffs_Bool_Exp = {
 };
 export type Transactions_Bool_Exp = {
   updatedAt?: InputMaybe<Timestamptz_Comparison_Exp>;
+  endTime?: InputMaybe<Timestamptz_Comparison_Exp>;
   totalKwh?: InputMaybe<Numeric_Comparison_Exp>;
+  isActive?: InputMaybe<Boolean_Comparison_Exp>;
   Authorization?: InputMaybe<Authorizations_Bool_Exp>;
   Tenant?: InputMaybe<Tenants_Bool_Exp>;
 };
@@ -57,7 +59,13 @@ export type Authorizations_Bool_Exp = {
 };
 export type Timestamptz_Comparison_Exp = {
   _gte?: InputMaybe<Scalars['timestamptz']['input']>;
+  _lt?: InputMaybe<Scalars['timestamptz']['input']>;
   _lte?: InputMaybe<Scalars['timestamptz']['input']>;
+  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type Boolean_Comparison_Exp = {
+  _eq?: InputMaybe<Scalars['Boolean']['input']>;
 };
 export type Numeric_Comparison_Exp = {
   _gt?: InputMaybe<Scalars['numeric']['input']>;
