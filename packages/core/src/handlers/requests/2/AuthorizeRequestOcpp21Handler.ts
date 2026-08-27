@@ -119,18 +119,17 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     // Validate Contract Certificates based on OCPP 2.1 Part 2 C07
     if (request.iso15118CertificateHashData || request.certificate) {
       // TODO - implement validation using cached OCSP data described in C07.FR.05
-      if (request.iso15118CertificateHashData && request.iso15118CertificateHashData.length > 0) {
-        response.certificateStatus =
-          await this._certificateAuthorityService.validateCertificateHashData(
-            request.iso15118CertificateHashData,
-          );
-      }
       // If Charging Station is not able to validate a contract certificate,
       // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
       // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06
       if (request.certificate) {
         response.certificateStatus =
           await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
+      } else if (request.iso15118CertificateHashData?.length) {
+        response.certificateStatus =
+          await this._certificateAuthorityService.validateCertificateHashData(
+            request.iso15118CertificateHashData,
+          );
       }
       if (response.certificateStatus !== AuthorizeCertificateStatusEnum.Accepted) {
         response = {
