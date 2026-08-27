@@ -250,24 +250,28 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           break;
         }
         default: {
-          let errorCode;
-          switch (protocol) {
-            case OCPPVersion.OCPP1_6:
-            case OCPPVersion.OCPP2_0_1:
-            case OCPPVersion.OCPP2_1: {
-              errorCode = ErrorCode.FormatViolation;
-              break;
-            }
-            default: {
-              throw new Error('Unknown protocol: ' + protocol);
-            }
-          }
-          throw new OcppError(
-            messageId,
-            errorCode,
-            'Unknown message type id: ' + messageTypeId,
-            {},
+          // OCPP-J Part 4 §4.1.3: "When a system receives a message with a Message Type Number not
+          // in this list, it SHALL ignore the message payload." The 2026-02 errata clarifies that
+          // the whole message is to be ignored, and deprecates MessageTypeNotSupported because an
+          // unsupported message type number is silently ignored. OCPP 2.1 added CALLRESULTERROR (5)
+          // and SEND (6), and N15.FR.02 says a SEND is not to be confirmed with a CALLRESULT or a
+          // CALLERROR, so answering one is wrong for a station that is merely ahead of us.
+          this._logger.warn(
+            `Ignoring message with unknown message type id ${messageTypeId}`,
+            identifier,
           );
+          await this._webhookDispatcher.dispatchMessageReceivedUnparsed(
+            tenantId,
+            ocppConnectionName,
+            message,
+            timestamp.toISOString(),
+            protocol,
+            // An unknown message type number carries no action the CSMS can trust: OCPP-J only
+            // places one at index 2 of a CALL, and this is not one.
+            undefined,
+            messageTypeId,
+          );
+          return true;
         }
       }
     } catch (error) {
