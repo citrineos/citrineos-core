@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_common_types } from '@citrineos/base';
 import {
   ChargingLimitSourceEnum,
   ChargingProfileKindEnum,
@@ -13,6 +12,7 @@ import {
   RecurrencyKindEnum,
   type ChargingProfileDto,
   type ChargingScheduleDto,
+  OCPP2_common_types,
 } from '@citrineos/types';
 
 /**

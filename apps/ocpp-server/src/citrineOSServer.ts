@@ -2,24 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asValue, type AwilixContainer } from 'awilix';
 import {
   type AbstractModule,
+  Ajv,
   type BootstrapConfig,
+  ConfigStoreFactory,
   type IApiAuthProvider,
+  type IAuthenticator,
   type ICache,
   type IFileStorage,
   type IMessageRouter,
   type IModule,
-  type IModuleApi,
-  Ajv,
-  ConfigStoreFactory,
-  type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig, EventGroup, eventGroupFromString } from '@citrineos/types';
 import {
-  AdminApi,
   apiAuthPluginFp,
   BrokerAwareMessageSender,
   DefaultDrizzleInstance,
@@ -35,8 +31,10 @@ import {
   Sequelize,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import { asValue, type AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
 import type {
@@ -51,8 +49,11 @@ import { buildContainer } from './container.js';
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {
   moduleToken: string;
-  routeApis: string[];
   configKey: keyof (BootstrapConfig & SystemConfig)['modules'];
+}
+
+interface ApiInitSpec {
+  apiTokens: string[];
 }
 
 export class CitrineOSServer {
@@ -67,7 +68,6 @@ export class CitrineOSServer {
   protected readonly _ocppValidator: OCPPValidator;
   protected readonly _fileStorage: IFileStorage;
   protected readonly modules: IModule[] = [];
-  protected readonly apis: IModuleApi[] = [];
   protected _sequelizeInstance!: Sequelize;
   protected host?: string;
   protected port?: number;
@@ -89,43 +89,41 @@ export class CitrineOSServer {
   private static readonly MODULE_SPECS: Partial<Record<EventGroup, ModuleInitSpec>> = {
     [EventGroup.Certificates]: {
       moduleToken: 'certificatesModule',
-      routeApis: ['certificatesOcpp2Api', 'certificatesDataApi'],
       configKey: 'certificates',
     },
     [EventGroup.Configuration]: {
       moduleToken: 'configurationModule',
-      routeApis: ['configurationOcpp2Api', 'configurationOcpp16Api', 'configurationDataApi'],
       configKey: 'configuration',
     },
     [EventGroup.EVDriver]: {
       moduleToken: 'evDriverModule',
-      routeApis: ['evDriverOcpp2Api', 'evDriverOcpp16Api', 'evDriverDataApi'],
       configKey: 'evdriver',
     },
     [EventGroup.Monitoring]: {
       moduleToken: 'monitoringModule',
-      routeApis: ['monitoringOcpp2Api', 'monitoringDataApi'],
       configKey: 'monitoring',
     },
     [EventGroup.Reporting]: {
       moduleToken: 'reportingModule',
-      routeApis: ['reportingOcpp2Api', 'reportingOcpp16Api'],
       configKey: 'reporting',
     },
     [EventGroup.SmartCharging]: {
       moduleToken: 'smartChargingModule',
-      routeApis: ['smartChargingOcpp2Api', 'smartChargingOcpp16Api'],
       configKey: 'smartcharging',
     },
     [EventGroup.Transactions]: {
       moduleToken: 'transactionsModule',
-      routeApis: ['transactionsOcpp2Api', 'transactionsDataApi'],
       configKey: 'transactions',
     },
     [EventGroup.Tenant]: {
       moduleToken: 'tenantModule',
-      routeApis: ['tenantDataApi'],
       configKey: 'tenant',
+    },
+  };
+
+  private static readonly API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
+    [EventGroup.Api]: {
+      apiTokens: ['commandsApi', 'ocppMessageApi', 'webPaymentApi'],
     },
   };
 
@@ -370,21 +368,28 @@ export class CitrineOSServer {
     this.port = this._config.centralSystem.port;
 
     if (this.eventGroup === EventGroup.All) {
-      this._logger.info('Initializing in ALL mode: WebSocket server and all modules');
-      this.initNetworkConnection();
+      this._logger.info('Initializing in ALL mode: WebSocket server, all modules and all APIs');
+      await this.initNetworkConnection();
       await this.initAllModules();
+      this.initAllApis();
     } else if (this.eventGroup === EventGroup.Router) {
       this._logger.info('Initializing in ROUTER mode: WebSocket server, no modules');
-      this.initNetworkConnection();
+      await this.initNetworkConnection();
     } else if (this.eventGroup === EventGroup.Modules) {
-      this._logger.info('Initializing in MODULES mode: all modules without NetworkConnection');
+      this._logger.info(
+        'Initializing in MODULES mode: all modules and all APIs, no NetworkConnection',
+      );
       await this.initAllModules();
+      this.initAllApis();
+    } else if (CitrineOSServer.API_SPECS[this.eventGroup]) {
+      this._logger.info(`Initializing in API mode: ${this.appName}`);
+      this.initApiInScope(CitrineOSServer.API_SPECS[this.eventGroup]!.apiTokens);
     } else {
       await this.initModule();
     }
   }
 
-  protected initNetworkConnection() {
+  protected async initNetworkConnection() {
     this._authenticator = this._container.resolve('authenticator');
     this._router = this._container.resolve('router');
     this._networkConnection = this._container.resolve('networkConnection');
@@ -393,14 +398,32 @@ export class CitrineOSServer {
     routerSender.onCallTimeout = (ocppConnectionName, tenantId) =>
       this._networkConnection!.disconnect(tenantId, ocppConnectionName).then(() => undefined);
 
-    this.apis.push(this._container.resolve<AdminApi>('adminApi'));
+    await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
+
+    this.initApiInScope(['adminApi']);
   }
 
   protected async initAllModules() {
     for (const spec of Object.values(CitrineOSServer.MODULE_SPECS)) {
       if (spec && this._config.modules[spec.configKey]) {
-        await this.initModuleInScope(spec.moduleToken, spec.routeApis);
+        await this.initModuleInScope(spec.moduleToken);
       }
+    }
+  }
+
+  protected initAllApis() {
+    for (const spec of Object.values(CitrineOSServer.API_SPECS)) {
+      if (spec) {
+        this.initApiInScope(spec.apiTokens);
+      }
+    }
+  }
+
+  private initApiInScope(apiTokens: string[]): void {
+    const scope = this._container.createScope();
+    scope.register({ moduleScope: asValue(scope) });
+    for (const apiToken of apiTokens) {
+      scope.resolve(apiToken);
     }
   }
 
@@ -410,23 +433,19 @@ export class CitrineOSServer {
     if (!spec) {
       throw new Error('Unhandled module type: ' + this.appName);
     }
-    await this.initModuleInScope(spec.moduleToken, spec.routeApis);
+    await this.initModuleInScope(spec.moduleToken);
   }
 
   /**
-   * Builds a module and its APIs together in their own isolated scope, so each
-   * API is wired to the exact module instance created here (and the module gets
-   * its own message sender/handler). App-wide singletons — repositories,
-   * services, the network stack — are created once and reused by every module
+   * Builds a module in its own isolated scope, so it gets its own message
+   * sender/handler. App-wide singletons — repositories, services, the network
+   * stack — are created once and reused by every module
    */
-  private async initModuleInScope(moduleToken: string, routeApis: string[]): Promise<void> {
+  private async initModuleInScope(moduleToken: string): Promise<void> {
     const scope = this._container.createScope();
     scope.register({ moduleScope: asValue(scope) });
     const module = scope.resolve<AbstractModule>(moduleToken);
     await this.initHandlersAndAddModule(module);
-    for (const routeApi of routeApis) {
-      this.apis.push(scope.resolve<IModuleApi>(routeApi));
-    }
   }
 
   protected async initHandlersAndAddModule(module: AbstractModule) {

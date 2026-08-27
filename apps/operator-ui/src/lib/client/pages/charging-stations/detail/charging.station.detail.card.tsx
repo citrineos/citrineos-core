@@ -45,9 +45,10 @@ import Image from 'next/image';
 import { isGcp } from '@lib/server/clients/file/isGcp';
 import { StartTransactionButton } from '@lib/client/pages/charging-stations/start.transaction.button';
 import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop.transaction.button';
+import { getTransactionCommandAvailability } from '@lib/client/pages/charging-stations/transaction.command.availability';
 import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands.unavailable.text';
 import { ResetButton } from '@lib/client/pages/charging-stations/reset.button';
-import { ForceDisconnectButton } from '../force.disconnect.button';
+import { ForceDisconnectButton } from '@lib/client/pages/charging-stations/force.disconnect.button';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 import { isEmpty } from '@lib/utils/assertion';
@@ -73,6 +74,7 @@ export const ChargingStationDetailCard = ({
   } = useOne<ChargingStationDetailsDto>({
     resource: ResourceType.CHARGING_STATIONS,
     id,
+    liveMode: 'auto',
     meta: {
       gqlQuery: CHARGING_STATIONS_GET_QUERY,
     },
@@ -171,7 +173,7 @@ export const ChargingStationDetailCard = ({
     return <NoDataFoundCard message={translate('ChargingStations.noDataFound', { id })} />;
   }
 
-  const hasActiveTransactions = station.transactions && station.transactions.length > 0;
+  const { canStart, canStop } = getTransactionCommandAvailability(station);
 
   // Security profile of the network profile pushed for the connected server config (matches the
   // Network Profiles tab). Falls back to the connected ServerNetworkProfile's security profile.
@@ -474,10 +476,10 @@ export const ChargingStationDetailCard = ({
                   id={station.id}
                   onClickAction={() => showForceDisconnectModal(station)}
                 />
-                {!hasActiveTransactions && (
+                {canStart && (
                   <StartTransactionButton station={station} disabled={!station.isOnline} />
                 )}
-                {hasActiveTransactions && (
+                {canStop && (
                   <StopTransactionButton station={station} disabled={!station.isOnline} />
                 )}
                 <ResetButton station={station} disabled={!station.isOnline} />

@@ -66,6 +66,7 @@ export {
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeChangeConfigurationRepository,
   SequelizeChargingProfileRepository,
+  SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
@@ -81,6 +82,7 @@ export {
   SequelizeTenantRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeServerNetworkProfileRepository,
+  SequelizeSetNetworkProfileRepository,
   SequelizeLocalAuthListRepository,
   OCPP2_0_1_Mapper,
   OCPP1_6_Mapper,
@@ -88,8 +90,11 @@ export {
 export { RepositoryStore } from './layers/sequelize/repository/RepositoryStore.js';
 export {
   DefaultDrizzleInstance,
+  DrizzleAuthorizationRepository,
+  DrizzleBootRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
+  DrizzleVariableAttributeRepository,
 } from './layers/drizzle/index.js';

@@ -451,4 +451,71 @@ describe('LocalAuthListService', () => {
       );
     expect(result).toEqual(mockSendLocalList);
   });
+
+  describe('prepareSendLocalList', () => {
+    it('mints a correlation id and persists the request against that same id', async () => {
+      const persist = vi
+        .spyOn(
+          localAuthListService,
+          'persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest',
+        )
+        .mockResolvedValue({} as SendLocalList);
+      const sendLocalListRequest = {
+        versionNumber: 3,
+        updateType: OCPP2_0_1.UpdateEnumType.Full,
+      } as OCPP2_0_1.SendLocalListRequest;
+
+      const returned = await localAuthListService.prepareSendLocalList(
+        tenantId,
+        ocppConnectionName,
+        sendLocalListRequest,
+      );
+
+      expect(returned).toEqual(expect.any(String));
+      expect(persist).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        returned,
+        sendLocalListRequest,
+      );
+    });
+
+    it('mints a distinct correlation id per call', async () => {
+      vi.spyOn(
+        localAuthListService,
+        'persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest',
+      ).mockResolvedValue({} as SendLocalList);
+      const sendLocalListRequest = {
+        versionNumber: 3,
+        updateType: OCPP2_0_1.UpdateEnumType.Full,
+      } as OCPP2_0_1.SendLocalListRequest;
+
+      const first = await localAuthListService.prepareSendLocalList(
+        tenantId,
+        ocppConnectionName,
+        sendLocalListRequest,
+      );
+      const second = await localAuthListService.prepareSendLocalList(
+        tenantId,
+        ocppConnectionName,
+        sendLocalListRequest,
+      );
+
+      expect(first).not.toEqual(second);
+    });
+
+    it('propagates a validation failure from the persist step without swallowing it', async () => {
+      vi.spyOn(
+        localAuthListService,
+        'persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest',
+      ).mockRejectedValue(new Error('versionNumber must be greater than 0'));
+
+      await expect(
+        localAuthListService.prepareSendLocalList(tenantId, ocppConnectionName, {
+          versionNumber: 0,
+          updateType: OCPP2_0_1.UpdateEnumType.Full,
+        } as OCPP2_0_1.SendLocalListRequest),
+      ).rejects.toThrow('versionNumber must be greater than 0');
+    });
+  });
 });

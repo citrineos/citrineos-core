@@ -11,12 +11,22 @@ SPDX-License-Identifier: Apache-2.0
 Representative health (preregistered, freshly restarted — your first row will be #1):
 
 ```json
-{"status":"up","party":"US/TST","role":"EMSP","registration":{"status":"registered"},"scenario":"preregistered","exchanges":0,"findings":0,"faults":0,"authorize":"ALLOWED"}
+{
+  "status": "up",
+  "party": "US/TST",
+  "role": "EMSP",
+  "registration": { "status": "registered" },
+  "scenario": "preregistered",
+  "exchanges": 0,
+  "findings": 0,
+  "faults": 0,
+  "authorize": "ALLOWED"
+}
 ```
 
 `/_mock/faults` = `[]` · `/_mock/exchanges` = `[]` · `GET /` = 200.
 
-Real CitrineOS is running in Docker (7 containers, OCPI on :8085, Hasura on :8090). **Everything in this demo is real traffic.** There is no "I'm playing Citrine's role" disclaimer — it would be false. This build answers Mason's question directly: **it does both directions** — we call Citrine, *and* we can make Citrine call us — with a **Provoke** panel, a live **coverage matrix**, and a **dynamic fault builder** in place of the old preset buttons.
+Real CitrineOS is running in Docker (7 containers, OCPI on :8085, Hasura on :8090). **Everything in this demo is real traffic.** There is no "I'm playing Citrine's role" disclaimer — it would be false. This build answers Mason's question directly: **it does both directions** — we call Citrine, _and_ we can make Citrine call us — with a **Provoke** panel, a live **coverage matrix**, and a **dynamic fault builder** in place of the old preset buttons.
 
 ---
 
@@ -25,43 +35,49 @@ Real CitrineOS is running in Docker (7 containers, OCPI on :8085, Hasura on :809
 Run top to bottom. Any FAIL → jump to the [Panic Button](#panic-button).
 
 **Step 1 — Citrine containers (OCPI + DB + Hasura)**
+
 ```bash
 docker ps --format "{{.Names}}\t{{.Status}}" | grep -E "citrineos-ocpi|ocpp-db|hasura"
 ```
+
 Expect all `Up`. FAIL → `docker start citrineos-core-citrineos-ocpi-1`. (Hasura powers the Provoke buttons — if it's down, Provoke returns a 502 but nothing else breaks.)
 
 **Step 2 — Health, faults, recorder in one shot**
+
 ```bash
 curl -s localhost:8083/_mock/health; echo; curl -s localhost:8083/_mock/faults
 ```
+
 PASS = `"registration":{"status":"registered"...}` **and** `"scenario":"preregistered"` **and** `exchanges 0 / findings 0 / faults 0` **and** `[]` for faults.
 
-FAIL on any of it → **Tier 2 restart** (below). Do *not* reach for `_mock/reset` to tidy up — it blanks the scenario badge you're about to point at in Beat 2. A fresh `demo-up.sh` is already 0/0/0 **and** keeps the badge. You cannot have both a reset and the badge.
+FAIL on any of it → **Tier 2 restart** (below). Do _not_ reach for `_mock/reset` to tidy up — it blanks the scenario badge you're about to point at in Beat 2. A fresh `demo-up.sh` is already 0/0/0 **and** keeps the badge. You cannot have both a reset and the badge.
 
 > A stale armed fault silently poisons the money shot. That is why faults is checked before anything else.
 
 **Step 3 — Dashboard**
+
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8083/
 ```
+
 Expect `200`. Open `http://localhost:8083/` with **Ctrl+Shift+R**, confirm **live** is ticked, window **≥900px**, zoom ~110%. Share the **window**, not the screen — a notification over the money shot is its own accident.
 
 **Step 4 — No terminal needed**
 
-The old CDR/demo-trigger terminal step is gone — **the Provoke buttons make Citrine push, in-browser.** If you *want* the terminal fallback staged anyway, see [Fallbacks](#fallbacks) at the end. Otherwise skip straight to Beat 1.
+The old CDR/demo-trigger terminal step is gone — **the Provoke buttons make Citrine push, in-browser.** If you _want_ the terminal fallback staged anyway, see [Fallbacks](#fallbacks) at the end. Otherwise skip straight to Beat 1.
 
 ### ⛔ NEVER CLICK LIST (memorise — all in the left rail)
 
-| ⛔ | Why |
-|---|---|
-| **Register** | Hard 502, `generate-credentials-token-a did not return a token`. Red toast in front of Mason. |
-| **Re-register** | Green 200 that does nothing and never calls Citrine. A lie on screen. |
-| **Unregister** | The genuinely dangerous one. Blanks our token → everything after 401s. |
-| **Reset recorder + state** | Won't break registration (it *restores* it), but wipes your visual story **and blanks the scenario badge**. |
-| **Fault builder with Module = _any_ + Direction = _any_** | The dynamic equivalent of the old "Delay 2s all." A `delay`/`abort` armed against *everything* hits every click. Always scope the module before arming. |
-| **Control secret** input | Leave empty. Point at it, don't type in it. |
+| ⛔                                                        | Why                                                                                                                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Register**                                              | Hard 502, `generate-credentials-token-a did not return a token`. Red toast in front of Mason.                                                           |
+| **Re-register**                                           | Green 200 that does nothing and never calls Citrine. A lie on screen.                                                                                   |
+| **Unregister**                                            | The genuinely dangerous one. Blanks our token → everything after 401s.                                                                                  |
+| **Reset recorder + state**                                | Won't break registration (it _restores_ it), but wipes your visual story **and blanks the scenario badge**.                                             |
+| **Fault builder with Module = _any_ + Direction = _any_** | The dynamic equivalent of the old "Delay 2s all." A `delay`/`abort` armed against _everything_ hits every click. Always scope the module before arming. |
+| **Control secret** input                                  | Leave empty. Point at it, don't type in it.                                                                                                             |
 
-Everything else — the **Provoke** buttons, **Pull all**, the **Send command** control, and any *scoped* fault — is safe to press live.
+Everything else — the **Provoke** buttons, **Pull all**, the **Send command** control, and any _scoped_ fault — is safe to press live.
 
 ---
 
@@ -75,7 +91,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > A **CPO** owns the physical chargers. That's CitrineOS, running in Docker right here. Identity `US/S44`.
 >
-> An **eMSP** owns the *driver* — the app, the RFID card, the billing relationship. That's this thing. A fake one. Identity `US/TST`, "TestMobilitySolutions".
+> An **eMSP** owns the _driver_ — the app, the RFID card, the billing relationship. That's this thing. A fake one. Identity `US/TST`, "TestMobilitySolutions".
 >
 > So: I built a fake driver-side company and pointed it at the real CitrineOS. Everything on this screen is real traffic to a real server on port 8085. Nothing is stubbed.
 >
@@ -107,7 +123,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Point at `updated HH:MM:SS`, then `live`, then `↻`.]**
 
-> Timestamp on the right — be precise about what that is: it's my *browser's* clock, redrawn every poll. Not the server's time. It only proves the page is alive and still talking.
+> Timestamp on the right — be precise about what that is: it's my _browser's_ clock, redrawn every poll. Not the server's time. It only proves the page is alive and still talking.
 >
 > `live` is on. Every two seconds it fires four reads: health, the wire trace, findings, armed faults. Uncheck it and the page freezes exactly as-is — nothing else changes, it just stops asking. `↻` is one poll right now, and works even with `live` off.
 
@@ -125,7 +141,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Tap the FINDINGS card. Slow down.]**
 
-> A **finding** is one accusation: *this one response didn't match the contract.* One bad response, one finding.
+> A **finding** is one accusation: _this one response didn't match the contract._ One bad response, one finding.
 >
 > The individual broken fields inside it are **issues**, and there can be any number.
 >
@@ -137,7 +153,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > **REGISTRATION** — same as the badge up top, said twice.
 >
-> **AUTHORIZE** — `ALLOWED`. When a driver taps a card at one of Citrine's chargers, Citrine calls *me* asking "can this person charge?" This is my standing answer. A scenario file flips it to `BLOCKED` for one specific card — that's how you test declines without owning a declined card.
+> **AUTHORIZE** — `ALLOWED`. When a driver taps a card at one of Citrine's chargers, Citrine calls _me_ asking "can this person charge?" This is my standing answer. A scenario file flips it to `BLOCKED` for one specific card — that's how you test declines without owning a declined card.
 
 ---
 
@@ -157,11 +173,11 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > Then the three that matter. **`http`** — green under 300, amber 300s/400s, red 500+.
 >
-> **`ocpi`** — here's the trick that makes OCPI its own animal. OCPI puts its *real* status inside the JSON body, separate from the HTTP status. `1000` is genuinely fine. 3000+ is a server error. So you can get **HTTP 200 and OCPI 3001 at the same time** — the transport says "great!" and the body says "I'm broken." Green for 1000, red for 3000+, amber between.
+> **`ocpi`** — here's the trick that makes OCPI its own animal. OCPI puts its _real_ status inside the JSON body, separate from the HTTP status. `1000` is genuinely fine. 3000+ is a server error. So you can get **HTTP 200 and OCPI 3001 at the same time** — the transport says "great!" and the body says "I'm broken." Green for 1000, red for 3000+, amber between.
 >
 > **`valid`** — this column is the actual product. Green tick, red `✗ invalid`, or a dash. And the dash matters: **a dash means no schema was applied. It does not mean it passed.** I say that out loud every time, because "no news is good news" is how people ship broken.
 >
-> **`flags`** — error and warning counts, plus a red pill if *I* broke it on purpose.
+> **`flags`** — error and warning counts, plus a red pill if _I_ broke it on purpose.
 
 ---
 
@@ -181,7 +197,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > And the key point: by default this thing is a **spec-perfect partner**. It doesn't cut corners. So anything red from here on is not me being sloppy — unless I explicitly armed it, and when I do, it gets stamped on the row.
 
-> *(Aside, if asked about **Send command** just below it: it ships a schema-valid default payload, so `START_SESSION` on empty `{}` sends a well-formed command Citrine actually parses — not a 400. **With EVerest running you now get a real sync `ACCEPTED`** and the async result comes back too; use the Charging session panel for the polished version.)*
+> _(Aside, if asked about **Send command** just below it: it ships a schema-valid default payload, so `START_SESSION` on empty `{}` sends a well-formed command Citrine actually parses — not a 400. **With EVerest running you now get a real sync `ACCEPTED`** and the async result comes back too; use the Charging session panel for the polished version.)_
 
 ---
 
@@ -235,7 +251,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Scroll down to FINDINGS in the drawer.]**
 
-> The finding: *"Citrine response to pull.locations failed the ocpi-base schema."* One accusation. That's why the card says 1.
+> The finding: _"Citrine response to pull.locations failed the ocpi-base schema."_ One accusation. That's why the card says 1.
 >
 > And here are the seventeen receipts.
 
@@ -258,7 +274,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 > Let me be straight about how bad this actually is, because it's easy to oversell.
 >
-> On the coordinates: it's a **real, reproducible spec violation, on a mandatory field, hitting a hundred percent of locations, and the nested copy too**. It's also **one line to fix** — the value is *correct*, `37.7749` is the right latitude. It's a formatting problem. Four decimals instead of five. A lenient partner would shrug and take it.
+> On the coordinates: it's a **real, reproducible spec violation, on a mandatory field, hitting a hundred percent of locations, and the nested copy too**. It's also **one line to fix** — the value is _correct_, `37.7749` is the right latitude. It's a formatting problem. Four decimals instead of five. A lenient partner would shrug and take it.
 >
 > So I don't call it a blocker. I call it **high severity, one-line fix — and it blocks certification and any partner who validates strictly.** That's the defensible line, and the one I'd put in the ticket.
 >
@@ -297,7 +313,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Point at the "Provoke · make Citrine push" section in the left rail. This is the new star — the direct answer to Mason's question.]**
 
-> Here's the part you actually asked for. So far *I've* been calling Citrine — blue rows, `M→C`. You asked: can I make it go the other way? Can I see what **Citrine sends**, not just what I send?
+> Here's the part you actually asked for. So far _I've_ been calling Citrine — blue rows, `M→C`. You asked: can I make it go the other way? Can I see what **Citrine sends**, not just what I send?
 >
 > Yes. One button.
 
@@ -305,7 +321,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 > I did not just call Citrine's OCPI API. I reached around the side and wrote a row straight into **Citrine's own database**, through its Hasura GraphQL on port 8090. A new charging location.
 >
-> Citrine notices its own data changed, and — entirely on its own — decides to **broadcast that new location to every roaming partner it's registered with.** One of those partners is me. So in about a second, Citrine is going to call *me*, unprompted.
+> Citrine notices its own data changed, and — entirely on its own — decides to **broadcast that new location to every roaming partner it's registered with.** One of those partners is me. So in about a second, Citrine is going to call _me_, unprompted.
 
 **[Row #4 lands within ~1–3s. `C→M` green. Point at the direction cell first.]**
 
@@ -313,13 +329,13 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Expand row #4. Point at coordinates in the request body.]**
 
-> And look — same coordinates bug, now from the *inbound* side. Citrine *volunteered* this location, we didn't ask for it, and it *still* ships `"37.7749"` — four decimals. `valid ✗`, coordinates finding. So the defect isn't an artefact of how I pull; it's in how Citrine emits, in both directions.
+> And look — same coordinates bug, now from the _inbound_ side. Citrine _volunteered_ this location, we didn't ask for it, and it _still_ ships `"37.7749"` — four decimals. `valid ✗`, coordinates finding. So the defect isn't an artefact of how I pull; it's in how Citrine emits, in both directions.
 
 **[Click **Make Citrine update a location**. Row #5 lands: `C→M`, `PATCH`, `valid ✓`.]**
 
 > And the clean counterpart. This one bumps an existing location's name and timestamp — a `PATCH`, carrying only the changed fields. No coordinates in the body, so nothing to fail. `C→M` green, `PATCH`, **valid green tick.** Proof the inbound path is spec-clean when the data is — the mock isn't just painting everything red.
 >
-> Mechanism, said plainly so nobody thinks it's smoke: the button does a Hasura write; Citrine's database trigger fires; Citrine's OCPI broadcaster makes a genuine HTTP call to me. The write is a *harness* action — it edits Citrine's data — so it is deliberately **not** recorded as one of our OCPI exchanges. Only Citrine's resulting call is. (Small honest note: "add" leaves a real location row in Citrine's DB each time — harmless, but it's why the pull count creeps.)
+> Mechanism, said plainly so nobody thinks it's smoke: the button does a Hasura write; Citrine's database trigger fires; Citrine's OCPI broadcaster makes a genuine HTTP call to me. The write is a _harness_ action — it edits Citrine's data — so it is deliberately **not** recorded as one of our OCPI exchanges. Only Citrine's resulting call is. (Small honest note: "add" leaves a real location row in Citrine's DB each time — harmless, but it's why the pull count creeps.)
 
 ---
 
@@ -333,15 +349,15 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Click **Pull all**.]**
 
-> `Pull all` fans out to locations, sessions, cdrs and tariffs in one go, so the whole Citrine-*sender* side lights up at once.
+> `Pull all` fans out to locations, sessions, cdrs and tariffs in one go, so the whole Citrine-_sender_ side lights up at once.
 
 **[Grid updates: sessions/tariffs green, cdrs red, locations red.]**
 
-> Now `sessions` and `tariffs` go green — proper envelopes — and `cdrs` stays red next to them. That red-among-greens *is* the interop story, drawn as a picture: same server, one module out of step.
+> Now `sessions` and `tariffs` go green — proper envelopes — and `cdrs` stays red next to them. That red-among-greens _is_ the interop story, drawn as a picture: same server, one module out of step.
 
 **[Point at the greyed / "n/a locally" cells.]**
 
-> And here's the honesty I care about most. These cells are marked **`n/a locally`**, not faked green. Real-time **token authorize** — Citrine only calls me there when a driver physically taps a card at a real charger. The **async command result** — Citrine only posts that back for a real station. I can't provoke either from a laptop, so I refuse to colour them. The easy ninety percent is green-or-red on evidence; the honest ten percent is *labelled*, not invented. A coverage grid that lies is worse than none.
+> And here's the honesty I care about most. These cells are marked **`n/a locally`**, not faked green. Real-time **token authorize** — Citrine only calls me there when a driver physically taps a card at a real charger. The **async command result** — Citrine only posts that back for a real station. I can't provoke either from a laptop, so I refuse to colour them. The easy ninety percent is green-or-red on evidence; the honest ten percent is _labelled_, not invented. A coverage grid that lies is worse than none.
 
 ---
 
@@ -353,7 +369,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Point at the three dropdowns.]**
 
-> Three dropdowns. **Module** — who does this hit. **Direction** — inbound, outbound, or any. **Fault kind** — and this is the whole grammar the backend already supports: `delay`, `abort`, `unauthorized`, `httpStatus`, `ocpiStatus`, `malformBody`, `dropHeaders`, `oversizeToken`. Pick a kind and only *its* parameters appear — `ocpiStatus` asks for a code, `delay` asks for milliseconds, `dropHeaders` asks which headers.
+> Three dropdowns. **Module** — who does this hit. **Direction** — inbound, outbound, or any. **Fault kind** — and this is the whole grammar the backend already supports: `delay`, `abort`, `unauthorized`, `httpStatus`, `ocpiStatus`, `malformBody`, `dropHeaders`, `oversizeToken`. Pick a kind and only _its_ parameters appear — `ocpiStatus` asks for a code, `delay` asks for milliseconds, `dropHeaders` asks which headers.
 >
 > The quick-fill chips just pre-load the builder for the common cases — they **don't arm anything**, so I can talk over them safely.
 
@@ -367,13 +383,13 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Now fire it: click **Make Citrine push a new location** again.]**
 
-> And I trigger it the way we just learned — make Citrine push a location. The fault sits on the *inbound* path, so it mutates **my reply** to Citrine.
+> And I trigger it the way we just learned — make Citrine push a location. The fault sits on the _inbound_ path, so it mutates **my reply** to Citrine.
 
 **[Row lands: `C→M` green, blood-tinted, red `fault:ocpiStatus` pill. `http 200 / ocpi 3001`.]**
 
 > **HTTP 200. OCPI 3001.** The two layers disagreeing, on purpose this time — exactly the failure mode that gets past everybody: the HTTP client sees 200 and celebrates while the body is screaming. That's why `ocpi` is its own column and not an afterthought.
 >
-> And the row is tinted red with a `fault:ocpiStatus` pill carrying the rule ID. That's deliberate — **when *I* cause the failure, the receipt says so**, so nobody wastes an hour blaming the mock for a wound I inflicted.
+> And the row is tinted red with a `fault:ocpiStatus` pill carrying the rule ID. That's deliberate — **when _I_ cause the failure, the receipt says so**, so nobody wastes an hour blaming the mock for a wound I inflicted.
 
 **[Click **Clear all**.]**
 
@@ -403,7 +419,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > The locations rows survive. The CDRs row survives. The clean token push and the clean `PATCH` disappear. One-click "just show me what's broken."
 >
-> One honest caveat: this filter is **error-only. Warnings don't survive it.** A `pull.tokens` 404 raises a *warn* and silently hides under this filter. Worth knowing before you trust an empty screen.
+> One honest caveat: this filter is **error-only. Warnings don't survive it.** A `pull.tokens` 404 raises a _warn_ and silently hides under this filter. Worth knowing before you trust an empty screen.
 
 **[Untick it.]**
 
@@ -415,7 +431,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 > Two bits of UI I haven't touched, and deliberately won't.
 >
-> Top of the rail: **Register / Re-register / Unregister** — the business-card ceremony, on demand. ⛔ In *this* setup they're off-limits: our two sides were pre-credentialed by a database seed, so Register comes back 502 — Citrine correctly says "you already have credentials token A." There's nothing to register. That my error handling surfaces that as a 502 rather than "already registered" is honestly a bug in my code, and it's on the list.
+> Top of the rail: **Register / Re-register / Unregister** — the business-card ceremony, on demand. ⛔ In _this_ setup they're off-limits: our two sides were pre-credentialed by a database seed, so Register comes back 502 — Citrine correctly says "you already have credentials token A." There's nothing to register. That my error handling surfaces that as a 502 rather than "already registered" is honestly a bug in my code, and it's on the list.
 >
 > **Re-register** is worse in a quieter way — it returns a green 200 and never calls Citrine at all. Green toast means nothing there.
 >
@@ -443,7 +459,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > Which means when those seventeen issues show up, there are only two possibilities. **Either Citrine's output is wrong, or Citrine's own schema is wrong.** It cannot be mine. I don't have one to be wrong.
 >
-> And that's precisely what we're looking at. Citrine emits `"37.7749"`. Citrine's own schema demands five to seven decimals. **Citrine is failing its own validator.** One call. One finding. Seventeen receipts. In *both directions* — I pull it, and I made Citrine push it, and it's wrong both times.
+> And that's precisely what we're looking at. Citrine emits `"37.7749"`. Citrine's own schema demands five to seven decimals. **Citrine is failing its own validator.** One call. One finding. Seventeen receipts. In _both directions_ — I pull it, and I made Citrine push it, and it's wrong both times.
 
 **[Beat.]**
 
@@ -451,7 +467,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > And the piece I'm most pleased with is that `known-bugs/` folder. Every rough edge becomes a **scenario file** — JSON that sets up the state, arms the fault, and asserts the outcome. Not a Jira ticket that rots. An executable fixture that stays red until it's fixed and becomes the regression test the day after.
 >
-> There's one in there for a genuinely nasty one: Citrine marks `authorization_reference` as required, OCPI marks it optional. So a *correct* partner, omitting a field they're allowed to omit, breaks Citrine's live authorization. A file you can run, not a paragraph in Slack.
+> There's one in there for a genuinely nasty one: Citrine marks `authorization_reference` as required, OCPI marks it optional. So a _correct_ partner, omitting a field they're allowed to omit, breaks Citrine's live authorization. A file you can run, not a paragraph in Slack.
 >
 > **Next step is CI.** Once this runs on every PR, "did we break interop?" stops being a question anyone has to remember to ask.
 >
@@ -461,13 +477,13 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 ## DO NOT TOUCH
 
-| Control | Exact bad outcome | Exact recovery |
-|---|---|---|
-| **Unregister** | **The truly dangerous one.** `tokenWePresent:""` → *every* outbound call dies `401`/`2002`. Push token and Pull locations both break. Silent until you click something. | `curl -s -X POST localhost:8083/_mock/reset -H 'content-type: application/json' -d '{}'` — restores `registered` + both tokens. **No restart needed.** Do **not** pass `keepRegistration:true` — that re-pins the broken state. |
-| **Register** | `502 {"error":"register_failed","message":"generate-credentials-token-a did not return a token"}` — Citrine refuses ("TenantPartner already has credentials token A"). Red toast. | **None needed** — it fails *before* mutating anything. Say the Beat 11 line and move on. |
-| **Reset recorder + state** | Not a state risk, a **narrative** risk. Wipes exchanges/findings/faults, **blanks the scenario badge** and drops `registeredAt`. | Nothing to recover — you deleted your evidence. Press only deliberately. |
-| **Fault: Module _any_ + Direction _any_** | The dynamic "Delay 2s all." A `delay`/`abort` matching `{}` hits every subsequent call. | `curl -s -X DELETE localhost:8083/_mock/faults`, or the armed-rule `✕`. **Always scope the Module dropdown before arming.** |
-| **A fault left armed** | Poisons the next demo click — a failure *you* caused, read as Citrine's. The FAULTS ARMED card is your tell. | `curl -s -X DELETE localhost:8083/_mock/faults`, or **Clear all**. |
+| Control                                   | Exact bad outcome                                                                                                                                                                 | Exact recovery                                                                                                                                                                                                                  |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unregister**                            | **The truly dangerous one.** `tokenWePresent:""` → _every_ outbound call dies `401`/`2002`. Push token and Pull locations both break. Silent until you click something.           | `curl -s -X POST localhost:8083/_mock/reset -H 'content-type: application/json' -d '{}'` — restores `registered` + both tokens. **No restart needed.** Do **not** pass `keepRegistration:true` — that re-pins the broken state. |
+| **Register**                              | `502 {"error":"register_failed","message":"generate-credentials-token-a did not return a token"}` — Citrine refuses ("TenantPartner already has credentials token A"). Red toast. | **None needed** — it fails _before_ mutating anything. Say the Beat 11 line and move on.                                                                                                                                        |
+| **Reset recorder + state**                | Not a state risk, a **narrative** risk. Wipes exchanges/findings/faults, **blanks the scenario badge** and drops `registeredAt`.                                                  | Nothing to recover — you deleted your evidence. Press only deliberately.                                                                                                                                                        |
+| **Fault: Module _any_ + Direction _any_** | The dynamic "Delay 2s all." A `delay`/`abort` matching `{}` hits every subsequent call.                                                                                           | `curl -s -X DELETE localhost:8083/_mock/faults`, or the armed-rule `✕`. **Always scope the Module dropdown before arming.**                                                                                                     |
+| **A fault left armed**                    | Poisons the next demo click — a failure _you_ caused, read as Citrine's. The FAULTS ARMED card is your tell.                                                                      | `curl -s -X DELETE localhost:8083/_mock/faults`, or **Clear all**.                                                                                                                                                              |
 
 ### ⚠️ The one inversion that will catch you out
 
@@ -476,25 +492,25 @@ The intuition is backwards here, so read it twice:
 - **`reset -d '{}'`** → rebuilds registration **from config** → **RESTORES `registered`** + both tokens. **This is your panic button.**
 - **`reset -d '{"keepRegistration":true}'`** → **PRESERVES whatever you currently have**, including a broken unregistered state. **This one cannot rescue you.**
 
-Source: `apps/mock-msp/src/core/Store.ts:252` (`reset()` calls `seedDomain(this.cfg)`, then only re-pins the old registration *if* `keepRegistration`), and `Store.ts:111` (`seedRegistration()` returns `status:'registered'` with both bootstrap tokens).
+Source: `apps/mock-msp/src/core/Store.ts:252` (`reset()` calls `seedDomain(this.cfg)`, then only re-pins the old registration _if_ `keepRegistration`), and `Store.ts:111` (`seedRegistration()` returns `status:'registered'` with both bootstrap tokens).
 
 ### Accident scenarios
 
-| Symptom | Do this / say this |
-|---|---|
-| Red toast, any button | Read it out loud, move on. Don't debug in front of Mason. |
-| Badge red `server down` | Tier 2 restart. Header recovers within 2s. |
-| **You fat-fingered Unregister** | `reset -d '{}'` restores registration *and* both tokens. Costs you the trace, not the demo. |
-| **You clicked Reset** | Nothing to fix — re-run the path. Say: *"That's the reset — it clears the recorder so you get a clean slate per test run."* Don't point at the scenario badge afterward; it's blank. |
-| **Armed a fault and forgot it** | The FAULTS ARMED counter is your seatbelt light. **Clear all** or `curl -s -X DELETE localhost:8083/_mock/faults`. Say: *"Let me clear the fault I armed — otherwise I'd be showing you a failure I caused rather than one Citrine produced."* |
-| **Provoke returns 502** | Hasura or Citrine OCPI is down. `{"error":"provoke_failed"...}` or `{"error":"hasura_error"...}`. Say: *"That's the Provoke path failing honestly — it writes through Citrine's Hasura, and Hasura isn't answering. The mock isn't pretending it worked."* Fix: Tier 3. |
-| **Send command** (if asked or fat-fingered) | `START_SESSION` on the default payload → **valid** command. With EVerest up you get a real sync **`ACCEPTED`** (it reaches the simulated charger `cp001`); with EVerest down, **`REJECTED`** ("charging station offline") — both are real Citrine answers, not errors. Say: *"Well-formed command, real answer from the CPO."* Sharper decline if you want one: `STOP_SESSION` with `{"session_id":"demo-1"}` → `2001 "Session not found"` / `UNKNOWN_SESSION`. |
-| Browser cached an old page | **Ctrl+Shift+R**. *"Hard-refresh — it's a polling page, not a socket."* |
-| `live` unticked, screen frozen | Tick **live** or hit **↻**. |
-| Window < 900px | Widen, or Ctrl+- to 90%. |
-| Mock died | Tier 2 (**~30–60s**, it runs `tsc -b` first — cover it). *"It's a dev-mode mock; a cold start rebuilds. While it does: it's booting an eMSP already credentialed with Citrine, which is why the pull works the moment it's live."* |
-| A Citrine container died | Tier 3. *"That's Citrine, not the mock — the mock's telling us the truth about a dead peer, which is precisely its job."* |
-| Mason: "can I see request headers?" | *"Recorded, not rendered — that's a gap. The meta line shows routed identity and tracing IDs, which is the 90%."* |
+| Symptom                                     | Do this / say this                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Red toast, any button                       | Read it out loud, move on. Don't debug in front of Mason.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Badge red `server down`                     | Tier 2 restart. Header recovers within 2s.                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **You fat-fingered Unregister**             | `reset -d '{}'` restores registration _and_ both tokens. Costs you the trace, not the demo.                                                                                                                                                                                                                                                                                                                                                                     |
+| **You clicked Reset**                       | Nothing to fix — re-run the path. Say: _"That's the reset — it clears the recorder so you get a clean slate per test run."_ Don't point at the scenario badge afterward; it's blank.                                                                                                                                                                                                                                                                            |
+| **Armed a fault and forgot it**             | The FAULTS ARMED counter is your seatbelt light. **Clear all** or `curl -s -X DELETE localhost:8083/_mock/faults`. Say: _"Let me clear the fault I armed — otherwise I'd be showing you a failure I caused rather than one Citrine produced."_                                                                                                                                                                                                                  |
+| **Provoke returns 502**                     | Hasura or Citrine OCPI is down. `{"error":"provoke_failed"...}` or `{"error":"hasura_error"...}`. Say: _"That's the Provoke path failing honestly — it writes through Citrine's Hasura, and Hasura isn't answering. The mock isn't pretending it worked."_ Fix: Tier 3.                                                                                                                                                                                         |
+| **Send command** (if asked or fat-fingered) | `START_SESSION` on the default payload → **valid** command. With EVerest up you get a real sync **`ACCEPTED`** (it reaches the simulated charger `cp001`); with EVerest down, **`REJECTED`** ("charging station offline") — both are real Citrine answers, not errors. Say: _"Well-formed command, real answer from the CPO."_ Sharper decline if you want one: `STOP_SESSION` with `{"session_id":"demo-1"}` → `2001 "Session not found"` / `UNKNOWN_SESSION`. |
+| Browser cached an old page                  | **Ctrl+Shift+R**. _"Hard-refresh — it's a polling page, not a socket."_                                                                                                                                                                                                                                                                                                                                                                                         |
+| `live` unticked, screen frozen              | Tick **live** or hit **↻**.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Window < 900px                              | Widen, or Ctrl+- to 90%.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Mock died                                   | Tier 2 (**~30–60s**, it runs `tsc -b` first — cover it). _"It's a dev-mode mock; a cold start rebuilds. While it does: it's booting an eMSP already credentialed with Citrine, which is why the pull works the moment it's live."_                                                                                                                                                                                                                              |
+| A Citrine container died                    | Tier 3. _"That's Citrine, not the mock — the mock's telling us the truth about a dead peer, which is precisely its job."_                                                                                                                                                                                                                                                                                                                                       |
+| Mason: "can I see request headers?"         | _"Recorded, not rendered — that's a gap. The meta line shows routed identity and tracing IDs, which is the 90%."_                                                                                                                                                                                                                                                                                                                                               |
 
 **Distinguish the two failure modes fast:** `ECONNREFUSED` = Citrine is down → Tier 3. `401`/`2002` = tokens are wrong → `reset -d '{}'`.
 
@@ -503,27 +519,33 @@ Source: `apps/mock-msp/src/core/Store.ts:252` (`reset()` calls `seedDomain(this.
 ## PANIC BUTTON
 
 **Tier 1 — 90% of accidents, ~1 second.** Fixes: Unregister, any armed fault, dirty table, 401/2002.
+
 ```bash
 curl -s -X DELETE localhost:8083/_mock/faults; \
 curl -s -X POST localhost:8083/_mock/reset -H 'content-type: application/json' -d '{}'; echo; \
 curl -s localhost:8083/_mock/health
 ```
+
 Expect `{"cleared":true}`, `{"reset":true,"keepRegistration":false}`, and health with `"registration":{"status":"registered"}`. That's demo-ready.
 ⚠️ **`scenario` will be `null` and `registeredAt` gone — both cosmetic. Do not point at the badge afterward.**
 
 **Tier 2 — mock dead, or health won't say `registered`, or you need the badge back. ~30–60s.**
+
 ```bash
 cd /c/Users/ahmed.aboelezz/Desktop/44/citrineos-core && \
 bash apps/mock-msp/scripts/demo-down.sh; bash apps/mock-msp/scripts/demo-up.sh && \
 curl -s localhost:8083/_mock/health
 ```
+
 Restores **everything including `"scenario":"preregistered"` and `registeredAt`**, and `seq` restarts at 1. Idempotent. (Restart, not rebuild, is also how any `dashboard.html` edit takes effect — the file is read once at boot.) Cover the rebuild with the line above.
 
 **Tier 3 — Citrine down (`ECONNREFUSED`) or Provoke 502.**
+
 ```bash
 docker start citrineos-core-citrineos-ocpi-1 && sleep 5 && \
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/ocpi/versions/1
 ```
+
 Expect `200`. If Provoke specifically 502s, also confirm Hasura: `curl -s -o /dev/null -w "%{http_code}\n" localhost:8090/v1/graphql` (405/400 on GET is fine — it means it's up).
 
 ---
@@ -570,14 +592,14 @@ you want to show a full charging lifecycle rather than the empty-stack ceiling.
 
 **Verified path:** Push token (#1 clean green) → Pull locations (#2 green/green/red, ~17 issues) → expand → Pull CDRs (#3, second bug, 200/—/✗, 2 issues) → **Make Citrine push a new location** (#4, `C→M` PUT, coordinates bug — the both-directions proof) → **Make Citrine update a location** (#5, `C→M` PATCH, clean) → **Pull all** + coverage grid → build `ocpiStatus 3001` on `locations/inbound` → arm → Provoke to fire → **Clear all** → filters. Every step is real traffic against the live stack.
 
-**On the coordinates line** — the defensible framing: *"High severity, one-line fix. The value is correct — 37.7749 is the right latitude — it's emitted with 4 decimals where the spec's regex demands 5 to 7. A formatting violation on a mandatory field, on 100% of locations. A lenient partner ingests it fine; a spec-strict one rejects every location, and it fails certification."* **Resist upgrading that to "blocker" if Mason gets excited.** The ground truth is the coordinate is *right*, and overselling is the one thing that would cost credibility with a technical peer.
+**On the coordinates line** — the defensible framing: _"High severity, one-line fix. The value is correct — 37.7749 is the right latitude — it's emitted with 4 decimals where the spec's regex demands 5 to 7. A formatting violation on a mandatory field, on 100% of locations. A lenient partner ingests it fine; a spec-strict one rejects every location, and it fails certification."_ **Resist upgrading that to "blocker" if Mason gets excited.** The ground truth is the coordinate is _right_, and overselling is the one thing that would cost credibility with a technical peer.
 
-**The `physical_reference` finding is subtler:** `'EVSE-001-PHYSICAL'` is 17 chars against a 16-char cap, and it comes from **seed data** — *not* a Citrine code bug. It demonstrates that **Citrine serves its own data without validating its own output.**
+**The `physical_reference` finding is subtler:** `'EVSE-001-PHYSICAL'` is 17 chars against a 16-char cap, and it comes from **seed data** — _not_ a Citrine code bug. It demonstrates that **Citrine serves its own data without validating its own output.**
 
-**The CDRs-envelope bug is your strongest technical card** — an *interop* break, not a formatting nit. Carry the caveat: **only observed on the empty-list path; the populated path is untested.**
+**The CDRs-envelope bug is your strongest technical card** — an _interop_ break, not a formatting nit. Carry the caveat: **only observed on the empty-list path; the populated path is untested.**
 
 **"Both directions" is the headline for Mason.** Blue rows are us→Citrine (pull, push token, commands). Green rows are Citrine→us (Provoke add/nudge, plus real-time authorize when a live charger exists). The coverage grid draws both columns; the `n/a locally` cells are the honest edge of what a laptop can provoke.
 
-**On `problems only`:** it requires *error* severity. `pull.cdrs` shows; `pull.tokens` (warn) silently hides. That asymmetry is the honest answer if Mason asks whether the filter is trustworthy.
+**On `problems only`:** it requires _error_ severity. `pull.cdrs` shows; `pull.tokens` (warn) silently hides. That asymmetry is the honest answer if Mason asks whether the filter is trustworthy.
 
 **Files:** `apps/mock-msp/public/dashboard.html` · `src/control/controlApi.ts` (`/_mock/provoke/:what`, `/_mock/coverage`, command defaults) · `src/config.ts` (`CITRINE_HASURA_URL`) · `src/core/Store.ts` · `src/core/client.ts` · `src/ocpi/barrel.ts` · `scenarios/` · fallback CDR payload `c:\tmp\cdr-demo.json`, headers `c:\tmp\h.sh`

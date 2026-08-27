@@ -880,6 +880,7 @@ export type GetTransactionByTransactionIdQueryResult = {
       id: number;
       ocppConnectionName: string;
       isOnline: boolean;
+      protocol?: string | null;
     };
     transactionEvents: Array<{
       id: number;

@@ -36,10 +36,10 @@ export { CreateTenantQuerySchema, TenantQuerySchema } from './queries/Tenant.js'
 export type { TenantQueryString } from './queries/Tenant.js';
 export { TlsReloadQuerySchema } from './queries/TlsReload.js';
 export type { TlsReloadQueryString } from './queries/TlsReload.js';
-export { TransactionEventQuerySchema } from './queries/TransactionEvent.js';
-export type { TransactionEventQuerystring } from './queries/TransactionEvent.js';
 export { UpdateChargingStationPasswordQuerySchema } from './queries/UpdateChargingStationPasswordQuery.js';
 export type { UpdateChargingStationPasswordQueryString } from './queries/UpdateChargingStationPasswordQuery.js';
+export { TransactionEventQuerySchema } from './queries/TransactionEvent.js';
+export type { TransactionEventQuerystring } from './queries/TransactionEvent.js';
 export {
   CreateOrUpdateVariableAttributeQuerySchema,
   VariableAttributeQuerySchema,
@@ -51,12 +51,14 @@ export type {
 export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
+  WebsocketMappingDeleteQuerySchema,
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from './queries/Websocket.js';
 export type {
   WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
+  WebsocketMappingDeleteQuerystring,
   WebsocketMappingQuerystring,
 } from './queries/Websocket.js';
 

@@ -6,7 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_common_types,
 } from '@citrineos/base';
 import {
   type ChargingRateUnitEnumType,
@@ -14,6 +13,7 @@ import {
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
+  OCPP2_common_types,
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js';
 import type { CompositeScheduleInput } from '@dal/layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';

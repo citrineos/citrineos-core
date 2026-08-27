@@ -6,9 +6,6 @@ import {
   type AbstractHandlerDependencies,
   AsResponseHandler,
   type IMessage,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -18,6 +15,9 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   SetVariableStatusEnum,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import {
   Component,

@@ -4,7 +4,6 @@
 
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
 import { MonitoringService } from './module/MonitoringService.js';
-import { DeviceModelService } from './module/services.js';
 import {
   type AbstractHandler,
   buildHandlers,
@@ -43,7 +42,6 @@ const MONITORING_HANDLERS = [
  */
 export function registerMonitoringServices(container: AwilixContainer): void {
   container.register({
-    monitoringDeviceModelService: asClass(DeviceModelService).scoped(),
     monitoringService: asClass(MonitoringService).scoped(),
     monitoringHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, MONITORING_HANDLERS),

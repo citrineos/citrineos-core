@@ -9,9 +9,6 @@ import {
   type ICache,
   type IMessage,
   type IOcppSender,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
   OcppError,
 } from '@citrineos/base';
 import {
@@ -22,6 +19,9 @@ import {
   OCPP_CallAction,
   SetVariableStatusEnum,
   type SystemConfig,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
 } from '@citrineos/types';
 import { Component, type IDeviceModelRepository, Variable } from '@dal/index.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';

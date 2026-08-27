@@ -35,7 +35,6 @@ describe('BootService', () => {
 
     mockConfig = {
       bootRetryInterval: 0,
-      endpointPrefix: '',
       heartbeatInterval: 0,
       requests: [],
       responses: [],

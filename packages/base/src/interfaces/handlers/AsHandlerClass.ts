@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type CallAction, OCPPVersion } from '@citrineos/types';
-import type { IHandlerClassDefinition } from '@interfaces/handlers/HandlerClassDefinition.js';
+import type { IHandlerMetadata } from '@interfaces/handlers/HandlerMetadata.js';
 import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
 import { MessageState } from '@interfaces/messages/index.js';
 
@@ -17,7 +17,7 @@ const asHandlerClass = function (protocols: OCPPVersion[], action: CallAction, t
     const handlers = Reflect.getMetadata(
       AS_HANDLER_CLASS_METADATA,
       target,
-    ) as Array<IHandlerClassDefinition>;
+    ) as Array<IHandlerMetadata>;
     protocols.forEach((protocol) => {
       handlers.push({ action, protocol, type });
     });

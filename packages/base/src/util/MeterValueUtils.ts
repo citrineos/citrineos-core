@@ -24,7 +24,8 @@ export class MeterValueUtils {
    * @param {array} meterValues - meterValues of a transaction.
    * @param {number} currentTotal - the current total Kwh to add to interval values, if needed.
    * @param {number} meterStart - the starting Kwh value at the beginning of the transaction, if available.
-   * @return {number} total Kwh based on the best available energy measurement.
+   * @return {number} total Kwh based on the best available energy measurement, or currentTotal when
+   *     this batch of meterValues carries no usable energy reading.
    */
   public static getTotalKwh(
     meterValues: MeterValueDto[],
@@ -33,7 +34,7 @@ export class MeterValueUtils {
   ): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     if (filteredValues.length === 0) {
-      return 0;
+      return currentTotal;
     }
 
     const registerMap = this.getRegisterValuesMap(filteredValues);
@@ -57,7 +58,7 @@ export class MeterValueUtils {
       return netMap.get(latestTimestamp)!;
     }
 
-    return 0;
+    return currentTotal;
   }
 
   public static getMeterStart(meterValues: MeterValueDto[]): number | null {
@@ -214,10 +215,7 @@ export class MeterValueUtils {
 
       let sum = 0;
       for (const value of phaseNeutralValues) {
-        const normalizedValue = this.normalizeToKwh(value);
-        if (normalizedValue !== null) {
-          sum += normalizedValue;
-        }
+        sum += this.normalizeToKwh(value);
       }
 
       return sum;
@@ -226,21 +224,19 @@ export class MeterValueUtils {
     // Sum all the normalized phase values
     let sum = 0;
     for (const value of phaseValues) {
-      const normalizedValue = this.normalizeToKwh(value);
-      if (normalizedValue !== null) {
-        sum += normalizedValue;
-      }
+      sum += this.normalizeToKwh(value);
     }
 
     return sum;
   }
 
   /**
-   * Convert a sampled value to kWh, applying unit multipliers.
+   * Convert a sampled energy value to kWh, applying the unit multiplier and Wh→kWh factor.
+   * A missing unit is treated as Wh. Throws for a genuinely unknown energy unit.
    * @param value A SampledValueType entry.
-   * @returns The converted value in kWh, or null if unit is missing.
+   * @returns The converted value in kWh.
    */
-  private static normalizeToKwh(value: SampledValue): number | null {
+  public static normalizeToKwh(value: SampledValue): number {
     let powerOfTen = value.unitOfMeasure?.multiplier ?? 0;
     const unit = value.unitOfMeasure?.unit?.toUpperCase();
 
