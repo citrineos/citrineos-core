@@ -9,7 +9,7 @@ import {
   type TariffDto,
   type TransactionDto,
   type TransactionEventDto,
-  OCPP2_0_1,
+  MeasurandEnum,
 } from '@citrineos/types';
 import { AuthMethod } from '../model/AuthMethod.js';
 import type { ChargingPeriod } from '../model/ChargingPeriod.js';
@@ -25,6 +25,7 @@ import { LocationsService } from '../services/LocationsService.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
 import { OcpiGraphqlClient } from '../graphql/index.js';
+import { MeterValueUtils } from '@citrineos/base';
 
 @Service()
 export class SessionMapper extends BaseTransactionMapper {
@@ -373,34 +374,33 @@ export class SessionMapper extends BaseTransactionMapper {
     const cdrDimensions: CdrDimension[] = [];
     for (const sampledValue of meterValue.sampledValue) {
       switch (sampledValue.measurand) {
-        case OCPP2_0_1.MeasurandEnumType.Current_Import:
-          if (sampledValue.phase === 'N') {
+        case MeasurandEnum['Current.Import']:
+          if (!sampledValue.phase) {
             cdrDimensions.push({
               type: CdrDimensionType.CURRENT,
               volume: Number(sampledValue.value),
             });
           }
           break;
-        case OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register:
+        case MeasurandEnum['Energy.Active.Import.Register']:
           if (!sampledValue.phase) {
+            // OCPI energy dimensions are expressed in kWh; normalize the raw meter
+            // reading (commonly Wh) via the same conversion that feeds session.kwh.
+            const energyImportKwh = MeterValueUtils.normalizeToKwh(sampledValue);
             cdrDimensions.push({
               type: CdrDimensionType.ENERGY_IMPORT,
-              volume: Number(sampledValue.value),
+              volume: energyImportKwh,
             });
             const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
-            if (
-              previousEnergyImport !== undefined &&
-              !isNaN(Number(previousEnergyImport)) &&
-              !isNaN(Number(sampledValue.value))
-            ) {
+            if (previousEnergyImport !== undefined) {
               cdrDimensions.push({
                 type: CdrDimensionType.ENERGY,
-                volume: Number(sampledValue.value) - Number(previousEnergyImport),
+                volume: energyImportKwh - previousEnergyImport,
               });
             }
           }
           break;
-        case OCPP2_0_1.MeasurandEnumType.SoC:
+        case MeasurandEnum['SoC']:
           cdrDimensions.push({
             type: CdrDimensionType.STATE_OF_CHARGE,
             volume: Number(sampledValue.value),
@@ -415,14 +415,17 @@ export class SessionMapper extends BaseTransactionMapper {
     return cdrDimensions;
   }
 
-  private getEnergyImportForMeterValue(meterValue?: MeterValueDto) {
-    return (
-      meterValue?.sampledValue.find(
-        (sampledValue) =>
-          sampledValue.measurand === OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register &&
-          !sampledValue.phase,
-      )?.value ?? undefined
+  private getEnergyImportForMeterValue(meterValue?: MeterValueDto): number | undefined {
+    const sampledValue = meterValue?.sampledValue.find(
+      (sampledValue) =>
+        sampledValue.measurand === MeasurandEnum['Energy.Active.Import.Register'] &&
+        !sampledValue.phase,
     );
+    if (!sampledValue) {
+      return undefined;
+    }
+    // Return kWh to keep the ENERGY delta consistent with ENERGY_IMPORT.
+    return MeterValueUtils.normalizeToKwh(sampledValue);
   }
 
   private getTimeElapsedForMeterValue(

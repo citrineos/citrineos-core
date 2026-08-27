@@ -2,17 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractEndpoint,
   type AbstractEndpointDependencies,
   type BootConfig,
-  type ICommandEndpointMetadata,
-  AbstractEndpoint,
   BootConfigSchema,
+  type ICommandEndpointMetadata,
 } from '@citrineos/base';
-import { HttpMethod, type OCPP2_response_types } from '@citrineos/types';
+import { type BootDto, HttpMethod, type OCPP2_response_types } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/index.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/index.js';
 import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import type { Boot } from '@dal/layers/sequelize/index.js';
 import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
@@ -43,7 +42,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
     this._bootRepository = bootRepository;
   }
 
-  async handle(request: FastifyRequest<BootConfigWriteRoute>): Promise<Boot | undefined> {
+  async handle(request: FastifyRequest<BootConfigWriteRoute>): Promise<BootDto | undefined> {
     return this._bootRepository.createOrUpdateByKey(
       request.query.tenantId,
       request.body as BootConfig,
@@ -66,7 +65,7 @@ export class GetBootConfigEndpoint extends AbstractEndpoint<BootConfigReadRoute>
     this._bootRepository = bootRepository;
   }
 
-  async handle(request: FastifyRequest<BootConfigReadRoute>): Promise<Boot | undefined> {
+  async handle(request: FastifyRequest<BootConfigReadRoute>): Promise<BootDto | undefined> {
     return this._bootRepository.readByKey(request.query.tenantId, request.query.ocppConnectionName);
   }
 }
@@ -85,7 +84,7 @@ export class DeleteBootConfigEndpoint extends AbstractEndpoint<BootConfigReadRou
     this._bootRepository = bootRepository;
   }
 
-  async handle(request: FastifyRequest<BootConfigReadRoute>): Promise<Boot | undefined> {
+  async handle(request: FastifyRequest<BootConfigReadRoute>): Promise<BootDto | undefined> {
     return this._bootRepository.deleteByKey(
       request.query.tenantId,
       request.query.ocppConnectionName,

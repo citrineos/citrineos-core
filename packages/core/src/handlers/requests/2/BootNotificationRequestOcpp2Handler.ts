@@ -16,12 +16,13 @@ import {
   type IWebsocketConnection,
 } from '@citrineos/base';
 import {
+  type BootDto,
   EventGroup,
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  type RegistrationStatusEnumType,
   RegistrationStatusEnum,
+  type RegistrationStatusEnumType,
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
@@ -30,7 +31,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
-import { Boot, ChargingStation } from '@dal/layers/sequelize/index.js';
+import { ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import type { DeviceModelService } from '@modules/Configuration/src/module/DeviceModelService.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,6 +88,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const bootNotificationResponse: OCPP2_response_types.BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(tenantId, ocppConnectionName);
@@ -94,12 +96,12 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: RegistrationStatusEnumType | null = await this._cache.get(
       BOOT_STATUS,
-      ocppConnectionName,
+      identifier,
     );
 
     // Blacklist or whitelist charger actions in cache
     await this._bootService.cacheChargerActionsPermissions(
-      ocppConnectionName,
+      identifier,
       cachedBootStatus,
       bootNotificationResponse.status,
     );
@@ -111,10 +113,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Order matters: updateDeviceModel creates VariableAttributes with a FK
     // reference to the ChargingStation record, so the station must exist first.
     (async () => {
-      const connectionJson = await this._cache.get<string>(
-        createIdentifier(tenantId, ocppConnectionName),
-        CacheNamespace.Connections,
-      );
+      const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
         : null;
@@ -164,11 +163,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, identifier);
     }
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
-    const bootConfigDbEntity: Boot = await this._bootService.updateBootConfig(
+    const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
@@ -190,7 +189,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       this._config.modules.configuration.ocpp2_0_1?.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      await this._cache.remove(OCPP_CallAction.NotifyReport, ocppConnectionName);
+      await this._cache.remove(OCPP_CallAction.NotifyReport, identifier);
 
       const getBaseReportRequest = await this._bootService.createGetBaseReportRequest(
         ocppConnectionName,
@@ -214,8 +213,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
-      bootConfigDbEntity.getBaseReportOnPending = false;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { getBaseReportOnPending: false },
+        ocppConnectionName,
+      );
     }
 
     // SetVariables
@@ -293,23 +295,28 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       );
 
       if (rejectedSetVariable && doNotBootWithRejectedVariables) {
-        bootConfigDbEntity.status = RegistrationStatusEnum.Rejected;
-        await bootConfigDbEntity.save();
-        // No more to do.
+        await this._bootService.updateBoot(
+          tenantId,
+          { status: RegistrationStatusEnum.Rejected },
+          ocppConnectionName,
+        );
         return;
       }
     }
 
     if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
-      //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
-      // Update boot config with status accepted
+      // TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       // TODO: Determine how/if StatusInfo should be generated
-      bootConfigDbEntity.status = RegistrationStatusEnum.Accepted;
-      await bootConfigDbEntity.save();
+      await this._bootService.updateBoot(
+        tenantId,
+        { status: RegistrationStatusEnum.Accepted },
+        ocppConnectionName,
+      );
     }
 
     if (rebootSetVariable) {
-      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it is appropriate to send an Immediate Reset
+      // Charger SHALL not be in a transaction as it has not yet successfully booted, therefore it
+      // is appropriate to send an Immediate Reset
       await this._ocppSender.sendCall({
         ocppConnectionName,
         tenantId,

@@ -4,11 +4,6 @@
 
 import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
 
-export const PATH_DELIMITER = ':';
-export const getCacheTenantPathMappingKey = (serverId: string, path: string): string => {
-  return serverId + PATH_DELIMITER + path;
-};
-
 /*
  * Helper methods to create a unique identifier used in the cache and queues.
  * This is usually a combination between the tenantId and the ocppConnectionName.

@@ -12,6 +12,7 @@ import {
   pgTable,
   serial,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -29,6 +30,9 @@ function tenantColumns() {
     serverProfileOCPI: jsonb('serverProfileOCPI').$type<ServerProfile>(),
     isUserTenant: boolean('isUserTenant').notNull().default(false),
     maxChargingStations: integer('maxChargingStations'),
+    // Path segment this tenant is reachable under on websocket servers that use
+    // dynamic tenant resolution. Unique across tenants (nulls are not compared).
+    tenantWebsocketServerPath: varchar('tenantWebsocketServerPath', { length: 255 }),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -38,7 +42,9 @@ function tenantColumns() {
   };
 }
 
-export const tenantTable = pgTable(TableName.Tenants, tenantColumns());
+export const tenantTable = pgTable(TableName.Tenants, tenantColumns(), (t) => [
+  uniqueIndex('tenants_tenant_websocket_server_path').on(t.tenantWebsocketServerPath),
+]);
 
 // Schema-per-tenant reference (kept for symmetry with the other schemas).
 const tenantTableCache = new Map<number, typeof tenantTable>();

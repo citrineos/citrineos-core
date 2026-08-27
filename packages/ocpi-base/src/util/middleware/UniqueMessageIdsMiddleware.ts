@@ -17,8 +17,8 @@ export class UniqueMessageIdsMiddleware extends BaseMiddleware implements KoaMid
   public async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     const xRequestId = this.getHeader(context, OcpiHttpHeader.XRequestId);
     const xCorrelationId = this.getHeader(context, OcpiHttpHeader.XCorrelationId);
-    context.response.set(OcpiHttpHeader.XRequestId, xRequestId);
-    context.response.set(OcpiHttpHeader.XCorrelationId, xCorrelationId);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.XRequestId, xRequestId);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.XCorrelationId, xCorrelationId);
     await next();
   }
 }

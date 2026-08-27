@@ -4,7 +4,7 @@
 
 import type { ITenantRepository } from '@/dal/index.js';
 import type { TenantDto } from '@citrineos/types';
-import { eq } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import EventEmitter from 'events';
 import { type ILogObj, Logger } from 'tslog';
@@ -24,6 +24,7 @@ export function toTenantDto(entity: TenantEntity): TenantDto {
     serverProfileOCPI: entity.serverProfileOCPI ?? null,
     isUserTenant: entity.isUserTenant,
     maxChargingStations: entity.maxChargingStations ?? null,
+    tenantWebsocketServerPath: entity.tenantWebsocketServerPath ?? null,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };
@@ -69,6 +70,40 @@ export class DrizzleTenantRepository extends EventEmitter implements ITenantRepo
       .where(eq(tenantTable.id, Number(key)))
       .limit(1);
     return rows[0] ? toTenantDto(rows[0]) : undefined;
+  }
+
+  async readByWebsocketServerPath(path: string): Promise<TenantDto | undefined> {
+    const rows = await this.db
+      .select()
+      .from(tenantTable)
+      .where(eq(tenantTable.tenantWebsocketServerPath, path))
+      .limit(1);
+    return rows[0] ? toTenantDto(rows[0]) : undefined;
+  }
+
+  async readAllWithWebsocketServerPath(): Promise<TenantDto[]> {
+    const rows = await this.db
+      .select()
+      .from(tenantTable)
+      .where(isNotNull(tenantTable.tenantWebsocketServerPath));
+    return rows.map(toTenantDto);
+  }
+
+  async updateWebsocketServerPath(
+    tenantId: number,
+    path: string | null,
+  ): Promise<TenantDto | undefined> {
+    const rows = await this.db
+      .update(tenantTable)
+      .set({ tenantWebsocketServerPath: path, updatedAt: new Date() })
+      .where(eq(tenantTable.id, tenantId))
+      .returning();
+    if (!rows[0]) {
+      return undefined;
+    }
+    const dto = toTenantDto(rows[0]);
+    this.emit('updated', [dto]);
+    return dto;
   }
 }
 

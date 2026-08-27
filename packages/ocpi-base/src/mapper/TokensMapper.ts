@@ -69,11 +69,10 @@ export class TokensMapper {
         return TokenType.AD_HOC_USER;
       case IdTokenEnum.Central:
         return TokenType.APP_USER;
+      case IdTokenEnum.Other:
       case null:
         return TokenType.OTHER;
       default: {
-        // OCPI has only 4 token types; every other OCPP idTokenType (Other, eMAID, ISO15693,
-        // KeyCode, MacAddress) maps to OTHER rather than throwing.
         Container.get(Logger).warn(
           `Unmapped OCPP idToken type "${type}"; defaulting to OCPI TokenType.OTHER`,
         );
@@ -152,9 +151,12 @@ export class TokensMapper {
           ])
         : undefined;
 
-    const status: AuthorizationStatusEnumType = tokenDto.valid
-      ? AuthorizationStatusEnum.Accepted
-      : AuthorizationStatusEnum.Invalid;
+    const status: AuthorizationStatusEnumType | undefined =
+      tokenDto.valid === undefined
+        ? undefined
+        : tokenDto.valid
+          ? AuthorizationStatusEnum.Accepted
+          : AuthorizationStatusEnum.Invalid;
 
     const language1: string | undefined = tokenDto.language ?? undefined;
 
@@ -171,10 +173,14 @@ export class TokensMapper {
     };
   }
 
-  public static getContractId(authorization: AuthorizationDto): string {
-    const contractId = authorization.additionalInfo!.find(
+  public static findContractId(authorization: AuthorizationDto): string | undefined {
+    return authorization.additionalInfo?.find(
       (info) => info.type === OCPP2_0_1.IdTokenEnumType.eMAID,
     )?.additionalIdToken;
+  }
+
+  public static getContractId(authorization: AuthorizationDto): string {
+    const contractId = TokensMapper.findContractId(authorization);
     if (!contractId) {
       throw new Error(
         'Contract ID not found in authorization additional info, authorization is incomplete for OCPI token mapping. Please add additional info with type eMAID.',
@@ -184,7 +190,7 @@ export class TokensMapper {
   }
 
   public static getVisualNumber(authorization: AuthorizationDto): string | undefined {
-    const visualNumber = authorization.additionalInfo!.find(
+    const visualNumber = authorization.additionalInfo?.find(
       (info) => info.type === 'visual_number',
     )?.additionalIdToken;
     if (!visualNumber) {
@@ -194,7 +200,7 @@ export class TokensMapper {
   }
 
   public static getIssuer(authorization: AuthorizationDto): string {
-    const issuer = authorization.additionalInfo!.find(
+    const issuer = authorization.additionalInfo?.find(
       (info) => info.type === 'issuer',
     )?.additionalIdToken;
     if (!issuer) {

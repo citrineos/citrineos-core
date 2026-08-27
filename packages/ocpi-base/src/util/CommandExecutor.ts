@@ -493,11 +493,7 @@ export class CommandExecutor {
           });
           this.commandsClientApi
             .postCommandResult(
-              tenantPartner.countryCode!,
-              tenantPartner.partyId!,
-              tenantPartner.tenant!.countryCode!,
-              tenantPartner.tenant!.partyId!,
-              tenantPartner.partnerProfileOCPI!,
+              tenantPartner,
               responseUrl,
               {
                 result: CommandResultType.TIMEOUT,
@@ -541,11 +537,7 @@ export class CommandExecutor {
       });
       this.commandsClientApi
         .postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.FAILED,

@@ -37,6 +37,5 @@ export const SERVER_NETWORK_PROFILE_FULL_FIELDS = fieldSet([
   'tlsCertificateChainFilePath',
   'mtlsCertificateAuthorityKeyFilePath',
   'rootCACertificateFilePath',
-  'tenantPathMapping',
   'dynamicTenantResolution',
 ]);

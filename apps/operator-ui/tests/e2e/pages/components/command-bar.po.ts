@@ -19,12 +19,12 @@ export class CommandBar {
 
   constructor(private readonly page: Page) {
     this.resetButton = page.getByRole('button', { name: /^reset$/i });
-    this.remoteStartButton = page.getByRole('button', {
-      name: /(remote start|start transaction)/i,
-    });
-    this.remoteStopButton = page.getByRole('button', {
-      name: /(remote stop|stop transaction)/i,
-    });
+    this.remoteStartButton = page
+      .getByRole('button', { name: /(remote start|start transaction)/i })
+      .first();
+    this.remoteStopButton = page
+      .getByRole('button', { name: /(remote stop|stop transaction)/i })
+      .first();
     this.forceDisconnectButton = page.getByRole('button', {
       name: /force disconnect/i,
     });
