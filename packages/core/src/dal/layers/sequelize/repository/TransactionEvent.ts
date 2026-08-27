@@ -815,6 +815,10 @@ export class SequelizeTransactionEventRepository
     evseId: number,
     excludeTransactionId: string,
   ): Promise<Transaction[]> {
+    if (!excludeTransactionId || excludeTransactionId === '0') {
+      return [];
+    }
+
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
         ocppConnectionName: ocppConnectionName,
