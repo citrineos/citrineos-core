@@ -74,9 +74,23 @@ done
 if printf '%s' "$current" | grep -q "host.docker.internal:8081/${STATION}" \
    && printf '%s' "$current" | grep -q '"ocppVersion":"OCPP20"'; then
   ok "profile already OCPP20 + correct CSMS URL — no patch needed"
-else
-  printf "UPDATE VARIABLE_ATTRIBUTE SET VALUE='%s' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');\n" \
-    "$PROFILE_JSON" | MSYS_NO_PATHCONV=1 docker exec -i "$MANAGER" sqlite3 "$DB" || die "sqlite patch failed"
+  # libocpp is still writing this DB during boot, so the UPDATE can hit
+  # SQLITE_BUSY ("database is locked"). Let sqlite wait on the lock and retry
+  # the whole statement a few times before giving up.
+  PATCH_SQL="UPDATE VARIABLE_ATTRIBUTE SET VALUE='$PROFILE_JSON' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');"
+  patched=""
+  for _ in $(seq 1 5); do
+    if printf '%s\n' "$PATCH_SQL" | MSYS_NO_PATHCONV=1 docker exec -i "$MANAGER" sqlite3 -cmd '.timeout 10000' "$DB"; then
+      patched=1
+      break
+    fi
+    warn "sqlite patch attempt failed (database busy?) - retrying"
+    sleep 3
+  done
+  [ -n "$patched" ] || die "sqlite patch failed after 5 attempts"
+  # read it back so a lost write cannot slip through as success
+  current="$(MSYS_NO_PATHCONV=1 docker exec "$MANAGER" sqlite3 -readonly "$DB"     "SELECT VALUE FROM VARIABLE_ATTRIBUTE WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');" 2>/dev/null)"
+  printf '%s' "$current" | grep -q '"ocppVersion":"OCPP20"' || die "patch did not stick (profile still: $current)"
   docker restart "$MANAGER" >/dev/null || warn "manager restart returned nonzero"
   ok "patched profile to OCPP20 and restarted $MANAGER"
 fi
