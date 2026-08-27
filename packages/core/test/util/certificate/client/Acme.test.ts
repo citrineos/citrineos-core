@@ -4,12 +4,12 @@
 import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
+import * as CertificateUtil from '@util/certificate/CertificateUtil.js';
+import { Acme } from '@util/certificate/client/acme.js';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
-import * as CertificateUtil from '@util/certificate/CertificateUtil.js';
-import { Acme } from '@util/certificate/client/acme.js';
 import { aValidSignedCertificate } from '../../providers/ACME.js';
 
 vi.mock('@util/certificate/CertificateUtil');
@@ -29,8 +29,6 @@ describe('ACME', () => {
     global.fetch = vi.fn();
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
 
-    // The websocket servers are no longer part of SystemConfig; Acme.create reads them
-    // through ConfigLoader, which reads this file out of the same file storage.
     const websocketServersConfigFile = 'websocket-servers.json';
     const websocketServers = [
       {

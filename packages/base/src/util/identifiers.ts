@@ -5,10 +5,6 @@
 /**
  * Tenant assumed when a value carries no tenant of its own.
  *
- * Declared here rather than in the package barrel: the barrel's `export *`
- * statements run before its own `const` initializers, so a submodule reading this
- * from the barrel at module-evaluation time hits it in the temporal dead zone. The
- * barrel re-exports it, so `@citrineos/base` consumers are unaffected.
  */
 export const DEFAULT_TENANT_ID = 1;
 

@@ -55,15 +55,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       ? logger.getSubLogger({ name: 'Acme' })
       : new Logger<ILogObj>({ name: 'Acme' });
 
-    // Read through ConfigLoader rather than taking the servers as an argument: it owns
-    // the one copy for the process, so this cannot be handed a snapshot that a later
-    // save has moved on from.
     const websocketServersConfig = await ConfigLoader.loadWebsocketServersConfig(
       fileStorage,
       config.websocketServerConfigFile,
     );
 
-    // Collect all required file paths to check existence in configured file storage
     const securityProfile3Servers = websocketServersConfig.filter((s) => s.securityProfile === 3);
     const requiredPaths = securityProfile3Servers.flatMap((s) => [
       s.tlsCertificateChainFilePath as string,

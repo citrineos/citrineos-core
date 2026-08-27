@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Boot, IBootRepository } from '@citrineos/core';
-import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import { ICache } from '@citrineos/base';
+import { Boot, IBootRepository } from '@citrineos/core';
 import { OCPP2_0_1, SystemConfig } from '@citrineos/types';
+import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 type Configuration = SystemConfig['ocpp'];
 
@@ -32,8 +32,6 @@ describe('BootService', () => {
       set: vi.fn(),
     } as unknown as Mocked<ICache>;
 
-    // One flat block now — the per-protocol ocpp2_0_1/ocpp1_6 sub-blocks were
-    // collapsed into a single `ocpp` config shared by every OCPP version.
     mockConfig = {
       bootRetryInterval: 0,
       heartbeatInterval: 0,

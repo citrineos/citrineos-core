@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { BadRequestError, NotFoundError, type IFileStorage } from '@citrineos/base';
 import { type SystemConfig, type WebsocketServerConfig } from '@citrineos/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateCertificateChainEndpoint } from '@modules/OcppRouter/src/module/endpoints/GenerateCertificateChainEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TENANT_ID = 1;
 
@@ -33,8 +33,6 @@ function buildRequest(serverId: string | string[], body: any = {}): any {
 describe('GenerateCertificateChainEndpoint', () => {
   const { container } = createTestContainer();
   let endpoint: GenerateCertificateChainEndpoint;
-  // The endpoint reads and writes the websocket servers through the network connection,
-  // which owns the one list for the process — there is no config store any more.
   let mockNetworkConnection: {
     getWebsocketServers: ReturnType<typeof vi.fn>;
     saveWebsocketServersConfig: ReturnType<typeof vi.fn>;

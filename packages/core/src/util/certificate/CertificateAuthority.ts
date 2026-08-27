@@ -70,9 +70,7 @@ export class CertificateAuthorityService {
 
   /**
    * The charging station CA client, or a throw if `integrations.chargingStationCA` is
-   * not configured. Kept behind a getter so the unconfigured case fails at the call
-   * site — the same way {@link _v2gClient} does — rather than leaving the constructor
-   * holding a rejected promise nobody awaits.
+   * not configured.
    */
   private get _chargingStationClient(): Promise<IChargingStationCertificateAuthorityClient> {
     if (!this._chargingStationClientPromise) {
