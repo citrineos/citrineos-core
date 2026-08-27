@@ -297,8 +297,7 @@
         },
         "minChargingRate": {
           "description": "Minimum charging rate supported by the EV. The unit of measure is defined by the chargingRateUnit. This parameter is intended to be used by a local smart charging algorithm to optimize the power allocation for in the case a charging process is inefficient at lower charging rates. \r\n",
-          "type": "number",
-          "multipleOf": 0.1
+          "type": "number"
         },
         "powerTolerance": {
           "description": "*(2.1)* Power tolerance when following EVPowerProfile.\r\n\r\n",

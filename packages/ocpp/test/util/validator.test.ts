@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import {
@@ -290,6 +290,7 @@ describe('validateChargingProfileType', () => {
 
   const testTenantId = 1;
   const testStationId = 'STATION001';
+  const version = OCPPVersion.OCPP2_0_1;
 
   beforeEach(() => {
     mockDeviceModelRepo = createMockDeviceModelRepository();
@@ -322,6 +323,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).rejects.toThrow('Lowest Stack level is 0');
     });
@@ -340,6 +342,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).resolves.not.toThrow();
     });
@@ -360,6 +363,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
           1, // non-zero evseId
         ),
       ).rejects.toThrow(
@@ -381,6 +385,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
           0, // zero evseId
         ),
       ).resolves.not.toThrow();
@@ -404,6 +409,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).rejects.toThrow(
         'transactionId SHALL only be included when ChargingProfilePurpose is set to TxProfile.',
@@ -428,6 +434,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
           1,
         ),
       ).rejects.toThrow(`Transaction ${transactionId} not found on station ${testStationId}.`);
@@ -459,6 +466,7 @@ describe('validateChargingProfileType', () => {
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
+        version,
         1,
       );
 
@@ -501,6 +509,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).rejects.toThrow(
         `ChargingSchedule 1: The number of chargingSchedulePeriod SHALL not exceed ${periodsLimit}.`,
@@ -528,10 +537,9 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
-      ).rejects.toThrow(
-        'chargingSchedule 1: minChargingRate accepts at most one digit fraction (e.g. 8.1).',
-      );
+      ).rejects.toThrow('chargingSchedule 1: minChargingRate accepts at most 1 digit fraction.');
     });
 
     it('should throw error for chargingSchedulePeriod limit with more than 1 fraction digit', async () => {
@@ -557,9 +565,10 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).rejects.toThrow(
-        'ChargingSchedule 1: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).',
+        'ChargingSchedule 1: chargingSchedulePeriod limit accepts at most 1 digit fraction.',
       );
     });
 
@@ -586,8 +595,88 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).resolves.not.toThrow();
+    });
+
+    // OCPP 2.1 Part 2 §2.1.4, decimal: "The decimal sent towards the Charging Station SHALL NOT
+    // have more than six decimal places." The one-decimal restriction 2.0.1 put on limit and
+    // minChargingRate is gone from the 2.1 field tables and from the published Part 3 schema.
+    it('should accept six fraction digits on OCPP 2.1', async () => {
+      const chargingProfile = aChargingProfileType({
+        chargingSchedule: [
+          aChargingSchedule({
+            minChargingRate: 6.123456,
+            chargingSchedulePeriod: [aChargingSchedulePeriod({ limit: 16.123456 })],
+          }),
+        ],
+      });
+
+      await expect(
+        validateChargingProfileType(
+          chargingProfile,
+          testTenantId,
+          testStationId,
+          mockDeviceModelRepo,
+          mockChargingProfileRepo,
+          mockTransactionEventRepo,
+          mockLogger,
+          OCPPVersion.OCPP2_1,
+        ),
+      ).resolves.not.toThrow();
+    });
+
+    it('should throw for seven fraction digits on OCPP 2.1', async () => {
+      const chargingProfile = aChargingProfileType({
+        chargingSchedule: [
+          aChargingSchedule({
+            id: 1,
+            chargingSchedulePeriod: [aChargingSchedulePeriod({ limit: 16.1234567 })],
+          }),
+        ],
+      });
+
+      await expect(
+        validateChargingProfileType(
+          chargingProfile,
+          testTenantId,
+          testStationId,
+          mockDeviceModelRepo,
+          mockChargingProfileRepo,
+          mockTransactionEventRepo,
+          mockLogger,
+          OCPPVersion.OCPP2_1,
+        ),
+      ).rejects.toThrow(
+        'ChargingSchedule 1: chargingSchedulePeriod limit accepts at most 6 digit fraction.',
+      );
+    });
+
+    it('should still throw for two fraction digits on OCPP 2.0.1', async () => {
+      const chargingProfile = aChargingProfileType({
+        chargingSchedule: [
+          aChargingSchedule({
+            id: 1,
+            chargingSchedulePeriod: [aChargingSchedulePeriod({ limit: 16.25 })],
+          }),
+        ],
+      });
+
+      await expect(
+        validateChargingProfileType(
+          chargingProfile,
+          testTenantId,
+          testStationId,
+          mockDeviceModelRepo,
+          mockChargingProfileRepo,
+          mockTransactionEventRepo,
+          mockLogger,
+          OCPPVersion.OCPP2_0_1,
+        ),
+      ).rejects.toThrow(
+        'ChargingSchedule 1: chargingSchedulePeriod limit accepts at most 1 digit fraction.',
+      );
     });
   });
 
@@ -638,6 +727,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
           evseId,
         ),
       ).rejects.toThrow(
@@ -678,6 +768,7 @@ describe('validateChargingProfileType', () => {
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
+          version,
         ),
       ).rejects.toThrow('ChargingSchedule 1: amountMultiplier SHALL be in [-3, 3].');
     });
@@ -716,6 +807,7 @@ describe('validateChargingProfileType', () => {
             mockChargingProfileRepo,
             mockTransactionEventRepo,
             mockLogger,
+            version,
           ),
         ).resolves.not.toThrow();
       },
@@ -772,6 +864,7 @@ describe('validateChargingProfileType', () => {
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
+        version,
         evseId,
       );
 
@@ -827,6 +920,7 @@ describe('validateChargingProfileType', () => {
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
+        version,
         evseId,
       );
 

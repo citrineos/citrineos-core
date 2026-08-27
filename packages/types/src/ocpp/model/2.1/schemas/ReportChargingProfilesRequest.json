@@ -293,8 +293,7 @@
         },
         "limit": {
           "description": "Optional only when not required by the _operationMode_, as in CentralSetpoint, ExternalSetpoint, ExternalLimits, LocalFrequency,  LocalLoadBalancing. +\r\nCharging rate limit during the schedule period, in the applicable _chargingRateUnit_. \r\nThis SHOULD be a non-negative value; a negative value is only supported for backwards compatibility with older systems that use a negative value to specify a discharging limit.\r\nWhen using _chargingRateUnit_ = `W`, this field represents the sum of the power of all phases, unless values are provided for L2 and L3, in which case this field represents phase L1.\r\n",
-          "type": "number",
-          "multipleOf": 0.1
+          "type": "number"
         },
         "limit_L2": {
           "description": "*(2.1)* Charging rate limit on phase L2  in the applicable _chargingRateUnit_. \r\n",

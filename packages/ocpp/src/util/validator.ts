@@ -8,6 +8,7 @@ import {
   IdTokenEnum,
   MessageFormatEnum,
   OCPP2_1,
+  OCPPVersion,
   type IdTokenEnumType,
   type OCPP2_common_types,
 } from '@citrineos/types';
@@ -50,6 +51,17 @@ export interface ChargingProfileValidation {
 }
 
 /**
+ * OCPP 2.0.1 restricts a charging rate to one decimal place - "Accepts at most one digit fraction
+ * (e.g. 8.1)" on both ChargingSchedulePeriodType.limit and ChargingScheduleType.minChargingRate.
+ * OCPP 2.1 dropped that restriction; Part 2 §2.1.4 replaces it with the general rule for the decimal
+ * datatype, that a decimal sent towards the Charging Station SHALL NOT have more than six decimal
+ * places.
+ */
+function maxFractionDigits(version: OCPPVersion): number {
+  return version === OCPPVersion.OCPP2_1 ? 6 : 1;
+}
+
+/**
  * Validate constraints of ChargingProfileType defined in OCPP 2.0.1
  *
  * @param chargingProfileType ChargingProfileType from the request
@@ -59,6 +71,7 @@ export interface ChargingProfileValidation {
  * @param chargingProfileRepository chargingProfileRepository
  * @param transactionEventRepository transactionEventRepository
  * @param logger logger
+ * @param version the OCPP version of the station the profile is bound for
  * @param evseId evse id
  */
 export async function validateChargingProfileType(
@@ -69,8 +82,10 @@ export async function validateChargingProfileType(
   chargingProfileRepository: IChargingProfileRepository,
   transactionEventRepository: ITransactionEventRepository,
   logger: Logger<ILogObj>,
+  version: OCPPVersion,
   evseId?: number | null,
 ): Promise<ChargingProfileValidation> {
+  const fractionDigitLimit = maxFractionDigits(version);
   if (chargingProfileType.stackLevel < 0) {
     throw new Error('Lowest Stack level is 0');
   }
@@ -135,10 +150,10 @@ export async function validateChargingProfileType(
   for (const chargingSchedule of chargingProfileType.chargingSchedule) {
     if (
       chargingSchedule.minChargingRate &&
-      getNumberOfFractionDigit(chargingSchedule.minChargingRate) > 1
+      getNumberOfFractionDigit(chargingSchedule.minChargingRate) > fractionDigitLimit
     ) {
       throw new Error(
-        `chargingSchedule ${chargingSchedule.id}: minChargingRate accepts at most one digit fraction (e.g. 8.1).`,
+        `chargingSchedule ${chargingSchedule.id}: minChargingRate accepts at most ${fractionDigitLimit} digit fraction.`,
       );
     }
     if (periodsPerSchedule && chargingSchedule.chargingSchedulePeriod.length > periodsPerSchedule) {
@@ -148,9 +163,9 @@ export async function validateChargingProfileType(
     }
 
     for (const chargingSchedulePeriod of chargingSchedule.chargingSchedulePeriod) {
-      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit ?? 0) > 1) {
+      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit ?? 0) > fractionDigitLimit) {
         throw new Error(
-          `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).`,
+          `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most ${fractionDigitLimit} digit fraction.`,
         );
       }
 

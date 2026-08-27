@@ -136,10 +136,7 @@ describe('OCPPValidator', () => {
      * ChargingSchedulePeriodType.limit and ChargingScheduleType.minChargingRate carry no step
      * constraint at all, and neither does the published Part 3 schema.
      */
-    function aSetChargingProfileRequest(overrides: {
-      limit?: number;
-      minChargingRate?: number;
-    }) {
+    function aSetChargingProfileRequest(overrides: { limit?: number; minChargingRate?: number }) {
       return {
         evseId: 1,
         chargingProfile: {
