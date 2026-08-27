@@ -22,6 +22,7 @@ export class AuthorizationMapper {
       case AuthorizationStatusEnum.Invalid:
         return OCPP1_6.AuthorizeResponseStatus.Invalid;
       default:
+        console.warn(`Unsupported OCPP 1.6 authorization status: ${status}`);
         return OCPP1_6.AuthorizeResponseStatus.Invalid;
     }
   }
