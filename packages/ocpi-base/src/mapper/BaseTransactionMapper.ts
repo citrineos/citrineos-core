@@ -6,7 +6,6 @@ import type { AuthorizationDto, LocationDto, TariffDto, TransactionDto } from '@
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { Price } from '../model/Price.js';
 import type { Session } from '../model/Session.js';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
@@ -147,11 +146,5 @@ export abstract class BaseTransactionMapper {
         }),
     );
     return transactionIdToOcpiTariffMap;
-  }
-
-  protected calculateTotalCost(totalKwh: number, tariffCost: number): Price {
-    return {
-      excl_vat: Math.floor(totalKwh * tariffCost * 100) / 100,
-    };
   }
 }
