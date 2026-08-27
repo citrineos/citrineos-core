@@ -781,6 +781,7 @@ export class SequelizeTransactionEventRepository
     if (meterValues.length > 0) {
       await Promise.all(
         meterValues.map(async (meterValue) => {
+          meterValue.tenantId = tenantId;
           meterValue.transactionDatabaseId = transactionDatabaseId;
           const createdMeterValue = MeterValue.build(meterValue);
           createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
