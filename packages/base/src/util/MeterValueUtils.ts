@@ -24,7 +24,8 @@ export class MeterValueUtils {
    * @param {array} meterValues - meterValues of a transaction.
    * @param {number} currentTotal - the current total Kwh to add to interval values, if needed.
    * @param {number} meterStart - the starting Kwh value at the beginning of the transaction, if available.
-   * @return {number} total Kwh based on the best available energy measurement.
+   * @return {number} total Kwh based on the best available energy measurement, or currentTotal when
+   *     this batch of meterValues carries no usable energy reading.
    */
   public static getTotalKwh(
     meterValues: MeterValueDto[],
@@ -33,7 +34,7 @@ export class MeterValueUtils {
   ): number {
     const filteredValues = this.filterValidMeterValues(meterValues);
     if (filteredValues.length === 0) {
-      return 0;
+      return currentTotal;
     }
 
     const registerMap = this.getRegisterValuesMap(filteredValues);
@@ -57,7 +58,7 @@ export class MeterValueUtils {
       return netMap.get(latestTimestamp)!;
     }
 
-    return 0;
+    return currentTotal;
   }
 
   public static getMeterStart(meterValues: MeterValueDto[]): number | null {

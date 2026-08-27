@@ -4,7 +4,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslate } from '@refinedev/core';
+import { useOne, useTranslate } from '@refinedev/core';
 import { Copy, Loader2, Play, HelpCircle } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import {
@@ -20,6 +20,8 @@ import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
 import { fetchFileAction } from '@lib/server/actions/file/fetchFileAction';
 import { BucketType } from '@lib/utils/enums';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { TENANT_DETAIL_QUERY } from '@lib/queries/tenants';
+import { ResourceType } from '@lib/utils/access.types';
 
 export interface OperatorConfig {
   centralSystem: {
@@ -99,19 +101,24 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
       .catch(console.error);
   };
 
+  // The websocket path is a property of the tenant: every server with dynamic tenant
+  // resolution enabled routes `/{tenantWebsocketServerPath}/{stationId}` to this tenant.
+  const { query: tenantQuery } = useOne<{ tenantWebsocketServerPath?: string | null }>({
+    resource: ResourceType.TENANTS,
+    id: tenantId,
+    meta: { gqlQuery: TENANT_DETAIL_QUERY },
+    queryOptions: { enabled: open && !!tenantId },
+  });
+  const tenantWebsocketServerPath = tenantQuery.data?.data?.tenantWebsocketServerPath ?? null;
+
   // Group servers by security profile
   const groupedServers: Record<number, WebsocketServerConfig[]> = {};
   const fallbackServers: Record<number, WebsocketServerConfig[]> = {};
 
   coreConfig?.util?.networkConnection?.websocketServers?.forEach((server) => {
-    const serverWithMapping = server as any;
-
-    // Check if server has tenant path mapping and dynamic tenant resolution enabled
-    if (serverWithMapping.tenantPathMapping && serverWithMapping.dynamicTenantResolution) {
-      const pathMapping = serverWithMapping.tenantPathMapping;
-      const hasTenantMapping = Object.values(pathMapping).includes(tenantId);
-
-      if (hasTenantMapping) {
+    // Servers resolving the tenant dynamically are only usable once this tenant has a path.
+    if (server.dynamicTenantResolution) {
+      if (tenantWebsocketServerPath) {
         if (!groupedServers[server.securityProfile]) groupedServers[server.securityProfile] = [];
         groupedServers[server.securityProfile].push(server);
       }
@@ -121,29 +128,13 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
     }
   });
 
-  const buildWebsocketUrl = (
-    server: WebsocketServerConfig,
-    host: string,
-    tenantId: number,
-  ): string => {
+  const buildWebsocketUrl = (server: WebsocketServerConfig, host: string): string => {
     const protocol = server.securityProfile > 1 ? 'wss' : 'ws';
 
-    const serverWithMapping = server as any;
-
-    // Check if tenant path mapping exists and dynamic tenant resolution is enabled
-    if (serverWithMapping.tenantPathMapping && serverWithMapping.dynamicTenantResolution) {
-      const pathMapping = serverWithMapping.tenantPathMapping;
-      const pathEntry = Object.entries(pathMapping).find(
-        ([_, mappedTenantId]) => mappedTenantId === tenantId,
-      );
-      if (pathEntry) {
-        return `${protocol}://${host}:${server.port}/${pathEntry[0]}`;
-      } else {
-        return `${protocol}://${host}:${server.port}`;
-      }
-    } else {
-      return `${protocol}://${host}:${server.port}`;
+    if (server.dynamicTenantResolution && tenantWebsocketServerPath) {
+      return `${protocol}://${host}:${server.port}/${tenantWebsocketServerPath}`;
     }
+    return `${protocol}://${host}:${server.port}`;
   };
 
   const hasConnections = coreConfig?.util?.networkConnection?.websocketServers?.length && host;
@@ -256,7 +247,7 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
                   <ul className="space-y-2">
                     {servers.map((s) => {
                       if (!tenantId) return null;
-                      const wsUrl = buildWebsocketUrl(s, host, tenantId);
+                      const wsUrl = buildWebsocketUrl(s, host);
                       return (
                         <li key={s.id} className="border p-2 rounded flex flex-col gap-1">
                           <span className="text-sm mr-2 font-semibold">

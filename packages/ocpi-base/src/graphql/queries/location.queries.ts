@@ -92,8 +92,13 @@ export const GET_LOCATIONS_QUERY = gql`
 `;
 
 export const GET_LOCATION_BY_ID_QUERY = gql`
-  query GetLocationById($id: Int!) {
-    Locations(where: { id: { _eq: $id } }) {
+  query GetLocationById($id: Int!, $countryCode: String!, $partyId: String!) {
+    Locations(
+      where: {
+        id: { _eq: $id }
+        Tenant: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }
+      }
+    ) {
       id
       name
       address
@@ -174,8 +179,19 @@ export const GET_LOCATION_BY_ID_QUERY = gql`
 `;
 
 export const GET_EVSE_BY_ID_QUERY = gql`
-  query GetEvseById($locationId: Int!, $stationId: String!, $evseId: Int!) {
-    Locations(where: { id: { _eq: $locationId } }) {
+  query GetEvseById(
+    $locationId: Int!
+    $stationId: String!
+    $evseId: Int!
+    $countryCode: String!
+    $partyId: String!
+  ) {
+    Locations(
+      where: {
+        id: { _eq: $locationId }
+        Tenant: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }
+      }
+    ) {
       chargingPool: ChargingStations(where: { ocppConnectionName: { _eq: $stationId } }) {
         id
         ocppConnectionName
@@ -214,12 +230,19 @@ export const GET_EVSE_BY_ID_QUERY = gql`
 
 export const GET_CONNECTOR_BY_ID_QUERY = gql`
   query GetConnectorById(
+    $countryCode: String!
+    $partyId: String!
     $locationId: Int!
     $stationId: String!
     $evseId: Int!
     $connectorId: Int!
   ) {
-    Locations(where: { id: { _eq: $locationId } }) {
+    Locations(
+      where: {
+        id: { _eq: $locationId }
+        Tenant: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }
+      }
+    ) {
       chargingPool: ChargingStations(where: { ocppConnectionName: { _eq: $stationId } }) {
         evses: Evses(where: { id: { _eq: $evseId } }) {
           connectors: Connectors(where: { connectorId: { _eq: $connectorId } }) {

@@ -94,12 +94,14 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
       await this._ocppSender.sendCallResultWithMessage(message, response);
     }
 
-    await this.deactivateOtherActiveTransactionsAtEvse16(
-      tenantId,
-      response.transactionId.toString(),
-      ocppConnectionName,
-      request,
-    );
+    if (response.idTagInfo.status === OCPP1_6.StartTransactionResponseStatus.Accepted) {
+      await this.deactivateOtherActiveTransactionsAtEvse16(
+        tenantId,
+        response.transactionId.toString(),
+        ocppConnectionName,
+        request,
+      );
+    }
 
     // Deactivate reservation only if the transaction was accepted.
     // A rejected StartTransaction (auth failure or DB error) should not
