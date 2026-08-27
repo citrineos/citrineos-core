@@ -173,10 +173,14 @@ export class TokensMapper {
     };
   }
 
-  public static getContractId(authorization: AuthorizationDto): string {
-    const contractId = authorization.additionalInfo!.find(
+  public static findContractId(authorization: AuthorizationDto): string | undefined {
+    return authorization.additionalInfo?.find(
       (info) => info.type === OCPP2_0_1.IdTokenEnumType.eMAID,
     )?.additionalIdToken;
+  }
+
+  public static getContractId(authorization: AuthorizationDto): string {
+    const contractId = TokensMapper.findContractId(authorization);
     if (!contractId) {
       throw new Error(
         'Contract ID not found in authorization additional info, authorization is incomplete for OCPI token mapping. Please add additional info with type eMAID.',
@@ -186,7 +190,7 @@ export class TokensMapper {
   }
 
   public static getVisualNumber(authorization: AuthorizationDto): string | undefined {
-    const visualNumber = authorization.additionalInfo!.find(
+    const visualNumber = authorization.additionalInfo?.find(
       (info) => info.type === 'visual_number',
     )?.additionalIdToken;
     if (!visualNumber) {
@@ -196,7 +200,7 @@ export class TokensMapper {
   }
 
   public static getIssuer(authorization: AuthorizationDto): string {
-    const issuer = authorization.additionalInfo!.find(
+    const issuer = authorization.additionalInfo?.find(
       (info) => info.type === 'issuer',
     )?.additionalIdToken;
     if (!issuer) {

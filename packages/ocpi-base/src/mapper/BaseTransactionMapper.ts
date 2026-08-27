@@ -79,11 +79,11 @@ export abstract class BaseTransactionMapper {
         }
       }
       if (transaction.authorization) {
-        const tokenDto = await TokensMapper.toDto(transaction.authorization);
-        if (tokenDto) {
+        if (TokensMapper.findContractId(transaction.authorization)) {
+          const tokenDto = TokensMapper.toDto(transaction.authorization);
           transactionIdToTokenMap.set(transaction.transactionId!, tokenDto);
         } else {
-          this.logger.debug(`Unmapped token for transaction ${transaction.id}`);
+          this.logger.debug(`No contract id for transaction ${transaction.id}; token omitted`);
         }
       } else {
         this.logger.debug(`No token for transaction ${transaction.id}`);
