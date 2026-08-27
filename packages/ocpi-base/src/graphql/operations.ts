@@ -831,11 +831,84 @@ export type GetTransactionsQueryResult = {
   Transactions_aggregate: { aggregate?: { count: number } | null };
 };
 
-export type GetTransactionByTransactionIdQueryVariables = Exact<{
-  transactionId: Scalars['String']['input'];
+export type GetTransactionByIdQueryVariables = Exact<{
+  id: Scalars['Int']['input'];
 }>;
 
-export type GetTransactionByTransactionIdQueryResult = {
+export type GetTransactionByIdQueryResult = {
+  Transactions_by_pk?: {
+    id: number;
+    stationId: number;
+    ocppConnectionName: string;
+    transactionId: string;
+    isActive: boolean;
+    chargingState?: string | null;
+    timeSpentCharging?: any | null;
+    totalKwh?: any | null;
+    stoppedReason?: string | null;
+    remoteStartId?: number | null;
+    totalCost?: any | null;
+    startTime?: any | null;
+    endTime?: any | null;
+    createdAt: any;
+    updatedAt: any;
+    evseId?: number | null;
+    connectorId?: number | null;
+    locationId?: number | null;
+    authorizationId?: number | null;
+    tariffId?: number | null;
+    tenant: {
+      countryCode: string;
+      partyId: string;
+      name: string;
+      isUserTenant: boolean;
+    };
+    authorization?: {
+      tenantPartner?: {
+        id: number;
+        countryCode: string;
+        partyId: string;
+        partnerProfileOCPI?: any | null;
+        tenant: {
+          id: number;
+          countryCode: string;
+          partyId: string;
+        };
+      } | null;
+    } | null;
+    station: {
+      id: number;
+      ocppConnectionName: string;
+      isOnline: boolean;
+    };
+    transactionEvents: Array<{
+      id: number;
+      eventType?: string | null;
+      transactionInfo?: any | null;
+      EvseType?: {
+        id?: number | null;
+      } | null;
+    }>;
+    startTransaction?: {
+      timestamp?: any | null;
+    } | null;
+    stopTransaction?: {
+      timestamp?: any | null;
+    } | null;
+    meterValues: Array<{
+      timestamp?: any | null;
+      sampledValue?: any | null;
+    }>;
+  } | null;
+};
+
+export type GetActiveTransactionForStopSessionQueryVariables = Exact<{
+  transactionId: Scalars['String']['input'];
+  countryCode: Scalars['String']['input'];
+  partyId: Scalars['String']['input'];
+}>;
+
+export type GetActiveTransactionForStopSessionQueryResult = {
   Transactions: Array<{
     id: number;
     stationId: number;
