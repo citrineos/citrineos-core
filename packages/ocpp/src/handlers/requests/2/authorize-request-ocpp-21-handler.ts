@@ -29,7 +29,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import { CertificateAuthorityService } from '@/services/index.js';
-import { validateOcpp21IdToken } from '@util/index.js';
+import { redactKeyCode, redactKeyCodeInMessage, validateOcpp21IdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
   type IDeviceModelRepository,
@@ -75,7 +75,12 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     message: IMessage<OCPP2_request_types.AuthorizeRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.info(this.createHandlerReceivedMessageLog('AuthorizeRequest'), message, props);
+    // C04.FR.04: a key code is a PIN the driver typed, and must not appear in any logging.
+    this._logger.info(
+      this.createHandlerReceivedMessageLog('AuthorizeRequest'),
+      redactKeyCodeInMessage(message),
+      props,
+    );
 
     const request: OCPP2_request_types.AuthorizeRequest = message.payload;
     const context = message.context;
@@ -91,7 +96,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     if (!tokenValidation.isValid) {
       this._logger.warn(`Invalid ID token format`, {
         type: request.idToken.type,
-        token: request.idToken.idToken,
+        token: redactKeyCode(request.idToken.type, request.idToken.idToken),
         error: tokenValidation.errorMessage,
       });
       const messageId = message.context.correlationId;

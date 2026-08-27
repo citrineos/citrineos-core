@@ -19,10 +19,7 @@ import type {
   IDeviceModelRepository,
   ITariffRepository,
 } from '@citrineos/dal';
-import {
-  AuthorizeRequestOcpp201Handler,
-  AuthorizeRequestOcpp21Handler,
-} from '@handlers/index.js';
+import { AuthorizeRequestOcpp201Handler, AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
 import type { CertificateAuthorityService } from '@/services/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -35,10 +32,7 @@ import { createTestContainer, makeMockOcppSender } from '@test/test-container.js
  */
 const KEY_CODE = 'PIN#1234';
 
-function makeMessage<T extends OcppRequest>(
-  payload: T,
-  protocol: OCPPVersion,
-): IMessage<T> {
+function makeMessage<T extends OcppRequest>(payload: T, protocol: OCPPVersion): IMessage<T> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
