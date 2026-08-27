@@ -119,7 +119,9 @@ export class InternalSmartCharging implements ISmartCharging {
       ? new Date(chargingNeeds.departureTime)
       : undefined;
     const currentTime = new Date();
-    const duration = departureTime ? departureTime.getTime() - currentTime.getTime() : undefined;
+    const duration = departureTime
+      ? Math.floor((departureTime.getTime() - currentTime.getTime()) / 1000)
+      : undefined;
 
     // Create charging period
     const chargingSchedulePeriod: [
