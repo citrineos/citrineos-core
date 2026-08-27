@@ -267,24 +267,24 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           break;
         }
         default: {
-          let errorCode;
-          switch (protocol) {
-            case OCPPVersion.OCPP1_6:
-            case OCPPVersion.OCPP2_0_1:
-            case OCPPVersion.OCPP2_1: {
-              errorCode = ErrorCode.FormatViolation;
-              break;
-            }
-            default: {
-              throw new Error('Unknown protocol: ' + protocol);
-            }
-          }
-          throw new OcppError(
-            messageId,
-            errorCode,
-            'Unknown message type id: ' + messageTypeId,
-            {},
+          this._logger.warn(
+            `Ignoring message with unknown message type id ${messageTypeId}`,
+            identifier,
           );
+          await this._messagesExchangeSink.record(
+            buildFrameEvent({
+              tenantId,
+              ocppConnectionName,
+              origin: MessageOrigin.ChargingStation,
+              correlationId: uuidv4(),
+              protocol,
+              raw: message,
+              timestamp: timestamp.toISOString(),
+              type: messageTypeId,
+              action: this.getActionFromIncompletelyParsedRpcMessage(rpcMessage, messageTypeId),
+            }),
+          );
+          return true;
         }
       }
     } catch (error) {

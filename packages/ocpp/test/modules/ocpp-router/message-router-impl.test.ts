@@ -335,14 +335,6 @@ describe('MessageRouterImpl', () => {
         expect(frames(sink, 'inbound')).toEqual([expect.objectContaining({ parsed: false })]);
       });
 
-      /**
-       * OCPP-J Part 4 §4.1.3, in 2.0.1 Edition 4 and 2.1 Edition 2 alike: "When a system receives a
-       * message with a Message Type Number not in this list, it SHALL ignore the message payload."
-       * The 2026-02 errata clarifies that the whole message is to be ignored, and deprecates the
-       * MessageTypeNotSupported error code because an unsupported message type number is silently
-       * ignored. 2.1 added CALLRESULTERROR (5) and SEND (6); N15.FR.02 adds that a SEND is not to
-       * be confirmed with a CALLRESULT or a CALLERROR.
-       */
       it.each([
         ['SEND, added by OCPP 2.1', 6],
         ['CALLRESULTERROR, added by OCPP 2.1', 5],
