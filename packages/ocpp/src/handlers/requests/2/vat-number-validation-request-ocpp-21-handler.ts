@@ -43,13 +43,15 @@ export class VatNumberValidationRequestOcpp21Handler extends AbstractHandler {
 
     const company = this._vatProvider ? await this._vatProvider.getVat(request.vatNumber) : null;
 
+    // company is an AddressType, so it is left out rather than sent as null when the VAT number
+    // did not resolve - C18.FR.09 makes it optional, and the schema will not accept a null.
     const response: OCPP2_1.VatNumberValidationResponse = {
       vatNumber: request.vatNumber,
       evseId: request.evseId,
       status: company
         ? OCPP2_1.GenericStatusEnumType.Accepted
         : OCPP2_1.GenericStatusEnumType.Rejected,
-      company,
+      ...(company ? { company } : {}),
     };
 
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
