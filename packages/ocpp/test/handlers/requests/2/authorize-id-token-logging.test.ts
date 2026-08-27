@@ -19,26 +19,13 @@ import type {
   IDeviceModelRepository,
   ITariffRepository,
 } from '@citrineos/dal';
-import {
-  AuthorizeRequestOcpp201Handler,
-  AuthorizeRequestOcpp21Handler,
-} from '@handlers/index.js';
+import { AuthorizeRequestOcpp201Handler, AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
 import type { CertificateAuthorityService } from '@/services/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
-/**
- * C04.FR.04: "If an idToken of type keyCode is used -> The Charging Station or CSMS SHALL NOT show
- * the IdToken in any logging. key codes should never appear in logs."
- *
- * A key code is a PIN the driver typed at the Charging Station, and a mistyped one is exactly the
- * case that reaches the invalid-format branch.
- */
 const KEY_CODE = 'PIN#1234';
 
-function makeMessage<T extends OcppRequest>(
-  payload: T,
-  protocol: OCPPVersion,
-): IMessage<T> {
+function makeMessage<T extends OcppRequest>(payload: T, protocol: OCPPVersion): IMessage<T> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,

@@ -29,7 +29,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import { CertificateAuthorityService } from '@services/index.js';
-import { validateIdToken } from '@util/index.js';
+import { redactKeyCode, redactKeyCodeInMessage, validateIdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
   type IDeviceModelRepository,
@@ -71,7 +71,11 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     message: IMessage<OCPP2_request_types.AuthorizeRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
-    this._logger.info(this.createHandlerReceivedMessageLog('AuthorizeRequest'), message, props);
+    this._logger.info(
+      this.createHandlerReceivedMessageLog('AuthorizeRequest'),
+      redactKeyCodeInMessage(message),
+      props,
+    );
 
     const request = message.payload as OCPP2_0_1.AuthorizeRequest;
     const context = message.context;
@@ -88,7 +92,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     if (!tokenValidation.isValid) {
       this._logger.warn(`Invalid ID token format`, {
         type: request.idToken.type,
-        token: request.idToken.idToken,
+        token: redactKeyCode(request.idToken.type, request.idToken.idToken),
         error: tokenValidation.errorMessage,
       });
       const messageId = message.context.correlationId;

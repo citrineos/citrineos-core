@@ -28,6 +28,12 @@ export {
   type ChargingProfileTransactionContext,
   type ChargingProfileValidation,
 } from './validator.js';
+export {
+  isKeyCode,
+  redactKeyCode,
+  redactKeyCodeInMessage,
+  REDACTED_KEY_CODE,
+} from './key-code-redaction.js';
 export { IdGenerator } from './id-generator.js';
 
 export {
