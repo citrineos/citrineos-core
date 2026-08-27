@@ -22,12 +22,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 function makeConfig(): SystemConfig {
   return {
-    modules: {
-      transactions: {
-        requests: [],
-        responses: [],
-        sendCostUpdatedOnMeterValue: false,
-      },
+    transactions: {
+      sendCostUpdatedOnMeterValue: false,
     },
   } as unknown as SystemConfig;
 }

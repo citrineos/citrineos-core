@@ -29,10 +29,31 @@ describe('ACME', () => {
     global.fetch = vi.fn();
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
 
+    // The websocket servers are no longer part of SystemConfig; Acme.create reads them
+    // through ConfigLoader, which reads this file out of the same file storage.
+    const websocketServersConfigFile = 'websocket-servers.json';
+    const websocketServers = [
+      {
+        id: '3',
+        host: '0.0.0.0',
+        port: 8444,
+        pingInterval: 60,
+        protocols: ['ocpp2.0.1'],
+        securityProfile: 3,
+        allowUnknownChargingStations: false,
+        dynamicTenantResolution: false,
+        tenantId: 1,
+        tlsKeyFilePath: faker.lorem.word(),
+        tlsCertificateChainFilePath: faker.lorem.word(),
+        mtlsCertificateAuthorityKeyFilePath: faker.lorem.word(),
+      },
+    ];
+
     mockFileStorage = {
       saveFile: vi.fn().mockResolvedValue(undefined),
       getFile: vi
         .fn()
+        .mockResolvedValueOnce(JSON.stringify(websocketServers))
         .mockResolvedValueOnce(mockTlsCertificateChain)
         .mockResolvedValueOnce(mockMtlsCertificateAuthorityKey)
         .mockResolvedValueOnce(faker.lorem.word()),
@@ -42,24 +63,14 @@ describe('ACME', () => {
     } as unknown as IFileStorage;
 
     systemConfig = {
-      util: {
-        networkConnection: {
-          websocketServers: [
-            {
-              id: '3',
-              securityProfile: 3,
-              tlsCertificateChainFilePath: faker.lorem.word(),
-              mtlsCertificateAuthorityKeyFilePath: faker.lorem.word(),
-            },
-          ],
-        },
-        certificateAuthority: {
-          chargingStationCA: {
-            name: 'acme',
-            acme: {
-              env: 'staging',
-              accountKeyFilePath: faker.lorem.word(),
-            },
+      websocketServerConfigFile: websocketServersConfigFile,
+      integrations: {
+        chargingStationCA: {
+          name: 'acme',
+          acme: {
+            env: 'staging',
+            accountKeyFilePath: faker.lorem.word(),
+            email: 'test@citrineos.com',
           },
         },
       },

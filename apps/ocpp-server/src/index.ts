@@ -7,7 +7,7 @@ import { EventGroup } from '@citrineos/types';
 import { CitrineOSServer } from './citrineOSServer.js';
 
 async function main() {
-  const config = await new ConfigLoader().loadConfig();
+  const config = await ConfigLoader.loadConfig();
   const server = new CitrineOSServer(process.env.APP_NAME?.toLowerCase() as EventGroup, config);
   server.run().catch((error: any) => {
     console.error(error);

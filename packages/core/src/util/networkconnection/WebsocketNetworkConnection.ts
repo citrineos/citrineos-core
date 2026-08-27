@@ -19,15 +19,13 @@ import {
   type INetworkConnection,
   type IWebsocketConnection,
   CacheNamespace,
+  ConfigLoader,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '@citrineos/base';
 import type { OCPPVersionType, SystemConfig, WebsocketServerConfig } from '@citrineos/types';
-import {
-  TENANT_WEBSOCKET_SERVER_PATH_PATTERN,
-  websocketServersConfigSchema,
-} from '@citrineos/types';
+import { TENANT_WEBSOCKET_SERVER_PATH_PATTERN } from '@citrineos/types';
 import * as http from 'http';
 import * as https from 'https';
 import { performance } from 'node:perf_hooks';
@@ -53,7 +51,6 @@ import {
 import { UpgradeAuthenticationError } from './authenticator/errors/AuthenticationError.js';
 import type { IUpgradeError } from './authenticator/errors/IUpgradeError.js';
 import { TlsCredentialManager } from './TlsCertificateManager.js';
-import { loadWebsocketServersConfig } from './websocketServersConfig.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
@@ -128,7 +125,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   public async initialize(): Promise<void> {
-    this._websocketServers = await this.loadWebsocketServersConfig();
+    this._websocketServers = await ConfigLoader.loadWebsocketServersConfig(
+      this._fileStorage,
+      this._config.websocketServerConfigFile,
+    );
     if (
       this._websocketServers.some(
         (websocketServerConfig) => websocketServerConfig.dynamicTenantResolution,
@@ -155,18 +155,14 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     return this._websocketServers;
   }
 
-  private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {
-    return loadWebsocketServersConfig(this._fileStorage, this._config.websocketServerConfigFile);
-  }
-
   public async saveWebsocketServersConfig(
     websocketServers: WebsocketServerConfig[],
   ): Promise<void> {
     try {
-      websocketServersConfigSchema.parse(websocketServers);
-      await this._fileStorage.saveFile(
+      await ConfigLoader.saveWebsocketServersConfig(
+        this._fileStorage,
         this._config.websocketServerConfigFile,
-        Buffer.from(JSON.stringify(websocketServers)),
+        websocketServers,
       );
     } catch (error) {
       this._logger.error('Failed to save websocket servers config', error);

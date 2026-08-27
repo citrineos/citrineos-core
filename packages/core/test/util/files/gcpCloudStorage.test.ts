@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { SystemConfig } from '@citrineos/types';
 import { Storage } from '@google-cloud/storage';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GcpCloudStorage } from '@util/index.js';
@@ -39,11 +38,6 @@ describe('GcpCloudStorage', () => {
     projectId: 'test-project',
   };
 
-  const mockSystemConfig: SystemConfig = {
-    modules: {},
-    util: {},
-  } as SystemConfig;
-
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -52,14 +46,12 @@ describe('GcpCloudStorage', () => {
     mockBucket = mockStorageInstance.bucket();
     mockFile = mockBucket.file();
 
-    gcpStorage = new GcpCloudStorage(mockConfig, 'config.json', 'test-bucket');
+    gcpStorage = new GcpCloudStorage(mockConfig, 'test-bucket');
   });
 
   describe('constructor', () => {
     it('should throw error if config is missing', () => {
-      expect(() => new GcpCloudStorage(null as any, 'config.json')).toThrow(
-        'GCP Cloud Storage config missing.',
-      );
+      expect(() => new GcpCloudStorage(null as any)).toThrow('GCP Cloud Storage config missing.');
     });
 
     it('should initialize with provided config', () => {
@@ -288,108 +280,6 @@ describe('GcpCloudStorage', () => {
 
       await expect(gcpStorage.deleteFile(key, undefined, { force: true })).rejects.toThrow(
         'Network error',
-      );
-    });
-  });
-
-  describe('fetchConfig', () => {
-    it('should fetch and parse config successfully', async () => {
-      const configString = JSON.stringify(mockSystemConfig);
-      mockFile.exists.mockResolvedValue([true]);
-      mockFile.download.mockResolvedValue([Buffer.from(configString)]);
-
-      const result = await gcpStorage.fetchConfig();
-
-      expect(result).toEqual(mockSystemConfig);
-      expect(mockBucket.file).toHaveBeenCalledWith('config.json');
-    });
-
-    it('should return null if config file does not exist', async () => {
-      mockFile.exists.mockResolvedValue([false]);
-
-      const result = await gcpStorage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null if 404 error occurs', async () => {
-      const notFoundError = { code: 404 };
-      mockFile.exists.mockRejectedValue(notFoundError);
-
-      const result = await gcpStorage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null if "could not find" error occurs', async () => {
-      const notFoundError = { message: 'could not find config file' };
-      mockFile.exists.mockRejectedValue(notFoundError);
-
-      const result = await gcpStorage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it('should throw error for non-404 errors', async () => {
-      const error = new Error('Network timeout');
-      mockFile.exists.mockRejectedValue(error);
-
-      await expect(gcpStorage.fetchConfig()).rejects.toThrow('Network timeout');
-    });
-
-    it('should handle invalid JSON gracefully', async () => {
-      mockFile.exists.mockResolvedValue([true]);
-      mockFile.download.mockResolvedValue([Buffer.from('invalid json{')]);
-
-      await expect(gcpStorage.fetchConfig()).rejects.toThrow();
-    });
-  });
-
-  describe('saveConfig', () => {
-    it('should save config successfully', async () => {
-      mockFile.save.mockResolvedValue(undefined);
-
-      await gcpStorage.saveConfig(mockSystemConfig);
-
-      const expectedContent = Buffer.from(JSON.stringify(mockSystemConfig, null, 2));
-      expect(mockBucket.file).toHaveBeenCalledWith('config.json');
-      expect(mockFile.save).toHaveBeenCalledWith(expectedContent, {
-        contentType: 'application/octet-stream',
-        resumable: false,
-      });
-    });
-
-    it('should create bucket and retry if bucket not found', async () => {
-      const notFoundError = { code: 404 };
-      mockFile.save.mockRejectedValueOnce(notFoundError).mockResolvedValueOnce(undefined);
-      mockStorageInstance.createBucket.mockResolvedValue(undefined);
-
-      await gcpStorage.saveConfig(mockSystemConfig);
-
-      expect(mockStorageInstance.createBucket).toHaveBeenCalledWith('test-bucket');
-      expect(mockFile.save).toHaveBeenCalledTimes(2);
-    });
-
-    it('should throw error if save fails with non-404 error', async () => {
-      const error = new Error('Insufficient permissions');
-      mockFile.save.mockRejectedValue(error);
-
-      await expect(gcpStorage.saveConfig(mockSystemConfig)).rejects.toThrow(
-        'Insufficient permissions',
-      );
-    });
-
-    it('should properly format JSON with indentation', async () => {
-      mockFile.save.mockResolvedValue(undefined);
-
-      await gcpStorage.saveConfig(mockSystemConfig);
-
-      const expectedContent = Buffer.from(JSON.stringify(mockSystemConfig, null, 2));
-      expect(mockFile.save).toHaveBeenCalledWith(
-        expectedContent,
-        expect.objectContaining({
-          contentType: 'application/octet-stream',
-        }),
       );
     });
   });

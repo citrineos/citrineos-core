@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IFileStorage } from '@citrineos/base';
-import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
+import { ConfigLoader, type IFileStorage } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
@@ -24,14 +24,12 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   private _securityCertChainKeyMap: Map<string, [string, string]>;
 
   private _config: SystemConfig;
-  private _websocketServersConfig: WebsocketServerConfig[];
   private _client: Client | undefined;
   private _logger: Logger<ILogObj>;
   private readonly _fileStorage: IFileStorage;
 
   private constructor(
     config: SystemConfig,
-    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     securityCertChainKeyMap: Map<string, [string, string]>,
     client: Client,
@@ -44,13 +42,11 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
     this._config = config;
-    this._websocketServersConfig = websocketServersConfig;
     this._email = config.integrations.chargingStationCA?.acme?.email;
   }
 
   static async create(
     config: SystemConfig,
-    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     logger?: Logger<ILogObj>,
     client?: Client,
@@ -58,6 +54,14 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     const log = logger
       ? logger.getSubLogger({ name: 'Acme' })
       : new Logger<ILogObj>({ name: 'Acme' });
+
+    // Read through ConfigLoader rather than taking the servers as an argument: it owns
+    // the one copy for the process, so this cannot be handed a snapshot that a later
+    // save has moved on from.
+    const websocketServersConfig = await ConfigLoader.loadWebsocketServersConfig(
+      fileStorage,
+      config.websocketServerConfigFile,
+    );
 
     // Collect all required file paths to check existence in configured file storage
     const securityProfile3Servers = websocketServersConfig.filter((s) => s.securityProfile === 3);
@@ -121,14 +125,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       });
     }
 
-    return new Acme(
-      config,
-      websocketServersConfig,
-      fileStorage,
-      securityCertChainKeyMap,
-      resolvedClient,
-      logger,
-    );
+    return new Acme(config, fileStorage, securityCertChainKeyMap, resolvedClient, logger);
   }
 
   /**

@@ -1,5 +1,12 @@
-import { configSchema, type SystemConfig, type SystemConfigInput } from '@citrineos/types';
+import {
+  configSchema,
+  type SystemConfig,
+  type SystemConfigInput,
+  type WebsocketServerConfig,
+  websocketServersConfigSchema,
+} from '@citrineos/types';
 import { z } from 'zod';
+import type { IFileStorage } from '../interfaces/files/fileStorage.js';
 
 const args = typeof process !== 'undefined' && process.argv ? process.argv.slice(2) : [];
 
@@ -13,10 +20,68 @@ for (const arg of args) {
 
 const CITRINE_ENV_VAR_PREFIX = dynamicPrefix;
 
+/**
+ * Prefixed variables that are deliberately not part of the config schema — runtime
+ * feature flags read straight from `process.env`. Listed here so the loader does not
+ * report them as misconfiguration. Compared without the prefix, case-insensitively.
+ */
+const NON_CONFIG_ENV_VARS = new Set(['use_drizzle']);
+
+/** One resolved path segment: the real schema key, and the level below it if any. */
+type KeyMapMatch = { key: string; child?: Record<string, any> };
+
 export class ConfigLoader {
-  public async loadConfig(): Promise<SystemConfig> {
+  private static websocketServers: WebsocketServerConfig[] | undefined;
+
+  public static async loadConfig(): Promise<SystemConfig> {
     const configFromEnv = this.mergeConfigFromEnvVars({}, process.env);
     return configSchema.parse(configFromEnv);
+  }
+
+  /**
+   * Reads and validates the websocket servers this pod hosts, or returns the already
+   * read config. The returned array is shared with every other caller — see
+   * {@link websocketServers}.
+   *
+   * @param fileStorage Storage the file is read through; keys resolve against its root.
+   * @param fileName `SystemConfig.websocketServerConfigFile`.
+   * @throws If the file is missing or fails schema validation.
+   */
+  public static async loadWebsocketServersConfig(
+    fileStorage: IFileStorage,
+    fileName: string,
+  ): Promise<WebsocketServerConfig[]> {
+    if (!this.websocketServers) {
+      const configString = await fileStorage.getFile(fileName);
+      if (!configString) {
+        throw new Error(`Websocket servers config file not found: ${fileName}`);
+      }
+      this.websocketServers = websocketServersConfigSchema.parse(JSON.parse(configString));
+    }
+    return this.websocketServers;
+  }
+
+  /**
+   * Validates and writes the websocket servers config back to storage, then brings the
+   * shared array up to date.
+   *
+   * @throws If `websocketServers` fails schema validation. Nothing is written or updated
+   *   in that case.
+   */
+  public static async saveWebsocketServersConfig(
+    fileStorage: IFileStorage,
+    fileName: string,
+    websocketServers: WebsocketServerConfig[],
+  ): Promise<void> {
+    const validated = websocketServersConfigSchema.parse(websocketServers);
+    await fileStorage.saveFile(fileName, Buffer.from(JSON.stringify(validated)));
+    if (this.websocketServers) {
+      // In place, not reassigned: consumers hold the array itself, so replacing it here
+      // would leave them on the previous one.
+      this.websocketServers.splice(0, this.websocketServers.length, ...validated);
+    } else {
+      this.websocketServers = validated;
+    }
   }
 
   /**
@@ -25,7 +90,7 @@ export class ConfigLoader {
    * @param envVars The environment variables.
    * @returns The merged configuration.
    */
-  private mergeConfigFromEnvVars(
+  private static mergeConfigFromEnvVars(
     config: SystemConfigInput,
     envVars: NodeJS.ProcessEnv,
   ): SystemConfigInput {
@@ -39,59 +104,62 @@ export class ConfigLoader {
       const lowercaseEnvKey = fullEnvKey.toLowerCase();
       if (lowercaseEnvKey.startsWith(CITRINE_ENV_VAR_PREFIX)) {
         const envKeyWithoutPrefix = lowercaseEnvKey.substring(CITRINE_ENV_VAR_PREFIX.length);
-        const path = envKeyWithoutPrefix.split('_');
+        if (NON_CONFIG_ENV_VARS.has(envKeyWithoutPrefix)) {
+          continue;
+        }
+        // Resolve the whole name against the schema before touching `config`. Every
+        // segment must match, including the last: a name that matches nothing would
+        // otherwise be written under its own lowercase spelling and then stripped by
+        // Zod, leaving a misspelled variable looking as though it had been applied.
+        // Resolving up front also keeps a rejected name from leaving half-built
+        // objects behind, which would make Zod fail about an unrelated field.
+        const segments = envKeyWithoutPrefix.split('_');
+        const schemaKeys: string[] = [];
+        let keyMapLevel: Record<string, any> | undefined = configKeyMap;
+        let unknownSegment: string | undefined;
 
-        let currentConfigPart: Record<string, any> = config;
-        let currentConfigKeyMap: Record<string, any> = configKeyMap;
-        let validMapping = true;
-
-        for (let i = 0; i < path.length - 1; i++) {
-          const part = path[i];
-          const lowerTargetKey = part.toLowerCase();
-          const matchingKey = Object.keys(currentConfigKeyMap).find(
-            (key) => key.toLowerCase() === lowerTargetKey,
-          );
-          if (!matchingKey) {
-            errors.push(
-              `Environment variable '${fullEnvKey}' refers to unknown configuration segment '${part}'.`,
-            );
-            validMapping = false;
+        for (const segment of segments) {
+          // No level left to search means an earlier segment was a leaf field.
+          const match: KeyMapMatch | undefined = keyMapLevel
+            ? this.lookupSegment(keyMapLevel, segment)
+            : undefined;
+          if (!match) {
+            unknownSegment = segment;
             break;
           }
-
-          if (currentConfigPart[matchingKey] === undefined) {
-            currentConfigPart[matchingKey] = {};
-          } else if (
-            typeof currentConfigPart[matchingKey] !== 'object' ||
-            currentConfigPart[matchingKey] === null
-          ) {
-            errors.push(
-              `Environment variable '${fullEnvKey}' refers to configuration segment '${part}', but its current value is not an object.`,
-            );
-            validMapping = false;
-            break;
-          }
-
-          currentConfigPart = currentConfigPart[matchingKey];
-          currentConfigKeyMap = currentConfigKeyMap[matchingKey];
+          schemaKeys.push(match.key);
+          keyMapLevel = match.child;
         }
 
-        if (!validMapping) {
+        if (unknownSegment !== undefined) {
+          errors.push(
+            `Environment variable '${fullEnvKey}' refers to unknown configuration field '${unknownSegment}'.`,
+          );
           continue;
         }
 
-        const finalPart = path[path.length - 1];
-        const mapped = currentConfigKeyMap[finalPart.toLowerCase()];
-        // Leaf keys map to their real (camelCase) schema key. A non-string means the
-        // env var targets a whole subtree (e.g. CITRINEOS_DATABASE='{"host":"..."}'),
-        // so recover the schema key from the map's own key casing instead.
-        const keyToUse =
-          typeof mapped === 'string'
-            ? mapped
-            : (Object.keys(currentConfigKeyMap).find(
-                (key) => key.toLowerCase() === finalPart.toLowerCase(),
-              ) ?? finalPart);
+        let currentConfigPart: Record<string, any> = config;
+        let conflictingSegment: string | undefined;
 
+        for (const key of schemaKeys.slice(0, -1)) {
+          const existing = currentConfigPart[key];
+          if (existing === undefined) {
+            currentConfigPart[key] = {};
+          } else if (typeof existing !== 'object' || existing === null) {
+            conflictingSegment = key;
+            break;
+          }
+          currentConfigPart = currentConfigPart[key];
+        }
+
+        if (conflictingSegment !== undefined) {
+          errors.push(
+            `Environment variable '${fullEnvKey}' refers to configuration segment '${conflictingSegment}', but its current value is not an object.`,
+          );
+          continue;
+        }
+
+        const keyToUse = schemaKeys[schemaKeys.length - 1];
         try {
           currentConfigPart[keyToUse] = JSON.parse(value as string);
         } catch {
@@ -106,13 +174,33 @@ export class ConfigLoader {
     return config;
   }
 
-  // private async loadWebsocketServersConfig(): Promise<WebsocketServerConfig[]> {
-  //   const configString = await this.fileStorage.getFile(this.configFileName, this.configBucketName);
-  //   if (!configString) throw new Error('Websocket servers config file not found.');
-  //   return JSON.parse(configString) as WebsocketServerConfig[];
-  // }
+  /**
+   * Resolves one path segment against a level of the key map.
+   *
+   * A level holds leaf fields as `lowercasename -> realKey` and nested objects as
+   * `realKey -> submap`, so both spellings have to be tried.
+   *
+   * @returns The real schema key, plus the submap to descend into when the segment named
+   *   a nested object. `child` is undefined for a leaf field, which is what tells the
+   *   caller that a further segment cannot resolve. Undefined when nothing matched.
+   */
+  private static lookupSegment(
+    keyMap: Record<string, any>,
+    segment: string,
+  ): KeyMapMatch | undefined {
+    const mapped = keyMap[segment];
+    if (typeof mapped === 'string') {
+      return { key: mapped };
+    }
+    const key = Object.keys(keyMap).find((candidate) => candidate.toLowerCase() === segment);
+    if (!key) {
+      return undefined;
+    }
+    const child = keyMap[key];
+    return { key, child: typeof child === 'object' && child !== null ? child : undefined };
+  }
 
-  private getZodSchemaKeyMap(schema: z.ZodTypeAny): Record<string, any> {
+  private static getZodSchemaKeyMap(schema: z.ZodTypeAny): Record<string, any> {
     if (
       schema instanceof z.ZodNullable ||
       schema instanceof z.ZodOptional ||

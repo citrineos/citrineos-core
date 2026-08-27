@@ -4,13 +4,13 @@
 import { Boot, IBootRepository } from '@citrineos/core';
 import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import { ICache } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/types';
+import { OCPP2_0_1, SystemConfig } from '@citrineos/types';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
-type Configuration = SystemConfig['modules']['configuration'];
+type Configuration = SystemConfig['ocpp'];
 
 describe('BootService', () => {
   const { container } = createTestContainer();
@@ -32,20 +32,15 @@ describe('BootService', () => {
       set: vi.fn(),
     } as unknown as Mocked<ICache>;
 
+    // One flat block now — the per-protocol ocpp2_0_1/ocpp1_6 sub-blocks were
+    // collapsed into a single `ocpp` config shared by every OCPP version.
     mockConfig = {
       bootRetryInterval: 0,
       heartbeatInterval: 0,
-      requests: [],
-      responses: [],
-      ocpp2_0_1: {
-        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-        getBaseReportOnPending: false,
-        bootWithRejectedVariables: false,
-        autoAccept: false,
-      },
-      ocpp1_6: {
-        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
-      },
+      unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      getBaseReportOnPending: false,
+      bootWithRejectedVariables: false,
+      autoAccept: false,
     };
 
     bootService = getTestInstance(container, BootNotificationService, {
@@ -96,9 +91,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
       const bootConfig = aValidBootConfig((item: Boot) => (item.getBaseReportOnPending = false));
 
-      if (mockConfig && mockConfig.ocpp2_0_1) {
-        mockConfig.ocpp2_0_1.autoAccept = true;
-      }
+      mockConfig.autoAccept = true;
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });
@@ -118,9 +111,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      if (mockConfig && mockConfig.ocpp2_0_1) {
-        mockConfig.ocpp2_0_1.autoAccept = true;
-      }
+      mockConfig.autoAccept = true;
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });

@@ -7,4 +7,3 @@ export { WebsocketNetworkConnection } from './WebsocketNetworkConnection.js';
 export { BasicAuthenticationFilter } from './authenticator/BasicAuthenticationFilter.js';
 export { ConnectedStationFilter } from './authenticator/ConnectedStationFilter.js';
 export { UnknownStationFilter } from './authenticator/UnknownStationFilter.js';
-export { loadWebsocketServersConfig } from './websocketServersConfig.js';

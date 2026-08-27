@@ -5,6 +5,7 @@
 import {
   type AbstractModule,
   Ajv,
+  ConfigLoader,
   type IApiAuthProvider,
   type IAuthenticator,
   type ICache,
@@ -22,7 +23,6 @@ import {
   HealthCheckService,
   initSwagger,
   type IServerNetworkProfileRepository,
-  loadWebsocketServersConfig,
   LocalStorage,
   MemoryCache,
   RabbitMQChannelManager,
@@ -343,14 +343,9 @@ export class CitrineOSServer {
    * Builds the DI container from the prebuilt primitives. Everything else is resolved
    * from / wired through it by the rest of initialize().
    *
-   * Separate from the constructor because the websocket servers config is read
-   * asynchronously through fileStorage, and Awilix resolution is synchronous — so it
-   * has to be loaded before any registration can hand it out. It is loaded here rather
-   * than by the network connection so that module-only modes, which never construct
-   * one, can still resolve services that depend on it (certificateAuthorityService).
    */
   protected async initContainer(): Promise<void> {
-    const websocketServersConfig = await loadWebsocketServersConfig(
+    await ConfigLoader.loadWebsocketServersConfig(
       this._fileStorage,
       this._config.websocketServerConfigFile,
     );
@@ -361,7 +356,6 @@ export class CitrineOSServer {
       fileStorage: this._fileStorage,
       ocppValidator: this._ocppValidator,
       server: this._server,
-      websocketServersConfig,
     });
   }
 

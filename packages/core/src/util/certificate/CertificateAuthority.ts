@@ -5,7 +5,6 @@ import type { ICache, IFileStorage } from '@citrineos/base';
 import {
   type CertificateSigningUseEnumType,
   type SystemConfig,
-  type WebsocketServerConfig,
   CertificateSigningUseEnum,
   OCPP2_1,
 } from '@citrineos/types';
@@ -45,13 +44,11 @@ export class CertificateAuthorityService {
 
   constructor({
     config,
-    websocketServersConfig,
     cache,
     logger,
     fileStorage,
   }: {
     config: SystemConfig;
-    websocketServersConfig: WebsocketServerConfig[];
     cache: ICache;
     logger: Logger<ILogObj>;
     fileStorage: IFileStorage;
@@ -65,7 +62,6 @@ export class CertificateAuthorityService {
       this._chargingStationClientPromise =
         CertificateAuthorityService._instantiateChargingStationClient(
           config,
-          websocketServersConfig,
           this._fileStorage,
           logger,
         );
@@ -336,13 +332,12 @@ export class CertificateAuthorityService {
 
   protected static async _instantiateChargingStationClient(
     config: SystemConfig,
-    websocketServersConfig: WebsocketServerConfig[],
     fileStorage: IFileStorage,
     logger?: Logger<ILogObj>,
   ): Promise<IChargingStationCertificateAuthorityClient> {
     switch (config.integrations.chargingStationCA?.name) {
       case 'acme':
-        return Acme.create(config, websocketServersConfig, fileStorage, logger);
+        return Acme.create(config, fileStorage, logger);
       default:
         throw new Error(
           `Unsupported Charging Station CA: ${config.integrations.chargingStationCA?.name}`,

@@ -27,7 +27,7 @@ import { RabbitMQChannelManager } from './ChannelManager.js';
  * The instance queue name is derived from `amqpConfig.instanceIdentifier`, defaulting to
  * `router-<Date.now()>` when not set. This value should be set to a stable, unique identifier
  * per process (e.g. the ECS task hostname or Kubernetes pod name) via the `INSTANCE_IDENTIFIER`
- * environment variable wired into `SystemConfig.util.messageBroker.amqp.instanceIdentifier`.
+ * environment variable wired into `SystemConfig.messageBroker.amqp.instanceIdentifier`.
  */
 export class RabbitMqReceiver extends AbstractMessageHandler {
   protected static readonly QUEUE_PREFIX = 'rabbit_queue_';

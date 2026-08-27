@@ -6,7 +6,7 @@ import 'ts-node/register';
 
 export default (async () => {
   try {
-    const bootstrapConfig = await new ConfigLoader().loadConfig();
+    const bootstrapConfig = await ConfigLoader.loadConfig();
 
     const { host, port, database, dialect, username, password, ssl } = bootstrapConfig.database;
 
