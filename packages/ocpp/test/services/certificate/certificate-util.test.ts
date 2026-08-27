@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  createOcspRequest,
   createPemBlock,
   createSignedCertificateFromCSR,
   extractCertificateArrayFromEncodedString,
@@ -10,6 +11,7 @@ import {
   parseCertificateChainPem,
   sendOCSPRequest,
 } from '@/services/index.js';
+import { OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { faker } from '@faker-js/faker';
 import { readFile } from '../../utils/file-util.js';
@@ -77,6 +79,42 @@ describe('CertificateUtil', () => {
     });
   });
 
+  describe('createOcspRequest', () => {
+    const givenOcspRequestData: OCPP2_1.OCSPRequestDataType = {
+      hashAlgorithm: OCPP2_1.HashAlgorithmEnumType.SHA256,
+      issuerNameHash: 'aa'.repeat(32),
+      issuerKeyHash: 'bb'.repeat(32),
+      serialNumber: '0102030405',
+      responderURL: 'http://ocsp.example.test/responder',
+    };
+
+    it('encodes the hash data the station reported', () => {
+      const hex = createOcspRequest(givenOcspRequestData).getEncodedHex();
+
+      const parsed = new jsrsasign.KJUR.asn1.ocsp.OCSPParser().getOCSPRequest(hex);
+      expect(parsed.array).toEqual([
+        {
+          alg: 'sha256',
+          issname: givenOcspRequestData.issuerNameHash,
+          isskey: givenOcspRequestData.issuerKeyHash,
+          sbjsn: givenOcspRequestData.serialNumber,
+        },
+      ]);
+    });
+
+    it.each([
+      OCPP2_1.HashAlgorithmEnumType.SHA256,
+      OCPP2_1.HashAlgorithmEnumType.SHA384,
+      OCPP2_1.HashAlgorithmEnumType.SHA512,
+    ])('encodes with hash algorithm %s', (hashAlgorithm) => {
+      // OCPP spells these upper case; jsrsasign only resolves the lower-case OID names.
+      const hex = createOcspRequest({ ...givenOcspRequestData, hashAlgorithm }).getEncodedHex();
+
+      const parsed = new jsrsasign.KJUR.asn1.ocsp.OCSPParser().getOCSPRequest(hex);
+      expect(parsed.array[0].alg).toBe(hashAlgorithm.toLowerCase());
+    });
+  });
+
   describe('sendOCSPRequest', () => {
     global.fetch = vi.fn();
 
@@ -93,24 +131,26 @@ describe('CertificateUtil', () => {
     const givenResponderURL = faker.internet.url();
 
     it('success', async () => {
-      const mockResult = faker.lorem.word();
+      // RFC 6960 Appendix A.1: the body is the DER of the OCSPRequest and the responder answers
+      // with the DER of an OCSPResponse, so neither direction survives a text decode.
+      const responderDer = Uint8Array.from([0x30, 0x03, 0x0a, 0x01, 0x00, 0x80, 0x81]);
       (fetch as Mock).mockReturnValueOnce(
         Promise.resolve({
           ok: true,
-          text: () => mockResult,
+          arrayBuffer: () => Promise.resolve(responderDer.buffer),
         }),
       );
 
       const actualResult = await sendOCSPRequest(givenRequest, givenResponderURL);
 
-      expect(actualResult).toBe(mockResult);
+      expect(actualResult).toBe(Buffer.from(responderDer).toString('hex'));
       const expectedInit: RequestInit = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/ocsp-request',
           Accept: 'application/ocsp-response',
         },
-        body: givenRequest.getEncodedHex(),
+        body: Uint8Array.from(Buffer.from(givenRequest.getEncodedHex(), 'hex')),
       };
       expect(fetch).toHaveBeenCalledWith(givenResponderURL, expectedInit);
     });

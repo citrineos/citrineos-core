@@ -7,7 +7,7 @@ import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@citrineos/dal';
-import type { CertificateCreate } from '@citrineos/types';
+import type { CertificateCreate, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
@@ -15,7 +15,6 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
 
@@ -283,6 +282,11 @@ export function createSignedCertificateFromCSR(
     cakey: issuerPrivateKeyPem,
   });
 }
+/**
+ * The members jsrsasign 11 reads a value-based CertID from. @types/jsrsasign is still on the
+ * jsrsasign 10 names (namehash / keyhash / serial), which the installed runtime no longer accepts,
+ * so the shape has to be declared here and cast in.
+ */
 interface OcspCertIdValueParams {
   alg: string;
   issname: string;
@@ -290,24 +294,28 @@ interface OcspCertIdValueParams {
   sbjsn: string;
 }
 
-export function createOcspRequest(reqData: {
-  hashAlgorithm: string;
-  issuerNameHash: string;
-  issuerKeyHash: string;
-  serialNumber: string;
-}): Request {
-  const params: OcspCertIdValueParams = {
+/**
+ * Builds the RFC 6960 OCSPRequest for the certificate a station asked about. jsrsasign looks the
+ * digest algorithm up in an OID table that only holds lower-case names, so the upper-case
+ * HashAlgorithmEnumType value off the wire has to be folded before it reaches the encoder.
+ */
+export function createOcspRequest(
+  reqData: OCPP2_0_1.OCSPRequestDataType | OCPP2_1.OCSPRequestDataType,
+): OCSPRequest {
+  const certId: OcspCertIdValueParams = {
     alg: reqData.hashAlgorithm.toLowerCase(),
     issname: reqData.issuerNameHash,
     isskey: reqData.issuerKeyHash,
     sbjsn: reqData.serialNumber,
   };
 
-  return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
+  return new OCSPRequest({
+    reqList: [certId as unknown as jsrsasign.KJUR.asn1.ocsp.CertificateRequest],
+  });
 }
 
 export async function sendOCSPRequest(
-  ocspRequest: OCSPRequest | Request,
+  ocspRequest: OCSPRequest,
   responderURL: string,
 ): Promise<string> {
   const response = await fetch(responderURL, {
@@ -316,7 +324,7 @@ export async function sendOCSPRequest(
       'Content-Type': 'application/ocsp-request',
       Accept: 'application/ocsp-response',
     },
-    body: ocspRequest.getEncodedHex(),
+    body: Uint8Array.from(Buffer.from(ocspRequest.getEncodedHex(), 'hex')),
   });
 
   if (!response.ok) {
@@ -325,7 +333,7 @@ export async function sendOCSPRequest(
     );
   }
 
-  return await response.text();
+  return Buffer.from(await response.arrayBuffer()).toString('hex');
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {
