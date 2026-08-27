@@ -55,13 +55,18 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
     });
     if (request) {
       const status = message.payload.status as ReserveNowStatusEnumType;
-      await this._reservationRepository.updateByKey(
+      await this._reservationRepository.updateAllByQuery(
         message.context.tenantId,
         {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,
         },
-        request.payload.id,
+        {
+          where: {
+            id: request.payload.id,
+            ocppConnectionName: message.context.ocppConnectionName,
+          },
+        },
       );
     } else {
       this._logger.error(
