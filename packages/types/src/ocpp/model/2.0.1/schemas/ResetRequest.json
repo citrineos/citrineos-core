@@ -18,13 +18,13 @@
       "description": "This contains the type of reset that the Charging Station or EVSE should perform.\r\n",
       "javaType": "ResetEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Immediate", "OnIdle"],
       "tsEnumNames": ["Immediate", "OnIdle"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

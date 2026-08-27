@@ -18,7 +18,7 @@
       "description": "This indicates whether the Charging Station is able to display the message.\r\n",
       "javaType": "DisplayMessageStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Accepted",
         "NotSupportedMessageFormat",
@@ -40,7 +40,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -60,7 +60,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

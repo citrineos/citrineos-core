@@ -18,7 +18,7 @@
       "description": "The type of this monitor, e.g. a threshold, delta or periodic monitor. \r\n\r\n",
       "javaType": "MonitorEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["UpperThreshold", "LowerThreshold", "Delta", "Periodic", "PeriodicClockAligned"],
       "tsEnumNames": [
         "UpperThreshold",
@@ -32,7 +32,7 @@
       "description": "Status is OK if a value could be returned. Otherwise this will indicate the reason why a value could not be returned.\r\n",
       "javaType": "SetMonitoringStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Accepted",
         "UnknownComponent",
@@ -54,7 +54,7 @@
       "description": "A physical or logical component\r\n",
       "javaType": "Component",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -79,7 +79,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -103,7 +103,7 @@
       "description": "Class to hold result of SetVariableMonitoring request.\r\n",
       "javaType": "SetMonitoringResult",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -140,7 +140,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -162,7 +162,7 @@
       "description": "Reference key to a component-variable.\r\n",
       "javaType": "Variable",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -182,7 +182,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

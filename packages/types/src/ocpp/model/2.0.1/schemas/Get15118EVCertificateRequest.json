@@ -18,13 +18,13 @@
       "description": "Defines whether certificate needs to be installed or updated.\r\n",
       "javaType": "CertificateActionEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Install", "Update"],
       "tsEnumNames": ["Install", "Update"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

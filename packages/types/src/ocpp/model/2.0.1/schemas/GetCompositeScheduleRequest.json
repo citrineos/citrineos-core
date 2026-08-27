@@ -18,13 +18,13 @@
       "description": "Can be used to force a power or current profile.\r\n\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["W", "A"],
       "tsEnumNames": ["W", "A"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

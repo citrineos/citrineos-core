@@ -18,13 +18,13 @@
       "description": "This field specifies the report base.\r\n",
       "javaType": "ReportBaseEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["ConfigurationInventory", "FullInventory", "SummaryInventory"],
       "tsEnumNames": ["ConfigurationInventory", "FullInventory", "SummaryInventory"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

@@ -18,13 +18,13 @@
       "description": "Indicates the type of certificate that is to be signed. When omitted the certificate is to be used for both the 15118 connection (if implemented) and the Charging Station to CSMS connection.\r\n\r\n",
       "javaType": "CertificateSigningUseEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["ChargingStationCertificate", "V2GCertificate"],
       "tsEnumNames": ["ChargingStationCertificate", "V2GCertificate"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

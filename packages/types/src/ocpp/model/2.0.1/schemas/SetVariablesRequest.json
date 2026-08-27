@@ -19,7 +19,7 @@
       "javaType": "AttributeEnum",
       "type": "string",
       "default": "Actual",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Actual", "Target", "MinSet", "MaxSet"],
       "tsEnumNames": ["Actual", "Target", "MinSet", "MaxSet"]
     },
@@ -27,7 +27,7 @@
       "description": "A physical or logical component\r\n",
       "javaType": "Component",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -52,7 +52,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -75,7 +75,7 @@
     "SetVariableDataType": {
       "javaType": "SetVariableData",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -101,7 +101,7 @@
       "description": "Reference key to a component-variable.\r\n",
       "javaType": "Variable",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -121,7 +121,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

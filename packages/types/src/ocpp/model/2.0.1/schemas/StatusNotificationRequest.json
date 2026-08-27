@@ -18,13 +18,13 @@
       "description": "This contains the current status of the Connector.\r\n",
       "javaType": "ConnectorStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"],
       "tsEnumNames": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

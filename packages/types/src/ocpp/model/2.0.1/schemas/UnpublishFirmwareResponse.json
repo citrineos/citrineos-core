@@ -18,13 +18,13 @@
       "description": "Indicates whether the Local Controller succeeded in unpublishing the firmware.\r\n",
       "javaType": "UnpublishFirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["DownloadOngoing", "NoFirmware", "Unpublished"],
       "tsEnumNames": ["DownloadOngoing", "NoFirmware", "Unpublished"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

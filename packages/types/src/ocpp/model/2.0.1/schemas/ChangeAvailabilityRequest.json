@@ -18,7 +18,7 @@
       "description": "This contains the type of availability change that the Charging Station should perform.\r\n\r\n",
       "javaType": "OperationalStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Inoperative", "Operative"],
       "tsEnumNames": ["Inoperative", "Operative"]
     },
@@ -26,7 +26,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -48,7 +48,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

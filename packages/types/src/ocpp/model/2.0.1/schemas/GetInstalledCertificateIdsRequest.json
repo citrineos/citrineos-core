@@ -17,7 +17,7 @@
     "GetCertificateIdUseEnumType": {
       "javaType": "GetCertificateIdUseEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "V2GRootCertificate",
         "MORootCertificate",
@@ -35,7 +35,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

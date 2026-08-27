@@ -17,7 +17,7 @@
     "ComponentCriterionEnumType": {
       "javaType": "ComponentCriterionEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Active", "Available", "Enabled", "Problem"],
       "tsEnumNames": ["Active", "Available", "Enabled", "Problem"]
     },
@@ -25,7 +25,7 @@
       "description": "A physical or logical component\r\n",
       "javaType": "Component",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -50,7 +50,7 @@
       "description": "Class to report components, variables and variable attributes and characteristics.\r\n",
       "javaType": "ComponentVariable",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -68,7 +68,7 @@
       "description": "EVSE\r\nurn:x-oca:ocpp:uid:2:233123\r\nElectric Vehicle Supply Equipment\r\n",
       "javaType": "EVSE",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -92,7 +92,7 @@
       "description": "Reference key to a component-variable.\r\n",
       "javaType": "Variable",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -112,7 +112,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

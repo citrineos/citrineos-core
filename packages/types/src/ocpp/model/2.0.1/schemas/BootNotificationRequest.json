@@ -18,7 +18,7 @@
       "description": "This contains the reason for sending this message to the CSMS.\r\n",
       "javaType": "BootReasonEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "ApplicationReset",
         "FirmwareUpdate",
@@ -46,7 +46,7 @@
       "description": "Charge_ Point\r\nurn:x-oca:ocpp:uid:2:233122\r\nThe physical system where an Electrical Vehicle (EV) can be charged.\r\n",
       "javaType": "ChargingStation",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -81,7 +81,7 @@
       "description": "Wireless_ Communication_ Module\r\nurn:x-oca:ocpp:uid:2:233306\r\nDefines parameters required for initiating and maintaining wireless communication with other devices.\r\n",
       "javaType": "Modem",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -101,7 +101,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

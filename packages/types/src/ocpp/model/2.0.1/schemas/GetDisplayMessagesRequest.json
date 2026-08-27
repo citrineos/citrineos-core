@@ -18,7 +18,7 @@
       "description": "If provided the Charging Station shall return Display Messages with the given priority only.\r\n",
       "javaType": "MessagePriorityEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["AlwaysFront", "InFront", "NormalCycle"],
       "tsEnumNames": ["AlwaysFront", "InFront", "NormalCycle"]
     },
@@ -26,13 +26,13 @@
       "description": "If provided the Charging Station shall return Display Messages with the given state only. \r\n",
       "javaType": "MessageStateEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Charging", "Faulted", "Idle", "Unavailable"],
       "tsEnumNames": ["Charging", "Faulted", "Idle", "Unavailable"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

@@ -18,13 +18,13 @@
       "description": "Specify which monitoring base will be set\r\n",
       "javaType": "MonitoringBaseEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["All", "FactoryDefault", "HardWiredOnly"],
       "tsEnumNames": ["All", "FactoryDefault", "HardWiredOnly"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

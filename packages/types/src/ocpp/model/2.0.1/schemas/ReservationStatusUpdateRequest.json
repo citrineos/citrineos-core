@@ -18,13 +18,13 @@
       "description": "The updated reservation status.\r\n",
       "javaType": "ReservationUpdateStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Expired", "Removed"],
       "tsEnumNames": ["Expired", "Removed"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

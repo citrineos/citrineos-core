@@ -18,7 +18,7 @@
       "description": "This contains the type of log file that the Charging Station\r\nshould send.\r\n",
       "javaType": "LogEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["DiagnosticsLog", "SecurityLog"],
       "tsEnumNames": ["DiagnosticsLog", "SecurityLog"]
     },
@@ -26,7 +26,7 @@
       "description": "Log\r\nurn:x-enexis:ecdm:uid:2:233373\r\nGeneric class for the configuration of logging entries.\r\n",
       "javaType": "LogParameters",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -51,7 +51,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

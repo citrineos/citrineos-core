@@ -18,7 +18,7 @@
       "description": "Charging_ Needs. Requested. Energy_ Transfer_ Mode_ Code\r\nurn:x-oca:ocpp:uid:1:569209\r\nMode of energy transfer requested by the EV.\r\n",
       "javaType": "EnergyTransferModeEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"],
       "tsEnumNames": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"]
     },
@@ -26,7 +26,7 @@
       "description": "AC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233250\r\nEV AC charging parameters.\r\n\r\n",
       "javaType": "ACChargingParameters",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -62,7 +62,7 @@
       "description": "Charging_ Needs\r\nurn:x-oca:ocpp:uid:2:233249\r\n",
       "javaType": "ChargingNeeds",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -88,7 +88,7 @@
       "description": "DC_ Charging_ Parameters\r\nurn:x-oca:ocpp:uid:2:233251\r\nEV DC charging parameters\r\n\r\n\r\n",
       "javaType": "DCChargingParameters",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -146,7 +146,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

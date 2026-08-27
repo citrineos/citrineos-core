@@ -18,7 +18,7 @@
       "description": "This contains the progress status of the publishfirmware\r\ninstallation.\r\n",
       "javaType": "PublishFirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Idle",
         "DownloadScheduled",
@@ -46,7 +46,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

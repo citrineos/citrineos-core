@@ -18,7 +18,7 @@
       "description": "Indicates whether the Charging Station will send the requested notification or not.\r\n",
       "javaType": "TriggerMessageStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotImplemented"],
       "tsEnumNames": ["Accepted", "Rejected", "NotImplemented"]
     },
@@ -26,7 +26,7 @@
       "description": "Element providing more information about the status.\r\n",
       "javaType": "StatusInfo",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -46,7 +46,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

@@ -18,13 +18,13 @@
       "description": "Source of the charging limit.\r\n",
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["EMS", "Other", "SO", "CSO"],
       "tsEnumNames": ["EMS", "Other", "SO", "CSO"]
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

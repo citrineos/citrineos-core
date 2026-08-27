@@ -18,7 +18,7 @@
       "description": "This field specifies the connector type.\r\n",
       "javaType": "ConnectorEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "cCCS1",
         "cCCS2",
@@ -72,7 +72,7 @@
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Central",
         "eMAID",
@@ -98,7 +98,7 @@
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
       "javaType": "AdditionalInfo",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -120,7 +120,7 @@
       "description": "Contains a case insensitive identifier to use for the authorization and the type of authorization to support multiple forms of identifiers.\r\n",
       "javaType": "IdToken",
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "customData": {
           "$ref": "#/definitions/CustomDataType"
@@ -146,7 +146,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"

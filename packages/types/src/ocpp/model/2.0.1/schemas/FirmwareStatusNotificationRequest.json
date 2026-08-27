@@ -18,7 +18,7 @@
       "description": "This contains the progress status of the firmware installation.\r\n",
       "javaType": "FirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Downloaded",
         "DownloadFailed",
@@ -54,7 +54,7 @@
     }
   },
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "customData": {
       "$ref": "#/definitions/CustomDataType"
