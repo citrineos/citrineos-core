@@ -124,7 +124,11 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       return;
     }
 
-    const stoppedReason = request.reason || (request.idTag ? 'Remote' : 'Local');
+    // 4.10: "If a transaction is ended in a normal way (e.g. EV-driver presented his
+    // identification to stop the transaction), the Reason element MAY be omitted and the Reason
+    // SHOULD be assumed 'Local'." The example is the case where an idTag is present, so an omitted
+    // reason is Local either way.
+    const stoppedReason = request.reason ?? OCPP1_6.StopTransactionRequestReason.Local;
 
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
       tenantId,
