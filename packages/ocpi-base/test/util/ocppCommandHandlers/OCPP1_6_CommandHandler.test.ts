@@ -151,6 +151,7 @@ describe('OCPP1_6_CommandHandler.sendStartSessionCommand', () => {
 
     expect(sent).toHaveLength(0);
     expect(postCommandResult).toHaveBeenCalledOnce();
-    expect(postCommandResult.mock.calls[0][6]).toMatchObject({ result: 'FAILED' });
+    // postCommandResult(tenantPartner, responseUrl, commandResult, commandId) — the result body is arg 2.
+    expect(postCommandResult.mock.calls[0][2]).toMatchObject({ result: 'FAILED' });
   });
 });
