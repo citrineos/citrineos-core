@@ -88,6 +88,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const bootNotificationResponse: OCPP2_response_types.BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(tenantId, ocppConnectionName);
@@ -95,12 +96,12 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: RegistrationStatusEnumType | null = await this._cache.get(
       BOOT_STATUS,
-      ocppConnectionName,
+      identifier,
     );
 
     // Blacklist or whitelist charger actions in cache
     await this._bootService.cacheChargerActionsPermissions(
-      ocppConnectionName,
+      identifier,
       cachedBootStatus,
       bootNotificationResponse.status,
     );
@@ -112,10 +113,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Order matters: updateDeviceModel creates VariableAttributes with a FK
     // reference to the ChargingStation record, so the station must exist first.
     const stationUpdate = (async () => {
-      const connectionJson = await this._cache.get<string>(
-        createIdentifier(tenantId, ocppConnectionName),
-        CacheNamespace.Connections,
-      );
+      const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
         : null;
@@ -165,7 +163,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, identifier);
     }
 
     // Boot.stationId is a non-null FK, so the station must be committed first.
@@ -194,7 +192,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       this._config.modules.configuration.ocpp2_0_1?.getBaseReportOnPending
     ) {
       // Remove Notify Report from blacklist
-      await this._cache.remove(OCPP_CallAction.NotifyReport, ocppConnectionName);
+      await this._cache.remove(OCPP_CallAction.NotifyReport, identifier);
 
       const getBaseReportRequest = await this._bootService.createGetBaseReportRequest(
         ocppConnectionName,

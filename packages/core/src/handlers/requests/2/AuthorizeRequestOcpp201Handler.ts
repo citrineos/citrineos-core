@@ -122,18 +122,17 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     // Validate Contract Certificates based on OCPP 2.0.1 Part 2 C07
     if (request.iso15118CertificateHashData || request.certificate) {
       // TODO - implement validation using cached OCSP data described in C07.FR.05
-      if (request.iso15118CertificateHashData && request.iso15118CertificateHashData.length > 0) {
-        response.certificateStatus =
-          await this._certificateAuthorityService.validateCertificateHashData(
-            request.iso15118CertificateHashData,
-          );
-      }
       // If Charging Station is not able to validate a contract certificate,
       // it SHALL pass the contract certificate chain to the CSMS in certificate attribute (in PEM
       // format) of AuthorizeRequest for validation by CSMS, see C07.FR.06
       if (request.certificate) {
         response.certificateStatus =
           await this._certificateAuthorityService.validateCertificateChainPem(request.certificate);
+      } else if (request.iso15118CertificateHashData?.length) {
+        response.certificateStatus =
+          await this._certificateAuthorityService.validateCertificateHashData(
+            request.iso15118CertificateHashData,
+          );
       }
       if (response.certificateStatus !== AuthorizeCertificateStatusEnum.Accepted) {
         response = {
@@ -180,10 +179,9 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           // Authorization restrictions MUST provide these variable attributes as defined in Physical Component
           // list of Part 2 - Appendices of OCPP 2.0.1
           let evseIds: Set<number> | undefined = undefined;
-          if (
-            authorization.allowedConnectorTypes &&
-            authorization.allowedConnectorTypes.length > 0
-          ) {
+          const allowedConnectorTypes = authorization.allowedConnectorTypes ?? [];
+          const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
+          if (hasConnectorTypeRestriction) {
             evseIds = new Set();
             const connectorTypes: VariableAttribute[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -194,8 +192,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
                 type: AttributeEnum.Actual,
               });
             for (const connectorType of connectorTypes) {
-              if (authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0) {
-                evseIds.add(connectorType.evse?.id as number);
+              if (allowedConnectorTypes.includes(connectorType.value as string)) {
+                evseIds.add(connectorType.component?.evse?.id as number);
               }
             }
           }
@@ -222,14 +220,14 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
                   type: AttributeEnum.Actual,
                 });
               for (const evseIdAttribute of evseIdAttributes) {
-                const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes.some(
+                const evseIdDisallowed: boolean = authorization.disallowedEvseIdPrefixes.some(
                   (disallowedEvseId: string) =>
                     (evseIdAttribute.value as string).startsWith(disallowedEvseId),
                 );
-                if (evseIdAllowed && !authorization.allowedConnectorTypes) {
-                  evseIds.add(evseIdAttribute.evse?.id as number);
-                } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
-                  evseIds.delete(evseIdAttribute.evse?.id as number);
+                if (evseIdDisallowed) {
+                  evseIds.delete(evseIdAttribute.component?.evse?.id as number);
+                } else if (!hasConnectorTypeRestriction) {
+                  evseIds.add(evseIdAttribute.component?.evse?.id as number);
                 }
               }
             }

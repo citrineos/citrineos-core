@@ -110,7 +110,6 @@ export { recordAuthorizeResult } from './src/util/AuthorizationMetrics.js';
 export {
   assert,
   createIdentifier,
-  getCacheTenantPathMappingKey,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
   MeterValueUtils,

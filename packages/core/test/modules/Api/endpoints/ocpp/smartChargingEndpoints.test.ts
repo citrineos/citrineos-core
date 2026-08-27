@@ -63,6 +63,29 @@ describe('smartCharging message endpoints', () => {
       expect(sendCall).not.toHaveBeenCalled();
     });
 
+    it('sends for the whole station when the criteria name evseId 0', async () => {
+      // The spec: "An evseId of zero (0) specifies the charging profile for the overall
+      // Charging Station."
+      const confirmations = await handle({ chargingProfileCriteria: { evseId: 0 } });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('sends when the criteria name stack level 0, the lowest the schema allows', async () => {
+      const confirmations = await handle({ chargingProfileCriteria: { stackLevel: 0 } });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('treats charging profile id 0 as an id, not as an absent one', async () => {
+      const confirmations = await handle({ chargingProfileId: 0 });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
     it('refuses criteria alongside an id as redundant', async () => {
       const confirmations = await handle({
         chargingProfileId: 1,
@@ -128,6 +151,26 @@ describe('smartCharging message endpoints', () => {
       });
 
       expect(confirmations[0].success).toBe(true);
+    });
+
+    it('sends when queried by stack level 0', async () => {
+      const confirmations = await handle({
+        requestId: 1,
+        chargingProfile: { stackLevel: 0 },
+      });
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalledOnce();
+    });
+
+    it('refuses stack level 0 alongside a profile id, like any other criterion', async () => {
+      const confirmations = await handle({
+        requestId: 1,
+        chargingProfile: { chargingProfileId: [1], stackLevel: 0 },
+      });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(sendCall).not.toHaveBeenCalled();
     });
 
     it('refuses mixing profile ids with other criteria', async () => {
@@ -276,8 +319,18 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, SetChargingProfileEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: { readAllByQuerystring },
-        chargingProfileRepository: { createOrUpdateChargingProfile },
+        deviceModelRepository: {
+          readAllByQuerystring,
+          // No RateUnit characteristics stored, so the member-list check is skipped.
+          findVariableCharacteristicsByVariableNameAndVariableInstance: vi
+            .fn()
+            .mockResolvedValue(undefined),
+        },
+        chargingProfileRepository: {
+          createOrUpdateChargingProfile,
+          readAllByQuery: vi.fn().mockResolvedValue([]),
+          existByQuery: vi.fn().mockResolvedValue(0),
+        },
         transactionEventRepository: {},
       });
 
@@ -313,6 +366,59 @@ describe('smartCharging message endpoints', () => {
       expect(confirmations[0].success).toBe(false);
       expect(String(confirmations[0].payload)).toContain('should not be in the future');
       expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    /** A schedule whose single period asks the station to charge on one specific phase. */
+    const aPhaseToUseSchedule = () => ({
+      chargingSchedule: [
+        {
+          id: 1,
+          // Absolute is the kind aProfile() uses, so a startSchedule is required.
+          startSchedule: new Date().toISOString(),
+          chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.A,
+          chargingSchedulePeriod: [{ startPeriod: 0, limit: 16, numberPhases: 1, phaseToUse: 1 }],
+        },
+      ],
+    });
+
+    /** Mocks the device model so ACPhaseSwitchingSupported reports the given value. */
+    const withPhaseSwitching = (value: string | undefined) => {
+      readAllByQuerystring.mockImplementation(async (_tenantId: number, query: any) =>
+        query.variable_name === 'ACPhaseSwitchingSupported' && value !== undefined
+          ? [{ value }]
+          : [],
+      );
+    };
+
+    it('refuses phaseToUse when the station reports AC phase switching unsupported', async () => {
+      // The guard tested only whether the variable row existed, not what it said. A station that
+      // explicitly reports ACPhaseSwitchingSupported=false has a row, so the profile was accepted
+      // and forwarded to hardware that cannot honour it.
+      withPhaseSwitching('false');
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('phaseToUse not allowed');
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses phaseToUse when the station does not report the variable at all', async () => {
+      withPhaseSwitching(undefined);
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('phaseToUse not allowed');
+    });
+
+    it('allows phaseToUse when the station reports AC phase switching supported', async () => {
+      withPhaseSwitching('true');
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).not.toBe(false);
+      expect(sendCall).toHaveBeenCalled();
     });
 
     it('refuses a profile that has already expired', async () => {

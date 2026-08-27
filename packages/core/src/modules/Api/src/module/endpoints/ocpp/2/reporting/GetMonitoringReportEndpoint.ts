@@ -16,7 +16,7 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import { getBatches } from '@util/index.js';
+import { getBatches, getSizeOfRequest } from '@util/index.js';
 import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
 import { COMPONENT_DEVICE_DATA_CTRLR } from '../components.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
@@ -62,6 +62,21 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
 
     const confirmations: IMessageConfirmation[] = [];
     for (const ocppConnectionName of identifiers) {
+      const maxBytes =
+        await this._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+          COMPONENT_DEVICE_DATA_CTRLR,
+          OCPP_CallAction.GetReport,
+          tenantId,
+          ocppConnectionName,
+        );
+      if (maxBytes && getSizeOfRequest(request) > maxBytes) {
+        confirmations.push({
+          success: false,
+          payload: `${ocppConnectionName}: the request size exceeds the limit of ${maxBytes} bytes.`,
+        });
+        continue;
+      }
+
       const itemsPerMessageGetReport =
         (await this._deviceModelService.getItemsPerMessageByComponentAndVariableInstanceAndStationId(
           COMPONENT_DEVICE_DATA_CTRLR,

@@ -103,12 +103,16 @@ export class LocationsService {
     return Number(locationId.trim());
   }
 
-  async getLocationById(locationId: string): Promise<LocationResponse> {
+  async getLocationById(ocpiHeaders: OcpiHeaders, locationId: string): Promise<LocationResponse> {
     this.logger.debug(`Getting location ${locationId}`);
 
     try {
       const id = this.parseLocationId(locationId);
-      const variables = { id };
+      const variables = {
+        id,
+        countryCode: ocpiHeaders.toCountryCode,
+        partyId: ocpiHeaders.toPartyId,
+      };
       const response = await this.ocpiGraphqlClient.request<
         GetLocationByIdQueryResult,
         GetLocationByIdQueryVariables
@@ -136,13 +140,24 @@ export class LocationsService {
     }
   }
 
-  async getEvseById(locationId: string, stationId: string, evseId: number): Promise<EvseResponse> {
+  async getEvseById(
+    ocpiHeaders: OcpiHeaders,
+    locationId: string,
+    stationId: string,
+    evseId: number,
+  ): Promise<EvseResponse> {
     this.logger.debug(
       `Getting EVSE ${evseId} from Charging Station ${stationId} in Location ${locationId}`,
     );
 
     try {
-      const variables = { locationId: this.parseLocationId(locationId), stationId, evseId };
+      const variables = {
+        locationId: this.parseLocationId(locationId),
+        stationId,
+        evseId,
+        countryCode: ocpiHeaders.toCountryCode,
+        partyId: ocpiHeaders.toPartyId,
+      };
       const response = await this.ocpiGraphqlClient.request<
         GetEvseByIdQueryResult,
         GetEvseByIdQueryVariables
@@ -164,6 +179,7 @@ export class LocationsService {
   }
 
   async getConnectorById(
+    ocpiHeaders: OcpiHeaders,
     locationId: string,
     stationId: string,
     evseId: number,
@@ -179,6 +195,8 @@ export class LocationsService {
         stationId,
         evseId,
         connectorId,
+        countryCode: ocpiHeaders.toCountryCode,
+        partyId: ocpiHeaders.toPartyId,
       };
       const response = await this.ocpiGraphqlClient.request<
         GetConnectorByIdQueryResult,
