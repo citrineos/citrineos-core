@@ -26,6 +26,7 @@
 
 import { type ChildProcess, execSync, spawn } from 'child_process';
 import { mkdtempSync, writeFileSync } from 'fs';
+import { type AddressInfo, createServer } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Client } from 'pg';
@@ -43,11 +44,6 @@ const SERVER_DIST = fileURLToPath(
   new URL('../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
 );
 
-// ─── Ports used by the server under test ─────────────────────────────────────
-
-const HTTP_PORT = 8080; // Fastify API + /health endpoint
-const WS_PORT = 8081; // OCPP WebSocket (allowUnknownChargingStations: true)
-
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
 let pgContainer: StartedTestContainer;
@@ -56,7 +52,28 @@ let pgPort: number;
 let rabbitPort: number;
 let tempDir: string;
 
+// Assigned in beforeAll. The config's fixed 8080/8081/8085 are deliberately not used - see the
+// comment where these are patched into the config.
+let httpPort: number; // Fastify API + /health endpoint
+let wsPort: number; // OCPP WebSocket (allowUnknownChargingStations: true)
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Asks the OS for a port nothing is listening on. There is an unavoidable gap between closing this
+ * probe and the server binding, but that is far narrower a risk than the config's fixed ports,
+ * which a developer running the docker-compose stack already owns.
+ */
+function reserveFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address() as AddressInfo;
+      probe.close(() => resolve(port));
+    });
+  });
+}
 
 function buildTestEnv(extraEnv: Record<string, string> = {}): NodeJS.ProcessEnv {
   return {
@@ -90,7 +107,7 @@ async function waitForHealth(timeoutMs = 45_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(`http://localhost:${HTTP_PORT}/health/ready`);
+      const res = await fetch(`http://localhost:${httpPort}/health/ready`);
       if (res.ok) return;
     } catch {
       // server not up yet
@@ -118,7 +135,7 @@ async function killServer(proc: ChildProcess): Promise<void> {
 
 function connectOcpp(stationId: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://localhost:${WS_PORT}/${stationId}`, ['ocpp2.0.1']);
+    const ws = new WebSocket(`ws://localhost:${wsPort}/${stationId}`, ['ocpp2.0.1']);
     ws.once('open', () => resolve(ws));
     ws.once('error', reject);
   });
@@ -176,6 +193,20 @@ beforeAll(async () => {
   config.util.messageBroker.amqp!.url = `amqp://guest:guest@localhost:${rabbitPort}`;
   config.util.networkConnection.websocketServers =
     config.util.networkConnection.websocketServers.filter((s) => s.securityProfile === 0);
+
+  // Bind every listener to an ephemeral port instead of the config's fixed 8080/8081/8085.
+  // A developer running the docker-compose stack already owns those, and the server spawned below
+  // then loses the race to bind - silently, because it dies before its logger produces output.
+  // waitForHealth and the OCPP socket would go on to reach *that* server, which happily answers
+  // and persists the SecurityEvent to its own database, leaving this test querying an empty
+  // testcontainer and reporting a phantom persistence failure.
+  [httpPort, wsPort, config.ocpiServer.port] = await Promise.all([
+    reserveFreePort(),
+    reserveFreePort(),
+    reserveFreePort(),
+  ]);
+  config.centralSystem.port = httpPort;
+  config.util.networkConnection.websocketServers[0].port = wsPort;
 
   tempDir = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
   writeFileSync(join(tempDir, 'config.json'), JSON.stringify(config, null, 2));
