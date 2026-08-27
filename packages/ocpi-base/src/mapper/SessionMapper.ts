@@ -375,7 +375,7 @@ export class SessionMapper extends BaseTransactionMapper {
     for (const sampledValue of meterValue.sampledValue) {
       switch (sampledValue.measurand) {
         case MeasurandEnum['Current.Import']:
-          if (sampledValue.phase === 'N') {
+          if (!sampledValue.phase) {
             cdrDimensions.push({
               type: CdrDimensionType.CURRENT,
               volume: Number(sampledValue.value),
