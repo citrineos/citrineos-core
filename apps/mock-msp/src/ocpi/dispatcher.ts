@@ -122,8 +122,10 @@ export async function dispatch(
       }
     }
 
-    // ---- routing headers (strict only on functional endpoints) ----
-    if (route.requireRoutingHeaders && route.auth === 'functional') {
+    // ---- routing headers (strict on functional + command-result callbacks) ----
+    // 'callback' shares functional's token semantics, and a command result is a
+    // CPO->eMSP message, so the same expected identities (from=CPO, to=eMSP) apply.
+    if (route.requireRoutingHeaders && (route.auth === 'functional' || route.auth === 'callback')) {
       const expected = {
         from: { cc: ctx.config.cpoCountryCode, party: ctx.config.cpoPartyId },
         to: { cc: ctx.config.countryCode, party: ctx.config.partyId },

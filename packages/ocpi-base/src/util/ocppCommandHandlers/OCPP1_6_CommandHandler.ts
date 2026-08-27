@@ -114,11 +114,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       });
       this.commandsClientApi
         .postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           unlockConnector.response_url,
           {
             result: CommandResultType.FAILED,
@@ -191,11 +187,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.RemoteStartTransactionResponseStatus.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -209,11 +201,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.RemoteStartTransactionResponseStatus.Rejected:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.EVSE_OCCUPIED,
@@ -242,11 +230,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.RemoteStopTransactionResponseStatus.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -260,11 +244,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.RemoteStopTransactionResponseStatus.Rejected:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.REJECTED,
@@ -293,11 +273,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.UnlockConnectorResponseStatus.Unlocked:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -311,11 +287,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.UnlockConnectorResponseStatus.NotSupported:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.NOT_SUPPORTED,
@@ -329,11 +301,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.UnlockConnectorResponseStatus.UnlockFailed:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.FAILED,
