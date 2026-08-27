@@ -127,6 +127,57 @@ describe('OCPPValidator', () => {
     });
   });
 
+  describe('decimal fields constrained by multipleOf', () => {
+    /**
+     * OCPP 2.0.1 constrains a charging limit to one decimal place and gives 8.1 as its own example
+     * of an accepted value. The schema states that as multipleOf: 0.1, which Ajv checks by dividing
+     * in binary floating point: 8.1 / 0.1 is 81.00000000000001, so without a precision the check
+     * refuses roughly a third of the values it is meant to allow.
+     */
+    function aSetChargingProfileRequest(limit: number) {
+      return {
+        evseId: 1,
+        chargingProfile: {
+          id: 1,
+          stackLevel: 0,
+          chargingProfilePurpose: 'TxDefaultProfile',
+          chargingProfileKind: 'Relative',
+          chargingSchedule: [
+            {
+              id: 1,
+              chargingRateUnit: 'A',
+              chargingSchedulePeriod: [{ startPeriod: 0, limit }],
+            },
+          ],
+        },
+      };
+    }
+
+    function validateLimit(limit: number) {
+      return validator.validateOCPPRequest(
+        OCPP_CallAction.SetChargingProfile,
+        aSetChargingProfileRequest(limit),
+        OCPPVersion.OCPP2_0_1,
+      );
+    }
+
+    it('accepts the one decimal place the spec gives as its example', () => {
+      expect(validateLimit(8.1).isValid).toBe(true);
+    });
+
+    it('accepts every one decimal place limit up to 40 A', () => {
+      const refused = Array.from({ length: 401 }, (_, i) => i / 10).filter(
+        (limit) => !validateLimit(limit).isValid,
+      );
+
+      expect(refused).toEqual([]);
+    });
+
+    it('still refuses a second decimal place', () => {
+      expect(validateLimit(6.25).isValid).toBe(false);
+    });
+  });
+
   describe('validateOCPPRequest', () => {
     describe('OCPP 1.6', () => {
       it('should validate a valid BootNotification request', () => {
