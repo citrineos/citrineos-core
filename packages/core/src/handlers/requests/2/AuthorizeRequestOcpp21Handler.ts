@@ -172,10 +172,9 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           } as OCPP2_response_types.AuthorizeResponse;
         } else {
           let evseIds: Set<number> | undefined = undefined;
-          if (
-            authorization.allowedConnectorTypes &&
-            authorization.allowedConnectorTypes.length > 0
-          ) {
+          const allowedConnectorTypes = authorization.allowedConnectorTypes ?? [];
+          const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
+          if (hasConnectorTypeRestriction) {
             evseIds = new Set();
             const connectorTypes: VariableAttribute[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
@@ -186,8 +185,8 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                 type: AttributeEnum.Actual,
               });
             for (const connectorType of connectorTypes) {
-              if (authorization.allowedConnectorTypes.indexOf(connectorType.value as string) > 0) {
-                evseIds.add(connectorType.evse?.id as number);
+              if (allowedConnectorTypes.includes(connectorType.value as string)) {
+                evseIds.add(connectorType.component?.evse?.id as number);
               }
             }
           }
@@ -214,14 +213,14 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                   type: AttributeEnum.Actual,
                 });
               for (const evseIdAttribute of evseIdAttributes) {
-                const evseIdAllowed: boolean = authorization.disallowedEvseIdPrefixes.some(
+                const evseIdDisallowed: boolean = authorization.disallowedEvseIdPrefixes.some(
                   (disallowedEvseId: string) =>
                     (evseIdAttribute.value as string).startsWith(disallowedEvseId),
                 );
-                if (evseIdAllowed && !authorization.allowedConnectorTypes) {
-                  evseIds.add(evseIdAttribute.evse?.id as number);
-                } else if (!evseIdAllowed && authorization.allowedConnectorTypes) {
-                  evseIds.delete(evseIdAttribute.evse?.id as number);
+                if (evseIdDisallowed) {
+                  evseIds.delete(evseIdAttribute.component?.evse?.id as number);
+                } else if (!hasConnectorTypeRestriction) {
+                  evseIds.add(evseIdAttribute.component?.evse?.id as number);
                 }
               }
             }
