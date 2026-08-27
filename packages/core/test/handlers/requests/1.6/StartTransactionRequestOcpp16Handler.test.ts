@@ -63,6 +63,8 @@ function makeHandler(
   const transactionService = {
     authorizeOcpp16IdToken: vi.fn().mockResolvedValue({
       idTagInfo: { status: OCPP1_6.StartTransactionResponseStatus.Accepted },
+      // authorizeOcpp16IdToken seeds every response with 0 and only the accepted path replaces it.
+      transactionId: 0,
     }),
     deactivateReservation: vi.fn().mockResolvedValue(undefined),
     deactivateOtherActiveTransactionsAtEvse: vi.fn().mockResolvedValue(undefined),
@@ -128,6 +130,79 @@ describe('StartTransactionRequestOcpp16Handler', () => {
       );
 
       expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The point of the sweep is that a *new* transaction has taken the connector, so anything still
+     * marked active there is stale. A StartTransaction the CSMS refused starts nothing, and
+     * authorizeOcpp16IdToken seeds the response with transactionId 0, so the "exclude the new
+     * transaction" filter matches nothing and every live transaction on that connector is closed -
+     * including the one that is actually charging.
+     */
+    it('does not sweep the connector when the idTag was refused', async () => {
+      const { handler, transactionService } = makeHandler({
+        transactionService: {
+          authorizeOcpp16IdToken: vi.fn().mockResolvedValue({
+            idTagInfo: { status: OCPP1_6.StartTransactionResponseStatus.Invalid },
+            transactionId: 0,
+          }),
+        },
+      });
+
+      await handler.handle(
+        makeMessage({
+          connectorId: 1,
+          idTag: 'UNKNOWN',
+          meterStart: 0,
+          timestamp: new Date().toISOString(),
+        } as OCPP1_6.StartTransactionRequest),
+      );
+
+      expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+
+    it('does not sweep the connector when the transaction could not be created', async () => {
+      const { handler, transactionService } = makeHandler({
+        transactionEventRepository: {
+          createTransactionByStartTransaction: vi
+            .fn()
+            .mockRejectedValue(new Error('Charging station station-001 does not exist')),
+        },
+      });
+
+      await handler.handle(
+        makeMessage({
+          connectorId: 1,
+          idTag: 'TAG001',
+          meterStart: 0,
+          timestamp: new Date().toISOString(),
+        } as OCPP1_6.StartTransactionRequest),
+      );
+
+      expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+
+    it('does not consume a reservation when the idTag was refused', async () => {
+      const { handler, transactionService } = makeHandler({
+        transactionService: {
+          authorizeOcpp16IdToken: vi.fn().mockResolvedValue({
+            idTagInfo: { status: OCPP1_6.StartTransactionResponseStatus.Invalid },
+            transactionId: 0,
+          }),
+        },
+      });
+
+      await handler.handle(
+        makeMessage({
+          connectorId: 1,
+          idTag: 'UNKNOWN',
+          meterStart: 0,
+          reservationId: 5,
+          timestamp: new Date().toISOString(),
+        } as OCPP1_6.StartTransactionRequest),
+      );
+
+      expect(transactionService.deactivateReservation).not.toHaveBeenCalled();
     });
   });
 });
