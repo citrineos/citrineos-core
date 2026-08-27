@@ -99,9 +99,12 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
               },
             });
             if (chargingStationNetworkProfile) {
-              const serverNetworkProfile = await ServerNetworkProfile.findByPk(
-                chargingStationNetworkProfile.websocketServerConfigId,
-              );
+              const serverNetworkProfile = await ServerNetworkProfile.findOne({
+                where: {
+                  id: chargingStationNetworkProfile.websocketServerConfigId,
+                  tenantId,
+                },
+              });
               if (serverNetworkProfile && securityProfile >= serverNetworkProfile.securityProfile) {
                 this._logger.debug('Security profile allowed');
                 securityProfileAllowed = true;
