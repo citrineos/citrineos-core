@@ -310,10 +310,12 @@ describe('smartCharging message endpoints', () => {
   describe('SetChargingProfileEndpoint', () => {
     let readAllByQuerystring: ReturnType<typeof vi.fn>;
     let createOrUpdateChargingProfile: ReturnType<typeof vi.fn>;
+    let readAllByQuery: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       readAllByQuerystring = vi.fn().mockResolvedValue([]);
       createOrUpdateChargingProfile = vi.fn().mockResolvedValue({ id: 1 });
+      readAllByQuery = vi.fn().mockResolvedValue([]);
     });
 
     const build = () =>
@@ -321,16 +323,11 @@ describe('smartCharging message endpoints', () => {
         ocppSender: { sendCall },
         deviceModelRepository: {
           readAllByQuerystring,
-          // No RateUnit characteristics stored, so the member-list check is skipped.
           findVariableCharacteristicsByVariableNameAndVariableInstance: vi
             .fn()
             .mockResolvedValue(undefined),
         },
-        chargingProfileRepository: {
-          createOrUpdateChargingProfile,
-          readAllByQuery: vi.fn().mockResolvedValue([]),
-          existByQuery: vi.fn().mockResolvedValue(0),
-        },
+        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery },
         transactionEventRepository: {},
       });
 
@@ -358,14 +355,14 @@ describe('smartCharging message endpoints', () => {
       expect(createOrUpdateChargingProfile).not.toHaveBeenCalled();
     });
 
-    it('refuses a profile whose validFrom is in the future', async () => {
-      const validFrom = new Date(Date.now() + 60_000).toISOString();
+    it('sends a profile scheduled to start later', async () => {
+      const validFrom = new Date(Date.now() + 60 * 60_000).toISOString();
+      const validTo = new Date(Date.now() + 120 * 60_000).toISOString();
 
-      const confirmations = await handle(aProfile({ validFrom }));
+      const confirmations = await handle(aProfile({ validFrom, validTo }));
 
-      expect(confirmations[0].success).toBe(false);
-      expect(String(confirmations[0].payload)).toContain('should not be in the future');
-      expect(sendCall).not.toHaveBeenCalled();
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
     });
 
     /** A schedule whose single period asks the station to charge on one specific phase. */
@@ -429,6 +426,90 @@ describe('smartCharging message endpoints', () => {
       expect(confirmations[0].success).toBe(false);
       expect(String(confirmations[0].payload)).toContain('should be in the future');
       expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses a window that ends before it begins', async () => {
+      const validFrom = new Date(Date.now() + 120 * 60_000).toISOString();
+      const validTo = new Date(Date.now() + 60 * 60_000).toISOString();
+
+      const confirmations = await handle(aProfile({ validFrom, validTo }));
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('should be before validTo');
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses a profile whose window overlaps one already active', async () => {
+      // Both are valid from now, so they are valid at the same time however they end.
+      readAllByQuery.mockResolvedValue([
+        { validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({ validTo: new Date(Date.now() + 120 * 60_000).toISOString() }),
+      );
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('valid at the same time');
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('sends a profile whose window begins after the active one ends', async () => {
+      readAllByQuery.mockResolvedValue([
+        { validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({
+          validFrom: new Date(Date.now() + 120 * 60_000).toISOString(),
+          validTo: new Date(Date.now() + 180 * 60_000).toISOString(),
+        }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
+    });
+
+    it('sends a profile when the one already stored has expired', async () => {
+      readAllByQuery.mockResolvedValue([{ validTo: new Date(Date.now() - 60_000).toISOString() }]);
+
+      const confirmations = await handle(
+        aProfile({ validTo: new Date(Date.now() + 60 * 60_000).toISOString() }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
+    });
+
+    it('sends a profile whose window only met the stored one before now', async () => {
+      readAllByQuery.mockResolvedValue([
+        { validTo: new Date(Date.now() - 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({
+          validFrom: new Date(Date.now() - 120 * 60_000).toISOString(),
+          validTo: new Date(Date.now() + 60 * 60_000).toISOString(),
+        }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
+    });
+
+    it('sends an update to the profile already stored under the same id', async () => {
+      // Re-sending an id the station already holds replaces that profile, so its stored copy is
+      // not a second profile to be valid at the same time as itself.
+      readAllByQuery.mockResolvedValue([
+        { id: 1, validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
+      ]);
+
+      const confirmations = await handle(
+        aProfile({ id: 1, validTo: new Date(Date.now() + 120 * 60_000).toISOString() }),
+      );
+
+      expect(confirmations[0].success).toBe(true);
+      expect(sendCall).toHaveBeenCalled();
     });
   });
 });
