@@ -15,8 +15,8 @@ import { DrizzleRepository } from './Base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external ServerNetworkProfileDto contract.
-// Note: the DTO intentionally omits the model-only columns dynamicTenantResolution
-// and tenantPathMapping — they are persisted but not part of the public contract.
+// Note: the DTO intentionally omits the model-only column dynamicTenantResolution —
+// it is persisted but not part of the public contract.
 export function toServerNetworkProfileDto(
   entity: ServerNetworkProfileEntity,
 ): ServerNetworkProfileDto {
@@ -78,7 +78,6 @@ export class DrizzleServerNetworkProfileRepository
       securityProfile: websocketServerConfig.securityProfile,
       allowUnknownChargingStations: websocketServerConfig.allowUnknownChargingStations,
       dynamicTenantResolution: websocketServerConfig.dynamicTenantResolution ?? false,
-      tenantPathMapping: websocketServerConfig.tenantPathMapping ?? null,
       tlsKeyFilePath: websocketServerConfig.tlsKeyFilePath ?? null,
       tlsCertificateChainFilePath: websocketServerConfig.tlsCertificateChainFilePath ?? null,
       mtlsCertificateAuthorityKeyFilePath:

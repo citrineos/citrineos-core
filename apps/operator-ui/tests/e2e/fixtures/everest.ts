@@ -48,6 +48,8 @@ const POLL_INTERVAL_MS = 2_000;
 // few seconds after `compose up`; this bounds the wait so a manager that never
 // boots fails fast into awaitStationOnline's diagnostics rather than hanging.
 const DB_READY_TIMEOUT_MS = 60_000;
+const SQLITE_BUSY_TIMEOUT_MS = 30_000;
+const SQLITE_PATCH_ATTEMPTS = 3;
 
 export interface EverestHandle {
   readonly ocppConnectionName: string;
@@ -319,24 +321,43 @@ async function patchEverestNetworkProfile(): Promise<void> {
   }
 
   const escaped = CORRECT_NETWORK_PROFILE_JSON.replace(/'/g, "''");
-  const sql = `UPDATE VARIABLE_ATTRIBUTE SET VALUE='${escaped}' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');\n`;
+  // The manager holds the same database open, so the write waits for its lock rather than failing
+  // on the first SQLITE_BUSY. The retry covers a lock held for longer than the pragma waits.
+  const sql =
+    `PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS};` +
+    `UPDATE VARIABLE_ATTRIBUTE SET VALUE='${escaped}' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');`;
   // Pipe SQL via stdin to avoid shell quoting hell with the embedded JSON.
-  await new Promise<void>((res, rej) => {
-    const proc = spawn(
-      process.platform === 'win32' ? 'docker.exe' : 'docker',
-      ['exec', '-i', 'everest-manager-1', 'sqlite3', EVEREST_DEVICE_MODEL_DB],
-      { stdio: ['pipe', 'pipe', 'pipe'], shell: false },
-    );
-    let stderr = '';
-    proc.stderr?.on('data', (c: Buffer) => (stderr += c.toString()));
-    proc.on('exit', (code) => {
-      if (code === 0) res();
-      else rej(new Error(`SQLite patch failed (code ${code}): ${stderr}`));
-    });
-    proc.on('error', rej);
-    proc.stdin?.write(sql);
-    proc.stdin?.end();
-  });
+  let lastFailure: Error | undefined;
+  for (let attempt = 1; attempt <= SQLITE_PATCH_ATTEMPTS; attempt++) {
+    try {
+      await new Promise<void>((res, rej) => {
+        const proc = spawn(
+          process.platform === 'win32' ? 'docker.exe' : 'docker',
+          ['exec', '-i', 'everest-manager-1', 'sqlite3', EVEREST_DEVICE_MODEL_DB],
+          { stdio: ['pipe', 'pipe', 'pipe'], shell: false },
+        );
+        let stderr = '';
+        proc.stderr?.on('data', (c: Buffer) => (stderr += c.toString()));
+        proc.on('exit', (code) => {
+          if (code === 0) res();
+          else rej(new Error(`SQLite patch failed (code ${code}): ${stderr}`));
+        });
+        proc.on('error', rej);
+        proc.stdin?.write(sql);
+        proc.stdin?.end();
+      });
+      lastFailure = undefined;
+      break;
+    } catch (error) {
+      lastFailure = error as Error;
+      if (attempt < SQLITE_PATCH_ATTEMPTS) {
+        await delay(POLL_INTERVAL_MS);
+      }
+    }
+  }
+  if (lastFailure) {
+    throw lastFailure;
+  }
   await new Promise<void>((res) => {
     const proc = spawn(
       process.platform === 'win32' ? 'docker.exe' : 'docker',

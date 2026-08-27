@@ -26,7 +26,7 @@ export interface OIDCConfig {
   issuer: string;
 
   // Expected audience of tokens (usually the client ID)
-  audience?: string;
+  audience: string;
 
   // How long to cache keys (ms)
   cacheTime?: number;
@@ -105,8 +105,10 @@ export class OIDCAuthProvider implements IApiAuthProvider {
         throw new Error('Invalid token format');
       }
       const publicKey = await this.fetchPublicKey(decoded.header.kid);
-      // Verify the token with the public key
-      const payload = jwt.verify(token, createPublicKey(publicKey)) as JwtPayload;
+      const payload = jwt.verify(token, createPublicKey(publicKey), {
+        issuer: this._config.issuer,
+        audience: this._config.audience,
+      }) as JwtPayload;
 
       // Extract user info from the decoded token
       const user: UserInfo = {

@@ -271,6 +271,28 @@ export function createSignedCertificateFromCSR(
     cakey: issuerPrivateKeyPem,
   });
 }
+interface OcspCertIdValueParams {
+  alg: string;
+  issname: string;
+  isskey: string;
+  sbjsn: string;
+}
+
+export function createOcspRequest(reqData: {
+  hashAlgorithm: string;
+  issuerNameHash: string;
+  issuerKeyHash: string;
+  serialNumber: string;
+}): Request {
+  const params: OcspCertIdValueParams = {
+    alg: reqData.hashAlgorithm.toLowerCase(),
+    issname: reqData.issuerNameHash,
+    isskey: reqData.issuerKeyHash,
+    sbjsn: reqData.serialNumber,
+  };
+
+  return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
+}
 
 export async function sendOCSPRequest(
   ocspRequest: OCSPRequest | Request,

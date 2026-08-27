@@ -83,6 +83,12 @@ describe('Actor: command send + async result callback', () => {
         'content-type': 'application/json',
         'x-request-id': 'cb-req',
         'x-correlation-id': 'cb-cor',
+        // A CommandResult is a CPO->eMSP message: from=CPO (US/S44), to=eMSP (US/TST).
+        // The callback route now strict-validates this direction.
+        'ocpi-from-country-code': 'US',
+        'ocpi-from-party-id': 'S44',
+        'ocpi-to-country-code': 'US',
+        'ocpi-to-party-id': 'TST',
       },
       payload: JSON.stringify({ result: 'ACCEPTED' }),
     });

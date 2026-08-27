@@ -565,4 +565,7 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
   readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
+  readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
+  readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
+  updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
 }
