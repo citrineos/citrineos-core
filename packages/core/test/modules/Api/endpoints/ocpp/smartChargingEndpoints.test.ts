@@ -276,8 +276,18 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, SetChargingProfileEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: { readAllByQuerystring },
-        chargingProfileRepository: { createOrUpdateChargingProfile },
+        deviceModelRepository: {
+          readAllByQuerystring,
+          // No RateUnit characteristics stored, so the member-list check is skipped.
+          findVariableCharacteristicsByVariableNameAndVariableInstance: vi
+            .fn()
+            .mockResolvedValue(undefined),
+        },
+        chargingProfileRepository: {
+          createOrUpdateChargingProfile,
+          readAllByQuery: vi.fn().mockResolvedValue([]),
+          existByQuery: vi.fn().mockResolvedValue(0),
+        },
         transactionEventRepository: {},
       });
 
@@ -313,6 +323,59 @@ describe('smartCharging message endpoints', () => {
       expect(confirmations[0].success).toBe(false);
       expect(String(confirmations[0].payload)).toContain('should not be in the future');
       expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    /** A schedule whose single period asks the station to charge on one specific phase. */
+    const aPhaseToUseSchedule = () => ({
+      chargingSchedule: [
+        {
+          id: 1,
+          // Absolute is the kind aProfile() uses, so a startSchedule is required.
+          startSchedule: new Date().toISOString(),
+          chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.A,
+          chargingSchedulePeriod: [{ startPeriod: 0, limit: 16, numberPhases: 1, phaseToUse: 1 }],
+        },
+      ],
+    });
+
+    /** Mocks the device model so ACPhaseSwitchingSupported reports the given value. */
+    const withPhaseSwitching = (value: string | undefined) => {
+      readAllByQuerystring.mockImplementation(async (_tenantId: number, query: any) =>
+        query.variable_name === 'ACPhaseSwitchingSupported' && value !== undefined
+          ? [{ value }]
+          : [],
+      );
+    };
+
+    it('refuses phaseToUse when the station reports AC phase switching unsupported', async () => {
+      // The guard tested only whether the variable row existed, not what it said. A station that
+      // explicitly reports ACPhaseSwitchingSupported=false has a row, so the profile was accepted
+      // and forwarded to hardware that cannot honour it.
+      withPhaseSwitching('false');
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('phaseToUse not allowed');
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses phaseToUse when the station does not report the variable at all', async () => {
+      withPhaseSwitching(undefined);
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('phaseToUse not allowed');
+    });
+
+    it('allows phaseToUse when the station reports AC phase switching supported', async () => {
+      withPhaseSwitching('true');
+
+      const confirmations = await handle(aProfile(aPhaseToUseSchedule()));
+
+      expect(confirmations[0].success).not.toBe(false);
+      expect(sendCall).toHaveBeenCalled();
     });
 
     it('refuses a profile that has already expired', async () => {
