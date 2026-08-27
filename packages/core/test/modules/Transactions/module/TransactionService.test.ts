@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, IAuthorizer } from '@citrineos/base';
-import { AuthorizationStatusEnum, OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import { AuthorizationStatusEnum, OCPP1_6, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 import {
   IAuthorizationRepository,
   ILocationRepository,
@@ -69,6 +69,62 @@ describe('TransactionService', () => {
       ocppMessageRepository,
       realTimeAuthorizer,
       authorizers: [authorizer],
+    });
+  });
+
+  // C02.FR.02: "CSMS receives a TransactionEventRequest with an IdTokenType of type:
+  // NoAuthorization -> The CSMS SHALL respond with a TransactionEventResponse with
+  // IdTokenInfo.status set Accepted." C02.FR.01 has the station send this when a transaction is
+  // started with a button, so there is no Authorization row to find and none is expected.
+  describe('C02 - transaction started with a button', () => {
+    const noAuthorizationIdToken = anIdToken((token) => {
+      token.idToken = '';
+      token.type = OCPP2_0_1.IdTokenEnumType.NoAuthorization;
+    });
+
+    it('accepts a NoAuthorization idToken on OCPP 2.0.1', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([]);
+      const transactionEventRequest = aTransactionEventRequest((item) => {
+        item.idToken = noAuthorizationIdToken;
+      });
+
+      const response = await transactionService.authorizeOcpp201IdToken(
+        DEFAULT_TENANT_ID,
+        transactionEventRequest,
+        aMessageContext(),
+      );
+
+      expect(response.idTokenInfo!.status).toBe(OCPP2_0_1.AuthorizationStatusEnumType.Accepted);
+    });
+
+    it('accepts a NoAuthorization idToken on OCPP 2.1', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([]);
+      const transactionEventRequest = aTransactionEventRequest((item) => {
+        item.idToken = noAuthorizationIdToken;
+      });
+
+      const response = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        transactionEventRequest,
+        aMessageContext(),
+      );
+
+      expect(response.idTokenInfo!.status).toBe(OCPP2_1.AuthorizationStatusEnumType.Accepted);
+    });
+
+    it('does not look the token up at all', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([]);
+      const transactionEventRequest = aTransactionEventRequest((item) => {
+        item.idToken = noAuthorizationIdToken;
+      });
+
+      await transactionService.authorizeOcpp201IdToken(
+        DEFAULT_TENANT_ID,
+        transactionEventRequest,
+        aMessageContext(),
+      );
+
+      expect(authorizationRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
   });
 
