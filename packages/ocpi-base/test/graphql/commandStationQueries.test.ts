@@ -7,7 +7,7 @@ import {
   GET_CHARGING_STATION_BY_ID_QUERY,
   GET_CHARGING_STATION_BY_PK_QUERY,
 } from '../../src/graphql/queries/chargingStation.queries.js';
-import { GET_TRANSACTION_BY_TRANSACTION_ID_QUERY } from '../../src/graphql/queries/transaction.queries.js';
+import { GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY } from '../../src/graphql/queries/transaction.queries.js';
 
 /** Pulls the body of a `<alias>: ChargingStation { ... }` selection out of a query. */
 function stationSelection(query: string): string | null {
@@ -34,14 +34,14 @@ describe('station sources for OCPI commands', () => {
   // ever sending a RequestStopTransaction, and the transaction kept charging
   // even though the eMSP had already been told sync ACCEPTED.
   it('STOP_SESSION: the transaction query selects protocol on its station', () => {
-    const selection = stationSelection(GET_TRANSACTION_BY_TRANSACTION_ID_QUERY);
+    const selection = stationSelection(GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY);
 
     expect(selection).not.toBeNull();
     expect(selection!).toMatch(/^\s*protocol\s*$/m);
   });
 
   it('STOP_SESSION: the transaction query keeps the fields the stop path uses', () => {
-    const selection = stationSelection(GET_TRANSACTION_BY_TRANSACTION_ID_QUERY);
+    const selection = stationSelection(GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY);
 
     // ocppConnectionName becomes the `identifier` query param on the OCPP call,
     // isOnline gates the sync REJECTED, id is used for logging.
