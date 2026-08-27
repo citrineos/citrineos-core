@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ReserveNowResponseStatus"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["status"],
   "$id": "ReserveNowResponse",
   "definitions": {
     "ReserveNowResponseStatus": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"],
       "tsEnumNames": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"]
     }

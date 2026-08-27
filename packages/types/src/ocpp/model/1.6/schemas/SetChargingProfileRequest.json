@@ -63,7 +63,7 @@
                     "type": "integer"
                   }
                 },
-                "additionalProperties": true,
+                "additionalProperties": false,
                 "required": ["startPeriod", "limit"]
               }
             },
@@ -72,11 +72,11 @@
               "multipleOf": 0.1
             }
           },
-          "additionalProperties": true,
+          "additionalProperties": false,
           "required": ["chargingRateUnit", "chargingSchedulePeriod"]
         }
       },
-      "additionalProperties": true,
+      "additionalProperties": false,
       "required": [
         "chargingProfileId",
         "stackLevel",
@@ -86,31 +86,31 @@
       ]
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["connectorId", "csChargingProfiles"],
   "$id": "SetChargingProfileRequest",
   "definitions": {
     "SetChargingProfileRequestChargingProfilePurpose": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"],
       "tsEnumNames": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"]
     },
     "SetChargingProfileRequestChargingProfileKind": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Absolute", "Recurring", "Relative"],
       "tsEnumNames": ["Absolute", "Recurring", "Relative"]
     },
     "SetChargingProfileRequestRecurrencyKind": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Daily", "Weekly"],
       "tsEnumNames": ["Daily", "Weekly"]
     },
     "SetChargingProfileRequestChargingRateUnit": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["A", "W"],
       "tsEnumNames": ["A", "W"]
     }

@@ -13,13 +13,13 @@
       "type": "integer"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["status", "currentTime", "interval"],
   "$id": "BootNotificationResponse",
   "definitions": {
     "BootNotificationResponseStatus": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Accepted", "Pending", "Rejected"],
       "tsEnumNames": ["Accepted", "Pending", "Rejected"]
     }

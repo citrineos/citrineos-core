@@ -6,7 +6,7 @@
       "type": "integer"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["reservationId"],
   "$id": "CancelReservationRequest",
   "definitions": {}

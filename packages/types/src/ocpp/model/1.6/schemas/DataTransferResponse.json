@@ -9,13 +9,13 @@
       "type": "string"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["status"],
   "$id": "DataTransferResponse",
   "definitions": {
     "DataTransferResponseStatus": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"],
       "tsEnumNames": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"]
     }

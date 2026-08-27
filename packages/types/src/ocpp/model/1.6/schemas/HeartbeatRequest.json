@@ -2,7 +2,7 @@
   "title": "HeartbeatRequest",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "HeartbeatRequest",
   "definitions": {}
 }

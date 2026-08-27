@@ -2,7 +2,7 @@
   "title": "ClearCacheRequest",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "ClearCacheRequest",
   "definitions": {}
 }

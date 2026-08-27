@@ -10,7 +10,7 @@
       }
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "GetConfigurationRequest",
   "definitions": {}
 }

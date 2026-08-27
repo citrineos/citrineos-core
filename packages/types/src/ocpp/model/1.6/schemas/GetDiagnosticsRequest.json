@@ -21,7 +21,7 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["location"],
   "$id": "GetDiagnosticsRequest",
   "definitions": {}

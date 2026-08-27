@@ -2,7 +2,7 @@
   "title": "MeterValuesResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "MeterValuesResponse",
   "definitions": {}
 }

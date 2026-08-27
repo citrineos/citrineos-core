@@ -21,7 +21,7 @@
       "type": "integer"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["connectorId", "expiryDate", "idTag", "reservationId"],
   "$id": "ReserveNowRequest",
   "definitions": {}

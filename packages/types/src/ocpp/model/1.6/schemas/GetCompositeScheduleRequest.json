@@ -12,13 +12,13 @@
       "$ref": "#/definitions/GetCompositeScheduleRequestChargingRateUnit"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["connectorId", "duration"],
   "$id": "GetCompositeScheduleRequest",
   "definitions": {
     "GetCompositeScheduleRequestChargingRateUnit": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["A", "W"],
       "tsEnumNames": ["A", "W"]
     }

@@ -6,13 +6,13 @@
       "$ref": "#/definitions/ResetResponseStatus"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["status"],
   "$id": "ResetResponse",
   "definitions": {
     "ResetResponseStatus": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"],
       "tsEnumNames": ["Accepted", "Rejected"]
     }

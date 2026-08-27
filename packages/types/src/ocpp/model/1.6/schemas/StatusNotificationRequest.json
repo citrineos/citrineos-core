@@ -28,13 +28,13 @@
       "maxLength": 50
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["connectorId", "errorCode", "status"],
   "$id": "StatusNotificationRequest",
   "definitions": {
     "StatusNotificationRequestErrorCode": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "ConnectorLockFailure",
         "EVCommunicationError",
@@ -74,7 +74,7 @@
     },
     "StatusNotificationRequestStatus": {
       "type": "string",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "enum": [
         "Available",
         "Preparing",

@@ -2,7 +2,7 @@
   "title": "StatusNotificationResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "StatusNotificationResponse",
   "definitions": {}
 }

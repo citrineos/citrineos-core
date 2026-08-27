@@ -2,7 +2,7 @@
   "title": "UpdateFirmwareResponse",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "UpdateFirmwareResponse",
   "definitions": {}
 }

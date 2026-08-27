@@ -2,7 +2,7 @@
   "title": "GetLocalListVersionRequest",
   "type": "object",
   "properties": {},
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$id": "GetLocalListVersionRequest",
   "definitions": {}
 }
