@@ -64,8 +64,8 @@ export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
         },
         {
           where: {
-            id: request.payload.reservationId,
             ocppConnectionName: message.context.ocppConnectionName,
+            id: request.payload.reservationId,
           },
         },
       );

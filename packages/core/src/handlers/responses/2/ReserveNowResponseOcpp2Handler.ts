@@ -63,8 +63,8 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
         },
         {
           where: {
-            id: request.payload.id,
             ocppConnectionName: message.context.ocppConnectionName,
+            id: request.payload.id,
           },
         },
       );
