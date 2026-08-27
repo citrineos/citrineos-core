@@ -271,6 +271,48 @@ describe('TransactionService', () => {
       expect(response.idTagInfo.expiryDate).toBeUndefined();
     });
 
+    it('should not accept an authorization that has no status', async () => {
+      const authorization = anAuthorization((auth) => {
+        auth.status = undefined as unknown as AuthorizationStatusEnum;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const messageContext = aMessageContext();
+      const connectorId = 1;
+      const response = await transactionService.authorizeOcpp16IdToken(
+        messageContext,
+        faker.string.uuid(),
+        connectorId,
+      );
+
+      expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Invalid);
+    });
+
+    it('should not consult the authorizers for an authorization that has no status', async () => {
+      const authorization = anAuthorization((auth) => {
+        auth.status = undefined as unknown as AuthorizationStatusEnum;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      // A permissive real-time authorizer must not be able to rescue a statusless token, and the
+      // rejection has to happen before we spend a network round trip asking it.
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const messageContext = aMessageContext();
+      const connectorId = 1;
+      const response = await transactionService.authorizeOcpp16IdToken(
+        messageContext,
+        faker.string.uuid(),
+        connectorId,
+      );
+
+      expect(response.idTagInfo.status).toBe(OCPP1_6.StartTransactionResponseStatus.Invalid);
+      expect(realTimeAuthorizer.authorize).not.toHaveBeenCalled();
+    });
+
     it('should return ConcurrentTx status when an active transaction exists', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
