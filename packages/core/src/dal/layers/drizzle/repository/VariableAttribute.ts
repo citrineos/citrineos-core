@@ -4,11 +4,13 @@
 
 import type { VariableAttributeDto } from '@citrineos/types';
 import {
+  tenantVariableAttributeTable,
   type VariableAttributeEntity,
   variableAttributeTable,
-  tenantVariableAttributeTable,
 } from '../schema/VariableAttribute.js';
 import { DrizzleRepository } from './Base.js';
+import type { VariableAttributeQuerystring } from '@/dal/index.js';
+import { and, eq } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external VariableAttributeDto contract.
@@ -50,5 +52,36 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
     return toVariableAttributeDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  private createVariableAttributeConditions(query: VariableAttributeQuerystring) {
+    const conditions = [];
+
+    if (query.ocppConnectionName) {
+      conditions.push(eq(variableAttributeTable.ocppConnectionName, query.ocppConnectionName));
+    }
+
+    if (query.tenantId) {
+      conditions.push(eq(variableAttributeTable.tenantId, query.tenantId));
+    }
+
+    // TODO implement remaining conditions as needed
+
+    return conditions;
+  }
+
+  async updateAllByQueryString(
+    query: VariableAttributeQuerystring,
+    value: object,
+  ): Promise<VariableAttributeDto[]> {
+    const rows = (await this.db
+      .update(variableAttributeTable)
+      .set(value)
+      .where(and(...this.createVariableAttributeConditions(query)))
+      .returning()) as VariableAttributeEntity[];
+
+    const dtos = rows.map((row) => this.toDto(row));
+
+    this.emit('updated', dtos);
+
+    return dtos;
+  }
 }

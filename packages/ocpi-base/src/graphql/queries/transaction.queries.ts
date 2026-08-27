@@ -64,9 +64,9 @@ export const GET_TRANSACTIONS_QUERY = gql`
   }
 `;
 
-export const GET_TRANSACTION_BY_TRANSACTION_ID_QUERY = gql`
-  query GetTransactionByTransactionId($transactionId: String!) {
-    Transactions(where: { transactionId: { _eq: $transactionId } }) {
+export const GET_TRANSACTION_BY_ID_QUERY = gql`
+  query GetTransactionById($id: Int!) {
+    Transactions_by_pk(id: $id) {
       tenant: Tenant {
         countryCode
         partyId
@@ -110,6 +110,104 @@ export const GET_TRANSACTION_BY_TRANSACTION_ID_QUERY = gql`
         id
         ocppConnectionName
         isOnline
+      }
+      transactionEvents: TransactionEvents {
+        id
+        eventType
+        EvseType {
+          id
+        }
+        transactionInfo
+      }
+      startTransaction: StartTransaction {
+        timestamp
+      }
+      stopTransaction: StopTransaction {
+        timestamp
+      }
+      meterValues: MeterValues {
+        timestamp
+        sampledValue
+      }
+    }
+  }
+`;
+
+// Scoped lookup for the OCPI StopSession command: the eMSP only knows the
+// (non-unique) transactionId, so we additionally scope to the calling partner
+// (countryCode/partyId) and to active sessions. The caller must treat a result
+// with more than one row as ambiguous and reject it rather than pick one.
+export const GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY = gql`
+  query GetActiveTransactionForStopSession(
+    $transactionId: String!
+    $countryCode: String!
+    $partyId: String!
+  ) {
+    Transactions(
+      where: {
+        transactionId: { _eq: $transactionId }
+        isActive: { _eq: true }
+        Authorization: {
+          TenantPartner: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }
+        }
+      }
+      order_by: { createdAt: desc }
+    ) {
+      tenant: Tenant {
+        countryCode
+        partyId
+        name
+        isUserTenant
+      }
+      id
+      stationId
+      ocppConnectionName
+      transactionId
+      isActive
+      chargingState
+      timeSpentCharging
+      totalKwh
+      stoppedReason
+      remoteStartId
+      totalCost
+      startTime
+      endTime
+      createdAt
+      updatedAt
+      evseId
+      connectorId
+      locationId
+      authorizationId
+      tariffId
+      authorization: Authorization {
+        id
+        idToken
+        idTokenType
+        tenantPartner: TenantPartner {
+          id
+          countryCode
+          partyId
+          partnerProfileOCPI
+          tenant: Tenant {
+            id
+            countryCode
+            partyId
+          }
+        }
+        groupAuthorization: GroupAuthorization {
+          idToken
+        }
+        additionalInfo
+        status
+        realTimeAuth
+        language1
+        updatedAt
+      }
+      station: ChargingStation {
+        id
+        ocppConnectionName
+        isOnline
+        protocol
       }
       transactionEvents: TransactionEvents {
         id

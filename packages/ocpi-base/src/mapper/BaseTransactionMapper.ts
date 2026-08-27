@@ -6,7 +6,6 @@ import type { AuthorizationDto, LocationDto, TariffDto, TransactionDto } from '@
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { Price } from '../model/Price.js';
 import type { Session } from '../model/Session.js';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
@@ -45,7 +44,11 @@ export abstract class BaseTransactionMapper {
         const result = await this.ocpiGraphqlClient.request<
           GetLocationByIdQueryResult,
           GetLocationByIdQueryVariables
-        >(GET_LOCATION_BY_ID_QUERY, { id: transaction.locationId });
+        >(GET_LOCATION_BY_ID_QUERY, {
+          id: transaction.locationId,
+          countryCode: transaction.tenant!.countryCode!,
+          partyId: transaction.tenant!.partyId!,
+        });
         transaction.location = result.Locations[0] as LocationDto;
       }
       const location = transaction.location;
@@ -79,11 +82,11 @@ export abstract class BaseTransactionMapper {
         }
       }
       if (transaction.authorization) {
-        const tokenDto = await TokensMapper.toDto(transaction.authorization);
-        if (tokenDto) {
+        if (TokensMapper.findContractId(transaction.authorization)) {
+          const tokenDto = TokensMapper.toDto(transaction.authorization);
           transactionIdToTokenMap.set(transaction.transactionId!, tokenDto);
         } else {
-          this.logger.debug(`Unmapped token for transaction ${transaction.id}`);
+          this.logger.debug(`No contract id for transaction ${transaction.id}; token omitted`);
         }
       } else {
         this.logger.debug(`No token for transaction ${transaction.id}`);
@@ -147,11 +150,5 @@ export abstract class BaseTransactionMapper {
         }),
     );
     return transactionIdToOcpiTariffMap;
-  }
-
-  protected calculateTotalCost(totalKwh: number, tariffCost: number): Price {
-    return {
-      excl_vat: Math.floor(totalKwh * tariffCost * 100) / 100,
-    };
   }
 }

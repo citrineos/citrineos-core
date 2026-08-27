@@ -107,7 +107,18 @@ export class OcpiExceptionHandler implements KoaMiddlewareInterface {
               ),
             );
             break;
-          default:
+          default: {
+            const httpCode = (err as any)?.httpCode;
+            if (typeof httpCode === 'number' && httpCode >= 400 && httpCode < 500) {
+              context.status = httpCode;
+              context.body = JSON.stringify(
+                buildOcpiErrorResponse(
+                  OcpiResponseStatusCode.ClientInvalidOrMissingParameters,
+                  `${(err as Error).message}${(err as any).errors ? ': ' + JSON.stringify((err as any).errors) : ''}`,
+                ),
+              );
+              break;
+            }
             context.status = HttpStatus.INTERNAL_SERVER_ERROR;
             context.body = JSON.stringify(
               buildOcpiErrorResponse(
@@ -115,6 +126,7 @@ export class OcpiExceptionHandler implements KoaMiddlewareInterface {
                 `Internal Server Error, ${(err as Error).message}: ${JSON.stringify((err as any).errors)}`,
               ),
             );
+          }
         }
       }
     }

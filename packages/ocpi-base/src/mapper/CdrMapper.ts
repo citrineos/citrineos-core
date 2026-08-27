@@ -11,6 +11,8 @@ import type { Price } from '../model/Price.js';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { SignedData } from '../model/SignedData.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
+import type { ChargingPeriod } from '../model/ChargingPeriod.js';
+import { CdrDimensionType } from '../model/CdrDimensionType.js';
 import { BaseTransactionMapper } from './BaseTransactionMapper.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -76,7 +78,10 @@ export class CdrMapper extends BaseTransactionMapper {
   ): Promise<Cdr[]> {
     return Promise.all(
       sessions
-        .filter((session) => transactionIdToTariffMap.has(session.id))
+        .filter(
+          (session): session is Session & { charging_periods: ChargingPeriod[] } =>
+            transactionIdToTariffMap.has(session.id) && !!session.charging_periods?.length,
+        )
         .map((session) =>
           this.mapSessionToCDR(
             session,
@@ -89,7 +94,7 @@ export class CdrMapper extends BaseTransactionMapper {
   }
 
   private async mapSessionToCDR(
-    session: Session,
+    session: Session & { charging_periods: ChargingPeriod[] },
     location: LocationDTO,
     tariff: TariffDto,
     ocpiTariff: OcpiTariff,
@@ -107,8 +112,8 @@ export class CdrMapper extends BaseTransactionMapper {
       cdr_location: await this.createCdrLocation(location, session),
       meter_id: session.meter_id,
       currency: session.currency,
-      tariffs: [ocpiTariff],
-      charging_periods: session.charging_periods || [],
+      tariffs: ocpiTariff ? [ocpiTariff] : undefined,
+      charging_periods: session.charging_periods,
       signed_data: await this.getSignedData(session),
       total_cost: calculateTotalCdrCost(session, tariff),
       total_fixed_cost: calculateFixedCost(tariff),
@@ -219,6 +224,6 @@ export class CdrMapper extends BaseTransactionMapper {
   }
 
   private getCompletedTransactions(transactions: TransactionDto[]): TransactionDto[] {
-    return transactions.filter((transaction) => !transaction.isActive);
+    return transactions.filter((transaction) => !transaction.isActive && !!transaction.endTime);
   }
 }

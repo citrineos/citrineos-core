@@ -5,6 +5,7 @@
 import React from 'react';
 import { type ChargingStationDto, type EvseDto, EvseProps } from '@citrineos/types';
 import { Combobox } from '@lib/client/components/combobox';
+import { buildEvseOptionValue } from '@lib/client/components/modals/shared/evse-selector/evse.option.value';
 import { GET_EVSE_LIST_FOR_STATION } from '@lib/queries/evses';
 import { ResourceType } from '@lib/utils/access.types';
 import { useSelect, useTranslate } from '@refinedev/core';
@@ -44,7 +45,7 @@ export const EvseSelector = ({
   const { options, onSearch, query } = useSelect<EvseDto>({
     resource: ResourceType.EVSES,
     optionLabel: 'evseTypeId',
-    optionValue: (evse) => JSON.stringify({ id: evse.id, evseTypeId: evse.evseTypeId }),
+    optionValue: buildEvseOptionValue,
     meta: {
       gqlQuery: GET_EVSE_LIST_FOR_STATION,
       gqlVariables: {

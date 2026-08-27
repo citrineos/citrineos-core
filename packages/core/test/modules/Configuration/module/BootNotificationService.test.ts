@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Boot, IBootRepository } from '@citrineos/core';
 import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
-import { ICache } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1, SystemConfig } from '@citrineos/types';
+import { BOOT_STATUS, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, SystemConfig } from '@citrineos/types';
+import { MemoryCache } from '@util/cache/memory.js';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
@@ -169,6 +170,109 @@ describe('BootService', () => {
 
       expect(mockCache.remove).not.toHaveBeenCalled();
       expect(mockCache.set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cache namespacing agrees with the router', () => {
+    // MessageRouterImpl gates inbound Calls on `cache.exists(action, identifier)` and outbound
+    // Calls on `cache.get(BOOT_STATUS, identifier)`, where identifier is
+    // `createIdentifier(tenantId, ocppConnectionName)`. Anything written under a different
+    // namespace is simply never read, so the blacklist and the boot gate do nothing.
+    const IDENTIFIER = createIdentifier(DEFAULT_TENANT_ID, MOCK_STATION_ID);
+
+    let realCache: ICache;
+    let service: BootNotificationService;
+
+    beforeEach(() => {
+      realCache = new MemoryCache();
+      service = getTestInstance(container, BootNotificationService, {
+        bootRepository: mockBootRepository,
+        cache: realCache,
+        config: mockConfig,
+      });
+    });
+
+    it('blacklists OCPP 2.0.1 actions where the router looks for them', async () => {
+      await service.cacheChargerActionsPermissions(
+        IDENTIFIER,
+        null,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
+
+      await expect(realCache.exists(OCPP_CallAction.StatusNotification, IDENTIFIER)).resolves.toBe(
+        true,
+      );
+    });
+
+    it('blacklists OCPP 1.6 actions where the router looks for them', async () => {
+      await service.cacheOcpp16ChargerActionsPermissions(
+        IDENTIFIER,
+        null,
+        OCPP1_6.BootNotificationResponseStatus.Rejected,
+      );
+
+      await expect(realCache.exists(OCPP_CallAction.StatusNotification, IDENTIFIER)).resolves.toBe(
+        true,
+      );
+    });
+
+    it('leaves BootNotification itself un-blacklisted', async () => {
+      await service.cacheOcpp16ChargerActionsPermissions(
+        IDENTIFIER,
+        null,
+        OCPP1_6.BootNotificationResponseStatus.Rejected,
+      );
+
+      await expect(realCache.exists(OCPP_CallAction.BootNotification, IDENTIFIER)).resolves.toBe(
+        false,
+      );
+    });
+
+    it('clears the OCPP 2.0.1 blacklist and boot status on an accepted boot', async () => {
+      await service.cacheChargerActionsPermissions(
+        IDENTIFIER,
+        null,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
+      await realCache.set(BOOT_STATUS, OCPP2_0_1.RegistrationStatusEnumType.Rejected, IDENTIFIER);
+
+      await service.cacheChargerActionsPermissions(
+        IDENTIFIER,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+      );
+
+      await expect(realCache.exists(OCPP_CallAction.StatusNotification, IDENTIFIER)).resolves.toBe(
+        false,
+      );
+      await expect(realCache.get(BOOT_STATUS, IDENTIFIER)).resolves.toBeNull();
+    });
+
+    it('clears the OCPP 1.6 boot status on an accepted boot', async () => {
+      // The 1.6 un-blacklist loop itself is separately broken (it destructures each action
+      // name as an array) and is fixed by #865, so this only covers the boot status.
+      await realCache.set(BOOT_STATUS, OCPP1_6.BootNotificationResponseStatus.Rejected, IDENTIFIER);
+
+      await service.cacheOcpp16ChargerActionsPermissions(
+        IDENTIFIER,
+        OCPP1_6.BootNotificationResponseStatus.Rejected,
+        OCPP1_6.BootNotificationResponseStatus.Accepted,
+      );
+
+      await expect(realCache.get(BOOT_STATUS, IDENTIFIER)).resolves.toBeNull();
+    });
+
+    it('does not blacklist a same-named station belonging to another tenant', async () => {
+      await service.cacheChargerActionsPermissions(
+        IDENTIFIER,
+        null,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
+
+      const otherTenant = createIdentifier(DEFAULT_TENANT_ID + 1, MOCK_STATION_ID);
+      await expect(realCache.exists(OCPP_CallAction.StatusNotification, otherTenant)).resolves.toBe(
+        false,
+      );
     });
   });
 

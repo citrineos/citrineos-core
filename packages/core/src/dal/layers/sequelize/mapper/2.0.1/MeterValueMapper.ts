@@ -145,7 +145,8 @@ export class MeterValueMapper {
   static fromMeasurandEnumType(
     measurand?: OCPP2_0_1.MeasurandEnumType | null,
   ): keyof typeof MeasurandEnum | undefined {
-    if (!measurand) return undefined;
+    // Per OCPP, an omitted measurand defaults to Energy.Active.Import.Register.
+    if (!measurand) return 'Energy.Active.Import.Register';
 
     switch (measurand) {
       case OCPP2_0_1.MeasurandEnumType.Current_Export:
@@ -199,7 +200,8 @@ export class MeterValueMapper {
       case OCPP2_0_1.MeasurandEnumType.Voltage:
         return 'Voltage';
       default:
-        return 'Energy.Active.Import.Register';
+        console.warn(`Unknown OCPP measurand "${measurand}"; not represented`);
+        return undefined;
     }
   }
 
