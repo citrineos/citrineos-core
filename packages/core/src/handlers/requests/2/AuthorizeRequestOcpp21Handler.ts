@@ -304,7 +304,9 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           type: AttributeEnum.Actual,
         });
 
-      if (tariffEnabled.length > 0 && Boolean(tariffEnabled[0].value)) {
+      // A device model boolean arrives as the string "false" or "true" (Part 2 §2.1.4), so it
+      // has to be compared, not coerced.
+      if (tariffEnabled[0]?.value?.toLowerCase() === 'true') {
         if (authorization.tariffId != null) {
           const tariff = await this._tariffRepository.readByKey(
             context.tenantId,
