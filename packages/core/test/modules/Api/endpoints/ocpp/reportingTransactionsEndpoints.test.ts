@@ -137,6 +137,29 @@ describe('reporting and transactions message endpoints', () => {
       }
     });
 
+    it('reads its byte limit from the same variable as its item limit', async () => {
+      // ItemsPerMessageGetReport and BytesPerMessageGetReport both sit on DeviceDataCtrlr under the
+      // GetReport instance, and each is defined as constraining GetReportRequest or
+      // GetMonitoringReportRequest, so both messages share them.
+      await handle({ requestId: 1, componentVariable: [aComponentVariable('A')] });
+
+      const expected = ['DeviceDataCtrlr', OCPP_CallAction.GetReport, DEFAULT_TENANT_ID, STATION];
+      expect(getItemsPerMessage).toHaveBeenCalledWith(...expected);
+      expect(getBytesPerMessage).toHaveBeenCalledWith(...expected);
+    });
+
+    it('refuses a request larger than the station byte limit', async () => {
+      getBytesPerMessage.mockResolvedValue(1);
+
+      const confirmations = await handle({
+        requestId: 1,
+        componentVariable: [aComponentVariable('A')],
+      });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
     it('captures a send failure as an unsuccessful batch', async () => {
       getItemsPerMessage.mockResolvedValue(1);
       sendCall.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({

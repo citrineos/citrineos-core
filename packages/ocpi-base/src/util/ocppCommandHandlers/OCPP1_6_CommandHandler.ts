@@ -40,8 +40,22 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       this.config.commands.ocpiBaseUrl +
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.START_SESSION}/${commandId}`;
     options.queryParameters = queryParameters;
+    let connectorId: number | undefined;
+    if (startSession.connector_id !== null && startSession.connector_id !== undefined) {
+      connectorId = this.resolveOcpp16ConnectorId(chargingStation, startSession.connector_id);
+      if (connectorId === undefined) {
+        this.reportConnectorNotFound(
+          'StartSession',
+          startSession,
+          tenantPartner,
+          startSession.response_url,
+          commandId,
+        );
+        return;
+      }
+    }
     const remoteStartTransactionRequest: OCPP1_6.RemoteStartTransactionRequest = {
-      connectorId: Number(startSession.connector_id),
+      ...(connectorId !== undefined ? { connectorId } : {}),
       idTag: startSession.token.uid,
     };
     await this.sendOCPPMessage(
@@ -105,29 +119,18 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.UNLOCK_CONNECTOR}/${commandId}`;
     options.queryParameters = queryParameters;
 
-    const ocpp1_6ConnectorId = Array.from(chargingStation.connectors || []).find(
-      (connector) => connector.id === Number(unlockConnector.connector_id),
-    )?.connectorId;
+    const ocpp1_6ConnectorId = this.resolveOcpp16ConnectorId(
+      chargingStation,
+      unlockConnector.connector_id,
+    );
     if (ocpp1_6ConnectorId === undefined) {
-      this.logger.error('UnlockConnector failed, Connector not found', {
+      this.reportConnectorNotFound(
+        'UnlockConnector',
         unlockConnector,
-      });
-      this.commandsClientApi
-        .postCommandResult(
-          tenantPartner,
-          unlockConnector.response_url,
-          {
-            result: CommandResultType.FAILED,
-            message: {
-              language: 'en',
-              text: 'Charging station communication failed',
-            },
-          },
-          commandId,
-        )
-        .catch((error) => {
-          this.logger.error('Failed to post command result', { error });
-        });
+        tenantPartner,
+        unlockConnector.response_url,
+        commandId,
+      );
       return;
     }
     const unlockConnectorRequest: OCPP1_6.UnlockConnectorRequest = {
@@ -141,6 +144,44 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       unlockConnector.response_url,
       commandId,
     );
+  }
+
+  private resolveOcpp16ConnectorId(
+    chargingStation: ChargingStationDto,
+    ocpiConnectorId: string | null | undefined,
+  ): number | undefined {
+    if (ocpiConnectorId === null || ocpiConnectorId === undefined) {
+      return undefined;
+    }
+    return Array.from(chargingStation.connectors || []).find(
+      (connector) => connector.id === Number(ocpiConnectorId),
+    )?.connectorId;
+  }
+
+  private reportConnectorNotFound(
+    command: string,
+    request: unknown,
+    tenantPartner: TenantPartnerDto,
+    responseUrl: string,
+    commandId: string,
+  ): void {
+    this.logger.error(`${command} failed, Connector not found`, request);
+    this.commandsClientApi
+      .postCommandResult(
+        tenantPartner,
+        responseUrl,
+        {
+          result: CommandResultType.FAILED,
+          message: {
+            language: 'en',
+            text: 'Connector not found on charging station',
+          },
+        },
+        commandId,
+      )
+      .catch((error) => {
+        this.logger.error('Failed to post command result', { error });
+      });
   }
 
   public async handleAsyncCommandResponse(
