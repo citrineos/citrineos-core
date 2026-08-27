@@ -9,6 +9,7 @@ import {
   type CertificateCreate,
   type CertificateDto,
   type CertificateUseEnumType,
+  type DeleteCertificateAttemptDto,
   type InstallCertificateStatusEnumType,
   type WebsocketServerConfig,
 } from '@citrineos/types';
@@ -27,7 +28,6 @@ import type {
 import {
   Certificate,
   CountryNameEnumType,
-  DeleteCertificateAttempt,
   InstallCertificateAttempt,
   InstalledCertificate,
   SignatureAlgorithmEnumType,
@@ -162,30 +162,25 @@ export class InstallCertificateHelperService {
     tenantId: number,
     ocppConnectionName: string,
     certificateHashData: Pick<
-      DeleteCertificateAttempt,
+      DeleteCertificateAttemptDto,
       'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
     >,
   ): Promise<void> {
     const existingPendingDeleteCertificateAttempt =
-      await this.deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-          hashAlgorithm: certificateHashData.hashAlgorithm,
-          issuerNameHash: certificateHashData.issuerNameHash,
-          issuerKeyHash: certificateHashData.issuerKeyHash,
-          serialNumber: certificateHashData.serialNumber,
-          status: null,
-        },
-      });
+      await this.deleteCertificateAttemptRepository.findPendingByStationAndHashData(
+        tenantId,
+        ocppConnectionName,
+        certificateHashData,
+      );
 
     if (!existingPendingDeleteCertificateAttempt) {
-      const deleteCertificateAttempt = new DeleteCertificateAttempt();
-      deleteCertificateAttempt.ocppConnectionName = ocppConnectionName;
-      deleteCertificateAttempt.hashAlgorithm = certificateHashData.hashAlgorithm;
-      deleteCertificateAttempt.issuerNameHash = certificateHashData.issuerNameHash;
-      deleteCertificateAttempt.issuerKeyHash = certificateHashData.issuerKeyHash;
-      deleteCertificateAttempt.serialNumber = certificateHashData.serialNumber;
-      await deleteCertificateAttempt.save();
+      await this.deleteCertificateAttemptRepository.createAttempt(tenantId, {
+        ocppConnectionName,
+        hashAlgorithm: certificateHashData.hashAlgorithm,
+        issuerNameHash: certificateHashData.issuerNameHash,
+        issuerKeyHash: certificateHashData.issuerKeyHash,
+        serialNumber: certificateHashData.serialNumber,
+      });
     }
   }
 

@@ -9,6 +9,9 @@ import type {
   CallAction,
   CertificateCreate,
   CertificateDto,
+  DeleteCertificateAttemptCreate,
+  DeleteCertificateAttemptDto,
+  DeleteCertificateStatusEnumType,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -32,7 +35,6 @@ import type {
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
 import type {
-  DeleteCertificateAttempt,
   InstallCertificateAttempt,
   InstalledCertificate,
 } from '../layers/sequelize/model/Certificate/index.js';
@@ -463,8 +465,31 @@ export interface ICertificateRepository {
 export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
 export interface IInstallCertificateAttemptRepository
   extends CrudRepository<InstallCertificateAttempt> {}
-export interface IDeleteCertificateAttemptRepository
-  extends CrudRepository<DeleteCertificateAttempt> {}
+type DeleteCertificateHashData = Pick<
+  DeleteCertificateAttemptDto,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+>;
+
+export interface IDeleteCertificateAttemptRepository {
+  findPendingByStationAndHashData(
+    tenantId: number,
+    ocppConnectionName: string,
+    hashData: DeleteCertificateHashData,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: DeleteCertificateAttemptCreate,
+  ): Promise<DeleteCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: DeleteCertificateStatusEnumType,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(

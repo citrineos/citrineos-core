@@ -178,7 +178,8 @@ describe('InstallCertificateHelperService', () => {
   const mockInstalledCertificateReadOnlyOneByQuery = vi.fn();
   const mockInstallCertificateAttemptReadOnlyOneByQuery = vi.fn();
   const mockDeviceModelReadAllByQuerystring = vi.fn();
-  const mockDeleteCertificateAttemptReadOnlyOneByQuery = vi.fn();
+  const mockDeleteCertificateAttemptFindPending = vi.fn();
+  const mockDeleteCertificateAttemptCreate = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -210,7 +211,8 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     mockDeleteCertificateAttemptRepository = {
-      readOnlyOneByQuery: mockDeleteCertificateAttemptReadOnlyOneByQuery,
+      findPendingByStationAndHashData: mockDeleteCertificateAttemptFindPending,
+      createAttempt: mockDeleteCertificateAttemptCreate,
     } as any;
     mockCertificateAuthorityService = {} as any;
     mockNetworkConnection = {} as any;
@@ -1576,43 +1578,37 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     it('dedupes on all four hash fields plus a null status', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(null);
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue(undefined);
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(mockDeleteCertificateAttemptReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: {
-          ocppConnectionName,
-          hashAlgorithm: certificateHashData.hashAlgorithm,
-          issuerNameHash: certificateHashData.issuerNameHash,
-          issuerKeyHash: certificateHashData.issuerKeyHash,
-          serialNumber: certificateHashData.serialNumber,
-          status: null,
-        },
-      });
+      expect(mockDeleteCertificateAttemptFindPending).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        certificateHashData,
+      );
     });
 
     it('creates an attempt carrying the hash data when none is pending', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(null);
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue(undefined);
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(createdDeleteCertificateAttemptInstances).toHaveLength(1);
-      const created = createdDeleteCertificateAttemptInstances[0];
-      expect(created.ocppConnectionName).toBe(ocppConnectionName);
-      expect(created.hashAlgorithm).toBe(certificateHashData.hashAlgorithm);
-      expect(created.issuerNameHash).toBe(certificateHashData.issuerNameHash);
-      expect(created.issuerKeyHash).toBe(certificateHashData.issuerKeyHash);
-      expect(created.serialNumber).toBe(certificateHashData.serialNumber);
-      expect(created.save).toHaveBeenCalled();
+      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        hashAlgorithm: certificateHashData.hashAlgorithm,
+        issuerNameHash: certificateHashData.issuerNameHash,
+        issuerKeyHash: certificateHashData.issuerKeyHash,
+        serialNumber: certificateHashData.serialNumber,
+      });
     });
 
     it('does not create a second attempt when one is already pending', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue({ id: 50 });
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue({ id: 50 });
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(createdDeleteCertificateAttemptInstances).toHaveLength(0);
+      expect(mockDeleteCertificateAttemptCreate).not.toHaveBeenCalled();
     });
   });
 });
