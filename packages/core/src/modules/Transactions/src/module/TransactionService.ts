@@ -133,7 +133,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
@@ -208,7 +208,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
@@ -418,7 +418,6 @@ export class TransactionService {
     let evseTypeId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
-      // OCPP 1.6: evseIdentifier is a connector ID — resolve to EVSE type ID
       const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
         tenantId,
         ocppConnectionName,
@@ -426,7 +425,6 @@ export class TransactionService {
       );
       evseTypeId = connector?.evse?.evseTypeId;
     } else {
-      // OCPP 2.0.1: evseIdentifier is an EVSEType — use evse.id directly
       evseTypeId = evseIdentifier.id;
     }
 
