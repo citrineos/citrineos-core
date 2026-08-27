@@ -50,7 +50,14 @@ export class GetCompositeScheduleResponseOcpp16Handler extends AbstractHandler {
       const compositeSchedule = {
         evseId: response.connectorId ?? 0,
         duration: response.chargingSchedule.duration ?? 0,
-        scheduleStart: response.chargingSchedule.startSchedule ?? new Date().toISOString(),
+        // GetCompositeSchedule.conf carries scheduleStart itself - "Periods contained in the
+        // charging profile are relative to this point in time" - so that is the anchor, and the
+        // schedule's own startSchedule is only a fallback. Defaulting to the current time would
+        // shift every period by however long the response took to arrive.
+        scheduleStart:
+          response.scheduleStart ??
+          response.chargingSchedule.startSchedule ??
+          new Date().toISOString(),
         chargingRateUnit: response.chargingSchedule
           .chargingRateUnit as unknown as ChargingRateUnitEnumType,
         chargingSchedulePeriod: response.chargingSchedule.chargingSchedulePeriod.map((p) => ({
