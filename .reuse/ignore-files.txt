@@ -82,6 +82,7 @@ apps/ocpp-server/src/assets/certificates/leafKey.pem
 apps/ocpp-server/src/assets/certificates/rootCertificate.pem
 apps/ocpp-server/src/assets/certificates/rootKey.pem
 apps/ocpp-server/src/assets/certificates/subCAKey.pem
+apps/ocpp-server/src/assets/websocket-servers.json
 
 # Documentation
 packages/core/test/util/resources/README.md
