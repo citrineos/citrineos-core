@@ -26,9 +26,7 @@ import type {
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
 import {
-  Certificate,
   CountryNameEnumType,
-  InstallCertificateAttempt,
   InstalledCertificate,
   SignatureAlgorithmEnumType,
 } from '@dal/layers/sequelize/index.js';
@@ -107,22 +105,13 @@ export class InstallCertificateHelperService {
 
     const hash = this.getCertificateHash(certificate);
     const existingPendingInstallCertificateAttempt =
-      await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          certificateType: certificateType,
-          status: null,
-          ...(requestId != null ? { requestId } : {}),
-        },
-        include: [
-          {
-            model: Certificate,
-            where: {
-              certificateFileHash: hash,
-            },
-          },
-        ],
-      });
+      await this.installCertificateAttemptRepository.findPendingByStationTypeAndCertHash(
+        tenantId,
+        ocppConnectionName,
+        certificateType,
+        hash,
+        requestId,
+      );
     if (!existingPendingInstallCertificateAttempt) {
       const {
         serialNumber,
@@ -147,14 +136,12 @@ export class InstallCertificateHelperService {
           signatureAlgorithm,
         );
       }
-      const installCertificateAttempt = new InstallCertificateAttempt();
-      installCertificateAttempt.ocppConnectionName = ocppConnectionName;
-      installCertificateAttempt.certificateType = certificateType;
-      installCertificateAttempt.certificateId = existingCertificate!.id!;
-      if (requestId != null) {
-        installCertificateAttempt.requestId = requestId;
-      }
-      await installCertificateAttempt.save();
+      await this.installCertificateAttemptRepository.createAttempt(tenantId, {
+        ocppConnectionName,
+        certificateType,
+        certificateId: existingCertificate!.id!,
+        ...(requestId != null ? { requestId } : {}),
+      });
     }
   }
 
@@ -251,21 +238,20 @@ export class InstallCertificateHelperService {
     certificateType?: CertificateUseEnumType,
   ) {
     const existingPendingInstallCertificateAttempt =
-      await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          status: null,
-          ...(requestId != null ? { requestId } : {}),
-          ...(certificateType != null ? { certificateType } : {}),
-        },
-      });
+      await this.installCertificateAttemptRepository.findPendingByStation(
+        tenantId,
+        ocppConnectionName,
+        requestId,
+        certificateType,
+      );
     // should always be true
     if (existingPendingInstallCertificateAttempt) {
-      existingPendingInstallCertificateAttempt.status = status;
-      await existingPendingInstallCertificateAttempt.save();
-      if (
-        existingPendingInstallCertificateAttempt.status === InstallCertificateStatusEnum.Accepted
-      ) {
+      await this.installCertificateAttemptRepository.updateStatus(
+        tenantId,
+        existingPendingInstallCertificateAttempt.id!,
+        status,
+      );
+      if (status === InstallCertificateStatusEnum.Accepted) {
         const existingInstalledCertificate =
           await this.installedCertificateRepository.readOnlyOneByQuery(tenantId, {
             where: {
@@ -278,7 +264,10 @@ export class InstallCertificateHelperService {
             existingPendingInstallCertificateAttempt.certificateId;
           await existingInstalledCertificate.save();
         } else {
-          const certificate = await existingPendingInstallCertificateAttempt.$get('certificate');
+          const certificate = await this.installCertificateAttemptRepository.getLinkedCertificate(
+            tenantId,
+            existingPendingInstallCertificateAttempt.id!,
+          );
           if (certificate && certificate.certificateFileId) {
             const certificateBuffer = await this.fileStorage.getFile(certificate.certificateFileId);
             if (!certificateBuffer) {
@@ -434,7 +423,7 @@ export class InstallCertificateHelperService {
   /**
    * Generates a sub CA certificate signed by a CA server.
    *
-   * @param {Certificate} certificate - The certificate information used for generating the root certificate.
+   * @param {CertificateWorkingInput} certificate - The certificate information used for generating the root certificate.
    * @return {Promise<[string, string]>} An array containing the signed certificate and the private key.
    */
   async generateSubCACertificateSignedByCAServer(
