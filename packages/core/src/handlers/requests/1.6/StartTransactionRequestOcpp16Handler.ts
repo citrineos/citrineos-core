@@ -94,12 +94,18 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
       await this._ocppSender.sendCallResultWithMessage(message, response);
     }
 
-    await this.deactivateOtherActiveTransactionsAtEvse16(
-      tenantId,
-      response.transactionId.toString(),
-      ocppConnectionName,
-      request,
-    );
+    // Only sweep the connector once a transaction has actually taken it. The sweep closes every
+    // active transaction on the connector except the new one, and a refused StartTransaction has no
+    // new one - authorizeOcpp16IdToken leaves transactionId at 0 - so the exclusion would match
+    // nothing and the transaction that is genuinely charging would be closed.
+    if (response.idTagInfo.status === OCPP1_6.StartTransactionResponseStatus.Accepted) {
+      await this.deactivateOtherActiveTransactionsAtEvse16(
+        tenantId,
+        response.transactionId.toString(),
+        ocppConnectionName,
+        request,
+      );
+    }
 
     // Deactivate reservation only if the transaction was accepted.
     // A rejected StartTransaction (auth failure or DB error) should not
