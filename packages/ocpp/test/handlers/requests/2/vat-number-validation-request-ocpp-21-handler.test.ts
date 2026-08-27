@@ -62,15 +62,13 @@ describe('VatNumberValidationRequestOcpp21Handler', () => {
       .calls[0][1] as OCPP2_1.VatNumberValidationResponse;
   }
 
-  // C18.FR.09: the CSMS responds Rejected when the VAT number is invalid, and MAY return the
-  // company address. company is an AddressType, so null is not a value it can carry.
-  it('omits company when the VAT number does not resolve', async () => {
+  it('omits company from the sent response when the VAT number does not resolve', async () => {
     getVat.mockResolvedValue(null);
 
     const response = await validate({ vatNumber: 'GB000000000' });
 
     expect(response.status).toBe(OCPP2_1.GenericStatusEnumType.Rejected);
-    expect(response).not.toHaveProperty('company');
+    expect(JSON.parse(JSON.stringify(response))).not.toHaveProperty('company');
   });
 
   it('produces a response the schema accepts when the VAT number does not resolve', async () => {
@@ -87,7 +85,6 @@ describe('VatNumberValidationRequestOcpp21Handler', () => {
     expect(isValid).toBe(true);
   });
 
-  // C18.FR.10: the CSMS uses the same evseId in the response.
   it('echoes the evseId the station asked about', async () => {
     getVat.mockResolvedValue(null);
 
