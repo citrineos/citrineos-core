@@ -69,11 +69,10 @@ export class TokensMapper {
         return TokenType.AD_HOC_USER;
       case IdTokenEnum.Central:
         return TokenType.APP_USER;
+      case IdTokenEnum.Other:
       case null:
         return TokenType.OTHER;
       default: {
-        // OCPI has only 4 token types; every other OCPP idTokenType (Other, eMAID, ISO15693,
-        // KeyCode, MacAddress) maps to OTHER rather than throwing.
         Container.get(Logger).warn(
           `Unmapped OCPP idToken type "${type}"; defaulting to OCPI TokenType.OTHER`,
         );
