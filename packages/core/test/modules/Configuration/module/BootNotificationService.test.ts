@@ -171,6 +171,54 @@ describe('BootService', () => {
       expect(mockCache.remove).not.toHaveBeenCalled();
       expect(mockCache.set).not.toHaveBeenCalled();
     });
+
+    // B01.FR.10 / B02.FR.09 / B03.FR.07: while a station's boot is Rejected or Pending, anything it
+    // sends other than BootNotification (or a triggered message) is answered SecurityError. The
+    // blacklist is what enforces that, so it has to cover every action the station can send -
+    // including the ones only OCPP 2.1 defines.
+    it.each([OCPP_CallAction.NotifySettlement, OCPP_CallAction.VatNumberValidation])(
+      'blacklists the OCPP 2.1 action %s',
+      async (action) => {
+        await bootService.cacheChargerActionsPermissions(
+          MOCK_STATION_ID,
+          null,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        );
+
+        expect(mockCache.set).toHaveBeenCalledWith(action, 'blacklisted', MOCK_STATION_ID);
+      },
+    );
+
+    it('whitelists the OCPP 2.1 actions again once the boot is accepted', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+      );
+
+      expect(mockCache.remove).toHaveBeenCalledWith(
+        OCPP_CallAction.NotifySettlement,
+        MOCK_STATION_ID,
+      );
+      expect(mockCache.remove).toHaveBeenCalledWith(
+        OCPP_CallAction.VatNumberValidation,
+        MOCK_STATION_ID,
+      );
+    });
+
+    it('never blacklists BootNotification itself', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        null,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
+
+      expect(mockCache.set).not.toHaveBeenCalledWith(
+        OCPP_CallAction.BootNotification,
+        'blacklisted',
+        MOCK_STATION_ID,
+      );
+    });
   });
 
   describe('cache namespacing agrees with the router', () => {
