@@ -12,24 +12,13 @@ import {
   makeServer,
   startStubCpo,
   ocpiEnvelope,
-  authHeader,
   functionalHeaders,
   validSession,
-  SEED_TOKEN_WE_ACCEPT,
   type StubCpo,
   type StubCpoReply,
 } from './harness.js';
 
 const CONTROL = { 'content-type': 'application/json' };
-
-function callbackHeaders(): Record<string, string> {
-  return {
-    authorization: authHeader(SEED_TOKEN_WE_ACCEPT),
-    'content-type': 'application/json',
-    'x-request-id': 'cb-req',
-    'x-correlation-id': 'cb-cor',
-  };
-}
 
 /** Poll until at least `count` PendingCommands exist, then return the newest. */
 async function waitForPending(ctx: MockContext, count = 1): Promise<PendingCommand> {
@@ -85,7 +74,9 @@ describe('charge start/stop degraded branches', () => {
     const res = await app.inject({
       method: 'POST',
       url: new URL(pending.responseUrl).pathname,
-      headers: callbackHeaders(),
+      // a CommandResult is a CPO->eMSP message, so it carries the same routing
+      // headers as a functional push - the callback route strict-validates them
+      headers: functionalHeaders(ctx.config),
       payload: JSON.stringify({ result }),
     });
     expect(res.statusCode).toBe(200);

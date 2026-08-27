@@ -582,13 +582,25 @@ describe('commands result callback', () => {
   let ctx: MockContext;
   let cpo: StubCpo;
 
-  // Citrine sends this callback with from/to reversed (from=eMSP, to=CPO).
-  function reversedCallbackHeaders(token = SEED_TOKEN_WE_ACCEPT): Record<string, string> {
+  // A CommandResult is a CPO->eMSP message: from=CPO, to=eMSP, same as any
+  // functional push. The callback route strict-validates that direction.
+  function callbackHeaders(token = SEED_TOKEN_WE_ACCEPT): Record<string, string> {
     return {
       authorization: authHeader(token),
       'content-type': 'application/json',
       'x-request-id': 'cb-req',
       'x-correlation-id': 'cb-cor',
+      'ocpi-from-country-code': ctx.config.cpoCountryCode,
+      'ocpi-from-party-id': ctx.config.cpoPartyId,
+      'ocpi-to-country-code': ctx.config.countryCode,
+      'ocpi-to-party-id': ctx.config.partyId,
+    };
+  }
+
+  // The reversal Citrine used to emit on the async callback (from=eMSP, to=CPO).
+  function reversedCallbackHeaders(): Record<string, string> {
+    return {
+      ...callbackHeaders(),
       'ocpi-from-country-code': ctx.config.countryCode,
       'ocpi-from-party-id': ctx.config.partyId,
       'ocpi-to-country-code': ctx.config.cpoCountryCode,
@@ -611,11 +623,23 @@ describe('commands result callback', () => {
     await cpo.close();
   });
 
-  it('accepts a result with reversed routing headers for an unknown uid and records an info finding', async () => {
+  it('rejects the reversed routing headers Citrine used to send (401 + header finding)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/ocpi/2.2.1/emsp/commands/START_SESSION/whatever',
+      headers: reversedCallbackHeaders(),
+      payload: JSON.stringify({ result: 'ACCEPTED' }),
+    });
+    expect(res.statusCode).toBe(401);
+    const ex = ctx.store.query({ direction: 'inbound', operation: 'commands.result' }).at(-1)!;
+    expect(ex.findings.some((f) => f.severity === 'error' && f.kind === 'header')).toBe(true);
+  });
+
+  it('accepts a result for an unknown uid and records an info finding', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/ocpi/2.2.1/emsp/commands/START_SESSION/not-a-uid-we-sent',
-      headers: reversedCallbackHeaders(),
+      headers: callbackHeaders(),
       payload: JSON.stringify({ result: 'ACCEPTED' }),
     });
     expect(res.statusCode).toBe(200);
@@ -647,7 +671,7 @@ describe('commands result callback', () => {
     const res = await app.inject({
       method: 'POST',
       url: cbPath,
-      headers: reversedCallbackHeaders(),
+      headers: callbackHeaders(),
       payload: JSON.stringify({ result: 'ACCEPTED', message: { language: 'en', text: 'ok' } }),
     });
     expect(res.statusCode).toBe(200);
@@ -666,7 +690,7 @@ describe('commands result callback', () => {
     await app.inject({
       method: 'POST',
       url: '/ocpi/2.2.1/emsp/commands/STOP_SESSION/whatever',
-      headers: reversedCallbackHeaders(),
+      headers: callbackHeaders(),
       payload: JSON.stringify({ result: 'MAYBE' }),
     });
     const ex = ctx.store.query({ direction: 'inbound', operation: 'commands.result' }).at(-1)!;
@@ -679,7 +703,7 @@ describe('commands result callback', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/ocpi/2.2.1/emsp/commands/START_SESSION/whatever',
-      headers: reversedCallbackHeaders('WRONG-TOKEN'),
+      headers: callbackHeaders('WRONG-TOKEN'),
       payload: JSON.stringify({ result: 'ACCEPTED' }),
     });
     expect(res.statusCode).toBe(401);
