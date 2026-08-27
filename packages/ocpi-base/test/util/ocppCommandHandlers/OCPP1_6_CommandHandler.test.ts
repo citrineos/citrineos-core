@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import 'reflect-metadata';
-import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
+import { describe, expect, it, vi } from 'vitest';
 
 // The package barrel reaches BaseClientApi, whose `@Inject()` is evaluated as the module loads and
 // needs design:type metadata that esbuild does not emit. Stub the barrel down to the handful of
@@ -151,6 +151,6 @@ describe('OCPP1_6_CommandHandler.sendStartSessionCommand', () => {
 
     expect(sent).toHaveLength(0);
     expect(postCommandResult).toHaveBeenCalledOnce();
-    expect(postCommandResult.mock.calls[0][6]).toMatchObject({ result: 'FAILED' });
+    expect(postCommandResult.mock.calls[0][2]).toMatchObject({ result: 'FAILED' });
   });
 });
