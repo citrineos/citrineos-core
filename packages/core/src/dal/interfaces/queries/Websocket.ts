@@ -90,32 +90,38 @@ export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
     required: true,
   },
   {
-    key: 'tenantPathMapping',
-    type: 'object',
-  },
-  {
     key: 'dynamicTenantResolution',
     type: 'boolean',
   },
 ]);
 
+/**
+ * A websocket path mapping is a property of the tenant, not of a single server: every
+ * server with dynamicTenantResolution enabled resolves against the same set of paths.
+ */
 export interface WebsocketMappingQuerystring {
-  id: string;
   path: string;
   tenantId: number;
 }
 
 export const WebsocketMappingQuerySchema = QuerySchema('WebsocketMappingQuerySchema', [
   {
-    key: 'id',
-    type: 'string',
-    required: true,
-  },
-  {
     key: 'path',
     type: 'string',
     required: true,
   },
+  {
+    key: 'tenantId',
+    type: 'number',
+    required: true,
+  },
+]);
+
+export interface WebsocketMappingDeleteQuerystring {
+  tenantId: number;
+}
+
+export const WebsocketMappingDeleteQuerySchema = QuerySchema('WebsocketMappingDeleteQuerySchema', [
   {
     key: 'tenantId',
     type: 'number',

@@ -15,7 +15,6 @@ import {
   NotifyEVChargingNeedsStatusEnum,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OCPPVersion,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -138,7 +137,7 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
     await this._ocppSender.sendCall({
       ocppConnectionName,
       tenantId: message.context.tenantId,
-      protocol: OCPPVersion.OCPP2_1,
+      protocol: message.protocol,
       action: OCPP_CallAction.SetChargingProfile,
       eventGroup: EventGroup.SmartCharging,
       payload: {

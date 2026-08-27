@@ -51,12 +51,14 @@ export type {
 export {
   WebsocketDeleteQuerySchema,
   WebsocketGetQuerySchema,
+  WebsocketMappingDeleteQuerySchema,
   WebsocketMappingQuerySchema,
   WebsocketRequestSchema,
 } from './queries/Websocket.js';
 export type {
   WebsocketDeleteQuerystring,
   WebsocketGetQuerystring,
+  WebsocketMappingDeleteQuerystring,
   WebsocketMappingQuerystring,
 } from './queries/Websocket.js';
 
