@@ -75,18 +75,21 @@ export class DrizzleBootRepository
   }
 
   // ──────────── IBootRepository methods ─────────────────────────────
-  // Note that for many of the methods below, we purposely DO NOT use the equivalent Drizzle methods:
-  // callers address a boot record by its station's ocppConnectionName, whereas the
+  // Callers address a boot record by its station's ocppConnectionName, whereas the
   // record is keyed by stationId and its own `id` is an unrelated serial primary key.
 
   async updateByKey(tenantId: number, value: object, key: string): Promise<BootDto | undefined> {
     const stationId = await this.findStationId(tenantId, key);
     if (stationId === undefined) return undefined;
 
+    // Not allowed different tenants or stations in given value
+    const { tenantId: _tenantId, stationId: _stationId, ...safeValue } = value as any;
+
     const rows = (await this.db
       .update(bootTable)
-      .set(toBootEntity(value))
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+      .set(toBootEntity(safeValue))
+      // stationId is a ChargingStations primary key, so it is unique across tenants
+      .where(eq(bootTable.stationId, stationId))
       .returning()) as BootEntity[];
 
     if (!rows[0]) return undefined;
@@ -119,7 +122,7 @@ export class DrizzleBootRepository
       const existingBoots = await tx
         .select({ id: bootTable.id })
         .from(bootTable)
-        .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+        .where(eq(bootTable.stationId, stationId))
         .limit(1);
 
       bootExists = existingBoots.length > 0;
@@ -130,7 +133,7 @@ export class DrizzleBootRepository
         const savedBootsResult = (await tx
           .update(bootTable)
           .set(bootEntityToSave)
-          .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+          .where(eq(bootTable.stationId, stationId))
           .returning()) as BootEntity[];
 
         if (!savedBootsResult[0]) return undefined;
@@ -167,7 +170,7 @@ export class DrizzleBootRepository
 
     const rows = (await this.db
       .delete(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+      .where(eq(bootTable.stationId, stationId))
       .returning()) as BootEntity[];
 
     if (!rows[0]) return undefined;
@@ -183,7 +186,7 @@ export class DrizzleBootRepository
     const rows = await this.db
       .select({ id: bootTable.id })
       .from(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+      .where(eq(bootTable.stationId, stationId))
       .limit(1);
 
     return rows.length > 0;
@@ -196,7 +199,7 @@ export class DrizzleBootRepository
     const rows = await this.db
       .select()
       .from(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.stationId, stationId)))
+      .where(eq(bootTable.stationId, stationId))
       .limit(1);
 
     return rows[0] ? this.toDto(rows[0]) : undefined;
