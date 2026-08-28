@@ -7,7 +7,7 @@ import { AuthMethod } from './AuthMethod.js';
 import { SessionStatus } from './SessionStatus.js';
 import { PaginatedResponseSchema } from './PaginatedResponse.js';
 import { OcpiResponseSchema } from './OcpiResponse.js';
-import { PriceSchema } from './Price.js';
+import { PriceSchema } from '@citrineos/base';
 import { ChargingPeriodSchema } from './ChargingPeriod.js';
 import { CdrTokenSchema } from './CdrToken.js';
 
