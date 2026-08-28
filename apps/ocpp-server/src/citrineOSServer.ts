@@ -457,14 +457,14 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
-    // Throws on drift between the Sequelize models and database schema,
-    // which aborts startup.
+
     this._schemaValidationReport = await sequelize.assertSequelizeSchemaMatches(
       this._sequelizeInstance,
       this._config.database,
       this._logger,
     );
-    if (process.env.CITRINEOS_1USE_DRIZZLE === 'true') {
+
+    if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
   }
