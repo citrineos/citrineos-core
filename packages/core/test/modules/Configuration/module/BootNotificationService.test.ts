@@ -21,6 +21,7 @@ describe('BootService', () => {
   const mockMaxCachingSeconds = 10;
   let bootService: BootNotificationService;
   const MOCK_STATION_ID = 'Station01';
+  const MOCK_IDENTIFIER = createIdentifier(DEFAULT_TENANT_ID, MOCK_STATION_ID);
 
   beforeEach(() => {
     mockBootRepository = {
@@ -324,7 +325,44 @@ describe('BootService', () => {
     });
   });
 
+  describe('createGetBaseReportRequest', () => {
+    it('marks the request ongoing under the tenant-scoped identifier', async () => {
+      // The request id is a hard-coded 0, so with the bare station name as the namespace two
+      // tenants that both have a station of that name share one cache entry.
+      await bootService.createGetBaseReportRequest(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        mockMaxCachingSeconds,
+      );
+
+      expect(mockCache.set).toHaveBeenCalledWith(
+        '0',
+        'ongoing',
+        MOCK_IDENTIFIER,
+        mockMaxCachingSeconds,
+      );
+    });
+  });
+
   describe('confirmGetBaseReportSuccess', () => {
+    it('waits on the tenant-scoped identifier', async () => {
+      mockCache.onChange.mockResolvedValueOnce('complete');
+
+      await bootService.confirmGetBaseReportSuccess(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        MOCK_REQUEST_ID.toString(),
+        aMessageConfirmation(),
+        mockMaxCachingSeconds,
+      );
+
+      expect(mockCache.onChange).toHaveBeenCalledWith(
+        MOCK_REQUEST_ID.toString(),
+        mockMaxCachingSeconds,
+        MOCK_IDENTIFIER,
+      );
+    });
+
     it('should throw because getBaseReport was not successful', async () => {
       const unsuccessfulConfirmation = aMessageConfirmation((mc) => {
         mc.success = false;
@@ -333,6 +371,7 @@ describe('BootService', () => {
       await expect(
         async () =>
           await bootService.confirmGetBaseReportSuccess(
+            DEFAULT_TENANT_ID,
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             unsuccessfulConfirmation,
@@ -347,6 +386,7 @@ describe('BootService', () => {
       await expect(
         async () =>
           await bootService.confirmGetBaseReportSuccess(
+            DEFAULT_TENANT_ID,
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             aMessageConfirmation(),
@@ -360,6 +400,7 @@ describe('BootService', () => {
 
       await expect(
         bootService.confirmGetBaseReportSuccess(
+          DEFAULT_TENANT_ID,
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),
           aMessageConfirmation(),

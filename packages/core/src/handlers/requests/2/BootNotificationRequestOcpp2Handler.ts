@@ -192,6 +192,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       await this._cache.remove(OCPP_CallAction.NotifyReport, identifier);
 
       const getBaseReportRequest = await this._bootService.createGetBaseReportRequest(
+        tenantId,
         ocppConnectionName,
         this._config.maxCachingSeconds,
       );
@@ -206,6 +207,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       });
 
       await this._bootService.confirmGetBaseReportSuccess(
+        tenantId,
         ocppConnectionName,
         getBaseReportRequest.requestId.toString(),
         getBaseReportConfirmation,
