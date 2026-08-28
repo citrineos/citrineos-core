@@ -37,7 +37,6 @@ import {
   MessageOrigin,
   MessageState,
   MessageTypeId,
-  NO_ACTION,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
@@ -288,10 +287,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Response,
           rawMessage,
           callError,
+          action,
         );
       }
       await this._webhookDispatcher.dispatchMessageReceivedUnparsed(
@@ -308,7 +307,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       const action =
         parsedMessage.messageTypeId === MessageTypeId.Call
           ? (parsedMessage as Call).action
-          : NO_ACTION;
+          : undefined;
       try {
         switch (parsedMessage.messageTypeId) {
           case MessageTypeId.Call: {
@@ -338,10 +337,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           await this._sendMessage(
             identifier,
             protocol,
-            action,
             MessageState.Response,
             rawMessage,
             callError,
+            action,
           );
         }
       } finally {
@@ -407,10 +406,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         const successTimestamp = await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Request,
           rawMessage,
           message,
+          action,
         );
         if (successTimestamp != undefined) {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.Sent);
@@ -490,10 +489,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -556,10 +555,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -869,10 +868,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
-    action: string,
     state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
+    action?: string,
     receivedIsoTimestamp?: string,
   ): Promise<Date | undefined> {
     try {
@@ -1048,12 +1047,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let action;
     switch (messageTypeId) {
       case MessageTypeId.Call:
-        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : NO_ACTION;
+        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : undefined;
         break;
       case MessageTypeId.CallResult:
       case MessageTypeId.CallError:
       default:
-        action = NO_ACTION;
+        action = undefined;
         break;
     }
     return action;
