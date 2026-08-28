@@ -87,7 +87,6 @@ export class OIDCAuthProvider implements IApiAuthProvider {
 
     // Return the token without the "Bearer " prefix
     const token = authHeader.slice(7).trim();
-    this._logger.debug('Extracted token from request:', token);
     return token;
   }
 
