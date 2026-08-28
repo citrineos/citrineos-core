@@ -15,7 +15,6 @@ import {
   type IModule,
   OCPPValidator,
 } from '@citrineos/base';
-import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
 import {
   apiAuthPluginFp,
   BrokerAwareMessageSender,
