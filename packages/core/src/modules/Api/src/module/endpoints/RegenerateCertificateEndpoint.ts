@@ -10,14 +10,13 @@ import {
   DEFAULT_TENANT_ID,
   IMessageQuerystringSchema,
 } from '@citrineos/base';
-import { type CertificateCreate, HttpMethod } from '@citrineos/types';
+import { type CertificateCreate, type InstalledCertificateDto, HttpMethod } from '@citrineos/types';
 import type { RegenerateExistingCertificate } from '@dal/interfaces/index.js';
 import { RegenerateInstalledCertificateSchema } from '@dal/interfaces/index.js';
 import type {
   ICertificateRepository,
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
-import { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import { generateCertificate } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
@@ -65,25 +64,29 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
 
   async handle(
     request: FastifyRequest<RegenerateCertificateEndpointRoute>,
-  ): Promise<InstalledCertificate> {
+  ): Promise<InstalledCertificateDto> {
     const installedCertificateId = request.body.installedCertificateId;
     const validBeforeParam = request.body.validBefore;
-    const ocppConnectionName = request.query.identifier;
+    const ocppConnectionName = Array.isArray(request.query.identifier)
+      ? request.query.identifier[0]
+      : request.query.identifier;
     const tenantId = request.query.tenantId || DEFAULT_TENANT_ID;
     this._logger.info(
       `Regenerating existing certificate ${installedCertificateId} for charger ${ocppConnectionName}`,
     );
     const existingInstalledCertificate =
-      await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          id: installedCertificateId,
-          ocppConnectionName: ocppConnectionName,
-        },
-      });
+      await this._installedCertificateRepository.findByIdAndStation(
+        tenantId,
+        installedCertificateId,
+        ocppConnectionName,
+      );
     if (!existingInstalledCertificate) {
       throw new Error('Installed certificate not found');
     }
-    const existingCertificateRecord = await existingInstalledCertificate.$get('certificate');
+    const existingCertificateRecord = await this._installedCertificateRepository.getLinkedCertificate(
+      tenantId,
+      existingInstalledCertificate.id!,
+    );
     if (!existingCertificateRecord) {
       throw new Error('Certificate not found');
     }
@@ -140,8 +143,12 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
       tenantId,
       newCertificateRecord,
     );
-    existingInstalledCertificate.certificateId = savedCertificate.id!;
-    await existingInstalledCertificate.save();
-    return existingInstalledCertificate;
+    return (
+      (await this._installedCertificateRepository.setCertificateId(
+        tenantId,
+        existingInstalledCertificate.id!,
+        savedCertificate.id!,
+      )) ?? existingInstalledCertificate
+    );
   }
 }

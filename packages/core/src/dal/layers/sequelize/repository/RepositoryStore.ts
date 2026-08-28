@@ -34,6 +34,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
+  DrizzleInstalledCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -102,11 +103,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
       config,
       logger,
@@ -173,6 +169,10 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.installedCertificateRepository = new DrizzleInstalledCertificateRepository({
+        config,
+        logger,
+      });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -198,6 +198,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
         config,
         logger,
         sequelizeInstance,

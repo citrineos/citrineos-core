@@ -174,7 +174,15 @@ describe('InstallCertificateHelperService', () => {
   const mockCertificateFindByFileHash = vi.fn();
   const mockCertificateFindById = vi.fn();
   const mockCertificateCreate = vi.fn();
-  const mockInstalledCertificateReadOnlyOneByQuery = vi.fn();
+  const mockInstalledFindByStationAndType = vi.fn();
+  const mockInstalledFindByIdAndStation = vi.fn();
+  const mockInstalledGetLinkedCertificate = vi.fn();
+  const mockInstalledCreate = vi.fn();
+  const mockInstalledSetCertificateId = vi.fn();
+  const mockInstalledUpdateHashData = vi.fn();
+  const mockInstalledDeleteByStation = vi.fn();
+  const mockInstalledDeleteByStationAndType = vi.fn();
+  const mockInstalledDeleteByStationAndHashData = vi.fn();
   const mockInstallCertificateAttemptFindPendingByHash = vi.fn();
   const mockInstallCertificateAttemptFindPending = vi.fn();
   const mockInstallCertificateAttemptCreate = vi.fn();
@@ -199,7 +207,15 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     mockInstalledCertificateRepository = {
-      readOnlyOneByQuery: mockInstalledCertificateReadOnlyOneByQuery,
+      findByStationAndType: mockInstalledFindByStationAndType,
+      findByIdAndStation: mockInstalledFindByIdAndStation,
+      getLinkedCertificate: mockInstalledGetLinkedCertificate,
+      createInstalledCertificate: mockInstalledCreate,
+      setCertificateId: mockInstalledSetCertificateId,
+      updateHashData: mockInstalledUpdateHashData,
+      deleteByStation: mockInstalledDeleteByStation,
+      deleteByStationAndType: mockInstalledDeleteByStationAndType,
+      deleteByStationAndHashData: mockInstalledDeleteByStationAndHashData,
     } as any;
 
     mockInstallCertificateAttemptRepository = {
@@ -441,12 +457,12 @@ describe('InstallCertificateHelperService', () => {
           variable_name: 'AdditionalRootCertificateCheck',
           type: 'Actual',
         });
-        expect(mockInstalledCertificateReadOnlyOneByQuery).not.toHaveBeenCalled();
+        expect(mockInstalledFindByStationAndType).not.toHaveBeenCalled();
       });
 
       it('allows the install when no CSMS root is currently installed (initial install)', async () => {
         mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
-        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+        mockInstalledFindByStationAndType.mockResolvedValue(undefined);
 
         await expect(
           service.prepareToInstallCertificate(
@@ -462,9 +478,8 @@ describe('InstallCertificateHelperService', () => {
 
       it('throws BadRequestError when the installed root record has no certificate file on record', async () => {
         mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
-        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
-          $get: vi.fn().mockResolvedValue(undefined),
-        } as any);
+        mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+        mockInstalledGetLinkedCertificate.mockResolvedValue(undefined);
 
         await expect(
           service.prepareToInstallCertificate(
@@ -478,8 +493,9 @@ describe('InstallCertificateHelperService', () => {
 
       it('throws BadRequestError when the new root is not signed by the previous root', async () => {
         mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
-        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
-          $get: vi.fn().mockResolvedValue({ certificateFileId: 'root-cert-path' }),
+        mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+        mockInstalledGetLinkedCertificate.mockResolvedValue({
+          certificateFileId: 'root-cert-path',
         } as any);
         mockFileStorageGetFile.mockResolvedValue(previousRootPemBuffer);
         mockIsSignedBy.mockReturnValue(false);
@@ -501,8 +517,9 @@ describe('InstallCertificateHelperService', () => {
 
       it('proceeds with the install when the new root is signed by the previous root', async () => {
         mockDeviceModelReadAllByQuerystring.mockResolvedValue([{ value: 'true' }]);
-        mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue({
-          $get: vi.fn().mockResolvedValue({ certificateFileId: 'root-cert-path' }),
+        mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+        mockInstalledGetLinkedCertificate.mockResolvedValue({
+          certificateFileId: 'root-cert-path',
         } as any);
         mockFileStorageGetFile.mockResolvedValue(previousRootPemBuffer);
         mockIsSignedBy.mockReturnValue(true);
@@ -531,7 +548,7 @@ describe('InstallCertificateHelperService', () => {
         MOCK_STATUS_REJECTED as any,
       );
 
-      expect(mockInstalledCertificateReadOnlyOneByQuery).not.toHaveBeenCalled();
+      expect(mockInstalledFindByStationAndType).not.toHaveBeenCalled();
     });
 
     it('should update status of pending attempt', async () => {
@@ -540,7 +557,7 @@ describe('InstallCertificateHelperService', () => {
       } as any;
 
       mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
 
       await service.finalizeInstalledCertificate(
         tenantId,
@@ -556,8 +573,6 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should update existing installed certificate if status is Accepted', async () => {
-      const mockInstalledSave = vi.fn().mockResolvedValue(true);
-
       const mockAttempt = {
         id: 1,
         certificateId: 100,
@@ -566,11 +581,10 @@ describe('InstallCertificateHelperService', () => {
 
       const mockInstalledCert = {
         id: 50,
-        save: mockInstalledSave,
       } as any;
 
       mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
+      mockInstalledFindByStationAndType.mockResolvedValue(mockInstalledCert);
 
       await service.finalizeInstalledCertificate(
         tenantId,
@@ -578,8 +592,7 @@ describe('InstallCertificateHelperService', () => {
         MOCK_STATUS_ACCEPTED as any,
       );
 
-      expect(mockInstalledCert.certificateId).toBe(100);
-      expect(mockInstalledSave).toHaveBeenCalled();
+      expect(mockInstalledSetCertificateId).toHaveBeenCalledWith(tenantId, 50, 100);
     });
 
     it('should create new installed certificate if none exists and file is retrieved', async () => {
@@ -596,7 +609,7 @@ describe('InstallCertificateHelperService', () => {
 
       mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
       mockInstallCertificateAttemptGetLinkedCertificate.mockResolvedValue(mockCertificate);
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
       mockFileStorageGetFile.mockResolvedValue(Buffer.from(MOCK_CERTIFICATE));
 
       await service.finalizeInstalledCertificate(
@@ -611,9 +624,11 @@ describe('InstallCertificateHelperService', () => {
       );
       expect(mockFileStorageGetFile).toHaveBeenCalledWith('file123');
 
-      const savedInstalledCert = createdInstalledCertificateInstances[0];
-      expect(savedInstalledCert).toBeDefined();
-      expect(savedInstalledCert.save).toHaveBeenCalled();
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 100,
+      });
     });
 
     it('should include requestId in lookup query when provided', async () => {
@@ -622,7 +637,7 @@ describe('InstallCertificateHelperService', () => {
       } as any;
 
       mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
 
       await service.finalizeInstalledCertificate(
         tenantId,
@@ -653,7 +668,7 @@ describe('InstallCertificateHelperService', () => {
 
       mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
       mockInstallCertificateAttemptGetLinkedCertificate.mockResolvedValue(mockCertificate);
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
       mockFileStorageGetFile.mockResolvedValue(null);
 
       await service.finalizeInstalledCertificate(
@@ -669,7 +684,7 @@ describe('InstallCertificateHelperService', () => {
           id: 100,
         },
       );
-      expect(createdInstalledCertificateInstances).toHaveLength(0);
+      expect(mockInstalledCreate).not.toHaveBeenCalled();
     });
   });
 
@@ -754,7 +769,7 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should extract certificate details', async () => {
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
       mockCertificateFindByFileHash.mockResolvedValue(undefined);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
@@ -769,12 +784,9 @@ describe('InstallCertificateHelperService', () => {
 
     it('should throw error if certificate already exists with fileId', async () => {
       const mockExistingCert = { id: 99, certificateFileId: 'existingFile' } as any;
-      const mockInstalledCert = {
-        id: 50,
-        $get: vi.fn().mockResolvedValue(mockExistingCert),
-      } as any;
 
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
+      mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+      mockInstalledGetLinkedCertificate.mockResolvedValue(mockExistingCert);
 
       await expect(
         service.handleUploadExistingCertificate(tenantId, ocppConnectionName, mockUploadRequest),
@@ -782,18 +794,13 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should save file and update certificate if fileId is missing', async () => {
-      const mockCertSave = vi.fn().mockResolvedValue(true);
       const mockExistingCert = {
         id: 99,
         certificateFileId: undefined,
-        save: mockCertSave,
-      } as any;
-      const mockInstalledCert = {
-        id: 50,
-        $get: vi.fn().mockResolvedValue(mockExistingCert),
       } as any;
 
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
+      mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+      mockInstalledGetLinkedCertificate.mockResolvedValue(mockExistingCert);
       mockFileStorageSaveFile.mockResolvedValue('newFileId');
 
       await service.handleUploadExistingCertificate(
@@ -815,16 +822,12 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should get or create certificate and update installed cert if no cert tied', async () => {
-      const mockInstalledSave = vi.fn().mockResolvedValue({ id: 200 });
-      const mockInstalledCert = {
-        id: 50,
-        $get: vi.fn().mockResolvedValue(null),
-        save: mockInstalledSave,
-      } as any;
       const mockExistingCert = { id: 99 } as any;
 
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
+      mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+      mockInstalledGetLinkedCertificate.mockResolvedValue(null);
       mockCertificateFindByFileHash.mockResolvedValue(mockExistingCert);
+      mockInstalledSetCertificateId.mockResolvedValue({ id: 50, certificateId: 99 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -833,21 +836,15 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(mockCertificateFindByFileHash).toHaveBeenCalledWith(tenantId, mockHash);
-      expect(mockInstalledCert.certificateId).toBe(99);
-      expect(mockInstalledSave).toHaveBeenCalled();
+      expect(mockInstalledSetCertificateId).toHaveBeenCalledWith(tenantId, 50, 99);
     });
 
     it('should create new certificate if not found when no cert tied', async () => {
-      const mockInstalledSave = vi.fn().mockResolvedValue({ id: 200 });
-      const mockInstalledCert = {
-        id: 50,
-        $get: vi.fn().mockResolvedValue(null),
-        save: mockInstalledSave,
-      } as any;
-
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
+      mockInstalledFindByStationAndType.mockResolvedValue({ id: 50 } as any);
+      mockInstalledGetLinkedCertificate.mockResolvedValue(null);
       mockCertificateFindByFileHash.mockResolvedValue(undefined);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
+      mockInstalledSetCertificateId.mockResolvedValue({ id: 50, certificateId: 100 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -856,14 +853,16 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(service.createNewCertificate).toHaveBeenCalled();
-      expect(mockInstalledCert.certificateId).toBe(100);
+      expect(mockInstalledSetCertificateId).toHaveBeenCalledWith(tenantId, 50, 100);
     });
 
     it('should create new installed certificate if none exists', async () => {
       const mockExistingCert = { id: 99 } as any;
+      const mockCreatedInstalled = { id: 200 } as any;
 
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
       mockCertificateFindByFileHash.mockResolvedValue(mockExistingCert);
+      mockInstalledCreate.mockResolvedValue(mockCreatedInstalled);
 
       const result = await service.handleUploadExistingCertificate(
         tenantId,
@@ -871,16 +870,19 @@ describe('InstallCertificateHelperService', () => {
         mockUploadRequest,
       );
 
-      const savedInstalledCert = createdInstalledCertificateInstances[0];
-      expect(savedInstalledCert).toBeDefined();
-      expect(savedInstalledCert.save).toHaveBeenCalled();
-      expect(result).toBe(savedInstalledCert);
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 99,
+      });
+      expect(result).toBe(mockCreatedInstalled);
     });
 
     it('should create certificate and installed cert if neither exist', async () => {
-      mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
       mockCertificateFindByFileHash.mockResolvedValue(undefined);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
+      mockInstalledCreate.mockResolvedValue({ id: 200 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -900,8 +902,11 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      const savedInstalledCert = createdInstalledCertificateInstances[0];
-      expect(savedInstalledCert.save).toHaveBeenCalled();
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 100,
+      });
     });
   });
 

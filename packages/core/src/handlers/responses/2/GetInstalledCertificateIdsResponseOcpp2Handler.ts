@@ -20,7 +20,6 @@ import {
 } from '@citrineos/types';
 import {
   type IInstalledCertificateRepository,
-  InstalledCertificate,
   type IOCPPMessageRepository,
 } from '@dal/index.js';
 
@@ -80,21 +79,21 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
           this._logger.debug(
             `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had certificateType: ${certificateType}. Cleaning up installed certificates of this type in DB if any.`,
           );
-          await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType,
-            },
-          });
+          const certificateTypes = Array.isArray(certificateType)
+            ? certificateType
+            : [certificateType];
+          for (const type of certificateTypes) {
+            await this._installedCertificateRepository.deleteByStationAndType(
+              tenantId,
+              ocppConnectionName,
+              type as unknown as CertificateUseEnumType,
+            );
+          }
         } else {
           this._logger.debug(
             `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had no certificateType. Cleaning up all installed certificates in DB if any.`,
           );
-          await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-            },
-          });
+          await this._installedCertificateRepository.deleteByStation(tenantId, ocppConnectionName);
         }
       }
       return;
@@ -104,33 +103,37 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
         const certificateHashData = certificateHashDataWrap.certificateHashData;
         const certificateType =
           certificateHashDataWrap.certificateType as unknown as CertificateUseEnumType;
-        let existingInstalledCertificate =
-          await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-            where: {
+        const existingInstalledCertificate =
+          await this._installedCertificateRepository.findByStationAndType(
+            tenantId,
+            ocppConnectionName,
+            certificateType,
+          );
+        if (existingInstalledCertificate) {
+          const updated = await this._installedCertificateRepository.updateHashData(
+            tenantId,
+            existingInstalledCertificate.id!,
+            {
+              hashAlgorithm: certificateHashData.hashAlgorithm,
+              issuerNameHash: certificateHashData.issuerNameHash,
+              issuerKeyHash: certificateHashData.issuerKeyHash,
+              serialNumber: certificateHashData.serialNumber,
+            },
+          );
+          this._logger.debug('Updated installed certificate record', updated);
+        } else {
+          const created = await this._installedCertificateRepository.createInstalledCertificate(
+            tenantId,
+            {
               ocppConnectionName: ocppConnectionName,
               certificateType: certificateType,
+              hashAlgorithm: certificateHashData.hashAlgorithm,
+              issuerNameHash: certificateHashData.issuerNameHash,
+              issuerKeyHash: certificateHashData.issuerKeyHash,
+              serialNumber: certificateHashData.serialNumber,
             },
-          });
-        if (existingInstalledCertificate) {
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          await existingInstalledCertificate.save();
-          this._logger.debug('Updated installed certificate record', existingInstalledCertificate);
-        } else {
-          existingInstalledCertificate = new InstalledCertificate();
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          existingInstalledCertificate.ocppConnectionName = ocppConnectionName;
-          existingInstalledCertificate.certificateType = certificateType;
-          await existingInstalledCertificate.save();
-          this._logger.debug(
-            'Created new installed certificate record',
-            existingInstalledCertificate,
           );
+          this._logger.debug('Created new installed certificate record', created);
         }
       }
     }

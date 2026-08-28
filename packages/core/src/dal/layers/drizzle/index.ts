@@ -55,6 +55,18 @@ export {
   type InstallCertificateAttemptEntity,
   type InstallCertificateAttemptEntityInsert,
 } from './schema/InstallCertificateAttempt.js';
+export {
+  DrizzleInstalledCertificateRepository,
+  toInstalledCertificateDto,
+} from './repository/InstalledCertificate.js';
+export {
+  installedCertificateTable,
+  tenantInstalledCertificateTable,
+  InstalledCertificateEntitySchema,
+  InstalledCertificateEntityInsertSchema,
+  type InstalledCertificateEntity,
+  type InstalledCertificateEntityInsert,
+} from './schema/InstalledCertificate.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

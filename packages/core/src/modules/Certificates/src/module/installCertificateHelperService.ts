@@ -11,6 +11,7 @@ import {
   type CertificateUseEnumType,
   type DeleteCertificateAttemptDto,
   type InstallCertificateStatusEnumType,
+  type InstalledCertificateDto,
   type WebsocketServerConfig,
 } from '@citrineos/types';
 import {
@@ -25,11 +26,7 @@ import type {
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@dal/interfaces/repositories.js';
-import {
-  CountryNameEnumType,
-  InstalledCertificate,
-  SignatureAlgorithmEnumType,
-} from '@dal/layers/sequelize/index.js';
+import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@dal/layers/sequelize/index.js';
 import {
   type CertificateAuthorityService,
   extractCertificateDetails,
@@ -198,20 +195,19 @@ export class InstallCertificateHelperService {
       return;
     }
 
-    const previouslyInstalledRoot = await this.installedCertificateRepository.readOnlyOneByQuery(
+    const previouslyInstalledRoot = await this.installedCertificateRepository.findByStationAndType(
       tenantId,
-      {
-        where: {
-          ocppConnectionName,
-          certificateType: CertificateUseEnum.CSMSRootCertificate,
-        },
-      },
+      ocppConnectionName,
+      CertificateUseEnum.CSMSRootCertificate,
     );
     if (!previouslyInstalledRoot) {
       // Nothing installed yet to replace
       return;
     }
-    const previousRootCertificate = await previouslyInstalledRoot.$get('certificate');
+    const previousRootCertificate = await this.installedCertificateRepository.getLinkedCertificate(
+      tenantId,
+      previouslyInstalledRoot.id!,
+    );
     if (!previousRootCertificate?.certificateFileId) {
       throw new BadRequestError(
         `Cannot verify AdditionalRootCertificateCheck for ${ocppConnectionName}: the currently installed CSMS root certificate has no certificate file on record to verify the new one against.`,
@@ -253,16 +249,17 @@ export class InstallCertificateHelperService {
       );
       if (status === InstallCertificateStatusEnum.Accepted) {
         const existingInstalledCertificate =
-          await this.installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType: existingPendingInstallCertificateAttempt.certificateType,
-            },
-          });
+          await this.installedCertificateRepository.findByStationAndType(
+            tenantId,
+            ocppConnectionName,
+            existingPendingInstallCertificateAttempt.certificateType,
+          );
         if (existingInstalledCertificate) {
-          existingInstalledCertificate.certificateId =
-            existingPendingInstallCertificateAttempt.certificateId;
-          await existingInstalledCertificate.save();
+          await this.installedCertificateRepository.setCertificateId(
+            tenantId,
+            existingInstalledCertificate.id!,
+            existingPendingInstallCertificateAttempt.certificateId!,
+          );
         } else {
           const certificate = await this.installCertificateAttemptRepository.getLinkedCertificate(
             tenantId,
@@ -280,13 +277,11 @@ export class InstallCertificateHelperService {
             const certificateString = certificateBuffer.toString();
             const cert = new jsrsasign.X509();
             cert.readCertPEM(certificateString);
-            const installedCertificate = new InstalledCertificate();
-            installedCertificate.ocppConnectionName = ocppConnectionName;
-            installedCertificate.certificateId =
-              existingPendingInstallCertificateAttempt.certificateId;
-            installedCertificate.certificateType =
-              existingPendingInstallCertificateAttempt.certificateType;
-            await installedCertificate.save();
+            await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
+              ocppConnectionName,
+              certificateType: existingPendingInstallCertificateAttempt.certificateType,
+              certificateId: existingPendingInstallCertificateAttempt.certificateId,
+            });
           }
         }
       }
@@ -327,7 +322,7 @@ export class InstallCertificateHelperService {
     identifier: string,
     uploadExistingCertificate: UploadExistingCertificate,
     filePath?: string,
-  ): Promise<InstalledCertificate> {
+  ): Promise<InstalledCertificateDto> {
     this.logger.info(
       `Uploading existing ${uploadExistingCertificate.certificateType} certificate for charger ${identifier}`,
     );
@@ -342,19 +337,18 @@ export class InstallCertificateHelperService {
       signatureAlgorithm,
     } = extractCertificateDetails(certificate);
 
-    let existingInstalledCertificate = await this.installedCertificateRepository.readOnlyOneByQuery(
+    let existingInstalledCertificate = await this.installedCertificateRepository.findByStationAndType(
       tenantId,
-      {
-        where: {
-          ocppConnectionName: identifier,
-          certificateType: uploadExistingCertificate.certificateType,
-        },
-      },
+      identifier,
+      uploadExistingCertificate.certificateType,
     );
 
     if (existingInstalledCertificate) {
       let existingCertificate: CertificateDto | undefined | null =
-        await existingInstalledCertificate.$get('certificate');
+        await this.installedCertificateRepository.getLinkedCertificate(
+          tenantId,
+          existingInstalledCertificate.id!,
+        );
       if (existingCertificate && existingCertificate.certificateFileId) {
         throw new Error('Cannot upload exiting certificate because it already exists');
       } else if (existingCertificate && !existingCertificate.certificateFileId) {
@@ -388,8 +382,12 @@ export class InstallCertificateHelperService {
             signatureAlgorithm,
           );
         }
-        existingInstalledCertificate.certificateId = existingCertificate.id!;
-        existingInstalledCertificate = await existingInstalledCertificate.save();
+        existingInstalledCertificate =
+          (await this.installedCertificateRepository.setCertificateId(
+            tenantId,
+            existingInstalledCertificate.id!,
+            existingCertificate.id!,
+          )) ?? existingInstalledCertificate;
       }
     } else {
       // check if certificate record exists
@@ -411,13 +409,14 @@ export class InstallCertificateHelperService {
           signatureAlgorithm,
         );
       }
-      existingInstalledCertificate = new InstalledCertificate();
-      existingInstalledCertificate.ocppConnectionName = identifier;
-      existingInstalledCertificate.certificateId = existingCertificate.id!;
-      existingInstalledCertificate.certificateType = uploadExistingCertificate.certificateType;
-      existingInstalledCertificate = await existingInstalledCertificate.save();
+      existingInstalledCertificate =
+        await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
+          ocppConnectionName: identifier,
+          certificateType: uploadExistingCertificate.certificateType,
+          certificateId: existingCertificate.id!,
+        });
     }
-    return existingInstalledCertificate;
+    return existingInstalledCertificate!;
   }
 
   /**
