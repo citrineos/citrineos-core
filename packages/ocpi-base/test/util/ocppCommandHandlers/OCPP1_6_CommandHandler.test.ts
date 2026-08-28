@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import 'reflect-metadata';
-import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
+import { describe, expect, it, vi } from 'vitest';
 
 // The package barrel reaches BaseClientApi, whose `@Inject()` is evaluated as the module loads and
 // needs design:type metadata that esbuild does not emit. Stub the barrel down to the handful of

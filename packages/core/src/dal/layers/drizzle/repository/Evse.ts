@@ -12,7 +12,7 @@ import { DrizzleRepository } from './Base.js';
 export function toEvseDto(entity: EvseEntity): EvseDto {
   const dto: Explicit<EvseDto> = {
     id: entity.id,
-    stationId: entity.stationId,
+    stationId: entity.stationId ?? undefined,
     ocppConnectionName: entity.ocppConnectionName ?? '',
     evseTypeId: entity.evseTypeId ?? undefined,
     evseId: entity.evseId ?? '',

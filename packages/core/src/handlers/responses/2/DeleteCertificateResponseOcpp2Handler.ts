@@ -10,32 +10,39 @@ import {
 import {
   DeleteCertificateStatusEnum,
   type HandlerProperties,
+  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
 import type {
   IDeleteCertificateAttemptRepository,
   IInstalledCertificateRepository,
+  IOCPPMessageRepository,
 } from '@dal/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
 export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
+  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   constructor({
     logger,
     deleteCertificateAttemptRepository,
     installedCertificateRepository,
+    ocppMessageRepository,
   }: AbstractHandlerDependencies & {
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
     installedCertificateRepository: IInstalledCertificateRepository;
+    ocppMessageRepository: IOCPPMessageRepository;
   }) {
     super(logger);
 
     this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
     this._installedCertificateRepository = installedCertificateRepository;
+    this._ocppMessageRepository = ocppMessageRepository;
   }
 
   async handle(
@@ -49,11 +56,31 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
     );
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
+
+    const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    const certificateHashData = (
+      originalRequest?.payload as OCPP2_request_types.DeleteCertificateRequest | undefined
+    )?.certificateHashData;
+
     const existingPendingDeleteCertificateAttempt =
       await this._deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
         where: {
           ocppConnectionName: ocppConnectionName,
           status: null,
+          ...(certificateHashData
+            ? {
+                hashAlgorithm: certificateHashData.hashAlgorithm,
+                issuerNameHash: certificateHashData.issuerNameHash,
+                issuerKeyHash: certificateHashData.issuerKeyHash,
+                serialNumber: certificateHashData.serialNumber,
+              }
+            : {}),
         },
       });
     // should always be true

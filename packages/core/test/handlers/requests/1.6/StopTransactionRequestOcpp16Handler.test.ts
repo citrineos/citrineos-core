@@ -140,6 +140,17 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe(derived);
   });
 
+  it('derives Local as the stop reason when the driver presented an identification', async () => {
+    const transaction = aTransaction(true);
+    const { handler } = makeHandler(transaction);
+
+    await handler.handle(makeMessage({ ...request, reason: undefined }));
+
+    // 4.10 gives "EV-driver presented his identification to stop the transaction" as its own
+    // example of the omitted-reason case, so an idTag is not evidence of a remote stop.
+    expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe('Local');
+  });
+
   it('derives Local as the stop reason when no idTag was presented', async () => {
     const transaction = aTransaction(true);
     const { handler } = makeHandler(transaction);

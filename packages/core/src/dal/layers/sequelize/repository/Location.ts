@@ -2,8 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type ChargingStationDto, type OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import { CrudRepository } from '@citrineos/base';
+import {
+  type ChargingStationDto,
+  type ConnectorDto,
+  type EvseDto,
+  type OCPP2_0_1,
+  OCPPVersion,
+} from '@citrineos/types';
 import { Op } from 'sequelize';
 import { type ILocationRepository } from '../../../interfaces/repositories.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';
@@ -22,6 +28,7 @@ export class SequelizeLocationRepository
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
   latestStatusNotification: CrudRepository<LatestStatusNotification>;
+  evse: CrudRepository<Evse>;
   connector: CrudRepository<Connector>;
 
   constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
@@ -41,6 +48,12 @@ export class SequelizeLocationRepository
     this.latestStatusNotification = new SequelizeRepository<LatestStatusNotification>({
       config,
       namespace: LatestStatusNotification.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.evse = new SequelizeRepository<Evse>({
+      config,
+      namespace: Evse.MODEL_NAME,
       logger,
       sequelizeInstance,
     });
@@ -97,6 +110,7 @@ export class SequelizeLocationRepository
         tenantId,
         isOnline,
         protocol: ocppVersion,
+        connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
       });
     }
 
@@ -300,9 +314,38 @@ export class SequelizeLocationRepository
     }
   }
 
+  async createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto> {
+    let result;
+    await this.s.transaction(async (sequelizeTransaction) => {
+      const [savedEvse, evseCreated] = await this.evse.readOrCreateByQuery(tenantId, {
+        where: {
+          tenantId,
+          ocppConnectionName: evse.ocppConnectionName,
+          evseTypeId: evse.evseTypeId,
+        },
+        defaults: {
+          ...evse,
+        },
+        transaction: sequelizeTransaction,
+      });
+      if (!evseCreated) {
+        const updatedEvses = await this.evse.updateAllByQuery(tenantId, evse, {
+          where: {
+            id: savedEvse.id,
+          },
+          transaction: sequelizeTransaction,
+        });
+        result = updatedEvses.length > 0 ? updatedEvses[0] : undefined;
+      } else {
+        result = savedEvse;
+      }
+    });
+    return result!;
+  }
+
   async createOrUpdateConnector(
     tenantId: number,
-    connector: Connector,
+    connector: ConnectorDto,
   ): Promise<Connector | undefined> {
     let result;
     await this.s.transaction(async (sequelizeTransaction) => {

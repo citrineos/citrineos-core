@@ -134,7 +134,16 @@ export { HttpStatus } from './src/interfaces/api/http.status.js';
 
 export { Currency } from './src/money/Currency.js';
 export type { CurrencyCode } from './src/money/Currency.js';
+export type { Price } from './src/money/Price.js';
+export { PriceSchema } from './src/money/Price.js';
 export { Money } from './src/money/Money.js';
+export {
+  baseCalculateFixedCost,
+  baseCalculateEnergyCost,
+  baseCalculateTimeCost,
+  baseCalculateTotalCost,
+} from './src/cost/CostCalculator.js';
+
 export { addFormats, Ajv };
 export declare type Constructable<T> = new (...args: any[]) => T;
 export { IMessageQuerystringSchema } from './src/interfaces/api/MessageQuerystring.js';

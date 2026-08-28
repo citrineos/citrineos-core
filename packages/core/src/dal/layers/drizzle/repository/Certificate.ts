@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CertificateDto, CountryName, SignatureAlgorithm } from '@citrineos/types';
+import type {
+  CertificateCreate,
+  CertificateDto,
+  CountryName,
+  SignatureAlgorithm,
+} from '@citrineos/types';
 import {
   type CertificateEntity,
   certificateTable,
@@ -10,6 +15,8 @@ import {
 } from '../schema/Certificate.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
+import { type ICertificateRepository } from '@/dal/index.js';
+import { and, eq } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external CertificateDto contract.
@@ -39,10 +46,20 @@ export function toCertificateDto(entity: CertificateEntity): CertificateDto {
   return dto;
 }
 
-export class DrizzleCertificateRepository extends DrizzleRepository<
-  typeof certificateTable,
-  CertificateDto
-> {
+// Required to convert the DTO's ISO-string validBefore back into a JS Date, since
+// the Drizzle column is timestamp mode: 'date'.
+function toCertificateEntity(value: object): CertificateEntity {
+  const v = value as { validBefore?: string | Date | null };
+  if (typeof v.validBefore === 'string') {
+    return { ...value, validBefore: new Date(v.validBefore) } as CertificateEntity;
+  }
+  return value as CertificateEntity;
+}
+
+export class DrizzleCertificateRepository
+  extends DrizzleRepository<typeof certificateTable, CertificateDto>
+  implements ICertificateRepository
+{
   protected getTable(tenantId: number): typeof certificateTable {
     return this.useTenantSchema ? tenantCertificateTable(tenantId) : certificateTable;
   }
@@ -51,5 +68,78 @@ export class DrizzleCertificateRepository extends DrizzleRepository<
     return toCertificateDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async findByFileHash(tenantId: number, hash: string): Promise<CertificateDto | undefined> {
+    const rows = await this.db
+      .select()
+      .from(certificateTable)
+      .where(
+        and(
+          eq(certificateTable.tenantId, tenantId),
+          eq(certificateTable.certificateFileHash, hash),
+        ),
+      )
+      .limit(1);
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
+  async createCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto> {
+    // Base insert spreads { ...values, tenantId } and emits 'created'.
+    return await this.insert(tenantId, toCertificateEntity(input));
+  }
+
+  async createOrUpdateCertificate(
+    tenantId: number,
+    input: CertificateCreate,
+  ): Promise<CertificateDto> {
+    let savedCertificate: CertificateDto | undefined;
+    let certificateExists = false;
+
+    await this.db.transaction(async (tx) => {
+      const existing = await tx
+        .select({ id: certificateTable.id })
+        .from(certificateTable)
+        .where(
+          and(
+            eq(certificateTable.tenantId, tenantId),
+            eq(certificateTable.serialNumber, input.serialNumber),
+            eq(certificateTable.issuerName, input.issuerName),
+          ),
+        )
+        .limit(1);
+
+      certificateExists = existing.length > 0;
+
+      const entityToSave = toCertificateEntity({ ...input, tenantId });
+
+      if (certificateExists) {
+        const rows = (await tx
+          .update(certificateTable)
+          .set(entityToSave)
+          .where(
+            and(
+              eq(certificateTable.tenantId, tenantId),
+              eq(certificateTable.serialNumber, input.serialNumber),
+              eq(certificateTable.issuerName, input.issuerName),
+            ),
+          )
+          .returning()) as CertificateEntity[];
+
+        savedCertificate = rows[0] ? this.toDto(rows[0]) : undefined;
+      } else {
+        const rows = (await tx
+          .insert(certificateTable)
+          .values(entityToSave)
+          .returning()) as CertificateEntity[];
+
+        savedCertificate = this.toDto(rows[0]);
+      }
+    });
+
+    if (savedCertificate) {
+      this.emit(certificateExists ? 'updated' : 'created', [savedCertificate]);
+    }
+
+    return savedCertificate!;
+  }
 }

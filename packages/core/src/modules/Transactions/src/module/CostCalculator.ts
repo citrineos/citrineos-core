@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Money } from '@citrineos/base';
 import type { ITariffRepository } from '@dal/interfaces/repositories.js';
 import { Tariff } from '@dal/layers/sequelize/model/Tariff/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { TransactionService } from './TransactionService.js';
+import { Transaction } from '@dal/index.js';
+import { baseCalculateTotalCost } from '@citrineos/base';
 
 export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
@@ -31,38 +32,46 @@ export class CostCalculator {
   }
 
   /**
-   * Calculates the total cost for a transaction.
+   * Calculates the total cost for a transaction (excluding VAT).
    *
-   * Computes the cost based on `connectorId` and `totalKwh`.
+   * Computes the cost based on Tariff of connector and session information.
    *
-   * @param connectorId - The database ID of the connector.
-   * @param totalKwh - The total kilowatt-hours.
+   * @param tenantId - The tenant ID.
+   * @param transaction - Transaction to calculate for.
    *
    * @returns A promise that resolves to the total cost.
    */
-  async calculateTotalCost(
-    tenantId: number,
-    connectorId: number | undefined,
-    totalKwh: number,
-  ): Promise<number> {
-    if (connectorId == null) {
+  async calculateTotalCost(tenantId: number, transaction: Transaction): Promise<number> {
+    if (transaction.connectorId == null) {
       this._logger.error('Cannot calculate cost: connectorId is not set on transaction');
       return 0;
     }
-    this._logger.debug(`Calculating total cost for connector ${connectorId} and ${totalKwh} kWh`);
-    const tariff: Tariff | undefined = await this._tariffRepository.findByConnectorId(
-      tenantId,
-      connectorId,
-    );
-    if (tariff) {
-      this._logger.debug(`Tariff ${tariff.id} found for connector ${connectorId}`);
-      return Money.of(tariff.pricePerKwh, tariff.currency)
-        .multiply(totalKwh)
-        .roundToCurrencyScale()
-        .toNumber();
-    } else {
-      this._logger.error(`Tariff not found for connector ${connectorId}`);
+    if (transaction.totalKwh == null) {
+      this._logger.error('Cannot calculate cost: totalKwh not found');
       return 0;
     }
+    if (transaction.timeSpentCharging == null) {
+      this._logger.error('Cannot calculate cost: timeSpentCharging not found');
+      return 0;
+    }
+    this._logger.debug(`Calculating total cost for connector ${transaction.connectorId}`);
+    const tariff: Tariff | undefined = await this._tariffRepository.findByConnectorId(
+      tenantId,
+      transaction.connectorId,
+    );
+    if (!tariff) {
+      this._logger.error(`Tariff not found for connector ${transaction.connectorId}`);
+      return 0;
+    }
+    const price = baseCalculateTotalCost(
+      transaction.totalKwh,
+      transaction.timeSpentCharging / 60,
+      tariff.pricePerSession,
+      tariff.pricePerKwh,
+      tariff.pricePerMin,
+      tariff.currency,
+      tariff.taxRate,
+    );
+    return price.excl_vat;
   }
 }

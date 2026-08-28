@@ -8,10 +8,9 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
-import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import { Connector, StatusNotification } from '@dal/layers/sequelize/model/Location/index.js';
 import type { ILogObj } from 'tslog';
@@ -61,121 +60,119 @@ export class StatusNotificationService {
       tenantId,
       ocppConnectionName,
     );
-    if (chargingStation) {
-      const statusNotification = StatusNotification.build({
-        tenantId,
-        ocppConnectionName: ocppConnectionName,
-        ...statusNotificationRequest,
-      });
-      await this._locationRepository.addStatusNotificationToChargingStation(
-        tenantId,
-        ocppConnectionName,
-        statusNotification,
+    if (!chargingStation) {
+      this._logger.error(
+        `Charging station ${ocppConnectionName} not found. Status notification cannot be associated with a charging station.`,
       );
+      return;
+    }
 
-      const matchingEvse = chargingStation.evses?.find(
-        (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
-      );
-      // The request's connectorId is scoped to the EVSE, so it is matched against
-      // evseTypeConnectorId - the same key the transaction path uses
-      // (TransactionEvent.createOrUpdateTransactionByTransactionEventRequest).
-      // Matching it against Connector.connectorId, which is the station-wide 1.6
-      // numbering, makes every EVSE's "connector 1" resolve to the same row.
-      const matchingConnector = (matchingEvse?.connectors as Connector[] | undefined)?.find(
-        (c) => c.evseTypeConnectorId === statusNotificationRequest.connectorId,
-      );
+    const statusNotification = StatusNotification.build({
+      tenantId,
+      ocppConnectionName: ocppConnectionName,
+      ...statusNotificationRequest,
+    });
+    await this._locationRepository.addStatusNotificationToChargingStation(
+      tenantId,
+      ocppConnectionName,
+      statusNotification,
+    );
 
-      const connector = {
-        tenantId,
-        connectorId: matchingConnector?.connectorId ?? null,
-        ocppConnectionName: ocppConnectionName,
-        evseId: matchingConnector?.evseId ?? matchingEvse?.id,
-        evseTypeConnectorId:
-          matchingConnector?.evseTypeConnectorId ?? statusNotificationRequest.connectorId,
-        status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
-          statusNotificationRequest.connectorStatus,
-        ),
-        timestamp: statusNotificationRequest.timestamp
-          ? statusNotificationRequest.timestamp
-          : new Date().toISOString(),
-      } as Connector;
+    let matchingEvse = chargingStation.evses?.find(
+      (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
+    );
+    let matchingConnector: ConnectorDto | undefined = (
+      matchingEvse?.connectors as Connector[] | undefined
+    )?.find((c) => c.evseTypeConnectorId === statusNotificationRequest.connectorId);
 
-      const connectionJson = await this._cache.get<string>(
-        createIdentifier(tenantId, ocppConnectionName),
-        CacheNamespace.Connections,
-      );
-      const connection: IWebsocketConnection | null = connectionJson
-        ? JSON.parse(connectionJson)
-        : null;
-      if (!connection?.allowUnknownChargingStations) {
-        const connectorExists = chargingStation.evses?.some((evse) =>
-          evse.connectors?.some((c) => c.connectorId === statusNotificationRequest.connectorId),
+    const connectionJson = await this._cache.get<string>(
+      createIdentifier(tenantId, ocppConnectionName),
+      CacheNamespace.Connections,
+    );
+    const connection: IWebsocketConnection | null = connectionJson
+      ? JSON.parse(connectionJson)
+      : null;
+    if (!connection?.allowUnknownChargingStations) {
+      if (!matchingConnector) {
+        this._logger.error(
+          `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
         );
-        if (!connectorExists) {
-          throw new Error(
-            `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
-          );
-        }
+        return;
       }
-
-      if (connector.evseId != null && connector.evseTypeConnectorId != null) {
-        await this._locationRepository.createOrUpdateConnector(tenantId, connector);
-      } else {
+    } else if (!matchingConnector) {
+      if (!matchingEvse) {
+        matchingEvse = await this._locationRepository.createOrUpdateEvse(tenantId, {
+          evseTypeId: statusNotificationRequest.evseId,
+          ocppConnectionName,
+        });
+      }
+      matchingConnector = {
+        tenantId,
+        stationId: chargingStation.id,
+        evseId: matchingEvse.id!,
+        evseTypeConnectorId: statusNotificationRequest.connectorId,
+        /**
+         * Note: This is the OCPP 1.6 connectorId, which is NOT the same as the evseTypeConnectorId
+         * for OCPP 2.0.1 -- it is possible this will collide with an existing connectorId on a
+         * multi-evse station. Do not autocommission multi-evse stations.
+         */
+        connectorId: statusNotificationRequest.connectorId,
+        ocppConnectionName: ocppConnectionName,
+      };
+      if (matchingEvse.evseTypeId! > 1) {
         this._logger.warn(
-          `Could not resolve evseId/evseTypeConnectorId for connector ${statusNotificationRequest.connectorId} on EVSE ${statusNotificationRequest.evseId} at station ${ocppConnectionName}. Skipping connector update.`,
+          `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is true, but the EVSE has evseTypeId ${matchingEvse.evseTypeId}. This may cause a collision with an existing connectorId on a multi-evse station.`,
         );
       }
+    }
 
-      let components = await this._componentRepository.readAllByQuery(tenantId, {
-        where: {
-          tenantId,
-          name: 'Connector',
-        },
-        include: [
-          {
-            model: EvseType,
-            where: {
-              id: statusNotificationRequest.evseId,
-              connectorId: statusNotificationRequest.connectorId,
-            },
+    await this._locationRepository.createOrUpdateConnector(tenantId, matchingConnector);
+
+    let components = await this._componentRepository.readAllByQuery(tenantId, {
+      where: {
+        tenantId,
+        name: 'Connector',
+      },
+      include: [
+        {
+          model: EvseType,
+          where: {
+            id: statusNotificationRequest.evseId,
+            connectorId: statusNotificationRequest.connectorId,
           },
+        },
+        {
+          model: Variable,
+          where: {
+            name: 'AvailabilityState',
+          },
+        },
+      ],
+    });
+    components = components.filter(
+      (component) => component.variables?.length && component.variables.length > 0,
+    );
+    if (components.length === 0) {
+      this._logger.warn(
+        'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
+      );
+    }
+    for (const component of components) {
+      const variable = component.variables?.[0];
+      const reportDataType: OCPP2_0_1.ReportDataType = {
+        component: component,
+        variable: variable!,
+        variableAttribute: [
           {
-            model: Variable,
-            where: {
-              name: 'AvailabilityState',
-            },
+            value: statusNotificationRequest.connectorStatus,
           },
         ],
-      });
-      components = components.filter(
-        (component) => component.variables?.length && component.variables.length > 0,
-      );
-      if (components.length === 0) {
-        this._logger.warn(
-          'Missing component or variable for status notification. Status notification cannot be assigned to device model.',
-        );
-      }
-      for (const component of components) {
-        const variable = component.variables?.[0];
-        const reportDataType: OCPP2_0_1.ReportDataType = {
-          component: component,
-          variable: variable!,
-          variableAttribute: [
-            {
-              value: statusNotificationRequest.connectorStatus,
-            },
-          ],
-        };
-        await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
-          tenantId,
-          reportDataType,
-          ocppConnectionName,
-          statusNotificationRequest.timestamp,
-        );
-      }
-    } else {
-      this._logger.warn(
-        `Charging station ${ocppConnectionName} not found. Status notification cannot be associated with a charging station.`,
+      };
+      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        tenantId,
+        reportDataType,
+        ocppConnectionName,
+        statusNotificationRequest.timestamp,
       );
     }
   }

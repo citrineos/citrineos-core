@@ -21,6 +21,7 @@ describe('BootService', () => {
   const mockMaxCachingSeconds = 10;
   let bootService: BootNotificationService;
   const MOCK_STATION_ID = 'Station01';
+  const MOCK_IDENTIFIER = createIdentifier(DEFAULT_TENANT_ID, MOCK_STATION_ID);
 
   beforeEach(() => {
     mockBootRepository = {
@@ -171,6 +172,54 @@ describe('BootService', () => {
       expect(mockCache.remove).not.toHaveBeenCalled();
       expect(mockCache.set).not.toHaveBeenCalled();
     });
+
+    // B01.FR.10 / B02.FR.09 / B03.FR.07: while a station's boot is Rejected or Pending, anything it
+    // sends other than BootNotification (or a triggered message) is answered SecurityError. The
+    // blacklist is what enforces that, so it has to cover every action the station can send -
+    // including the ones only OCPP 2.1 defines.
+    it.each([OCPP_CallAction.NotifySettlement, OCPP_CallAction.VatNumberValidation])(
+      'blacklists the OCPP 2.1 action %s',
+      async (action) => {
+        await bootService.cacheChargerActionsPermissions(
+          MOCK_STATION_ID,
+          null,
+          OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        );
+
+        expect(mockCache.set).toHaveBeenCalledWith(action, 'blacklisted', MOCK_STATION_ID);
+      },
+    );
+
+    it('whitelists the OCPP 2.1 actions again once the boot is accepted', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
+        OCPP2_0_1.RegistrationStatusEnumType.Accepted,
+      );
+
+      expect(mockCache.remove).toHaveBeenCalledWith(
+        OCPP_CallAction.NotifySettlement,
+        MOCK_STATION_ID,
+      );
+      expect(mockCache.remove).toHaveBeenCalledWith(
+        OCPP_CallAction.VatNumberValidation,
+        MOCK_STATION_ID,
+      );
+    });
+
+    it('never blacklists BootNotification itself', async () => {
+      await bootService.cacheChargerActionsPermissions(
+        MOCK_STATION_ID,
+        null,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
+
+      expect(mockCache.set).not.toHaveBeenCalledWith(
+        OCPP_CallAction.BootNotification,
+        'blacklisted',
+        MOCK_STATION_ID,
+      );
+    });
   });
 
   describe('cache namespacing agrees with the router', () => {
@@ -276,7 +325,44 @@ describe('BootService', () => {
     });
   });
 
+  describe('createGetBaseReportRequest', () => {
+    it('marks the request ongoing under the tenant-scoped identifier', async () => {
+      // The request id is a hard-coded 0, so with the bare station name as the namespace two
+      // tenants that both have a station of that name share one cache entry.
+      await bootService.createGetBaseReportRequest(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        mockMaxCachingSeconds,
+      );
+
+      expect(mockCache.set).toHaveBeenCalledWith(
+        '0',
+        'ongoing',
+        MOCK_IDENTIFIER,
+        mockMaxCachingSeconds,
+      );
+    });
+  });
+
   describe('confirmGetBaseReportSuccess', () => {
+    it('waits on the tenant-scoped identifier', async () => {
+      mockCache.onChange.mockResolvedValueOnce('complete');
+
+      await bootService.confirmGetBaseReportSuccess(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        MOCK_REQUEST_ID.toString(),
+        aMessageConfirmation(),
+        mockMaxCachingSeconds,
+      );
+
+      expect(mockCache.onChange).toHaveBeenCalledWith(
+        MOCK_REQUEST_ID.toString(),
+        mockMaxCachingSeconds,
+        MOCK_IDENTIFIER,
+      );
+    });
+
     it('should throw because getBaseReport was not successful', async () => {
       const unsuccessfulConfirmation = aMessageConfirmation((mc) => {
         mc.success = false;
@@ -285,6 +371,7 @@ describe('BootService', () => {
       await expect(
         async () =>
           await bootService.confirmGetBaseReportSuccess(
+            DEFAULT_TENANT_ID,
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             unsuccessfulConfirmation,
@@ -299,6 +386,7 @@ describe('BootService', () => {
       await expect(
         async () =>
           await bootService.confirmGetBaseReportSuccess(
+            DEFAULT_TENANT_ID,
             MOCK_STATION_ID,
             MOCK_REQUEST_ID.toString(),
             aMessageConfirmation(),
@@ -312,6 +400,7 @@ describe('BootService', () => {
 
       await expect(
         bootService.confirmGetBaseReportSuccess(
+          DEFAULT_TENANT_ID,
           MOCK_STATION_ID,
           MOCK_REQUEST_ID.toString(),
           aMessageConfirmation(),

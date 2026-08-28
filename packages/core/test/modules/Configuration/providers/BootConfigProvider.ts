@@ -34,7 +34,8 @@ export const aValidSetVariableResult = (
 
 export const aValidBootConfig = (updateFunction?: UpdateFunction<Boot>): Boot => {
   const item: Boot = {
-    id: faker.string.uuid(),
+    id: faker.number.int({ min: 1, max: 1000 }),
+    stationId: faker.number.int({ min: 1, max: 1000 }),
     lastBootTime: faker.date.recent().toISOString(),
     heartbeatInterval: faker.number.int({ min: 30, max: 3600 }),
     bootRetryInterval: faker.number.int({ min: 30, max: 3600 }),

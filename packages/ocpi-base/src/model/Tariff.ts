@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { DisplayTextSchema } from './DisplayText.js';
-import { PriceSchema } from './Price.js';
+import { PriceSchema } from '@citrineos/base';
 import { TariffElementSchema } from './TariffElement.js';
 import { EnergyMixSchema } from './EnergyMix.js';
 import { OcpiResponseSchema } from './OcpiResponse.js';
