@@ -462,8 +462,10 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
             variable_name: 'Available',
             type: AttributeEnum.Actual,
           });
+        // A device model boolean arrives as the string "false" or "true" (Part 2 §2.1.4), so it
+        // has to be compared, not coerced.
         const supportTariff: boolean =
-          tariffAvailableAttributes.length !== 0 && Boolean(tariffAvailableAttributes[0].value);
+          tariffAvailableAttributes[0]?.value?.toLowerCase() === 'true';
 
         if (supportTariff && transaction && transaction.isActive) {
           this._logger.debug(
@@ -575,8 +577,11 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
             variable_instance: 'Tariff',
             type: AttributeEnum.Actual,
           });
-        // C20.FR.03
-        if (tariffEnabled.length == 0 || !tariffEnabled[0].value) {
+        // C20.FR.03: central cost calculation is what applies when the station is not doing it
+        // itself, i.e. TariffCostCtrlr.Enabled[Tariff] is false or was never reported. A device
+        // model boolean arrives as the string "false" or "true" (Part 2 §2.1.4).
+        const localCostCalculation = tariffEnabled[0]?.value?.toLowerCase() === 'true';
+        if (!localCostCalculation) {
           this._logger.info(`Central cost calculation is used for transaction ${transactionId}`);
           response.totalCost = 0;
         }

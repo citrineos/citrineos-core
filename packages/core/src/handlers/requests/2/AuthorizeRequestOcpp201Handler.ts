@@ -295,10 +295,12 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           type: AttributeEnum.Actual,
         });
 
-      // only send the tariff information if the Charging Station supports the tariff or DisplayMessage functionality
+      // I01.FR.02: only send the tariff information if the Charging Station supports the tariff or
+      // DisplayMessage functionality. A device model boolean arrives as the string "false" or
+      // "true" (Part 2 §2.1.4), so it has to be compared, not coerced.
       if (
-        (tariffAvailable.length > 0 && Boolean(tariffAvailable[0].value)) ||
-        (displayMessageAvailable.length > 0 && Boolean(displayMessageAvailable[0].value))
+        tariffAvailable[0]?.value?.toLowerCase() === 'true' ||
+        displayMessageAvailable[0]?.value?.toLowerCase() === 'true'
       ) {
         // TODO: The OCPP 2.0.1 Authorize request pricing message requires EV Driver specific pricing, which is not yet supported.
       }
