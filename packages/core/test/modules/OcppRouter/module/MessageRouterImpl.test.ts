@@ -541,8 +541,8 @@ describe('MessageRouterImpl', () => {
 
   // ─── action attribution ────────────────────────────────────────────────────
 
-  // An action that cannot be determined is recorded as undefined, not as a
-  // 'NoAction' sentinel: only a Call carries an action of its own, and a
+  // An action that cannot be determined is recorded as undefined
+  // only a Call carries an action of its own, and a
   // CallResult/CallError inherits the action of the Call it is correlated to.
   describe('action attribution', () => {
     const timestamp = new Date('2025-01-01T00:00:00Z');
