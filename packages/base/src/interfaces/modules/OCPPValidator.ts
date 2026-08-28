@@ -45,7 +45,7 @@ export class OCPPValidator {
     const ajvInstance =
       ajv ||
       new Ajv({
-        removeAdditional: 'failing',
+        removeAdditional: 'all',
         useDefaults: true,
         coerceTypes: true, // HTTP query/path params arrive as strings and need coercion
         strict: false,
