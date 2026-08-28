@@ -117,7 +117,7 @@ export class DrizzleInstallCertificateAttemptRepository
     tenantId: number,
     input: InstallCertificateAttemptCreate,
   ): Promise<InstallCertificateAttemptDto> {
-    // Replicates the Sequelize model's resolveStationId @BeforeCreate hook.
+    // Resolve stationId from ocppConnectionName + tenantId when the caller doesn't supply it.
     const stationId =
       input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
     // Base insert spreads { ...values, tenantId } and emits 'created'.

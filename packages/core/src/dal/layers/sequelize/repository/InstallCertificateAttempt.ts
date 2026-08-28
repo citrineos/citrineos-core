@@ -13,6 +13,7 @@ import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Bas
 import type { IInstallCertificateAttemptRepository } from '../../../interfaces/repositories.js';
 import { InstallCertificateAttempt } from '../model/Certificate/InstallCertificateAttempt.js';
 import { Certificate } from '../model/Certificate/Certificate.js';
+import { ChargingStation } from '../model/Location/index.js';
 
 export class SequelizeInstallCertificateAttemptRepository
   extends SequelizeRepository<InstallCertificateAttempt>
@@ -67,7 +68,9 @@ export class SequelizeInstallCertificateAttemptRepository
     tenantId: number,
     input: InstallCertificateAttemptCreate,
   ): Promise<InstallCertificateAttemptDto> {
-    const attempt = InstallCertificateAttempt.build({ ...input, tenantId });
+    const stationId =
+      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    const attempt = InstallCertificateAttempt.build({ ...input, stationId, tenantId });
     const saved = await attempt.save();
     this.emit('created', [saved]);
     return saved;
@@ -90,6 +93,17 @@ export class SequelizeInstallCertificateAttemptRepository
       return undefined;
     }
     return (await attempt.$get('certificate')) ?? undefined;
+  }
+
+  private async resolveStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | null> {
+    const station = await ChargingStation.findOne({
+      where: { ocppConnectionName, tenantId },
+      attributes: ['id'],
+    });
+    return station?.id ?? null;
   }
 }
 
