@@ -17,11 +17,6 @@ import type { IChargingProfileRepository } from '@dal/interfaces/repositories.js
 import { GetCompositeScheduleResponseOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer } from '@test/testContainer.js';
 
-/**
- * OCPP 1.6 Edition 2, GetCompositeSchedule.conf: `scheduleStart` is a field of the response, not of
- * the schedule inside it - "Time. Periods contained in the charging profile are relative to this
- * point in time. If status is 'Rejected', this field may be absent."
- */
 const SCHEDULE_START = '2026-08-27T09:00:00.000Z';
 const SCHEDULE_OWN_START = '2026-08-27T08:00:00.000Z';
 
