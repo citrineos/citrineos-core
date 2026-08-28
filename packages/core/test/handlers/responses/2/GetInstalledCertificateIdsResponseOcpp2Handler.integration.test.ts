@@ -128,6 +128,31 @@ async function anInstalledCertificate(certificateHashData: CertificateHashData) 
   } as never);
 }
 
+async function aManufacturerCertificate() {
+  return InstalledCertificate.create({
+    ocppConnectionName: STATION,
+    hashAlgorithm: ROOT_ONE.hashAlgorithm,
+    issuerNameHash: 'issuer-mf',
+    issuerKeyHash: 'key-mf',
+    serialNumber: 'serial-mf',
+    certificateType: CertificateUseEnum.ManufacturerRootCertificate,
+    tenantId: DEFAULT_TENANT_ID,
+  } as never);
+}
+
+async function aRequestAskingFor(...certificateType: CertificateUseEnum[]) {
+  return OCPPMessage.create({
+    ocppConnectionName: STATION,
+    correlationId: 'corr-1',
+    origin: MessageOrigin.ChargingStationManagementSystem,
+    action: OCPP_CallAction.GetInstalledCertificateIds,
+    protocol: OCPPVersion.OCPP2_0_1,
+    payload: { certificateType },
+    raw: JSON.stringify([2, 'corr-1', 'GetInstalledCertificateIds', { certificateType }]),
+    tenantId: DEFAULT_TENANT_ID,
+  } as never);
+}
+
 function recordedSerialNumbers() {
   return InstalledCertificate.findAll({ where: { ocppConnectionName: STATION } }).then((rows) =>
     rows.map((row) => row.serialNumber).sort(),
@@ -180,5 +205,33 @@ describe('GetInstalledCertificateIdsResponseOcpp2Handler with several certificat
     await aHandler().handle(aResponseReporting(ROOT_ONE) as never);
 
     expect(await recordedSerialNumbers()).toEqual(['serial-1']);
+  });
+
+  it('removes a certificate the station no longer reports', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await anInstalledCertificate(ROOT_TWO);
+
+    await aHandler().handle(aResponseReporting(ROOT_TWO) as never);
+
+    expect(await recordedSerialNumbers()).toEqual(['serial-2']);
+  });
+
+  it('removes every certificate when the station reports none of that type', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await anInstalledCertificate(ROOT_TWO);
+
+    await aHandler().handle(aResponseReporting() as never);
+
+    expect(await recordedSerialNumbers()).toEqual([]);
+  });
+
+  it('leaves a certificate of a type the request did not ask about', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await aManufacturerCertificate();
+    await aRequestAskingFor(CertificateUseEnum.V2GRootCertificate);
+
+    await aHandler().handle(aResponseReporting(ROOT_TWO) as never);
+
+    expect(await recordedSerialNumbers()).toEqual(['serial-2', 'serial-mf']);
   });
 });
