@@ -26,13 +26,6 @@ import { CompositeSchedule } from '@dal/layers/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
-/**
- * A GetCompositeScheduleResponse names the EVSE the station calls it, restarting at 1 on every
- * station and using 0 for the whole grid connection. CompositeSchedule.evseId is a foreign key to
- * Evse.id, which is a database key over the whole tenant. They are different numbers of the same
- * type, so storing one as the other either files the schedule against another station's EVSE or
- * fails the constraint and loses it.
- */
 const STATION = 'CS-COMPOSITE-1';
 const OTHER_STATION = 'CS-COMPOSITE-2';
 const WHOLE_STATION = 0;
@@ -139,8 +132,6 @@ describe('A composite schedule reported for a station EVSE number', () => {
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
     nextEvseNumber = 1;
 
-    // A neighbouring station is commissioned first, so it holds the low database ids - the range
-    // an OCPP EVSE number falls in.
     await aStation(OTHER_STATION);
     await anEvseOn(OTHER_STATION, 1);
     await anEvseOn(OTHER_STATION, 2);
@@ -159,33 +150,46 @@ describe('A composite schedule reported for a station EVSE number', () => {
     });
   }
 
-  it('stores the schedule for the whole charging station', async () => {
-    // evseId 0 is the grid connection rather than an EVSE, which is what depot load management
-    // asks for. No Evse row can ever carry id 0.
+  it('stores the schedule for the whole charging station without an EVSE', async () => {
     await aHandler().handle(aCompositeScheduleResponse(WHOLE_STATION) as never);
 
     const stored = await CompositeSchedule.findAll();
     expect(stored).toHaveLength(1);
-    expect(stored[0].evseId).toBe(WHOLE_STATION);
+    expect(stored[0].evseId).toBeNull();
   });
 
-  it('stores the schedule for an EVSE no other station has a row for', async () => {
+  it('associates the schedule with the EVSE the station named', async () => {
+    const ownEvse = await Evse.findOne({
+      where: { ocppConnectionName: STATION, evseTypeId: 1 },
+    });
+
+    await aHandler().handle(aCompositeScheduleResponse(1) as never);
+
+    const stored = await CompositeSchedule.findAll();
+    expect(stored).toHaveLength(1);
+    expect(stored[0].evseId).toBe(ownEvse!.id);
+  });
+
+  it('does not associate the schedule with another station EVSE carrying that number', async () => {
+    const ownEvse = await Evse.findOne({
+      where: { ocppConnectionName: STATION, evseTypeId: 1 },
+    });
+    const neighbour = await Evse.findOne({
+      where: { ocppConnectionName: OTHER_STATION, evseTypeId: 1 },
+    });
+
+    await aHandler().handle(aCompositeScheduleResponse(1) as never);
+
+    const stored = await CompositeSchedule.findAll();
+    expect(stored[0].evseId).toBe(ownEvse!.id);
+    expect(stored[0].evseId).not.toBe(neighbour!.id);
+  });
+
+  it('stores the schedule without an EVSE when the station names one it has not reported', async () => {
     await aHandler().handle(aCompositeScheduleResponse(UNCOMMISSIONED_EVSE) as never);
 
     const stored = await CompositeSchedule.findAll();
     expect(stored).toHaveLength(1);
-    expect(stored[0].evseId).toBe(UNCOMMISSIONED_EVSE);
-  });
-
-  it('does not tie the reported EVSE number to an EVSE row', async () => {
-    const foreignKeys = await sequelizeInstance.query(
-      `SELECT tc.constraint_name
-         FROM information_schema.table_constraints tc
-         JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND tc.table_name = 'CompositeSchedules'
-          AND kcu.column_name = 'evseId'`,
-    );
-    expect(foreignKeys[0]).toHaveLength(0);
+    expect(stored[0].evseId).toBeNull();
   });
 });

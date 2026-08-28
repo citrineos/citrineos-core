@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { CompositeScheduleDto, TenantDto } from '@citrineos/types';
+import type { CompositeScheduleDto, EvseDto, TenantDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
@@ -13,6 +13,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Evse } from '../Location/index.js';
 import { Tenant } from '../Tenant.js';
 
 @Table
@@ -22,8 +23,12 @@ export class CompositeSchedule extends Model implements CompositeScheduleDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @Column(DataType.INTEGER)
-  declare evseId: number;
+  @ForeignKey(() => Evse)
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare evseId?: number | null;
+
+  @BelongsTo(() => Evse, 'evseId')
+  declare evse?: EvseDto;
 
   @Column(DataType.INTEGER)
   declare duration: number;

@@ -4,6 +4,7 @@
 import type {
   ChargingNeedsDto,
   ChargingStationDto,
+  CompositeScheduleDto,
   ConnectorDto,
   EvseDto,
   TenantDto,
@@ -22,6 +23,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { ChargingNeeds } from '../ChargingProfile/ChargingNeeds.js';
+import { CompositeSchedule } from '../ChargingProfile/CompositeSchedule.js';
 import { Tenant } from '../Tenant.js';
 import { Transaction } from '../TransactionEvent/Transaction.js';
 import { ChargingStation } from './ChargingStation.js';
@@ -66,6 +68,9 @@ export class Evse extends Model implements EvseDto {
 
   @HasMany(() => ChargingNeeds, 'evseId')
   declare chargingNeeds?: ChargingNeedsDto[];
+
+  @HasMany(() => CompositeSchedule, 'evseId')
+  declare compositeSchedules?: CompositeScheduleDto[];
 
   @HasMany(() => Transaction, 'evseId')
   declare transactions?: TransactionDto[];
