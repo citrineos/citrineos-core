@@ -214,8 +214,8 @@ export class VariableAttribute
   declare bootConfig?: BootDto;
 
   @ForeignKey(() => Boot)
-  @Column(DataType.STRING)
-  declare bootConfigId?: string | null;
+  @Column(DataType.INTEGER)
+  declare bootConfigId?: number | null;
 
   declare customData?: OCPP2_0_1.CustomDataType | null;
 

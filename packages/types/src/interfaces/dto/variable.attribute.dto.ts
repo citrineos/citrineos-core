@@ -27,7 +27,7 @@ export const VariableAttributeSchema = BaseSchema.extend({
   componentId: z.number().int().nullable().optional(),
   evse: EvseTypeSchema.optional(),
   evseDatabaseId: z.number().int().nullable().optional(),
-  bootConfigId: z.string().nullable().optional(),
+  bootConfigId: z.number().int().nullable().optional(),
 });
 
 export const VariableAttributeProps = VariableAttributeSchema.keyof().enum;
