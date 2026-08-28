@@ -13,7 +13,6 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
-  OCPPVersion,
   SendLocalListStatusEnum,
   OCPP2_request_types,
   OCPP2_response_types,
@@ -90,7 +89,7 @@ export class SendLocalListResponseOcpp2Handler extends AbstractHandler {
         const messageConfirmation = await this._ocppSender.sendCall({
           ocppConnectionName,
           tenantId: message.context.tenantId,
-          protocol: OCPPVersion.OCPP2_1,
+          protocol: message.protocol,
           action: OCPP_CallAction.GetLocalListVersion,
           eventGroup: EventGroup.EVDriver,
           payload: {} as OCPP2_request_types.GetLocalListVersionRequest,

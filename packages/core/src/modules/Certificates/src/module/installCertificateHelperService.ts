@@ -248,6 +248,7 @@ export class InstallCertificateHelperService {
     ocppConnectionName: string,
     status: InstallCertificateStatusEnumType,
     requestId?: number,
+    certificateType?: CertificateUseEnumType,
   ) {
     const existingPendingInstallCertificateAttempt =
       await this.installCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
@@ -255,6 +256,7 @@ export class InstallCertificateHelperService {
           ocppConnectionName: ocppConnectionName,
           status: null,
           ...(requestId != null ? { requestId } : {}),
+          ...(certificateType != null ? { certificateType } : {}),
         },
       });
     // should always be true
@@ -1019,13 +1021,6 @@ export class InstallCertificateHelperService {
     return { certPem, keyPem, certificateId: record.id! };
   }
 
-  /**
-   * Reads and extracts the subCA certificate from a server's currently-configured
-   * certificate chain file (chain = leaf + subCA concatenation). This is the only
-   * config field relied on to identify a server's current lineage — the optional
-   * `rootCACertificateFilePath`/`mtlsCertificateAuthorityKeyFilePath` fields are not
-   * used, since they may not be set (e.g. typically absent for securityProfile 2).
-   */
   private async _readCurrentSubCACertPem(config: WebsocketServerConfig): Promise<string> {
     if (!config.tlsCertificateChainFilePath) {
       throw new BadRequestError(

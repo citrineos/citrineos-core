@@ -781,6 +781,7 @@ export class SequelizeTransactionEventRepository
     if (meterValues.length > 0) {
       await Promise.all(
         meterValues.map(async (meterValue) => {
+          meterValue.tenantId = tenantId;
           meterValue.transactionDatabaseId = transactionDatabaseId;
           const createdMeterValue = MeterValue.build(meterValue);
           createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
@@ -815,6 +816,10 @@ export class SequelizeTransactionEventRepository
     evseId: number,
     excludeTransactionId: string,
   ): Promise<Transaction[]> {
+    if (!excludeTransactionId || excludeTransactionId === '0') {
+      return [];
+    }
+
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
         ocppConnectionName: ocppConnectionName,
