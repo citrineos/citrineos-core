@@ -117,6 +117,12 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
           }
           response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
         }
+      } else {
+        // Stored non-Accepted status (Blocked / Expired / ConcurrentTx / Invalid, etc.)
+        // Map it directly from stored state — no IAuthorizer required.
+        response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(
+          authorization.status,
+        );
       }
     } catch (error) {
       // Log any unexpected errors
