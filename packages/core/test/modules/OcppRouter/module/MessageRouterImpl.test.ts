@@ -27,7 +27,6 @@ import {
   MessageOrigin,
   MessageState,
   MessageTypeId,
-  NO_ACTION,
   OCPP2_0_1,
   OCPP_CallAction,
   OCPPVersion,
@@ -430,7 +429,7 @@ describe('MessageRouterImpl', () => {
         'invalid-json',
         timestamp.toISOString(),
         PROTOCOL,
-        NO_ACTION,
+        undefined,
         // Unparseable message — no messageTypeId could be read off the frame.
         undefined,
       );
@@ -537,6 +536,316 @@ describe('MessageRouterImpl', () => {
       // The error is handled asynchronously via sendCallError, so success is still true from onMessage
       // but the call itself will trigger sendCallError
       expect(sender.send).toHaveBeenCalled();
+    });
+  });
+
+  // ─── action attribution ────────────────────────────────────────────────────
+
+  // An action that cannot be determined is recorded as undefined, not as a
+  // 'NoAction' sentinel: only a Call carries an action of its own, and a
+  // CallResult/CallError inherits the action of the Call it is correlated to.
+  describe('action attribution', () => {
+    const timestamp = new Date('2025-01-01T00:00:00Z');
+
+    describe('getActionFromIncompletelyParsedRpcMessage', () => {
+      const getAction = (rpcMessage: any, messageTypeId?: MessageTypeId) =>
+        (router as any).getActionFromIncompletelyParsedRpcMessage(rpcMessage, messageTypeId);
+
+      it('should read the action off a Call frame that carries one', () => {
+        expect(
+          getAction(
+            [MessageTypeId.Call, CORRELATION_ID, OCPP_CallAction.Heartbeat, {}],
+            MessageTypeId.Call,
+          ),
+        ).toBe(OCPP_CallAction.Heartbeat);
+      });
+
+      it('should return undefined for a Call frame truncated before the action', () => {
+        expect(getAction([MessageTypeId.Call, CORRELATION_ID], MessageTypeId.Call)).toBeUndefined();
+      });
+
+      it('should return undefined when the frame itself could not be parsed', () => {
+        expect(getAction(undefined, MessageTypeId.Call)).toBeUndefined();
+      });
+
+      it('should return undefined for a CallResult frame', () => {
+        expect(
+          getAction([MessageTypeId.CallResult, CORRELATION_ID, {}], MessageTypeId.CallResult),
+        ).toBeUndefined();
+      });
+
+      it('should return undefined for a CallError frame', () => {
+        expect(
+          getAction(
+            [MessageTypeId.CallError, CORRELATION_ID, ErrorCode.InternalError, 'boom', {}],
+            MessageTypeId.CallError,
+          ),
+        ).toBeUndefined();
+      });
+
+      it('should return undefined when the messageTypeId could not be read', () => {
+        expect(getAction(undefined, undefined)).toBeUndefined();
+      });
+
+      it('should return undefined for an unknown messageTypeId even if slot 2 looks like an action', () => {
+        expect(
+          getAction([99, CORRELATION_ID, OCPP_CallAction.Heartbeat, {}], 99 as MessageTypeId),
+        ).toBeUndefined();
+      });
+    });
+
+    describe('unparsed messages (via onMessage)', () => {
+      it('should attribute both the record and the CallError reply to a malformed Call action', async () => {
+        // Payload missing ⇒ the Call model rejects the frame, but the action is still readable.
+        const malformedCall = JSON.stringify([
+          MessageTypeId.Call,
+          CORRELATION_ID,
+          OCPP_CallAction.Heartbeat,
+        ]);
+
+        const result = await router.onMessage(IDENTIFIER, malformedCall, timestamp, PROTOCOL);
+
+        expect(result).toBe(false);
+        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          malformedCall,
+          timestamp.toISOString(),
+          PROTOCOL,
+          OCPP_CallAction.Heartbeat,
+          MessageTypeId.Call,
+        );
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.CallError,
+          expect.anything(),
+          OCPP_CallAction.Heartbeat,
+        );
+      });
+
+      it('should leave the action undefined on the CallError reply to an unparseable frame', async () => {
+        await router.onMessage(IDENTIFIER, 'not-json', timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.CallError,
+          expect.anything(),
+          undefined,
+        );
+      });
+
+      it('should leave the action undefined for an unknown messageTypeId', async () => {
+        const badMessage = JSON.stringify([99, CORRELATION_ID, OCPP_CallAction.Heartbeat, {}]);
+
+        await router.onMessage(IDENTIFIER, badMessage, timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          badMessage,
+          timestamp.toISOString(),
+          PROTOCOL,
+          undefined,
+          99,
+        );
+      });
+
+      it('should leave the action undefined for a malformed CallResult and send no reply', async () => {
+        // Payload is a string, not an object ⇒ the CallResult model rejects the frame.
+        const malformedCallResult = JSON.stringify([
+          MessageTypeId.CallResult,
+          CORRELATION_ID,
+          'not-an-object',
+        ]);
+
+        const result = await router.onMessage(IDENTIFIER, malformedCallResult, timestamp, PROTOCOL);
+
+        expect(result).toBe(false);
+        // A CallResult is never answered with a CallError.
+        expect(networkHook).not.toHaveBeenCalled();
+        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          malformedCallResult,
+          timestamp.toISOString(),
+          PROTOCOL,
+          undefined,
+          MessageTypeId.CallResult,
+        );
+      });
+    });
+
+    describe('parsed messages (via onMessage)', () => {
+      it('should record a Call with its own action', async () => {
+        vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
+        cache.exists.mockResolvedValue(false);
+
+        const callMessage = JSON.stringify([
+          MessageTypeId.Call,
+          CORRELATION_ID,
+          OCPP_CallAction.Heartbeat,
+          {},
+        ]);
+
+        await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          timestamp.toISOString(),
+          PROTOCOL,
+          callMessage,
+          MessageTypeId.Call,
+          expect.anything(),
+          OCPP_CallAction.Heartbeat,
+        );
+      });
+
+      it('should record a CallResult without an action, leaving correlation to supply it', async () => {
+        cache.get.mockResolvedValue(
+          `${OCPP_CallAction.BootNotification}@${timestamp.toISOString()}`,
+        );
+        vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
+
+        const callResultMessage = JSON.stringify([MessageTypeId.CallResult, CORRELATION_ID, {}]);
+
+        await router.onMessage(IDENTIFIER, callResultMessage, timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          timestamp.toISOString(),
+          PROTOCOL,
+          callResultMessage,
+          MessageTypeId.CallResult,
+          expect.anything(),
+          undefined,
+        );
+      });
+
+      it('should record a CallError without an action, leaving correlation to supply it', async () => {
+        cache.get.mockResolvedValue(
+          `${OCPP_CallAction.BootNotification}@${timestamp.toISOString()}`,
+        );
+
+        const callErrorMessage = JSON.stringify([
+          MessageTypeId.CallError,
+          CORRELATION_ID,
+          ErrorCode.InternalError,
+          'boom',
+          {},
+        ]);
+
+        await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
+          TENANT_ID,
+          STATION_ID,
+          timestamp.toISOString(),
+          PROTOCOL,
+          callErrorMessage,
+          MessageTypeId.CallError,
+          expect.anything(),
+          undefined,
+        );
+      });
+
+      it('should attribute the CallError reply to the action of the Call it rejects', async () => {
+        cache.exists.mockResolvedValue(true); // blacklisted ⇒ _onCall throws back out to onMessage
+
+        const callMessage = JSON.stringify([
+          MessageTypeId.Call,
+          CORRELATION_ID,
+          OCPP_CallAction.Heartbeat,
+          {},
+        ]);
+
+        await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.CallError,
+          expect.anything(),
+          OCPP_CallAction.Heartbeat,
+        );
+      });
+    });
+
+    describe('outbound messages', () => {
+      it('should attribute a sent Call to its action', async () => {
+        cache.get.mockResolvedValue(null);
+
+        await router.sendCall(
+          STATION_ID,
+          TENANT_ID,
+          PROTOCOL,
+          OCPP_CallAction.GetBaseReport,
+          { requestId: 1, reportBase: 'FullInventory' } as unknown as OcppRequest,
+          CORRELATION_ID,
+        );
+
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.Call,
+          expect.anything(),
+          OCPP_CallAction.GetBaseReport,
+        );
+      });
+
+      it('should attribute a sent CallResult to the cached action of the Call it answers', async () => {
+        const action = OCPP_CallAction.BootNotification;
+        cache.get.mockResolvedValue(`${action}@${timestamp.toISOString()}`);
+
+        await router.sendCallResult(CORRELATION_ID, STATION_ID, TENANT_ID, PROTOCOL, action, {
+          status: 'Accepted',
+        } as unknown as OcppResponse);
+
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.CallResult,
+          expect.anything(),
+          action,
+        );
+      });
+
+      it('should attribute a sent CallError to the cached action of the Call it answers', async () => {
+        const action = OCPP_CallAction.BootNotification;
+        cache.get.mockResolvedValue(`${action}@${timestamp.toISOString()}`);
+
+        await router.sendCallError(
+          CORRELATION_ID,
+          STATION_ID,
+          TENANT_ID,
+          PROTOCOL,
+          action,
+          new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'boom', {}),
+        );
+
+        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
+          IDENTIFIER,
+          expect.any(String),
+          PROTOCOL,
+          expect.any(String),
+          MessageTypeId.CallError,
+          expect.anything(),
+          action,
+        );
+      });
     });
   });
 
