@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { OCPPVersion } from '@citrineos/types';
-import { Service } from 'typedi';
-import { OCPP_COMMAND_HANDLER } from './base.js';
 import { OCPP2_0_1_CommandHandler } from './OCPP2_0_1_CommandHandler.js';
 
 /**
@@ -15,7 +13,6 @@ import { OCPP2_0_1_CommandHandler } from './OCPP2_0_1_CommandHandler.js';
  * station's websocket negotiated, so the command has to be posted to the
  * /ocpp/2.1/ endpoints rather than the 2.0.1 ones.
  */
-@Service({ id: OCPP_COMMAND_HANDLER, multiple: true })
 export class OCPP2_1_CommandHandler extends OCPP2_0_1_CommandHandler {
   public readonly supportedVersion: OCPPVersion = OCPPVersion.OCPP2_1;
 

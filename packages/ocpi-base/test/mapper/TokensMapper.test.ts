@@ -74,8 +74,7 @@ describe('TokensMapper token type mapping', () => {
     // Other is what the forward mapping produces for TokenType.OTHER, so treating it as unmapped on
     // the way back warned on every ordinary token and buried the warning that matters - the one for
     // a type OCPI genuinely cannot carry, such as MacAddress.
-    const warn = vi.spyOn(logger, 'warn')
-      .mockImplementation(() => undefined as never);
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined as never);
 
     expect(tokensMapper.mapOcppIdTokenTypeToOcpiTokenType(IdTokenEnum.Other)).toBe(TokenType.OTHER);
     expect(warn).not.toHaveBeenCalled();
@@ -84,8 +83,7 @@ describe('TokensMapper token type mapping', () => {
   });
 
   it('warns and falls back to OTHER for a type OCPI cannot express', () => {
-    const warn = vi.spyOn(logger, 'warn')
-      .mockImplementation(() => undefined as never);
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined as never);
 
     // Autocharge enrols a vehicle by its MAC. OCPI has no equivalent token type, so a token pushed
     // or read over OCPI cannot carry it - vehicle enrolment has to go through another channel.

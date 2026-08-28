@@ -56,6 +56,7 @@ import { UniqueMessageIdsMiddleware } from './util/middleware/UniqueMessageIdsMi
 import type { OCPPCommandHandler } from './util/ocppCommandHandlers/base.js';
 import { OCPP1_6_CommandHandler } from './util/ocppCommandHandlers/OCPP1_6_CommandHandler.js';
 import { OCPP2_0_1_CommandHandler } from './util/ocppCommandHandlers/OCPP2_0_1_CommandHandler.js';
+import { OCPP2_1_CommandHandler } from './util/ocppCommandHandlers/OCPP2_1_CommandHandler.js';
 
 import type { DtoEventReceiverFactory } from './events/types.js';
 import { PgNotifyEventSubscriber } from './events/pgNotify/subscriber.js';
@@ -236,11 +237,17 @@ function registerCommandHandlers(container: AwilixContainer): void {
   container.register({
     ocpp16CommandHandler: singletonClass('ocpp16CommandHandler', OCPP1_6_CommandHandler),
     ocpp201CommandHandler: singletonClass('ocpp201CommandHandler', OCPP2_0_1_CommandHandler),
+    ocpp21CommandHandler: singletonClass('ocpp21CommandHandler', OCPP2_1_CommandHandler),
 
     handlers: asFunction(
-      ({ ocpp16CommandHandler, ocpp201CommandHandler }): OCPPCommandHandler[] => [
+      ({
         ocpp16CommandHandler,
         ocpp201CommandHandler,
+        ocpp21CommandHandler,
+      }): OCPPCommandHandler[] => [
+        ocpp16CommandHandler,
+        ocpp201CommandHandler,
+        ocpp21CommandHandler,
       ],
     ).singleton(),
   });
