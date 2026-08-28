@@ -292,10 +292,7 @@ export class TransactionService {
   ): Promise<MeterValue[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
-        const hasPeriodic: boolean = meterValue.sampledValue?.some(
-          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-        );
-        if (transactionDbId && hasPeriodic) {
+        if (transactionDbId) {
           return await this._transactionEventRepository.createMeterValue(
             tenantId,
             meterValue,
