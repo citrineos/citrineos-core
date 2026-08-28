@@ -337,11 +337,12 @@ export class InstallCertificateHelperService {
       signatureAlgorithm,
     } = extractCertificateDetails(certificate);
 
-    let existingInstalledCertificate = await this.installedCertificateRepository.findByStationAndType(
-      tenantId,
-      identifier,
-      uploadExistingCertificate.certificateType,
-    );
+    let existingInstalledCertificate =
+      await this.installedCertificateRepository.findByStationAndType(
+        tenantId,
+        identifier,
+        uploadExistingCertificate.certificateType,
+      );
 
     if (existingInstalledCertificate) {
       let existingCertificate: CertificateDto | undefined | null =

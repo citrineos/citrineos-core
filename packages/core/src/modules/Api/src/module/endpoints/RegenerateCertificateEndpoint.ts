@@ -83,10 +83,11 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
     if (!existingInstalledCertificate) {
       throw new Error('Installed certificate not found');
     }
-    const existingCertificateRecord = await this._installedCertificateRepository.getLinkedCertificate(
-      tenantId,
-      existingInstalledCertificate.id!,
-    );
+    const existingCertificateRecord =
+      await this._installedCertificateRepository.getLinkedCertificate(
+        tenantId,
+        existingInstalledCertificate.id!,
+      );
     if (!existingCertificateRecord) {
       throw new Error('Certificate not found');
     }

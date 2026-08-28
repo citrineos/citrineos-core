@@ -58,7 +58,11 @@ describe('RegenerateCertificateEndpoint', () => {
     const endpoint = getTestInstance(container, RegenerateCertificateEndpoint, {
       fileStorage: { getFile, saveFile },
       certificateRepository: { createCertificate },
-      installedCertificateRepository: { findByIdAndStation, getLinkedCertificate, setCertificateId },
+      installedCertificateRepository: {
+        findByIdAndStation,
+        getLinkedCertificate,
+        setCertificateId,
+      },
       installCertificateHelperService: { getCertificateHash },
     });
     mounted = await mountEndpoint(endpoint, RegenerateCertificateEndpoint.route);

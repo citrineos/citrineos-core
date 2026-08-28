@@ -18,10 +18,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import {
-  type IInstalledCertificateRepository,
-  type IOCPPMessageRepository,
-} from '@dal/index.js';
+import { type IInstalledCertificateRepository, type IOCPPMessageRepository } from '@dal/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
 export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {

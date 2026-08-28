@@ -110,7 +110,9 @@ export class SequelizeInstalledCertificateRepository
     ocppConnectionName: string,
     certificateType: CertificateUseEnumType,
   ): Promise<InstalledCertificateDto[]> {
-    return await this.deleteAllByQuery(tenantId, { where: { ocppConnectionName, certificateType } });
+    return await this.deleteAllByQuery(tenantId, {
+      where: { ocppConnectionName, certificateType },
+    });
   }
 
   async deleteByStationAndHashData(
