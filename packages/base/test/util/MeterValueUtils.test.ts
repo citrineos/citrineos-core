@@ -230,6 +230,38 @@ describe('MeterValueUtils', () => {
       ];
       expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(0);
     });
+
+    describe('Batches with no usable energy reading', () => {
+      // Every caller writes this return value straight back to Transaction.totalKwh, so
+      // returning 0 for a batch that simply carries nothing energy-bearing wipes the
+      // running total of a live session rather than leaving it alone.
+
+      it('preserves the running total for a clock-aligned batch', () => {
+        // Sample.Clock is the standard OCPP 1.6 clock-aligned context and is not one of
+        // the contexts getTotalKwh accepts, so the whole batch is filtered away.
+        const meterValues = [
+          makeMeterValue(
+            '2025-05-29T12:02:00Z',
+            'Energy.Active.Import.Register',
+            112.5,
+            'kWh',
+            'Sample.Clock',
+          ),
+        ];
+        expect(MeterValueUtils.getTotalKwh(meterValues, 12.5, 100)).toBe(12.5);
+      });
+
+      it('preserves the running total for a batch carrying no energy measurand', () => {
+        const meterValues = [
+          makeMeterValue('2025-05-29T12:02:00Z', 'SoC', 62, 'Percent', 'Sample.Periodic'),
+        ];
+        expect(MeterValueUtils.getTotalKwh(meterValues, 12.5, 100)).toBe(12.5);
+      });
+
+      it('preserves the running total for an empty batch', () => {
+        expect(MeterValueUtils.getTotalKwh([], 12.5, 100)).toBe(12.5);
+      });
+    });
   });
 
   describe('getMeterStart', () => {

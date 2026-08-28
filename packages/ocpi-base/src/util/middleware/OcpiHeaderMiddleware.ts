@@ -20,10 +20,10 @@ export class OcpiHeaderMiddleware extends BaseMiddleware implements KoaMiddlewar
     const fromPartyId = this.getHeader(context, OcpiHttpHeader.OcpiFromPartyId);
     const toCountryCode = this.getHeader(context, OcpiHttpHeader.OcpiToCountryCode);
     const toPartyId = this.getHeader(context, OcpiHttpHeader.OcpiToPartyId);
-    context.response.set(OcpiHttpHeader.OcpiFromCountryCode, toCountryCode);
-    context.response.set(OcpiHttpHeader.OcpiFromPartyId, toPartyId);
-    context.response.set(OcpiHttpHeader.OcpiToCountryCode, fromCountryCode);
-    context.response.set(OcpiHttpHeader.OcpiToPartyId, fromPartyId);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.OcpiFromCountryCode, toCountryCode);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.OcpiFromPartyId, toPartyId);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.OcpiToCountryCode, fromCountryCode);
+    this.setHeaderIfPresent(context, OcpiHttpHeader.OcpiToPartyId, fromPartyId);
     await next();
   }
 }

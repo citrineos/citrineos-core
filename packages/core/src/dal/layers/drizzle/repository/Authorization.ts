@@ -17,9 +17,12 @@ import { type Explicit } from '../types.js';
 import { DrizzleRepository } from './Base.js';
 import type { AuthorizationQuerystring, IAuthorizationRepository } from '@/dal/index.js';
 import { and, eq, isNotNull } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { type TariffEntity, tariffTable } from '../schema/Tariff.js';
+import { toTariffDto } from './Tariff.js';
 
-// ─── Mapper ──────────────────────────────────────────────────────────────────
-// Maps a Drizzle entity (DB row) to the external AuthorizationDto contract.
+const groupAuthorizationTable = alias(authorizationTable, 'groupAuthorization');
+
 export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDto {
   const dto: Explicit<AuthorizationDto> = {
     id: entity.id,
@@ -41,7 +44,6 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     customData: undefined,
     concurrentTransaction: entity.concurrentTransaction ?? undefined,
     isPrepaid: entity.isPrepaid ?? undefined,
-    // Sequelize DECIMAL → numeric returns string; DTO contract is number.
     prepaidBalance: entity.prepaidBalance != null ? Number(entity.prepaidBalance) : null,
     realTimeAuth: entity.realTimeAuth as AuthorizationWhitelistEnumType | null,
     realTimeAuthLastAttempt: entity.realTimeAuthLastAttempt,
@@ -97,8 +99,6 @@ export class DrizzleAuthorizationRepository
     return conditions;
   }
 
-  // ─── IAuthorizationRepository methods ────────────────────────────────────
-
   async readAllByQuerystring(
     tenantId: number,
     query: AuthorizationQuerystring,
@@ -106,11 +106,20 @@ export class DrizzleAuthorizationRepository
     const conditions = this.createAuthorizationConditions(tenantId, query);
 
     const rows = await this.db
-      .select()
+      .select({ authorization: authorizationTable, groupAuthorization: groupAuthorizationTable })
       .from(authorizationTable)
+      .leftJoin(
+        groupAuthorizationTable,
+        eq(authorizationTable.groupAuthorizationId, groupAuthorizationTable.id),
+      )
       .where(and(...conditions));
 
-    return rows.map((row) => this.toDto(row as AuthorizationEntity));
+    return rows.map(({ authorization, groupAuthorization }) => ({
+      ...this.toDto(authorization as AuthorizationEntity),
+      groupAuthorization: groupAuthorization
+        ? this.toDto(groupAuthorization as AuthorizationEntity)
+        : undefined,
+    }));
   }
 
   async readOnlyOneByQuerystring(
@@ -128,12 +137,16 @@ export class DrizzleAuthorizationRepository
 
   async findAllAuthorizationsWithTariffs(tenantId: number): Promise<AuthorizationDto[]> {
     const rows = await this.db
-      .select()
+      .select({ authorization: authorizationTable, tariff: tariffTable })
       .from(authorizationTable)
+      .innerJoin(tariffTable, eq(authorizationTable.tariffId, tariffTable.id))
       .where(
         and(eq(authorizationTable.tenantId, tenantId), isNotNull(authorizationTable.tariffId)),
       );
 
-    return rows.map((row) => this.toDto(row as AuthorizationEntity));
+    return rows.map(({ authorization, tariff }) => ({
+      ...this.toDto(authorization as AuthorizationEntity),
+      tariff: toTariffDto(tariff as TariffEntity),
+    }));
   }
 }

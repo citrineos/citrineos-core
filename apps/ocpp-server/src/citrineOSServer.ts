@@ -2,21 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asValue, type AwilixContainer } from 'awilix';
 import {
   type AbstractModule,
+  Ajv,
   type BootstrapConfig,
+  ConfigStoreFactory,
   type IApiAuthProvider,
+  type IAuthenticator,
   type ICache,
   type IFileStorage,
   type IMessageRouter,
   type IModule,
-  Ajv,
-  ConfigStoreFactory,
-  type IAuthenticator,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig, EventGroup, eventGroupFromString } from '@citrineos/types';
 import {
   apiAuthPluginFp,
   BrokerAwareMessageSender,
@@ -33,8 +31,10 @@ import {
   Sequelize,
   WebsocketNetworkConnection,
 } from '@citrineos/core';
+import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
 import cors from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import { asValue, type AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
 import type {
@@ -369,12 +369,12 @@ export class CitrineOSServer {
 
     if (this.eventGroup === EventGroup.All) {
       this._logger.info('Initializing in ALL mode: WebSocket server, all modules and all APIs');
-      this.initNetworkConnection();
+      await this.initNetworkConnection();
       await this.initAllModules();
       this.initAllApis();
     } else if (this.eventGroup === EventGroup.Router) {
       this._logger.info('Initializing in ROUTER mode: WebSocket server, no modules');
-      this.initNetworkConnection();
+      await this.initNetworkConnection();
     } else if (this.eventGroup === EventGroup.Modules) {
       this._logger.info(
         'Initializing in MODULES mode: all modules and all APIs, no NetworkConnection',
@@ -389,7 +389,7 @@ export class CitrineOSServer {
     }
   }
 
-  protected initNetworkConnection() {
+  protected async initNetworkConnection() {
     this._authenticator = this._container.resolve('authenticator');
     this._router = this._container.resolve('router');
     this._networkConnection = this._container.resolve('networkConnection');
@@ -397,6 +397,8 @@ export class CitrineOSServer {
     const routerSender = this._container.resolve<BrokerAwareMessageSender>('routerSender');
     routerSender.onCallTimeout = (ocppConnectionName, tenantId) =>
       this._networkConnection!.disconnect(tenantId, ocppConnectionName).then(() => undefined);
+
+    await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(['adminApi']);
   }

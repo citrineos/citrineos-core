@@ -19,6 +19,7 @@ import { ACTIONS_COLUMN } from '@lib/client/hooks/useColumnPreferences';
 import { ActionType, ResourceType } from '@lib/utils/access.types';
 import { StartTransactionButton } from '@lib/client/pages/charging-stations/start.transaction.button';
 import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop.transaction.button';
+import { getTransactionCommandAvailability } from '@lib/client/pages/charging-stations/transaction.command.availability';
 import { ResetButton } from '@lib/client/pages/charging-stations/reset.button';
 import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands.unavailable.text';
 import { isEmpty } from '@lib/utils/assertion';
@@ -195,7 +196,7 @@ export const getChargingStationsColumns = (
       header: t('Common.actions', 'Actions'),
       visible: true,
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => {
-        const hasActiveTransactions = !isEmpty(row.original.transactions);
+        const { canStart, canStop } = getTransactionCommandAvailability(row.original);
 
         return row.original.isOnline ? (
           <CanAccess
@@ -206,8 +207,8 @@ export const getChargingStationsColumns = (
             }}
           >
             <div className="flex gap-4 w-fit" onClick={(e) => e.stopPropagation()}>
-              {!hasActiveTransactions && <StartTransactionButton station={row.original} />}
-              {hasActiveTransactions && <StopTransactionButton station={row.original} />}
+              {canStart && <StartTransactionButton station={row.original} />}
+              {canStop && <StopTransactionButton station={row.original} />}
               <ResetButton station={row.original} />
             </div>
           </CanAccess>

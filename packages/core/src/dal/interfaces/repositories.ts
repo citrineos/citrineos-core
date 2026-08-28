@@ -7,6 +7,8 @@ import type {
   AuthorizationDto,
   BootDto,
   CallAction,
+  CertificateCreate,
+  CertificateDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -31,7 +33,6 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type { Certificate } from '../layers/sequelize/model/Certificate/Certificate.js';
 import type {
   DeleteCertificateAttempt,
   InstallCertificateAttempt,
@@ -458,8 +459,11 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
 }
 
-export interface ICertificateRepository extends CrudRepository<Certificate> {
-  createOrUpdateCertificate(tenantId: number, certificate: Certificate): Promise<Certificate>;
+export interface ICertificateRepository {
+  findByFileHash(tenantId: number, hash: string): Promise<CertificateDto | undefined>;
+  findById(tenantId: number, id: number): Promise<CertificateDto | undefined>;
+  createCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto>;
+  createOrUpdateCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto>;
 }
 
 export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
@@ -571,4 +575,7 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
   readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
+  readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
+  readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
+  updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
 }

@@ -299,7 +299,6 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
                 if (qrLimits.maxEnergy != null) {
                   ocpp21Response.transactionLimit.maxEnergy = qrLimits.maxEnergy;
                 }
-                // Clear the session from cache — limits are consumed on first transaction start
                 await this._cache.remove(cacheKey, CacheNamespace.Other);
                 this._logger.info(
                   `Set transactionLimit from QR payment session for station ${ocppConnectionName}, ` +
@@ -514,7 +513,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
                     await this._ocppSender.sendCall({
                       ocppConnectionName,
                       tenantId,
-                      protocol: OCPPVersion.OCPP2_1,
+                      protocol: message.protocol,
                       action: OCPP_CallAction.SetChargingProfile,
                       eventGroup: EventGroup.Transactions,
                       payload: {

@@ -44,6 +44,7 @@ describe('RegenerateCertificateEndpoint', () => {
   let getFile: ReturnType<typeof vi.fn>;
   let saveFile: ReturnType<typeof vi.fn>;
   let getCertificateHash: ReturnType<typeof vi.fn>;
+  let createCertificate: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
@@ -52,9 +53,11 @@ describe('RegenerateCertificateEndpoint', () => {
     getFile = vi.fn().mockResolvedValue(Buffer.from('pem'));
     saveFile = vi.fn().mockResolvedValue('new-file-id');
     getCertificateHash = vi.fn().mockReturnValue('new-hash');
+    createCertificate = vi.fn().mockResolvedValue({ id: 2 });
 
     const endpoint = getTestInstance(container, RegenerateCertificateEndpoint, {
       fileStorage: { getFile, saveFile },
+      certificateRepository: { createCertificate },
       installedCertificateRepository: { readOnlyOneByQuery },
       installCertificateHelperService: { getCertificateHash },
     });

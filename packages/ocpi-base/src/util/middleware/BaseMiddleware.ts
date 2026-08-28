@@ -12,4 +12,11 @@ export class BaseMiddleware {
     const headers = context.req.headers;
     return headers[header.toLowerCase()];
   }
+
+  protected setHeaderIfPresent(context: Context, header: string, value: unknown) {
+    if (value === undefined || value === null) {
+      return;
+    }
+    context.response.set(header, value);
+  }
 }

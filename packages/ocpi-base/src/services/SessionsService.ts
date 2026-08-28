@@ -13,6 +13,7 @@ import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type {
   GetTransactionsQueryResult,
   GetTransactionsQueryVariables,
+  Timestamptz_Comparison_Exp,
   Transactions_Bool_Exp,
 } from '../graphql/index.js';
 import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
@@ -49,15 +50,15 @@ export class SessionsService {
         },
       },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
-    if (dateTo) dateFilters._lte = dateTo.toISOString();
+    if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }
 
     if (endedOnly) {
-      where.totalKwh = { _gt: 0 };
+      where.isActive = { _eq: false };
     }
     const queryOptions = {
       offset,

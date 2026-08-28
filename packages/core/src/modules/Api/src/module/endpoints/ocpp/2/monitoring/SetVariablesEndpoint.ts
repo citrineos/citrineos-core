@@ -17,6 +17,7 @@ import {
 } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
 import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
+import { getSizeOfRequest } from '@util/index.js';
 import { COMPONENT_DEVICE_DATA_CTRLR } from '../components.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 import { sendInBatches } from './sendInBatches.js';
@@ -57,6 +58,21 @@ export class SetVariablesEndpoint extends AbstractMessageEndpoint {
 
     for (const ocppConnectionName of identifiers) {
       try {
+        const maxBytes =
+          await this._deviceModelService.getBytesPerMessageByComponentAndVariableInstanceAndStationId(
+            COMPONENT_DEVICE_DATA_CTRLR,
+            OCPP_CallAction.SetVariables,
+            tenantId,
+            ocppConnectionName,
+          );
+        const requestBytes = getSizeOfRequest(request);
+
+        if (maxBytes && requestBytes > maxBytes) {
+          throw new Error(
+            `The request size exceeds the limit of ${maxBytes} bytes for identifier ${ocppConnectionName}.`,
+          );
+        }
+
         const setVariableData = request.setVariableData;
 
         await this._deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
