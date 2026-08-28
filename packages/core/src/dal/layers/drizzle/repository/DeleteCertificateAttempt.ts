@@ -107,8 +107,6 @@ export class DrizzleDeleteCertificateAttemptRepository
     tenantId: number,
     input: DeleteCertificateAttemptCreate,
   ): Promise<DeleteCertificateAttemptDto> {
-    // Replicates the Sequelize model's resolveStationId @BeforeCreate hook: resolve the
-    // stationId from the ocppConnectionName + tenantId when it isn't provided.
     const stationId =
       input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
     // Base insert spreads { ...values, tenantId } and emits 'created'.

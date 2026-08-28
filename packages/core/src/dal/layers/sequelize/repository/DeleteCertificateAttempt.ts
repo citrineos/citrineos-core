@@ -9,6 +9,7 @@ import type {
 } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import { DeleteCertificateAttempt } from '../model/Certificate/DeleteCertificateAttempt.js';
+import { ChargingStation } from '../model/Location/index.js';
 import type { IDeleteCertificateAttemptRepository } from '../../../interfaces/repositories.js';
 
 type DeleteCertificateHashData = Pick<
@@ -57,7 +58,9 @@ export class SequelizeDeleteCertificateAttemptRepository
     tenantId: number,
     input: DeleteCertificateAttemptCreate,
   ): Promise<DeleteCertificateAttemptDto> {
-    const attempt = DeleteCertificateAttempt.build({ ...input, tenantId });
+    const stationId =
+      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    const attempt = DeleteCertificateAttempt.build({ ...input, stationId, tenantId });
     const saved = await attempt.save();
     this.emit('created', [saved]);
     return saved;
@@ -69,6 +72,17 @@ export class SequelizeDeleteCertificateAttemptRepository
     status: DeleteCertificateStatusEnumType,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
     return await this.updateByKey(tenantId, { status }, id.toString());
+  }
+
+  private async resolveStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | null> {
+    const station = await ChargingStation.findOne({
+      where: { ocppConnectionName, tenantId },
+      attributes: ['id'],
+    });
+    return station?.id ?? null;
   }
 }
 
