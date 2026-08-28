@@ -9,24 +9,31 @@ import {
 } from '@citrineos/base';
 import {
   type HandlerProperties,
+  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
+import type { IOCPPMessageRepository } from '@dal/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.InstallCertificate)
 export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
+  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
     logger,
+    ocppMessageRepository,
     installCertificateHelperService,
   }: AbstractHandlerDependencies & {
+    ocppMessageRepository: IOCPPMessageRepository;
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
     super(logger);
 
+    this._ocppMessageRepository = ocppMessageRepository;
     this._installCertificateHelperService = installCertificateHelperService;
   }
 
@@ -39,10 +46,27 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
       message,
       props,
     );
+
+    const tenantId = message.context.tenantId;
+    const ocppConnectionName = message.context.ocppConnectionName;
+
+    const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    const requestPayload = originalRequest?.payload as
+      | OCPP2_request_types.InstallCertificateRequest
+      | undefined;
+
     await this._installCertificateHelperService.finalizeInstalledCertificate(
-      message.context.tenantId,
-      message.context.ocppConnectionName,
+      tenantId,
+      ocppConnectionName,
       message.payload.status,
+      undefined,
+      requestPayload?.certificateType,
     );
   }
 }

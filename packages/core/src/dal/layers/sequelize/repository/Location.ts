@@ -97,6 +97,7 @@ export class SequelizeLocationRepository
         tenantId,
         isOnline,
         protocol: ocppVersion,
+        connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
       });
     }
 

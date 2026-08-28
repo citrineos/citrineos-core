@@ -22,6 +22,15 @@ export {
   type BootEntity,
   type BootEntityInsert,
 } from './schema/Boot.js';
+export { DrizzleCertificateRepository, toCertificateDto } from './repository/Certificate.js';
+export {
+  certificateTable,
+  tenantCertificateTable,
+  CertificateEntitySchema,
+  CertificateEntityInsertSchema,
+  type CertificateEntity,
+  type CertificateEntityInsert,
+} from './schema/Certificate.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

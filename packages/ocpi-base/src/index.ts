@@ -52,6 +52,7 @@ export {
   OCPPCommandHandler,
   OCPP1_6_CommandHandler,
   OCPP2_0_1_CommandHandler,
+  OCPP2_1_CommandHandler,
 } from './util/ocppCommandHandlers/index.js';
 export type { ChargingPreferencesResponse } from './model/ChargingPreferencesResponse.js';
 export {
