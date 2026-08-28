@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CrudRepository, DEFAULT_TENANT_ID } from '@citrineos/base';
+import {
+  CrudRepository,
+  DEFAULT_TENANT_ID,
+  type ICache,
+  type IWebsocketConnection,
+} from '@citrineos/base';
 import { Component, IDeviceModelRepository, ILocationRepository } from '@citrineos/core';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { StatusNotification } from '@dal/layers/sequelize/index.js';
 import { StatusNotificationService } from '@modules/Transactions/src/module/StatusNotificationService.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import {
   aChargingStation,
   aComponent,
@@ -76,18 +81,22 @@ describe('StatusNotificationService', () => {
       addStatusNotificationToChargingStation: vi.fn(),
       readChargingStationByStationId: vi.fn(),
       createOrUpdateConnector: vi.fn(),
+      createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
       updateAllConnectorsByQuery: vi.fn(),
     } as unknown as Mocked<ILocationRepository>;
 
     const mockConnection: IWebsocketConnection = {
       id: 'test-server',
+      timeConnected: new Date().toISOString(),
       protocol: 'ocpp2.0.1',
       allowUnknownChargingStations: true,
     };
     cache = {
       get: vi.fn().mockResolvedValue(JSON.stringify(mockConnection)),
     } as unknown as Mocked<ICache>;
+
+    locationRepository.createOrUpdateEvse.mockResolvedValue(aEvse());
 
     statusNotificationService = getTestInstance(container, StatusNotificationService, {
       componentRepository,
@@ -294,6 +303,114 @@ describe('StatusNotificationService', () => {
     });
   });
 
+  describe('Test process OCPP 2.0.1 StatusNotification for an unknown connector', () => {
+    beforeEach(() => {
+      componentRepository.readAllByQuery.mockResolvedValue([]);
+      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
+    });
+
+    it('should commission an EVSE and synthesize the connector when neither exists and allowUnknownChargingStations is true', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.evses = [];
+        }),
+      );
+      locationRepository.createOrUpdateEvse.mockResolvedValue(
+        aEvse((evse) => {
+          evse.id = 99;
+          evse.evseTypeId = 1;
+          evse.connectors = [];
+        }),
+      );
+
+      await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aStatusNotificationRequest((request) => {
+          request.evseId = 1;
+          request.connectorId = 1;
+        }),
+      );
+
+      expect(locationRepository.createOrUpdateEvse).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
+        evseTypeId: 1,
+        ocppConnectionName: MOCK_STATION_ID,
+      });
+      expect(locationRepository.createOrUpdateConnector).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({
+          tenantId: DEFAULT_TENANT_ID,
+          stationId: MOCK_STATION_ID,
+          evseId: 99,
+          evseTypeConnectorId: 1,
+          connectorId: 1,
+          ocppConnectionName: MOCK_STATION_ID,
+        }),
+      );
+    });
+
+    it('should reuse the existing EVSE and only synthesize the connector when the EVSE is known', async () => {
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.evses = [aEvse()];
+        }),
+      );
+
+      await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aStatusNotificationRequest((request) => {
+          request.evseId = MOCK_EVSE_ID;
+          // aEvse()'s only connector has evseTypeConnectorId 1, so 2 is unknown.
+          request.connectorId = 2;
+        }),
+      );
+
+      expect(locationRepository.createOrUpdateEvse).not.toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({
+          evseId: MOCK_EVSE_ID,
+          evseTypeConnectorId: 2,
+          connectorId: 2,
+        }),
+      );
+    });
+
+    it('should record the StatusNotification but skip the connector upsert when allowUnknownChargingStations is false', async () => {
+      // The 2.0.1 path logs and returns rather than throwing: the StatusNotification
+      // is already persisted as an audit record before the check, but nothing is
+      // commissioned and the device model is left untouched.
+      locationRepository.readChargingStationByStationId.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.evses = [];
+        }),
+      );
+      const strictConnection: IWebsocketConnection = {
+        id: 'test-server',
+        timeConnected: new Date().toISOString(),
+        protocol: 'ocpp2.0.1',
+        allowUnknownChargingStations: false,
+      };
+      cache.get = vi.fn().mockResolvedValue(JSON.stringify(strictConnection));
+
+      await expect(
+        statusNotificationService.processStatusNotification(
+          DEFAULT_TENANT_ID,
+          MOCK_STATION_ID,
+          aStatusNotificationRequest((request) => {
+            request.connectorId = 9;
+          }),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateEvse).not.toHaveBeenCalled();
+      expect(locationRepository.createOrUpdateConnector).not.toHaveBeenCalled();
+      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Test process OCPP 1.6 StatusNotification', () => {
     it('should save StatusNotification and connector when Charging Station exists with a matching evse', async () => {
       locationRepository.readChargingStationByStationId.mockResolvedValue(
@@ -427,6 +544,7 @@ describe('StatusNotificationService', () => {
       );
       const strictConnection: IWebsocketConnection = {
         id: 'test-server',
+        timeConnected: new Date().toISOString(),
         protocol: 'ocpp1.6',
         allowUnknownChargingStations: false,
       };
