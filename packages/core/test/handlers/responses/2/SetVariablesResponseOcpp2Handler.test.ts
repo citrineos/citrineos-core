@@ -127,7 +127,7 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 // ---------------------------------------------------------------------------
 
 async function seedBase(): Promise<void> {
-  await Tenant.create({ id: TENANT_ID as any });
+  await Tenant.create({ id: TENANT_ID as any, name: TENANT_ID });
   await ChargingStation.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
