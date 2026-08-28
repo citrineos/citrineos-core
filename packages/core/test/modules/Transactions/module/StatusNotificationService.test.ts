@@ -85,7 +85,14 @@ describe('StatusNotificationService', () => {
       commissionEvseForOcpp16Connector: vi.fn(),
       commissionEvseForOcpp201Connector: vi
         .fn()
-        .mockResolvedValue({ evseId: 1, connectorId: 1, evseTypeConnectorId: 1 }),
+        .mockImplementation(
+          async (
+            _tenantId: number,
+            _ocppConnectionName: string,
+            _evseId: number,
+            connectorId: number,
+          ) => ({ evseId: 1, connectorId, evseTypeConnectorId: connectorId }),
+        ),
       updateAllConnectorsByQuery: vi.fn(),
     } as unknown as Mocked<ILocationRepository>;
 
@@ -318,13 +325,11 @@ describe('StatusNotificationService', () => {
           cs.evses = [];
         }),
       );
-      locationRepository.createOrUpdateEvse.mockResolvedValue(
-        aEvse((evse) => {
-          evse.id = 99;
-          evse.evseTypeId = 1;
-          evse.connectors = [];
-        }),
-      );
+      locationRepository.commissionEvseForOcpp201Connector.mockResolvedValue({
+        evseId: 99,
+        connectorId: 1,
+        evseTypeConnectorId: 1,
+      });
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
@@ -335,10 +340,12 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(locationRepository.createOrUpdateEvse).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        evseTypeId: 1,
-        ocppConnectionName: MOCK_STATION_ID,
-      });
+      expect(locationRepository.commissionEvseForOcpp201Connector).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        1,
+        1,
+      );
       expect(locationRepository.createOrUpdateConnector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         expect.objectContaining({

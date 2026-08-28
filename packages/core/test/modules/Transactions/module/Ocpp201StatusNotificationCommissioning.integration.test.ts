@@ -149,13 +149,14 @@ describe('An OCPP 2.0.1 station reporting a connector for the first time', () =>
     expect(await Connector.count()).toBe(1);
   });
 
-  it('refuses an unknown connector when the server does not allow unknown stations', async () => {
-    await expect(
-      aService(false).processStatusNotification(
-        DEFAULT_TENANT_ID,
-        STATION,
-        aStatusNotification(1, 1),
-      ),
-    ).rejects.toThrow(/does not exist and allowUnknownChargingStations is false/);
+  it('records no connector when the server does not allow unknown stations', async () => {
+    await aService(false).processStatusNotification(
+      DEFAULT_TENANT_ID,
+      STATION,
+      aStatusNotification(1, 1),
+    );
+
+    const connectors = await Connector.findAll({ where: { ocppConnectionName: STATION } });
+    expect(connectors).toHaveLength(0);
   });
 });

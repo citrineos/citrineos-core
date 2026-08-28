@@ -11,6 +11,7 @@ import {
 import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
+import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import { Connector, StatusNotification } from '@dal/layers/sequelize/model/Location/index.js';
 import type { ILogObj } from 'tslog';
@@ -113,7 +114,11 @@ export class StatusNotificationService {
         evseTypeConnectorId: reference.evseTypeConnectorId,
         connectorId: reference.connectorId,
         ocppConnectionName: ocppConnectionName,
-      };
+        status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+          statusNotificationRequest.connectorStatus,
+        ),
+        timestamp: statusNotificationRequest.timestamp ?? new Date().toISOString(),
+      } as ConnectorDto;
     }
 
     await this._locationRepository.createOrUpdateConnector(tenantId, matchingConnector);
