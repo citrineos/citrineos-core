@@ -165,6 +165,11 @@ export const ocpiConfigInputSchema = z.object({
       requestStopTransactionRequestUrl: z.string(),
       unlockConnectorRequestUrl: z.string(),
     }),
+    ocpp2_1: z.object({
+      requestStartTransactionRequestUrl: z.string(),
+      requestStopTransactionRequestUrl: z.string(),
+      unlockConnectorRequestUrl: z.string(),
+    }),
   }),
 
   // OCPI-specific settings
@@ -312,6 +317,11 @@ export const ocpiConfigSchema = z.object({
       unlockConnectorRequestUrl: z.string(),
     }),
     ocpp2_0_1: z.object({
+      requestStartTransactionRequestUrl: z.string(),
+      requestStopTransactionRequestUrl: z.string(),
+      unlockConnectorRequestUrl: z.string(),
+    }),
+    ocpp2_1: z.object({
       requestStartTransactionRequestUrl: z.string(),
       requestStopTransactionRequestUrl: z.string(),
       unlockConnectorRequestUrl: z.string(),

@@ -20,9 +20,13 @@ export type ChargingStationWithTransactionsDto = z.infer<
 
 export interface RemoteStopTransactionModalProps {
   station: ChargingStationWithTransactionsDto;
+  transactionId?: string;
 }
 
-export const RemoteStopTransactionModal = ({ station }: RemoteStopTransactionModalProps) => {
+export const RemoteStopTransactionModal = ({
+  station,
+  transactionId,
+}: RemoteStopTransactionModalProps) => {
   const translate = useTranslate();
   const parsedStation: ChargingStationWithTransactionsDto = useMemo(
     () => plainToInstance(ChargingStationClass, station),
@@ -36,7 +40,7 @@ export const RemoteStopTransactionModal = ({ station }: RemoteStopTransactionMod
         return <OCPP1_6_RemoteStop station={parsedStation} />;
       case OCPPVersion.OCPP2_0_1:
       case OCPPVersion.OCPP2_1:
-        return <OCPP2_0_1_RemoteStop station={parsedStation} />;
+        return <OCPP2_0_1_RemoteStop station={parsedStation} transactionId={transactionId} />;
       default:
         return (
           <div>

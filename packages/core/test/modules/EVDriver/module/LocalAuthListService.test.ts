@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  IChangeConfigurationRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
   LocalListVersion,
@@ -20,6 +21,7 @@ describe('LocalAuthListService', () => {
   const { container } = createTestContainer();
   let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;
   let mockDeviceModelRepository: Mocked<IDeviceModelRepository>;
+  let mockChangeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let localAuthListService: LocalAuthListService;
 
   const tenantId = DEFAULT_TENANT_ID;
@@ -45,9 +47,15 @@ describe('LocalAuthListService', () => {
       readAllByQuerystring: vi.fn(),
     } as unknown as Mocked<IDeviceModelRepository>;
 
+    // Only the OCPP 1.6 path reads configuration keys; these specs all exercise 2.0.1.
+    mockChangeConfigurationRepository = {
+      readOnlyOneByQuery: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Mocked<IChangeConfigurationRepository>;
+
     localAuthListService = getTestInstance(container, LocalAuthListService, {
       localAuthListRepository: mockLocalAuthListRepository,
       deviceModelRepository: mockDeviceModelRepository,
+      changeConfigurationRepository: mockChangeConfigurationRepository,
     });
   });
 

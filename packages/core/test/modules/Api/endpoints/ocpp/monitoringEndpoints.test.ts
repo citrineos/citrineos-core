@@ -116,6 +116,25 @@ describe('monitoring message endpoints', () => {
       }
     });
 
+    it('refuses a request larger than the station byte limit', async () => {
+      // The three sibling endpoints in this file all enforce DeviceDataCtrlr.BytesPerMessage.
+      getBytesPerMessage.mockResolvedValue(1);
+
+      const confirmations = await handle({ setVariableData: [aSetVariableData('A')] });
+
+      expect(confirmations[0].success).toBe(false);
+      expect(String(confirmations[0].payload)).toContain('exceeds the limit of 1 bytes');
+      expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('does not persist the values when the request is over the byte limit', async () => {
+      getBytesPerMessage.mockResolvedValue(1);
+
+      await handle({ setVariableData: [aSetVariableData('A')] });
+
+      expect(createOrUpdateBySetVariablesDataAndStationId).not.toHaveBeenCalled();
+    });
+
     it('reports a persistence failure as an unsuccessful confirmation', async () => {
       createOrUpdateBySetVariablesDataAndStationId.mockRejectedValue(new Error('db down'));
 

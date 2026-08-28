@@ -60,9 +60,6 @@ export class ServerNetworkProfile
   @Column(DataType.BOOLEAN)
   declare dynamicTenantResolution: boolean;
 
-  @Column(DataType.JSONB)
-  declare tenantPathMapping?: Record<string, number>;
-
   @Column(DataType.STRING)
   declare tlsKeyFilePath?: string;
 

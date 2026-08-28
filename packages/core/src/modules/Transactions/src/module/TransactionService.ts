@@ -97,6 +97,13 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_response_types.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
+
+    // C02.FR.02: a transaction started with a button carries a NoAuthorization idToken with an
+    // empty value, which is not backed by an Authorization and is accepted as it stands.
+    if (idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
+      return { idTokenInfo: { status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted } };
+    }
+
     const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
       type: idToken.type,
@@ -133,7 +140,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_0_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
@@ -177,6 +184,13 @@ export class TransactionService {
     messageContext: IMessageContext,
   ): Promise<OCPP2_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
+
+    // C02.FR.02: a transaction started with a button carries a NoAuthorization idToken with an
+    // empty value, which is not backed by an Authorization and is accepted as it stands.
+    if (idToken.type === OCPP2_1.IdTokenEnumType.NoAuthorization) {
+      return { idTokenInfo: { status: OCPP2_1.AuthorizationStatusEnumType.Accepted } };
+    }
+
     const authorizations = await this._authorizationRepository.readAllByQuerystring(tenantId, {
       idToken: idToken.idToken,
       type: idToken.type,
@@ -208,7 +222,7 @@ export class TransactionService {
       return response;
     } else {
       if (
-        authorization.concurrentTransaction === true &&
+        authorization.concurrentTransaction !== true &&
         transactionEvent.eventType === OCPP2_1.TransactionEventEnumType.Started
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
@@ -278,10 +292,7 @@ export class TransactionService {
   ): Promise<MeterValue[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
-        const hasPeriodic: boolean = meterValue.sampledValue?.some(
-          (s) => s.context === OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
-        );
-        if (transactionDbId && hasPeriodic) {
+        if (transactionDbId) {
           return await this._transactionEventRepository.createMeterValue(
             tenantId,
             meterValue,
@@ -324,7 +335,9 @@ export class TransactionService {
 
       // Check expiration and status
       if (!authorization.status) {
-        response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Accepted;
+        this._logger.error(
+          `Authorization ${authorization.id} for idToken ${idToken} has no status; rejecting.`,
+        );
         return response;
       }
 
@@ -418,7 +431,6 @@ export class TransactionService {
     let evseTypeId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
-      // OCPP 1.6: evseIdentifier is a connector ID — resolve to EVSE type ID
       const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
         tenantId,
         ocppConnectionName,
@@ -426,7 +438,6 @@ export class TransactionService {
       );
       evseTypeId = connector?.evse?.evseTypeId;
     } else {
-      // OCPP 2.0.1: evseIdentifier is an EVSEType — use evse.id directly
       evseTypeId = evseIdentifier.id;
     }
 

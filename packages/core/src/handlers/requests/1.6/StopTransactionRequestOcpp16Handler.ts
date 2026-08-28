@@ -117,6 +117,19 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       return;
     }
 
+    if (!transaction.isActive) {
+      this._logger.warn(
+        `Received StopTransaction for already-ended transaction ${request.transactionId} on ${ocppConnectionName}. Ignoring.`,
+      );
+      return;
+    }
+
+    // 4.10: "If a transaction is ended in a normal way (e.g. EV-driver presented his
+    // identification to stop the transaction), the Reason element MAY be omitted and the Reason
+    // SHOULD be assumed 'Local'." The example is the case where an idTag is present, so an omitted
+    // reason is Local either way.
+    const stoppedReason = request.reason ?? OCPP1_6.StopTransactionRequestReason.Local;
+
     const stopTransaction = await this._transactionEventRepository.createStopTransaction(
       tenantId,
       transaction.id,
@@ -128,7 +141,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
           data as OCPP1_6.MeterValuesRequest['meterValue'][0],
         ),
       ) || [],
-      request.reason || (request.idTag ? 'Remote' : 'Local'),
+      stoppedReason,
       authorization?.id,
     );
 
@@ -147,7 +160,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       );
     }
     transaction.isActive = false;
-    transaction.stoppedReason = request.reason;
+    transaction.stoppedReason = stoppedReason;
     transaction.endTime = request.timestamp;
     await transaction.save();
   }

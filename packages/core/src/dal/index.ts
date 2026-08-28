@@ -92,6 +92,7 @@ export {
   DefaultDrizzleInstance,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
+  DrizzleCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,

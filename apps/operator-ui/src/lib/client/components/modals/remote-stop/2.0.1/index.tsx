@@ -21,13 +21,14 @@ import { useTenantId } from '@lib/client/hooks/useTenantId';
 
 export interface OCPP2_0_1_RemoteStopProps {
   station: ChargingStationWithTransactionsDto;
+  transactionId?: string;
 }
 
 type RemoteStopFormData = {
   transactionId: string;
 };
 
-export const OCPP2_0_1_RemoteStop = ({ station }: OCPP2_0_1_RemoteStopProps) => {
+export const OCPP2_0_1_RemoteStop = ({ station, transactionId }: OCPP2_0_1_RemoteStopProps) => {
   const translate = useTranslate();
   const unknownEvse = translate('ChargingStations.remoteStopModal.unknownEvse');
   const evseMap: Map<number, EvseDto> = useMemo(() => {
@@ -71,12 +72,15 @@ export const OCPP2_0_1_RemoteStop = ({ station }: OCPP2_0_1_RemoteStopProps) => 
     });
   };
 
-  // Set initial value when transactions are loaded
   useEffect(() => {
+    if (transactionId) {
+      form.setValue('transactionId', transactionId);
+      return;
+    }
     if (station.transactions && station.transactions.length > 0) {
       form.setValue('transactionId', station.transactions[0].transactionId);
     }
-  }, [station, form]);
+  }, [station, form, transactionId]);
 
   // Filter out inactive transactions
   const activeTransactions = station.transactions

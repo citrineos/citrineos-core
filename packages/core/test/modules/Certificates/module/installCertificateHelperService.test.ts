@@ -172,7 +172,9 @@ describe('InstallCertificateHelperService', () => {
   const tenantId = 1;
   const ocppConnectionName = 'cp001';
 
-  const mockCertificateReadOnlyOneByQuery = vi.fn();
+  const mockCertificateFindByFileHash = vi.fn();
+  const mockCertificateFindById = vi.fn();
+  const mockCertificateCreate = vi.fn();
   const mockInstalledCertificateReadOnlyOneByQuery = vi.fn();
   const mockInstallCertificateAttemptReadOnlyOneByQuery = vi.fn();
   const mockDeviceModelReadAllByQuerystring = vi.fn();
@@ -186,7 +188,9 @@ describe('InstallCertificateHelperService', () => {
     createdDeleteCertificateAttemptInstances = [];
 
     mockCertificateRepository = {
-      readOnlyOneByQuery: mockCertificateReadOnlyOneByQuery,
+      findByFileHash: mockCertificateFindByFileHash,
+      findById: mockCertificateFindById,
+      createCertificate: mockCertificateCreate,
       createOrUpdateCertificate: vi.fn(),
     } as any;
 
@@ -269,7 +273,7 @@ describe('InstallCertificateHelperService', () => {
 
       mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
       mockExtractCertificateDetails.mockReturnValue(mockCertDetails);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockCertificateFindByFileHash.mockResolvedValue(undefined);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
       await service.prepareToInstallCertificate(
@@ -280,10 +284,9 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(mockExtractCertificateDetails).toHaveBeenCalledWith(MOCK_CERTIFICATE);
-      expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: { certificateFileHash: mockHash },
-      });
+      expect(mockCertificateFindByFileHash).toHaveBeenCalledWith(tenantId, mockHash);
       expect(service.createNewCertificate).toHaveBeenCalledWith(
+        tenantId,
         MOCK_CERTIFICATE,
         mockCertDetails.serialNumber,
         mockCertDetails.issuerName,
@@ -373,7 +376,7 @@ describe('InstallCertificateHelperService', () => {
 
       mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
       mockExtractCertificateDetails.mockReturnValue(mockCertDetails);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(mockExistingCertificate);
+      mockCertificateFindByFileHash.mockResolvedValue(mockExistingCertificate);
 
       await service.prepareToInstallCertificate(
         tenantId,
@@ -406,7 +409,7 @@ describe('InstallCertificateHelperService', () => {
           validBefore: new Date('2027-02-17'),
           signatureAlgorithm: 'SHA256withECDSA' as any,
         });
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1 } as any);
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 1 } as any);
       });
 
       it('does not consult the device model for non-CSMSRootCertificate types', async () => {
@@ -677,8 +680,10 @@ describe('InstallCertificateHelperService', () => {
   describe('createNewCertificate', () => {
     it('should call getCertificateHash and save file', async () => {
       mockFileStorageSaveFile.mockResolvedValue('fileId123');
+      mockCertificateCreate.mockResolvedValue({ id: 1 });
 
       await service.createNewCertificate(
+        tenantId,
         MOCK_CERTIFICATE,
         123456,
         'Test Issuer',
@@ -694,15 +699,21 @@ describe('InstallCertificateHelperService', () => {
         `Existing_Cert_123456.pem`,
         Buffer.from(MOCK_CERTIFICATE),
       );
-
-      const savedCert = createdCertificateInstances[0];
-      expect(savedCert.save).toHaveBeenCalled();
+      expect(mockCertificateCreate).toHaveBeenCalled();
     });
 
     it('should save certificate record with correct values', async () => {
       mockFileStorageSaveFile.mockResolvedValue('fileId123');
+      const createdCertificate = {
+        id: 5,
+        serialNumber: 123456,
+        issuerName: 'Test Issuer',
+        certificateFileHash: mockHash,
+      };
+      mockCertificateCreate.mockResolvedValue(createdCertificate);
 
       const result = await service.createNewCertificate(
+        tenantId,
         MOCK_CERTIFICATE,
         123456,
         'Test Issuer',
@@ -713,11 +724,16 @@ describe('InstallCertificateHelperService', () => {
         'SHA256withECDSA' as any,
       );
 
-      const savedCert = createdCertificateInstances[0];
-      expect(savedCert.serialNumber).toBe(123456);
-      expect(savedCert.issuerName).toBe('Test Issuer');
-      expect(savedCert.certificateFileHash).toBe(mockHash);
-      expect(result).toBe(savedCert);
+      expect(mockCertificateCreate).toHaveBeenCalledWith(
+        tenantId,
+        expect.objectContaining({
+          serialNumber: 123456,
+          issuerName: 'Test Issuer',
+          certificateFileHash: mockHash,
+          certificateFileId: 'fileId123',
+        }),
+      );
+      expect(result).toBe(createdCertificate);
     });
   });
 
@@ -743,8 +759,8 @@ describe('InstallCertificateHelperService', () => {
 
     it('should extract certificate details', async () => {
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as Certificate);
+      mockCertificateFindByFileHash.mockResolvedValue(undefined);
+      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -796,7 +812,8 @@ describe('InstallCertificateHelperService', () => {
         Buffer.from(MOCK_CERTIFICATE),
       );
       expect(mockExistingCert.certificateFileId).toBe('newFileId');
-      expect(Certificate.create).toHaveBeenCalledWith(
+      expect(mockCertificateCreate).toHaveBeenCalledWith(
+        tenantId,
         expect.objectContaining({ certificateFileId: 'newFileId' }),
       );
     });
@@ -811,7 +828,7 @@ describe('InstallCertificateHelperService', () => {
       const mockExistingCert = { id: 99 } as any;
 
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(mockExistingCert);
+      mockCertificateFindByFileHash.mockResolvedValue(mockExistingCert);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -819,9 +836,7 @@ describe('InstallCertificateHelperService', () => {
         mockUploadRequest,
       );
 
-      expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: { certificateFileHash: mockHash },
-      });
+      expect(mockCertificateFindByFileHash).toHaveBeenCalledWith(tenantId, mockHash);
       expect(mockInstalledCert.certificateId).toBe(99);
       expect(mockInstalledSave).toHaveBeenCalled();
     });
@@ -835,8 +850,8 @@ describe('InstallCertificateHelperService', () => {
       } as any;
 
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as Certificate);
+      mockCertificateFindByFileHash.mockResolvedValue(undefined);
+      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -849,10 +864,10 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should create new installed certificate if none exists', async () => {
-      const mockExistingCert = { id: 99 } as Certificate;
+      const mockExistingCert = { id: 99 } as any;
 
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(mockExistingCert);
+      mockCertificateFindByFileHash.mockResolvedValue(mockExistingCert);
 
       const result = await service.handleUploadExistingCertificate(
         tenantId,
@@ -868,8 +883,8 @@ describe('InstallCertificateHelperService', () => {
 
     it('should create certificate and installed cert if neither exist', async () => {
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
-      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as Certificate);
+      mockCertificateFindByFileHash.mockResolvedValue(undefined);
+      vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
       await service.handleUploadExistingCertificate(
         tenantId,
@@ -878,6 +893,7 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(service.createNewCertificate).toHaveBeenCalledWith(
+        tenantId,
         MOCK_CERTIFICATE,
         mockCertDetails.serialNumber,
         mockCertDetails.issuerName,
@@ -949,7 +965,7 @@ describe('InstallCertificateHelperService', () => {
       it('throws BadRequestError if the subCA record has no private key on file', async () => {
         mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('oldLeafPem+subCACertPem'));
         mockParseCertificateChainPem.mockReturnValue(['oldLeafPem', 'subCACertPem']);
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+        mockCertificateFindByFileHash.mockResolvedValue({
           id: 55,
           privateKeyFileId: undefined,
         });
@@ -964,7 +980,7 @@ describe('InstallCertificateHelperService', () => {
           .mockResolvedValueOnce(Buffer.from('oldLeafPem+subCACertPem'))
           .mockResolvedValueOnce(Buffer.from('subCAKeyPem'));
         mockParseCertificateChainPem.mockReturnValue(['oldLeafPem', 'subCACertPem']);
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+        mockCertificateFindByFileHash.mockResolvedValue({
           id: 55,
           privateKeyFileId: 'SubCA_Key_existing.pem',
         });
@@ -985,9 +1001,7 @@ describe('InstallCertificateHelperService', () => {
           undefined,
         );
         expect(mockParseCertificateChainPem).toHaveBeenCalledWith('oldLeafPem+subCACertPem');
-        expect(mockCertificateReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-          where: { certificateFileHash: mockHash },
-        });
+        expect(mockCertificateFindByFileHash).toHaveBeenCalledWith(tenantId, mockHash);
         expect(mockGenerateCertificate).toHaveBeenCalledWith(
           expect.objectContaining({ signedBy: 55, commonName: 'localhost' }),
           logger,
@@ -1023,7 +1037,7 @@ describe('InstallCertificateHelperService', () => {
       it('throws BadRequestError if the current subCA has no locally-generated root to reuse', async () => {
         mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('leafPem+subCACertPem'));
         mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 20, signedBy: null });
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 20, signedBy: null });
 
         await expect(
           service.generateCertificateChain(tenantId, websocketConfig, certRequest),
@@ -1033,13 +1047,12 @@ describe('InstallCertificateHelperService', () => {
       it('throws BadRequestError if the root record is missing its certificate or private key', async () => {
         mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('leafPem+subCACertPem'));
         mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
-        mockCertificateReadOnlyOneByQuery
-          .mockResolvedValueOnce({ id: 20, signedBy: 10 })
-          .mockResolvedValueOnce({
-            id: 10,
-            certificateFileId: undefined,
-            privateKeyFileId: undefined,
-          });
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 20, signedBy: 10 });
+        mockCertificateFindById.mockResolvedValue({
+          id: 10,
+          certificateFileId: undefined,
+          privateKeyFileId: undefined,
+        });
 
         await expect(
           service.generateCertificateChain(tenantId, websocketConfig, certRequest),
@@ -1052,13 +1065,12 @@ describe('InstallCertificateHelperService', () => {
           .mockResolvedValueOnce(Buffer.from('rootCertPem'))
           .mockResolvedValueOnce(Buffer.from('rootKeyPem'));
         mockParseCertificateChainPem.mockReturnValue(['leafPem', 'subCACertPem']);
-        mockCertificateReadOnlyOneByQuery
-          .mockResolvedValueOnce({ id: 20, signedBy: 10 })
-          .mockResolvedValueOnce({
-            id: 10,
-            certificateFileId: 'Root_Certificate_existing.pem',
-            privateKeyFileId: 'Root_Key_existing.pem',
-          });
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 20, signedBy: 10 });
+        mockCertificateFindById.mockResolvedValue({
+          id: 10,
+          certificateFileId: 'Root_Certificate_existing.pem',
+          privateKeyFileId: 'Root_Key_existing.pem',
+        });
         mockGenerateCertificate
           .mockReturnValueOnce(['newSubCACertPem', 'newSubCAKeyPem'])
           .mockReturnValueOnce(['newLeafPem', 'newLeafKeyPem']);
@@ -1193,7 +1205,7 @@ describe('InstallCertificateHelperService', () => {
           mockFileStorageGetFile
             .mockResolvedValueOnce(Buffer.from('previousRootCertPem'))
             .mockResolvedValueOnce(Buffer.from('previousRootKeyPem'));
-          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+          mockCertificateFindByFileHash.mockResolvedValue({
             id: 77,
             privateKeyFileId: 'Root_Key_existing.pem',
           });
@@ -1242,7 +1254,7 @@ describe('InstallCertificateHelperService', () => {
           mockFileStorageGetFile
             .mockResolvedValueOnce(Buffer.from('otherRootCertPem'))
             .mockResolvedValueOnce(Buffer.from('otherRootKeyPem'));
-          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+          mockCertificateFindByFileHash.mockResolvedValue({
             id: 88,
             privateKeyFileId: 'Root_Key_other.pem',
           });
@@ -1331,7 +1343,7 @@ describe('InstallCertificateHelperService', () => {
           } as GenerateCertificateChainRequest;
 
           mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('previousRootCertPem'));
-          mockCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
+          mockCertificateFindByFileHash.mockResolvedValue(undefined);
 
           await expect(
             service.generateCertificateChain(tenantId, websocketConfig, certRequest),
@@ -1349,7 +1361,7 @@ describe('InstallCertificateHelperService', () => {
           } as GenerateCertificateChainRequest;
 
           mockFileStorageGetFile.mockResolvedValueOnce(Buffer.from('previousRootCertPem'));
-          mockCertificateReadOnlyOneByQuery.mockResolvedValue({
+          mockCertificateFindByFileHash.mockResolvedValue({
             id: 77,
             privateKeyFileId: undefined,
           });
@@ -1455,7 +1467,7 @@ describe('InstallCertificateHelperService', () => {
       });
 
       it('groups servers whose current (distinct) subCAs were signed by the same root', async () => {
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1, signedBy: 100 });
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 1, signedBy: 100 });
 
         const groups = await service.groupServersForGeneration(
           tenantId,
@@ -1467,11 +1479,9 @@ describe('InstallCertificateHelperService', () => {
       });
 
       it('splits servers into separate groups when their subCAs were signed by different roots', async () => {
-        mockCertificateReadOnlyOneByQuery.mockImplementation((_tenantId: number, query: any) =>
+        mockCertificateFindByFileHash.mockImplementation((_tenantId: number, hash: string) =>
           Promise.resolve(
-            query.where.certificateFileHash === 'subCA-chain-a.pem'
-              ? { id: 1, signedBy: 100 }
-              : { id: 2, signedBy: 200 },
+            hash === 'subCA-chain-a.pem' ? { id: 1, signedBy: 100 } : { id: 2, signedBy: 200 },
           ),
         );
 
@@ -1485,7 +1495,7 @@ describe('InstallCertificateHelperService', () => {
       });
 
       it('throws BadRequestError if the current subCA has no locally-generated root to reuse', async () => {
-        mockCertificateReadOnlyOneByQuery.mockResolvedValue({ id: 1, signedBy: null });
+        mockCertificateFindByFileHash.mockResolvedValue({ id: 1, signedBy: null });
 
         await expect(
           service.groupServersForGeneration(

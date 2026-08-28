@@ -10,15 +10,14 @@ import {
 } from '@citrineos/base';
 import {
   ErrorCode,
-  GetCertificateStatusEnum,
   type HandlerProperties,
+  OCPP2_1,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import jsrsasign from 'jsrsasign';
-import { sendOCSPRequest } from '@util/index.js';
+import { createOcspRequest, sendOCSPRequest } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
@@ -47,23 +46,20 @@ export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
 
     const reqData = message.payload.ocspRequestData;
     try {
-      const ocspRequest = new jsrsasign.KJUR.asn1.ocsp.Request({
-        alg: reqData.hashAlgorithm,
-        keyhash: reqData.issuerKeyHash,
-        namehash: reqData.issuerNameHash,
-        serial: reqData.serialNumber,
-      });
-      const ocspResponse = await sendOCSPRequest(ocspRequest, reqData.responderURL);
-      await this._ocppSender.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnum.Accepted,
-        ocspResponse: ocspResponse,
-      } as OCPP2_response_types.GetCertificateStatusResponse);
+      const ocspRequest = createOcspRequest(reqData);
+      const ocspResult = await sendOCSPRequest(ocspRequest, reqData.responderURL);
+      const response: OCPP2_response_types.GetCertificateStatusResponse = {
+        status: OCPP2_1.GetCertificateStatusEnumType.Accepted,
+        ocspResult,
+      };
+      await this._ocppSender.sendCallResultWithMessage(message, response);
     } catch (error) {
       this._logger.error(`GetCertificateStatus failed: ${error}`);
-      await this._ocppSender.sendCallResultWithMessage(message, {
-        status: GetCertificateStatusEnum.Failed,
+      const response: OCPP2_response_types.GetCertificateStatusResponse = {
+        status: OCPP2_1.GetCertificateStatusEnumType.Failed,
         statusInfo: { reasonCode: ErrorCode.GenericError },
-      } as OCPP2_response_types.GetCertificateStatusResponse);
+      };
+      await this._ocppSender.sendCallResultWithMessage(message, response);
     }
   }
 }

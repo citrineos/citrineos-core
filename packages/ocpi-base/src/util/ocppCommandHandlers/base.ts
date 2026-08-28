@@ -106,11 +106,7 @@ export abstract class OCPPCommandHandler {
         response: response?.result,
       });
       await this.commandsClientApi.postCommandResult(
-        tenantPartner.countryCode!,
-        tenantPartner.partyId!,
-        tenantPartner.tenant!.countryCode!,
-        tenantPartner.tenant!.partyId!,
-        tenantPartner.partnerProfileOCPI!,
+        tenantPartner,
         responseUrl,
         {
           result: CommandResultType.FAILED,

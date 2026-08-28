@@ -8,6 +8,8 @@ import type { Price } from '../model/Price.js';
 import type { Session } from '../model/Session.js';
 import { MINUTES_IN_HOUR } from '../util/Consts.js';
 
+export type PricedSession = Pick<Session, 'kwh' | 'start_date_time' | 'end_date_time'>;
+
 export function buildPrice(amount: number, currency: string, taxRate?: number | null): Price {
   const money = Money.of(amount, currency);
   const price: Price = { excl_vat: money.roundToCurrencyScale().toNumber() };
@@ -40,7 +42,7 @@ export function sumPrices(currency: string, prices: (Price | undefined)[]): Pric
   return { excl_vat: exclVat.toNumber(), incl_vat: inclVat.toNumber() };
 }
 
-export function calculateTotalTimeHours(session: Session): number {
+export function calculateTotalTimeHours(session: PricedSession): number {
   if (session.end_date_time) {
     return (session.end_date_time.getTime() - session.start_date_time.getTime()) / 3600000;
   }
@@ -54,11 +56,11 @@ export function calculateFixedCost(tariff: TariffDto): Price | undefined {
   return buildPrice(tariff.pricePerSession, tariff.currency, tariff.taxRate);
 }
 
-export function calculateEnergyCost(session: Session, tariff: TariffDto): Price {
+export function calculateEnergyCost(session: PricedSession, tariff: TariffDto): Price {
   return buildPrice(session.kwh * tariff.pricePerKwh, tariff.currency, tariff.taxRate);
 }
 
-export function calculateTimeCost(session: Session, tariff: TariffDto): Price | undefined {
+export function calculateTimeCost(session: PricedSession, tariff: TariffDto): Price | undefined {
   if (!tariff.pricePerMin) {
     return undefined;
   }
@@ -66,7 +68,7 @@ export function calculateTimeCost(session: Session, tariff: TariffDto): Price | 
   return buildPrice(totalMinutes * tariff.pricePerMin, tariff.currency, tariff.taxRate);
 }
 
-export function calculateTotalCdrCost(session: Session, tariff: TariffDto): Price {
+export function calculateTotalCdrCost(session: PricedSession, tariff: TariffDto): Price {
   return sumPrices(tariff.currency, [
     calculateFixedCost(tariff),
     calculateEnergyCost(session, tariff),

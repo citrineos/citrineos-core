@@ -72,6 +72,7 @@ export class SequelizeLocalAuthListRepository
     for (const authData of localAuthorizationList ?? []) {
       const auth = await Authorization.findOne({
         where: {
+          tenantId,
           idToken: authData.idToken.idToken,
           idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
         },
@@ -85,6 +86,7 @@ export class SequelizeLocalAuthListRepository
       if (authData.idTokenInfo?.groupIdToken) {
         const groupAuth = await Authorization.findOne({
           where: {
+            tenantId,
             idToken: authData.idTokenInfo.groupIdToken.idToken,
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(
               authData.idTokenInfo.groupIdToken.type,
@@ -92,11 +94,6 @@ export class SequelizeLocalAuthListRepository
           },
         });
         const groupAuthorizationAuthId = groupAuth?.id;
-        if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
-          throw new Error(
-            `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
-          );
-        }
         if (!auth.groupAuthorizationId || groupAuthorizationAuthId !== auth.groupAuthorizationId) {
           throw new Error(
             `Authorization groupIdToken in SendLocalListRequest ${JSON.stringify(authData.idTokenInfo.groupIdToken)} does not match groupAuthorizationId in database ${JSON.stringify(auth.groupAuthorizationId)} (update the groupAuthorization first)`,
@@ -168,7 +165,7 @@ export class SequelizeLocalAuthListRepository
         updateType === OCPP1_6.SendLocalListRequestUpdateType.Differential && !authData.idTagInfo;
 
       const auth = await Authorization.findOne({
-        where: { idToken: authData.idTag },
+        where: { tenantId, idToken: authData.idTag },
       });
 
       if (!auth && !isDelete) {
@@ -180,7 +177,7 @@ export class SequelizeLocalAuthListRepository
       let groupAuthorizationId: number | undefined;
       if (authData.idTagInfo?.parentIdTag) {
         const parent = await Authorization.findOne({
-          where: { idToken: authData.idTagInfo.parentIdTag },
+          where: { tenantId, idToken: authData.idTagInfo.parentIdTag },
         });
         if (!parent) {
           throw new Error(
@@ -238,7 +235,7 @@ export class SequelizeLocalAuthListRepository
   ): Promise<void> {
     await this.s.transaction(async (transaction) => {
       const localListVersion = await LocalListVersion.findOne({
-        where: { ocppConnectionName: ocppConnectionName },
+        where: { tenantId, ocppConnectionName: ocppConnectionName },
         transaction,
       });
       if (localListVersion && localListVersion.versionNumber === versionNumber) {
@@ -309,19 +306,19 @@ export class SequelizeLocalAuthListRepository
   ): Promise<LocalListVersion> {
     const localListVersion = await this.s.transaction(async (transaction) => {
       const oldLocalListVersion = await LocalListVersion.findOne({
-        where: { ocppConnectionName: ocppConnectionName },
+        where: { tenantId, ocppConnectionName: ocppConnectionName },
         include: [LocalListAuthorization],
         transaction,
       });
       if (oldLocalListVersion) {
         // Remove associations
         await LocalListVersionAuthorization.destroy({
-          where: { localListVersionId: oldLocalListVersion.id },
+          where: { tenantId, localListVersionId: oldLocalListVersion.id },
           transaction,
         });
         // Destroy old version
         await LocalListVersion.destroy({
-          where: { ocppConnectionName: ocppConnectionName },
+          where: { tenantId, ocppConnectionName: ocppConnectionName },
           transaction,
         });
       }
@@ -381,7 +378,7 @@ export class SequelizeLocalAuthListRepository
       }
 
       const localListVersion = await LocalListVersion.findOne({
-        where: { ocppConnectionName: ocppConnectionName },
+        where: { tenantId, ocppConnectionName: ocppConnectionName },
         include: [LocalListAuthorization],
         transaction,
       });
@@ -407,6 +404,7 @@ export class SequelizeLocalAuthListRepository
         for (const oldAuth of matches) {
           await LocalListVersionAuthorization.destroy({
             where: {
+              tenantId,
               localListVersionId: localListVersion.id,
               authorizationId: oldAuth.id,
             },

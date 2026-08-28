@@ -8,6 +8,7 @@ import {
   type IMessage,
 } from '@citrineos/base';
 import {
+  type CertificateUseEnumType,
   type HandlerProperties,
   type InstallCertificateStatusEnumType,
   MessageOrigin,
@@ -51,26 +52,28 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    let requestId: number | undefined;
-    if (message.protocol === OCPPVersion.OCPP2_1) {
-      const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-          correlationId: message.context.correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
-      if (originalRequest) {
-        const certSignedPayload = originalRequest.payload as OCPP2_1.CertificateSignedRequest;
-        requestId = certSignedPayload?.requestId ?? undefined;
-      }
-    }
+    const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName,
+        correlationId: message.context.correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+    const certSignedPayload = originalRequest?.payload as
+      | OCPP2_1.CertificateSignedRequest
+      | undefined;
+
+    const requestId =
+      message.protocol === OCPPVersion.OCPP2_1
+        ? (certSignedPayload?.requestId ?? undefined)
+        : undefined;
 
     await this._installCertificateHelperService.finalizeInstalledCertificate(
       tenantId,
       ocppConnectionName,
       message.payload.status as unknown as InstallCertificateStatusEnumType,
       requestId,
+      certSignedPayload?.certificateType as unknown as CertificateUseEnumType | undefined,
     );
     // TODO: If rejected, retry and/or send to callbackUrl if originally part of a triggered refresh
     // TODO: If accepted, revoke old certificate

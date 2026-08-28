@@ -52,7 +52,7 @@
     "@types/node": "^25.3.3",
     "madge": "^8.0.0",
     "openapi-types": "^12.1.3",
-    "@types/pg": "8.20.4",
+    "@types/pg": "8.23.1",
     "tsc-alias": "^1.8.16",
     "testcontainers": "11.14.0",
     "typescript": "^6.0.0"
