@@ -7,7 +7,7 @@ import type { Cdr } from '../model/Cdr.js';
 import type { Session } from '../model/Session.js';
 import { SessionMapper } from './SessionMapper.js';
 import type { CdrLocation } from '../model/CdrLocation.js';
-import type { Price } from '../model/Price.js';
+import type { Price } from '@citrineos/base';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { SignedData } from '../model/SignedData.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';

@@ -50,7 +50,10 @@ export class GetCompositeScheduleResponseOcpp16Handler extends AbstractHandler {
       const compositeSchedule = {
         evseId: response.connectorId ?? 0,
         duration: response.chargingSchedule.duration ?? 0,
-        scheduleStart: response.chargingSchedule.startSchedule ?? new Date().toISOString(),
+        scheduleStart:
+          response.scheduleStart ??
+          response.chargingSchedule.startSchedule ??
+          new Date().toISOString(),
         chargingRateUnit: response.chargingSchedule
           .chargingRateUnit as unknown as ChargingRateUnitEnumType,
         chargingSchedulePeriod: response.chargingSchedule.chargingSchedulePeriod.map((p) => ({
