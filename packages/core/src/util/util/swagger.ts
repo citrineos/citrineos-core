@@ -131,12 +131,10 @@ export const getAuthorizationTokenFromRequest = (request: FastifyRequest): strin
 
 const registerFastifyAuth = async (server: FastifyInstance) => {
   await server.register(FastifyAuth as any).after();
-  console.log((server as any).authorization);
 
   server.decorate('authorization', function (request: any, reply: any, done: any) {
     try {
-      const token = getAuthorizationTokenFromRequest(request);
-      console.log('Received authorization token', token);
+      getAuthorizationTokenFromRequest(request);
       done();
     } catch (e) {
       reply.code(HttpStatus.UNAUTHORIZED);

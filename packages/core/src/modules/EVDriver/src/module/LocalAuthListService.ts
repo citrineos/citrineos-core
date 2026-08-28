@@ -6,6 +6,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type {
+  IChangeConfigurationRepository,
   IDeviceModelRepository,
   ILocalAuthListRepository,
 } from '@dal/interfaces/repositories.js';
@@ -20,19 +21,23 @@ import {
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _changeConfigurationRepository: IChangeConfigurationRepository;
   protected _logger: Logger<ILogObj>;
 
   constructor({
     localAuthListRepository,
     deviceModelRepository,
+    changeConfigurationRepository,
     logger,
   }: {
     localAuthListRepository: ILocalAuthListRepository;
     deviceModelRepository: IDeviceModelRepository;
+    changeConfigurationRepository: IChangeConfigurationRepository;
     logger: Logger<ILogObj>;
   }) {
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
+    this._changeConfigurationRepository = changeConfigurationRepository;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -219,11 +224,6 @@ export class LocalAuthListService {
     }
   }
 
-  /**
-   * OCPP 1.6 variant: validate and persist a SendLocalListRequest, returning the persisted row.
-   * Mirrors the 2.0.1 path but uses flat idTag and 1.6 update enum. Item-count limits for 1.6
-   * come from the chargepoint via `LocalAuthListMaxLength` configuration; absence is non-fatal.
-   */
   async persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest16(
     tenantId: number,
     stationId: string,
@@ -255,6 +255,44 @@ export class LocalAuthListService {
       }
     }
 
+    const sendLocalListMaxLength = await this.getOcpp16ConfigurationNumber(
+      tenantId,
+      stationId,
+      'SendLocalListMaxLength',
+    );
+    if (sendLocalListMaxLength === null) {
+      this._logger.warn(
+        `Station ${stationId} has not reported SendLocalListMaxLength; forwarding SendLocalList ` +
+          `without enforcing the per-message length.`,
+      );
+    } else if (list.length > sendLocalListMaxLength) {
+      throw new Error(
+        `Number of authorizations (${list.length}) in SendLocalListRequest exceeds ` +
+          `SendLocalListMaxLength (${sendLocalListMaxLength}) reported by ${stationId} ` +
+          `(break the list up into a Full request followed by Differential ones)`,
+      );
+    }
+
+    const localAuthListMaxLength = await this.getOcpp16ConfigurationNumber(
+      tenantId,
+      stationId,
+      'LocalAuthListMaxLength',
+    );
+    if (localAuthListMaxLength === null) {
+      this._logger.warn(
+        `Station ${stationId} has not reported LocalAuthListMaxLength; forwarding SendLocalList ` +
+          `without enforcing the maximum list length.`,
+      );
+    } else {
+      const updatedLength = this.countUpdatedAuthList16(sendLocalListRequest, localListVersion);
+      if (updatedLength > localAuthListMaxLength) {
+        throw new Error(
+          `Updated local auth list length (${updatedLength}) will exceed ` +
+            `LocalAuthListMaxLength (${localAuthListMaxLength}) reported by ${stationId}`,
+        );
+      }
+    }
+
     return await this._localAuthListRepository.createSendLocalListFromRequestData16(
       tenantId,
       stationId,
@@ -263,6 +301,46 @@ export class LocalAuthListService {
       sendLocalListRequest.listVersion,
       sendLocalListRequest.localAuthorizationList ?? undefined,
     );
+  }
+
+  private countUpdatedAuthList16(
+    sendLocalListRequest: OCPP1_6.SendLocalListRequest,
+    localListVersion?: LocalListVersion,
+  ): number {
+    const list = sendLocalListRequest.localAuthorizationList ?? [];
+    if (sendLocalListRequest.updateType === OCPP1_6.SendLocalListRequestUpdateType.Full) {
+      return list.length;
+    }
+
+    const idTags = new Set(
+      (localListVersion?.localAuthorizationList ?? []).map((auth) => auth.idToken),
+    );
+    for (const entry of list) {
+      if (!entry.idTag) {
+        continue;
+      }
+      if (entry.idTagInfo) {
+        idTags.add(entry.idTag);
+      } else {
+        idTags.delete(entry.idTag);
+      }
+    }
+    return idTags.size;
+  }
+
+  private async getOcpp16ConfigurationNumber(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<number | null> {
+    const configuration = await this._changeConfigurationRepository.readOnlyOneByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName, key },
+    });
+    if (configuration?.value == null) {
+      return null;
+    }
+    const value = Number(configuration.value);
+    return Number.isFinite(value) ? value : null;
   }
 
   private async getMaxLocalAuthListEntries(

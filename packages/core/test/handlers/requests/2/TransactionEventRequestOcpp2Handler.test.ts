@@ -54,6 +54,7 @@ function makeHandler(
     cache?: Partial<ICache>;
     transactionService?: Record<string, unknown>;
     config?: SystemConfig;
+    deviceModelVariables?: Record<string, { value: string | null }[]>;
   } = {},
 ) {
   const { logger } = createTestContainer();
@@ -88,7 +89,15 @@ function makeHandler(
   };
 
   const chargingProfileRepository = { readAllByQuery: vi.fn().mockResolvedValue([]) };
-  const deviceModelRepository = { readAllByQuerystring: vi.fn().mockResolvedValue([]) };
+  const deviceModelVariables = overrides.deviceModelVariables ?? {};
+  const deviceModelRepository = {
+    readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
+      const key = [query.component_name, query.variable_name, query.variable_instance]
+        .filter(Boolean)
+        .join('.');
+      return deviceModelVariables[key] ?? [];
+    }),
+  };
   const signedMeterValuesUtil = { validateMeterValues: vi.fn().mockResolvedValue(true) };
   const costCalculator = { calculateTotalCost: vi.fn().mockResolvedValue(0) };
   const costNotifier = { notifyWhileActive: vi.fn() };
@@ -108,10 +117,63 @@ function makeHandler(
     transactionService: transactionService as any,
   });
 
-  return { handler, ocppSender, transactionEventRepository, cache, transactionService };
+  return {
+    handler,
+    ocppSender,
+    transactionEventRepository,
+    cache,
+    transactionService,
+    deviceModelRepository,
+  };
 }
 
 describe('TransactionEventRequestOcpp2Handler', () => {
+  // C20.FR.03: when a transaction ends before any cost is incurred and central cost calculation is
+  // used, the CSMS answers with totalCost = 0. Central calculation is what applies when the station
+  // is not doing it itself, i.e. TariffCostCtrlr.Enabled[Tariff] is false or absent - and a device
+  // model boolean arrives as the string "false", which is truthy.
+  describe('C20 - cancelled before any cost was incurred', () => {
+    function anEndedTransactionEvent(): OCPP2_1.TransactionEventRequest {
+      return {
+        eventType: OCPP2_1.TransactionEventEnumType.Ended,
+        triggerReason: OCPP2_1.TriggerReasonEnumType.StopAuthorized,
+        timestamp: new Date().toISOString(),
+        seqNo: 2,
+        transactionInfo: { transactionId: 'txn-001' },
+      } as OCPP2_1.TransactionEventRequest;
+    }
+
+    async function handleWithTariffEnabled(value: string | null | undefined) {
+      const { handler, ocppSender } = makeHandler({
+        deviceModelVariables:
+          value === undefined ? {} : { 'TariffCostCtrlr.Enabled.Tariff': [{ value }] },
+      });
+
+      await handler.handle(makeMessage(anEndedTransactionEvent(), OCPPVersion.OCPP2_1));
+
+      return ocppSender.sendCallResultWithMessage.mock
+        .calls[0][1] as OCPP2_1.TransactionEventResponse;
+    }
+
+    it('answers totalCost 0 when the station reports local cost calculation off', async () => {
+      const response = await handleWithTariffEnabled('false');
+
+      expect(response.totalCost).toBe(0);
+    });
+
+    it('answers totalCost 0 when the station has never reported the variable', async () => {
+      const response = await handleWithTariffEnabled(undefined);
+
+      expect(response.totalCost).toBe(0);
+    });
+
+    it('leaves totalCost alone when the station calculates cost itself', async () => {
+      const response = await handleWithTariffEnabled('true');
+
+      expect(response.totalCost).toBeUndefined();
+    });
+  });
+
   describe('deactivateOtherActiveTransactionsAtEvse201', () => {
     it('calls deactivateOtherActiveTransactionsAtEvse when eventType=Started and evse is defined', async () => {
       const { handler, transactionService } = makeHandler();

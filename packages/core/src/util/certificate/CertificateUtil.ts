@@ -7,7 +7,7 @@ import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@dal/layers/sequelize/index.js';
-import { Certificate } from '@dal/layers/sequelize/index.js';
+import type { CertificateCreate } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
@@ -20,6 +20,18 @@ import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
 
 export const dateTimeFormat = 'YYMMDDHHmmssZ';
+
+export type CertificateGenerationInput = Pick<
+  CertificateCreate,
+  | 'signatureAlgorithm'
+  | 'keyLength'
+  | 'validBefore'
+  | 'commonName'
+  | 'organizationName'
+  | 'countryName'
+  | 'isCA'
+  | 'pathLen'
+>;
 
 // RFC 5280 §4.1.2.5: dates through 2049 use UTCTime (2-digit year);
 // 2050 and later must use GeneralizedTime (4-digit year) to avoid
@@ -120,7 +132,7 @@ export function extractEncodedContentFromCSR(csrPem: string): string {
  * @return generated certificate pem and its private key pem
  */
 export function generateCertificate(
-  certificateEntity: Certificate,
+  certificateEntity: CertificateGenerationInput,
   logger: Logger<ILogObj>,
   issuerKeyPem?: string,
   issuerCertPem?: string,
@@ -271,6 +283,28 @@ export function createSignedCertificateFromCSR(
     cakey: issuerPrivateKeyPem,
   });
 }
+interface OcspCertIdValueParams {
+  alg: string;
+  issname: string;
+  isskey: string;
+  sbjsn: string;
+}
+
+export function createOcspRequest(reqData: {
+  hashAlgorithm: string;
+  issuerNameHash: string;
+  issuerKeyHash: string;
+  serialNumber: string;
+}): Request {
+  const params: OcspCertIdValueParams = {
+    alg: reqData.hashAlgorithm.toLowerCase(),
+    issname: reqData.issuerNameHash,
+    isskey: reqData.issuerKeyHash,
+    sbjsn: reqData.serialNumber,
+  };
+
+  return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
+}
 
 export async function sendOCSPRequest(
   ocspRequest: OCSPRequest | Request,
@@ -303,7 +337,7 @@ export function parseCSRForVerification(csrPem: string): CertificationRequest {
   return new CertificationRequest({ schema: asn1.result });
 }
 
-export function generateCSR(certificate: Certificate): [string, string] {
+export function generateCSR(certificate: CertificateGenerationInput): [string, string] {
   let keyPair;
   if (certificate.signatureAlgorithm === SignatureAlgorithmEnumType.RSA) {
     keyPair = KEYUTIL.generateKeypair('RSA', certificate.keyLength ? certificate.keyLength : 2048);

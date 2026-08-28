@@ -42,15 +42,22 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
     }
 
     const setNetworkProfile = await SetNetworkProfile.findOne({
-      where: { tenantId: message.context.tenantId, correlationId: message.context.correlationId },
+      where: {
+        tenantId: message.context.tenantId,
+        correlationId: message.context.correlationId,
+        ocppConnectionName: message.context.ocppConnectionName,
+      },
     });
     if (!setNetworkProfile) {
       return;
     }
 
-    const serverNetworkProfile = await ServerNetworkProfile.findByPk(
-      setNetworkProfile.websocketServerConfigId!,
-    );
+    const serverNetworkProfile = await ServerNetworkProfile.findOne({
+      where: {
+        id: setNetworkProfile.websocketServerConfigId!,
+        tenantId: message.context.tenantId,
+      },
+    });
     if (!serverNetworkProfile) {
       return;
     }

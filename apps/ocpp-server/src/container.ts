@@ -35,6 +35,7 @@ import {
   DeviceModelService,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
+  DrizzleCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -300,6 +301,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
+      certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),

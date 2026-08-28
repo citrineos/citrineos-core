@@ -276,15 +276,21 @@ describe('CertificateAuthorityService', () => {
 
   describe('validateCertificateHashData', () => {
     it('successes', async () => {
+      const { createOcspRequest } = await vi.importActual<typeof CertificateUtil>(
+        '@util/certificate/CertificateUtil.js',
+      );
+      mockCertUtil.createOcspRequest.mockImplementation(createOcspRequest);
+
       const mockOCSPResponse = faker.lorem.word();
       mockCertUtil.sendOCSPRequest.mockReturnValue(Promise.resolve(mockOCSPResponse));
 
       const givenResponderURL = faker.internet.url();
       const givenOCSPRequest = {
         hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType.SHA256,
-        issuerNameHash: faker.lorem.word(),
-        issuerKeyHash: faker.lorem.word(),
-        serialNumber: faker.lorem.word(),
+        // Valid hex so the OCSP Request can actually be encoded (getEncodedHex).
+        issuerNameHash: 'ab'.repeat(32),
+        issuerKeyHash: 'cd'.repeat(32),
+        serialNumber: '1a2b3c4d',
         responderURL: givenResponderURL,
       } as OCPP2_0_1.OCSPRequestDataType;
       const actualResult = await certificateAuthorityService.validateCertificateHashData([
@@ -295,6 +301,11 @@ describe('CertificateAuthorityService', () => {
         expect.any(KJUR.asn1.ocsp.Request),
         givenResponderURL,
       );
+      const capturedRequest = mockCertUtil.sendOCSPRequest.mock.calls.find(
+        ([, url]) => url === givenResponderURL,
+      )![0];
+      expect(() => capturedRequest.getEncodedHex()).not.toThrow();
+      expect(capturedRequest.getEncodedHex()).toMatch(/^[0-9a-f]+$/i);
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
       expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
     });

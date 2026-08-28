@@ -26,6 +26,7 @@
 
 import { type ChildProcess, execSync, spawn } from 'child_process';
 import { mkdtempSync, writeFileSync } from 'fs';
+import { type AddressInfo, createServer } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Client } from 'pg';
@@ -42,11 +43,6 @@ const SERVER_DIST = fileURLToPath(
   new URL('../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
 );
 
-// ─── Ports used by the server under test ─────────────────────────────────────
-
-const HTTP_PORT = 8080; // Fastify API + /health endpoint
-const WS_PORT = 8081; // OCPP WebSocket (allowUnknownChargingStations: true)
-
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
 let pgContainer: StartedTestContainer;
@@ -55,7 +51,28 @@ let pgPort: number;
 let rabbitPort: number;
 let tempDir: string;
 
+// Assigned in beforeAll. The schema defaults 8080/8081 are deliberately not used - see the
+// comment where these are reserved.
+let httpPort: number; // Fastify API + /health endpoint
+let wsPort: number; // OCPP WebSocket (allowUnknownChargingStations: true)
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Asks the OS for a port nothing is listening on. There is an unavoidable gap between closing this
+ * probe and the server binding, but that is far narrower a risk than the config's fixed ports,
+ * which a developer running the docker-compose stack already owns.
+ */
+function reserveFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address() as AddressInfo;
+      probe.close(() => resolve(port));
+    });
+  });
+}
 
 function buildTestEnv(extraEnv: Record<string, string> = {}): NodeJS.ProcessEnv {
   return {
@@ -72,6 +89,8 @@ function buildTestEnv(extraEnv: Record<string, string> = {}): NodeJS.ProcessEnv 
     CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: tempDir,
     // The testcontainer RabbitMQ, whose port is only known once it has started.
     CITRINEOS_MESSAGEBROKER_AMQP_URL: `amqp://guest:guest@localhost:${rabbitPort}`,
+    // The Fastify API port, reserved in beforeAll rather than left on the default 8080.
+    CITRINEOS_PORT: String(httpPort),
     // App config
     APP_NAME: 'all',
     ...extraEnv,
@@ -89,7 +108,7 @@ async function waitForHealth(timeoutMs = 45_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(`http://localhost:${HTTP_PORT}/health/ready`);
+      const res = await fetch(`http://localhost:${httpPort}/health/ready`);
       if (res.ok) return;
     } catch {
       // server not up yet
@@ -117,7 +136,7 @@ async function killServer(proc: ChildProcess): Promise<void> {
 
 function connectOcpp(stationId: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://localhost:${WS_PORT}/${stationId}`, ['ocpp2.0.1']);
+    const ws = new WebSocket(`ws://localhost:${wsPort}/${stationId}`, ['ocpp2.0.1']);
     ws.once('open', () => resolve(ws));
     ws.once('error', reject);
   });
@@ -167,11 +186,19 @@ beforeAll(async () => {
   pgPort = pgContainer.getMappedPort(5432);
   rabbitPort = rabbitContainer.getMappedPort(5672);
 
+  // Bind both listeners to an ephemeral port instead of the schema defaults 8080/8081.
+  // A developer running the docker-compose stack already owns those, and the server spawned below
+  // then loses the race to bind - silently, because it dies before its logger produces output.
+  // waitForHealth and the OCPP socket would go on to reach *that* server, which happily answers
+  // and persists the SecurityEvent to its own database, leaving this test querying an empty
+  // testcontainer and reporting a phantom persistence failure.
+  [httpPort, wsPort] = await Promise.all([reserveFreePort(), reserveFreePort()]);
+
   // Everything else about the system config comes from the schema defaults via
   // buildTestEnv(). The websocket servers are the one part that is not an environment
   // variable: they are read from a JSON file through file storage, whose root
   // buildTestEnv() points at tempDir. Only the securityProfile 0 server is listed, so
-  // there is nothing on 8082 to collide with a port the previous scenario is still
+  // there is nothing on a second port to collide with a port the previous scenario is still
   // releasing.
   tempDir = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
   writeFileSync(
@@ -181,7 +208,7 @@ beforeAll(async () => {
         {
           id: '0',
           host: '0.0.0.0',
-          port: WS_PORT,
+          port: wsPort,
           pingInterval: 60,
           protocols: ['ocpp2.1', 'ocpp2.0.1', 'ocpp1.6'],
           securityProfile: 0,

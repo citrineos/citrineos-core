@@ -13,6 +13,7 @@ import type {
   GetTariffsQueryResult,
   GetTariffsQueryVariables,
   Tariffs_Bool_Exp,
+  Timestamptz_Comparison_Exp,
 } from '../graphql/index.js';
 import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
 import { TariffMapper } from '../mapper/index.js';
@@ -50,9 +51,9 @@ export class TariffsService {
         partyId: { _eq: ocpiHeaders.toPartyId },
       },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
     if (paginationParams?.dateFrom) dateFilters._gte = paginationParams.dateFrom.toISOString();
-    if (paginationParams?.dateTo) dateFilters._lte = paginationParams?.dateTo.toISOString();
+    if (paginationParams?.dateTo) dateFilters._lt = paginationParams.dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }

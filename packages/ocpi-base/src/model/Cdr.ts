@@ -9,7 +9,7 @@ import { CdrLocationSchema } from './CdrLocation.js';
 import { TariffSchema } from './Tariff.js';
 import { ChargingPeriodSchema } from './ChargingPeriod.js';
 import { SignedDataSchema } from './SignedData.js';
-import { PriceSchema } from './Price.js';
+import { PriceSchema } from '@citrineos/base';
 import { OcpiResponseStatusCode } from './OcpiResponse.js';
 
 export const CdrSchema = z.object({

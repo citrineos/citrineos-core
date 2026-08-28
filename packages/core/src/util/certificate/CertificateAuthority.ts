@@ -16,6 +16,7 @@ import { Certificate } from 'pkijs';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import {
+  createOcspRequest,
   createPemBlock,
   dateTimeFormat,
   extractCertificateArrayFromEncodedString,
@@ -30,7 +31,6 @@ import type {
   IV2GCertificateAuthorityClient,
 } from './client/interface.js';
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 const cryptoEngine = new pkijs.CryptoEngine({
   crypto: new Crypto(),
 });
@@ -255,12 +255,7 @@ export class CertificateAuthorityService {
     ocspRequestData: OCPP2_1.OCSPRequestDataType[],
   ): Promise<OCPP2_1.AuthorizeCertificateStatusEnumType> {
     for (const reqData of ocspRequestData) {
-      const ocspRequest = new Request({
-        alg: reqData.hashAlgorithm,
-        keyhash: reqData.issuerKeyHash,
-        namehash: reqData.issuerNameHash,
-        serial: reqData.serialNumber,
-      });
+      const ocspRequest = createOcspRequest(reqData);
       this._logger.debug(`OCSP request: ${JSON.stringify(ocspRequest)}`);
 
       try {

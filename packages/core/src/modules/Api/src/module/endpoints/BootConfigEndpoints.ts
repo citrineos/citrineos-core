@@ -6,6 +6,7 @@ import {
   type AbstractEndpointDependencies,
   BootConfigSchema,
   type ICommandEndpointMetadata,
+  NotFoundError,
 } from '@citrineos/base';
 import {
   type BootCreate,
@@ -15,11 +16,12 @@ import {
 } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/index.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/index.js';
-import type { IBootRepository } from '@dal/interfaces/repositories.js';
+import type { IBootRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
   bootRepository: IBootRepository;
+  locationRepository: ILocationRepository;
 }
 
 type BootConfigReadRoute = { Querystring: ChargingStationKeyQuerystring };
@@ -40,17 +42,33 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
   };
 
   private readonly _bootRepository: IBootRepository;
+  private readonly _locationRepository: ILocationRepository;
 
-  constructor({ logger, bootRepository }: BootConfigEndpointDependencies) {
+  constructor({ logger, bootRepository, locationRepository }: BootConfigEndpointDependencies) {
     super(logger);
     this._bootRepository = bootRepository;
+    this._locationRepository = locationRepository;
   }
 
   async handle(request: FastifyRequest<BootConfigWriteRoute>): Promise<BootDto | undefined> {
+    const { tenantId, ocppConnectionName } = request.query;
+
+    // A boot record takes its identity from a non-null FK to the charging
+    // station, so the station must already exist within this tenant.
+    const stationExists = await this._locationRepository.doesChargingStationExistByStationId(
+      tenantId,
+      ocppConnectionName,
+    );
+    if (!stationExists) {
+      throw new NotFoundError(
+        `Charging station ${ocppConnectionName} does not exist for tenant ${tenantId}`,
+      );
+    }
+
     return this._bootRepository.createOrUpdateByKey(
-      request.query.tenantId,
+      tenantId,
       request.body as BootCreate,
-      request.query.ocppConnectionName,
+      ocppConnectionName,
     );
   }
 }

@@ -17,10 +17,6 @@ import { type Model, type Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { DefaultSequelizeInstance } from '../util.js';
 
-/**
- * Dependencies every Sequelize repository takes. `logger` and `sequelizeInstance`
- * are optional — the base falls back to a default logger and the shared instance.
- */
 export interface SequelizeRepositoryDependencies {
   config: SystemConfig;
   logger?: Logger<ILogObj>;
@@ -51,7 +47,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string | number,
     namespace: string = this.namespace,
   ): Promise<T | undefined> {
-    return await this.s.models[namespace].findByPk(key).then((row) => row as T);
+    const model = this.s.models[namespace];
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key, tenantId };
+    return await model.findOne({ where }).then((row) => (row ?? undefined) as T | undefined);
   }
 
   async readAllByQuery(
@@ -96,7 +94,9 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     key: string,
     namespace: string = this.namespace,
   ): Promise<boolean> {
-    return await this.s.models[namespace].findByPk(key).then((row) => row !== null);
+    const model = this.s.models[namespace];
+    const where: WhereOptions = { [model.primaryKeyAttribute]: key, tenantId };
+    return await model.findOne({ where }).then((row) => row !== null);
   }
 
   async existByQuery(

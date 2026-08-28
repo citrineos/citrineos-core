@@ -5,7 +5,6 @@
 export {
   ErrorCode,
   MessageTypeId,
-  NO_ACTION,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,

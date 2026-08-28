@@ -85,12 +85,13 @@ const apiAuthPlugin: FastifyPluginAsync<{
 
   // Helper to check if a route is excluded from authentication
   function isExcludedRoute(url: string): boolean {
+    const path = url.split('?', 1)[0];
     // Always exclude health check
-    if (url === '/health') {
+    if (path === '/health') {
       return true;
     }
     const isExcluded = !!options.excludedRoutes?.some(
-      (route) => url === route || url.startsWith(`${route}/`),
+      (route) => path === route || path.startsWith(`${route}/`),
     );
     if (isExcluded && options.debug) {
       _logger.debug(`Skipping authentication for excluded route: ${url}`);

@@ -8,6 +8,7 @@ import {
   type ICache,
   type IMessage,
   type IOcppSender,
+  createIdentifier,
   OcppError,
 } from '@citrineos/base';
 import {
@@ -123,7 +124,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       const success = await this._cache.set(
         message.payload.requestId.toString(),
         NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_COMPLETE_CACHE_VALUE,
-        ocppConnectionName,
+        createIdentifier(tenantId, ocppConnectionName),
       );
       this._logger.info('GetBaseReport Completed', success, message.payload.requestId);
     } else {
@@ -132,7 +133,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       const success = await this._cache.set(
         message.payload.requestId.toString(),
         NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
-        ocppConnectionName,
+        createIdentifier(tenantId, ocppConnectionName),
         this._config.timeouts.maxCachingSeconds,
       );
       this._logger.info('GetBaseReport Ongoing', success, message.payload.requestId);

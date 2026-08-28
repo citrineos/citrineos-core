@@ -7,7 +7,8 @@ import { BaseSchema } from './types/base.dto.js';
 import { VariableAttributeSchema } from './variable.attribute.dto.js';
 
 export const BootSchema = BaseSchema.extend({
-  id: z.string(),
+  id: z.number().int().optional(),
+  stationId: z.number().int(),
   lastBootTime: z.iso.datetime().nullable().optional(),
   /**
    *  Also declared in SystemConfig. If absent, SystemConfig value is used.
@@ -64,7 +65,7 @@ export const BootUpdateSchema = BootSchema.partial()
     createdAt: true,
     pendingBootSetVariables: true,
   })
-  .required({ id: true, tenantId: true });
+  .required({ stationId: true, tenantId: true });
 
 export type BootUpdate = z.infer<typeof BootUpdateSchema>;
 
