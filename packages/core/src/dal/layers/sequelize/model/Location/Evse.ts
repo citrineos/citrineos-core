@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import type {
   ChargingNeedsDto,
   ChargingStationDto,
@@ -10,7 +11,6 @@ import type {
   TenantDto,
   TransactionDto,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -52,7 +52,7 @@ export class Evse extends Model implements EvseDto {
   declare evseTypeId?: number; // This is the serial int used in OCPP 2.0.1 to refer to the EVSE.
 
   @Column(DataType.STRING)
-  declare evseId: string; // This is the eMI3 compliant EVSE ID
+  declare evseId?: string | null; // This is the eMI3 compliant EVSE ID
 
   @Column(DataType.STRING)
   declare physicalReference?: string | null; // Any identifier printed directly on the EVSE
