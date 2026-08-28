@@ -6,12 +6,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import type { AuthenticationOptions, BootstrapConfig } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/types';
+import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   ServerNetworkProfile,
+  SetNetworkProfile,
   Tenant,
 } from '@dal/index.js';
 import type { IDeviceModelRepository } from '@dal/interfaces/repositories.js';
@@ -29,6 +30,7 @@ const TENANT_A = 1;
 const TENANT_B = 2;
 const STATION = 'CP001';
 const SHARED_PROFILE_ID = 'websocket-server-0';
+const SET_NETWORK_PROFILE_ID = 123;
 const CONFIGURATION_SLOT = 1;
 
 let pgContainer: StartedTestContainer;
@@ -124,6 +126,20 @@ describe('NetworkProfileFilter tenant scoping', () => {
       tenantId: TENANT_A,
     } as never);
 
+    await SetNetworkProfile.create({
+      id: SET_NETWORK_PROFILE_ID,
+      ocppConnectionName: STATION,
+      correlationId: 'any-correlation-id',
+      configurationSlot: 1,
+      ocppVersion: OCPP2_0_1.OCPPVersionEnumType.OCPP20,
+      ocppTransport: OCPP2_0_1.OCPPTransportEnumType.JSON,
+      ocppCsmsUrl: 'url',
+      messageTimeout: 30,
+      securityProfile: 0,
+      ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired1,
+      tenantId: TENANT_A,
+    });
+
     // Tenant A's station names it anyway. Nothing validates the reference on the way in.
     await ChargingStationNetworkProfile.create({
       stationId: (station as unknown as { id: number }).id,
@@ -131,6 +147,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
       tenantId: TENANT_A,
+      setNetworkProfileId: SET_NETWORK_PROFILE_ID,
     } as never);
   });
 
