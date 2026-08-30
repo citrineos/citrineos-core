@@ -263,6 +263,20 @@ export const systemConfigInputSchema = z.object({
         logoPath: z.string(),
         exposeData: z.boolean().default(true).optional(),
         exposeMessage: z.boolean().default(true).optional(),
+        // Gates the Swagger UI itself behind an OIDC Authorization Code
+        // login (browser redirect + callback + session cookie), separate
+        // from util.authProvider -- that only verifies a bearer token a
+        // caller already has, which a browser opening this page does not.
+        oidcLogin: z
+          .object({
+            issuer: z.string(),
+            authorizationEndpoint: z.string(),
+            tokenEndpoint: z.string(),
+            jwksUri: z.string(),
+            clientId: z.string(),
+            clientSecret: z.string(),
+          })
+          .optional(),
       })
       .optional(),
     networkConnection: z.object({
@@ -593,6 +607,16 @@ export const systemConfigSchema = z
           logoPath: z.string(),
           exposeData: z.boolean(),
           exposeMessage: z.boolean(),
+          oidcLogin: z
+            .object({
+              issuer: z.string(),
+              authorizationEndpoint: z.string(),
+              tokenEndpoint: z.string(),
+              jwksUri: z.string(),
+              clientId: z.string(),
+              clientSecret: z.string(),
+            })
+            .optional(),
         })
         .optional(),
       networkConnection: z.object({
