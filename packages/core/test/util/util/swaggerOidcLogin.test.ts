@@ -44,7 +44,10 @@ describe('registerSwaggerOidcLogin', () => {
   it('does nothing when oidcLogin is not configured', async () => {
     const bare = Fastify();
     registerSwaggerOidcLogin(
-      { modules: {}, util: { swagger: { path: '/docs', logoPath: '' } } } as unknown as SystemConfig,
+      {
+        modules: {},
+        util: { swagger: { path: '/docs', logoPath: '' } },
+      } as unknown as SystemConfig,
       bare,
     );
     bare.get('/docs', async () => ({ ok: true }));
