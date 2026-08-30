@@ -14,6 +14,7 @@ import { LocalStorage } from '../files/localStorage.js';
 import type { OpenAPIV3_1 } from 'openapi-types';
 import { OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import * as packageJson from '../../../package.json' with { type: 'json' };
+import { registerSwaggerOidcLogin } from './swaggerOidcLogin.js';
 
 /**
  * This transformation is used to set default tags
@@ -180,6 +181,10 @@ const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInsta
 
 export async function initSwagger(systemConfig: SystemConfig, server: FastifyInstance) {
   registerFastifySwagger(systemConfig, server);
+  // Must run before registerSwaggerUi: it installs the onRequest hook that
+  // gates systemConfig.util.swagger.path (and registers the OAuth2 callback
+  // route under it) before @fastify/swagger-ui's own routes exist.
+  registerSwaggerOidcLogin(systemConfig, server);
   await registerSwaggerUi(systemConfig, server);
   await registerFastifyAuth(server);
 }
