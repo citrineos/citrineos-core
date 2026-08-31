@@ -18,7 +18,10 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
+import type {
+  IDeviceModelRepository,
+  IChargingStationRepository,
+} from '@dal/interfaces/repositories.js';
 import type { InitiateWebPaymentRequest } from '@modules/EVDriver/src/module/interface.js';
 import { InitiateWebPaymentRequestSchema } from '@modules/EVDriver/src/module/interface.js';
 import { resolveStationProtocol, TotpUtil } from '@util/index.js';
@@ -30,7 +33,7 @@ interface Dependencies extends AbstractEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
   deviceModelRepository: IDeviceModelRepository;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type InitiateWebPaymentRoute = { Body: InitiateWebPaymentRequest };
@@ -45,7 +48,7 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
   private readonly _deviceModelRepository: IDeviceModelRepository;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,

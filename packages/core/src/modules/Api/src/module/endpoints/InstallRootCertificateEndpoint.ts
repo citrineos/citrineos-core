@@ -16,7 +16,7 @@ import {
   OCPP_2_VER_LIST,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { IChargingStationRepository } from '@dal/interfaces/repositories.js';
 import type { InstallRootCertificateRequest } from '@dal/interfaces/index.js';
 import { InstallRootCertificateSchema } from '@dal/interfaces/index.js';
 import { type CertificateAuthorityService, resolveStationProtocol } from '@util/index.js';
@@ -26,7 +26,7 @@ interface InstallRootCertificateEndpointDependencies extends AbstractEndpointDep
   fileStorage: IFileStorage;
   ocppSender: IOcppSender;
   certificateAuthorityService: CertificateAuthorityService;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type InstallRootCertificateRoute = { Body: InstallRootCertificateRequest };
@@ -41,7 +41,7 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
   private readonly _fileStorage: IFileStorage;
   private readonly _ocppSender: IOcppSender;
   private readonly _certificateAuthorityService: CertificateAuthorityService;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,

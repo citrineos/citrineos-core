@@ -11,12 +11,12 @@ import {
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
-import type { ILocationRepository, ITransactionEventRepository } from '@/dal/index.js';
+import type { IConnectorRepository, ITransactionEventRepository } from '@/dal/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IConnectorRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionService: TransactionService;
 
@@ -28,7 +28,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     transactionService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    locationRepository: ILocationRepository;
+    locationRepository: IConnectorRepository;
     transactionEventRepository: ITransactionEventRepository;
     transactionService: TransactionService;
   }) {

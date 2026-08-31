@@ -10,15 +10,15 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import type { Authorization } from '@dal/layers/sequelize/index.js';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { IChargingStationRepository } from '@dal/interfaces/repositories.js';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { RealTimeAuthorizer } from '@util/authorizer/RealTimeAuthorizer.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
-function buildMockLocationRepository(chargingStation: unknown): Mocked<ILocationRepository> {
+function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
     readChargingStationByStationId: vi.fn().mockResolvedValue(chargingStation),
-  } as unknown as Mocked<ILocationRepository>;
+  } as unknown as Mocked<IChargingStationRepository>;
 }
 
 function buildAuthorization(): Authorization {

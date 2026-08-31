@@ -12,13 +12,13 @@ import {
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type {
   IChangeConfigurationRepository,
-  ILocationRepository,
+  IChargingStationRepository,
 } from '@dal/interfaces/repositories.js';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
 }
 
@@ -31,7 +31,7 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
   private readonly _changeConfigurationRepository: IChangeConfigurationRepository;
 
   constructor({

@@ -5,7 +5,8 @@ import { DEFAULT_TENANT_ID, IAuthorizer } from '@citrineos/base';
 import { AuthorizationStatusEnum, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 import {
   IAuthorizationRepository,
-  ILocationRepository,
+  IConnectorRepository,
+  IEvseRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
@@ -24,7 +25,7 @@ describe('C17 - Prepaid Card Authorization', () => {
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
   let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
@@ -44,7 +45,7 @@ describe('C17 - Prepaid Card Authorization', () => {
       readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
       readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
       readEvseByStationIdAndOcpp201EvseId: vi.fn(),
-    } as unknown as Mocked<ILocationRepository>;
+    } as unknown as Mocked<IConnectorRepository & IEvseRepository>;
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
 

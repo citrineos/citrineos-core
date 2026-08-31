@@ -10,11 +10,11 @@ import {
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { IChargingStationRepository } from '@dal/interfaces/repositories.js';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
@@ -26,7 +26,7 @@ export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({ logger, ocppSender, locationRepository }: Dependencies) {
     super(logger);

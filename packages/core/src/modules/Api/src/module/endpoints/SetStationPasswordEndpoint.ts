@@ -27,7 +27,7 @@ import {
   type OCPP2_request_types,
   type OCPP2_response_types,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { IChargingStationRepository } from '@dal/interfaces/repositories.js';
 import type { UpdateChargingStationPasswordQueryString } from '@dal/interfaces/index.js';
 import { UpdateChargingStationPasswordQuerySchema } from '@dal/interfaces/index.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
@@ -41,7 +41,7 @@ interface SetStationPasswordEndpointDependencies extends AbstractEndpointDepende
   cache: ICache;
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type SetStationPasswordEndpointRoute = {
@@ -61,7 +61,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
   private readonly _cache: ICache;
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,

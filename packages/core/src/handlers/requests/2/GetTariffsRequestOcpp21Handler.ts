@@ -15,7 +15,7 @@ import {
   Connector,
   Evse,
   type IAuthorizationRepository,
-  type ILocationRepository,
+  type IChargingStationRepository,
   Tariff,
   Transaction,
 } from '@dal/index.js';
@@ -34,7 +34,7 @@ import {
 export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -44,7 +44,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(logger);
 

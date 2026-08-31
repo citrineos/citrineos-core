@@ -9,7 +9,12 @@ import {
   type IWebsocketConnection,
 } from '@citrineos/base';
 import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
-import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
+import type {
+  IChargingStationRepository,
+  IConnectorRepository,
+  IDeviceModelRepository,
+  IEvseRepository,
+} from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import { Connector, StatusNotification } from '@dal/layers/sequelize/model/Location/index.js';
@@ -19,7 +24,9 @@ import { Logger } from 'tslog';
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository &
+    IConnectorRepository &
+    IEvseRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -32,7 +39,7 @@ export class StatusNotificationService {
   }: {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository & IConnectorRepository & IEvseRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {

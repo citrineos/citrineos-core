@@ -30,7 +30,10 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
+import type {
+  IDeviceModelRepository,
+  IChargingStationRepository,
+} from '@dal/interfaces/repositories.js';
 import { ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import type { DeviceModelService } from '@modules/Configuration/src/module/DeviceModelService.js';
@@ -44,7 +47,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -62,7 +65,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;

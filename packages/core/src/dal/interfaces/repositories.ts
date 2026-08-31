@@ -15,6 +15,7 @@ import type {
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
   EvseDto,
+  LocationDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -230,27 +231,15 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<LocalListVersion>;
 }
 
-export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
+export interface ILocationRepository {
+  readLocationById: (tenantId: number, id: number) => Promise<LocationDto | undefined>;
+}
+
+export interface IChargingStationRepository {
   readChargingStationByStationId: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStation | undefined>;
-  readConnectorByStationIdAndOcpp16ConnectorId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
-  readEvseByStationIdAndOcpp201EvseId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
-  readConnectorByStationIdAndOcpp201EvseType: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
@@ -271,11 +260,42 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
-  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  updateChargingStationTimestamp(
+    tenantId: number,
+    ocppConnectionName: string,
+    timestamp: string,
+  ): Promise<void>;
+}
+
+export interface IConnectorRepository {
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseType: OCPP2_common_types.EVSEType,
+  ) => Promise<Connector | undefined>;
   createOrUpdateConnector(
     tenantId: number,
     connector: ConnectorDto,
   ): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: Partial<Connector>,
+    query: object,
+  ): Promise<Connector[]>;
+}
+
+export interface IEvseRepository {
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
   /**
    * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
    * Used in ad-hoc/`allowUnknownChargingStations` flows where the charge point arrives
@@ -288,17 +308,14 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppConnectionName: string,
     connectorId: number,
   ): Promise<{ evseId: number; evseTypeConnectorId: number }>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: Partial<Connector>,
-    query: object,
-  ): Promise<Connector[]>;
-  updateChargingStationTimestamp(
-    tenantId: number,
-    ocppConnectionName: string,
-    timestamp: string,
-  ): Promise<void>;
 }
+
+export interface ILocationDomainRepository
+  extends CrudRepository<Location>,
+    ILocationRepository,
+    IChargingStationRepository,
+    IConnectorRepository,
+    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (

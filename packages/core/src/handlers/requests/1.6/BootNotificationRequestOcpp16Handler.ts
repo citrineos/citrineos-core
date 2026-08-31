@@ -26,7 +26,7 @@ import {
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
-  ILocationRepository,
+  IChargingStationRepository,
 } from '@dal/interfaces/repositories.js';
 import { ChangeConfiguration, ChargingStation } from '@dal/layers/sequelize/index.js';
 import type { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
@@ -40,7 +40,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -58,7 +58,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;

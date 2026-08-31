@@ -12,12 +12,12 @@ import {
 import { type BootDto, HttpMethod, type OCPP2_response_types } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/index.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/index.js';
-import type { IBootRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { IBootRepository, IChargingStationRepository } from '@dal/interfaces/repositories.js';
 import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
   bootRepository: IBootRepository;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type BootConfigReadRoute = { Querystring: ChargingStationKeyQuerystring };
@@ -38,7 +38,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
   };
 
   private readonly _bootRepository: IBootRepository;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({ logger, bootRepository, locationRepository }: BootConfigEndpointDependencies) {
     super(logger);

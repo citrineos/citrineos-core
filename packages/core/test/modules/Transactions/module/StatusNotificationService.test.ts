@@ -7,7 +7,13 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import { Component, IDeviceModelRepository, ILocationRepository } from '@citrineos/core';
+import {
+  Component,
+  IChargingStationRepository,
+  IConnectorRepository,
+  IDeviceModelRepository,
+  IEvseRepository,
+} from '@citrineos/core';
 import { StatusNotification } from '@dal/layers/sequelize/index.js';
 import { StatusNotificationService } from '@modules/Transactions/src/module/StatusNotificationService.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
@@ -65,7 +71,9 @@ describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
   let componentRepository: Mocked<CrudRepository<Component>>;
   let deviceModelRepository: Mocked<IDeviceModelRepository>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<
+    IChargingStationRepository & IConnectorRepository & IEvseRepository
+  >;
   let cache: Mocked<ICache>;
 
   beforeEach(() => {
@@ -84,7 +92,7 @@ describe('StatusNotificationService', () => {
       createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
       updateAllConnectorsByQuery: vi.fn(),
-    } as unknown as Mocked<ILocationRepository>;
+    } as unknown as Mocked<IChargingStationRepository & IConnectorRepository & IEvseRepository>;
 
     const mockConnection: IWebsocketConnection = {
       id: 'test-server',

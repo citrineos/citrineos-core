@@ -15,7 +15,7 @@ import {
 } from '@citrineos/types';
 import type {
   IAuthorizationRepository,
-  ILocationRepository,
+  IChargingStationRepository,
 } from '@dal/interfaces/repositories.js';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
@@ -53,7 +53,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let mockLocationRepository: Partial<ILocationRepository>;
+  let mockLocationRepository: Partial<IChargingStationRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockConnectorFindAll: any;
   let mockAuthorizationFindAll: any;
@@ -90,7 +90,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
-      locationRepository: mockLocationRepository as unknown as ILocationRepository,
+      locationRepository: mockLocationRepository as unknown as IChargingStationRepository,
     });
   });
 
