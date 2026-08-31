@@ -12,6 +12,8 @@ import { Logger } from 'tslog';
 vi.mock('../../src/services/LocationsService.js', () => ({ LocationsService: class {} }));
 
 import { CdrMapper } from '../../src/mapper/CdrMapper.js';
+import { ConnectorMapper, EvseMapper, LocationMapper } from '../../src/mapper/LocationMapper.js';
+import { TokensMapper } from '../../src/mapper/TokensMapper.js';
 import { SessionMapper } from '../../src/mapper/SessionMapper.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
@@ -94,12 +96,18 @@ function aTransaction(overrides: Partial<TransactionDto> = {}): TransactionDto {
 function cdrMapper(tariffLookup: TariffDto[] = [aTariff()]): CdrMapper {
   const logger = new Logger({ type: 'hidden' });
   const graphql = { request: async () => ({ Tariffs: tariffLookup }) } as never;
-  return new CdrMapper(
+  const connectorMapper = new ConnectorMapper({ logger });
+  const evseMapper = new EvseMapper({ logger, connectorMapper });
+  const locationMapper = new LocationMapper({ evseMapper });
+  const tokensMapper = new TokensMapper({ logger });
+  const deps = {
     logger,
-    {} as never,
-    graphql,
-    new SessionMapper(logger, {} as never, graphql),
-  );
+    locationsService: {},
+    ocpiGraphqlClient: graphql,
+    locationMapper,
+    tokensMapper,
+  } as never;
+  return new CdrMapper({ ...(deps as object), sessionMapper: new SessionMapper(deps) } as never);
 }
 
 describe('CdrMapper.mapTransactionsToCdrs', () => {

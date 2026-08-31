@@ -8,9 +8,7 @@ import { Logger } from 'tslog';
 import { RetryMessageError } from '@citrineos/types';
 import type { IDtoEventReceiver, IDtoModule } from '../index.js';
 import { AbstractDtoEventReceiver, DtoEventObjectType, DtoEventType } from '../index.js';
-import { Inject } from 'typedi';
 import type { OcpiConfig } from '../../config/ocpi.types.js';
-import { OcpiConfigToken } from '../../config/ocpi.types.js';
 
 /**
  * Implementation of a {@link IEventHandler} using RabbitMQ as the underlying transport.
@@ -30,11 +28,7 @@ export class RabbitMqDtoReceiver extends AbstractDtoEventReceiver implements IDt
   private _reconnecting = false;
   private _abortReconnectController?: AbortController;
 
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    logger?: Logger<ILogObj>,
-    module?: IDtoModule,
-  ) {
+  constructor(config: OcpiConfig, logger: Logger<ILogObj>, module?: IDtoModule) {
     super(config, logger, module);
   }
 

@@ -24,9 +24,11 @@ export * from '@modules/Transactions/src/index.js';
 // Handler exports
 export * from '@handlers/index.js';
 
-// Server support services (bootstrap-agnostic; the concrete server + DI container live in the app)
+// Server support services (bootstrap-agnostic; the concrete server lives in the app)
 export { HealthCheckService, type HealthCheckResult } from './src/server/HealthCheckService.js';
 export { loadSystemConfig } from './src/server/ConfigLoader.js';
+
+export { buildContainer, type Prebuilt } from './src/server/container.js';
 
 // Startup schema validation. Also reachable as `sequelize.*` via the @dal barrel;
 // re-exported here so apps can name the types without the namespace.

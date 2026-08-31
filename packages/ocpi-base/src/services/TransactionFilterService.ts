@@ -5,7 +5,6 @@
 // import { ITransactionDatasource } from '../datasources/ITransactionDatasource';
 // import { PaginatedResult } from '../model/PaginatedResult';
 // import { OcpiGraphqlClient } from '../graphql/OcpiGraphqlClient';
-// import { Service, Token } from 'typedi';
 // import { Transaction } from '@citrineos/core';
 // import { GET_TRANSACTIONS_QUERY } from '../graphql/queries/transaction.queries';
 // import { GetTransactionsQuery } from '../graphql/types/graphql';
@@ -14,7 +13,6 @@
 //   'TRANSACTION_DATASOURCE_SERVICE_TOKEN',
 // );
 
-// @Service(TRANSACTION_DATASOURCE_SERVICE_TOKEN)
 // export class TransactionFilterService implements ITransactionDatasource {
 //   constructor(private readonly ocpiGraphqlClient: OcpiGraphqlClient) {}
 

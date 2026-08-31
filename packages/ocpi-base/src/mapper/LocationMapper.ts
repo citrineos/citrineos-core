@@ -34,8 +34,8 @@ import {
 } from '@citrineos/types';
 import { ParkingRestriction } from '../model/ParkingRestriction.js';
 import { Capability } from '../model/Capability.js';
-import { Container } from 'typedi';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
+import type { OcpiDependencies } from '../dependencies.js';
 import { ParkingType } from '../model/ParkingType.js';
 import { Facilities } from '../model/Facilities.js';
 import type { Hours } from '../model/Hours.js';
@@ -48,8 +48,18 @@ export function formatCoordinate(value: number | string): string {
   return `${integerPart}.${decimalPart.slice(0, 6)}`;
 }
 
+export interface LocationMapperDependencies {
+  evseMapper: EvseMapper;
+}
+
 export class LocationMapper {
-  static fromGraphql(location: LocationDto): LocationDTO {
+  private readonly evseMapper: EvseMapper;
+
+  constructor({ evseMapper }: LocationMapperDependencies) {
+    this.evseMapper = evseMapper;
+  }
+
+  fromGraphql(location: LocationDto): LocationDTO {
     return {
       id: location.id!.toString(),
       country_code: location.tenant!.countryCode!,
@@ -67,21 +77,21 @@ export class LocationMapper {
       },
       time_zone: location.timeZone,
       evses: location.chargingPool
-        ?.map((station) => station.evses?.map((evse) => EvseMapper.fromGraphql(station, evse)))
+        ?.map((station) => station.evses?.map((evse) => this.evseMapper.fromGraphql(station, evse)))
         ?.flat()
         ?.filter((evse) => evse !== undefined),
-      parking_type: LocationMapper.mapLocationParkingType(location.parkingType),
+      parking_type: this.mapLocationParkingType(location.parkingType),
       facilities: location.facilities
-        ?.map(LocationMapper.mapLocationFacility)
+        ?.map((facility) => this.mapLocationFacility(facility))
         .filter((f) => f !== null),
       opening_times: location.openingHours
-        ? LocationMapper.mapLocationHours(location.openingHours)
+        ? this.mapLocationHours(location.openingHours)
         : undefined,
       last_updated: location.updatedAt!,
     };
   }
 
-  static fromPartialGraphql(location: Partial<LocationDto>): Partial<LocationDTO> {
+  fromPartialGraphql(location: Partial<LocationDto>): Partial<LocationDTO> {
     return {
       publish: location.publishUpstream,
       name: location.name,
@@ -98,21 +108,23 @@ export class LocationMapper {
       evses:
         location.chargingPool &&
         location.chargingPool
-          .map((station) => station.evses!.map((evse) => EvseMapper.fromGraphql(station, evse)))
+          .map((station) =>
+            station.evses!.map((evse) => this.evseMapper.fromGraphql(station, evse)),
+          )
           .flat()
           .filter((evse) => evse !== undefined),
-      parking_type: LocationMapper.mapLocationParkingType(location.parkingType),
+      parking_type: this.mapLocationParkingType(location.parkingType),
       facilities: location.facilities
-        ?.map(LocationMapper.mapLocationFacility)
+        ?.map((facility) => this.mapLocationFacility(facility))
         .filter((f) => f !== null),
       opening_times: location.openingHours
-        ? LocationMapper.mapLocationHours(location.openingHours)
+        ? this.mapLocationHours(location.openingHours)
         : undefined,
       last_updated: location.updatedAt!,
     };
   }
 
-  static mapLocationParkingType(
+  mapLocationParkingType(
     parkingType: LocationParkingEnumType | null | undefined,
   ): ParkingType | null {
     switch (parkingType) {
@@ -133,7 +145,7 @@ export class LocationMapper {
     }
   }
 
-  static mapLocationFacility(
+  mapLocationFacility(
     locationFacility: LocationFacilityEnumType | null | undefined,
   ): Facilities | null {
     switch (locationFacility) {
@@ -182,7 +194,7 @@ export class LocationMapper {
     }
   }
 
-  static mapLocationHours(locationHours: LocationHours): Hours {
+  mapLocationHours(locationHours: LocationHours): Hours {
     return {
       regular_hours: locationHours.regularHours?.map((rh) => {
         return {
@@ -208,14 +220,25 @@ export class LocationMapper {
   }
 }
 
+export interface EvseMapperDependencies extends OcpiDependencies {
+  connectorMapper: ConnectorMapper;
+}
+
 export class EvseMapper {
-  static fromGraphql(station: ChargingStationDto, evse: EvseDto): EvseDTO | undefined {
+  private readonly logger: Logger<ILogObj>;
+  private readonly connectorMapper: ConnectorMapper;
+
+  constructor({ logger, connectorMapper }: EvseMapperDependencies) {
+    this.logger = logger;
+    this.connectorMapper = connectorMapper;
+  }
+
+  fromGraphql(station: ChargingStationDto, evse: EvseDto): EvseDTO | undefined {
     let connectors = evse.connectors
-      ?.map(ConnectorMapper.fromGraphql)
+      ?.map((connector) => this.connectorMapper.fromGraphql(connector))
       ?.filter((c) => c !== undefined);
     if (!connectors || connectors.length === 0) {
-      const logger = Container.get(Logger);
-      logger.warn('EVSE has no valid connectors', {
+      this.logger.warn('EVSE has no valid connectors', {
         stationId: station.id,
         evseId: evse.id,
       });
@@ -227,9 +250,9 @@ export class EvseMapper {
     return {
       uid: UID_FORMAT(station.ocppConnectionName, evse.id!),
       evse_id: evse.evseId,
-      status: EvseMapper.mapEvseStatusFromConnectors(evse.connectors ?? []),
+      status: this.mapEvseStatusFromConnectors(evse.connectors ?? []),
       capabilities: station.capabilities
-        ?.map((c) => EvseMapper.mapEvseCapabilities(c))
+        ?.map((c) => this.mapEvseCapabilities(c))
         .filter((c) => c !== null),
       physical_reference: evse.physicalReference,
       coordinates: station.coordinates
@@ -239,7 +262,7 @@ export class EvseMapper {
           }
         : undefined,
       parking_restrictions: station.parkingRestrictions
-        ?.map((r) => EvseMapper.mapEvseParkingRestrictions(r))
+        ?.map((r) => this.mapEvseParkingRestrictions(r))
         .filter((r) => r !== null),
       connectors: connectors || [],
       floor_level: station.floorLevel,
@@ -247,22 +270,22 @@ export class EvseMapper {
     };
   }
 
-  static fromPartialGraphql(
+  fromPartialGraphql(
     station: Partial<ChargingStationDto>,
     evse: Partial<EvseDto>,
   ): Partial<EvseDTO> {
     const connectors = evse.connectors
-      ?.map(ConnectorMapper.fromGraphql)
+      ?.map((connector) => this.connectorMapper.fromGraphql(connector))
       .filter((c) => c !== undefined);
 
     return {
       evse_id: evse.evseId,
       status:
         evse.connectors && evse.connectors.length > 0
-          ? EvseMapper.mapEvseStatusFromConnectors(evse.connectors)
+          ? this.mapEvseStatusFromConnectors(evse.connectors)
           : undefined,
       capabilities: station.capabilities
-        ?.map((c) => EvseMapper.mapEvseCapabilities(c))
+        ?.map((c) => this.mapEvseCapabilities(c))
         .filter((c) => c !== null),
       physical_reference: evse.physicalReference,
       coordinates: station.coordinates
@@ -272,7 +295,7 @@ export class EvseMapper {
           }
         : undefined,
       parking_restrictions: station.parkingRestrictions
-        ?.map((r) => EvseMapper.mapEvseParkingRestrictions(r))
+        ?.map((r) => this.mapEvseParkingRestrictions(r))
         .filter((r) => r !== null),
       connectors: connectors,
       floor_level: station.floorLevel,
@@ -280,7 +303,7 @@ export class EvseMapper {
     };
   }
 
-  static mapEvseStatusFromConnectors(connectors: ConnectorDto[]): EvseStatus {
+  mapEvseStatusFromConnectors(connectors: ConnectorDto[]): EvseStatus {
     if (!connectors || connectors.length === 0) {
       return EvseStatus.UNKNOWN;
     }
@@ -317,7 +340,7 @@ export class EvseMapper {
     return EvseStatus.UNKNOWN;
   }
 
-  static mapEvseParkingRestrictions(
+  mapEvseParkingRestrictions(
     stationRestrictions: ChargingStationParkingRestrictionEnumType,
   ): ParkingRestriction | null {
     switch (stationRestrictions) {
@@ -336,9 +359,7 @@ export class EvseMapper {
     }
   }
 
-  static mapEvseCapabilities(
-    stationCapabilities: ChargingStationCapabilityEnumType,
-  ): Capability | null {
+  mapEvseCapabilities(stationCapabilities: ChargingStationCapabilityEnumType): Capability | null {
     switch (stationCapabilities) {
       case ChargingStationCapabilityEnum.ChargingProfileCapable:
         return Capability.CHARGING_PROFILE_CAPABLE;
@@ -373,13 +394,18 @@ export class EvseMapper {
 }
 
 export class ConnectorMapper {
-  static fromGraphql(connector: ConnectorDto): ConnectorDTO | undefined {
-    const logger = Container.get(Logger);
+  private readonly logger: Logger<ILogObj>;
+
+  constructor({ logger }: OcpiDependencies) {
+    this.logger = logger;
+  }
+
+  fromGraphql(connector: ConnectorDto): ConnectorDTO | undefined {
     const partialConnector: Partial<ConnectorDTO> = {
       id: connector.id?.toString(),
-      standard: ConnectorMapper.mapConnectorType(connector.type),
-      format: ConnectorMapper.mapConnectorFormat(connector.format),
-      power_type: ConnectorMapper.mapConnectorPowerType(connector.powerType),
+      standard: this.mapConnectorType(connector.type),
+      format: this.mapConnectorFormat(connector.format),
+      power_type: this.mapConnectorPowerType(connector.powerType),
       max_voltage: connector.maximumVoltage || undefined,
       max_amperage: connector.maximumAmperage || undefined,
       max_electric_power: connector.maximumPowerWatts || undefined,
@@ -387,18 +413,17 @@ export class ConnectorMapper {
       terms_and_conditions: connector.termsAndConditionsUrl,
       last_updated: connector.updatedAt!,
     };
-    if (ConnectorMapper.validatePartialConnector(partialConnector)) {
+    if (this.validatePartialConnector(partialConnector)) {
       return partialConnector as ConnectorDTO;
     }
-    logger.warn(`Invalid connector: ${JSON.stringify(partialConnector)}`);
+    this.logger.warn(`Invalid connector: ${JSON.stringify(partialConnector)}`);
   }
 
-  static fromPartialGraphql(connector: Partial<ConnectorDto>): Partial<ConnectorDTO> {
-    const logger = Container.get(Logger);
+  fromPartialGraphql(connector: Partial<ConnectorDto>): Partial<ConnectorDTO> {
     const partialConnector: Partial<ConnectorDTO> = {
-      standard: ConnectorMapper.mapConnectorType(connector.type),
-      format: ConnectorMapper.mapConnectorFormat(connector.format),
-      power_type: ConnectorMapper.mapConnectorPowerType(connector.powerType),
+      standard: this.mapConnectorType(connector.type),
+      format: this.mapConnectorFormat(connector.format),
+      power_type: this.mapConnectorPowerType(connector.powerType),
       max_voltage: connector.maximumVoltage || undefined,
       max_amperage: connector.maximumAmperage || undefined,
       max_electric_power: connector.maximumPowerWatts || undefined,
@@ -409,10 +434,9 @@ export class ConnectorMapper {
     return partialConnector;
   }
 
-  static mapConnectorType(
+  mapConnectorType(
     connectorType: ConnectorTypeEnumType | null | undefined,
   ): ConnectorType | undefined {
-    const logger = Container.get(Logger);
     switch (connectorType) {
       case ConnectorTypeEnum.CHAdeMO:
         return ConnectorType.CHADEMO;
@@ -487,30 +511,28 @@ export class ConnectorMapper {
       case ConnectorTypeEnum.TeslaS:
         return ConnectorType.TESLA_S;
       default:
-        logger.warn(`Unknown ConnectorType ${connectorType}`);
+        this.logger.warn(`Unknown ConnectorType ${connectorType}`);
         return undefined;
     }
   }
 
-  static mapConnectorFormat(
+  mapConnectorFormat(
     connectorFormat: ConnectorFormatEnumType | null | undefined,
   ): ConnectorFormat | undefined {
-    const logger = Container.get(Logger);
     switch (connectorFormat) {
       case ConnectorFormatEnum.Cable:
         return ConnectorFormat.CABLE;
       case ConnectorFormatEnum.Socket:
         return ConnectorFormat.SOCKET;
       default:
-        logger.warn(`Unknown Format ${connectorFormat}`);
+        this.logger.warn(`Unknown Format ${connectorFormat}`);
         return undefined;
     }
   }
 
-  static mapConnectorPowerType(
+  mapConnectorPowerType(
     connectorPowerType: ConnectorPowerTypeEnumType | null | undefined,
   ): PowerType | undefined {
-    const logger = Container.get(Logger);
     switch (connectorPowerType) {
       case ConnectorPowerTypeEnum.AC1Phase:
         return PowerType.AC_1_PHASE;
@@ -523,12 +545,12 @@ export class ConnectorMapper {
       case ConnectorPowerTypeEnum.DC:
         return PowerType.DC;
       default:
-        logger.warn(`Unknown PowerType ${connectorPowerType}`);
+        this.logger.warn(`Unknown PowerType ${connectorPowerType}`);
         return undefined;
     }
   }
 
-  static validatePartialConnector(partialConnector: Partial<ConnectorDTO>) {
+  validatePartialConnector(partialConnector: Partial<ConnectorDTO>) {
     if (
       !partialConnector.id ||
       !partialConnector.standard ||
@@ -538,8 +560,7 @@ export class ConnectorMapper {
       !partialConnector.max_amperage ||
       !partialConnector.last_updated
     ) {
-      const logger = Container.get(Logger);
-      logger.warn('Connector is missing required fields, skipping', {
+      this.logger.warn('Connector is missing required fields, skipping', {
         connector: partialConnector,
       });
       return false;

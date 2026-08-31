@@ -8,7 +8,7 @@ import { BaseSchema } from './types/base.dto.js';
 export const CompositeScheduleSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   ocppConnectionName: z.string(),
-  evseId: z.number().int(),
+  evseId: z.number().int().nullish(),
   duration: z.number().int(),
   scheduleStart: z.iso.datetime(),
   chargingRateUnit: z.string(),

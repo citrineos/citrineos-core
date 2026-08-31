@@ -8,37 +8,32 @@ import type {
   IDtoRouter,
   OcpiConfig,
 } from '../../../index.js';
-import {
-  DtoEvent,
-  DtoEventObjectType,
-  DtoEventType,
-  OcpiConfigToken,
-  PgNotifyEventSubscriber,
-  RabbitMqDtoSender,
-} from '../../../index.js';
+import { DtoEvent, DtoEventObjectType, DtoEventType } from '../../../index.js';
+import type { OcpiConfiguredDependencies } from '../../../dependencies.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Inject, Service } from 'typedi';
 
-@Service()
+export interface DtoRouterDependencies extends OcpiConfiguredDependencies {
+  rabbitMqDtoSender: IDtoEventSender;
+  pgNotifyEventSubscriber: IDtoEventSubscriber;
+}
+
 export class DtoRouter implements IDtoRouter {
   protected _config: OcpiConfig;
-  protected readonly _sender: RabbitMqDtoSender;
-  protected _subscriber: PgNotifyEventSubscriber;
+  protected readonly _sender: IDtoEventSender;
+  protected _subscriber: IDtoEventSubscriber;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    sender: RabbitMqDtoSender,
-    subscriber: PgNotifyEventSubscriber,
-    logger?: Logger<ILogObj>,
-  ) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+  constructor({
+    config,
+    rabbitMqDtoSender,
+    pgNotifyEventSubscriber,
+    logger,
+  }: DtoRouterDependencies) {
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
     this._config = config;
-    this._sender = sender;
-    this._subscriber = subscriber;
+    this._sender = rabbitMqDtoSender;
+    this._subscriber = pgNotifyEventSubscriber;
   }
 
   async init(): Promise<void> {

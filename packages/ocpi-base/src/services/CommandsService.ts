@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Inject, Service } from 'typedi';
 import type { CancelReservation } from '../model/CancelReservation.js';
 import type { ReserveNow } from '../model/ReserveNow.js';
 import type { StartSession } from '../model/StartSession.js';
@@ -13,7 +12,7 @@ import type { OcpiCommandResponse } from '../model/CommandResponse.js';
 import { CommandResponseType } from '../model/CommandResponse.js';
 // import { CommandExecutor } from '../util/CommandExecutor.js';
 import { ResponseGenerator } from '../util/response.generator.js';
-import { CommandExecutor } from '../util/CommandExecutor.js';
+import type { CommandExecutor } from '../util/CommandExecutor.js';
 import type {
   GetActiveTransactionForStopSessionQueryResult,
   GetActiveTransactionForStopSessionQueryVariables,
@@ -23,27 +22,32 @@ import type {
 import {
   GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY,
   GET_CHARGING_STATION_BY_ID_QUERY,
-  OcpiGraphqlClient,
 } from '../graphql/index.js';
 import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { Logger } from 'tslog';
 import type { OcpiConfig } from '../config/ocpi.types.js';
-import { OcpiConfigToken } from '../config/ocpi.types.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { OcpiConfiguredDependencies } from '../dependencies.js';
 import type { ChargingStationDto, TenantPartnerDto } from '@citrineos/types';
 import { EXTRACT_STATION_ID } from '../model/DTO/EvseDTO.js';
 
-@Service()
+export interface CommandsServiceDependencies extends OcpiConfiguredDependencies {
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+  commandExecutor: CommandExecutor;
+}
+
 export class CommandsService {
-  @Inject()
-  protected logger!: Logger<ILogObj>;
+  protected readonly logger: Logger<ILogObj>;
+  protected readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  protected readonly commandExecutor: CommandExecutor;
+  readonly config: OcpiConfig;
 
-  @Inject()
-  protected ocpiGraphqlClient!: OcpiGraphqlClient;
-
-  @Inject()
-  protected commandExecutor!: CommandExecutor;
-
-  @Inject(OcpiConfigToken) readonly config!: OcpiConfig;
+  constructor({ config, logger, ocpiGraphqlClient, commandExecutor }: CommandsServiceDependencies) {
+    this.config = config;
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.commandExecutor = commandExecutor;
+  }
 
   public async postCommand(
     commandType: CommandType,

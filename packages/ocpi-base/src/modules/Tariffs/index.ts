@@ -1,34 +1,39 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IDtoEvent, OcpiConfig } from '../../index.js';
+import type { IDtoEvent } from '../../index.js';
 import {
   AbstractDtoModule,
   AsDtoEventHandler,
   DtoEventObjectType,
   DtoEventType,
-  OcpiConfigToken,
   OcpiModule,
-  RabbitMqDtoReceiver,
-  TariffsBroadcaster,
 } from '../../index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Inject, Service } from 'typedi';
+import type { TariffsBroadcaster } from '../../index.js';
+import type { DtoEventReceiverFactory } from '../../index.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 import { TariffsModuleApi } from './module/TariffsModuleApi.js';
 import type { TariffDto } from '@citrineos/types';
 
 export { TariffsModuleApi } from './module/TariffsModuleApi.js';
 export type { ITariffsModuleApi } from './module/ITariffsModuleApi.js';
 
-@Service()
+export interface TariffsModuleDependencies extends OcpiConfiguredDependencies {
+  dtoEventReceiverFactory: DtoEventReceiverFactory;
+  tariffsBroadcaster: TariffsBroadcaster;
+}
+
 export class TariffsModule extends AbstractDtoModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    logger: Logger<ILogObj>,
-    readonly tariffsBroadcaster: TariffsBroadcaster,
-  ) {
-    super(config, new RabbitMqDtoReceiver(config, logger), logger);
+  readonly tariffsBroadcaster: TariffsBroadcaster;
+
+  constructor({
+    config,
+    logger,
+    dtoEventReceiverFactory,
+    tariffsBroadcaster,
+  }: TariffsModuleDependencies) {
+    super(config, dtoEventReceiverFactory(), logger);
+    this.tariffsBroadcaster = tariffsBroadcaster;
   }
 
   getController(): any {
