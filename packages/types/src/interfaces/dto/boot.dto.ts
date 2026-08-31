@@ -51,6 +51,7 @@ export type BootDto = z.infer<typeof BootSchema>;
 export const BootCreateSchema = BootSchema.omit({
   id: true,
   tenant: true,
+  stationId: true,
   updatedAt: true,
   createdAt: true,
   pendingBootSetVariables: true,

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// import { Service } from 'typedi';
 // import { OcpiLogger } from '../util/OcpiLogger';
 // import { TokensClientApi } from '../trigger/TokensClientApi';
 // import { OcpiResponseStatusCode } from '../model/OcpiResponse';
@@ -30,7 +29,6 @@
 // import { Authorization } from '@citrineos/core';
 // import { TokensMapper } from '../mapper/TokensMapper';
 
-// @Service()
 // export class TokensAdminService {
 //   constructor(
 //     private readonly logger: OcpiLogger,

@@ -17,7 +17,7 @@ import { MULTIPLE_TYPES } from '../util/decorators/MultipleTypes.js';
 import { HttpHeader } from '@citrineos/base';
 import { ENUM_QUERY_PARAM } from '../util/decorators/EnumQueryParam.js';
 import type { ParamMetadataArgs } from 'routing-controllers/types/metadata/args/ParamMetadataArgs.js';
-import type { Constructable } from 'typedi';
+import type { Constructable } from '@citrineos/base';
 import { ContentType } from '../util/ContentType.js';
 import type { ZodTypeAny } from 'zod';
 import { BODY_PARAM } from '../util/decorators/BodyWithSchema.js';

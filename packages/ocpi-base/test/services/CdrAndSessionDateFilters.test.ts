@@ -34,8 +34,9 @@ describe('OCPI date_from / date_to filters', () => {
     // a record whose last_updated lands exactly on the boundary is returned by the poll that ends
     // there and again by the poll that starts there - the same CDR billed twice.
     const { client, request } = aCapturingGraphqlClient();
-    const service = new CdrsService(client, {
-      mapTransactionsToCdrs: vi.fn().mockResolvedValue([]),
+    const service = new CdrsService({
+      ocpiGraphqlClient: client,
+      cdrMapper: { mapTransactionsToCdrs: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getCdrs('GB', 'ABC', 'GB', 'VLT', DATE_FROM, DATE_TO);
@@ -46,8 +47,9 @@ describe('OCPI date_from / date_to filters', () => {
 
   it('SessionsService treats date_to as exclusive', async () => {
     const { client, request } = aCapturingGraphqlClient();
-    const service = new SessionsService(client, {
-      mapTransactionsToSessions: vi.fn().mockResolvedValue([]),
+    const service = new SessionsService({
+      ocpiGraphqlClient: client,
+      sessionMapper: { mapTransactionsToSessions: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getSessions('GB', 'ABC', 'GB', 'VLT', DATE_FROM, DATE_TO);
@@ -58,8 +60,9 @@ describe('OCPI date_from / date_to filters', () => {
 
   it('omits the filter entirely when neither bound is given', async () => {
     const { client, request } = aCapturingGraphqlClient();
-    const service = new CdrsService(client, {
-      mapTransactionsToCdrs: vi.fn().mockResolvedValue([]),
+    const service = new CdrsService({
+      ocpiGraphqlClient: client,
+      cdrMapper: { mapTransactionsToCdrs: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getCdrs('GB', 'ABC', 'GB', 'VLT');
@@ -72,8 +75,9 @@ describe('OCPI date_from / date_to filters', () => {
     // not, so X-Total-Count counted sessions that never become CDRs and every page came back
     // short of its limit.
     const { client, request } = aCapturingGraphqlClient();
-    const service = new CdrsService(client, {
-      mapTransactionsToCdrs: vi.fn().mockResolvedValue([]),
+    const service = new CdrsService({
+      ocpiGraphqlClient: client,
+      cdrMapper: { mapTransactionsToCdrs: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getCdrs('GB', 'ABC', 'GB', 'VLT');
@@ -85,8 +89,9 @@ describe('OCPI date_from / date_to filters', () => {
     // A stale transaction is deactivated with no endTime when a new one starts on the same EVSE.
     // The mapper cannot build a CDR without an end_date_time, so the count has to exclude them too.
     const { client, request } = aCapturingGraphqlClient();
-    const service = new CdrsService(client, {
-      mapTransactionsToCdrs: vi.fn().mockResolvedValue([]),
+    const service = new CdrsService({
+      ocpiGraphqlClient: client,
+      cdrMapper: { mapTransactionsToCdrs: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getCdrs('GB', 'ABC', 'GB', 'VLT');
@@ -98,8 +103,9 @@ describe('OCPI date_from / date_to filters', () => {
     // totalKwh > 0 is not a completion signal: a session still running has delivered energy, and
     // one that ended without delivering any is still ended.
     const { client, request } = aCapturingGraphqlClient();
-    const service = new SessionsService(client, {
-      mapTransactionsToSessions: vi.fn().mockResolvedValue([]),
+    const service = new SessionsService({
+      ocpiGraphqlClient: client,
+      sessionMapper: { mapTransactionsToSessions: vi.fn().mockResolvedValue([]) },
     } as never);
 
     await service.getSessions('GB', 'ABC', 'GB', 'VLT', undefined, undefined, 0, 10, true);

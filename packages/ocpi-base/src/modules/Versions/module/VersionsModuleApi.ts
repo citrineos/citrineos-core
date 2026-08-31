@@ -15,15 +15,21 @@ import {
   VersionService,
 } from '../../../index.js';
 import { HttpStatus } from '@citrineos/base';
-import { Service } from 'typedi';
 import type { IVersionsModuleApi } from './IVersionsModuleApi.js';
 import { Get, JsonController, Param } from 'routing-controllers';
+import type { OcpiDependencies } from '../../../dependencies.js';
+
+export interface VersionsModuleApiDependencies extends OcpiDependencies {
+  versionService: VersionService;
+}
 
 @JsonController(`/${ModuleId.Versions}`)
-@Service()
 export class VersionsModuleApi extends BaseController implements IVersionsModuleApi {
-  constructor(readonly versionService: VersionService) {
-    super();
+  readonly versionService: VersionService;
+
+  constructor(dependencies: VersionsModuleApiDependencies) {
+    super(dependencies);
+    this.versionService = dependencies.versionService;
   }
 
   @Get('/:tenant_id')

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseClientApi } from './BaseClientApi.js';
-import { Service } from 'typedi';
 import { UnsuccessfulRequestException } from '../exception/UnsuccessfulRequestException.js';
 import type { VersionDetailsResponseDTO } from '../model/DTO/VersionDetailsResponseDTO.js';
 import { VersionDetailsResponseDTOSchema } from '../model/DTO/VersionDetailsResponseDTO.js';
@@ -12,7 +11,6 @@ import type { VersionListResponseDTO } from '../model/DTO/VersionListResponseDTO
 import { HttpMethod, type PartnerProfile } from '@citrineos/types';
 import { VersionsInterface } from '../model/EndpointIdentifier.js';
 
-@Service()
 export class VersionsClientApi extends BaseClientApi {
   getUrl(partnerProfile: PartnerProfile, versionInterface = VersionsInterface.VERSIONS): string {
     switch (versionInterface) {

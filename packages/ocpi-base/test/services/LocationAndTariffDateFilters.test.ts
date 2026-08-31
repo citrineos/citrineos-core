@@ -48,7 +48,10 @@ describe('OCPI date_from / date_to filters on Locations and Tariffs', () => {
     // returns a record sitting exactly on the boundary to both the poll that ends there and the
     // poll that starts there. CdrsService and SessionsService already use _lt.
     const { client, request } = aCapturingGraphqlClient({ Locations: [] });
-    const service = new LocationsService(new Logger({ type: 'hidden' }), client);
+    const service = new LocationsService({
+      logger: new Logger({ type: 'hidden' }),
+      ocpiGraphqlClient: client,
+    } as never);
 
     await service.getLocations(someHeaders(), paginatedParams(DATE_FROM, DATE_TO));
 
@@ -60,7 +63,7 @@ describe('OCPI date_from / date_to filters on Locations and Tariffs', () => {
 
   it('TariffsService treats date_to as exclusive', async () => {
     const { client, request } = aCapturingGraphqlClient({ Tariffs: [] });
-    const service = new TariffsService(client);
+    const service = new TariffsService({ ocpiGraphqlClient: client } as never);
 
     await service.getTariffs(someHeaders(), paginatedParams(DATE_FROM, DATE_TO));
 
@@ -72,7 +75,7 @@ describe('OCPI date_from / date_to filters on Locations and Tariffs', () => {
 
   it('omits the filter entirely when neither bound is given', async () => {
     const { client, request } = aCapturingGraphqlClient({ Tariffs: [] });
-    const service = new TariffsService(client);
+    const service = new TariffsService({ ocpiGraphqlClient: client } as never);
 
     await service.getTariffs(someHeaders(), paginatedParams());
 
@@ -81,7 +84,10 @@ describe('OCPI date_from / date_to filters on Locations and Tariffs', () => {
 
   it('applies a lower bound on its own', async () => {
     const { client, request } = aCapturingGraphqlClient({ Locations: [] });
-    const service = new LocationsService(new Logger({ type: 'hidden' }), client);
+    const service = new LocationsService({
+      logger: new Logger({ type: 'hidden' }),
+      ocpiGraphqlClient: client,
+    } as never);
 
     await service.getLocations(someHeaders(), paginatedParams(DATE_FROM, undefined));
 

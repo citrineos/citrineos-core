@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseBroadcaster } from './BaseBroadcaster.js';
-import { Service } from 'typedi';
-import { LocationsClientApi } from '../trigger/LocationsClientApi.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { CredentialsService } from '../services/CredentialsService.js';
+import type { LocationsClientApi } from '../trigger/LocationsClientApi.js';
+import type { ILogObj, Logger } from 'tslog';
+import type { CredentialsService } from '../services/CredentialsService.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import type { EvseDTO } from '../model/DTO/EvseDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
@@ -22,21 +20,45 @@ import {
   type TenantDto,
   HttpMethod,
 } from '@citrineos/types';
-import { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/index.js';
+import type { ConnectorMapper, EvseMapper, LocationMapper } from '../mapper/index.js';
+import type { OcpiDependencies } from '../dependencies.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 
-@Service()
+export interface LocationsBroadcasterDependencies extends OcpiDependencies {
+  credentialsService: CredentialsService;
+  locationsClientApi: LocationsClientApi;
+  locationMapper: LocationMapper;
+  evseMapper: EvseMapper;
+  connectorMapper: ConnectorMapper;
+}
+
 export class LocationsBroadcaster extends BaseBroadcaster {
-  constructor(
-    readonly logger: Logger<ILogObj>,
-    readonly credentialsService: CredentialsService,
-    readonly locationsClientApi: LocationsClientApi,
-  ) {
+  readonly logger: Logger<ILogObj>;
+  readonly credentialsService: CredentialsService;
+  readonly locationsClientApi: LocationsClientApi;
+  private readonly locationMapper: LocationMapper;
+  private readonly evseMapper: EvseMapper;
+  private readonly connectorMapper: ConnectorMapper;
+
+  constructor({
+    logger,
+    credentialsService,
+    locationsClientApi,
+    locationMapper,
+    evseMapper,
+    connectorMapper,
+  }: LocationsBroadcasterDependencies) {
     super();
+    this.logger = logger;
+    this.credentialsService = credentialsService;
+    this.locationsClientApi = locationsClientApi;
+    this.locationMapper = locationMapper;
+    this.evseMapper = evseMapper;
+    this.connectorMapper = connectorMapper;
   }
 
   async broadcastPutLocation(tenant: TenantDto, locationDto: LocationDto): Promise<void> {
-    const location = LocationMapper.fromGraphql(locationDto);
+    const location = this.locationMapper.fromGraphql(locationDto);
     const path = `/${tenant.countryCode}/${tenant.partyId}/${location.id}`;
     await this.broadcastLocation(tenant, location, HttpMethod.Put, path);
   }
@@ -47,7 +69,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
   ): Promise<void> {
     const locationId = locationDto.id;
     if (!locationId) throw new Error('Location ID missing');
-    const location = LocationMapper.fromPartialGraphql(locationDto);
+    const location = this.locationMapper.fromPartialGraphql(locationDto);
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}`;
     await this.broadcastLocation(tenant, location, HttpMethod.Patch, path);
   }
@@ -81,7 +103,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
   ): Promise<void> {
     const locationId = chargingStationDto?.locationId;
     if (!locationId) throw new Error('Location ID missing in EVSE data');
-    const evse = EvseMapper.fromGraphql(chargingStationDto!, evseDto);
+    const evse = this.evseMapper.fromGraphql(chargingStationDto!, evseDto);
     if (!evse) throw new Error('Failed to map EVSE data');
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(evseDto.ocppConnectionName, evseDto.id!)}`;
     await this.broadcastEvse(tenant, evse, HttpMethod.Put, path);
@@ -94,7 +116,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
   ): Promise<void> {
     const locationId = chargingStationDto?.locationId;
     if (!locationId) throw new Error('Location ID missing in EVSE data');
-    const evse = EvseMapper.fromPartialGraphql(chargingStationDto!, evseDto);
+    const evse = this.evseMapper.fromPartialGraphql(chargingStationDto!, evseDto);
     if (!evse) throw new Error('Failed to map EVSE data');
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(evseDto.ocppConnectionName!, evseDto.id!)}`;
     await this.broadcastEvse(tenant, evse, HttpMethod.Patch, path);
@@ -125,7 +147,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
   async broadcastPutConnector(tenant: TenantDto, connectorDto: ConnectorDto): Promise<void> {
     const locationId = connectorDto.chargingStation?.locationId;
     if (!locationId) throw new Error('Location ID missing in Connector data');
-    const connector = ConnectorMapper.fromGraphql(connectorDto);
+    const connector = this.connectorMapper.fromGraphql(connectorDto);
     if (!connector) throw new Error('Failed to map Connector data');
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName, connectorDto.evseId)}/${connectorDto.id}`;
     await this.broadcastConnector(tenant, connector, HttpMethod.Put, path);
@@ -137,7 +159,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
   ): Promise<void> {
     const locationId = connectorDto.chargingStation?.locationId;
     if (!locationId) throw new Error('Location ID missing in Connector data');
-    const connector = ConnectorMapper.fromPartialGraphql(connectorDto);
+    const connector = this.connectorMapper.fromPartialGraphql(connectorDto);
     if (!connector) throw new Error('Failed to map Connector data');
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName!, connectorDto.evseId!)}/${connectorDto.id}`;
     await this.broadcastConnector(tenant, connector, HttpMethod.Patch, path);

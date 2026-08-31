@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { Logger } from 'tslog';
 import type {
   IDtoEvent,
   IDtoEventReceiver,
@@ -29,15 +29,13 @@ export abstract class AbstractDtoEventReceiver implements IDtoEventReceiver {
    * Constructor
    *
    * @param config The system configuration.
-   * @param logger [Optional] The logger to use.
+   * @param logger The logger to use.
    * @param module [Optional] The module instance.
    */
-  constructor(config: OcpiConfig, logger?: Logger<ILogObj>, module?: IDtoModule) {
+  constructor(config: OcpiConfig, logger: Logger<ILogObj>, module?: IDtoModule) {
     this._config = config;
     this._module = module;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
   }
 
   /**
@@ -85,13 +83,11 @@ export abstract class AbstractDtoEventSender implements IDtoEventSender {
    * Constructor
    *
    * @param config The system configuration.
-   * @param logger [Optional] The logger to use.
+   * @param logger The logger to use.
    */
-  constructor(config: OcpiConfig, logger?: Logger<ILogObj>) {
+  constructor(config: OcpiConfig, logger: Logger<ILogObj>) {
     this._config = config;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
   }
 
   /**

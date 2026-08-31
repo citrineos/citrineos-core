@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import type { TariffDTO } from '../model/DTO/tariffs/TariffDTO.js';
 import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../model/PaginatedResponse.js';
 import { OcpiHeaders } from '../model/OcpiHeaders.js';
@@ -15,13 +14,18 @@ import type {
   Tariffs_Bool_Exp,
   Timestamptz_Comparison_Exp,
 } from '../graphql/index.js';
-import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
+import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { OcpiGraphqlDependencies } from '../dependencies.js';
 import { TariffMapper } from '../mapper/index.js';
 import type { TariffDto } from '@citrineos/types';
 
-@Service()
 export class TariffsService {
-  constructor(private readonly ocpiGraphqlClient: OcpiGraphqlClient) {}
+  private readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+
+  constructor({ ocpiGraphqlClient }: OcpiGraphqlDependencies) {
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+  }
 
   async getTariffByKey(key: {
     id: number;
