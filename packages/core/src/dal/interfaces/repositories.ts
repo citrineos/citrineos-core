@@ -9,9 +9,13 @@ import type {
   CallAction,
   CertificateCreate,
   CertificateDto,
+  CertificateUseEnumType,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
+  InstallCertificateAttemptCreate,
+  InstallCertificateAttemptDto,
+  InstallCertificateStatusEnumType,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -36,10 +40,7 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type {
-  InstallCertificateAttempt,
-  InstalledCertificate,
-} from '../layers/sequelize/model/Certificate/index.js';
+import type { InstalledCertificate } from '../layers/sequelize/model/Certificate/index.js';
 import type { ChangeConfiguration } from '../layers/sequelize/model/ChangeConfiguration.js';
 import type {
   ChargingNeeds,
@@ -469,8 +470,31 @@ export interface ICertificateRepository {
 }
 
 export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
-export interface IInstallCertificateAttemptRepository
-  extends CrudRepository<InstallCertificateAttempt> {}
+export interface IInstallCertificateAttemptRepository {
+  findPendingByStationTypeAndCertHash(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+    certificateFileHash: string,
+    requestId?: number | null,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+    requestId?: number | null,
+    certificateType?: CertificateUseEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: InstallCertificateAttemptCreate,
+  ): Promise<InstallCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: InstallCertificateStatusEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  getLinkedCertificate(tenantId: number, attemptId: number): Promise<CertificateDto | undefined>;
+}
 type DeleteCertificateHashData = Pick<
   DeleteCertificateAttemptDto,
   'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'

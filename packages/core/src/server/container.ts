@@ -28,6 +28,7 @@ import {
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleDeleteCertificateAttemptRepository,
+  DrizzleInstallCertificateAttemptRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -315,6 +316,9 @@ function registerRepositories(container: AwilixContainer): void {
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
+      ).singleton(),
+      installCertificateAttemptRepository: asClass(
+        DrizzleInstallCertificateAttemptRepository,
       ).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),

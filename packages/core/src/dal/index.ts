@@ -94,6 +94,7 @@ export {
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleDeleteCertificateAttemptRepository,
+  DrizzleInstallCertificateAttemptRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
