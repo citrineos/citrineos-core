@@ -5,7 +5,7 @@
 import { Role } from '../model/Role.js';
 import { plainToInstance } from 'class-transformer';
 import type { CredentialsRoleDTO } from '../model/DTO/CredentialsRoleDTO.js';
-import type { Constructable } from 'typedi';
+import type { Constructable } from '@citrineos/base';
 
 export const invalidClientCredentialsRoles = (roles: CredentialsRoleDTO[]) =>
   roles.some((role) => role.role !== Role.EMSP);

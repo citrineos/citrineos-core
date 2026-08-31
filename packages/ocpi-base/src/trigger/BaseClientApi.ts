@@ -11,22 +11,21 @@ import { type TenantPartnerDto, type PartnerProfile, HttpMethod } from '@citrine
 import { HttpHeader } from '@citrineos/base';
 import { OcpiHttpHeader } from '../util/OcpiHttpHeader.js';
 import { base64Encode } from '../util/Util.js';
-import { Inject } from 'typedi';
 import { v4 as uuidv4 } from 'uuid';
 import { ModuleId } from '../model/ModuleId.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
+import type { OcpiClientApiDependencies } from '../dependencies.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
 import type {
   GetTenantPartnerByCpoClientAndModuleIdQueryResult,
   GetTenantPartnerByCpoClientAndModuleIdQueryVariables,
   TenantPartnersListQueryResult,
   TenantPartnersListQueryVariables,
+  IOcpiGraphqlClient,
 } from '../graphql/index.js';
 import {
   GET_TENANT_PARTNER_BY_CPO_AND_AND_CLIENT,
   LIST_TENANT_PARTNERS_BY_CPO,
-  OcpiGraphqlClient,
 } from '../graphql/index.js';
 import type { PaginatedParams } from './param/PaginatedParams.js';
 import type { z, ZodTypeAny } from 'zod';
@@ -71,15 +70,15 @@ export interface TriggerRequestOptions extends IRequestOptions {
 }
 
 export abstract class BaseClientApi {
-  @Inject()
-  protected logger!: Logger<ILogObj>;
-  @Inject()
-  protected ocpiGraphqlClient!: OcpiGraphqlClient;
+  protected readonly logger: Logger<ILogObj>;
+  protected readonly ocpiGraphqlClient: IOcpiGraphqlClient;
 
   CONTROLLER_PATH = 'null';
   private restClient!: RestClient;
 
-  constructor() {
+  constructor({ logger, ocpiGraphqlClient }: OcpiClientApiDependencies) {
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
     this.initRestClient();
   }
 

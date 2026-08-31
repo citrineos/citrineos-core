@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseClientApi, MissingRequiredParamException } from './BaseClientApi.js';
-import { Inject, Service } from 'typedi';
 import type { OcpiEmptyResponse } from '../model/OcpiEmptyResponse.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 import { ModuleId } from '../model/ModuleId.js';
@@ -14,15 +13,19 @@ import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from '../util/Consts.js';
-import { CacheWrapper } from '../util/CacheWrapper.js';
+import type { CacheWrapper } from '../util/CacheWrapper.js';
+import type { OcpiClientApiDependencies } from '../dependencies.js';
 
-@Service()
+export interface CommandsClientApiDependencies extends OcpiClientApiDependencies {
+  cacheWrapper: CacheWrapper;
+}
+
 export class CommandsClientApi extends BaseClientApi {
-  protected cache!: ICache;
+  protected cache: ICache;
 
-  constructor(@Inject() cacheWrapper: CacheWrapper) {
-    super();
-    this.cache = cacheWrapper.cache;
+  constructor(dependencies: CommandsClientApiDependencies) {
+    super(dependencies);
+    this.cache = dependencies.cacheWrapper.cache;
   }
 
   CONTROLLER_PATH = ModuleId.Commands;

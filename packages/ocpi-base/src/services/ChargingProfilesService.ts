@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 // import { CommandExecutor } from '../util/CommandExecutor';
 import type { ChargingProfileResponse } from '../model/ChargingProfileResponse.js';
 import { ChargingProfileResultType } from '../model/ChargingProfileResponse.js';
@@ -11,7 +10,6 @@ import type { SetChargingProfile } from '../model/SetChargingProfile.js';
 import { NotFoundError } from 'routing-controllers';
 import { ResponseGenerator } from '../util/response.generator.js';
 
-@Service()
 export class ChargingProfilesService {
   readonly TIMEOUT = 30;
 

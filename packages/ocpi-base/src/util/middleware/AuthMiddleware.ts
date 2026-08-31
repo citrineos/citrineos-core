@@ -4,8 +4,7 @@
 
 import type { KoaMiddlewareInterface } from 'routing-controllers';
 import { HttpHeader, HttpStatus, UnauthorizedException } from '@citrineos/base';
-import { Container, Service } from 'typedi';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { extractToken } from '../decorators/AuthToken.js';
 import { OcpiHttpHeader } from '../OcpiHttpHeader.js';
 import { BaseMiddleware } from './BaseMiddleware.js';
@@ -16,7 +15,9 @@ import type {
   GetTenantPartnerByServerTokenQueryResult,
   GetTenantPartnerByServerTokenQueryVariables,
 } from '../../graphql/index.js';
-import { GET_TENANT_PARTNER_BY_SERVER_TOKEN, OcpiGraphqlClient } from '../../graphql/index.js';
+import { GET_TENANT_PARTNER_BY_SERVER_TOKEN } from '../../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../../graphql/index.js';
+import type { OcpiGraphqlDependencies } from '../../dependencies.js';
 
 /**
  * Authentication middleware for OCPI functional endpoints (applied via {@link AsOcpiFunctionalEndpoint}).
@@ -29,10 +30,14 @@ import { GET_TENANT_PARTNER_BY_SERVER_TOKEN, OcpiGraphqlClient } from '../../gra
  * inspecting the request URL or any other attacker-controlled input. If authentication fails, an
  * {@link OcpiErrorResponse} is written with HttpStatus.UNAUTHORIZED.
  */
-@Service()
 export class AuthMiddleware extends BaseMiddleware implements KoaMiddlewareInterface {
-  constructor(readonly ocpiGraphqlClient: OcpiGraphqlClient) {
+  protected readonly logger: Logger<ILogObj>;
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+
+  constructor({ logger, ocpiGraphqlClient }: OcpiGraphqlDependencies) {
     super();
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
   }
 
   protected enforceRoutingHeaders(): boolean {
@@ -48,12 +53,10 @@ export class AuthMiddleware extends BaseMiddleware implements KoaMiddlewareInter
   }
 
   async use(context: any, next: (err?: any) => Promise<any>): Promise<any> {
-    const logger = Container.get(Logger);
-
     const authHeader = context.request.headers[HttpHeader.Authorization.toLowerCase()];
 
     if (!authHeader) {
-      logger.debug(
+      this.logger.debug(
         `No authorization header found for ${context.request.method} ${context.request.url}`,
       );
       return this.throwError(context);
@@ -69,7 +72,7 @@ export class AuthMiddleware extends BaseMiddleware implements KoaMiddlewareInter
 
       const tenantPartner = response.TenantPartners[0];
       if (!tenantPartner) {
-        logger.debug(`Authorization failed - tenant partner not found for token`);
+        this.logger.debug(`Authorization failed - tenant partner not found for token`);
         throw new UnauthorizedException('Credentials not found for given token');
       }
 
@@ -84,7 +87,7 @@ export class AuthMiddleware extends BaseMiddleware implements KoaMiddlewareInter
           tenantPartner.tenant.countryCode !== toCountryCode ||
           tenantPartner.tenant.partyId !== toPartyId
         ) {
-          logger.debug(
+          this.logger.debug(
             `String token matched tenantPartner with incorrect routing headers - ${tenantPartner.countryCode}:${fromCountryCode}, ${tenantPartner.partyId}:${fromPartyId}, ${tenantPartner.tenant.countryCode}:${toCountryCode}, ${tenantPartner.tenant.partyId}:${toPartyId}`,
           );
           throw new UnauthorizedException('Credentials not found for given token');
@@ -93,17 +96,16 @@ export class AuthMiddleware extends BaseMiddleware implements KoaMiddlewareInter
 
       context.state.tenantPartner = tenantPartner;
     } catch (error: any) {
-      logger.debug(`Authorization error: ${error.message}`);
+      this.logger.debug(`Authorization error: ${error.message}`);
       return this.throwError(context);
     }
     return await next();
   }
 }
 
-@Service()
 export class RegistrationAuthMiddleware extends AuthMiddleware {
-  constructor(ocpiGraphqlClient: OcpiGraphqlClient) {
-    super(ocpiGraphqlClient);
+  constructor(dependencies: OcpiGraphqlDependencies) {
+    super(dependencies);
   }
 
   protected override enforceRoutingHeaders(): boolean {

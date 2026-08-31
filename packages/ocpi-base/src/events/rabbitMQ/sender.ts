@@ -4,18 +4,13 @@
 
 import * as amqplib from 'amqplib';
 import { instanceToPlain } from 'class-transformer';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type { IDtoEvent, IDtoEventSender, IDtoPayload } from '../index.js';
 import { AbstractDtoEventSender } from '../index.js';
-import { Inject, Service } from 'typedi';
-import type { OcpiConfig } from '../../config/ocpi.types.js';
-import { OcpiConfigToken } from '../../config/ocpi.types.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 
 /**
  * Implementation of a {@link IEventSender} using RabbitMQ as the underlying transport.
  */
-@Service()
 export class RabbitMqDtoSender extends AbstractDtoEventSender implements IDtoEventSender {
   /**
    * Constants
@@ -37,7 +32,7 @@ export class RabbitMqDtoSender extends AbstractDtoEventSender implements IDtoEve
    * @param {OcpiConfig} config - The system configuration.
    * @param {Logger<ILogObj>} [logger] - The logger object.
    */
-  constructor(@Inject(OcpiConfigToken) config: OcpiConfig, logger?: Logger<ILogObj>) {
+  constructor({ config, logger }: OcpiConfiguredDependencies) {
     super(config, logger);
   }
 

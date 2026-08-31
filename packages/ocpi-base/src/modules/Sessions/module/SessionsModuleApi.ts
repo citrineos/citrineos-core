@@ -33,8 +33,7 @@ import {
   VersionNumber,
   VersionNumberParam,
 } from '../../../index.js';
-
-import { Service } from 'typedi';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_PAGINATED_SESSIONS = await generateMockOcpiPaginatedResponse(
   PaginatedSessionResponseSchema,
@@ -46,11 +45,17 @@ const MOCK_CHARGING_PREFERENCES = await generateMockForSchema(
   ChargingPreferencesResponseSchemaName,
 );
 
+export interface SessionsModuleApiDependencies extends OcpiDependencies {
+  sessionsService: SessionsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Sessions}`)
-@Service()
 export class SessionsModuleApi extends BaseController implements ISessionsModuleApi {
-  constructor(readonly sessionsService: SessionsService) {
-    super();
+  readonly sessionsService: SessionsService;
+
+  constructor(dependencies: SessionsModuleApiDependencies) {
+    super(dependencies);
+    this.sessionsService = dependencies.sessionsService;
   }
 
   @Get()

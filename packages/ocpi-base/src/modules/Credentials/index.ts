@@ -3,23 +3,26 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { OcpiConfig } from '../../index.js';
-import { CacheWrapper, OcpiConfigToken, OcpiModule } from '../../index.js';
+import { OcpiModule } from '../../index.js';
+import type { CacheWrapper } from '../../index.js';
+import type { OcpiModuleDependencies } from '../../dependencies.js';
 
 import { CredentialsModuleApi } from './module/CredentialsModuleApi.js';
-import { Inject, Service } from 'typedi';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export { CredentialsModuleApi } from './module/CredentialsModuleApi.js';
 export type { ICredentialsModuleApi } from './module/ICredentialsModuleApi.js';
 
-@Service()
 export class CredentialsModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) readonly config: OcpiConfig,
-    readonly cacheWrapper: CacheWrapper,
-    readonly logger?: Logger<ILogObj>,
-  ) {}
+  readonly config: OcpiConfig;
+  readonly cacheWrapper: CacheWrapper;
+  readonly logger: Logger<ILogObj>;
+
+  constructor({ config, cacheWrapper, logger }: OcpiModuleDependencies) {
+    this.config = config;
+    this.cacheWrapper = cacheWrapper;
+    this.logger = logger;
+  }
 
   getController(): any {
     return CredentialsModuleApi;

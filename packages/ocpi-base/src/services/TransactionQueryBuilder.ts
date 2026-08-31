@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// import { Service } from 'typedi';
 // import { OcpiLocation, OcpiLocationProps } from '../model/OcpiLocation';
 // import { OcpiToken } from '../model/OcpiToken';
 // import { Op } from 'sequelize';
@@ -18,7 +17,6 @@
 // } from '@citrineos/core';
 // import { OCPP2_0_1 } from '@citrineos/types';
 
-// @Service()
 // export class TransactionQueryBuilder {
 //   private readonly MODELS = {
 //     CHARGING_STATION: 'ChargingStation',

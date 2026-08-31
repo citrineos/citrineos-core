@@ -3,22 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ChargingProfilesModuleApi } from './module/ChargingProfilesModuleApi.js';
-import type { OcpiConfig } from '../../index.js';
-import { CacheWrapper, OcpiConfigToken, OcpiModule } from '../../index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Container, Inject, Service } from 'typedi';
-import { useContainer } from 'routing-controllers';
+import { OcpiModule } from '../../index.js';
+import type { CacheWrapper } from '../../index.js';
+import type { OcpiModuleDependencies } from '../../dependencies.js';
+import type { ILogObj, Logger } from 'tslog';
 
-useContainer(Container);
-
-@Service()
 export class ChargingProfilesModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    readonly cache: CacheWrapper,
-    readonly logger?: Logger<ILogObj>,
-  ) {}
+  readonly cacheWrapper: CacheWrapper;
+  readonly logger: Logger<ILogObj>;
+
+  constructor({ cacheWrapper, logger }: OcpiModuleDependencies) {
+    this.cacheWrapper = cacheWrapper;
+    this.logger = logger;
+  }
 
   getController(): any {
     return ChargingProfilesModuleApi;

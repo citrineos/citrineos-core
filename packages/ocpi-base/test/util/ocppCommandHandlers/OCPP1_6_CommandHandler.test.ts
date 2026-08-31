@@ -62,17 +62,18 @@ const tenantPartner = {
 } as never;
 
 /**
- * The handler's dependencies arrive by typedi property injection, which does not run for a plain
- * `new`. Assign the few it actually reads, and capture the OCPP payload instead of sending it.
+ * Assign the few dependencies the handler actually reads, and capture the OCPP payload instead of
+ * sending it.
  */
 function aHandler() {
-  const handler = new OCPP1_6_CommandHandler();
   const sent: { url: string; payload: any }[] = [];
   const postCommandResult = vi.fn().mockResolvedValue(undefined);
 
-  Object.assign(handler as never, {
+  const handler = new OCPP1_6_CommandHandler({
     logger: new Logger({ type: 'hidden' }),
     commandsClientApi: { postCommandResult },
+    ajv: {},
+    ocpiGraphqlClient: {},
     config: {
       commands: {
         coreHeaders: {},
@@ -83,7 +84,7 @@ function aHandler() {
         },
       },
     },
-  });
+  } as never);
   (handler as never as { sendOCPPMessage: unknown }).sendOCPPMessage = async (
     url: string,
     payload: any,

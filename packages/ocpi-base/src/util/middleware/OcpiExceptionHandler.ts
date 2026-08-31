@@ -7,7 +7,6 @@ import { NotFoundError, UnauthorizedError } from 'routing-controllers';
 import type { Context } from 'vm';
 import { HttpStatus, UnauthorizedException } from '@citrineos/base';
 import { buildOcpiErrorResponse } from '../../model/OcpiErrorResponse.js';
-import { Service } from 'typedi';
 import { UnknownTokenException } from '../../exception/UnknownTokenException.js';
 import { OcpiResponseStatusCode } from '../../model/OcpiResponse.js';
 import { WrongClientAccessException } from '../../exception/WrongClientAccessException.js';
@@ -21,7 +20,6 @@ import { ContentType } from '../ContentType.js';
 /**
  * GlobalExceptionHandler handles all exceptions
  */
-@Service()
 export class OcpiExceptionHandler implements KoaMiddlewareInterface {
   public async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     try {
