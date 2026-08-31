@@ -509,6 +509,11 @@ export interface IInstalledCertificateRepository {
     id: number,
     hashData: InstalledCertificateHashData,
   ): Promise<InstalledCertificateDto | undefined>;
+  findAllByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto[]>;
+  deleteById(tenantId: number, id: number): Promise<InstalledCertificateDto | undefined>;
   deleteByStation(tenantId: number, ocppConnectionName: string): Promise<InstalledCertificateDto[]>;
   deleteByStationAndType(
     tenantId: number,

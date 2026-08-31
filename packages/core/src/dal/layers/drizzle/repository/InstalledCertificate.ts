@@ -167,6 +167,23 @@ export class DrizzleInstalledCertificateRepository
     });
   }
 
+  async findAllByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto[]> {
+    const rows = (await this.db
+      .select()
+      .from(installedCertificateTable)
+      .where(
+        and(
+          eq(installedCertificateTable.tenantId, tenantId),
+          eq(installedCertificateTable.ocppConnectionName, ocppConnectionName),
+        ),
+      )) as InstalledCertificateEntity[];
+
+    return rows.map((row) => this.toDto(row));
+  }
+
   async deleteByStation(
     tenantId: number,
     ocppConnectionName: string,

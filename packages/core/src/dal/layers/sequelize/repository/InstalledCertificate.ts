@@ -98,6 +98,17 @@ export class SequelizeInstalledCertificateRepository
     );
   }
 
+  async findAllByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto[]> {
+    return await this.readAllByQuery(tenantId, { where: { ocppConnectionName } });
+  }
+
+  async deleteById(tenantId: number, id: number): Promise<InstalledCertificateDto | undefined> {
+    return await this.deleteByKey(tenantId, id.toString());
+  }
+
   async deleteByStation(
     tenantId: number,
     ocppConnectionName: string,
