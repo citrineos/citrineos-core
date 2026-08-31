@@ -45,7 +45,7 @@ importers:
         version: 5.2.6
       '@google-cloud/storage':
         specifier: ^7.19.0
-        version: 7.21.0(encoding@0.1.13)
+        version: 7.22.0(encoding@0.1.13)
       '@peculiar/webcrypto':
         specifier: ^1.5.0
         version: 1.7.1
@@ -359,8 +359,8 @@ importers:
         specifier: 1.6.1
         version: 1.6.1(@sinclair/typebox@0.32.35)(@standard-schema/spec@1.1.0)(@tanstack/react-query@5.101.4(react@19.1.4))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(ajv-formats@2.1.1(ajv@8.18.0))(ajv@8.18.0)(class-transformer@0.5.1)(class-validator@0.14.2)(joi@17.13.3)
       '@google-cloud/storage':
-        specifier: 7.21.0
-        version: 7.21.0(encoding@0.1.13)
+        specifier: 7.22.0
+        version: 7.22.0(encoding@0.1.13)
       '@googlemaps/markerclusterer':
         specifier: 2.6.2
         version: 2.6.2
@@ -761,7 +761,7 @@ importers:
         version: 5.2.6
       '@google-cloud/storage':
         specifier: ^7.0.0
-        version: 7.21.0(encoding@0.1.13)
+        version: 7.22.0(encoding@0.1.13)
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
@@ -2053,9 +2053,9 @@ packages:
     resolution: {integrity: sha512-Orxzlfb9c67A15cq2JQEyVc7wEsmFBmHjZWZYQMUyJ1qivXyMwdyNOs9odi79hze+2zqdTtu1E19IM/FtqZ10g==}
     engines: {node: '>=14'}
 
-  '@google-cloud/storage@7.21.0':
-    resolution: {integrity: sha512-l+IFTkd+6Y5LoAuXyYCKNAKtw/Ci+rAMqgdTB1jv4iZiLhw0rtq+0qjIRbBizXkNzEFmXiXUW0H7sZQQvk1ffA==}
-    engines: {node: '>=14'}
+  '@google-cloud/storage@7.22.0':
+    resolution: {integrity: sha512-W98gTQOAntEeEQ7/pZxSQXxfUO5CiQcXJRsxBpUa6UU25n8YN/VtogPBi0H+MAmUrn/6bY/sBhFansoWEsr2/g==}
+    engines: {node: '>=18'}
 
   '@googlemaps/markerclusterer@2.6.2':
     resolution: {integrity: sha512-U6uVhq8iWhiIckA89sgRu8OK35mjd6/3CuoZKWakKEf0QmRRWpatlsPb3kqXkoWSmbcZkopRiI4dnW6DQSd7bQ==}
@@ -11506,7 +11506,7 @@ snapshots:
 
   '@google-cloud/promisify@4.0.0': {}
 
-  '@google-cloud/storage@7.21.0(encoding@0.1.13)':
+  '@google-cloud/storage@7.22.0(encoding@0.1.13)':
     dependencies:
       '@google-cloud/paginator': 5.0.2
       '@google-cloud/projectify': 4.0.0

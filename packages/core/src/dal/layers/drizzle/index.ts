@@ -31,6 +31,30 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/Certificate.js';
+export {
+  DrizzleDeleteCertificateAttemptRepository,
+  toDeleteCertificateAttemptDto,
+} from './repository/DeleteCertificateAttempt.js';
+export {
+  deleteCertificateAttemptTable,
+  tenantDeleteCertificateAttemptTable,
+  DeleteCertificateAttemptEntitySchema,
+  DeleteCertificateAttemptEntityInsertSchema,
+  type DeleteCertificateAttemptEntity,
+  type DeleteCertificateAttemptEntityInsert,
+} from './schema/DeleteCertificateAttempt.js';
+export {
+  DrizzleInstallCertificateAttemptRepository,
+  toInstallCertificateAttemptDto,
+} from './repository/InstallCertificateAttempt.js';
+export {
+  installCertificateAttemptTable,
+  tenantInstallCertificateAttemptTable,
+  InstallCertificateAttemptEntitySchema,
+  InstallCertificateAttemptEntityInsertSchema,
+  type InstallCertificateAttemptEntity,
+  type InstallCertificateAttemptEntityInsert,
+} from './schema/InstallCertificateAttempt.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,
