@@ -2,6 +2,9 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 
+# Set DB_STRATEGY, options are migrate or none
+ARG DB_STRATEGY=none
+
 # Use a specific base image with platform support
 FROM --platform=${BUILDPLATFORM:-linux/amd64} node:24.16.0 AS build
 
