@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import type { Session } from '../model/Session.js';
 import {
   type MeterValueDto,
@@ -16,26 +15,19 @@ import type { ChargingPeriod } from '../model/ChargingPeriod.js';
 import { CdrDimensionType } from '../model/CdrDimensionType.js';
 import type { CdrToken } from '../model/CdrToken.js';
 import { SessionStatus } from '../model/SessionStatus.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type { CdrDimension } from '../model/CdrDimension.js';
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
+import type { OcpiTransactionMapperDependencies } from './BaseTransactionMapper.js';
 import { BaseTransactionMapper } from './BaseTransactionMapper.js';
-import { LocationsService } from '../services/LocationsService.js';
+
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
 import { calculateTotalCdrCost } from './cdrCost.js';
-import { OcpiGraphqlClient } from '../graphql/index.js';
 import { MeterValueUtils } from '@citrineos/base';
 
-@Service()
 export class SessionMapper extends BaseTransactionMapper {
-  constructor(
-    protected logger: Logger<ILogObj>,
-    protected locationsService: LocationsService,
-    protected ocpiGraphqlClient: OcpiGraphqlClient,
-  ) {
-    super(logger, locationsService, ocpiGraphqlClient);
+  constructor(dependencies: OcpiTransactionMapperDependencies) {
+    super(dependencies);
   }
 
   /**

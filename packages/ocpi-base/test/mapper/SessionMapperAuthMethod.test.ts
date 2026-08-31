@@ -18,7 +18,11 @@ import type { TokenDTO } from '../../src/model/DTO/TokenDTO.js';
 const TRANSACTION_ID = 'tx-1';
 
 async function authMethodOf(overrides: Partial<TransactionDto>): Promise<AuthMethod> {
-  const mapper = new SessionMapper(new Logger({ type: 'hidden' }), {} as never, {} as never);
+  const mapper = new SessionMapper({
+    logger: new Logger({ type: 'hidden' }),
+    locationsService: {},
+    ocpiGraphqlClient: {},
+  } as never);
   const transaction = {
     id: 1,
     transactionId: TRANSACTION_ID,

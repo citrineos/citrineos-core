@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Body, Ctx, Get, JsonController, Param, Patch, Post, Put } from 'routing-controllers';
-import { Service } from 'typedi';
 
 import { HttpStatus } from '@citrineos/base';
 import type {
@@ -50,6 +49,7 @@ import {
   WrongClientAccessException,
 } from '../../../index.js';
 import type { ITokensModuleApi } from './ITokensModuleApi.js';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_TOKEN_RESPONSE = await generateMockForSchema(
   TokenResponseSchema,
@@ -80,14 +80,17 @@ const MockPutTokenBody = {
   },
 };
 
+export interface TokensModuleApiDependencies extends OcpiDependencies {
+  tokensService: TokensService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Tokens}`)
-@Service()
 export class TokensModuleApi extends BaseController implements ITokensModuleApi {
-  constructor(
-    readonly tokensService: TokensService,
-    // readonly tokensFetchService: TokensAdminService,
-  ) {
-    super();
+  readonly tokensService: TokensService;
+
+  constructor(dependencies: TokensModuleApiDependencies) {
+    super(dependencies);
+    this.tokensService = dependencies.tokensService;
   }
 
   @Get('/:countryCode/:partyId/:tokenId')

@@ -45,7 +45,7 @@ import {
   VersionNumberParam,
 } from '../../../index.js';
 import { ContentType } from '../../../util/ContentType.js';
-import { Inject, Service } from 'typedi';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_COMMAND_RESPONSE = await generateMockForSchema(
   CommandResponseSchema,
@@ -86,14 +86,20 @@ for (const [commandType, { schema, name }] of Object.entries(COMMAND_REQUEST_SCH
   }
 }
 
-@JsonController(`/:${versionIdParam}/${ModuleId.Commands}`)
-@Service()
-export class CommandsModuleApi extends BaseController implements ICommandsModuleApi {
-  @Inject()
-  private commandsExecutor!: CommandExecutor;
+export interface CommandsModuleApiDependencies extends OcpiDependencies {
+  commandsService: CommandsService;
+  commandExecutor: CommandExecutor;
+}
 
-  constructor(readonly commandsService: CommandsService) {
-    super();
+@JsonController(`/:${versionIdParam}/${ModuleId.Commands}`)
+export class CommandsModuleApi extends BaseController implements ICommandsModuleApi {
+  private readonly commandExecutor: CommandExecutor;
+  readonly commandsService: CommandsService;
+
+  constructor(dependencies: CommandsModuleApiDependencies) {
+    super(dependencies);
+    this.commandExecutor = dependencies.commandExecutor;
+    this.commandsService = dependencies.commandsService;
   }
 
   @Post('/:commandType')
@@ -184,7 +190,7 @@ export class CommandsModuleApi extends BaseController implements ICommandsModule
     @Param('commandId') commandId: string,
     @Body() response: any,
   ): Promise<void> {
-    await this.commandsExecutor.handleAsyncCommandResponse(
+    await this.commandExecutor.handleAsyncCommandResponse(
       tenantPartnerId,
       ocppVersion,
       command,

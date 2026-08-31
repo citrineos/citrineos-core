@@ -21,22 +21,27 @@ import {
   SetChargingProfileSchemaName,
   versionIdParam,
 } from '../../../index.js';
-
-import { Service } from 'typedi';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_CHARGING_PROFILE_RESPONSE = await generateMockForSchema(
   ChargingProfileResponseSchema,
   ChargingProfileResponseSchemaName,
 );
 
+export interface ChargingProfilesModuleApiDependencies extends OcpiDependencies {
+  chargingProfilesService: ChargingProfilesService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.ChargingProfiles}`)
-@Service()
 export class ChargingProfilesModuleApi
   extends BaseController
   implements IChargingProfilesModuleApi
 {
-  constructor(readonly service: ChargingProfilesService) {
-    super();
+  readonly chargingProfilesService: ChargingProfilesService;
+
+  constructor(dependencies: ChargingProfilesModuleApiDependencies) {
+    super(dependencies);
+    this.chargingProfilesService = dependencies.chargingProfilesService;
   }
 
   @Get('/:sessionId')
@@ -53,7 +58,7 @@ export class ChargingProfilesModuleApi
     @QueryParam('duration', { required: true }) duration: number,
     @QueryParam('response_url', { required: true }) responseUrl: string,
   ): Promise<ChargingProfileResponse> {
-    return this.service.getActiveChargingProfile(sessionId, duration, responseUrl);
+    return this.chargingProfilesService.getActiveChargingProfile(sessionId, duration, responseUrl);
   }
 
   @Delete('/:sessionId')
@@ -69,7 +74,7 @@ export class ChargingProfilesModuleApi
     @Param('sessionId') sessionId: string,
     @QueryParam('response_url', { required: true }) responseUrl: string,
   ): Promise<ChargingProfileResponse> {
-    return this.service.deleteChargingProfile(sessionId, responseUrl);
+    return this.chargingProfilesService.deleteChargingProfile(sessionId, responseUrl);
   }
 
   @Put('/:sessionId')
@@ -86,6 +91,6 @@ export class ChargingProfilesModuleApi
     @BodyWithSchema(SetChargingProfileSchema, SetChargingProfileSchemaName)
     payload: SetChargingProfile,
   ): Promise<ChargingProfileResponse> {
-    return this.service.putChargingProfile(sessionId, payload);
+    return this.chargingProfilesService.putChargingProfile(sessionId, payload);
   }
 }

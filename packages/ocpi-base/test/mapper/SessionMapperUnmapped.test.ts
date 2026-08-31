@@ -40,7 +40,11 @@ describe('SessionMapper.mapTransactionsToSessionsHelper', () => {
     // sees which records went missing.
     const logger = new Logger({ type: 'hidden' });
     const warn = vi.spyOn(logger, 'warn');
-    const mapper = new SessionMapper(logger, {} as never, {} as never);
+    const mapper = new SessionMapper({
+      logger: logger,
+      locationsService: {},
+      ocpiGraphqlClient: {},
+    } as never);
 
     const sessions = await mapper.mapTransactionsToSessionsHelper(
       [aTransaction('tx-1'), aTransaction('tx-2')],
@@ -58,7 +62,11 @@ describe('SessionMapper.mapTransactionsToSessionsHelper', () => {
   it('says nothing when every transaction maps', async () => {
     const logger = new Logger({ type: 'hidden' });
     const warn = vi.spyOn(logger, 'warn');
-    const mapper = new SessionMapper(logger, {} as never, {} as never);
+    const mapper = new SessionMapper({
+      logger: logger,
+      locationsService: {},
+      ocpiGraphqlClient: {},
+    } as never);
 
     await mapper.mapTransactionsToSessionsHelper(
       [aTransaction('tx-1')],

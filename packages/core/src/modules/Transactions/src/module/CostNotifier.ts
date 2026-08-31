@@ -79,11 +79,7 @@ export class CostNotifier extends Scheduler {
     tenantId: number,
     protocol: OCPPVersionType,
   ): Promise<void> {
-    const cost = await this._costCalculator.calculateTotalCost(
-      tenantId,
-      transaction.connectorId,
-      transaction.totalKwh!,
-    );
+    const cost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
 
     await this._transactionEventRepository.updateTransactionTotalCostById(
       tenantId,

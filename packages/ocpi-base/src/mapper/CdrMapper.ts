@@ -2,22 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import type { Cdr } from '../model/Cdr.js';
 import type { Session } from '../model/Session.js';
-import { SessionMapper } from './SessionMapper.js';
+import type { SessionMapper } from './SessionMapper.js';
 import type { CdrLocation } from '../model/CdrLocation.js';
-import type { Price } from '../model/Price.js';
+import type { Price } from '@citrineos/base';
 import type { Tariff as OcpiTariff } from '../model/Tariff.js';
 import type { SignedData } from '../model/SignedData.js';
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import type { ChargingPeriod } from '../model/ChargingPeriod.js';
 import { CdrDimensionType } from '../model/CdrDimensionType.js';
+import type { OcpiTransactionMapperDependencies } from './BaseTransactionMapper.js';
 import { BaseTransactionMapper } from './BaseTransactionMapper.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { OcpiGraphqlClient } from '../graphql/index.js';
-import { LocationsService } from '../services/LocationsService.js';
 import type { TariffDto, TransactionDto } from '@citrineos/types';
 import {
   calculateEnergyCost,
@@ -27,15 +23,16 @@ import {
   calculateTotalTimeHours,
 } from './cdrCost.js';
 
-@Service()
+export interface CdrMapperDependencies extends OcpiTransactionMapperDependencies {
+  sessionMapper: SessionMapper;
+}
+
 export class CdrMapper extends BaseTransactionMapper {
-  constructor(
-    protected logger: Logger<ILogObj>,
-    protected locationsService: LocationsService,
-    protected ocpiGraphqlClient: OcpiGraphqlClient,
-    readonly sessionMapper: SessionMapper,
-  ) {
-    super(logger, locationsService, ocpiGraphqlClient);
+  readonly sessionMapper: SessionMapper;
+
+  constructor(dependencies: CdrMapperDependencies) {
+    super(dependencies);
+    this.sessionMapper = dependencies.sessionMapper;
   }
 
   public async mapTransactionsToCdrs(transactions: TransactionDto[]): Promise<Cdr[]> {

@@ -4,22 +4,14 @@
 
 import { UseBefore } from 'routing-controllers';
 import { HttpExceptionHandler } from '../middleware/HttpExceptionHandler.js';
-import { OcpiConfigToken } from '../../config/ocpi.types.js';
-import { oidcAuthMiddleware } from '../security/oidcAuthMiddleware.js';
-import { Container } from 'typedi';
+import { AdminAuthMiddleware } from '../middleware/AdminAuthMiddleware.js';
 
 /**
  * Decorator to add necessary auth and exception handling for "admin" OCPI endpoints
  */
 export const AsAdminEndpoint = function () {
   return function (object: any, methodName: string) {
-    UseBefore((ctx: any, next: any) => {
-      const config = Container.get(OcpiConfigToken);
-      if (config.oidc) {
-        return oidcAuthMiddleware(config.oidc)(ctx, next);
-      }
-      return next();
-    })(object, methodName);
+    UseBefore(AdminAuthMiddleware)(object, methodName);
     UseBefore(HttpExceptionHandler)(object, methodName);
   };
 };

@@ -104,7 +104,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       await this._ocppSender.sendCallResultWithMessage(message, bootNotificationResponse);
     // Create or update charging station
     this._logger.debug(`Creating or updating charging station: ${ocppConnectionName}`);
-    (async () => {
+    const stationUpdate = (async () => {
       const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
@@ -154,8 +154,11 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     ) {
       await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, identifier);
     }
+    // Boot.stationId is a non-null FK, so the station must be committed first.
+    await stationUpdate;
+
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity = await this._bootService.updateOcpp16BootConfig(
+    await this._bootService.updateOcpp16BootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
@@ -233,7 +236,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
         changeConfigurationsOnPending,
         getConfigurationsOnPending,
       },
-      bootEntity.id,
+      ocppConnectionName,
     );
 
     // 4. Trigger another boot when pending

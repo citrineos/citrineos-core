@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseBroadcaster } from './BaseBroadcaster.js';
-import { Service } from 'typedi';
-import { SessionsClientApi } from '../trigger/SessionsClientApi.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { SessionsClientApi } from '../trigger/SessionsClientApi.js';
+import type { ILogObj, Logger } from 'tslog';
 import type { Session } from '../model/Session.js';
 import { ModuleId } from '../model/ModuleId.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
@@ -16,17 +14,25 @@ import {
   type TransactionDto,
   HttpMethod,
 } from '@citrineos/types';
-import { SessionMapper } from '../mapper/index.js';
+import type { SessionMapper } from '../mapper/index.js';
+import type { OcpiDependencies } from '../dependencies.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 
-@Service()
+export interface SessionBroadcasterDependencies extends OcpiDependencies {
+  sessionsClientApi: SessionsClientApi;
+  sessionMapper: SessionMapper;
+}
+
 export class SessionBroadcaster extends BaseBroadcaster {
-  constructor(
-    readonly logger: Logger<ILogObj>,
-    readonly sessionsClientApi: SessionsClientApi,
-    readonly sessionMapper: SessionMapper,
-  ) {
+  readonly logger: Logger<ILogObj>;
+  readonly sessionsClientApi: SessionsClientApi;
+  readonly sessionMapper: SessionMapper;
+
+  constructor({ logger, sessionsClientApi, sessionMapper }: SessionBroadcasterDependencies) {
     super();
+    this.logger = logger;
+    this.sessionsClientApi = sessionsClientApi;
+    this.sessionMapper = sessionMapper;
   }
 
   async broadcastPutSession(tenant: TenantDto, transactionDto: TransactionDto): Promise<void> {

@@ -19,7 +19,11 @@ import type { CdrDimension } from '../../src/model/CdrDimension.js';
 const TARIFF_ID = '7';
 
 function mapper(): SessionMapper {
-  return new SessionMapper(new Logger({ type: 'hidden' }), {} as never, {} as never);
+  return new SessionMapper({
+    logger: new Logger({ type: 'hidden' }),
+    locationsService: {},
+    ocpiGraphqlClient: {},
+  } as never);
 }
 
 function meterValue(timestamp: string, ...sampledValue: SampledValue[]): MeterValueDto {

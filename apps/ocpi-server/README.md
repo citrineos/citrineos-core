@@ -213,6 +213,7 @@ and the `process.env.*` fallbacks in the config files), including `DB_HOST`, `DB
 
 - **CitrineOS Core / OCPP Server**
   - [Server README](../ocpp-server/README.md)
+  - [Dependency Injection](../ocpp-server/DEPENDENCY_INJECTION.md) - the Awilix model this server follows too
 - **CitrineOS Operator UI**
   - [Operator UI README](../operator-ui/README.MD)
 - **CitrineOS Project Docs**

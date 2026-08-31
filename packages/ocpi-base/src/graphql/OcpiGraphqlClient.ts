@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { GraphQLClient } from 'graphql-request';
-import { Service } from 'typedi';
 
-@Service()
-export class OcpiGraphqlClient {
+export interface IOcpiGraphqlClient {
+  request<T, V extends object | undefined>(query: string, variables?: V): Promise<T>;
+}
+
+export class OcpiGraphqlClient implements IOcpiGraphqlClient {
   private client: GraphQLClient;
 
   constructor(endpoint: string, headers?: Record<string, string>) {

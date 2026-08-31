@@ -9,10 +9,8 @@ import pg from 'pg';
 // import { runner, RunnerOption } from 'node-pg-migrate';
 // import path from 'path';
 import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { OcpiConfig } from '../../config/ocpi.types.js';
-import { OcpiConfigToken } from '../../config/ocpi.types.js';
-import { Inject, Service } from 'typedi';
+import type { Logger } from 'tslog';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 
 const { Client: PgClient } = pg;
 
@@ -27,17 +25,14 @@ type EventHandler<T = any> = {
   handleDisconnect?: () => void;
 };
 
-@Service()
 export class PgNotifyEventSubscriber implements IDtoEventSubscriber {
   protected _pgClient: Client;
   protected readonly _logger: Logger<ILogObj>;
   protected subscribedChannels = new Set<string>();
   protected eventHandlers = new Map<string, EventHandler>();
 
-  constructor(@Inject(OcpiConfigToken) config: OcpiConfig, logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+  constructor({ config, logger }: OcpiConfiguredDependencies) {
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
 
     this._pgClient = new PgClient({
       host: config.database.host,

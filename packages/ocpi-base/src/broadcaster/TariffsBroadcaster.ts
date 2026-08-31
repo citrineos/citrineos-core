@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseBroadcaster } from './BaseBroadcaster.js';
-import { Service } from 'typedi';
-import { TariffsClientApi } from '../trigger/TariffsClientApi.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { TariffsClientApi } from '../trigger/TariffsClientApi.js';
+import type { ILogObj, Logger } from 'tslog';
 import { ModuleId } from '../model/ModuleId.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
 import { type TariffDto, type TenantDto, HttpMethod } from '@citrineos/types';
@@ -14,16 +12,25 @@ import type { Tariff } from '../model/Tariff.js';
 import { TariffMapper } from '../mapper/index.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 import type { GetTariffByKeyQueryResult, GetTariffByKeyQueryVariables } from '../graphql/index.js';
-import { GET_TARIFF_BY_KEY_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
+import { GET_TARIFF_BY_KEY_QUERY } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { OcpiDependencies } from '../dependencies.js';
 
-@Service()
+export interface TariffsBroadcasterDependencies extends OcpiDependencies {
+  tariffsClientApi: TariffsClientApi;
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+}
+
 export class TariffsBroadcaster extends BaseBroadcaster {
-  constructor(
-    readonly logger: Logger<ILogObj>,
-    readonly tariffsClientApi: TariffsClientApi,
-    readonly ocpiGraphqlClient: OcpiGraphqlClient,
-  ) {
+  readonly logger: Logger<ILogObj>;
+  readonly tariffsClientApi: TariffsClientApi;
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+
+  constructor({ logger, tariffsClientApi, ocpiGraphqlClient }: TariffsBroadcasterDependencies) {
     super();
+    this.logger = logger;
+    this.tariffsClientApi = tariffsClientApi;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
   }
 
   private async broadcast(

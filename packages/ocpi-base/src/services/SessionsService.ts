@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import type { PaginatedSessionResponse } from '../model/Session.js';
 import {
   buildOcpiPaginatedResponse,
@@ -16,16 +15,24 @@ import type {
   Timestamptz_Comparison_Exp,
   Transactions_Bool_Exp,
 } from '../graphql/index.js';
-import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
-import { SessionMapper } from '../mapper/index.js';
+import { GET_TRANSACTIONS_QUERY } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { SessionMapper } from '../mapper/index.js';
+import type { OcpiGraphqlDependencies } from '../dependencies.js';
 import type { TransactionDto } from '@citrineos/types';
 
-@Service()
+export interface SessionsServiceDependencies extends OcpiGraphqlDependencies {
+  sessionMapper: SessionMapper;
+}
+
 export class SessionsService {
-  constructor(
-    private readonly ocpiGraphqlClient: OcpiGraphqlClient,
-    private readonly sessionMapper: SessionMapper,
-  ) {}
+  private readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  private readonly sessionMapper: SessionMapper;
+
+  constructor({ ocpiGraphqlClient, sessionMapper }: SessionsServiceDependencies) {
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.sessionMapper = sessionMapper;
+  }
 
   public async getSessions(
     fromCountryCode: string,

@@ -48,7 +48,10 @@ function expectPartyPredicate(request: ReturnType<typeof aCapturingGraphqlClient
 }
 
 function aService(client: never) {
-  return new LocationsService(new Logger({ type: 'hidden' }), client);
+  return new LocationsService({
+    logger: new Logger({ type: 'hidden' }),
+    ocpiGraphqlClient: client,
+  } as never);
 }
 
 describe('LocationsService by-id reads are scoped to the requesting party', () => {
