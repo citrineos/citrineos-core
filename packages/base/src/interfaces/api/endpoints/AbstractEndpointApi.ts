@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
 import type { BuiltEndpoint } from '@interfaces/api/endpoints/buildEndpoints.js';
 import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/EndpointMetadata.js';
+import { serializeError } from '@base-util/errors.js';
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
 import { removeUnknownSchemaKeys } from '@base-util/endpoints/routeSchemas.js';
 
@@ -42,7 +43,7 @@ export abstract class AbstractEndpointApi {
         try {
           return await endpoint.handle(request, reply);
         } catch (error) {
-          this._logger.error(`Error handling ${route.method} ${url}`, error);
+          this._logger.error(`Error handling ${route.method} ${url}`, serializeError(error));
           throw error;
         }
       },

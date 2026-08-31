@@ -287,6 +287,12 @@ export class OcppError extends Error {
   ) {
     super(errorDescription);
     this.name = 'OcppError';
+    Object.defineProperty(this, 'message', {
+      value: errorDescription,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
     this._messageId = messageId;
     this._errorCode = errorCode;
     this._errorDetails = errorDetails;

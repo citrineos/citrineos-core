@@ -115,6 +115,7 @@ export {
   MeterValueUtils,
   notNull,
   RequestBuilder,
+  serializeError,
 } from './src/util/index.js';
 
 export {

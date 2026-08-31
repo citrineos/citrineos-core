@@ -5,6 +5,7 @@
 export { MeterValueUtils } from './MeterValueUtils.js';
 export { RequestBuilder } from './request.js';
 export { assert, notNull } from './assertion.js';
+export { serializeError } from './errors.js';
 export {
   IDENTIFIER_DELIMITER,
   createIdentifier,

@@ -16,6 +16,7 @@ import {
   MessageOrigin,
 } from '@interfaces/messages/index.js';
 import { createIdentifier } from '@base-util/identifiers.js';
+import { serializeError } from '@base-util/errors.js';
 import { v4 as uuidv4 } from 'uuid';
 import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
 import type { ICache } from '@interfaces/cache/cache.js';
@@ -114,7 +115,7 @@ export class OcppSender implements IOcppSender {
             this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
           }
         })
-        .catch((error) => this._logger.error('Error setting cache: ', error));
+        .catch((error) => this._logger.error('Error setting cache: ', serializeError(error)));
     }
     // TODO: Future - Compound key with tenantId
     return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
