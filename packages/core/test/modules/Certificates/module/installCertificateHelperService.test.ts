@@ -15,7 +15,6 @@ import {
 import { BadRequestError } from '@citrineos/base';
 import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Certificate } from '@dal/layers/sequelize/index.js';
 import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService';
 import { mockFileStorage, mockFileStorageGetFile, mockFileStorageSaveFile } from '../vitest.setup';
 import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
@@ -176,9 +175,14 @@ describe('InstallCertificateHelperService', () => {
   const mockCertificateFindById = vi.fn();
   const mockCertificateCreate = vi.fn();
   const mockInstalledCertificateReadOnlyOneByQuery = vi.fn();
-  const mockInstallCertificateAttemptReadOnlyOneByQuery = vi.fn();
+  const mockInstallCertificateAttemptFindPendingByHash = vi.fn();
+  const mockInstallCertificateAttemptFindPending = vi.fn();
+  const mockInstallCertificateAttemptCreate = vi.fn();
+  const mockInstallCertificateAttemptUpdateStatus = vi.fn();
+  const mockInstallCertificateAttemptGetLinkedCertificate = vi.fn();
   const mockDeviceModelReadAllByQuerystring = vi.fn();
-  const mockDeleteCertificateAttemptReadOnlyOneByQuery = vi.fn();
+  const mockDeleteCertificateAttemptFindPending = vi.fn();
+  const mockDeleteCertificateAttemptCreate = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -199,7 +203,11 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     mockInstallCertificateAttemptRepository = {
-      readOnlyOneByQuery: mockInstallCertificateAttemptReadOnlyOneByQuery,
+      findPendingByStationTypeAndCertHash: mockInstallCertificateAttemptFindPendingByHash,
+      findPendingByStation: mockInstallCertificateAttemptFindPending,
+      createAttempt: mockInstallCertificateAttemptCreate,
+      updateStatus: mockInstallCertificateAttemptUpdateStatus,
+      getLinkedCertificate: mockInstallCertificateAttemptGetLinkedCertificate,
     } as any;
 
     // Defaults to an empty result, i.e. AdditionalRootCertificateCheck is unset/disabled,
@@ -210,7 +218,8 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     mockDeleteCertificateAttemptRepository = {
-      readOnlyOneByQuery: mockDeleteCertificateAttemptReadOnlyOneByQuery,
+      findPendingByStationAndHashData: mockDeleteCertificateAttemptFindPending,
+      createAttempt: mockDeleteCertificateAttemptCreate,
     } as any;
     mockCertificateAuthorityService = {} as any;
     mockNetworkConnection = {} as any;
@@ -232,7 +241,7 @@ describe('InstallCertificateHelperService', () => {
   describe('prepareToInstallCertificate', () => {
     it('should not create new install certificate attempt if existing pending attempt exists', async () => {
       const mockExistingAttempt = { id: 1 } as any;
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockExistingAttempt);
+      mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(mockExistingAttempt);
 
       await service.prepareToInstallCertificate(
         tenantId,
@@ -242,22 +251,14 @@ describe('InstallCertificateHelperService', () => {
       );
 
       expect(service.getCertificateHash).toHaveBeenCalledWith(MOCK_CERTIFICATE);
-      expect(mockInstallCertificateAttemptReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: {
-          ocppConnectionName,
-          certificateType: MOCK_CERT_TYPE_V2G,
-          status: null,
-        },
-        include: [
-          {
-            model: Certificate,
-            where: {
-              certificateFileHash: mockHash,
-            },
-          },
-        ],
-      });
-      expect(createdInstallCertificateAttemptInstances).toHaveLength(0);
+      expect(mockInstallCertificateAttemptFindPendingByHash).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        MOCK_CERT_TYPE_V2G,
+        mockHash,
+        undefined,
+      );
+      expect(mockInstallCertificateAttemptCreate).not.toHaveBeenCalled();
     });
 
     it('should extract certificate details and create new certificate if not exists', async () => {
@@ -271,7 +272,7 @@ describe('InstallCertificateHelperService', () => {
         signatureAlgorithm: 'SHA256withECDSA' as any,
       };
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(undefined);
       mockExtractCertificateDetails.mockReturnValue(mockCertDetails);
       mockCertificateFindByFileHash.mockResolvedValue(undefined);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
@@ -297,14 +298,16 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      const savedAttempt = createdInstallCertificateAttemptInstances[0];
-      expect(savedAttempt).toBeDefined();
-      expect(savedAttempt.save).toHaveBeenCalled();
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 100,
+      });
     });
 
     it('should include requestId when checking for existing pending attempt', async () => {
       const mockExistingAttempt = { id: 1 } as any;
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockExistingAttempt);
+      mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(mockExistingAttempt);
 
       await service.prepareToInstallCertificate(
         tenantId,
@@ -314,20 +317,13 @@ describe('InstallCertificateHelperService', () => {
         42,
       );
 
-      expect(mockInstallCertificateAttemptReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: {
-          ocppConnectionName,
-          certificateType: MOCK_CERT_TYPE_V2G,
-          status: null,
-          requestId: 42,
-        },
-        include: [
-          {
-            model: Certificate,
-            where: { certificateFileHash: mockHash },
-          },
-        ],
-      });
+      expect(mockInstallCertificateAttemptFindPendingByHash).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        MOCK_CERT_TYPE_V2G,
+        mockHash,
+        42,
+      );
     });
 
     it('should set requestId on new attempt when provided', async () => {
@@ -341,7 +337,7 @@ describe('InstallCertificateHelperService', () => {
         signatureAlgorithm: 'SHA256withECDSA' as any,
       };
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(undefined);
       mockExtractCertificateDetails.mockReturnValue(mockCertDetails);
       vi.spyOn(service, 'createNewCertificate').mockResolvedValue({ id: 100 } as any);
 
@@ -353,10 +349,12 @@ describe('InstallCertificateHelperService', () => {
         42,
       );
 
-      const savedAttempt = createdInstallCertificateAttemptInstances[0];
-      expect(savedAttempt).toBeDefined();
-      expect(savedAttempt.requestId).toBe(42);
-      expect(savedAttempt.save).toHaveBeenCalled();
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 100,
+        requestId: 42,
+      });
     });
 
     it('should use existing certificate if found and create install attempt', async () => {
@@ -374,7 +372,7 @@ describe('InstallCertificateHelperService', () => {
 
       const mockExistingCertificate = { id: 99 } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(undefined);
       mockExtractCertificateDetails.mockReturnValue(mockCertDetails);
       mockCertificateFindByFileHash.mockResolvedValue(mockExistingCertificate);
 
@@ -387,10 +385,11 @@ describe('InstallCertificateHelperService', () => {
 
       expect(service.createNewCertificate).not.toHaveBeenCalled();
 
-      const savedAttempt = createdInstallCertificateAttemptInstances[0];
-      expect(savedAttempt).toBeDefined();
-      expect(savedAttempt.certificateId).toBe(99);
-      expect(savedAttempt.save).toHaveBeenCalled();
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        certificateType: MOCK_CERT_TYPE_V2G,
+        certificateId: 99,
+      });
     });
 
     describe('AdditionalRootCertificateCheck (M05.FR.10)', () => {
@@ -399,7 +398,7 @@ describe('InstallCertificateHelperService', () => {
 
       beforeEach(() => {
         // Common setup for tests that don't short-circuit on an existing pending attempt.
-        mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+        mockInstallCertificateAttemptFindPendingByHash.mockResolvedValue(undefined);
         mockExtractCertificateDetails.mockReturnValue({
           serialNumber: 1,
           issuerName: 'Test Issuer',
@@ -517,14 +516,14 @@ describe('InstallCertificateHelperService', () => {
           ),
         ).resolves.not.toThrow();
 
-        expect(createdInstallCertificateAttemptInstances).toHaveLength(1);
+        expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledTimes(1);
       });
     });
   });
 
   describe('finalizeInstalledCertificate', () => {
     it('should do nothing if no pending install attempt exists', async () => {
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(undefined);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(undefined);
 
       await service.finalizeInstalledCertificate(
         tenantId,
@@ -536,13 +535,11 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should update status of pending attempt', async () => {
-      const mockAttemptSave = vi.fn().mockResolvedValue(true);
       const mockAttempt = {
         id: 1,
-        save: mockAttemptSave,
       } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
 
       await service.finalizeInstalledCertificate(
@@ -551,19 +548,20 @@ describe('InstallCertificateHelperService', () => {
         MOCK_STATUS_REJECTED as any,
       );
 
-      expect(mockAttempt.status).toBe(MOCK_STATUS_REJECTED);
-      expect(mockAttemptSave).toHaveBeenCalled();
+      expect(mockInstallCertificateAttemptUpdateStatus).toHaveBeenCalledWith(
+        tenantId,
+        mockAttempt.id,
+        MOCK_STATUS_REJECTED,
+      );
     });
 
     it('should update existing installed certificate if status is Accepted', async () => {
-      const mockAttemptSave = vi.fn().mockResolvedValue(true);
       const mockInstalledSave = vi.fn().mockResolvedValue(true);
 
       const mockAttempt = {
         id: 1,
         certificateId: 100,
         certificateType: MOCK_CERT_TYPE_V2G,
-        save: mockAttemptSave,
       } as any;
 
       const mockInstalledCert = {
@@ -571,7 +569,7 @@ describe('InstallCertificateHelperService', () => {
         save: mockInstalledSave,
       } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(mockInstalledCert);
 
       await service.finalizeInstalledCertificate(
@@ -594,11 +592,10 @@ describe('InstallCertificateHelperService', () => {
         id: 1,
         certificateId: 100,
         certificateType: MOCK_CERT_TYPE_V2G,
-        save: vi.fn().mockResolvedValue(true),
-        $get: vi.fn().mockResolvedValue(mockCertificate),
       } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptGetLinkedCertificate.mockResolvedValue(mockCertificate);
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
       mockFileStorageGetFile.mockResolvedValue(Buffer.from(MOCK_CERTIFICATE));
 
@@ -608,7 +605,10 @@ describe('InstallCertificateHelperService', () => {
         MOCK_STATUS_ACCEPTED as any,
       );
 
-      expect(mockAttempt.$get).toHaveBeenCalledWith('certificate');
+      expect(mockInstallCertificateAttemptGetLinkedCertificate).toHaveBeenCalledWith(
+        tenantId,
+        mockAttempt.id,
+      );
       expect(mockFileStorageGetFile).toHaveBeenCalledWith('file123');
 
       const savedInstalledCert = createdInstalledCertificateInstances[0];
@@ -617,13 +617,11 @@ describe('InstallCertificateHelperService', () => {
     });
 
     it('should include requestId in lookup query when provided', async () => {
-      const mockAttemptSave = vi.fn().mockResolvedValue(true);
       const mockAttempt = {
         id: 1,
-        save: mockAttemptSave,
       } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
 
       await service.finalizeInstalledCertificate(
@@ -633,13 +631,12 @@ describe('InstallCertificateHelperService', () => {
         42,
       );
 
-      expect(mockInstallCertificateAttemptReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: {
-          ocppConnectionName,
-          status: null,
-          requestId: 42,
-        },
-      });
+      expect(mockInstallCertificateAttemptFindPending).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        42,
+        undefined,
+      );
     });
 
     it('should log error and return if file retrieval fails', async () => {
@@ -652,11 +649,10 @@ describe('InstallCertificateHelperService', () => {
         id: 1,
         certificateId: 100,
         certificateType: MOCK_CERT_TYPE_V2G,
-        save: vi.fn().mockResolvedValue(true),
-        $get: vi.fn().mockResolvedValue(mockCertificate),
       } as any;
 
-      mockInstallCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptFindPending.mockResolvedValue(mockAttempt);
+      mockInstallCertificateAttemptGetLinkedCertificate.mockResolvedValue(mockCertificate);
       mockInstalledCertificateReadOnlyOneByQuery.mockResolvedValue(undefined);
       mockFileStorageGetFile.mockResolvedValue(null);
 
@@ -1576,43 +1572,37 @@ describe('InstallCertificateHelperService', () => {
     } as any;
 
     it('dedupes on all four hash fields plus a null status', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(null);
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue(undefined);
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(mockDeleteCertificateAttemptReadOnlyOneByQuery).toHaveBeenCalledWith(tenantId, {
-        where: {
-          ocppConnectionName,
-          hashAlgorithm: certificateHashData.hashAlgorithm,
-          issuerNameHash: certificateHashData.issuerNameHash,
-          issuerKeyHash: certificateHashData.issuerKeyHash,
-          serialNumber: certificateHashData.serialNumber,
-          status: null,
-        },
-      });
+      expect(mockDeleteCertificateAttemptFindPending).toHaveBeenCalledWith(
+        tenantId,
+        ocppConnectionName,
+        certificateHashData,
+      );
     });
 
     it('creates an attempt carrying the hash data when none is pending', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue(null);
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue(undefined);
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(createdDeleteCertificateAttemptInstances).toHaveLength(1);
-      const created = createdDeleteCertificateAttemptInstances[0];
-      expect(created.ocppConnectionName).toBe(ocppConnectionName);
-      expect(created.hashAlgorithm).toBe(certificateHashData.hashAlgorithm);
-      expect(created.issuerNameHash).toBe(certificateHashData.issuerNameHash);
-      expect(created.issuerKeyHash).toBe(certificateHashData.issuerKeyHash);
-      expect(created.serialNumber).toBe(certificateHashData.serialNumber);
-      expect(created.save).toHaveBeenCalled();
+      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+        ocppConnectionName,
+        hashAlgorithm: certificateHashData.hashAlgorithm,
+        issuerNameHash: certificateHashData.issuerNameHash,
+        issuerKeyHash: certificateHashData.issuerKeyHash,
+        serialNumber: certificateHashData.serialNumber,
+      });
     });
 
     it('does not create a second attempt when one is already pending', async () => {
-      mockDeleteCertificateAttemptReadOnlyOneByQuery.mockResolvedValue({ id: 50 });
+      mockDeleteCertificateAttemptFindPending.mockResolvedValue({ id: 50 });
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(createdDeleteCertificateAttemptInstances).toHaveLength(0);
+      expect(mockDeleteCertificateAttemptCreate).not.toHaveBeenCalled();
     });
   });
 });
