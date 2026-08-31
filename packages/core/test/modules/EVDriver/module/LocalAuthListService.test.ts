@@ -49,7 +49,7 @@ describe('LocalAuthListService', () => {
 
     // Only the OCPP 1.6 path reads configuration keys; these specs all exercise 2.0.1.
     mockChangeConfigurationRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue(undefined),
+      findByStationAndKey: vi.fn().mockResolvedValue(undefined),
     } as unknown as Mocked<IChangeConfigurationRepository>;
 
     localAuthListService = getTestInstance(container, LocalAuthListService, {

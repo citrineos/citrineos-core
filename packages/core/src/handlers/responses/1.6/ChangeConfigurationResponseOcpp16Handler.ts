@@ -18,7 +18,6 @@ import type {
   IChangeConfigurationRepository,
   IOCPPMessageRepository,
 } from '@dal/interfaces/repositories.js';
-import { ChangeConfiguration } from '@dal/layers/sequelize/index.js';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.ChangeConfiguration)
 export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
@@ -64,11 +63,12 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
       this._logger.error(
         `No valid ChangeConfigurationRequest found for correlationId ${correlationId}`,
       );
+      return;
     }
 
     const status = message.payload.status;
-    const key = request?.payload.key;
-    const value = request?.payload.value;
+    const key = request.payload.key;
+    const value = request.payload.value;
 
     if (
       status == OCPP1_6.ChangeConfigurationResponseStatus.Rejected ||
@@ -87,7 +87,7 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
         ocppConnectionName,
         key,
         value,
-      } as ChangeConfiguration,
+      },
     );
     if (!config) {
       this._logger.error(

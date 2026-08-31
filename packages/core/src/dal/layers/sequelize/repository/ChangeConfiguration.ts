@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { ChangeConfigurationCreate, ChangeConfigurationDto } from '@citrineos/types';
 import type { IChangeConfigurationRepository } from '../../../interfaces/repositories.js';
 import { ChangeConfiguration } from '../model/ChangeConfiguration.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
@@ -14,20 +15,40 @@ export class SequelizeChangeConfigurationRepository
     super({ config, namespace: ChangeConfiguration.MODEL_NAME, logger, sequelizeInstance });
   }
 
+  async findByStationAndKey(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<ChangeConfigurationDto | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName, key },
+    });
+  }
+
+  async listByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ChangeConfigurationDto[]> {
+    return await this.readAllByQuery(tenantId, {
+      where: { ocppConnectionName },
+    });
+  }
+
   async createOrUpdateChangeConfiguration(
     tenantId: number,
-    configuration: ChangeConfiguration,
-  ): Promise<ChangeConfiguration | undefined> {
+    input: ChangeConfigurationCreate,
+  ): Promise<ChangeConfigurationDto | undefined> {
     let changeConfiguration: ChangeConfiguration | undefined;
     await this.s.transaction(async (sequelizeTransaction) => {
       const [savedConfig, created] = await this.readOrCreateByQuery(tenantId, {
         where: {
           tenantId: tenantId,
-          ocppConnectionName: configuration.ocppConnectionName,
-          key: configuration.key,
+          ocppConnectionName: input.ocppConnectionName,
+          key: input.key,
         },
         defaults: {
-          ...configuration,
+          ...input,
+          tenantId,
         },
         transaction: sequelizeTransaction,
       });
@@ -35,7 +56,7 @@ export class SequelizeChangeConfigurationRepository
         changeConfiguration = savedConfig;
       } else {
         changeConfiguration = await savedConfig.update(
-          { ...configuration },
+          { ...input, tenantId },
           { transaction: sequelizeTransaction },
         );
         this.emit('updated', [changeConfiguration]);

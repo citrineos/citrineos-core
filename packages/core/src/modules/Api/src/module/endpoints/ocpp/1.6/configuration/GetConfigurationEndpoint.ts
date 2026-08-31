@@ -120,13 +120,11 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
   }
 
   private async _readMaxKeys(tenantId: number, ocppConnectionName: string): Promise<number> {
-    const maxKeysConfig = await this._changeConfigurationRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        ocppConnectionName,
-        key: 'GetConfigurationMaxKeys',
-      },
-    });
+    const maxKeysConfig = await this._changeConfigurationRepository.findByStationAndKey(
+      tenantId,
+      ocppConnectionName,
+      'GetConfigurationMaxKeys',
+    );
     return maxKeysConfig?.value ? parseInt(maxKeysConfig.value, 10) : Number.MAX_SAFE_INTEGER;
   }
 

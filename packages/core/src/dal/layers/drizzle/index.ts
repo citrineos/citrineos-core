@@ -31,6 +31,18 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/Certificate.js';
+export {
+  DrizzleChangeConfigurationRepository,
+  toChangeConfigurationDto,
+} from './repository/ChangeConfiguration.js';
+export {
+  changeConfigurationTable,
+  tenantChangeConfigurationTable,
+  ChangeConfigurationEntitySchema,
+  ChangeConfigurationEntityInsertSchema,
+  type ChangeConfigurationEntity,
+  type ChangeConfigurationEntityInsert,
+} from './schema/ChangeConfiguration.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

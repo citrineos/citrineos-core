@@ -18,13 +18,13 @@ describe('configuration message endpoints', () => {
 
   let sendCall: ReturnType<typeof vi.fn>;
   let readChargingStationByStationId: ReturnType<typeof vi.fn>;
-  let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+  let findByStationAndKey: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
     readChargingStationByStationId = vi.fn().mockResolvedValue({ id: 1 });
-    readOnlyOneByQuery = vi.fn().mockResolvedValue(undefined);
+    findByStationAndKey = vi.fn().mockResolvedValue(undefined);
   });
 
   describe('ChangeConfigurationEndpoint', () => {
@@ -109,7 +109,7 @@ describe('configuration message endpoints', () => {
       getTestInstance(container, GetConfigurationEndpoint, {
         ocppSender: { sendCall },
         locationRepository: { readChargingStationByStationId },
-        changeConfigurationRepository: { readOnlyOneByQuery },
+        changeConfigurationRepository: { findByStationAndKey },
       });
 
     const handle = (request: OCPP1_6.GetConfigurationRequest) =>
@@ -124,7 +124,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('sends one call when the key count is within the station limit', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '5' });
+      findByStationAndKey.mockResolvedValue({ value: '5' });
 
       await handle({ key: ['a', 'b', 'c'] });
 
@@ -133,7 +133,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('splits keys into batches of GetConfigurationMaxKeys', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '2' });
+      findByStationAndKey.mockResolvedValue({ value: '2' });
 
       await handle({ key: ['a', 'b', 'c', 'd', 'e'] });
 
@@ -146,7 +146,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('labels each confirmation with its batch range and station', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '2' });
+      findByStationAndKey.mockResolvedValue({ value: '2' });
 
       const confirmations = await handle({ key: ['a', 'b', 'c'] });
 
@@ -157,7 +157,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('gives every batch its own correlation id', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '1' });
+      findByStationAndKey.mockResolvedValue({ value: '1' });
 
       await handle({ key: ['a', 'b'] });
 
@@ -166,7 +166,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('treats an absent max-keys configuration as unlimited', async () => {
-      readOnlyOneByQuery.mockResolvedValue(undefined);
+      findByStationAndKey.mockResolvedValue(undefined);
 
       await handle({ key: ['a', 'b', 'c', 'd'] });
 
@@ -174,7 +174,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('captures a send failure as an unsuccessful batch instead of throwing', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '1' });
+      findByStationAndKey.mockResolvedValue({ value: '1' });
       sendCall.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({
         success: true,
         payload: 'queued',

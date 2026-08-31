@@ -32,6 +32,7 @@ import type {
 import {
   DrizzleAuthorizationRepository,
   DrizzleCertificateRepository,
+  DrizzleChangeConfigurationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -115,11 +116,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.chargingProfileRepository = new SequelizeChargingProfileRepository({
       config,
       logger,
@@ -173,6 +169,10 @@ export class RepositoryStore {
         variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
       });
       this.certificateRepository = new DrizzleCertificateRepository({ config, logger });
+      this.changeConfigurationRepository = new DrizzleChangeConfigurationRepository({
+        config,
+        logger,
+      });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -188,6 +188,11 @@ export class RepositoryStore {
       });
       this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
       this.certificateRepository = new SequelizeCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
         config,
         logger,
         sequelizeInstance,

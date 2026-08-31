@@ -105,7 +105,7 @@ describe('BootNotification cache namespacing', () => {
         config: makeConfig(),
         bootNotificationService: bootNotificationService as any,
         bootRepository: { updateByKey: vi.fn().mockResolvedValue({}) } as any,
-        changeConfigurationRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+        changeConfigurationRepository: { listByStation: vi.fn().mockResolvedValue([]) } as any,
         locationRepository: makeLocationRepository() as any,
       });
 

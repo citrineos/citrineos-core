@@ -9,6 +9,8 @@ import type {
   CallAction,
   CertificateCreate,
   CertificateDto,
+  ChangeConfigurationCreate,
+  ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -38,7 +40,6 @@ import type {
   InstallCertificateAttempt,
   InstalledCertificate,
 } from '../layers/sequelize/model/Certificate/index.js';
-import type { ChangeConfiguration } from '../layers/sequelize/model/ChangeConfiguration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
@@ -566,11 +567,17 @@ export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkP
   createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
 }
 
-export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+export interface IChangeConfigurationRepository {
+  findByStationAndKey(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<ChangeConfigurationDto | undefined>;
+  listByStation(tenantId: number, ocppConnectionName: string): Promise<ChangeConfigurationDto[]>;
   createOrUpdateChangeConfiguration(
     tenantId: number,
-    configuration: ChangeConfiguration,
-  ): Promise<ChangeConfiguration | undefined>;
+    input: ChangeConfigurationCreate,
+  ): Promise<ChangeConfigurationDto | undefined>;
 }
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
