@@ -8,6 +8,7 @@ import type { Sequelize } from 'sequelize-typescript';
 import type { BootstrapConfig } from '@citrineos/base';
 import {
   Boot,
+  ChargingStation,
   DefaultSequelizeInstance,
   SequelizeBootRepository,
   SequelizeTariffRepository,
@@ -72,6 +73,10 @@ beforeEach(async () => {
   await Tenant.create({ id: TENANT_B as any });
 });
 
+async function aStation(tenantId: number, ocppConnectionName = SHARED_STATION_NAME) {
+  return ChargingStation.create({ ocppConnectionName, isOnline: false, tenantId } as any);
+}
+
 function aBootRepo(): SequelizeBootRepository {
   return new SequelizeBootRepository({ config: {} as BootstrapConfig, sequelizeInstance });
 }
@@ -85,10 +90,12 @@ describe('SequelizeRepository read tenant scoping', () => {
     it("does not return another tenant's boot config for the same station name", async () => {
       // ChargingStation.ocppConnectionName is documented as unique per tenant but shareable
       // between tenants, so two operators naming a station CS001 is expected. Boot is keyed on
-      // that name, and findByPk ignored the tenant - so tenant B's station read tenant A's boot
-      // config, including its heartbeat interval and accepted/rejected status.
+      // the station, which readByKey resolves within the tenant - so tenant B must not read
+      // tenant A's boot config, including its heartbeat interval and accepted/rejected status.
+      const stationA = await aStation(TENANT_A);
+      await aStation(TENANT_B);
       await Boot.create({
-        id: SHARED_STATION_NAME,
+        stationId: stationA.id,
         tenantId: TENANT_A,
         heartbeatInterval: 3600,
       } as any);
@@ -99,8 +106,9 @@ describe('SequelizeRepository read tenant scoping', () => {
     });
 
     it('returns the boot config belonging to the requesting tenant', async () => {
+      const stationA = await aStation(TENANT_A);
       await Boot.create({
-        id: SHARED_STATION_NAME,
+        stationId: stationA.id,
         tenantId: TENANT_A,
         heartbeatInterval: 3600,
       } as any);
@@ -141,7 +149,9 @@ describe('SequelizeRepository read tenant scoping', () => {
 
   describe('existsByKey', () => {
     it("does not report another tenant's row as existing", async () => {
-      await Boot.create({ id: SHARED_STATION_NAME, tenantId: TENANT_A } as any);
+      const stationA = await aStation(TENANT_A);
+      await aStation(TENANT_B);
+      await Boot.create({ stationId: stationA.id, tenantId: TENANT_A } as any);
 
       const exists = await aBootRepo().existsByKey(TENANT_B, SHARED_STATION_NAME);
 
@@ -149,7 +159,8 @@ describe('SequelizeRepository read tenant scoping', () => {
     });
 
     it('reports the requesting tenant own row as existing', async () => {
-      await Boot.create({ id: SHARED_STATION_NAME, tenantId: TENANT_A } as any);
+      const stationA = await aStation(TENANT_A);
+      await Boot.create({ stationId: stationA.id, tenantId: TENANT_A } as any);
 
       const exists = await aBootRepo().existsByKey(TENANT_A, SHARED_STATION_NAME);
 

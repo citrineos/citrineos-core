@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// import { Service } from 'typedi';
 // import { type ILogObj, Logger } from 'tslog';
 // import { ChargingStation, Location } from '@citrineos/core';
 // import { OcpiLocation } from '../model/OcpiLocation';
@@ -18,7 +17,6 @@
 // import { CREATE_OR_UPDATE_LOCATION_MUTATION } from '../graphql/queries/adminLocation.mutations';
 // import type { CreateOrUpdateLocationMutation } from '../graphql/types/graphql';
 
-// @Service()
 // export class AdminLocationsService {
 //   constructor(
 //     private logger: Logger<ILogObj>,

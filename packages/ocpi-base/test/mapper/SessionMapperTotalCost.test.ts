@@ -18,7 +18,11 @@ import type { TokenDTO } from '../../src/model/DTO/TokenDTO.js';
 const TRANSACTION_ID = 'tx-1';
 
 function mapper(): SessionMapper {
-  return new SessionMapper(new Logger({ type: 'hidden' }), {} as never, {} as never);
+  return new SessionMapper({
+    logger: new Logger({ type: 'hidden' }),
+    locationsService: {},
+    ocpiGraphqlClient: {},
+  } as never);
 }
 
 /** An hour of charging: 50 kWh at 0.45, a 1.50 session fee, 0.02 a minute, 20% VAT. */

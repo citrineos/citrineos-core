@@ -36,8 +36,8 @@ import {
   VersionNumber,
   VersionNumberParam,
 } from '../../../index.js';
-import { Service } from 'typedi';
 import { HttpStatus } from '@citrineos/base';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_PAGINATED_LOCATION = await generateMockOcpiPaginatedResponse(
   PaginatedLocationResponseSchema,
@@ -57,8 +57,11 @@ const MOCK_CONNECTOR = await generateMockForSchema(
 /**
  * Server API for the provisioning component.
  */
+export interface LocationsModuleApiDependencies extends OcpiDependencies {
+  locationsService: LocationsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Locations}`)
-@Service()
 export class LocationsModuleApi extends BaseController implements ILocationsModuleApi {
   /**
    * Constructs a new instance of the class.
@@ -66,11 +69,11 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
    * @param {LocationsService} locationsService - The Locations service.
    * @param {AdminLocationsService} adminLocationsService - The Admin Locations service.
    */
-  constructor(
-    readonly locationsService: LocationsService,
-    // readonly adminLocationsService: AdminLocationsService,
-  ) {
-    super();
+  readonly locationsService: LocationsService;
+
+  constructor(dependencies: LocationsModuleApiDependencies) {
+    super(dependencies);
+    this.locationsService = dependencies.locationsService;
   }
 
   @Get()

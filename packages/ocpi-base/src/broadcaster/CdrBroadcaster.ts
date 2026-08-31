@@ -3,25 +3,31 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BaseBroadcaster } from './BaseBroadcaster.js';
-import { Service } from 'typedi';
-import { CdrsClientApi } from '../trigger/CdrsClientApi.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { CdrsClientApi } from '../trigger/CdrsClientApi.js';
+import type { ILogObj, Logger } from 'tslog';
 import type { Cdr } from '../model/Cdr.js';
 import { ModuleId } from '../model/ModuleId.js';
 import { InterfaceRole } from '../model/InterfaceRole.js';
 import { type TransactionDto, HttpMethod } from '@citrineos/types';
-import { CdrMapper } from '../mapper/index.js';
+import type { CdrMapper } from '../mapper/index.js';
+import type { OcpiDependencies } from '../dependencies.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 
-@Service()
+export interface CdrBroadcasterDependencies extends OcpiDependencies {
+  cdrMapper: CdrMapper;
+  cdrsClientApi: CdrsClientApi;
+}
+
 export class CdrBroadcaster extends BaseBroadcaster {
-  constructor(
-    readonly logger: Logger<ILogObj>,
-    readonly cdrMapper: CdrMapper,
-    readonly cdrsClientApi: CdrsClientApi,
-  ) {
+  readonly logger: Logger<ILogObj>;
+  readonly cdrMapper: CdrMapper;
+  readonly cdrsClientApi: CdrsClientApi;
+
+  constructor({ logger, cdrMapper, cdrsClientApi }: CdrBroadcasterDependencies) {
     super();
+    this.logger = logger;
+    this.cdrMapper = cdrMapper;
+    this.cdrsClientApi = cdrsClientApi;
   }
 
   async broadcastPostCdr(transactionDto: TransactionDto): Promise<void> {

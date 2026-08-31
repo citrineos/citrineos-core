@@ -26,21 +26,24 @@ import {
   VersionNumber,
   VersionNumberParam,
 } from '../../../index.js';
-import { Service } from 'typedi';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_PAGINATED_TARIFF = await generateMockForSchema(
   PaginatedTariffResponseSchema,
   PaginatedTariffResponseSchemaName,
 );
 
-@Service()
+export interface TariffsModuleApiDependencies extends OcpiDependencies {
+  tariffsService: TariffsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Tariffs}`)
 export class TariffsModuleApi extends BaseController implements ITariffsModuleApi {
-  constructor(
-    readonly tariffService: TariffsService,
-    // readonly tariffsPublisher: TariffsBroadcaster,
-  ) {
-    super();
+  readonly tariffsService: TariffsService;
+
+  constructor(dependencies: TariffsModuleApiDependencies) {
+    super(dependencies);
+    this.tariffsService = dependencies.tariffsService;
   }
 
   @Get()
@@ -58,7 +61,7 @@ export class TariffsModuleApi extends BaseController implements ITariffsModuleAp
     @Paginated() paginationParams?: PaginatedParams,
   ): Promise<PaginatedTariffResponse> {
     console.log(`GET /tariffs ${JSON.stringify(paginationParams)}, ${JSON.stringify(ocpiHeaders)}`);
-    const { data, count } = await this.tariffService.getTariffs(ocpiHeaders, paginationParams);
+    const { data, count } = await this.tariffsService.getTariffs(ocpiHeaders, paginationParams);
 
     return {
       data: data,
@@ -101,7 +104,7 @@ export class TariffsModuleApi extends BaseController implements ITariffsModuleAp
   //   @Body(PutTariffRequestSchema, PutTariffRequestSchemaName)
   //   tariffDto: PutTariffRequest,
   // ): Promise<TariffDTO> {
-  //   return await this.tariffService.createOrUpdateTariff(tariffDto);
+  //   return await this.tariffsService.createOrUpdateTariff(tariffDto);
   // }
 
   // @Delete('/:tariffId')
@@ -115,7 +118,7 @@ export class TariffsModuleApi extends BaseController implements ITariffsModuleAp
   //     );
   //   }
 
-  //   await this.tariffService.deleteTariff(tariffId);
+  //   await this.tariffsService.deleteTariff(tariffId);
   //   return buildOcpiEmptyResponse(OcpiResponseStatusCode.GenericSuccessCode);
   // }
 }

@@ -12,7 +12,6 @@ import {
 import { OCPP2_0_1_Mapper } from '@citrineos/core';
 import type { IRequestOptions } from 'typed-rest-client';
 import type { IRequestQueryParams } from 'typed-rest-client/Interfaces.js';
-import { Service } from 'typedi';
 import type {
   GetSequenceQueryResult,
   GetSequenceQueryVariables,
@@ -22,14 +21,18 @@ import type {
 import { GET_SEQUENCE, UPSERT_SEQUENCE } from '../../graphql/index.js';
 import type { UnlockConnector } from '../../index.js';
 import { CommandResultType } from '../../index.js';
-import { TokensMapper } from '../../mapper/index.js';
+import type { TokensMapper } from '../../mapper/index.js';
 import { CommandType } from '../../model/CommandType.js';
 import { EXTRACT_EVSE_ID } from '../../model/DTO/EvseDTO.js';
 import type { StartSession } from '../../model/StartSession.js';
 import type { StopSession } from '../../model/StopSession.js';
-import { OCPP_COMMAND_HANDLER, OCPPCommandHandler } from './base.js';
+import type { OcppCommandHandlerDependencies } from './base.js';
+import { OCPPCommandHandler } from './base.js';
 
-@Service({ id: OCPP_COMMAND_HANDLER, multiple: true })
+export interface Ocpp201CommandHandlerDependencies extends OcppCommandHandlerDependencies {
+  tokensMapper: TokensMapper;
+}
+
 export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
   public readonly supportedVersion: OCPPVersion = OCPPVersion.OCPP2_0_1;
 
@@ -40,6 +43,13 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
    */
   protected get commandUrls() {
     return this.config.commands.ocpp2_0_1;
+  }
+
+  private readonly tokensMapper: TokensMapper;
+
+  constructor(dependencies: Ocpp201CommandHandlerDependencies) {
+    super(dependencies);
+    this.tokensMapper = dependencies.tokensMapper;
   }
 
   public async sendStartSessionCommand(
@@ -93,7 +103,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
       idToken: {
         idToken: startSession.token.uid,
         type: OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
-          TokensMapper.mapOcpiTokenTypeToOcppIdTokenType(startSession.token.type),
+          this.tokensMapper.mapOcpiTokenTypeToOcppIdTokenType(startSession.token.type),
         ),
       },
       evseId: Number(EXTRACT_EVSE_ID(startSession.evse_uid!)),

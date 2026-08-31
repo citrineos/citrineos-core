@@ -112,7 +112,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Update charging station first, then device model.
     // Order matters: updateDeviceModel creates VariableAttributes with a FK
     // reference to the ChargingStation record, so the station must exist first.
-    (async () => {
+    const stationUpdate = (async () => {
       const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
@@ -165,6 +165,9 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
       await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, identifier);
     }
+
+    // Boot.stationId is a non-null FK, so the station must be committed first.
+    await stationUpdate;
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
     const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(

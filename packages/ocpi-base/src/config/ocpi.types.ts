@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { Token } from 'typedi';
 
 /**
  * OCPI Configuration Schema
@@ -336,4 +335,3 @@ export const ocpiConfigSchema = z.object({
 
 export type OIDCConfig = z.infer<typeof oidcConfigSchema>;
 export type OcpiConfig = z.infer<typeof ocpiConfigSchema>;
-export const OcpiConfigToken = new Token<OcpiConfig>('ocpi.config');

@@ -5,40 +5,48 @@ import type {
   GetTransactionByIdQueryResult,
   GetTransactionByIdQueryVariables,
   IDtoEvent,
-  OcpiConfig,
 } from '../../index.js';
 import {
   AbstractDtoModule,
   AsDtoEventHandler,
-  CdrBroadcaster,
   DtoEventObjectType,
   DtoEventType,
   GET_TRANSACTION_BY_ID_QUERY,
-  OcpiConfigToken,
-  OcpiGraphqlClient,
   OcpiModule,
-  RabbitMqDtoReceiver,
-  SessionBroadcaster,
 } from '../../index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Inject, Service } from 'typedi';
+import type { CdrBroadcaster, IOcpiGraphqlClient, SessionBroadcaster } from '../../index.js';
+import type { DtoEventReceiverFactory } from '../../index.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 import { SessionsModuleApi } from './module/SessionsModuleApi.js';
 import type { MeterValueDto, TransactionDto } from '@citrineos/types';
 
 export { SessionsModuleApi } from './module/SessionsModuleApi.js';
 export type { ISessionsModuleApi } from './module/ISessionsModuleApi.js';
 
-@Service()
+export interface SessionsModuleDependencies extends OcpiConfiguredDependencies {
+  dtoEventReceiverFactory: DtoEventReceiverFactory;
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+  sessionBroadcaster: SessionBroadcaster;
+  cdrBroadcaster: CdrBroadcaster;
+}
+
 export class SessionsModule extends AbstractDtoModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    logger: Logger<ILogObj>,
-    readonly ocpiGraphqlClient: OcpiGraphqlClient,
-    readonly sessionBroadcaster: SessionBroadcaster,
-    readonly cdrBroadcaster: CdrBroadcaster,
-  ) {
-    super(config, new RabbitMqDtoReceiver(config, logger), logger);
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  readonly sessionBroadcaster: SessionBroadcaster;
+  readonly cdrBroadcaster: CdrBroadcaster;
+
+  constructor({
+    config,
+    logger,
+    dtoEventReceiverFactory,
+    ocpiGraphqlClient,
+    sessionBroadcaster,
+    cdrBroadcaster,
+  }: SessionsModuleDependencies) {
+    super(config, dtoEventReceiverFactory(), logger);
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.sessionBroadcaster = sessionBroadcaster;
+    this.cdrBroadcaster = cdrBroadcaster;
   }
 
   getController(): any {

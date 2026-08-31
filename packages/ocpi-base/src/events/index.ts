@@ -7,6 +7,7 @@ export type {
   IDtoPayload,
   IDtoEvent,
   IDtoEventReceiver,
+  DtoEventReceiverFactory,
   IDtoModule,
   IDtoEventSender,
   IDtoEventSubscriber,
