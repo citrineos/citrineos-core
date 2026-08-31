@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ "$DB_STRATEGY" = "migrate" ]; then
     (cd "$SCRIPT_DIR" && pnpm run db:migrate)
 elif [ "$DB_STRATEGY" = "none" ]; then
-    echo "DB_STRATEGY is 'none', will execute no database scripts."
+    echo "Skipping DB initialization."
 else
     echo "Unknown DB_STRATEGY: $DB_STRATEGY. Defaulting to migrate."
     (cd "$SCRIPT_DIR" && pnpm run db:migrate)
