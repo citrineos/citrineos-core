@@ -9,8 +9,7 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IRequestOptions } from 'typed-rest-client';
-import { Service } from 'typedi';
-import { OCPP_COMMAND_HANDLER, OCPPCommandHandler } from './base.js';
+import { OCPPCommandHandler } from './base.js';
 import type { StartSession } from '../../model/StartSession.js';
 import type { IRequestQueryParams } from 'typed-rest-client/Interfaces.js';
 import { CommandType } from '../../model/CommandType.js';
@@ -18,7 +17,6 @@ import type { StopSession } from '../../model/StopSession.js';
 import type { UnlockConnector } from '../../index.js';
 import { CommandResultType } from '../../index.js';
 
-@Service({ id: OCPP_COMMAND_HANDLER, multiple: true })
 export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
   public readonly supportedVersion = OCPPVersion.OCPP1_6;
 

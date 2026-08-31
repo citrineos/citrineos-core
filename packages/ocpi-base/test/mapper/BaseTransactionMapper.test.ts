@@ -6,15 +6,11 @@ import type { AuthorizationDto, TransactionDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
-import { Container } from 'typedi';
 
-// LocationsService is a typedi-decorated service and sits on an import cycle with this mapper.
+// LocationsService sits on an import cycle with this mapper.
 // The batch token mapping never touches it, so a bare stub is enough to load the module.
 vi.mock('../../src/services/LocationsService.js', () => ({ LocationsService: class {} }));
 
-// TokensMapper resolves its logger from the typedi container when it meets a token type OCPI
-// cannot express, which is exactly the case under test here.
-Container.set(Logger, new Logger({ type: 'hidden' }));
 import { BaseTransactionMapper } from '../../src/mapper/BaseTransactionMapper.js';
 import { TokensMapper } from '../../src/mapper/TokensMapper.js';
 import type { TokenDTO } from '../../src/model/DTO/TokenDTO.js';
@@ -25,7 +21,14 @@ import type { TokenDTO } from '../../src/model/DTO/TokenDTO.js';
  */
 class TestTransactionMapper extends BaseTransactionMapper {
   constructor() {
-    super(new Logger({ type: 'hidden' }), {} as never, {} as never);
+    const logger = new Logger({ type: 'hidden' });
+    super({
+      logger,
+      locationsService: {},
+      ocpiGraphqlClient: {},
+      locationMapper: {},
+      tokensMapper: new TokensMapper({ logger }),
+    } as never);
   }
 
   public tokensFor(transactions: TransactionDto[]): Promise<Map<string, TokenDTO>> {
@@ -67,7 +70,8 @@ describe('TokensMapper.toDto on an authorization with no additionalInfo', () => 
     // additionalInfo is nullable on AuthorizationDto, and every Authorization not created through
     // OCPI has it unset. The getters used a non-null assertion, so the descriptive errors below
     // them were unreachable and callers saw a TypeError instead.
-    expect(() => TokensMapper.toDto(aDepotVehicleAuthorization())).toThrowError(/Contract ID/i);
+    const tokensMapper = new TokensMapper({ logger: new Logger({ type: 'hidden' }) });
+    expect(() => tokensMapper.toDto(aDepotVehicleAuthorization())).toThrowError(/Contract ID/i);
   });
 });
 

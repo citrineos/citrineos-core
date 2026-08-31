@@ -4,7 +4,6 @@
 
 import type { KoaMiddlewareInterface } from 'routing-controllers';
 import type { Context } from 'vm';
-import { Service } from 'typedi';
 import { OcpiHttpHeader } from '../OcpiHttpHeader.js';
 import { BaseMiddleware } from './BaseMiddleware.js';
 
@@ -13,7 +12,6 @@ import { BaseMiddleware } from './BaseMiddleware.js';
  * {@link OcpiHttpHeader.OcpiToCountryCode} and {@link OcpiHttpHeader.OcpiToPartyId} to the request response headers switching
  * the from/to country codes and party ids.
  */
-@Service()
 export class OcpiHeaderMiddleware extends BaseMiddleware implements KoaMiddlewareInterface {
   public async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     const fromCountryCode = this.getHeader(context, OcpiHttpHeader.OcpiFromCountryCode);

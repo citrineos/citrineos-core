@@ -9,7 +9,9 @@ import {
   jsonb,
   pgSchema,
   pgTable,
+  serial,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -19,8 +21,8 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function bootColumns() {
   return {
-    // StationId — a string primary key, not a serial.
-    id: varchar('id', { length: 255 }).primaryKey(),
+    id: serial('id').primaryKey(),
+    stationId: integer('stationId').notNull(),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     lastBootTime: timestamp('lastBootTime', { withTimezone: true, mode: 'date' }),
     heartbeatInterval: integer('heartbeatInterval'),
@@ -43,7 +45,9 @@ function bootColumns() {
 }
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
-export const bootTable = pgTable(TableName.Boots, bootColumns());
+export const bootTable = pgTable(TableName.Boots, bootColumns(), (t) => [
+  uniqueIndex('boots_station_id_key').on(t.stationId),
+]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof bootTable>();

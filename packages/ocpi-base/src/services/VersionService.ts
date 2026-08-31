@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { GetTenantByIdQueryResult, GetTenantByIdQueryVariables } from '../graphql/index.js';
-import { GET_TENANT_BY_ID, OcpiGraphqlClient } from '../graphql/index.js';
+import { GET_TENANT_BY_ID } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { OcpiGraphqlDependencies } from '../dependencies.js';
 import { VersionNumber } from '../model/VersionNumber.js';
-import { Service } from 'typedi';
 import { NotFoundError } from 'routing-controllers';
 import type { VersionDetailsResponseDTO } from '../model/DTO/VersionDetailsResponseDTO.js';
 import type { VersionListResponseDTO } from '../model/DTO/VersionListResponseDTO.js';
@@ -13,9 +14,12 @@ import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type { Endpoint, TenantDto, Version } from '@citrineos/types';
 import { RegistrationMapper } from '../mapper/index.js';
 
-@Service()
 export class VersionService {
-  constructor(private ocpiGraphqlClient: OcpiGraphqlClient) {}
+  private readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+
+  constructor({ ocpiGraphqlClient }: OcpiGraphqlDependencies) {
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+  }
 
   async getVersions(tenantId: number): Promise<VersionListResponseDTO> {
     const response = await this.ocpiGraphqlClient.request<

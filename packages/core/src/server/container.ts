@@ -22,18 +22,8 @@ import { type ILogObj, Logger } from 'tslog';
 
 // -- Core: DB, messaging, repositories, services, network, modules, APIs, handlers --
 import {
-  AdminApi,
-  Authenticator,
-  BasicAuthenticationFilter,
-  BrokerAwareMessageSender,
-  CertificateAuthorityService,
-  CertificatesModule,
-  CommandsApi,
-  ConfigurationModule,
-  ConnectedStationFilter,
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
-  DeviceModelService,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
@@ -45,31 +35,6 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
-  EVDriverModule,
-  IdGenerator,
-  InternalSmartCharging,
-  LocalBypassAuthProvider,
-  MessageRouterImpl,
-  MonitoringModule,
-  NetworkProfileFilter,
-  NetworkProfileService,
-  OcppMessageApi,
-  OIDCAuthProvider,
-  RabbitMQChannelManager,
-  RabbitMQConnectionManager,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  RealTimeAuthorizer,
-  registerApiServices,
-  registerCertificatesServices,
-  registerConfigurationServices,
-  registerEVDriverServices,
-  registerMonitoringServices,
-  registerOcppRouterServices,
-  registerReportingServices,
-  registerSmartChargingServices,
-  registerTransactionsServices,
-  ReportingModule,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -97,16 +62,60 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  SmartChargingModule,
-  TenantModule,
-  TransactionsModule,
+} from '@dal/index.js';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
+  CertificateAuthorityService,
+  ConnectedStationFilter,
+  IdGenerator,
+  LocalBypassAuthProvider,
+  NetworkProfileFilter,
+  NetworkProfileService,
+  OIDCAuthProvider,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  RealTimeAuthorizer,
   UnknownStationFilter,
-  WebPaymentApi,
-  WebhookDispatcher,
   WebsocketNetworkConnection,
-} from '@citrineos/core';
+  DeviceModelService,
+} from '@util/index.js';
+import { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
+import { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
+import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
+import { registerApiServices } from '@modules/Api/src/register.js';
+import {
+  CertificatesModule,
+  registerCertificatesServices,
+} from '@modules/Certificates/src/index.js';
+import {
+  ConfigurationModule,
+  registerConfigurationServices,
+} from '@modules/Configuration/src/index.js';
+import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/src/index.js';
+import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/src/index.js';
+import {
+  AdminApi,
+  MessageRouterImpl,
+  registerOcppRouterServices,
+  WebhookDispatcher,
+} from '@modules/OcppRouter/src/index.js';
+import { registerReportingServices, ReportingModule } from '@modules/Reporting/src/index.js';
+import {
+  InternalSmartCharging,
+  registerSmartChargingServices,
+  SmartChargingModule,
+} from '@modules/SmartCharging/src/index.js';
+import { TenantModule } from '@modules/Tenant/src/index.js';
+import {
+  registerTransactionsServices,
+  TransactionsModule,
+} from '@modules/Transactions/src/index.js';
 
-type Prebuilt = {
+export type Prebuilt = {
   logger: Logger<ILogObj>;
   cache: ICache;
   ocppValidator: OCPPValidator;

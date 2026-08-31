@@ -5,14 +5,12 @@
 import { BaseClientApi } from './BaseClientApi.js';
 import type { Cdr, CdrResponse } from '../model/Cdr.js';
 import { CdrResponseSchema } from '../model/Cdr.js';
-import { Service } from 'typedi';
 import type { OcpiEmptyResponse } from '../model/OcpiEmptyResponse.js';
 import { OcpiEmptyResponseSchema } from '../model/OcpiEmptyResponse.js';
 import { ModuleId } from '../model/ModuleId.js';
 import { EndpointIdentifier } from '../model/EndpointIdentifier.js';
 import { type Endpoint, HttpMethod, type PartnerProfile } from '@citrineos/types';
 
-@Service()
 export class CdrsClientApi extends BaseClientApi {
   CONTROLLER_PATH = ModuleId.Cdrs;
 

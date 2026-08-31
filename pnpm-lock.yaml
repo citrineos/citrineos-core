@@ -201,6 +201,9 @@ importers:
       '@fastify/type-provider-json-schema-to-ts':
         specifier: 4.0.1
         version: 4.0.1
+      awilix:
+        specifier: 13.0.3
+        version: 13.0.3
       cross-env:
         specifier: 7.0.3
         version: 7.0.3
@@ -922,6 +925,9 @@ importers:
       amqplib:
         specifier: 0.10.9
         version: 0.10.9
+      awilix:
+        specifier: 13.0.3
+        version: 13.0.3
       class-transformer:
         specifier: 0.5.1
         version: 0.5.1
@@ -991,9 +997,6 @@ importers:
       typed-rest-client:
         specifier: 2.1.0
         version: 2.1.0
-      typedi:
-        specifier: 0.10.0
-        version: 0.10.0
       uuid:
         specifier: 11.1.1
         version: 11.1.1
@@ -4916,6 +4919,10 @@ packages:
 
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
+
+  awilix@13.0.3:
+    resolution: {integrity: sha512-WpgYKwf8XEPAxabPxBYGvxz1QZhyxoopQLLqpwwVqSQAvTO46yhld3M9nfMuV8t2FjsTO7DQblALD9w+C8iVKQ==}
+    engines: {node: '>=20.0.0'}
 
   awilix@13.0.5:
     resolution: {integrity: sha512-ORtca6suBdYA1FyTzqHEZDvEuUwo3lPDDBRm7GrzHgi6STESzJKdBtpqfTzObdMj1NGQUWX6k26E3EbQaGJX5Q==}
@@ -10030,9 +10037,6 @@ packages:
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
 
-  typedi@0.10.0:
-    resolution: {integrity: sha512-v3UJF8xm68BBj6AF4oQML3ikrfK2c9EmZUyLOfShpJuItAqVBHWP/KtpGinkSsIiP6EZyyb6Z3NXyW9dgS9X1w==}
-
   typescript-eslint@8.17.0:
     resolution: {integrity: sha512-409VXvFd/f1br1DCbuKNFqQpXICoTB+V51afcwG1pn1a3Cp92MqAUges3YjwEdQ0cMUoCIodjVDAYzyD8h3SYA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -14464,6 +14468,10 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       fastq: 1.20.2
+
+  awilix@13.0.3:
+    dependencies:
+      fast-glob: 3.3.3
 
   awilix@13.0.5:
     dependencies:
@@ -20261,8 +20269,6 @@ snapshots:
       underscore: 1.13.8
 
   typedarray@0.0.6: {}
-
-  typedi@0.10.0: {}
 
   typescript-eslint@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:

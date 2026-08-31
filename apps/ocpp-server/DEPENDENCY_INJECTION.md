@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Dependency Injection (Awilix)
 
-How DI is orchestrated in the server. Read this alongside `apps/ocpp-server/src/container.ts` and `apps/ocpp-server/src/citrineOSServer.ts`
+How DI is orchestrated in the server. Read this alongside `packages/core/src/server/container.ts` and `apps/ocpp-server/src/citrineOSServer.ts`
 
 ## The model
 
@@ -93,7 +93,7 @@ Deliberate — don't "fix" these:
 
 ## Tests
 
-`packages/core/src/test/testContainer.ts` gives tests the same container settings as production
+`packages/core/test/testContainer.ts` gives tests the same container settings as production
 
 - `createTestContainer()` → a container with a mock logger pre-registered.
 - `getTestInstance(container, Class, mocks)` → registers your mocks + the class, then resolves it. `mocks` is typed against the constructor, so a wrong or missing dependency name is a compile error.
