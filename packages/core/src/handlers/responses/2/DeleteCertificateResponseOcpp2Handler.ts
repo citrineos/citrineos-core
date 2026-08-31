@@ -86,22 +86,16 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
         message.payload.status,
       );
       if (message.payload.status === DeleteCertificateStatusEnum.Accepted) {
-        const existingInstalledCertificates =
-          await this._installedCertificateRepository.readAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
-              issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
-              issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
-              serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
-            },
-          });
-        // should always be true
-        if (existingInstalledCertificates) {
-          for (const existingInstalledCertificate of existingInstalledCertificates) {
-            await existingInstalledCertificate.destroy();
-          }
-        }
+        await this._installedCertificateRepository.deleteByStationAndHashData(
+          tenantId,
+          ocppConnectionName,
+          {
+            hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
+            issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
+            issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
+            serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
+          },
+        );
       }
     }
   }

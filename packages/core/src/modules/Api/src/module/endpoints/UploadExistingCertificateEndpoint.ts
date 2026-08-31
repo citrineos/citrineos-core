@@ -9,10 +9,9 @@ import {
   DEFAULT_TENANT_ID,
   IMessageQuerystringSchema,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { type InstalledCertificateDto, HttpMethod } from '@citrineos/types';
 import type { UploadExistingCertificate } from '@dal/interfaces/index.js';
 import { UploadExistingCertificateSchema } from '@dal/interfaces/index.js';
-import type { InstalledCertificate } from '@dal/layers/sequelize/index.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import type { FastifyRequest } from 'fastify';
 
@@ -45,14 +44,14 @@ export class UploadExistingCertificateEndpoint extends AbstractEndpoint<UploadEx
 
   async handle(
     request: FastifyRequest<UploadExistingCertificateEndpointRoute>,
-  ): Promise<InstalledCertificate[]> {
+  ): Promise<InstalledCertificateDto[]> {
     const uploadExistingCertificate = request.body as UploadExistingCertificate;
     const messageQuerystring = request.query as IMessageQuerystring;
     const tenantId = messageQuerystring.tenantId || DEFAULT_TENANT_ID;
     const identifier = messageQuerystring.identifier;
     const isIdentifierList = Array.isArray(identifier);
     if (isIdentifierList) {
-      const promises: Promise<InstalledCertificate>[] = [];
+      const promises: Promise<InstalledCertificateDto>[] = [];
       for (const identifierElement of identifier) {
         promises.push(
           this._installCertificateHelperService.handleUploadExistingCertificate(
