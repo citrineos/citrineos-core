@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
 import { DataTypes, QueryTypes } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
 import type { ILogObj, Logger } from 'tslog';
+import type { SystemConfig } from '@citrineos/types';
 
 /**
  * Startup gate that verifies the live database schema still has the shape the
@@ -622,10 +622,11 @@ function countByKind(findings: SchemaFinding[]): string {
  */
 export async function assertSequelizeSchemaMatches(
   sequelize: Sequelize,
-  databaseConfig: BootstrapConfig['database'],
+  config: SystemConfig,
   logger: Logger<ILogObj>,
 ): Promise<SchemaValidationReport | null> {
   const log = logger.getSubLogger({ name: 'SchemaValidator' });
+  const databaseConfig = config.database;
 
   if (!databaseConfig.validateSchema) {
     log.warn('Schema validation is disabled (database.validateSchema=false)');

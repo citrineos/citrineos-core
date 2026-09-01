@@ -463,7 +463,7 @@ export class CitrineOSServer {
 
     this._schemaValidationReport = await sequelize.assertSequelizeSchemaMatches(
       this._sequelizeInstance,
-      this._config.database,
+      this._config,
       this._logger,
     );
 

@@ -767,17 +767,15 @@ describe('SequelizeSchemaValidator', () => {
   describe('assertSequelizeSchemaMatches', () => {
     const logger = new Logger({ type: 'hidden' });
 
-    // These are BootstrapConfig['database'] field names, defined in
-    // packages/base/src/config/bootstrap.config.ts. They are deliberately not
-    // named after this module, so a rename of the functions above must not touch
-    // them — and the `as any` casts below mean the compiler will not catch it.
-    const baseConfig = {
-      schema: 'public',
-      validateSchema: true,
-      validateSchemaSeverity: 'error' as const,
-      sync: false,
-      alter: false,
-      force: false,
+    const baseConfig: any = {
+      database: {
+        schema: 'public',
+        validateSchema: true,
+        validateSchemaSeverity: 'error' as const,
+        sync: false,
+        alter: false,
+        force: false,
+      },
     };
 
     function gateHarness(rows: FakeColumn[]) {
@@ -948,11 +946,10 @@ describe('SequelizeSchemaValidator', () => {
 
       it('adds one line, not a second block, when severity is warn', async () => {
         const { calls, logger: capture } = capturingLogger();
-        await assertSequelizeSchemaMatches(
-          gateHarness(mixedRows),
-          { ...baseConfig, validateSchemaSeverity: 'warn' } as any,
-          capture as any,
-        );
+        const config = { ...baseConfig };
+        config.database.validateSchemaSeverity = 'warn';
+
+        await assertSequelizeSchemaMatches(gateHarness(mixedRows), config, capture as any);
 
         assert.strictEqual(calls.length, 2);
         assert.strictEqual(calls[0].level, 'error');
@@ -972,9 +969,12 @@ describe('SequelizeSchemaValidator', () => {
     });
 
     it('skips entirely when validation is disabled', async () => {
+      const config = { ...baseConfig };
+      config.database.validateSchema = false;
+
       const report = await assertSequelizeSchemaMatches(
         gateHarness(driftedRows),
-        { ...baseConfig, validateSchema: false } as any,
+        config,
         logger as any,
       );
       assert.strictEqual(report, null);
@@ -982,9 +982,12 @@ describe('SequelizeSchemaValidator', () => {
 
     for (const flag of ['sync', 'alter', 'force'] as const) {
       it(`skips when database.${flag} is set, since sync has just reshaped the schema`, async () => {
+        const config = { ...baseConfig };
+        config.database[flag] = true;
+
         const report = await assertSequelizeSchemaMatches(
           gateHarness(driftedRows),
-          { ...baseConfig, [flag]: true } as any,
+          config,
           logger as any,
         );
         assert.strictEqual(report, null);
