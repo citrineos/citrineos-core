@@ -19,7 +19,7 @@ import type { AuthorizationQuerystring } from '@dal/interfaces/queries/Authoriza
 import type { IAuthorizationRepository } from '@dal/repositories/repositories.js';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { type TariffEntity, tariffTable } from '../schema/Tariff.js';
+import { type TariffEntity, tariffTable } from '../../db/drizzle/schema/Tariff.js';
 import { toTariffDto } from './Tariff.js';
 
 const groupAuthorizationTable = alias(authorizationTable, 'groupAuthorization');

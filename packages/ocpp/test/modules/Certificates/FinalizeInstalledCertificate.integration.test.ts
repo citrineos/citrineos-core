@@ -20,7 +20,7 @@ import {
   SequelizeInstalledCertificateRepository,
   Tenant,
 } from '@citrineos/dal';
-import { InstallCertificateHelperService } from '@modules/Certificates/index.js';
+import { InstallCertificateHelperService } from '@/services/certificate/installCertificateHelperService.js';
 
 /**
  * A station can have more than one certificate install in flight: the endpoint prepares an attempt

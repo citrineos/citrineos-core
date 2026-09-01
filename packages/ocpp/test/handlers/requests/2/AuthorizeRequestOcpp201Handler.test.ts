@@ -15,10 +15,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type {
-  IAuthorizationRepository,
-  IDeviceModelRepository,
-} from '@citrineos/dal';
+import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
 import type { CertificateAuthorityService } from '@/services/index.js';

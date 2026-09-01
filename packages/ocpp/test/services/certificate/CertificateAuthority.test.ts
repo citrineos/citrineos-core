@@ -277,7 +277,7 @@ describe('CertificateAuthorityService', () => {
   describe('validateCertificateHashData', () => {
     it('successes', async () => {
       const { createOcspRequest } = await vi.importActual<typeof CertificateUtil>(
-        '@util/certificate/CertificateUtil.js',
+        '@/services/certificate/CertificateUtil.js',
       );
       mockCertUtil.createOcspRequest.mockImplementation(createOcspRequest);
 

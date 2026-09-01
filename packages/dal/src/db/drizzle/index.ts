@@ -3,8 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export { DefaultDrizzleInstance } from './util.js';
-export { DrizzleRepository, type DrizzleRepositoryDependencies } from '../../repositories/drizzle/Base.js';
-export { DrizzleAuthorizationRepository, toAuthorizationDto } from '../../repositories/drizzle/Authorization.js';
+export {
+  DrizzleRepository,
+  type DrizzleRepositoryDependencies,
+} from '../../repositories/drizzle/Base.js';
+export {
+  DrizzleAuthorizationRepository,
+  toAuthorizationDto,
+} from '../../repositories/drizzle/Authorization.js';
 export {
   authorizationTable,
   tenantAuthorizationTable,
@@ -22,7 +28,10 @@ export {
   type BootEntity,
   type BootEntityInsert,
 } from './schema/Boot.js';
-export { DrizzleCertificateRepository, toCertificateDto } from '../../repositories/drizzle/Certificate.js';
+export {
+  DrizzleCertificateRepository,
+  toCertificateDto,
+} from '../../repositories/drizzle/Certificate.js';
 export {
   certificateTable,
   tenantCertificateTable,
@@ -67,7 +76,10 @@ export {
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
 } from './schema/InstalledCertificate.js';
-export { DrizzleSecurityEventRepository, toSecurityEventDto } from '../../repositories/drizzle/SecurityEvent.js';
+export {
+  DrizzleSecurityEventRepository,
+  toSecurityEventDto,
+} from '../../repositories/drizzle/SecurityEvent.js';
 export {
   securityEventTable,
   tenantSecurityEventTable,
@@ -76,7 +88,10 @@ export {
   type SecurityEventEntity,
   type SecurityEventEntityInsert,
 } from './schema/SecurityEvent.js';
-export { DrizzleSubscriptionRepository, toSubscriptionDto } from '../../repositories/drizzle/Subscription.js';
+export {
+  DrizzleSubscriptionRepository,
+  toSubscriptionDto,
+} from '../../repositories/drizzle/Subscription.js';
 export {
   subscriptionTable,
   tenantSubscriptionTable,

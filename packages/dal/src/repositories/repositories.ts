@@ -67,16 +67,9 @@ import type { StatusNotification } from '../models/Location/StatusNotification.j
 import type { MessageInfo } from '../models/MessageInfo/MessageInfo.js';
 import type { Reservation } from '../models/Reservation.js';
 import type { Tariff } from '../models/Tariff/Tariffs.js';
-import type {
-  MeterValue,
-  StopTransaction,
-  Transaction,
-} from '../models/TransactionEvent/index.js';
+import type { MeterValue, StopTransaction, Transaction } from '../models/TransactionEvent/index.js';
 import type { TransactionEvent } from '../models/TransactionEvent/TransactionEvent.js';
-import type {
-  EventData,
-  VariableMonitoring,
-} from '../models/VariableMonitoring/index.js';
+import type { EventData, VariableMonitoring } from '../models/VariableMonitoring/index.js';
 import type { AuthorizationQuerystring } from '../interfaces/queries/Authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/Tariff.js';
 import type { VariableAttributeQuerystring } from '../interfaces/queries/VariableAttribute.js';

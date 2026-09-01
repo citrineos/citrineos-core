@@ -14,10 +14,7 @@ import {
   OCPPVersion,
   ReserveNowStatusEnum,
 } from '@citrineos/types';
-import type {
-  IOCPPMessageRepository,
-  IReservationRepository,
-} from '@citrineos/dal';
+import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
 import {
   CancelReservationResponseOcpp2Handler,
   ReserveNowResponseOcpp2Handler,

@@ -22,7 +22,7 @@ import {
   SequelizeChargingProfileRepository,
   Tenant,
 } from '@citrineos/dal';
-import { CompositeSchedule } from '@citrineos/dal';
+import { CompositeSchedule } from '@dal/db/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 

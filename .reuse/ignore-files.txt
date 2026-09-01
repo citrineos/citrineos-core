@@ -70,15 +70,15 @@ packages/dal/src/interfaces/projections/schemas/AuthorizationRestrictionsSchema.
 packages/dal/src/interfaces/projections/schemas/TariffSchema.json
 
 # Certificate files
-packages/ocpp/test/util/resources/ChargingStationCSRSample.pem
-packages/ocpp/test/util/resources/LeafCertificateSample.pem
-packages/ocpp/test/util/resources/LeafKeySample.pem
-packages/ocpp/test/util/resources/RootCertificateSample.pem
-packages/ocpp/test/util/resources/RootKeySample.pem
-packages/ocpp/test/util/resources/SubCACertificateSample.pem
-packages/ocpp/test/util/resources/SubCAKeySample.pem
-packages/ocpp/test/util/resources/V2GCACertChainSample.pem
-packages/ocpp/test/util/resources/V2GLeafCertificateSample.pem
+packages/ocpp/test/resources/ChargingStationCSRSample.pem
+packages/ocpp/test/resources/LeafCertificateSample.pem
+packages/ocpp/test/resources/LeafKeySample.pem
+packages/ocpp/test/resources/RootCertificateSample.pem
+packages/ocpp/test/resources/RootKeySample.pem
+packages/ocpp/test/resources/SubCACertificateSample.pem
+packages/ocpp/test/resources/SubCAKeySample.pem
+packages/ocpp/test/resources/V2GCACertChainSample.pem
+packages/ocpp/test/resources/V2GLeafCertificateSample.pem
 apps/ocpp-server/src/assets/certificates/acme_account_key.pem
 apps/ocpp-server/src/assets/certificates/certChain.pem
 apps/ocpp-server/src/assets/certificates/leafKey.pem
@@ -88,7 +88,7 @@ apps/ocpp-server/src/assets/certificates/subCAKey.pem
 apps/ocpp-server/src/assets/websocket-servers.json
 
 # Documentation
-packages/ocpp/test/util/resources/README.md
+packages/ocpp/test/resources/README.md
 apps/ocpp-server/everest/README.md
 packages/ocpp/src/handlers/HANDLERS.md
 

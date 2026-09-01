@@ -48,16 +48,11 @@ import { REPORTING_MESSAGE_ENDPOINTS as REPORTING_OCPP2_ENDPOINTS } from './ocpp
 import { SMART_CHARGING_MESSAGE_ENDPOINTS as SMART_CHARGING_OCPP2_ENDPOINTS } from './ocpp/2/smartCharging.js';
 import { TRANSACTIONS_MESSAGE_ENDPOINTS as TRANSACTIONS_OCPP2_ENDPOINTS } from './ocpp/2/transactions.js';
 import { CreateSubscriptionEndpoint } from './router/CreateSubscriptionEndpoint.js';
-import { CreateWebsocketConfigurationEndpoint } from './router/CreateWebsocketConfigurationEndpoint.js';
 import { DeleteSubscriptionEndpoint } from './router/DeleteSubscriptionEndpoint.js';
-import { DeleteWebsocketConfigurationEndpoint } from './router/DeleteWebsocketConfigurationEndpoint.js';
 import { DeleteWebsocketConnectionEndpoint } from './router/DeleteWebsocketConnectionEndpoint.js';
 import { DeleteWebsocketMappingEndpoint } from './router/DeleteWebsocketMappingEndpoint.js';
 import { GenerateCertificateChainEndpoint } from './router/GenerateCertificateChainEndpoint.js';
 import { GetSubscriptionsEndpoint } from './router/GetSubscriptionsEndpoint.js';
-import { GetSystemConfigEndpoint } from './router/GetSystemConfigEndpoint.js';
-import { GetWebsocketConfigurationsEndpoint } from './router/GetWebsocketConfigurationsEndpoint.js';
-import { PutSystemConfigEndpoint } from './router/PutSystemConfigEndpoint.js';
 import { PutWebsocketMappingEndpoint } from './router/PutWebsocketMappingEndpoint.js';
 import { ReloadTlsCertificatesEndpoint } from './router/ReloadTlsCertificatesEndpoint.js';
 
@@ -99,16 +94,11 @@ const MESSAGE_ENDPOINTS = [
 
 const ADMIN_ENDPOINTS = [
   CreateSubscriptionEndpoint,
-  CreateWebsocketConfigurationEndpoint,
   DeleteSubscriptionEndpoint,
-  DeleteWebsocketConfigurationEndpoint,
   DeleteWebsocketConnectionEndpoint,
   DeleteWebsocketMappingEndpoint,
   GenerateCertificateChainEndpoint,
   GetSubscriptionsEndpoint,
-  GetSystemConfigEndpoint,
-  GetWebsocketConfigurationsEndpoint,
-  PutSystemConfigEndpoint,
   PutWebsocketMappingEndpoint,
   ReloadTlsCertificatesEndpoint,
 ] satisfies ReadonlyArray<EndpointClass>;

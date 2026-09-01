@@ -14,10 +14,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type {
-  IAuthorizationRepository,
-  ITransactionEventRepository,
-} from '@citrineos/dal';
+import type { IAuthorizationRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';

@@ -13,10 +13,7 @@ import {
 import { type CertificateCreate, type InstalledCertificateDto, HttpMethod } from '@citrineos/types';
 import type { RegenerateExistingCertificate } from '@citrineos/dal';
 import { RegenerateInstalledCertificateSchema } from '@citrineos/dal';
-import type {
-  ICertificateRepository,
-  IInstalledCertificateRepository,
-} from '@citrineos/dal';
+import type { ICertificateRepository, IInstalledCertificateRepository } from '@citrineos/dal';
 import type { InstallCertificateHelperService } from '@/services/certificate/installCertificateHelperService.js';
 import { generateCertificate } from '@/services/index.js';
 import type { FastifyRequest } from 'fastify';

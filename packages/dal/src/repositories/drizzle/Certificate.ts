@@ -15,7 +15,7 @@ import {
 } from '../../db/drizzle/schema/Certificate.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './Base.js';
-import { type ICertificateRepository } from '@/dal/index.js';
+import { type ICertificateRepository } from '../../../index.js';
 import { and, eq } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────

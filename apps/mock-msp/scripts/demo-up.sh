@@ -40,7 +40,7 @@ HEALTH_URL="http://127.0.0.1:${PORT}/_mock/health"
 DASH_URL="http://localhost:${PORT}/"
 
 # Path aliases that tsc-alias is responsible for rewriting in the emitted JS.
-# base: @ocpp @config @interfaces @base-util | dal: @dal | core: @ @modules @util
+# base: @ocpp @config @interfaces @base-util | dal: @dal | ocpp: @ @modules @util
 # Deliberately does NOT match real package specifiers like '@citrineos/base'.
 ALIAS_RE="['\"]@(interfaces|ocpp|config|base-util|dal|modules|util)/|['\"]@/"
 
@@ -49,12 +49,12 @@ alias_broken_files() {
     --include=*.js 2>/dev/null || true
 }
 
-# The documented recovery is `npx tsc-alias -p packages/{base,dal,core,ocpi-base}/tsconfig.json`,
+# The documented recovery is `npx tsc-alias -p packages/{base,dal,ocpp,ocpi-base}/tsconfig.json`,
 # but tsc-alias -p accepts ONE project: brace expansion silently drops the rest.
 # Run it once per project instead.
 repair_aliases() {
   local p
-  for p in base dal core ocpi-base; do
+  for p in base dal ocpp ocpi-base; do
     say "tsc-alias -p packages/$p/tsconfig.json"
     npx tsc-alias -p "packages/$p/tsconfig.json" ||
       die "tsc-alias failed for packages/$p"

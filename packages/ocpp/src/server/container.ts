@@ -67,10 +67,7 @@ import { CommandsApi } from '@/apis/CommandsApi.js';
 import { OcppMessageApi } from '@/apis/OcppMessageApi.js';
 import { WebPaymentApi } from '@/apis/WebPaymentApi.js';
 import { registerApiServices } from '@/apis/register.js';
-import {
-  CertificatesModule,
-  registerCertificatesServices,
-} from '@modules/Certificates/index.js';
+import { CertificatesModule, registerCertificatesServices } from '@modules/Certificates/index.js';
 import {
   ConfigurationModule,
   registerConfigurationServices,
@@ -85,13 +82,28 @@ import {
   SmartChargingModule,
 } from '@modules/SmartCharging/index.js';
 import { TenantModule } from '@modules/Tenant/index.js';
-import {
-  registerTransactionsServices,
-  TransactionsModule,
-} from '@modules/Transactions/index.js';
+import { registerTransactionsServices, TransactionsModule } from '@modules/Transactions/index.js';
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
-import { CertificateAuthorityService, DeviceModelService, NetworkProfileService, RealTimeAuthorizer } from '@/services/index.js';
-import { Authenticator, BasicAuthenticationFilter, BrokerAwareMessageSender, ConnectedStationFilter, NetworkProfileFilter, RabbitMQChannelManager, RabbitMQConnectionManager, RabbitMqReceiver, RabbitMqSender, UnknownStationFilter, WebsocketNetworkConnection } from '@/transport/index.js';
+import {
+  CertificateAuthorityService,
+  InstallCertificateHelperService,
+  DeviceModelService,
+  NetworkProfileService,
+  RealTimeAuthorizer,
+} from '@/services/index.js';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
+  ConnectedStationFilter,
+  NetworkProfileFilter,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  UnknownStationFilter,
+  WebsocketNetworkConnection,
+} from '@/transport/index.js';
 import { IdGenerator } from '@util/index.js';
 
 export type Prebuilt = {
@@ -236,7 +248,7 @@ function registerMessaging(container: AwilixContainer): void {
 }
 
 // ============================================================
-// Repositories — all singletons, registered from @citrineos/core named exports.
+// Repositories — all singletons, registered from @citrineos/dal named exports.
 // Every repository class takes a single destructured dependency object, which is
 // what PROXY injection hands it, so all of them register with asClass.
 // The Drizzle repositories override their Sequelize counterparts when enabled.
@@ -318,6 +330,7 @@ function registerServices(container: AwilixContainer): void {
   container.register({
     idGenerator: asClass(IdGenerator).singleton(),
     certificateAuthorityService: asClass(CertificateAuthorityService).singleton(),
+    installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     deviceModelService: asClass(DeviceModelService).singleton(),
     networkProfileService: asClass(NetworkProfileService).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),

@@ -30,9 +30,8 @@ import {
 } from './providers/StatusNotification.js';
 
 // Mock StatusNotification model
-vi.mock('@citrineos/dal', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@citrineos/dal')>();
+vi.mock('@dal/models/Location/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@dal/models/Location/index.js')>();
 
   class MockStatusNotification {
     id?: number;
