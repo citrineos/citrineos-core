@@ -61,6 +61,23 @@ describe('OCPPValidator', () => {
       };
       expect(() => ajv.compile(schema)).not.toThrow();
     });
+
+    it('strips a property the schema does not declare', () => {
+      const ajv = OCPPValidator.createServerAjvInstance();
+      // Every OCPP schema in this repo sets additionalProperties: true, so an undeclared property
+      // never causes a failure and 'failing' has nothing to remove. The operator API copies the
+      // validated body into the OCPP message, so the stray field reaches the station, which
+      // answers a FormatViolation for the whole command.
+      const validate = ajv.compile({
+        type: 'object',
+        additionalProperties: true,
+        properties: { idToken: { type: 'string' } },
+      });
+
+      const payload: Record<string, unknown> = { idToken: 'TAG001', typo: 'not a field' };
+      expect(validate(payload)).toBe(true);
+      expect(payload).toEqual({ idToken: 'TAG001' });
+    });
   });
 
   describe('createValidatorAjvInstance', () => {

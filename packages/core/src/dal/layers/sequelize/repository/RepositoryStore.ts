@@ -32,6 +32,9 @@ import type {
 import {
   DrizzleAuthorizationRepository,
   DrizzleCertificateRepository,
+  DrizzleDeleteCertificateAttemptRepository,
+  DrizzleInstallCertificateAttemptRepository,
+  DrizzleInstalledCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -100,21 +103,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
       config,
       logger,
@@ -173,6 +161,18 @@ export class RepositoryStore {
         variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
       });
       this.certificateRepository = new DrizzleCertificateRepository({ config, logger });
+      this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
+        config,
+        logger,
+      });
+      this.installCertificateAttemptRepository = new DrizzleInstallCertificateAttemptRepository({
+        config,
+        logger,
+      });
+      this.installedCertificateRepository = new DrizzleInstalledCertificateRepository({
+        config,
+        logger,
+      });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -188,6 +188,21 @@ export class RepositoryStore {
       });
       this.bootRepository = new SequelizeBootRepository({ config, logger, sequelizeInstance });
       this.certificateRepository = new SequelizeCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
         config,
         logger,
         sequelizeInstance,
