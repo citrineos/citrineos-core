@@ -4,7 +4,7 @@
 import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction } from '@citrineos/types';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from './schemas.js';
-import { SetDefaultTariffEndpoint } from './transactions/SetDefaultTariffEndpoint.js';
+import { SetDefaultTariffEndpoint } from './transactions/set-default-tariff-endpoint.js';
 
 const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>
   forwardMessageEndpoint({

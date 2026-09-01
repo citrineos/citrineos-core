@@ -12,8 +12,8 @@ import {
   aMockChannelManager,
   aMockConnectionManager,
   aSystemConfigWithAmqp,
-} from '../../../providers/RabbitMqProvider.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+} from '../../../providers/rabbit-mq-provider.js';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('RabbitMqReceiver', () => {
   const { container } = createTestContainer();

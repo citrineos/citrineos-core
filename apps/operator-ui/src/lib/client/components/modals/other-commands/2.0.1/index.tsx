@@ -7,11 +7,11 @@ import type { ChargingStationDto } from '@citrineos/types';
 import {
   OCPP2_0_1_COMMANDS_REGISTRY,
   type CommandDefinition,
-} from '@lib/client/components/modals/2.0.1/commands.registry';
+} from '@lib/client/components/modals/2.0.1/commands-registry';
 import { Button } from '@lib/client/components/ui/button';
-import type { ListCanReturnType } from '@lib/utils/access.types';
-import { ActionType, ResourceType } from '@lib/utils/access.types';
-import { closeModal, openModal } from '@lib/utils/store/modal.slice';
+import type { ListCanReturnType } from '@lib/utils/access-types';
+import { ActionType, ResourceType } from '@lib/utils/access-types';
+import { closeModal, openModal } from '@lib/utils/store/modal-slice';
 import { useCan, useTranslate } from '@refinedev/core';
 import { instanceToPlain } from 'class-transformer';
 import { useDispatch } from 'react-redux';

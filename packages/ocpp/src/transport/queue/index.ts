@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { BrokerAwareMessageSender } from './BrokerAwareMessageSender.js';
-export { RabbitMQChannelManager } from './rabbit-mq/ChannelManager.js';
-export { RabbitMQConnectionManager } from './rabbit-mq/ConnectionManager.js';
+export { BrokerAwareMessageSender } from './broker-aware-message-sender.js';
+export { RabbitMQChannelManager } from './rabbit-mq/channel-manager.js';
+export { RabbitMQConnectionManager } from './rabbit-mq/connection-manager.js';
 export { RabbitMqReceiver } from './rabbit-mq/receiver.js';
 export { RabbitMqSender } from './rabbit-mq/sender.js';

@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreateSubscriptionEndpoint } from '@/apis/router/CreateSubscriptionEndpoint.js';
-import { DeleteSubscriptionEndpoint } from '@/apis/router/DeleteSubscriptionEndpoint.js';
-import { GetSubscriptionsEndpoint } from '@/apis/router/GetSubscriptionsEndpoint.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
-import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
+import { CreateSubscriptionEndpoint } from '@/apis/router/create-subscription-endpoint.js';
+import { DeleteSubscriptionEndpoint } from '@/apis/router/delete-subscription-endpoint.js';
+import { GetSubscriptionsEndpoint } from '@/apis/router/get-subscriptions-endpoint.js';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpoint-harness.js';
 
 const PREFIX = '/ocpprouter';
 const URL = `${PREFIX}/subscription`;

@@ -7,7 +7,7 @@ import type { SystemConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
-} from '@/services/certificate/CertificateUtil.js';
+} from '@/services/certificate/certificate-util.js';
 import * as acme from 'acme-client';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';

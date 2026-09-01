@@ -4,12 +4,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_TENANT_ID, IMessageConfirmation } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import { DeleteCertificateEndpoint } from '@/apis/ocpp/2/certificates/DeleteCertificateEndpoint.js';
-import { InstallCertificateEndpoint } from '@/apis/ocpp/2/certificates/InstallCertificateEndpoint.js';
-import { aInstallCertificateRequest } from '@test/modules/Certificates/providers/InstallCertificateRequestProvider.js';
-import { aDeleteCertificateRequest } from '@test/modules/Certificates/providers/DeleteCertificateRequestProvider.js';
-import { MOCK_CHARGING_STATION_ID } from '@test/modules/Certificates/providers/ChargingStation.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { DeleteCertificateEndpoint } from '@/apis/ocpp/2/certificates/delete-certificate-endpoint.js';
+import { InstallCertificateEndpoint } from '@/apis/ocpp/2/certificates/install-certificate-endpoint.js';
+import { aInstallCertificateRequest } from '@test/modules/certificates/providers/install-certificate-request-provider.js';
+import { aDeleteCertificateRequest } from '@test/modules/certificates/providers/delete-certificate-request-provider.js';
+import { MOCK_CHARGING_STATION_ID } from '@test/modules/certificates/providers/charging-station.js';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 const mockInstallCertificateHelperService = {
   prepareToInstallCertificate: vi.fn(),

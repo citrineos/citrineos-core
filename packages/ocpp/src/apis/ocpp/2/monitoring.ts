@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction } from '@citrineos/types';
-import { ClearVariableMonitoringEndpoint } from './monitoring/ClearVariableMonitoringEndpoint.js';
-import { GetVariablesEndpoint } from './monitoring/GetVariablesEndpoint.js';
-import { SetVariableMonitoringEndpoint } from './monitoring/SetVariableMonitoringEndpoint.js';
-import { SetVariablesEndpoint } from './monitoring/SetVariablesEndpoint.js';
+import { ClearVariableMonitoringEndpoint } from './monitoring/clear-variable-monitoring-endpoint.js';
+import { GetVariablesEndpoint } from './monitoring/get-variables-endpoint.js';
+import { SetVariableMonitoringEndpoint } from './monitoring/set-variable-monitoring-endpoint.js';
+import { SetVariablesEndpoint } from './monitoring/set-variables-endpoint.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from './schemas.js';
 
 const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>

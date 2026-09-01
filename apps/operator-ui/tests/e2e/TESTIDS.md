@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 
 **Status:** Deferred. Per a binding constraint from the project owner, no
 modifications may be made to `src/`. The current suite ships using
-accessible queries only — see `tests/e2e/pages/overview.page.ts` and the
+accessible queries only — see `tests/e2e/pages/overview-page.ts` and the
 spec files for the actual selectors in use.
 
 This file is the canonical place to declare any `data-testid`s that get

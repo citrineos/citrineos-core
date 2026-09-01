@@ -10,19 +10,19 @@ export * from '@/apis/index.js';
 export * from '@util/index.js';
 
 // Module exports
-export * from '@modules/Certificates/index.js';
-export * from '@modules/Configuration/index.js';
-export * from '@modules/EVDriver/index.js';
-export * from '@modules/Monitoring/index.js';
-export * from '@modules/OcppRouter/index.js';
-export * from '@modules/Reporting/index.js';
-export * from '@modules/SmartCharging/index.js';
-export * from '@modules/Tenant/index.js';
-export * from '@modules/Transactions/index.js';
+export * from '@modules/certificates/index.js';
+export * from '@modules/configuration/index.js';
+export * from '@modules/ev-driver/index.js';
+export * from '@modules/monitoring/index.js';
+export * from '@modules/ocpp-router/index.js';
+export * from '@modules/reporting/index.js';
+export * from '@modules/smart-charging/index.js';
+export * from '@modules/tenant/index.js';
+export * from '@modules/transactions/index.js';
 
 // Handler exports
 export * from '@handlers/index.js';
 
 // Server support services (bootstrap-agnostic; the concrete server lives in the app)
-export { HealthCheckService, type HealthCheckResult } from './src/server/HealthCheckService.js';
+export { HealthCheckService, type HealthCheckResult } from './src/server/health-check-service.js';
 export { buildContainer, type Prebuilt } from './src/server/container.js';

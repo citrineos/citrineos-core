@@ -62,27 +62,27 @@ import {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/dal';
-import { AdminApi } from '@/apis/AdminApi.js';
-import { CommandsApi } from '@/apis/CommandsApi.js';
-import { OcppMessageApi } from '@/apis/OcppMessageApi.js';
-import { WebPaymentApi } from '@/apis/WebPaymentApi.js';
+import { AdminApi } from '@/apis/admin-api.js';
+import { CommandsApi } from '@/apis/commands-api.js';
+import { OcppMessageApi } from '@/apis/ocpp-message-api.js';
+import { WebPaymentApi } from '@/apis/web-payment-api.js';
 import { registerApiServices } from '@/apis/register.js';
-import { CertificatesModule, registerCertificatesServices } from '@modules/Certificates/index.js';
+import { CertificatesModule, registerCertificatesServices } from '@modules/certificates/index.js';
 import {
   ConfigurationModule,
   registerConfigurationServices,
-} from '@modules/Configuration/index.js';
-import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/index.js';
-import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/index.js';
-import { MessageRouterImpl, WebhookDispatcher } from '@modules/OcppRouter/index.js';
-import { registerReportingServices, ReportingModule } from '@modules/Reporting/index.js';
+} from '@modules/configuration/index.js';
+import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
+import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
+import { MessageRouterImpl, WebhookDispatcher } from '@modules/ocpp-router/index.js';
+import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
   InternalSmartCharging,
   registerSmartChargingServices,
   SmartChargingModule,
-} from '@modules/SmartCharging/index.js';
-import { TenantModule } from '@modules/Tenant/index.js';
-import { registerTransactionsServices, TransactionsModule } from '@modules/Transactions/index.js';
+} from '@modules/smart-charging/index.js';
+import { TenantModule } from '@modules/tenant/index.js';
+import { registerTransactionsServices, TransactionsModule } from '@modules/transactions/index.js';
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
   CertificateAuthorityService,

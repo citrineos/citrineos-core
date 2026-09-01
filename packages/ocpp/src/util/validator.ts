@@ -20,7 +20,7 @@ import type { ChargingNeeds, Transaction } from '@citrineos/dal';
 import { VariableAttribute } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { calculateCheckDigit } from './emaidCheckDigitCalculator.js';
+import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
 import { getNumberOfFractionDigit } from './parser.js';
 
 /**

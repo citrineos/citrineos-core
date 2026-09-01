@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction } from '@citrineos/types';
-import { GetCustomReportEndpoint } from './reporting/GetCustomReportEndpoint.js';
-import { GetMonitoringReportEndpoint } from './reporting/GetMonitoringReportEndpoint.js';
+import { GetCustomReportEndpoint } from './reporting/get-custom-report-endpoint.js';
+import { GetMonitoringReportEndpoint } from './reporting/get-monitoring-report-endpoint.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from './schemas.js';
 
 const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>

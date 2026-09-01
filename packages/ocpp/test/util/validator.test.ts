@@ -49,7 +49,7 @@ import {
   VALID_LANGUAGE_TAGS,
   VALID_URI_CONTENT,
   VALID_UTF8_CONTENT,
-} from '../providers/ValidatorProvider.js';
+} from '../providers/validator-provider.js';
 
 describe('validateLanguageTag', () => {
   it.each(VALID_LANGUAGE_TAGS)('should return true for valid language tag "%s"', (languageTag) => {

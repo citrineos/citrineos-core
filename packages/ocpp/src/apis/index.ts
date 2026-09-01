@@ -5,8 +5,8 @@
 export * from './authorization/index.js';
 export { initSwagger } from './swagger.js';
 
-export { AdminApi } from './AdminApi.js';
-export { CommandsApi } from './CommandsApi.js';
-export { OcppMessageApi } from './OcppMessageApi.js';
-export { WebPaymentApi } from './WebPaymentApi.js';
+export { AdminApi } from './admin-api.js';
+export { CommandsApi } from './commands-api.js';
+export { OcppMessageApi } from './ocpp-message-api.js';
+export { WebPaymentApi } from './web-payment-api.js';
 export { registerApiServices } from './register.js';

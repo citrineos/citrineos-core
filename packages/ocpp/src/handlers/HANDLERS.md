@@ -13,14 +13,14 @@ look like this:
       handlers/
       ├─ requests/
       │  ├─ 1.6/
-      │  │  ├─ HeartbeatRequestOcpp16Handler.ts
+      │  │  ├─ heartbeat-request-ocpp-16-handler.ts
       │  ├─ 2/
-      │  │  ├─ HeartbeatRequestOcpp2Handler.ts
+      │  │  ├─ heartbeat-request-ocpp-2-handler.ts
       ├─ responses/
       │  ├─ 1.6/
-      │  │  ├─ HeartbeatResponseOcpp16Handler.ts
+      │  │  ├─ HeartbeatResponseOcpp16handler.ts
       │  ├─ 2/
-      │  │  ├─ HeartbeatResponseOcpp2Handler.ts
+      │  │  ├─ HeartbeatResponseOcpp2handler.ts
 
 All handlers are exported in `handlers/index.ts`.
 
@@ -29,7 +29,7 @@ All handlers are exported in `handlers/index.ts`.
 To register a handler to a particular module:
 
 1. Create your handler class under `requests/<version>/` or `responses/<version>/`, named
-   `<Action><Request|Response>Ocpp<version>Handler.ts`.
+   `<Action><Request|Response>Ocpp<version>handler.ts`.
 2. Extend `AbstractHandler`.
 3. Decorate your handler with either `@AsRequestHandler` or `@AsResponseHandler` (based on whether the handler processes
    a request or response).

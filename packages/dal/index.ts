@@ -88,9 +88,9 @@ export {
   OCPP1_6_Mapper,
   OCPP2_1_Mapper,
 } from './src/db/sequelize/index.js'; // TODO ensure all needed modules are properly exported
-export type { CompositeScheduleInput } from './src/mappers/2.0.1/ChargingProfileMapper.js';
-export type { TariffData } from './src/models/Tariff/Tariffs.js';
-export { RepositoryStore } from './src/repositories/sequelize/RepositoryStore.js';
+export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profile-mapper.js';
+export type { TariffData } from './src/models/tariff/tariffs.js';
+export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
 export {
   DefaultDrizzleInstance,
   DrizzleAuthorizationRepository,

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { resolveStationProtocol } from './stationProtocol.js';
-export type { ReadChargingStation, StationProtocolResolution } from './stationProtocol.js';
+export { resolveStationProtocol } from './station-protocol.js';
+export type { ReadChargingStation, StationProtocolResolution } from './station-protocol.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './parser.js';
 export {
   validateLanguageTag,
@@ -28,4 +28,4 @@ export {
   type ChargingProfileTransactionContext,
   type ChargingProfileValidation,
 } from './validator.js';
-export { IdGenerator } from './idGenerator.js';
+export { IdGenerator } from './id-generator.js';

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { UnknownStationFilter } from './networkconnection/authenticator/UnknownStationFilter.js';
-export { ConnectedStationFilter } from './networkconnection/authenticator/ConnectedStationFilter.js';
-export { NetworkProfileFilter } from './networkconnection/authenticator/NetworkProfileFilter.js';
-export { BasicAuthenticationFilter } from './networkconnection/authenticator/BasicAuthenticationFilter.js';
+export { UnknownStationFilter } from './network-connection/authenticator/unknown-station-filter.js';
+export { ConnectedStationFilter } from './network-connection/authenticator/connected-station-filter.js';
+export { NetworkProfileFilter } from './network-connection/authenticator/network-profile-filter.js';
+export { BasicAuthenticationFilter } from './network-connection/authenticator/basic-authentication-filter.js';
 
 export * from './queue/index.js';
-export * from './networkconnection/index.js';
+export * from './network-connection/index.js';

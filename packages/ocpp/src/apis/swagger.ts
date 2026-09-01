@@ -13,7 +13,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { OpenAPIV3_1 } from 'openapi-types';
 import { OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import * as packageJson from '../../package.json' with { type: 'json' };
-import { LocalStorage } from '../config/files/localStorage.js';
+import { LocalStorage } from '../config/files/local-storage.js';
 
 /**
  * This transformation is used to set default tags

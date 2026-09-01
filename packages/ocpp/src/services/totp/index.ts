@@ -2,4 +2,4 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { TotpUtil } from './TotpUtil.js';
+export { TotpUtil } from './totp-util.js';

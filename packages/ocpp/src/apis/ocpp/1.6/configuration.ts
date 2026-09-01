@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import { ChangeConfigurationEndpoint } from './configuration/ChangeConfigurationEndpoint.js';
-import { GetConfigurationEndpoint } from './configuration/GetConfigurationEndpoint.js';
-import { TriggerMessageEndpoint } from './configuration/TriggerMessageEndpoint.js';
+import { ChangeConfigurationEndpoint } from './configuration/change-configuration-endpoint.js';
+import { GetConfigurationEndpoint } from './configuration/get-configuration-endpoint.js';
+import { TriggerMessageEndpoint } from './configuration/trigger-message-endpoint.js';
 
 const ocpp16 = (action: OCPP_CallAction, bodySchema: object) =>
   forwardMessageEndpoint({

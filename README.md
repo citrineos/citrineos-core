@@ -220,7 +220,7 @@ as `SetVariablesEndpoint` does when it chunks a long variable list per station.
 
 ### Calling them from the Operator UI
 
-Each surface has its own helper in `messages.utils.tsx`. The helper supplies the prefix, so the `url`
+Each surface has its own helper in `messages-utils.tsx`. The helper supplies the prefix, so the `url`
 you pass is relative to it:
 
 ```ts
@@ -243,7 +243,7 @@ triggerAdminAndHandleResponse({
 ```
 
 All three wrap `BaseRestClient`, which is constructed with the base path it prepends —
-`ocppApiPath(version)`, `COMMANDS_API_PATH` or `ADMIN_API_PATH`, defined in `BaseRestClient.ts`.
+`ocppApiPath(version)`, `COMMANDS_API_PATH` or `ADMIN_API_PATH`, defined in `base-rest-client.ts`.
 Choosing the helper is what selects the surface, so the prefix never appears in a call site.
 
 ## Prerequisites

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { AuthorizationMapper } from './AuthorizationMapper.js';
-export { BootMapper } from './BootMapper.js';
-export { ChargingProfileMapper } from './ChargingProfileMapper.js';
-export { MeterValueMapper } from './MeterValueMapper.js';
-export { TransactionMapper } from './TransactionMapper.js';
-export { LocationMapper } from './LocationMapper.js';
+export { AuthorizationMapper } from './authorization-mapper.js';
+export { BootMapper } from './boot-mapper.js';
+export { ChargingProfileMapper } from './charging-profile-mapper.js';
+export { MeterValueMapper } from './meter-value-mapper.js';
+export { TransactionMapper } from './transaction-mapper.js';
+export { LocationMapper } from './location-mapper.js';

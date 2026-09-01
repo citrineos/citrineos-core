@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type MessageEndpointClass, forwardMessageEndpoint } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction } from '@citrineos/types';
-import { DeleteCertificateEndpoint } from './certificates/DeleteCertificateEndpoint.js';
-import { InstallCertificateEndpoint } from './certificates/InstallCertificateEndpoint.js';
+import { DeleteCertificateEndpoint } from './certificates/delete-certificate-endpoint.js';
+import { InstallCertificateEndpoint } from './certificates/install-certificate-endpoint.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from './schemas.js';
 
 const ocpp2 = (action: OCPP_CallAction, schemaName: string) =>

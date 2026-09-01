@@ -41,38 +41,42 @@ import type {
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
-} from '../mappers/2.0.1/ChargingProfileMapper.js';
-import type { LocalListVersion } from '../models/Authorization/LocalListVersion.js';
-import type { SendLocalList } from '../models/Authorization/SendLocalList.js';
-import type { ChangeConfiguration } from '../models/ChangeConfiguration.js';
+} from '../mappers/2.0.1/charging-profile-mapper.js';
+import type { LocalListVersion } from '../models/authorization/local-list-version.js';
+import type { SendLocalList } from '../models/authorization/send-local-list.js';
+import type { ChangeConfiguration } from '../models/change-configuration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
   CompositeSchedule,
-} from '../models/ChargingProfile/index.js';
-import type { ChargingStationSecurityInfo } from '../models/ChargingStationSecurityInfo.js';
-import type { ChargingStationSequence } from '../models/ChargingStationSequence/ChargingStationSequence.js';
-import type { Component } from '../models/DeviceModel/Component.js';
-import type { EvseType } from '../models/DeviceModel/EvseType.js';
-import type { Variable } from '../models/DeviceModel/Variable.js';
-import type { VariableAttribute } from '../models/DeviceModel/VariableAttribute.js';
-import type { VariableCharacteristics } from '../models/DeviceModel/VariableCharacteristics.js';
-import type { ChargingStation } from '../models/Location/ChargingStation.js';
-import type { ChargingStationNetworkProfile } from '../models/Location/ChargingStationNetworkProfile.js';
-import type { Connector } from '../models/Location/Connector.js';
-import type { Evse } from '../models/Location/Evse.js';
-import type { Location } from '../models/Location/Location.js';
-import type { SetNetworkProfile } from '../models/Location/SetNetworkProfile.js';
-import type { StatusNotification } from '../models/Location/StatusNotification.js';
-import type { MessageInfo } from '../models/MessageInfo/MessageInfo.js';
-import type { Reservation } from '../models/Reservation.js';
-import type { Tariff } from '../models/Tariff/Tariffs.js';
-import type { MeterValue, StopTransaction, Transaction } from '../models/TransactionEvent/index.js';
-import type { TransactionEvent } from '../models/TransactionEvent/TransactionEvent.js';
-import type { EventData, VariableMonitoring } from '../models/VariableMonitoring/index.js';
-import type { AuthorizationQuerystring } from '../interfaces/queries/Authorization.js';
-import type { TariffQueryString } from '../interfaces/queries/Tariff.js';
-import type { VariableAttributeQuerystring } from '../interfaces/queries/VariableAttribute.js';
+} from '../models/charging-profile/index.js';
+import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
+import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
+import type { Component } from '../models/device-model/component.js';
+import type { EvseType } from '../models/device-model/evse-type.js';
+import type { Variable } from '../models/device-model/variable.js';
+import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
+import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
+import type { ChargingStation } from '../models/location/charging-station.js';
+import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
+import type { Connector } from '../models/location/connector.js';
+import type { Evse } from '../models/location/evse.js';
+import type { Location } from '../models/location/location.js';
+import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
+import type { StatusNotification } from '../models/location/status-notification.js';
+import type { MessageInfo } from '../models/message-info/message-info.js';
+import type { Reservation } from '../models/reservation.js';
+import type { Tariff } from '../models/tariff/tariffs.js';
+import type {
+  MeterValue,
+  StopTransaction,
+  Transaction,
+} from '../models/transaction-event/index.js';
+import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
+import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
+import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
+import type { TariffQueryString } from '../interfaces/queries/tariff.js';
+import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (

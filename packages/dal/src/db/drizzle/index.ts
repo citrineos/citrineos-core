@@ -6,11 +6,11 @@ export { DefaultDrizzleInstance } from './util.js';
 export {
   DrizzleRepository,
   type DrizzleRepositoryDependencies,
-} from '../../repositories/drizzle/Base.js';
+} from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,
   toAuthorizationDto,
-} from '../../repositories/drizzle/Authorization.js';
+} from '../../repositories/drizzle/authorization.js';
 export {
   authorizationTable,
   tenantAuthorizationTable,
@@ -18,8 +18,8 @@ export {
   AuthorizationEntityInsertSchema,
   type AuthorizationEntity,
   type AuthorizationEntityInsert,
-} from './schema/Authorization.js';
-export { DrizzleBootRepository, toBootDto } from '../../repositories/drizzle/Boot.js';
+} from './schema/authorization.js';
+export { DrizzleBootRepository, toBootDto } from '../../repositories/drizzle/boot.js';
 export {
   bootTable,
   tenantBootTable,
@@ -27,11 +27,11 @@ export {
   BootEntityInsertSchema,
   type BootEntity,
   type BootEntityInsert,
-} from './schema/Boot.js';
+} from './schema/boot.js';
 export {
   DrizzleCertificateRepository,
   toCertificateDto,
-} from '../../repositories/drizzle/Certificate.js';
+} from '../../repositories/drizzle/certificate.js';
 export {
   certificateTable,
   tenantCertificateTable,
@@ -39,11 +39,11 @@ export {
   CertificateEntityInsertSchema,
   type CertificateEntity,
   type CertificateEntityInsert,
-} from './schema/Certificate.js';
+} from './schema/certificate.js';
 export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
-} from '../../repositories/drizzle/DeleteCertificateAttempt.js';
+} from '../../repositories/drizzle/delete-certificate-attempt.js';
 export {
   deleteCertificateAttemptTable,
   tenantDeleteCertificateAttemptTable,
@@ -51,11 +51,11 @@ export {
   DeleteCertificateAttemptEntityInsertSchema,
   type DeleteCertificateAttemptEntity,
   type DeleteCertificateAttemptEntityInsert,
-} from './schema/DeleteCertificateAttempt.js';
+} from './schema/delete-certificate-attempt.js';
 export {
   DrizzleInstallCertificateAttemptRepository,
   toInstallCertificateAttemptDto,
-} from '../../repositories/drizzle/InstallCertificateAttempt.js';
+} from '../../repositories/drizzle/install-certificate-attempt.js';
 export {
   installCertificateAttemptTable,
   tenantInstallCertificateAttemptTable,
@@ -63,11 +63,11 @@ export {
   InstallCertificateAttemptEntityInsertSchema,
   type InstallCertificateAttemptEntity,
   type InstallCertificateAttemptEntityInsert,
-} from './schema/InstallCertificateAttempt.js';
+} from './schema/install-certificate-attempt.js';
 export {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
-} from '../../repositories/drizzle/InstalledCertificate.js';
+} from '../../repositories/drizzle/installed-certificate.js';
 export {
   installedCertificateTable,
   tenantInstalledCertificateTable,
@@ -75,11 +75,11 @@ export {
   InstalledCertificateEntityInsertSchema,
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
-} from './schema/InstalledCertificate.js';
+} from './schema/installed-certificate.js';
 export {
   DrizzleSecurityEventRepository,
   toSecurityEventDto,
-} from '../../repositories/drizzle/SecurityEvent.js';
+} from '../../repositories/drizzle/security-event.js';
 export {
   securityEventTable,
   tenantSecurityEventTable,
@@ -87,11 +87,11 @@ export {
   SecurityEventEntityInsertSchema,
   type SecurityEventEntity,
   type SecurityEventEntityInsert,
-} from './schema/SecurityEvent.js';
+} from './schema/security-event.js';
 export {
   DrizzleSubscriptionRepository,
   toSubscriptionDto,
-} from '../../repositories/drizzle/Subscription.js';
+} from '../../repositories/drizzle/subscription.js';
 export {
   subscriptionTable,
   tenantSubscriptionTable,
@@ -99,11 +99,11 @@ export {
   SubscriptionEntityInsertSchema,
   type SubscriptionEntity,
   type SubscriptionEntityInsert,
-} from './schema/Subscription.js';
+} from './schema/subscription.js';
 export {
   DrizzleServerNetworkProfileRepository,
   toServerNetworkProfileDto,
-} from '../../repositories/drizzle/ServerNetworkProfile.js';
+} from '../../repositories/drizzle/server-network-profile.js';
 export {
   serverNetworkProfileTable,
   tenantServerNetworkProfileTable,
@@ -111,8 +111,8 @@ export {
   ServerNetworkProfileEntityInsertSchema,
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
-} from './schema/ServerNetworkProfile.js';
-export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/Tenant.js';
+} from './schema/server-network-profile.js';
+export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
   tenantTable,
   tenantTenantTable,
@@ -120,11 +120,11 @@ export {
   TenantEntityInsertSchema,
   type TenantEntity,
   type TenantEntityInsert,
-} from './schema/Tenant.js';
+} from './schema/tenant.js';
 export {
   DrizzleVariableAttributeRepository,
   toVariableAttributeDto,
-} from '../../repositories/drizzle/VariableAttribute.js';
+} from '../../repositories/drizzle/variable-attribute.js';
 export {
   variableAttributeTable,
   tenantVariableAttributeTable,
@@ -132,4 +132,4 @@ export {
   VariableAttributeEntityInsertSchema,
   type VariableAttributeEntity,
   type VariableAttributeEntityInsert,
-} from './schema/VariableAttribute.js';
+} from './schema/variable-attribute.js';

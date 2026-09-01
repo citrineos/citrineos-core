@@ -13,8 +13,8 @@ import { type OcppRequest, type OcppResponse, MessageState } from '@citrineos/ty
 import { instanceToPlain } from 'class-transformer';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { RabbitMQChannelManager } from './ChannelManager.js';
-import { RabbitMQConnectionManager } from './ConnectionManager.js';
+import { RabbitMQChannelManager } from './channel-manager.js';
+import { RabbitMQConnectionManager } from './connection-manager.js';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.

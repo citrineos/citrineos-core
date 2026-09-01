@@ -7,7 +7,7 @@ import { type CallAction, type SystemConfig, RetryMessageError } from '@citrineo
 import * as amqplib from 'amqplib';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { RabbitMQChannelManager } from './ChannelManager.js';
+import { RabbitMQChannelManager } from './channel-manager.js';
 
 /**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.

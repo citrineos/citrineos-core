@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { AuthorizationMapper } from './AuthorizationMapper.js';
-export { TariffMapper } from './TariffMapper.js';
+export { AuthorizationMapper } from './authorization-mapper.js';
+export { TariffMapper } from './tariff-mapper.js';

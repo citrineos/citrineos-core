@@ -12,49 +12,49 @@ import {
   type EndpointResolverCradle,
   type MessageEndpointClass,
 } from '@citrineos/base';
-import { DeleteStationNetworkProfileEndpoint } from './commands/DeleteStationNetworkProfileEndpoint.js';
+import { DeleteStationNetworkProfileEndpoint } from './commands/delete-station-network-profile-endpoint.js';
 import {
   DeleteBootConfigEndpoint,
   GetBootConfigEndpoint,
   PutBootConfigEndpoint,
-} from './commands/BootConfigEndpoints.js';
-import { GetLocalListVersionEndpoint } from './commands/GetLocalListVersionEndpoint.js';
-import { GetStationNetworkProfilesEndpoint } from './commands/GetStationNetworkProfilesEndpoint.js';
-import { GetTransactionEndpoint } from './commands/GetTransactionEndpoint.js';
+} from './commands/boot-config-endpoints.js';
+import { GetLocalListVersionEndpoint } from './commands/get-local-list-version-endpoint.js';
+import { GetStationNetworkProfilesEndpoint } from './commands/get-station-network-profiles-endpoint.js';
+import { GetTransactionEndpoint } from './commands/get-transaction-endpoint.js';
 import {
   DeleteStationVariablesEndpoint,
   GetStationVariablesEndpoint,
-} from './commands/StationVariableEndpoints.js';
+} from './commands/station-variable-endpoints.js';
 import {
   DeleteTariffsEndpoint,
   GetTariffsEndpoint,
   UpsertTariffEndpoint,
-} from './commands/TariffEndpoints.js';
-import { InstallRootCertificateEndpoint } from './commands/InstallRootCertificateEndpoint.js';
-import { ProvisionStationVariablesEndpoint } from './commands/ProvisionStationVariablesEndpoint.js';
-import { RegenerateCertificateEndpoint } from './commands/RegenerateCertificateEndpoint.js';
-import { SetStationPasswordEndpoint } from './commands/SetStationPasswordEndpoint.js';
-import { UploadExistingCertificateEndpoint } from './commands/UploadExistingCertificateEndpoint.js';
-import { InitiateWebPaymentEndpoint } from './webPayment/InitiateWebPaymentEndpoint.js';
+} from './commands/tariff-endpoints.js';
+import { InstallRootCertificateEndpoint } from './commands/install-root-certificate-endpoint.js';
+import { ProvisionStationVariablesEndpoint } from './commands/provision-station-variables-endpoint.js';
+import { RegenerateCertificateEndpoint } from './commands/regenerate-certificate-endpoint.js';
+import { SetStationPasswordEndpoint } from './commands/set-station-password-endpoint.js';
+import { UploadExistingCertificateEndpoint } from './commands/upload-existing-certificate-endpoint.js';
+import { InitiateWebPaymentEndpoint } from './web-payment/initiate-web-payment-endpoint.js';
 import { CONFIGURATION_MESSAGE_ENDPOINTS as CONFIGURATION_OCPP16_ENDPOINTS } from './ocpp/1.6/configuration.js';
-import { EV_DRIVER_MESSAGE_ENDPOINTS as EV_DRIVER_OCPP16_ENDPOINTS } from './ocpp/1.6/evDriver.js';
+import { EV_DRIVER_MESSAGE_ENDPOINTS as EV_DRIVER_OCPP16_ENDPOINTS } from './ocpp/1.6/ev-driver.js';
 import { REPORTING_MESSAGE_ENDPOINTS as REPORTING_OCPP16_ENDPOINTS } from './ocpp/1.6/reporting.js';
-import { SMART_CHARGING_MESSAGE_ENDPOINTS as SMART_CHARGING_OCPP16_ENDPOINTS } from './ocpp/1.6/smartCharging.js';
+import { SMART_CHARGING_MESSAGE_ENDPOINTS as SMART_CHARGING_OCPP16_ENDPOINTS } from './ocpp/1.6/smart-charging.js';
 import { CERTIFICATES_MESSAGE_ENDPOINTS as CERTIFICATES_OCPP2_ENDPOINTS } from './ocpp/2/certificates.js';
 import { CONFIGURATION_MESSAGE_ENDPOINTS as CONFIGURATION_OCPP2_ENDPOINTS } from './ocpp/2/configuration.js';
-import { EV_DRIVER_MESSAGE_ENDPOINTS as EV_DRIVER_OCPP2_ENDPOINTS } from './ocpp/2/evDriver.js';
+import { EV_DRIVER_MESSAGE_ENDPOINTS as EV_DRIVER_OCPP2_ENDPOINTS } from './ocpp/2/ev-driver.js';
 import { MONITORING_MESSAGE_ENDPOINTS as MONITORING_OCPP2_ENDPOINTS } from './ocpp/2/monitoring.js';
 import { REPORTING_MESSAGE_ENDPOINTS as REPORTING_OCPP2_ENDPOINTS } from './ocpp/2/reporting.js';
-import { SMART_CHARGING_MESSAGE_ENDPOINTS as SMART_CHARGING_OCPP2_ENDPOINTS } from './ocpp/2/smartCharging.js';
+import { SMART_CHARGING_MESSAGE_ENDPOINTS as SMART_CHARGING_OCPP2_ENDPOINTS } from './ocpp/2/smart-charging.js';
 import { TRANSACTIONS_MESSAGE_ENDPOINTS as TRANSACTIONS_OCPP2_ENDPOINTS } from './ocpp/2/transactions.js';
-import { CreateSubscriptionEndpoint } from './router/CreateSubscriptionEndpoint.js';
-import { DeleteSubscriptionEndpoint } from './router/DeleteSubscriptionEndpoint.js';
-import { DeleteWebsocketConnectionEndpoint } from './router/DeleteWebsocketConnectionEndpoint.js';
-import { DeleteWebsocketMappingEndpoint } from './router/DeleteWebsocketMappingEndpoint.js';
-import { GenerateCertificateChainEndpoint } from './router/GenerateCertificateChainEndpoint.js';
-import { GetSubscriptionsEndpoint } from './router/GetSubscriptionsEndpoint.js';
-import { PutWebsocketMappingEndpoint } from './router/PutWebsocketMappingEndpoint.js';
-import { ReloadTlsCertificatesEndpoint } from './router/ReloadTlsCertificatesEndpoint.js';
+import { CreateSubscriptionEndpoint } from './router/create-subscription-endpoint.js';
+import { DeleteSubscriptionEndpoint } from './router/delete-subscription-endpoint.js';
+import { DeleteWebsocketConnectionEndpoint } from './router/delete-websocket-connection-endpoint.js';
+import { DeleteWebsocketMappingEndpoint } from './router/delete-websocket-mapping-endpoint.js';
+import { GenerateCertificateChainEndpoint } from './router/generate-certificate-chain-endpoint.js';
+import { GetSubscriptionsEndpoint } from './router/get-subscriptions-endpoint.js';
+import { PutWebsocketMappingEndpoint } from './router/put-websocket-mapping-endpoint.js';
+import { ReloadTlsCertificatesEndpoint } from './router/reload-tls-certificates-endpoint.js';
 
 const COMMAND_ENDPOINTS = [
   DeleteBootConfigEndpoint,

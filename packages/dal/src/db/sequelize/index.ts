@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Sequelize Persistence Models
-export { Boot } from '../../models/Boot.js';
+export { Boot } from '../../models/boot.js';
 export {
   VariableAttribute,
   VariableCharacteristics,
@@ -11,7 +11,7 @@ export {
   EvseType,
   Variable,
   VariableStatus,
-} from '../../models/DeviceModel/index.js';
+} from '../../models/device-model/index.js';
 export {
   Authorization,
   LocalListAuthorization,
@@ -19,20 +19,20 @@ export {
   SendLocalList,
   LocalListVersionAuthorization,
   SendLocalListAuthorization,
-} from '../../models/Authorization/index.js';
+} from '../../models/authorization/index.js';
 export {
   StartTransaction,
   StopTransaction,
   Transaction,
   TransactionEvent,
   MeterValue,
-} from '../../models/TransactionEvent/index.js';
-export { SecurityEvent } from '../../models/SecurityEvent.js';
+} from '../../models/transaction-event/index.js';
+export { SecurityEvent } from '../../models/security-event.js';
 export {
   VariableMonitoring,
   EventData,
   VariableMonitoringStatus,
-} from '../../models/VariableMonitoring/index.js';
+} from '../../models/variable-monitoring/index.js';
 export {
   ChargingStation,
   Evse,
@@ -43,69 +43,73 @@ export {
   SetNetworkProfile,
   StatusNotification,
   Connector,
-} from '../../models/Location/index.js';
-export { ChargingStationSequence } from '../../models/ChargingStationSequence/index.js';
-export { MessageInfo } from '../../models/MessageInfo/index.js';
-export { Tariff } from '../../models/Tariff/index.js';
-export { Subscription } from '../../models/Subscription/index.js';
+} from '../../models/location/index.js';
+export { ChargingStationSequence } from '../../models/charging-station-sequence/index.js';
+export { MessageInfo } from '../../models/message-info/index.js';
+export { Tariff } from '../../models/tariff/index.js';
+export { Subscription } from '../../models/subscription/index.js';
 export {
   Certificate,
   SignatureAlgorithmEnumType,
   CountryNameEnumType,
   InstalledCertificate,
-} from '../../models/Certificate/index.js';
+} from '../../models/certificate/index.js';
 export {
   ChargingProfile,
   ChargingNeeds,
   ChargingSchedule,
   CompositeSchedule,
   SalesTariff,
-} from '../../models/ChargingProfile/index.js';
-export { OCPPMessage } from '../../models/OCPPMessage.js';
-export { Reservation } from '../../models/Reservation.js';
-export { ChargingStationSecurityInfo } from '../../models/ChargingStationSecurityInfo.js';
-export { ChangeConfiguration } from '../../models/ChangeConfiguration.js';
-export { Tenant } from '../../models/Tenant.js';
-export { TenantPartner } from '../../models/TenantPartner.js';
-export type { PaginatedParams } from '../../models/AsyncJob/index.js';
-export { AsyncJobStatus, AsyncJobStatusDTO, AsyncJobRequest } from '../../models/AsyncJob/index.js';
+} from '../../models/charging-profile/index.js';
+export { OCPPMessage } from '../../models/ocpp-message.js';
+export { Reservation } from '../../models/reservation.js';
+export { ChargingStationSecurityInfo } from '../../models/charging-station-security-info.js';
+export { ChangeConfiguration } from '../../models/change-configuration.js';
+export { Tenant } from '../../models/tenant.js';
+export { TenantPartner } from '../../models/tenant-partner.js';
+export type { PaginatedParams } from '../../models/async-job/index.js';
+export {
+  AsyncJobStatus,
+  AsyncJobStatusDTO,
+  AsyncJobRequest,
+} from '../../models/async-job/index.js';
 export {
   DeleteCertificateAttempt,
   InstallCertificateAttempt,
-} from '../../models/Certificate/index.js';
+} from '../../models/certificate/index.js';
 
 // Sequelize Repositories
 export {
   SequelizeRepository,
   type SequelizeRepositoryDependencies,
-} from '../../repositories/sequelize/Base.js';
-export { SequelizeAuthorizationRepository } from '../../repositories/sequelize/Authorization.js';
-export { SequelizeBootRepository } from '../../repositories/sequelize/Boot.js';
-export { SequelizeComponentRepository } from '../../repositories/sequelize/Component.js';
-export { SequelizeDeviceModelRepository } from '../../repositories/sequelize/DeviceModel.js';
-export { SequelizeLocalAuthListRepository } from '../../repositories/sequelize/LocalAuthList.js';
-export { SequelizeLocationRepository } from '../../repositories/sequelize/Location.js';
-export { SequelizeTransactionEventRepository } from '../../repositories/sequelize/TransactionEvent.js';
-export { SequelizeSecurityEventRepository } from '../../repositories/sequelize/SecurityEvent.js';
-export { SequelizeVariableMonitoringRepository } from '../../repositories/sequelize/VariableMonitoring.js';
-export { SequelizeMessageInfoRepository } from '../../repositories/sequelize/MessageInfo.js';
-export { SequelizeTariffRepository } from '../../repositories/sequelize/Tariff.js';
-export { SequelizeSubscriptionRepository } from '../../repositories/sequelize/Subscription.js';
-export { SequelizeCertificateRepository } from '../../repositories/sequelize/Certificate.js';
-export { SequelizeInstalledCertificateRepository } from '../../repositories/sequelize/InstalledCertificate.js';
-export { SequelizeChargingProfileRepository } from '../../repositories/sequelize/ChargingProfile.js';
-export { SequelizeOCPPMessageRepository } from '../../repositories/sequelize/OCPPMessage.js';
-export { SequelizeReservationRepository } from '../../repositories/sequelize/Reservation.js';
-export { SequelizeChargingStationSecurityInfoRepository } from '../../repositories/sequelize/ChargingStationSecurityInfo.js';
-export { SequelizeChargingStationSequenceRepository } from '../../repositories/sequelize/ChargingStationSequence.js';
-export { SequelizeChangeConfigurationRepository } from '../../repositories/sequelize/ChangeConfiguration.js';
-export { SequelizeTenantRepository } from '../../repositories/sequelize/Tenant.js';
-export { SequelizeAsyncJobStatusRepository } from '../../repositories/sequelize/AsyncJobStatus.js';
-export { SequelizeChargingStationNetworkProfileRepository } from '../../repositories/sequelize/ChargingStationNetworkProfile.js';
-export { SequelizeServerNetworkProfileRepository } from '../../repositories/sequelize/ServerNetworkProfile.js';
-export { SequelizeSetNetworkProfileRepository } from '../../repositories/sequelize/SetNetworkProfile.js';
-export { SequelizeInstallCertificateAttemptRepository } from '../../repositories/sequelize/InstallCertificateAttempt.js';
-export { SequelizeDeleteCertificateAttemptRepository } from '../../repositories/sequelize/DeleteCertificateAttempt.js';
+} from '../../repositories/sequelize/base.js';
+export { SequelizeAuthorizationRepository } from '../../repositories/sequelize/authorization.js';
+export { SequelizeBootRepository } from '../../repositories/sequelize/boot.js';
+export { SequelizeComponentRepository } from '../../repositories/sequelize/component.js';
+export { SequelizeDeviceModelRepository } from '../../repositories/sequelize/device-model.js';
+export { SequelizeLocalAuthListRepository } from '../../repositories/sequelize/local-auth-list.js';
+export { SequelizeLocationRepository } from '../../repositories/sequelize/location.js';
+export { SequelizeTransactionEventRepository } from '../../repositories/sequelize/transaction-event.js';
+export { SequelizeSecurityEventRepository } from '../../repositories/sequelize/security-event.js';
+export { SequelizeVariableMonitoringRepository } from '../../repositories/sequelize/variable-monitoring.js';
+export { SequelizeMessageInfoRepository } from '../../repositories/sequelize/message-info.js';
+export { SequelizeTariffRepository } from '../../repositories/sequelize/tariff.js';
+export { SequelizeSubscriptionRepository } from '../../repositories/sequelize/subscription.js';
+export { SequelizeCertificateRepository } from '../../repositories/sequelize/certificate.js';
+export { SequelizeInstalledCertificateRepository } from '../../repositories/sequelize/installed-certificate.js';
+export { SequelizeChargingProfileRepository } from '../../repositories/sequelize/charging-profile.js';
+export { SequelizeOCPPMessageRepository } from '../../repositories/sequelize/ocpp-message.js';
+export { SequelizeReservationRepository } from '../../repositories/sequelize/reservation.js';
+export { SequelizeChargingStationSecurityInfoRepository } from '../../repositories/sequelize/charging-station-security-info.js';
+export { SequelizeChargingStationSequenceRepository } from '../../repositories/sequelize/charging-station-sequence.js';
+export { SequelizeChangeConfigurationRepository } from '../../repositories/sequelize/change-configuration.js';
+export { SequelizeTenantRepository } from '../../repositories/sequelize/tenant.js';
+export { SequelizeAsyncJobStatusRepository } from '../../repositories/sequelize/async-job-status.js';
+export { SequelizeChargingStationNetworkProfileRepository } from '../../repositories/sequelize/charging-station-network-profile.js';
+export { SequelizeServerNetworkProfileRepository } from '../../repositories/sequelize/server-network-profile.js';
+export { SequelizeSetNetworkProfileRepository } from '../../repositories/sequelize/set-network-profile.js';
+export { SequelizeInstallCertificateAttemptRepository } from '../../repositories/sequelize/install-certificate-attempt.js';
+export { SequelizeDeleteCertificateAttemptRepository } from '../../repositories/sequelize/delete-certificate-attempt.js';
 
 // Sequelize Utilities
 export { DefaultSequelizeInstance } from './util.js';
