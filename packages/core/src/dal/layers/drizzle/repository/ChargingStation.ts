@@ -139,11 +139,6 @@ export class DrizzleChargingStationRepository
       return undefined;
     }
 
-    // The Sequelize implementation eager-loads two levels
-    // (`include: [{ model: Evse, include: [Connector] }]`), and callers depend on
-    // that nesting — StatusNotificationService walks station.evses[].connectors[]
-    // to find the connector matching an incoming status. Flat Drizzle rows cannot
-    // carry relations, so both levels are fetched and stitched here.
     const evses = this.getEvseTable(tenantId);
     const evseRows = (await this.db
       .select()
@@ -235,8 +230,6 @@ export class DrizzleChargingStationRepository
   ): Promise<ChargingStationDto> {
     chargingStation.tenantId = tenantId;
 
-    // Without a connection name there is nothing to match on, so this is always
-    // an insert — the Sequelize implementation takes the same branch.
     if (!chargingStation.ocppConnectionName) {
       return await this.insert(tenantId, toStationColumns(chargingStation));
     }
