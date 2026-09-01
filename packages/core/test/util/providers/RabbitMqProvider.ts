@@ -24,18 +24,16 @@ export function aSystemConfigWithAmqp(override?: {
   noAmqp?: boolean;
 }): SystemConfig {
   if (override?.noAmqp) {
-    return { util: { messageBroker: { amqp: undefined } } } as unknown as SystemConfig;
+    return { messageBroker: { amqp: undefined } } as unknown as SystemConfig;
   }
   return {
-    util: {
-      messageBroker: {
-        amqp: {
-          url: 'amqp://localhost',
-          exchange: override?.exchange ?? 'test-exchange',
-          ...(override?.instanceIdentifier !== undefined && {
-            instanceIdentifier: override.instanceIdentifier,
-          }),
-        },
+    messageBroker: {
+      amqp: {
+        url: 'amqp://localhost',
+        exchange: override?.exchange ?? 'test-exchange',
+        ...(override?.instanceIdentifier !== undefined && {
+          instanceIdentifier: override.instanceIdentifier,
+        }),
       },
     },
   } as unknown as SystemConfig;

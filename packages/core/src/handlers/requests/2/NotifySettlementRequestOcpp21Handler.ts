@@ -2,10 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  type IDeviceModelRepository,
+  type ITransactionEventRepository,
+  Transaction,
+  VariableAttribute,
+} from '@/dal/index.js';
+import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   type IMessage,
   type IOcppSender,
   OcppError,
@@ -20,12 +25,6 @@ import {
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/types';
-import {
-  type IDeviceModelRepository,
-  type ITransactionEventRepository,
-  Transaction,
-  VariableAttribute,
-} from '@/dal/index.js';
 
 /**
  * C19 - Cancellation prior to transaction
@@ -43,7 +42,7 @@ import {
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.NotifySettlement)
 export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
 
@@ -55,7 +54,7 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
     transactionEventRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     deviceModelRepository: IDeviceModelRepository;
     transactionEventRepository: ITransactionEventRepository;
   }) {
@@ -176,7 +175,7 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
           receiptByCSMSAttributes[0].value?.toLowerCase() === 'true';
 
         if (receiptByCSMS) {
-          const receiptBaseUrl = this._config.modules.transactions.receiptBaseUrl;
+          const receiptBaseUrl = this._config.transactions.receiptBaseUrl;
           if (receiptBaseUrl) {
             const receiptId = request.transactionId
               ? `${ocppConnectionName}-${request.transactionId}-${request.pspRef}`

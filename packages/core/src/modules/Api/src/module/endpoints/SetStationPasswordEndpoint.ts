@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type AbstractEndpointDependencies,
-  type BootstrapConfig,
-  type ICache,
-  type IMessageConfirmation,
-  type IOcppSender,
-  type ICommandEndpointMetadata,
   AbstractEndpoint,
   UpdateChargingStationPasswordSchema,
+  type AbstractEndpointDependencies,
+  type ICache,
+  type ICommandEndpointMetadata,
+  type IMessageConfirmation,
+  type IOcppSender,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -18,26 +17,26 @@ import {
   HttpMethod,
   MutabilityEnum,
   OCPPVersion,
-  OCPP_CallAction,
   OCPP_2_VER_LIST,
+  OCPP_CallAction,
   SetVariableStatusEnum,
-  type SystemConfig,
-  type UpdateChargingStationPasswordRequest,
   type OCPP2_common_types,
   type OCPP2_request_types,
   type OCPP2_response_types,
+  type SystemConfig,
+  type UpdateChargingStationPasswordRequest,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import type { UpdateChargingStationPasswordQueryString } from '@dal/interfaces/index.js';
 import { UpdateChargingStationPasswordQuerySchema } from '@dal/interfaces/index.js';
+import type { ILocationRepository } from '@dal/interfaces/repositories.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
-import { generatePassword, isValidPassword, resolveStationProtocol } from '@util/index.js';
 import type { DeviceModelService } from '@util/deviceModel/DeviceModelService.js';
+import { generatePassword, isValidPassword, resolveStationProtocol } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
 interface SetStationPasswordEndpointDependencies extends AbstractEndpointDependencies {
-  config: BootstrapConfig & SystemConfig;
+  config: SystemConfig;
   cache: ICache;
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
@@ -57,7 +56,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     bodySchema: UpdateChargingStationPasswordSchema,
   };
 
-  private readonly _config: BootstrapConfig & SystemConfig;
+  private readonly _config: SystemConfig;
   private readonly _cache: ICache;
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
@@ -147,7 +146,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     const correlationId = uuidv4();
     const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
       correlationId,
-      this._config.maxCachingSeconds,
+      this._config.timeouts.maxCachingSeconds,
       ocppConnectionName,
     );
 

@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type BootConfig, CrudRepository } from '@citrineos/base';
+import type { CrudRepository } from '@citrineos/base';
+import type { BootCreate } from '@citrineos/types';
 import type { IBootRepository } from '../../../interfaces/repositories.js';
 import { Boot } from '../model/Boot.js';
 import { VariableAttribute } from '../model/DeviceModel/VariableAttribute.js';
@@ -23,7 +24,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
   async createOrUpdateByKey(
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ): Promise<Boot | undefined> {
     // A boot record cannot exist without its station: stationId is a non-null FK.

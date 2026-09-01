@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { type RbacRules, RbacRulesSchema } from '@citrineos/types';
+import path from 'path';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { type RbacRules, RbacRulesSchema } from '@citrineos/types';
-import { UrlMatcher } from './UrlMatcher.js';
 import { LocalStorage } from '../../files/localStorage.js';
-import path from 'path';
+import { UrlMatcher } from './UrlMatcher.js';
 
 /**
  * Class to load and validate RBAC rules
@@ -25,7 +25,7 @@ export class RbacRulesLoader {
   constructor(rulesFilePath: string, logger: Logger<ILogObj>) {
     this._logger = logger.getSubLogger({ name: 'RbacRulesLoader' });
     // RBAC rules are always local files. defaultFilePath is unused since loadRules always passes an absolute path.
-    this._storage = new LocalStorage('', '');
+    this._storage = new LocalStorage('');
     this.loadRules(rulesFilePath).catch((error) => {
       this._logger.error('Failed to initialize RBAC rules:', error);
     });
