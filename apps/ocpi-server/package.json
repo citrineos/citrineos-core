@@ -27,16 +27,16 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@types/amqplib": "0.10.8",
+    "@types/amqplib": "catalog:",
     "@types/bcrypt": "5.0.2",
-    "@types/uuid": "9.0.8",
+    "@types/uuid": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "nodemon": "2.0.22",
-    "ts-node": "10.9.2",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.0",
+    "nodemon": "catalog:",
+    "ts-node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "dependencies": {
@@ -45,20 +45,20 @@
     "@citrineos/ocpi-base": "workspace:*",
     "@citrineos/types": "workspace:*",
     "@directus/extensions": "~1.0.2",
-    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
-    "awilix": "13.0.3",
-    "cross-env": "7.0.3",
+    "@fastify/type-provider-json-schema-to-ts": "catalog:",
+    "awilix": "catalog:",
+    "cross-env": "catalog:",
     "fastify": "catalog:",
-    "sequelize": "^6.37.7",
-    "sqlite3": "5.1.7",
-    "tslog": "4.9.2",
-    "uuid": "11.1.1"
+    "sequelize": "catalog:",
+    "sqlite3": "catalog:",
+    "tslog": "catalog:",
+    "uuid": "catalog:"
   },
   "engines": {
     "node": ">=24.16.0"
   },
   "optionalDependencies": {
-    "bufferutil": "4.1.0",
-    "utf-8-validate": "6.0.6"
+    "bufferutil": "catalog:",
+    "utf-8-validate": "catalog:"
   }
 }

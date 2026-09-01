@@ -24,7 +24,12 @@ export * from '@modules/Transactions/src/index.js';
 // Handler exports
 export * from '@handlers/index.js';
 
-// Server support services (bootstrap-agnostic; the concrete server lives in the app)
+export {
+  CitrineOSServer,
+  type ApiInitSpec,
+  type CitrineOSServerOverrides,
+  type ModuleInitSpec,
+} from './src/server/CitrineOSServer.js';
 export { HealthCheckService, type HealthCheckResult } from './src/server/HealthCheckService.js';
 
 export { buildContainer, type Prebuilt } from './src/server/container.js';

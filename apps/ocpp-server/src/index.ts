@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ConfigLoader } from '@citrineos/base';
+import { CitrineOSServer } from '@citrineos/core';
 import { EventGroup } from '@citrineos/types';
-import { CitrineOSServer } from './citrineOSServer.js';
 
 async function main() {
   const config = await ConfigLoader.loadConfig();

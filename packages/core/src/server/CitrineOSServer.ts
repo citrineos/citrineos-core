@@ -15,28 +15,27 @@ import {
   OCPPValidator,
 } from '@citrineos/base';
 import {
+  DefaultDrizzleInstance,
+  type IServerNetworkProfileRepository,
+  sequelize,
+  type Sequelize,
+} from '@dal/index.js';
+import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
+import cors, { type FastifyCorsOptions } from '@fastify/cors';
+import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import {
   apiAuthPluginFp,
   BrokerAwareMessageSender,
-  buildContainer,
-  DefaultDrizzleInstance,
   GcpCloudStorage,
-  type HealthCheckResult,
-  HealthCheckService,
   initSwagger,
-  type IServerNetworkProfileRepository,
   LocalStorage,
   MemoryCache,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RedisCache,
   S3Storage,
-  sequelize,
-  Sequelize,
   WebsocketNetworkConnection,
-} from '@citrineos/core';
-import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
-import cors from '@fastify/cors';
-import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+} from '@util/index.js';
 import { asValue, type AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
@@ -47,45 +46,84 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
+import { buildContainer } from './container.js';
+import { type HealthCheckResult, HealthCheckService } from './HealthCheckService.js';
 
-/** The container tokens needed to initialize a module and its APIs in a scope. */
-interface ModuleInitSpec {
+/** The container token needed to initialize a module in its own scope. */
+export interface ModuleInitSpec {
   moduleToken: string;
 }
 
-interface ApiInitSpec {
+/** The container tokens for a group of APIs initialized together in one scope. */
+export interface ApiInitSpec {
   apiTokens: string[];
 }
 
+/**
+ * Prebuilt collaborators an embedder can inject instead of letting the server
+ * construct its own. Anything omitted is created by the matching `create*()` method,
+ * which a subclass may also override.
+ */
+export interface CitrineOSServerOverrides {
+  server?: FastifyInstance;
+  ajv?: Ajv.Ajv;
+  cache?: ICache;
+  fileStorage?: IFileStorage;
+  logger?: Logger<ILogObj>;
+}
+
+/**
+ * The CitrineOS application server: builds the DI container, wires the modules/APIs
+ * selected by `appName`, and owns the startup and shutdown sequences.
+ *
+ * Downstream distributions are expected to subclass rather than fork this file. The
+ * intended extension points, roughly in the order they run:
+ *
+ * - `createLogger()` / `createFastifyInstance()` / `createAjv()` / `createCache()` /
+ *   `createFileStorage()` — swap an individual collaborator. (Instances can also be
+ *   passed to the constructor via {@link CitrineOSServerOverrides} without subclassing.)
+ * - `corsOptions` / `authExcludedRoutes` — tweak the HTTP surface.
+ * - `registerAdditionalServices()` — add or replace container registrations
+ *   (extra repositories, services, modules, APIs) on top of the core container.
+ * - `moduleSpecs` / `apiSpecs` — add distribution-specific modules and API groups to
+ *   the startup map, usually by spreading the base value.
+ * - `onInitialized()` — run after everything is wired but before the server listens.
+ * - `onShutdown()` — flush/close distribution-specific resources during shutdown.
+ *
+ * Every step of `initialize()` is itself a `protected` method, so anything not covered
+ * by the hooks above can still be overridden individually.
+ */
 export class CitrineOSServer {
   /**
    * Fields
    */
   protected readonly _config: SystemConfig;
-  protected readonly _logger: Logger<ILogObj>;
-  protected readonly _server: FastifyInstance;
-  protected readonly _cache: ICache;
-  protected readonly _ajv: Ajv.Ajv;
-  protected readonly _ocppValidator: OCPPValidator;
-  protected readonly _fileStorage: IFileStorage;
+  protected readonly appName: string;
+  protected readonly overrides: CitrineOSServerOverrides;
   protected readonly modules: IModule[] = [];
+
+  protected _logger!: Logger<ILogObj>;
+  protected _server!: FastifyInstance;
+  protected _cache!: ICache;
+  protected _ajv!: Ajv.Ajv;
+  protected _ocppValidator!: OCPPValidator;
+  protected _fileStorage!: IFileStorage;
   protected _sequelizeInstance!: Sequelize;
+  protected _container!: AwilixContainer;
+
   protected eventGroup?: EventGroup;
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
-
-  protected readonly appName: string;
-  protected _isShuttingDown = false;
-  protected _container!: AwilixContainer;
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
+  protected _isShuttingDown = false;
 
-  // Single source of truth mapping each module's EventGroup to the container
-  // tokens + config flag needed to initialize it. initAllModules() and
-  // initModule() both read from this instead of repeating the mapping.
-  private static readonly MODULE_SPECS: Partial<Record<EventGroup, ModuleInitSpec>> = {
+  // Single source of truth mapping each module's EventGroup to the container token
+  // needed to initialize it. initAllModules() and initModule() both read from this
+  // (through the `moduleSpecs` getter) instead of repeating the mapping.
+  protected static readonly DEFAULT_MODULE_SPECS: Partial<Record<EventGroup, ModuleInitSpec>> = {
     [EventGroup.Certificates]: {
       moduleToken: 'certificatesModule',
     },
@@ -112,54 +150,45 @@ export class CitrineOSServer {
     },
   };
 
-  private static readonly API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
+  protected static readonly DEFAULT_API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
     [EventGroup.Api]: {
       apiTokens: ['commandsApi', 'ocppMessageApi', 'webPaymentApi'],
     },
   };
 
+  /**
+   * Modules this server can start, keyed by the EventGroup that selects them.
+   * Override to add distribution-specific modules, e.g.
+   * `{ ...super.moduleSpecs, [EventGroup.Foo]: { moduleToken: 'fooModule' } }`.
+   */
+  protected get moduleSpecs(): Partial<Record<EventGroup, ModuleInitSpec>> {
+    return CitrineOSServer.DEFAULT_MODULE_SPECS;
+  }
+
+  /** API groups this server can start, keyed by the EventGroup that selects them. */
+  protected get apiSpecs(): Partial<Record<EventGroup, ApiInitSpec>> {
+    return CitrineOSServer.DEFAULT_API_SPECS;
+  }
+
+  /** Container tokens for the APIs that come up alongside the WebSocket server. */
+  protected get networkApiTokens(): string[] {
+    return ['adminApi'];
+  }
+
   // todo rename event group to type
   constructor(
     appName: string,
     systemConfig: SystemConfig,
-    server?: FastifyInstance,
-    ajv?: Ajv.Ajv,
-    cache?: ICache,
+    overrides: CitrineOSServerOverrides = {},
   ) {
     // TODO: Create and export config schemas for each util module, such as amqp, redis, etc, to avoid passing them possibly invalid configuration
     if (!systemConfig.messageBroker.amqp) {
       throw new Error('This server implementation requires amqp configuration for rabbitMQ.');
     }
 
-    // Create the prebuilt primitives the container depends on, then build it.
     this.appName = appName;
     this._config = systemConfig;
-    this._server = server || fastify().withTypeProvider<JsonSchemaToTsProvider>();
-
-    // enable cors
-    this._server.register(cors, {
-      origin: true, // This can be customized to specify allowed origins
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
-    });
-
-    console.log('Bootstrap configuration loaded');
-
-    // Create Ajv JSON schema validator instance
-    this._ajv = OCPPValidator.createServerAjvInstance(ajv);
-
-    // Initialize parent logger
-    this._logger = this.initLogger();
-
-    // Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
-    // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
-    // whereas _ajv coerces types for Fastify's HTTP schema compilation.
-    this._ocppValidator = new OCPPValidator(this._logger);
-
-    // Set cache implementation
-    this._cache = this.initCache(cache);
-
-    // Initialize File Access Implementation
-    this._fileStorage = this.initFileStorage();
+    this.overrides = overrides;
   }
 
   async run(): Promise<void> {
@@ -185,8 +214,12 @@ export class CitrineOSServer {
     }
   }
 
-  // Wire everything that depends on the container, as an ordered sequence.
+  /**
+   * Builds the collaborators, then wires everything that depends on the container,
+   * as an ordered sequence. Kept as a flat list of overridable steps on purpose.
+   */
   async initialize(): Promise<void> {
+    this.initPrimitives();
     await this.initContainer();
     await this.registerHttpPlugins();
     this.initSequelizeInstance();
@@ -195,6 +228,7 @@ export class CitrineOSServer {
     await this.initDb();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
+    await this.onInitialized();
   }
 
   async shutdown() {
@@ -227,25 +261,81 @@ export class CitrineOSServer {
     this._logger.info('Closing PostgreSQL connections...');
     await this._sequelizeInstance.connectionManager.close();
 
+    await this.onShutdown();
+
     this._logger.info('Shutdown complete');
     process.exitCode = 0;
   }
 
-  protected initLogger() {
+  /**
+   * Hook: everything is wired and the DB is up, but the server is not listening yet.
+   */
+  protected async onInitialized(): Promise<void> {}
+
+  /**
+   * Hook: the core resources have been closed; release anything the distribution
+   * added (tracing exporters, external clients, ...) before shutdown completes.
+   */
+  protected async onShutdown(): Promise<void> {}
+
+  /**
+   * Builds the collaborators the container is seeded with. Each one comes from the
+   * matching override, or from a `create*()` method a subclass can replace.
+   */
+  protected initPrimitives(): void {
+    this._logger = this.overrides.logger ?? this.createLogger();
+    this._server = this.overrides.server ?? this.createFastifyInstance();
+    this._server.register(cors, this.corsOptions);
+
+    console.log('Bootstrap configuration loaded');
+
+    this._ajv = this.createAjv(this.overrides.ajv);
+
+    // A separate OCPPValidator with its own Ajv instance for OCPP message validation.
+    // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
+    // whereas _ajv coerces types for Fastify's HTTP schema compilation.
+    this._ocppValidator = this.createOCPPValidator();
+
+    this._cache = this.overrides.cache ?? this.createCache();
+    this._fileStorage = this.overrides.fileStorage ?? this.createFileStorage();
+  }
+
+  protected createLogger(): Logger<ILogObj> {
     const isCloud = process.env.DEPLOYMENT_TARGET === 'cloud';
 
-    const loggerSettings = {
+    return new Logger<ILogObj>(this.loggerSettings(isCloud));
+  }
+
+  /** Split out so a subclass swapping the Logger implementation can reuse the settings. */
+  protected loggerSettings(isCloud = process.env.DEPLOYMENT_TARGET === 'cloud') {
+    return {
       name: 'CitrineOS Logger',
       minLevel: this._config.logLevel,
       hideLogPositionForProduction: this._config.env === 'production',
       type: isCloud ? ('json' as const) : ('pretty' as const),
     };
-
-    return new Logger<ILogObj>(loggerSettings);
   }
 
-  protected initCache(cache?: ICache): ICache {
-    if (cache) return cache;
+  protected createFastifyInstance(): FastifyInstance {
+    return fastify().withTypeProvider<JsonSchemaToTsProvider>();
+  }
+
+  protected get corsOptions(): FastifyCorsOptions {
+    return {
+      origin: true, // This can be customized to specify allowed origins
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed HTTP methods
+    };
+  }
+
+  protected createAjv(ajv?: Ajv.Ajv): Ajv.Ajv {
+    return OCPPValidator.createServerAjvInstance(ajv);
+  }
+
+  protected createOCPPValidator(): OCPPValidator {
+    return new OCPPValidator(this._logger);
+  }
+
+  protected createCache(): ICache {
     if (this._config.cache.type === 'redis') {
       const redisClientOptions: RedisClientOptions = { url: this._config.cache.url };
 
@@ -254,7 +344,7 @@ export class CitrineOSServer {
     return new MemoryCache();
   }
 
-  protected initFileStorage(): IFileStorage {
+  protected createFileStorage(): IFileStorage {
     switch (this._config.fileAccess.type) {
       case 'local':
         return new LocalStorage(this._config.fileAccess.local!.defaultFilePath);
@@ -266,6 +356,34 @@ export class CitrineOSServer {
         throw new Error(`Unsupported file access type: ${this._config.fileAccess.type}`);
     }
   }
+
+  /**
+   * Builds the DI container from the prebuilt primitives. Everything else is resolved
+   * from / wired through it by the rest of initialize().
+   */
+  protected async initContainer(): Promise<void> {
+    await ConfigLoader.loadWebsocketServersConfig(
+      this._fileStorage,
+      this._config.websocketServerConfigFile,
+    );
+
+    this._container = buildContainer(this._config, {
+      logger: this._logger,
+      cache: this._cache,
+      fileStorage: this._fileStorage,
+      ocppValidator: this._ocppValidator,
+      server: this._server,
+    });
+
+    this.registerAdditionalServices(this._container);
+  }
+
+  /**
+   * Hook: register distribution-specific repositories, services, modules or APIs on
+   * the container built by `buildContainer()`. Registering an existing token here
+   * replaces the core registration.
+   */
+  protected registerAdditionalServices(_container: AwilixContainer): void {}
 
   /**
    * Registers the HTTP plugins/routes that depend on the container or must be in
@@ -292,17 +410,22 @@ export class CitrineOSServer {
     }
   }
 
+  /** Routes served without API authentication. */
+  protected get authExcludedRoutes(): string[] {
+    return [
+      '/health',
+      '/health/live',
+      '/health/ready',
+      '/docs', // API documentation
+    ];
+  }
+
   protected registerApiAuth() {
     const authProvider = this._container.resolve<IApiAuthProvider>('apiAuthProvider');
     this._server.register(apiAuthPluginFp, {
       provider: authProvider,
       options: {
-        excludedRoutes: [
-          '/health',
-          '/health/live',
-          '/health/ready',
-          '/docs', // API documentation
-        ],
+        excludedRoutes: this.authExcludedRoutes,
         debug: this._config.logLevel <= 2, // Enable debug logs in dev mode
       },
       logger: this._logger,
@@ -339,26 +462,6 @@ export class CitrineOSServer {
     this._server.get('/health/ready', readiness);
   }
 
-  /**
-   * Builds the DI container from the prebuilt primitives. Everything else is resolved
-   * from / wired through it by the rest of initialize().
-   *
-   */
-  protected async initContainer(): Promise<void> {
-    await ConfigLoader.loadWebsocketServersConfig(
-      this._fileStorage,
-      this._config.websocketServerConfigFile,
-    );
-
-    this._container = buildContainer(this._config, {
-      logger: this._logger,
-      cache: this._cache,
-      fileStorage: this._fileStorage,
-      ocppValidator: this._ocppValidator,
-      server: this._server,
-    });
-  }
-
   protected initSequelizeInstance() {
     this._sequelizeInstance = this._container.resolve('sequelizeInstance');
   }
@@ -386,9 +489,9 @@ export class CitrineOSServer {
       );
       await this.initAllModules();
       this.initAllApis();
-    } else if (CitrineOSServer.API_SPECS[this.eventGroup]) {
+    } else if (this.apiSpecs[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
-      this.initApiInScope(CitrineOSServer.API_SPECS[this.eventGroup]!.apiTokens);
+      this.initApiInScope(this.apiSpecs[this.eventGroup]!.apiTokens);
     } else {
       await this.initModule();
     }
@@ -405,24 +508,24 @@ export class CitrineOSServer {
 
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
-    this.initApiInScope(['adminApi']);
+    this.initApiInScope(this.networkApiTokens);
   }
 
   protected async initAllModules() {
-    for (const spec of Object.values(CitrineOSServer.MODULE_SPECS)) {
+    for (const spec of Object.values(this.moduleSpecs)) {
       await this.initModuleInScope(spec.moduleToken);
     }
   }
 
   protected initAllApis() {
-    for (const spec of Object.values(CitrineOSServer.API_SPECS)) {
+    for (const spec of Object.values(this.apiSpecs)) {
       if (spec) {
         this.initApiInScope(spec.apiTokens);
       }
     }
   }
 
-  private initApiInScope(apiTokens: string[]): void {
+  protected initApiInScope(apiTokens: string[]): void {
     const scope = this._container.createScope();
     scope.register({ moduleScope: asValue(scope) });
     for (const apiToken of apiTokens) {
@@ -432,7 +535,7 @@ export class CitrineOSServer {
 
   protected async initModule(eventGroup = this.eventGroup) {
     this._logger.info(`Initializing module: ${this.appName}`);
-    const spec = eventGroup ? CitrineOSServer.MODULE_SPECS[eventGroup] : undefined;
+    const spec = eventGroup ? this.moduleSpecs[eventGroup] : undefined;
     if (!spec) {
       throw new Error('Unhandled module type: ' + this.appName);
     }
@@ -444,7 +547,7 @@ export class CitrineOSServer {
    * sender/handler. App-wide singletons — repositories, services, the network
    * stack — are created once and reused by every module
    */
-  private async initModuleInScope(moduleToken: string): Promise<void> {
+  protected async initModuleInScope(moduleToken: string): Promise<void> {
     const scope = this._container.createScope();
     scope.register({ moduleScope: asValue(scope) });
     const module = scope.resolve<AbstractModule>(moduleToken);

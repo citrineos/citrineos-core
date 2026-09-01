@@ -18,8 +18,15 @@ It is one workspace member of the `citrineos-core` pnpm monorepo. For repository
 `pnpm install`, building, the full-stack Docker Compose files, and the operator UI), see the
 [root README](../../README.md).
 
+The server class itself lives in `@citrineos/core` as
+[`CitrineOSServer`](../../packages/core/src/server/CitrineOSServer.ts); this app is only the
+entrypoint that loads config and runs it. Downstream distributions should subclass that class rather
+than copy it — see [Extending `CitrineOSServer`](../../packages/core/src/server/README.md).
+
 How the server wires its dependencies — the Awilix container, module/service registration, and the
-bootstrap sequence — is documented in [`DEPENDENCY_INJECTION.md`](./DEPENDENCY_INJECTION.md).
+bootstrap sequence — is documented in
+[`DEPENDENCY_INJECTION.md`](../../packages/core/src/server/DEPENDENCY_INJECTION.md), alongside the
+server class it describes.
 
 ## Table of Contents
 
@@ -347,7 +354,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-The OCPP message validator is created in `apps/ocpp-server/src/citrineOSServer.ts`. Register a DataTransfer schema by
+The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
 compiling it onto that validator's AJV and passing it in:
 
 ```ts
