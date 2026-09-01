@@ -13,6 +13,7 @@ import {
   IConnectorRepository,
   IDeviceModelRepository,
   IEvseRepository,
+  IStatusNotificationRepository,
 } from '@citrineos/core';
 import { StatusNotification } from '@dal/layers/sequelize/index.js';
 import { StatusNotificationService } from '@modules/Transactions/src/module/StatusNotificationService.js';
@@ -71,8 +72,14 @@ describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
   let componentRepository: Mocked<CrudRepository<Component>>;
   let deviceModelRepository: Mocked<IDeviceModelRepository>;
+  // One mock object backs both injected tokens: the service takes station reads from
+  // chargingStationRepository and everything else from locationRepository, but the
+  // assertions here do not care which token a call arrived through.
   let locationRepository: Mocked<
-    IChargingStationRepository & IConnectorRepository & IEvseRepository
+    IChargingStationRepository &
+      IConnectorRepository &
+      IEvseRepository &
+      IStatusNotificationRepository
   >;
   let cache: Mocked<ICache>;
 
@@ -92,7 +99,12 @@ describe('StatusNotificationService', () => {
       createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
       updateAllConnectorsByQuery: vi.fn(),
-    } as unknown as Mocked<IChargingStationRepository & IConnectorRepository & IEvseRepository>;
+    } as unknown as Mocked<
+      IChargingStationRepository &
+        IConnectorRepository &
+        IEvseRepository &
+        IStatusNotificationRepository
+    >;
 
     const mockConnection: IWebsocketConnection = {
       id: 'test-server',
@@ -109,6 +121,7 @@ describe('StatusNotificationService', () => {
     statusNotificationService = getTestInstance(container, StatusNotificationService, {
       componentRepository,
       deviceModelRepository,
+      chargingStationRepository: locationRepository,
       locationRepository,
       cache,
     });

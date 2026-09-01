@@ -68,7 +68,8 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
 
   // Returns the tenant isolation predicate for WHERE clauses.
   // Undefined in schema-per-tenant mode because isolation lives at the schema level.
-  private tenantFilter(table: TTable, tenantId: number) {
+  // Protected, so subclasses can apply it to sibling tables they join against.
+  protected tenantFilter(table: CitrineTable, tenantId: number) {
     return this.useTenantSchema ? undefined : eq(table.tenantId, tenantId);
   }
 

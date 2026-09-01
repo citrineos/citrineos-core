@@ -41,7 +41,7 @@ describe('InstallRootCertificateEndpoint', () => {
       fileStorage: { getFile },
       ocppSender: { sendCall },
       certificateAuthorityService: { getRootCACertificateFromExternalCA },
-      locationRepository: { readChargingStationByStationId },
+      chargingStationRepository: { readChargingStationByStationId },
     });
     mounted = await mountEndpoint(endpoint, InstallRootCertificateEndpoint.route);
   });

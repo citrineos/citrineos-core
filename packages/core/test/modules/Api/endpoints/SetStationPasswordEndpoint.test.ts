@@ -50,7 +50,7 @@ describe('SetStationPasswordEndpoint', () => {
       cache: { onChange },
       ocppSender: { sendCall },
       deviceModelService: { provisionVariableAttributes },
-      locationRepository: { readChargingStationByStationId },
+      chargingStationRepository: { readChargingStationByStationId },
     });
     mounted = await mountEndpoint(endpoint, SetStationPasswordEndpoint.route);
   });

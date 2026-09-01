@@ -34,23 +34,23 @@ import {
 export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _locationRepository: IChargingStationRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
-    locationRepository,
+    chargingStationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: IChargingStationRepository;
+    chargingStationRepository: IChargingStationRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -69,7 +69,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
     try {
       // Get charging station
-      const station = await this._locationRepository.readChargingStationByStationId(
+      const station = await this._chargingStationRepository.readChargingStationByStationId(
         tenantId,
         ocppConnectionName,
       );

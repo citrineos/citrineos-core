@@ -14,6 +14,7 @@ import type {
   IChargingProfileRepository,
   IChargingStationSequenceRepository,
   IDeleteCertificateAttemptRepository,
+  IChargingStationRepository,
   IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
@@ -33,6 +34,7 @@ import type {
 import {
   DrizzleAuthorizationRepository,
   DrizzleCertificateRepository,
+  DrizzleChargingStationRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
@@ -82,6 +84,7 @@ export class RepositoryStore {
   componentRepository: CrudRepository<Component>;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
+  chargingStationRepository: IChargingStationRepository;
   locationRepository: ILocationDomainRepository;
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
@@ -139,6 +142,9 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
+    // Defaults to the Location aggregate; the Drizzle branch below swaps in a
+    // station-only implementation, matching the container registration.
+    this.chargingStationRepository = this.locationRepository;
     this.messageInfoRepository = new SequelizeMessageInfoRepository({
       config,
       logger,
@@ -162,6 +168,7 @@ export class RepositoryStore {
         variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
       });
       this.certificateRepository = new DrizzleCertificateRepository({ config, logger });
+      this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
         logger,

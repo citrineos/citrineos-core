@@ -31,6 +31,18 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/Certificate.js';
+export {
+  DrizzleChargingStationRepository,
+  toChargingStationDto,
+} from './repository/ChargingStation.js';
+export {
+  chargingStationTable,
+  tenantChargingStationTable,
+  ChargingStationEntitySchema,
+  ChargingStationEntityInsertSchema,
+  type ChargingStationEntity,
+  type ChargingStationEntityInsert,
+} from './schema/ChargingStation.js';
 export { DrizzleLocationRepository, toLocationDto } from './repository/Location.js';
 export {
   locationTable,

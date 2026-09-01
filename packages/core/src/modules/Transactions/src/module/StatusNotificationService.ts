@@ -14,6 +14,7 @@ import type {
   IConnectorRepository,
   IDeviceModelRepository,
   IEvseRepository,
+  IStatusNotificationRepository,
 } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
 import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
@@ -24,27 +25,31 @@ import { Logger } from 'tslog';
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: IChargingStationRepository &
-    IConnectorRepository &
-    IEvseRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
+  protected _locationRepository: IConnectorRepository &
+    IEvseRepository &
+    IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
   constructor({
     componentRepository,
     deviceModelRepository,
+    chargingStationRepository,
     locationRepository,
     cache,
     logger,
   }: {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: IChargingStationRepository & IConnectorRepository & IEvseRepository;
+    chargingStationRepository: IChargingStationRepository;
+    locationRepository: IConnectorRepository & IEvseRepository & IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
     this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._locationRepository = locationRepository;
     this._cache = cache;
     this._logger = logger
@@ -63,7 +68,7 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._locationRepository.readChargingStationByStationId(
+    const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
       tenantId,
       ocppConnectionName,
     );
@@ -189,7 +194,7 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._locationRepository.readChargingStationByStationId(
+    const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
       tenantId,
       ocppConnectionName,
     );

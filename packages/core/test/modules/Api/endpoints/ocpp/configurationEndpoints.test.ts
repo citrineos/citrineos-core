@@ -33,7 +33,7 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, ChangeConfigurationEndpoint, {
         ocppSender: { sendCall },
-        locationRepository: { readChargingStationByStationId },
+        chargingStationRepository: { readChargingStationByStationId },
       });
 
     it('is declared for OCPP 1.6 only', () => {
@@ -108,7 +108,7 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetConfigurationEndpoint, {
         ocppSender: { sendCall },
-        locationRepository: { readChargingStationByStationId },
+        chargingStationRepository: { readChargingStationByStationId },
         changeConfigurationRepository: { readOnlyOneByQuery },
       });
 

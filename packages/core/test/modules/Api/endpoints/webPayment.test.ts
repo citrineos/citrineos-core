@@ -37,7 +37,7 @@ describe(`POST ${URL}`, () => {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
       deviceModelRepository: { readAllByQuerystring },
-      locationRepository: { readChargingStationByStationId },
+      chargingStationRepository: { readChargingStationByStationId },
     });
 
     server = Fastify({ logger: false });

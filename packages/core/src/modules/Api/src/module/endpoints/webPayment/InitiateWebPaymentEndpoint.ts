@@ -33,7 +33,7 @@ interface Dependencies extends AbstractEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
   deviceModelRepository: IDeviceModelRepository;
-  locationRepository: IChargingStationRepository;
+  chargingStationRepository: IChargingStationRepository;
 }
 
 type InitiateWebPaymentRoute = { Body: InitiateWebPaymentRequest };
@@ -48,20 +48,20 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
   private readonly _deviceModelRepository: IDeviceModelRepository;
-  private readonly _locationRepository: IChargingStationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
     ocppSender,
     cache,
     deviceModelRepository,
-    locationRepository,
+    chargingStationRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._cache = cache;
     this._deviceModelRepository = deviceModelRepository;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -106,7 +106,11 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
     }
 
     const resolution = await resolveStationProtocol(
-      this._locationRepository.readChargingStationByStationId,
+      (tenantId: number, ocppConnectionName: string) =>
+        this._chargingStationRepository.readChargingStationByStationId(
+          tenantId,
+          ocppConnectionName,
+        ),
       tenantId,
       identifier,
       [OCPPVersion.OCPP2_1],

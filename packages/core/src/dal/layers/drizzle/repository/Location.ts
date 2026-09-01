@@ -66,11 +66,7 @@ export class DrizzleLocationRepository
     const rows = (await this.db
       .select()
       .from(table)
-      .where(
-        this.useTenantSchema
-          ? eq(table.id, id)
-          : and(eq(table.id, id), eq(table.tenantId, tenantId)),
-      )
+      .where(and(eq(table.id, id), this.tenantFilter(table, tenantId)))
       .limit(1)) as LocationEntity[];
 
     if (!rows[0]) {
@@ -82,9 +78,7 @@ export class DrizzleLocationRepository
       .select()
       .from(stationTable)
       .where(
-        this.useTenantSchema
-          ? eq(stationTable.locationId, id)
-          : and(eq(stationTable.locationId, id), eq(stationTable.tenantId, tenantId)),
+        and(eq(stationTable.locationId, id), this.tenantFilter(stationTable, tenantId)),
       )) as ChargingStationEntity[];
 
     return { ...this.toDto(rows[0]), chargingPool: stationRows.map(toChargingStationDto) };

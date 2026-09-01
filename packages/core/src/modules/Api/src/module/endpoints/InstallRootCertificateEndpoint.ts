@@ -26,7 +26,7 @@ interface InstallRootCertificateEndpointDependencies extends AbstractEndpointDep
   fileStorage: IFileStorage;
   ocppSender: IOcppSender;
   certificateAuthorityService: CertificateAuthorityService;
-  locationRepository: IChargingStationRepository;
+  chargingStationRepository: IChargingStationRepository;
 }
 
 type InstallRootCertificateRoute = { Body: InstallRootCertificateRequest };
@@ -41,20 +41,20 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
   private readonly _fileStorage: IFileStorage;
   private readonly _ocppSender: IOcppSender;
   private readonly _certificateAuthorityService: CertificateAuthorityService;
-  private readonly _locationRepository: IChargingStationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
     fileStorage,
     ocppSender,
     certificateAuthorityService,
-    locationRepository,
+    chargingStationRepository,
   }: InstallRootCertificateEndpointDependencies) {
     super(logger);
     this._fileStorage = fileStorage;
     this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -66,7 +66,11 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
     );
 
     const resolution = await resolveStationProtocol(
-      this._locationRepository.readChargingStationByStationId,
+      (tenantId: number, ocppConnectionName: string) =>
+        this._chargingStationRepository.readChargingStationByStationId(
+          tenantId,
+          ocppConnectionName,
+        ),
       installReq.tenantId,
       installReq.ocppConnectionName,
       OCPP_2_VER_LIST,

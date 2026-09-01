@@ -18,10 +18,8 @@ import { DrizzleRepository } from './Base.js';
 import type { AuthorizationQuerystring, IAuthorizationRepository } from '@/dal/index.js';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { type TariffEntity, tariffTable } from '../schema/Tariff.js';
+import { type TariffEntity, tariffTable, tenantTariffTable } from '../schema/Tariff.js';
 import { toTariffDto } from './Tariff.js';
-
-const groupAuthorizationTable = alias(authorizationTable, 'groupAuthorization');
 
 export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDto {
   const dto: Explicit<AuthorizationDto> = {
@@ -79,21 +77,21 @@ export class DrizzleAuthorizationRepository
     return toAuthorizationDto(row);
   }
 
-  private createAuthorizationConditions(tenantId: number, query: AuthorizationQuerystring) {
-    const conditions = [];
-
-    if (!this.useTenantSchema) {
-      conditions.push(eq(authorizationTable.tenantId, tenantId));
-    }
+  private createAuthorizationConditions(
+    table: typeof authorizationTable,
+    tenantId: number,
+    query: AuthorizationQuerystring,
+  ) {
+    const conditions = [this.tenantFilter(table, tenantId)];
 
     if (query.idToken) {
-      conditions.push(eq(authorizationTable.idToken, query.idToken));
+      conditions.push(eq(table.idToken, query.idToken));
     }
     if (query.type) {
-      conditions.push(eq(authorizationTable.idTokenType, query.type));
+      conditions.push(eq(table.idTokenType, query.type));
     }
     if (query.id) {
-      conditions.push(eq(authorizationTable.id, query.id));
+      conditions.push(eq(table.id, query.id));
     }
 
     return conditions;
@@ -103,14 +101,20 @@ export class DrizzleAuthorizationRepository
     tenantId: number,
     query: AuthorizationQuerystring,
   ): Promise<AuthorizationDto[]> {
-    const conditions = this.createAuthorizationConditions(tenantId, query);
+    const table = this.getTable(tenantId);
+    // Self-join alias built from the resolved table so it follows the tenancy mode.
+    const groupAuthorizationTable = alias(table, 'groupAuthorization');
+    const conditions = this.createAuthorizationConditions(table, tenantId, query);
 
     const rows = await this.db
-      .select({ authorization: authorizationTable, groupAuthorization: groupAuthorizationTable })
-      .from(authorizationTable)
+      .select({ authorization: table, groupAuthorization: groupAuthorizationTable })
+      .from(table)
       .leftJoin(
         groupAuthorizationTable,
-        eq(authorizationTable.groupAuthorizationId, groupAuthorizationTable.id),
+        and(
+          eq(table.groupAuthorizationId, groupAuthorizationTable.id),
+          this.tenantFilter(groupAuthorizationTable, tenantId),
+        ),
       )
       .where(and(...conditions));
 
@@ -136,13 +140,14 @@ export class DrizzleAuthorizationRepository
   }
 
   async findAllAuthorizationsWithTariffs(tenantId: number): Promise<AuthorizationDto[]> {
+    const table = this.getTable(tenantId);
+    const tariffs = this.useTenantSchema ? tenantTariffTable(tenantId) : tariffTable;
+
     const rows = await this.db
-      .select({ authorization: authorizationTable, tariff: tariffTable })
-      .from(authorizationTable)
-      .innerJoin(tariffTable, eq(authorizationTable.tariffId, tariffTable.id))
-      .where(
-        and(eq(authorizationTable.tenantId, tenantId), isNotNull(authorizationTable.tariffId)),
-      );
+      .select({ authorization: table, tariff: tariffs })
+      .from(table)
+      .innerJoin(tariffs, and(eq(table.tariffId, tariffs.id), this.tenantFilter(tariffs, tenantId)))
+      .where(and(isNotNull(table.tariffId), this.tenantFilter(table, tenantId)));
 
     return rows.map(({ authorization, tariff }) => ({
       ...this.toDto(authorization as AuthorizationEntity),

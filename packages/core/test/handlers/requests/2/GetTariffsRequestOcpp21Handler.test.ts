@@ -53,7 +53,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let mockLocationRepository: Partial<IChargingStationRepository>;
+  let mockChargingStationRepository: Partial<IChargingStationRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockConnectorFindAll: any;
   let mockAuthorizationFindAll: any;
@@ -76,7 +76,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       findAllAuthorizationsWithTariffs: mockAuthorizationFindAll,
     };
 
-    mockLocationRepository = {
+    mockChargingStationRepository = {
       readChargingStationByStationId: vi.fn().mockResolvedValue({
         id: 1,
         ocppConnectionName: 'station-001',
@@ -90,7 +90,8 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
-      locationRepository: mockLocationRepository as unknown as IChargingStationRepository,
+      chargingStationRepository:
+        mockChargingStationRepository as unknown as IChargingStationRepository,
     });
   });
 
@@ -428,7 +429,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('Error handling', () => {
     it('should return Rejected status when charging station not found', async () => {
-      (mockLocationRepository.readChargingStationByStationId as any).mockResolvedValue(null);
+      (mockChargingStationRepository.readChargingStationByStationId as any).mockResolvedValue(null);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 

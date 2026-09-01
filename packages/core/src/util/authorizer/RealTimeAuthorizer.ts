@@ -36,21 +36,21 @@ export interface RealTimeAuthorizationResponse {
 }
 
 export class RealTimeAuthorizer implements IAuthorizer {
-  private _locationRepository: IChargingStationRepository;
+  private _chargingStationRepository: IChargingStationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   constructor({
-    locationRepository,
+    chargingStationRepository,
     config,
     logger,
   }: {
-    locationRepository: IChargingStationRepository;
+    chargingStationRepository: IChargingStationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._config = config;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     if (config.oidcClient) {
@@ -84,7 +84,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
     let connectorId = undefined;
     let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
-      const chargingStation = await this._locationRepository.readChargingStationByStationId(
+      const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
         context.tenantId,
         context.ocppConnectionName,
       );

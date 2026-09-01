@@ -53,6 +53,9 @@ function chargingStationColumns() {
     capabilities: jsonb('capabilities').$type<ChargingStationCapabilityEnumType[]>(),
     use16StatusNotification0: boolean('use16StatusNotification0').default(true),
     locationId: integer('locationId'),
+    connectedWebsocketServerConfigId: varchar('connectedWebsocketServerConfigId', {
+      length: 255,
+    }),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

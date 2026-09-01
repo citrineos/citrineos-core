@@ -24,7 +24,7 @@ describe('PutBootConfigEndpoint', () => {
 
     const endpoint = getTestInstance(container, PutBootConfigEndpoint, {
       bootRepository: { createOrUpdateByKey },
-      locationRepository: { doesChargingStationExistByStationId },
+      chargingStationRepository: { doesChargingStationExistByStationId },
     });
     mounted = await mountEndpoint(endpoint, PutBootConfigEndpoint.route);
   }
