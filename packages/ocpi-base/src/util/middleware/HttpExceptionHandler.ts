@@ -5,7 +5,6 @@
 import type { KoaMiddlewareInterface } from 'routing-controllers';
 import { NotFoundError, UnauthorizedError } from 'routing-controllers';
 import type { Context } from 'vm';
-import { Service } from 'typedi';
 import { HttpStatus, UnauthorizedException } from '@citrineos/base';
 import { MissingParamException } from '../../exception/MissingParamException.js';
 import { AlreadyRegisteredException } from '../../exception/AlreadyRegisteredException.js';
@@ -25,7 +24,6 @@ class HttpExceptionBody {
   }
 }
 
-@Service()
 export class HttpExceptionHandler implements KoaMiddlewareInterface {
   public async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     try {

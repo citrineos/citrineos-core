@@ -15,57 +15,26 @@ import {
   OcppSender,
   OCPPValidator,
 } from '@citrineos/base';
-import { type SystemConfig } from '@citrineos/types';
+import { type SystemConfig, type TenantDto } from '@citrineos/types';
 
 // -- Infrastructure --
 import { type ILogObj, Logger } from 'tslog';
 
 // -- Core: DB, messaging, repositories, services, network, modules, APIs, handlers --
 import {
-  AdminApi,
-  Authenticator,
-  BasicAuthenticationFilter,
-  BrokerAwareMessageSender,
-  CertificateAuthorityService,
-  CertificatesModule,
-  CommandsApi,
-  ConfigurationModule,
-  ConnectedStationFilter,
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
-  DeviceModelService,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
+  DrizzleCertificateRepository,
+  DrizzleDeleteCertificateAttemptRepository,
+  DrizzleInstallCertificateAttemptRepository,
+  DrizzleInstalledCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
-  EVDriverModule,
-  IdGenerator,
-  InternalSmartCharging,
-  LocalBypassAuthProvider,
-  MessageRouterImpl,
-  MonitoringModule,
-  NetworkProfileFilter,
-  NetworkProfileService,
-  OcppMessageApi,
-  OIDCAuthProvider,
-  RabbitMQChannelManager,
-  RabbitMQConnectionManager,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  RealTimeAuthorizer,
-  registerApiServices,
-  registerCertificatesServices,
-  registerConfigurationServices,
-  registerEVDriverServices,
-  registerMonitoringServices,
-  registerOcppRouterServices,
-  registerReportingServices,
-  registerSmartChargingServices,
-  registerTransactionsServices,
-  ReportingModule,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -93,16 +62,60 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  SmartChargingModule,
-  TenantModule,
-  TransactionsModule,
+} from '@dal/index.js';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
+  CertificateAuthorityService,
+  ConnectedStationFilter,
+  IdGenerator,
+  LocalBypassAuthProvider,
+  NetworkProfileFilter,
+  NetworkProfileService,
+  OIDCAuthProvider,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  RealTimeAuthorizer,
   UnknownStationFilter,
-  WebPaymentApi,
-  WebhookDispatcher,
   WebsocketNetworkConnection,
-} from '@citrineos/core';
+  DeviceModelService,
+} from '@util/index.js';
+import { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
+import { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
+import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
+import { registerApiServices } from '@modules/Api/src/register.js';
+import {
+  CertificatesModule,
+  registerCertificatesServices,
+} from '@modules/Certificates/src/index.js';
+import {
+  ConfigurationModule,
+  registerConfigurationServices,
+} from '@modules/Configuration/src/index.js';
+import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/src/index.js';
+import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/src/index.js';
+import {
+  AdminApi,
+  MessageRouterImpl,
+  registerOcppRouterServices,
+  WebhookDispatcher,
+} from '@modules/OcppRouter/src/index.js';
+import { registerReportingServices, ReportingModule } from '@modules/Reporting/src/index.js';
+import {
+  InternalSmartCharging,
+  registerSmartChargingServices,
+  SmartChargingModule,
+} from '@modules/SmartCharging/src/index.js';
+import { TenantModule } from '@modules/Tenant/src/index.js';
+import {
+  registerTransactionsServices,
+  TransactionsModule,
+} from '@modules/Transactions/src/index.js';
 
-type Prebuilt = {
+export type Prebuilt = {
   logger: Logger<ILogObj>;
   cache: ICache;
   ocppValidator: OCPPValidator;
@@ -301,6 +314,14 @@ function registerRepositories(container: AwilixContainer): void {
 
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
+      certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
+      deleteCertificateAttemptRepository: asClass(
+        DrizzleDeleteCertificateAttemptRepository,
+      ).singleton(),
+      installCertificateAttemptRepository: asClass(
+        DrizzleInstallCertificateAttemptRepository,
+      ).singleton(),
+      installedCertificateRepository: asClass(DrizzleInstalledCertificateRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
@@ -353,6 +374,29 @@ function registerNetwork(container: AwilixContainer): void {
         async (tenantId: number): Promise<number | null> => {
           const tenant = await tenantRepository.readByKey(tenantId, tenantId);
           return tenant?.maxChargingStations ?? null;
+        },
+    ).singleton(),
+    // Tenant path resolution for websocket servers with dynamicTenantResolution enabled:
+    // one lookup per unknown path (cache miss), plus a bulk load to warm the cache on startup.
+    getTenantIdByWebsocketServerPath: asFunction(
+      ({ tenantRepository }) =>
+        async (path: string): Promise<number | undefined> => {
+          const tenant = await tenantRepository.readByWebsocketServerPath(path);
+          return tenant?.id;
+        },
+    ).singleton(),
+    getAllTenantWebsocketServerPaths: asFunction(
+      ({ tenantRepository }) =>
+        async (): Promise<Map<string, number>> => {
+          const tenants = await tenantRepository.readAllWithWebsocketServerPath();
+          return new Map(
+            tenants
+              .filter((tenant: TenantDto) => tenant.tenantWebsocketServerPath && tenant.id)
+              .map((tenant: TenantDto): [string, number] => [
+                tenant.tenantWebsocketServerPath!,
+                tenant.id!,
+              ]),
+          );
         },
     ).singleton(),
 

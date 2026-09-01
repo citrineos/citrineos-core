@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import type { Session } from '../model/Session.js';
 import {
   type MeterValueDto,
@@ -16,25 +15,19 @@ import type { ChargingPeriod } from '../model/ChargingPeriod.js';
 import { CdrDimensionType } from '../model/CdrDimensionType.js';
 import type { CdrToken } from '../model/CdrToken.js';
 import { SessionStatus } from '../model/SessionStatus.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import type { CdrDimension } from '../model/CdrDimension.js';
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
+import type { OcpiTransactionMapperDependencies } from './BaseTransactionMapper.js';
 import { BaseTransactionMapper } from './BaseTransactionMapper.js';
-import { LocationsService } from '../services/LocationsService.js';
+
 import type { LocationDTO } from '../model/DTO/LocationDTO.js';
 import { UID_FORMAT } from '../model/DTO/EvseDTO.js';
-import { OcpiGraphqlClient } from '../graphql/index.js';
+import { calculateTotalCdrCost } from './cdrCost.js';
 import { MeterValueUtils } from '@citrineos/base';
 
-@Service()
 export class SessionMapper extends BaseTransactionMapper {
-  constructor(
-    protected logger: Logger<ILogObj>,
-    protected locationsService: LocationsService,
-    protected ocpiGraphqlClient: OcpiGraphqlClient,
-  ) {
-    super(logger, locationsService, ocpiGraphqlClient);
+  constructor(dependencies: OcpiTransactionMapperDependencies) {
+    super(dependencies);
   }
 
   /**
@@ -120,6 +113,7 @@ export class SessionMapper extends BaseTransactionMapper {
     transactionIdToTariffMap: Map<string, TariffDto>,
   ): Promise<Session[]> {
     const result: Session[] = [];
+    const skipped: string[] = [];
     for (const transaction of transactions) {
       const location = transactionIdToLocationMap.get(transaction.transactionId!);
       const token = transactionIdToTokenMap.get(transaction.transactionId!);
@@ -128,8 +122,18 @@ export class SessionMapper extends BaseTransactionMapper {
       if (location && token && tariff) {
         result.push(this.mapTransactionWithContextToSession(transaction, location, token, tariff));
       } else {
-        this.logger.debug(`Skipped transaction ${transaction.transactionId}`);
+        const missing = [
+          ...(location ? [] : ['location']),
+          ...(token ? [] : ['token']),
+          ...(tariff ? [] : ['tariff']),
+        ];
+        skipped.push(`${transaction.transactionId} (no ${missing.join(', ')})`);
       }
+    }
+    if (skipped.length > 0) {
+      this.logger.warn(
+        `Skipped ${skipped.length} of ${transactions.length} transactions: ${skipped.join('; ')}`,
+      );
     }
     return result;
   }
@@ -181,9 +185,17 @@ export class SessionMapper extends BaseTransactionMapper {
     if (tariff) {
       session.currency = tariff.currency;
       if (transaction.totalKwh !== undefined && transaction.endTime !== undefined) {
-        session.total_cost = transaction.endTime
-          ? this.calculateTotalCost(transaction.totalKwh || 0, tariff.pricePerKwh)
-          : null;
+        session.total_cost =
+          session.start_date_time && session.end_date_time
+            ? calculateTotalCdrCost(
+                {
+                  kwh: session.kwh ?? 0,
+                  start_date_time: session.start_date_time,
+                  end_date_time: session.end_date_time,
+                },
+                tariff,
+              )
+            : null;
       }
     }
 
@@ -209,8 +221,7 @@ export class SessionMapper extends BaseTransactionMapper {
       session.status = this.getTransactionStatus(transaction as TransactionDto);
     }
 
-    // Set default auth method
-    session.auth_method = AuthMethod.WHITELIST;
+    session.auth_method = this.getAuthMethod(transaction);
 
     // Set optional fields that are typically null in your implementation
     session.authorization_reference = null;
@@ -260,7 +271,7 @@ export class SessionMapper extends BaseTransactionMapper {
     }
 
     // Set defaults for fields that don't depend on external context
-    session.auth_method = AuthMethod.WHITELIST;
+    session.auth_method = this.getAuthMethod(transaction);
     session.authorization_reference = null;
     session.meter_id = null;
 
@@ -273,7 +284,7 @@ export class SessionMapper extends BaseTransactionMapper {
     token: TokenDTO,
     tariff: TariffDto,
   ): Session {
-    return {
+    const session: Session = {
       country_code: location.country_code,
       party_id: location.party_id,
       id: transaction.transactionId!,
@@ -288,8 +299,7 @@ export class SessionMapper extends BaseTransactionMapper {
       end_date_time: transaction.endTime ? new Date(transaction.endTime) : null,
       kwh: transaction.totalKwh || 0,
       cdr_token: this.createCdrToken(token),
-      // TODO: Implement other auth methods
-      auth_method: AuthMethod.WHITELIST,
+      auth_method: this.getAuthMethod(transaction),
       location_id: this.getLocationId(location),
       evse_uid: this.getEvseUid(transaction),
       connector_id: transaction.connectorId!.toString(),
@@ -299,11 +309,11 @@ export class SessionMapper extends BaseTransactionMapper {
       last_updated: transaction.updatedAt!,
       // TODO: Fill in optional values
       authorization_reference: null,
-      total_cost: transaction.endTime
-        ? this.calculateTotalCost(transaction.totalKwh || 0, tariff.pricePerKwh)
-        : null,
+      total_cost: null,
       meter_id: null,
     };
+    session.total_cost = session.end_date_time ? calculateTotalCdrCost(session, tariff) : null;
+    return session;
   }
 
   private getLatestEvent(transactionEvents: TransactionEventDto[]): Date {
@@ -375,7 +385,7 @@ export class SessionMapper extends BaseTransactionMapper {
     for (const sampledValue of meterValue.sampledValue) {
       switch (sampledValue.measurand) {
         case MeasurandEnum['Current.Import']:
-          if (sampledValue.phase === 'N') {
+          if (!sampledValue.phase) {
             cdrDimensions.push({
               type: CdrDimensionType.CURRENT,
               volume: Number(sampledValue.value),
@@ -438,6 +448,10 @@ export class SessionMapper extends BaseTransactionMapper {
 
     // Convert milliseconds to hours
     return timeDiffMs / (1000 * 60 * 60); // 1000 ms/sec * 60 sec/min * 60 min/hour
+  }
+
+  private getAuthMethod(transaction: Partial<TransactionDto>): AuthMethod {
+    return transaction.remoteStartId != null ? AuthMethod.COMMAND : AuthMethod.WHITELIST;
   }
 
   private getTransactionStatus(transaction: TransactionDto): SessionStatus {

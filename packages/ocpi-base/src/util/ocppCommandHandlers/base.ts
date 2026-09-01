@@ -5,40 +5,45 @@
 import { type IMessageConfirmation } from '@citrineos/base';
 import { type ChargingStationDto, type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
 import type { OcpiConfig, StartSession, StopSession, UnlockConnector } from '../../index.js';
-import { CommandResultType, CommandType, ModuleId, OcpiConfigToken } from '../../index.js';
+import { CommandResultType, CommandType, ModuleId } from '../../index.js';
 import type { IRequestOptions } from 'typed-rest-client';
 import { RestClient } from 'typed-rest-client';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Inject, Token } from 'typedi';
-import { OcpiGraphqlClient } from '../../graphql/index.js';
-import { CommandsClientApi } from '../../trigger/CommandsClientApi.js';
+import type { ILogObj, Logger } from 'tslog';
+import type { IOcpiGraphqlClient } from '../../graphql/index.js';
+import type { CommandsClientApi } from '../../trigger/CommandsClientApi.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 import qs from 'qs';
 import { Ajv } from 'ajv';
 
-export const OCPP_COMMAND_HANDLER = new Token<OCPPCommandHandler>('OCPP_COMMAND_HANDLER');
+export interface OcppCommandHandlerDependencies extends OcpiConfiguredDependencies {
+  ajv: Ajv;
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+  commandsClientApi: CommandsClientApi;
+}
 
 export abstract class OCPPCommandHandler {
   abstract readonly supportedVersion: OCPPVersion;
 
-  @Inject()
-  private ajv!: Ajv;
+  private readonly ajv: Ajv;
+  protected readonly logger: Logger<ILogObj>;
+  protected readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  protected readonly commandsClientApi: CommandsClientApi;
+  protected readonly config: OcpiConfig;
 
-  @Inject()
-  protected logger!: Logger<ILogObj>;
+  private restClient: RestClient;
 
-  @Inject()
-  protected ocpiGraphqlClient!: OcpiGraphqlClient;
-
-  @Inject()
-  protected commandsClientApi!: CommandsClientApi;
-
-  @Inject(OcpiConfigToken)
-  protected config!: OcpiConfig;
-
-  private restClient!: RestClient;
-
-  constructor() {
+  constructor({
+    ajv,
+    config,
+    logger,
+    ocpiGraphqlClient,
+    commandsClientApi,
+  }: OcppCommandHandlerDependencies) {
+    this.ajv = ajv;
+    this.config = config;
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.commandsClientApi = commandsClientApi;
     this.restClient = new RestClient(`CitrineOS OCPI ${ModuleId.Commands}`);
   }
 
@@ -106,11 +111,7 @@ export abstract class OCPPCommandHandler {
         response: response?.result,
       });
       await this.commandsClientApi.postCommandResult(
-        tenantPartner.countryCode!,
-        tenantPartner.partyId!,
-        tenantPartner.tenant!.countryCode!,
-        tenantPartner.tenant!.partyId!,
-        tenantPartner.partnerProfileOCPI!,
+        tenantPartner,
         responseUrl,
         {
           result: CommandResultType.FAILED,

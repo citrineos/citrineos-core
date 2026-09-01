@@ -89,7 +89,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
       const authorization = authorizations[0];
 
       if (!authorization.status) {
-        response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Accepted;
+        this._logger.error(`Authorization for idToken ${request.idTag} has no status; rejecting.`);
       } else if (authorization.status === AuthorizationStatusEnum.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
@@ -117,6 +117,12 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
           }
           response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
         }
+      } else {
+        // Stored non-Accepted status (Blocked / Expired / ConcurrentTx / Invalid, etc.)
+        // Map it directly from stored state — no IAuthorizer required.
+        response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(
+          authorization.status,
+        );
       }
     } catch (error) {
       // Log any unexpected errors

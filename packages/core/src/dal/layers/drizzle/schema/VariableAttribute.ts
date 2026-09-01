@@ -41,7 +41,7 @@ function variableAttributeColumns() {
     variableId: integer('variableId'),
     componentId: integer('componentId'),
     evseDatabaseId: integer('evseDatabaseId'),
-    bootConfigId: varchar('bootConfigId', { length: 255 }),
+    bootConfigId: integer('bootConfigId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

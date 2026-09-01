@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { z } from 'zod';
-import { Token } from 'typedi';
 
 /**
  * OCPI Configuration Schema
@@ -165,6 +164,11 @@ export const ocpiConfigInputSchema = z.object({
       requestStopTransactionRequestUrl: z.string(),
       unlockConnectorRequestUrl: z.string(),
     }),
+    ocpp2_1: z.object({
+      requestStartTransactionRequestUrl: z.string(),
+      requestStopTransactionRequestUrl: z.string(),
+      unlockConnectorRequestUrl: z.string(),
+    }),
   }),
 
   // OCPI-specific settings
@@ -316,6 +320,11 @@ export const ocpiConfigSchema = z.object({
       requestStopTransactionRequestUrl: z.string(),
       unlockConnectorRequestUrl: z.string(),
     }),
+    ocpp2_1: z.object({
+      requestStartTransactionRequestUrl: z.string(),
+      requestStopTransactionRequestUrl: z.string(),
+      unlockConnectorRequestUrl: z.string(),
+    }),
   }),
 
   logLevel: z.number().min(0).max(6),
@@ -326,4 +335,3 @@ export const ocpiConfigSchema = z.object({
 
 export type OIDCConfig = z.infer<typeof oidcConfigSchema>;
 export type OcpiConfig = z.infer<typeof ocpiConfigSchema>;
-export const OcpiConfigToken = new Token<OcpiConfig>('ocpi.config');

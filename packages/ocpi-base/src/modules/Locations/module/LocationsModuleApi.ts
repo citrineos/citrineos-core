@@ -36,8 +36,8 @@ import {
   VersionNumber,
   VersionNumberParam,
 } from '../../../index.js';
-import { Service } from 'typedi';
 import { HttpStatus } from '@citrineos/base';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_PAGINATED_LOCATION = await generateMockOcpiPaginatedResponse(
   PaginatedLocationResponseSchema,
@@ -57,8 +57,11 @@ const MOCK_CONNECTOR = await generateMockForSchema(
 /**
  * Server API for the provisioning component.
  */
+export interface LocationsModuleApiDependencies extends OcpiDependencies {
+  locationsService: LocationsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Locations}`)
-@Service()
 export class LocationsModuleApi extends BaseController implements ILocationsModuleApi {
   /**
    * Constructs a new instance of the class.
@@ -66,11 +69,11 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
    * @param {LocationsService} locationsService - The Locations service.
    * @param {AdminLocationsService} adminLocationsService - The Admin Locations service.
    */
-  constructor(
-    readonly locationsService: LocationsService,
-    // readonly adminLocationsService: AdminLocationsService,
-  ) {
-    super();
+  readonly locationsService: LocationsService;
+
+  constructor(dependencies: LocationsModuleApiDependencies) {
+    super(dependencies);
+    this.locationsService = dependencies.locationsService;
   }
 
   @Get()
@@ -101,9 +104,10 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getLocationById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
   ): Promise<LocationResponse> {
-    return this.locationsService.getLocationById(locationId);
+    return this.locationsService.getLocationById(ocpiHeaders, locationId);
   }
 
   @Get('/:location_id/:evse_uid')
@@ -117,13 +121,14 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getEvseById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
   ): Promise<EvseResponse> {
     const stationId = EXTRACT_STATION_ID(evseUid);
     const evseId = EXTRACT_EVSE_ID(evseUid);
 
-    return this.locationsService.getEvseById(locationId, stationId, Number(evseId));
+    return this.locationsService.getEvseById(ocpiHeaders, locationId, stationId, Number(evseId));
   }
 
   @Get('/:location_id/:evse_uid/:connector_id')
@@ -137,6 +142,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
   })
   async getConnectorById(
     @VersionNumberParam() version: VersionNumber,
+    @FunctionalEndpointParams() ocpiHeaders: OcpiHeaders,
     @Param('location_id') locationId: string,
     @Param('evse_uid') evseUid: string,
     @Param('connector_id') connectorId: string,
@@ -145,6 +151,7 @@ export class LocationsModuleApi extends BaseController implements ILocationsModu
     const evseId = EXTRACT_EVSE_ID(evseUid);
 
     return this.locationsService.getConnectorById(
+      ocpiHeaders,
       locationId,
       stationId,
       Number(evseId),

@@ -7,12 +7,28 @@ import type {
   AuthorizationDto,
   BootDto,
   CallAction,
+  CertificateCreate,
+  CertificateDto,
+  CertificateUseEnumType,
+  DeleteCertificateAttemptCreate,
+  DeleteCertificateAttemptDto,
+  DeleteCertificateStatusEnumType,
+  InstallCertificateAttemptCreate,
+  InstallCertificateAttemptDto,
+  InstallCertificateStatusEnumType,
+  InstalledCertificateCreate,
+  InstalledCertificateDto,
+  HashAlgorithmEnumType,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationSequenceTypeEnumType,
+  ConnectorDto,
+  EvseDto,
   MeterValueDto,
   OCPP1_6,
+  OCPP2_common_types,
+  OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
   SecurityEventDto,
@@ -20,8 +36,6 @@ import type {
   SubscriptionDto,
   TenantDto,
   UpdateEnumType,
-  OCPP2_common_types,
-  OCPP2_request_types,
 } from '@citrineos/types';
 import type {
   ChargingProfileInput,
@@ -29,12 +43,6 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type { Certificate } from '../layers/sequelize/model/Certificate/Certificate.js';
-import type {
-  DeleteCertificateAttempt,
-  InstallCertificateAttempt,
-  InstalledCertificate,
-} from '../layers/sequelize/model/Certificate/index.js';
 import type { ChangeConfiguration } from '../layers/sequelize/model/ChangeConfiguration.js';
 import type {
   ChargingNeeds,
@@ -50,10 +58,10 @@ import type { VariableAttribute } from '../layers/sequelize/model/DeviceModel/Va
 import type { VariableCharacteristics } from '../layers/sequelize/model/DeviceModel/VariableCharacteristics.js';
 import type { ChargingStation } from '../layers/sequelize/model/Location/ChargingStation.js';
 import type { ChargingStationNetworkProfile } from '../layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
-import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
 import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
+import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
@@ -268,7 +276,11 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
-  createOrUpdateConnector(tenantId: number, connector: Connector): Promise<Connector | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  createOrUpdateConnector(
+    tenantId: number,
+    connector: ConnectorDto,
+  ): Promise<Connector | undefined>;
   /**
    * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
    * Used in ad-hoc/`allowUnknownChargingStations` flows where the charge point arrives
@@ -452,15 +464,118 @@ export interface ITariffRepository extends CrudRepository<Tariff> {
   upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
 }
 
-export interface ICertificateRepository extends CrudRepository<Certificate> {
-  createOrUpdateCertificate(tenantId: number, certificate: Certificate): Promise<Certificate>;
+export interface ICertificateRepository {
+  findByFileHash(tenantId: number, hash: string): Promise<CertificateDto | undefined>;
+  findById(tenantId: number, id: number): Promise<CertificateDto | undefined>;
+  createCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto>;
+  createOrUpdateCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
-export interface IInstallCertificateAttemptRepository
-  extends CrudRepository<InstallCertificateAttempt> {}
-export interface IDeleteCertificateAttemptRepository
-  extends CrudRepository<DeleteCertificateAttempt> {}
+type InstalledCertificateHashData = Pick<
+  InstalledCertificateDto,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+>;
+type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
+  hashAlgorithm?: HashAlgorithmEnumType;
+  certificateId?: number | null;
+};
+
+export interface IInstalledCertificateRepository {
+  findByStationAndType(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+  ): Promise<InstalledCertificateDto | undefined>;
+  findByIdAndStation(
+    tenantId: number,
+    id: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto | undefined>;
+  getLinkedCertificate(
+    tenantId: number,
+    installedCertificateId: number,
+  ): Promise<CertificateDto | undefined>;
+  createInstalledCertificate(
+    tenantId: number,
+    input: InstalledCertificateCreateInput,
+  ): Promise<InstalledCertificateDto>;
+  setCertificateId(
+    tenantId: number,
+    id: number,
+    certificateId: number,
+  ): Promise<InstalledCertificateDto | undefined>;
+  updateHashData(
+    tenantId: number,
+    id: number,
+    hashData: InstalledCertificateHashData,
+  ): Promise<InstalledCertificateDto | undefined>;
+  findAllByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto[]>;
+  deleteById(tenantId: number, id: number): Promise<InstalledCertificateDto | undefined>;
+  deleteByStation(tenantId: number, ocppConnectionName: string): Promise<InstalledCertificateDto[]>;
+  deleteByStationAndType(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+  ): Promise<InstalledCertificateDto[]>;
+  deleteByStationAndHashData(
+    tenantId: number,
+    ocppConnectionName: string,
+    hashData: InstalledCertificateHashData,
+  ): Promise<InstalledCertificateDto[]>;
+}
+export interface IInstallCertificateAttemptRepository {
+  findPendingByStationTypeAndCertHash(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+    certificateFileHash: string,
+    requestId?: number | null,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+    requestId?: number | null,
+    certificateType?: CertificateUseEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: InstallCertificateAttemptCreate,
+  ): Promise<InstallCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: InstallCertificateStatusEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  getLinkedCertificate(tenantId: number, attemptId: number): Promise<CertificateDto | undefined>;
+}
+type DeleteCertificateHashData = Pick<
+  DeleteCertificateAttemptDto,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+>;
+
+export interface IDeleteCertificateAttemptRepository {
+  findPendingByStationAndHashData(
+    tenantId: number,
+    ocppConnectionName: string,
+    hashData: DeleteCertificateHashData,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: DeleteCertificateAttemptCreate,
+  ): Promise<DeleteCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: DeleteCertificateStatusEnumType,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
@@ -565,4 +680,7 @@ export interface IChangeConfigurationRepository extends CrudRepository<ChangeCon
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;
   readByKey(tenantId: number, key: string | number): Promise<TenantDto | undefined>;
+  readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
+  readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
+  updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
 }

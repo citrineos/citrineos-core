@@ -155,9 +155,9 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
       let latestStatusNotificationForEvse: StatusNotificationDto | undefined;
       chargingStation?.statusNotifications?.forEach((statusNotificationForStation) => {
         if (
-          statusNotificationForStation.statusNotification?.evseId === parseInt(evse.evseId) &&
+          statusNotificationForStation.statusNotification?.evseId === evse.evseTypeId &&
           statusNotificationForStation.statusNotification?.connectorId ===
-            evse.connectors?.[0]?.connectorId
+            evse.connectors?.[0]?.evseTypeConnectorId
         ) {
           latestStatusNotificationForEvse = statusNotificationForStation.statusNotification;
         }

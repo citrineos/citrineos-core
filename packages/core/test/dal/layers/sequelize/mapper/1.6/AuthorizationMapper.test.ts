@@ -20,11 +20,14 @@ describe('AuthorizationMapper', () => {
       expect(AuthorizationMapper.toIdTagInfoStatus(AuthorizationStatusEnum.Invalid)).toBe(
         OCPP1_6.AuthorizeResponseStatus.Invalid,
       );
+      expect(AuthorizationMapper.toIdTagInfoStatus(AuthorizationStatusEnum.ConcurrentTx)).toBe(
+        OCPP1_6.AuthorizeResponseStatus.ConcurrentTx,
+      );
     });
 
-    it('should throw an error for unmapped statuses', () => {
-      expect(() => AuthorizationMapper.toIdTagInfoStatus('ConcurrentTx')).toThrow(
-        'Unknown IdTagInfoStatus status',
+    it('should degrade statuses with no OCPP 1.6 representation to Invalid', () => {
+      expect(AuthorizationMapper.toIdTagInfoStatus(AuthorizationStatusEnum.NoCredit)).toBe(
+        OCPP1_6.AuthorizeResponseStatus.Invalid,
       );
     });
   });

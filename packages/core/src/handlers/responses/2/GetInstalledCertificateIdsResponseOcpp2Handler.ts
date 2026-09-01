@@ -18,11 +18,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import {
-  type IInstalledCertificateRepository,
-  InstalledCertificate,
-  type IOCPPMessageRepository,
-} from '@dal/index.js';
+import { type IInstalledCertificateRepository, type IOCPPMessageRepository } from '@dal/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
 export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {
@@ -57,82 +53,131 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
     const correlationId = message.context.correlationId;
     const certificateHashDataList: OCPP2_common_types.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
+    const requestedCertificateType = await this.readRequestedCertificateType(
+      tenantId,
+      ocppConnectionName,
+      correlationId,
+    );
+
     if (message.payload.status === GetInstalledCertificateStatusEnum.NotFound) {
-      const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
-      if (request) {
-        // should always be true
-        const getInstalledCertificateIdsRequest =
-          request.payload as OCPP2_request_types.GetInstalledCertificateIdsRequest;
-        let certificateType;
-        if (
-          getInstalledCertificateIdsRequest &&
-          getInstalledCertificateIdsRequest.certificateType
-        ) {
-          certificateType = getInstalledCertificateIdsRequest.certificateType;
-        }
-        if (certificateType) {
-          this._logger.debug(
-            `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had certificateType: ${certificateType}. Cleaning up installed certificates of this type in DB if any.`,
+      if (requestedCertificateType) {
+        this._logger.debug(
+          `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had certificateType: ${requestedCertificateType}. Cleaning up installed certificates of this type in DB if any.`,
+        );
+        const certificateTypes = Array.isArray(requestedCertificateType)
+          ? requestedCertificateType
+          : [requestedCertificateType];
+        for (const type of certificateTypes) {
+          await this._installedCertificateRepository.deleteByStationAndType(
+            tenantId,
+            ocppConnectionName,
+            type as unknown as CertificateUseEnumType,
           );
-          await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType,
-            },
-          });
-        } else {
-          this._logger.debug(
-            `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had no certificateType. Cleaning up all installed certificates in DB if any.`,
-          );
-          await this._installedCertificateRepository.deleteAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-            },
-          });
         }
+      } else {
+        this._logger.debug(
+          `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had no certificateType. Cleaning up all installed certificates in DB if any.`,
+        );
+        await this._installedCertificateRepository.deleteByStation(tenantId, ocppConnectionName);
       }
       return;
     }
-    if (certificateHashDataList && certificateHashDataList.length > 0) {
-      for (const certificateHashDataWrap of certificateHashDataList) {
-        const certificateHashData = certificateHashDataWrap.certificateHashData;
-        const certificateType =
-          certificateHashDataWrap.certificateType as unknown as CertificateUseEnumType;
-        let existingInstalledCertificate =
-          await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              certificateType: certificateType,
-            },
-          });
-        if (existingInstalledCertificate) {
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          await existingInstalledCertificate.save();
-          this._logger.debug('Updated installed certificate record', existingInstalledCertificate);
-        } else {
-          existingInstalledCertificate = new InstalledCertificate();
-          existingInstalledCertificate.hashAlgorithm = certificateHashData.hashAlgorithm;
-          existingInstalledCertificate.issuerNameHash = certificateHashData.issuerNameHash;
-          existingInstalledCertificate.issuerKeyHash = certificateHashData.issuerKeyHash;
-          existingInstalledCertificate.serialNumber = certificateHashData.serialNumber;
-          existingInstalledCertificate.ocppConnectionName = ocppConnectionName;
-          existingInstalledCertificate.certificateType = certificateType;
-          await existingInstalledCertificate.save();
-          this._logger.debug(
-            'Created new installed certificate record',
-            existingInstalledCertificate,
-          );
-        }
+
+    // Reconcile stored installed-certificate records against what the station reported: create any
+    // reported certificate we don't have, and remove any stored certificate the station no longer
+    // reports (scoped to the requested certificate type(s) when the request specified them).
+    const reported = certificateHashDataList ?? [];
+    const reportedKeys = new Set(
+      reported.map((wrap) =>
+        installedCertificateKey(
+          wrap.certificateType as unknown as CertificateUseEnumType,
+          wrap.certificateHashData,
+        ),
+      ),
+    );
+
+    const requestedTypes = requestedCertificateType
+      ? (Array.isArray(requestedCertificateType)
+          ? requestedCertificateType
+          : [requestedCertificateType]
+        ).map((type) => type as unknown as CertificateUseEnumType)
+      : undefined;
+    const allStored = await this._installedCertificateRepository.findAllByStation(
+      tenantId,
+      ocppConnectionName,
+    );
+    const stored = requestedTypes
+      ? allStored.filter((existing) => requestedTypes.includes(existing.certificateType))
+      : allStored;
+    const storedKeys = new Set(
+      stored.map((existing) => installedCertificateKey(existing.certificateType, existing)),
+    );
+
+    for (const certificateHashDataWrap of reported) {
+      const certificateHashData = certificateHashDataWrap.certificateHashData;
+      const certificateType =
+        certificateHashDataWrap.certificateType as unknown as CertificateUseEnumType;
+      if (storedKeys.has(installedCertificateKey(certificateType, certificateHashData))) {
+        this._logger.debug('Installed certificate already recorded', certificateHashData);
+        continue;
       }
+      const created = await this._installedCertificateRepository.createInstalledCertificate(
+        tenantId,
+        {
+          ocppConnectionName: ocppConnectionName,
+          certificateType: certificateType,
+          hashAlgorithm: certificateHashData.hashAlgorithm,
+          issuerNameHash: certificateHashData.issuerNameHash,
+          issuerKeyHash: certificateHashData.issuerKeyHash,
+          serialNumber: certificateHashData.serialNumber,
+        },
+      );
+      this._logger.debug('Created new installed certificate record', created);
+    }
+
+    for (const existing of stored) {
+      if (reportedKeys.has(installedCertificateKey(existing.certificateType, existing))) {
+        continue;
+      }
+      await this._installedCertificateRepository.deleteById(tenantId, existing.id!);
+      this._logger.debug('Removed installed certificate no longer on the station', existing);
     }
   }
+
+  private async readRequestedCertificateType(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<OCPP2_request_types.GetInstalledCertificateIdsRequest['certificateType']> {
+    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName: ocppConnectionName,
+        correlationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
+
+    const payload = request?.payload as
+      | OCPP2_request_types.GetInstalledCertificateIdsRequest
+      | undefined;
+    return payload?.certificateType ?? undefined;
+  }
+}
+
+function installedCertificateKey(
+  certificateType: CertificateUseEnumType,
+  hashData: {
+    hashAlgorithm?: string | null;
+    issuerNameHash?: string | null;
+    issuerKeyHash?: string | null;
+    serialNumber?: string | null;
+  },
+): string {
+  return [
+    certificateType,
+    hashData.hashAlgorithm,
+    hashData.issuerNameHash,
+    hashData.issuerKeyHash,
+    hashData.serialNumber,
+  ].join('|');
 }

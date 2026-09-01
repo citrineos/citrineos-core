@@ -4,47 +4,57 @@
 
 import type { ICache } from '@citrineos/base';
 import { type ChargingStationDto, type TenantPartnerDto, OCPPVersion } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Inject, InjectMany, Service } from 'typedi';
+import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   GetTenantPartnerByIdQueryResult,
   GetTenantPartnerByIdQueryVariables,
 } from '../graphql/index.js';
-import { GET_TENANT_PARTNER_BY_ID, OcpiGraphqlClient } from '../graphql/index.js';
-import type { OcpiConfig, UnlockConnector } from '../index.js';
-import { CacheWrapper, CommandResultType, CommandType, OcpiConfigToken } from '../index.js';
+import { GET_TENANT_PARTNER_BY_ID } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { CacheWrapper, OcpiConfig, UnlockConnector } from '../index.js';
+import { CommandResultType, CommandType } from '../index.js';
+import type { OcpiConfiguredDependencies } from '../dependencies.js';
 import type { CancelReservation } from '../model/CancelReservation.js';
 import type { ReserveNow } from '../model/ReserveNow.js';
 import type { SetChargingProfile } from '../model/SetChargingProfile.js';
 import type { StartSession } from '../model/StartSession.js';
 import type { StopSession } from '../model/StopSession.js';
-import { CommandsClientApi } from '../trigger/CommandsClientApi.js';
+import type { CommandsClientApi } from '../trigger/CommandsClientApi.js';
 import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from './Consts.js';
-import { OCPP_COMMAND_HANDLER, OCPPCommandHandler } from './ocppCommandHandlers/base.js';
+import type { OCPPCommandHandler } from './ocppCommandHandlers/base.js';
 
-@Service()
+export interface CommandExecutorDependencies extends OcpiConfiguredDependencies {
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+  commandsClientApi: CommandsClientApi;
+  cacheWrapper: CacheWrapper;
+  handlers: OCPPCommandHandler[];
+}
+
 export class CommandExecutor {
-  @Inject()
-  protected logger!: Logger<ILogObj>;
-  @Inject()
-  protected ocpiGraphqlClient!: OcpiGraphqlClient;
-  @Inject()
-  protected commandsClientApi!: CommandsClientApi;
-  @Inject(OcpiConfigToken)
-  protected config!: OcpiConfig;
+  protected readonly logger: Logger<ILogObj>;
+  protected readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  protected readonly commandsClientApi: CommandsClientApi;
+  protected readonly config: OcpiConfig;
 
-  protected cache!: ICache;
+  protected cache: ICache;
   private handlerRegistry = new Map<OCPPVersion, OCPPCommandHandler>();
 
-  constructor(
-    @Inject() cacheWrapper: CacheWrapper,
-    @InjectMany(OCPP_COMMAND_HANDLER) handlers: OCPPCommandHandler[],
-  ) {
+  constructor({
+    config,
+    logger,
+    ocpiGraphqlClient,
+    commandsClientApi,
+    cacheWrapper,
+    handlers,
+  }: CommandExecutorDependencies) {
+    this.config = config;
+    this.logger = logger;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.commandsClientApi = commandsClientApi;
     this.cache = cacheWrapper.cache;
     handlers.forEach((handler) => {
       this.handlerRegistry.set(handler.supportedVersion, handler);
@@ -493,11 +503,7 @@ export class CommandExecutor {
           });
           this.commandsClientApi
             .postCommandResult(
-              tenantPartner.countryCode!,
-              tenantPartner.partyId!,
-              tenantPartner.tenant!.countryCode!,
-              tenantPartner.tenant!.partyId!,
-              tenantPartner.partnerProfileOCPI!,
+              tenantPartner,
               responseUrl,
               {
                 result: CommandResultType.TIMEOUT,
@@ -541,11 +547,7 @@ export class CommandExecutor {
       });
       this.commandsClientApi
         .postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.FAILED,

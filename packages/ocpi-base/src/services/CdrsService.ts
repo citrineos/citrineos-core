@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Service } from 'typedi';
 import {
   buildOcpiPaginatedResponse,
   DEFAULT_LIMIT,
@@ -12,19 +11,28 @@ import { OcpiResponseStatusCode } from '../model/OcpiResponse.js';
 import type {
   GetTransactionsQueryResult,
   GetTransactionsQueryVariables,
+  Timestamptz_Comparison_Exp,
   Transactions_Bool_Exp,
 } from '../graphql/index.js';
-import { GET_TRANSACTIONS_QUERY, OcpiGraphqlClient } from '../graphql/index.js';
-import { CdrMapper } from '../mapper/index.js';
+import { GET_TRANSACTIONS_QUERY } from '../graphql/index.js';
+import type { IOcpiGraphqlClient } from '../graphql/index.js';
+import type { CdrMapper } from '../mapper/index.js';
+import type { OcpiGraphqlDependencies } from '../dependencies.js';
 import type { TransactionDto } from '@citrineos/types';
 import type { PaginatedCdrResponse } from '../model/Cdr.js';
 
-@Service()
+export interface CdrsServiceDependencies extends OcpiGraphqlDependencies {
+  cdrMapper: CdrMapper;
+}
+
 export class CdrsService {
-  constructor(
-    private readonly ocpiGraphqlClient: OcpiGraphqlClient,
-    private readonly cdrMapper: CdrMapper,
-  ) {}
+  private readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  private readonly cdrMapper: CdrMapper;
+
+  constructor({ ocpiGraphqlClient, cdrMapper }: CdrsServiceDependencies) {
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.cdrMapper = cdrMapper;
+  }
 
   public async getCdrs(
     fromCountryCode: string,
@@ -47,10 +55,12 @@ export class CdrsService {
           partyId: { _eq: fromPartyId },
         },
       },
+      isActive: { _eq: false },
+      endTime: { _is_null: false },
     };
-    const dateFilters: any = {};
+    const dateFilters: Timestamptz_Comparison_Exp = {};
     if (dateFrom) dateFilters._gte = dateFrom.toISOString();
-    if (dateTo) dateFilters._lte = dateTo.toISOString();
+    if (dateTo) dateFilters._lt = dateTo.toISOString();
     if (Object.keys(dateFilters).length > 0) {
       where.updatedAt = dateFilters;
     }

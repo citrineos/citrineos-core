@@ -96,6 +96,7 @@ describe('GenerateCertificateChainEndpoint', () => {
       configStore: mockConfigStore as unknown as ConfigStore,
       networkConnection: mockNetworkConnection,
       serverNetworkProfileRepository: mockServerNetworkProfileRepository,
+      tenantRepository: {} as any,
       installCertificateHelperService: mockInstallCertificateHelperService,
     });
   });

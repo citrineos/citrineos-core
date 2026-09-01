@@ -7,7 +7,6 @@ import { NotFoundError, UnauthorizedError } from 'routing-controllers';
 import type { Context } from 'vm';
 import { HttpStatus, UnauthorizedException } from '@citrineos/base';
 import { buildOcpiErrorResponse } from '../../model/OcpiErrorResponse.js';
-import { Service } from 'typedi';
 import { UnknownTokenException } from '../../exception/UnknownTokenException.js';
 import { OcpiResponseStatusCode } from '../../model/OcpiResponse.js';
 import { WrongClientAccessException } from '../../exception/WrongClientAccessException.js';
@@ -21,7 +20,6 @@ import { ContentType } from '../ContentType.js';
 /**
  * GlobalExceptionHandler handles all exceptions
  */
-@Service()
 export class OcpiExceptionHandler implements KoaMiddlewareInterface {
   public async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
     try {
@@ -107,7 +105,18 @@ export class OcpiExceptionHandler implements KoaMiddlewareInterface {
               ),
             );
             break;
-          default:
+          default: {
+            const httpCode = (err as any)?.httpCode;
+            if (typeof httpCode === 'number' && httpCode >= 400 && httpCode < 500) {
+              context.status = httpCode;
+              context.body = JSON.stringify(
+                buildOcpiErrorResponse(
+                  OcpiResponseStatusCode.ClientInvalidOrMissingParameters,
+                  `${(err as Error).message}${(err as any).errors ? ': ' + JSON.stringify((err as any).errors) : ''}`,
+                ),
+              );
+              break;
+            }
             context.status = HttpStatus.INTERNAL_SERVER_ERROR;
             context.body = JSON.stringify(
               buildOcpiErrorResponse(
@@ -115,6 +124,7 @@ export class OcpiExceptionHandler implements KoaMiddlewareInterface {
                 `Internal Server Error, ${(err as Error).message}: ${JSON.stringify((err as any).errors)}`,
               ),
             );
+          }
         }
       }
     }

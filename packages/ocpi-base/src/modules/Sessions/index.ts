@@ -2,43 +2,51 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type {
-  GetTransactionByTransactionIdQueryResult,
-  GetTransactionByTransactionIdQueryVariables,
+  GetTransactionByIdQueryResult,
+  GetTransactionByIdQueryVariables,
   IDtoEvent,
-  OcpiConfig,
 } from '../../index.js';
 import {
   AbstractDtoModule,
   AsDtoEventHandler,
-  CdrBroadcaster,
   DtoEventObjectType,
   DtoEventType,
-  GET_TRANSACTION_BY_TRANSACTION_ID_QUERY,
-  OcpiConfigToken,
-  OcpiGraphqlClient,
+  GET_TRANSACTION_BY_ID_QUERY,
   OcpiModule,
-  RabbitMqDtoReceiver,
-  SessionBroadcaster,
 } from '../../index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { Inject, Service } from 'typedi';
+import type { CdrBroadcaster, IOcpiGraphqlClient, SessionBroadcaster } from '../../index.js';
+import type { DtoEventReceiverFactory } from '../../index.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 import { SessionsModuleApi } from './module/SessionsModuleApi.js';
 import type { MeterValueDto, TransactionDto } from '@citrineos/types';
 
 export { SessionsModuleApi } from './module/SessionsModuleApi.js';
 export type { ISessionsModuleApi } from './module/ISessionsModuleApi.js';
 
-@Service()
+export interface SessionsModuleDependencies extends OcpiConfiguredDependencies {
+  dtoEventReceiverFactory: DtoEventReceiverFactory;
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+  sessionBroadcaster: SessionBroadcaster;
+  cdrBroadcaster: CdrBroadcaster;
+}
+
 export class SessionsModule extends AbstractDtoModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    logger: Logger<ILogObj>,
-    readonly ocpiGraphqlClient: OcpiGraphqlClient,
-    readonly sessionBroadcaster: SessionBroadcaster,
-    readonly cdrBroadcaster: CdrBroadcaster,
-  ) {
-    super(config, new RabbitMqDtoReceiver(config, logger), logger);
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  readonly sessionBroadcaster: SessionBroadcaster;
+  readonly cdrBroadcaster: CdrBroadcaster;
+
+  constructor({
+    config,
+    logger,
+    dtoEventReceiverFactory,
+    ocpiGraphqlClient,
+    sessionBroadcaster,
+    cdrBroadcaster,
+  }: SessionsModuleDependencies) {
+    super(config, dtoEventReceiverFactory(), logger);
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.sessionBroadcaster = sessionBroadcaster;
+    this.cdrBroadcaster = cdrBroadcaster;
   }
 
   getController(): any {
@@ -85,21 +93,28 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
     if (transactionDto.isActive === false) {
       this._logger.debug(`Transaction is no longer active: ${event._eventId}`);
 
-      const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
-        GetTransactionByTransactionIdQueryResult,
-        GetTransactionByTransactionIdQueryVariables
-      >(GET_TRANSACTION_BY_TRANSACTION_ID_QUERY, {
-        transactionId: transactionDto.transactionId!,
-      });
-
-      if (!fullTransactionDtoResponse.Transactions[0]) {
+      if (transactionDto.id === undefined || transactionDto.id === null) {
         this._logger.error(
-          `Full Transaction DTO not found for ID ${transactionDto.transactionId}, cannot broadcast.`,
+          `Transaction id missing in ${event._context.eventType} notification for ${event._context.objectType} ${transactionDto.transactionId}, cannot broadcast.`,
         );
         return;
       }
 
-      const fullTransactionDto = fullTransactionDtoResponse.Transactions[0] as TransactionDto;
+      const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
+        GetTransactionByIdQueryResult,
+        GetTransactionByIdQueryVariables
+      >(GET_TRANSACTION_BY_ID_QUERY, {
+        id: transactionDto.id,
+      });
+
+      if (!fullTransactionDtoResponse.Transactions_by_pk) {
+        this._logger.error(
+          `Full Transaction DTO not found for id ${transactionDto.id}, cannot broadcast.`,
+        );
+        return;
+      }
+
+      const fullTransactionDto = fullTransactionDtoResponse.Transactions_by_pk as TransactionDto;
       await this.cdrBroadcaster.broadcastPostCdr(fullTransactionDto);
     }
   }

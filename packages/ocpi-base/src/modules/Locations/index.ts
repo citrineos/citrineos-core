@@ -5,7 +5,6 @@ import type {
   GetChargingStationByPkQueryResult,
   GetChargingStationByPkQueryVariables,
   IDtoEvent,
-  OcpiConfig,
 } from '../../index.js';
 import {
   AbstractDtoModule,
@@ -13,30 +12,41 @@ import {
   DtoEventObjectType,
   DtoEventType,
   GET_CHARGING_STATION_BY_PK_QUERY,
-  LocationsBroadcaster,
-  OcpiConfigToken,
-  OcpiGraphqlClient,
   OcpiModule,
-  RabbitMqDtoReceiver,
 } from '../../index.js';
+import type { IOcpiGraphqlClient, LocationsBroadcaster } from '../../index.js';
+import type { DtoEventReceiverFactory } from '../../index.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { LocationsModuleApi } from './module/LocationsModuleApi.js';
 import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/types';
-import { Inject, Service } from 'typedi';
 
 export { LocationsModuleApi } from './module/LocationsModuleApi.js';
 export type { ILocationsModuleApi } from './module/ILocationsModuleApi.js';
 
-@Service()
+export interface LocationsModuleDependencies extends OcpiConfiguredDependencies {
+  dtoEventReceiverFactory: DtoEventReceiverFactory;
+  locationsBroadcaster: LocationsBroadcaster;
+  ocpiGraphqlClient: IOcpiGraphqlClient;
+}
+
 export class LocationsModule extends AbstractDtoModule implements OcpiModule {
-  constructor(
-    @Inject(OcpiConfigToken) config: OcpiConfig,
-    readonly logger: Logger<ILogObj>,
-    readonly locationsBroadcaster: LocationsBroadcaster,
-    readonly ocpiGraphqlClient: OcpiGraphqlClient,
-  ) {
-    super(config, new RabbitMqDtoReceiver(config, logger), logger);
+  readonly logger: Logger<ILogObj>;
+  readonly locationsBroadcaster: LocationsBroadcaster;
+  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+
+  constructor({
+    config,
+    logger,
+    dtoEventReceiverFactory,
+    locationsBroadcaster,
+    ocpiGraphqlClient,
+  }: LocationsModuleDependencies) {
+    super(config, dtoEventReceiverFactory(), logger);
+    this.logger = logger;
+    this.locationsBroadcaster = locationsBroadcaster;
+    this.ocpiGraphqlClient = ocpiGraphqlClient;
   }
 
   getController(): any {

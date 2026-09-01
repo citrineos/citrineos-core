@@ -24,6 +24,8 @@ import { Evse } from '../model/Location/Evse.js';
 import { EvseType } from '../model/DeviceModel/EvseType.js';
 import { Transaction } from '../model/TransactionEvent/Transaction.js';
 
+const WHOLE_CHARGING_STATION_EVSE_ID = 0;
+
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
   implements IChargingProfileRepository
@@ -33,6 +35,7 @@ export class SequelizeChargingProfileRepository
   salesTariff: CrudRepository<SalesTariff>;
   transaction: CrudRepository<Transaction>;
   evse: CrudRepository<EvseType>;
+  stationEvse: CrudRepository<Evse>;
   compositeSchedule: CrudRepository<CompositeSchedule>;
 
   constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
@@ -52,6 +55,12 @@ export class SequelizeChargingProfileRepository
     this.evse = new SequelizeRepository<EvseType>({
       config,
       namespace: EvseType.MODEL_NAME,
+      logger,
+      sequelizeInstance,
+    });
+    this.stationEvse = new SequelizeRepository<Evse>({
+      config,
+      namespace: Evse.MODEL_NAME,
       logger,
       sequelizeInstance,
     });
@@ -217,14 +226,46 @@ export class SequelizeChargingProfileRepository
     compositeSchedule: CompositeScheduleInput,
     ocppConnectionName: string,
   ): Promise<CompositeSchedule> {
+    const evseId = await this.resolveCompositeScheduleEvse(
+      tenantId,
+      ocppConnectionName,
+      compositeSchedule.evseId,
+    );
+
     return await this.compositeSchedule.create(
       tenantId,
       CompositeSchedule.build({
         tenantId,
         ...compositeSchedule,
+        evseId,
         ocppConnectionName: ocppConnectionName,
       }),
     );
+  }
+
+  private async resolveCompositeScheduleEvse(
+    tenantId: number,
+    ocppConnectionName: string,
+    reportedEvseId: number | null | undefined,
+  ): Promise<number | null> {
+    if (reportedEvseId == null || reportedEvseId === WHOLE_CHARGING_STATION_EVSE_ID) {
+      return null;
+    }
+
+    const [evse] = await this.stationEvse.readAllByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName, evseTypeId: reportedEvseId },
+      limit: 1,
+    });
+
+    if (!evse) {
+      this.logger.warn(
+        `Composite schedule for ${ocppConnectionName} names EVSE ${reportedEvseId}, which is not ` +
+          `recorded on that station. Storing the schedule without an EVSE association.`,
+      );
+      return null;
+    }
+
+    return evse.id;
   }
 
   async getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number> {

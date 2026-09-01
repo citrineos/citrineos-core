@@ -27,7 +27,6 @@ import {
   ModuleId,
   OcpiEmptyResponseSchema,
   OcpiEmptyResponseSchemaName,
-  OcpiLogger,
   OcpiResponseStatusCode,
   ResponseSchema,
   UnregisterClientRequestDTOSchema,
@@ -38,7 +37,6 @@ import {
 } from '../../../index.js';
 import type { TenantPartnerDto } from '@citrineos/types';
 import { HttpStatus } from '@citrineos/base';
-import { Service } from 'typedi';
 import type { ICredentialsModuleApi } from './ICredentialsModuleApi.js';
 import {
   Ctx,
@@ -50,6 +48,7 @@ import {
   Post,
   Put,
 } from 'routing-controllers';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_CREDENTIALS_RESPONSE = await generateMockForSchema(
   CredentialsResponseSchema,
@@ -60,14 +59,17 @@ const MOCK_EMPTY = await generateMockForSchema(
   OcpiEmptyResponseSchemaName,
 );
 
+export interface CredentialsModuleApiDependencies extends OcpiDependencies {
+  credentialsService: CredentialsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Credentials}`)
-@Service()
 export class CredentialsModuleApi extends BaseController implements ICredentialsModuleApi {
-  constructor(
-    readonly logger: OcpiLogger,
-    readonly credentialsService: CredentialsService,
-  ) {
-    super();
+  readonly credentialsService: CredentialsService;
+
+  constructor(dependencies: CredentialsModuleApiDependencies) {
+    super(dependencies);
+    this.credentialsService = dependencies.credentialsService;
   }
 
   @Get()
