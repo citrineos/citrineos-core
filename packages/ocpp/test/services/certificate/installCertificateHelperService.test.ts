@@ -15,9 +15,13 @@ import { WebsocketNetworkConnection } from '@/transport/index.js';
 import { BadRequestError } from '@citrineos/base';
 import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InstallCertificateHelperService } from '@modules/Certificates/installCertificateHelperService.js';
-import { mockFileStorage, mockFileStorageGetFile, mockFileStorageSaveFile } from './vitest.setup.js';
-import { MOCK_CERTIFICATE } from './providers/InstallCertificateRequestProvider.js';
+import { InstallCertificateHelperService } from '@/services/certificate/installCertificateHelperService.js';
+import {
+  mockFileStorage,
+  mockFileStorageGetFile,
+  mockFileStorageSaveFile,
+} from './vitest.setup.js';
+import { MOCK_CERTIFICATE } from '@test/modules/Certificates/providers/InstallCertificateRequestProvider.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 // Define constants BEFORE mocks to avoid hoisting issues
@@ -52,8 +56,8 @@ vi.mock('jsrsasign', async (importOriginal) => {
   };
 });
 
-vi.mock('@util/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@util/index.js')>();
+vi.mock('@/services/certificate/CertificateUtil.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/certificate/CertificateUtil.js')>();
   return {
     ...actual,
     extractCertificateDetails: mockExtractCertificateDetails,

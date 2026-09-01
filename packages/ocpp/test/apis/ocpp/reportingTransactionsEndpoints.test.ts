@@ -4,9 +4,9 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP2_0_1, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GetCustomReportEndpoint } from '@/apis/endpoints/ocpp/2/reporting/GetCustomReportEndpoint.js';
-import { GetMonitoringReportEndpoint } from '@/apis/endpoints/ocpp/2/reporting/GetMonitoringReportEndpoint.js';
-import { SetDefaultTariffEndpoint } from '@/apis/endpoints/ocpp/2/transactions/SetDefaultTariffEndpoint.js';
+import { GetCustomReportEndpoint } from '@/apis/ocpp/2/reporting/GetCustomReportEndpoint.js';
+import { GetMonitoringReportEndpoint } from '@/apis/ocpp/2/reporting/GetMonitoringReportEndpoint.js';
+import { SetDefaultTariffEndpoint } from '@/apis/ocpp/2/transactions/SetDefaultTariffEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const STATION = 'cs001';

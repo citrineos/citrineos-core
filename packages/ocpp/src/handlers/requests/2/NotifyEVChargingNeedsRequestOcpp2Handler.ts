@@ -21,7 +21,7 @@ import {
 } from '@citrineos/types';
 import type { IChargingProfileRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
-import type { ISmartCharging } from '@modules/SmartCharging/smartCharging/SmartCharging.js';
+import type { ISmartCharging } from '@modules/SmartCharging/SmartCharging.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingNeeds)
 export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {

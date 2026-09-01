@@ -4,11 +4,11 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CancelReservationEndpoint } from '@/apis/endpoints/ocpp/2/evDriver/CancelReservationEndpoint.js';
-import { RequestStartTransactionEndpoint } from '@/apis/endpoints/ocpp/2/evDriver/RequestStartTransactionEndpoint.js';
-import { ReserveNowEndpoint } from '@/apis/endpoints/ocpp/2/evDriver/ReserveNowEndpoint.js';
-import { SendLocalListEndpoint as SendLocalList16Endpoint } from '@/apis/endpoints/ocpp/1.6/evDriver/SendLocalListEndpoint.js';
-import { SendLocalListEndpoint } from '@/apis/endpoints/ocpp/2/evDriver/SendLocalListEndpoint.js';
+import { CancelReservationEndpoint } from '@/apis/ocpp/2/evDriver/CancelReservationEndpoint.js';
+import { RequestStartTransactionEndpoint } from '@/apis/ocpp/2/evDriver/RequestStartTransactionEndpoint.js';
+import { ReserveNowEndpoint } from '@/apis/ocpp/2/evDriver/ReserveNowEndpoint.js';
+import { SendLocalListEndpoint as SendLocalList16Endpoint } from '@/apis/ocpp/1.6/evDriver/SendLocalListEndpoint.js';
+import { SendLocalListEndpoint } from '@/apis/ocpp/2/evDriver/SendLocalListEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const STATION = 'cs001';

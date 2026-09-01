@@ -4,7 +4,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProvisionStationVariablesEndpoint } from '@/apis/endpoints/ProvisionStationVariablesEndpoint.js';
+import { ProvisionStationVariablesEndpoint } from '@/apis/commands/ProvisionStationVariablesEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
 

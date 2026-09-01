@@ -7,7 +7,7 @@ import { AttributeEnum, EventGroup, OCPP_CallAction, OCPPVersion } from '@citrin
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TotpUtil } from '@/services/index.js';
-import { InitiateWebPaymentEndpoint } from '@/apis/endpoints/webPayment/InitiateWebPaymentEndpoint.js';
+import { InitiateWebPaymentEndpoint } from '@/apis/webPayment/InitiateWebPaymentEndpoint.js';
 import { WebPaymentApi } from '@/apis/WebPaymentApi.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 

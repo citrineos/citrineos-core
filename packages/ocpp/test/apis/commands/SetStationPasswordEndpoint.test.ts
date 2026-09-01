@@ -4,7 +4,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SetStationPasswordEndpoint } from '@/apis/endpoints/SetStationPasswordEndpoint.js';
+import { SetStationPasswordEndpoint } from '@/apis/commands/SetStationPasswordEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
 import { aSystemConfig } from '@test/providers/systemConfig.js';

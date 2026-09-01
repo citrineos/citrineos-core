@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { asClass, asFunction, type AwilixContainer } from 'awilix';
+import { asFunction, type AwilixContainer } from 'awilix';
 import {
   type AbstractHandler,
   buildHandlers,
@@ -18,7 +18,6 @@ import {
   InstallCertificateResponseOcpp2Handler,
   SignCertificateRequestOcpp2Handler,
 } from '@handlers/index.js';
-import { InstallCertificateHelperService } from './installCertificateHelperService.js';
 
 /**
  * The handlers this module owns. Which of them are built is decided by the module's configured
@@ -39,7 +38,6 @@ const CERTIFICATES_HANDLERS = [
  */
 export function registerCertificatesServices(container: AwilixContainer): void {
   container.register({
-    installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     certificatesHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, CERTIFICATES_HANDLERS),
     ).scoped(),

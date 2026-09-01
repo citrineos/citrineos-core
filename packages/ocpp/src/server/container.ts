@@ -62,6 +62,7 @@ import {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/dal';
+import { AdminApi } from '@/apis/AdminApi.js';
 import { CommandsApi } from '@/apis/CommandsApi.js';
 import { OcppMessageApi } from '@/apis/OcppMessageApi.js';
 import { WebPaymentApi } from '@/apis/WebPaymentApi.js';
@@ -76,12 +77,7 @@ import {
 } from '@modules/Configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/index.js';
 import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/index.js';
-import {
-  AdminApi,
-  MessageRouterImpl,
-  registerOcppRouterServices,
-  WebhookDispatcher,
-} from '@modules/OcppRouter/index.js';
+import { MessageRouterImpl, WebhookDispatcher } from '@modules/OcppRouter/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/Reporting/index.js';
 import {
   InternalSmartCharging,
@@ -159,7 +155,6 @@ function registerModuleServices(container: AwilixContainer): void {
   registerConfigurationServices(container);
   registerEVDriverServices(container);
   registerMonitoringServices(container);
-  registerOcppRouterServices(container);
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);

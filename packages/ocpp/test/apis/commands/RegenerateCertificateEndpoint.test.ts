@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RegenerateCertificateEndpoint } from '@/apis/endpoints/RegenerateCertificateEndpoint.js';
+import { RegenerateCertificateEndpoint } from '@/apis/commands/RegenerateCertificateEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
 

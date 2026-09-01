@@ -5,6 +5,7 @@
 export * from './authorizer/index.js';
 export * from './vatProvider/index.js';
 export * from './certificate/index.js';
+export { InstallCertificateHelperService } from './certificate/installCertificateHelperService.js';
 
 export { MemoryCache } from './cache/memory.js';
 export { RedisCache } from './cache/redis.js';

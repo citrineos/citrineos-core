@@ -4,10 +4,10 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { EventGroup, OCPP2_0_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClearVariableMonitoringEndpoint } from '@/apis/endpoints/ocpp/2/monitoring/ClearVariableMonitoringEndpoint.js';
-import { GetVariablesEndpoint } from '@/apis/endpoints/ocpp/2/monitoring/GetVariablesEndpoint.js';
-import { SetVariableMonitoringEndpoint } from '@/apis/endpoints/ocpp/2/monitoring/SetVariableMonitoringEndpoint.js';
-import { SetVariablesEndpoint } from '@/apis/endpoints/ocpp/2/monitoring/SetVariablesEndpoint.js';
+import { ClearVariableMonitoringEndpoint } from '@/apis/ocpp/2/monitoring/ClearVariableMonitoringEndpoint.js';
+import { GetVariablesEndpoint } from '@/apis/ocpp/2/monitoring/GetVariablesEndpoint.js';
+import { SetVariableMonitoringEndpoint } from '@/apis/ocpp/2/monitoring/SetVariableMonitoringEndpoint.js';
+import { SetVariablesEndpoint } from '@/apis/ocpp/2/monitoring/SetVariablesEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 const STATION = 'cs001';

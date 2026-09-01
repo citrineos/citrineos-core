@@ -9,7 +9,7 @@ import type {
   IInstalledCertificateRepository,
 } from '@citrineos/dal';
 import { CertificateAuthorityService } from '@/services/index.js';
-import type { InstallCertificateHelperService } from './installCertificateHelperService.js';
+import type { InstallCertificateHelperService } from '@/services/certificate/installCertificateHelperService.js';
 
 export interface CertificatesModuleDependencies extends OcppModuleDependencies {
   installedCertificateRepository: IInstalledCertificateRepository;

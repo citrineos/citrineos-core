@@ -27,14 +27,14 @@ import type {
   IInstalledCertificateRepository,
 } from '@citrineos/dal';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@citrineos/dal';
+import type { CertificateAuthorityService } from './CertificateAuthority.js';
 import {
-  type CertificateAuthorityService,
   extractCertificateDetails,
   generateCertificate,
   generateCSR,
   isSignedBy,
   parseCertificateChainPem,
-} from '@/services/index.js';
+} from './CertificateUtil.js';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';
 import { type ILogObj, Logger } from 'tslog';

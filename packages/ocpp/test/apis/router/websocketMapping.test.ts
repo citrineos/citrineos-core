@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { CacheNamespace } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/types';
-import { DeleteWebsocketMappingEndpoint } from '@modules/OcppRouter/endpoints/DeleteWebsocketMappingEndpoint.js';
-import { PutWebsocketMappingEndpoint } from '@modules/OcppRouter/endpoints/PutWebsocketMappingEndpoint.js';
+import { DeleteWebsocketMappingEndpoint } from '@/apis/router/DeleteWebsocketMappingEndpoint.js';
+import { PutWebsocketMappingEndpoint } from '@/apis/router/PutWebsocketMappingEndpoint.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

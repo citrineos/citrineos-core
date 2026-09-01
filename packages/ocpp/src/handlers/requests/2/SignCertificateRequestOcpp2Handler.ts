@@ -28,7 +28,7 @@ import {
 import type { IDeviceModelRepository } from '@citrineos/dal';
 import { CertificateAuthorityService, parseCSRForVerification } from '@/services/index.js';
 import { validatePEMEncodedCSR } from '@util/index.js';
-import type { InstallCertificateHelperService } from '@modules/Certificates/installCertificateHelperService.js';
+import type { InstallCertificateHelperService } from '@/services/certificate/installCertificateHelperService.js';
 import { Crypto } from '@peculiar/webcrypto';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';

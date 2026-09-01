@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreateSubscriptionEndpoint } from '@modules/OcppRouter/endpoints/CreateSubscriptionEndpoint.js';
-import { DeleteSubscriptionEndpoint } from '@modules/OcppRouter/endpoints/DeleteSubscriptionEndpoint.js';
-import { GetSubscriptionsEndpoint } from '@modules/OcppRouter/endpoints/GetSubscriptionsEndpoint.js';
+import { CreateSubscriptionEndpoint } from '@/apis/router/CreateSubscriptionEndpoint.js';
+import { DeleteSubscriptionEndpoint } from '@/apis/router/DeleteSubscriptionEndpoint.js';
+import { GetSubscriptionsEndpoint } from '@/apis/router/GetSubscriptionsEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
 
