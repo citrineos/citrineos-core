@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { LocalStorage } from '@/util/index.js';
 import type { IFileStorage } from '@citrineos/base';
 import type { WebsocketServerConfig } from '@citrineos/types';
 import * as https from 'https';
-import { LocalStorage } from '@/util/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -54,9 +54,7 @@ export class TlsCredentialManager {
       );
     }
 
-    const storage: IFileStorage = allExistInFileStorage
-      ? this._fileStorage
-      : new LocalStorage('', '');
+    const storage: IFileStorage = allExistInFileStorage ? this._fileStorage : new LocalStorage('');
 
     const keyStr = await storage.getFile(this.config.tlsKeyFilePath as string, undefined, {
       trusted: true,

@@ -127,15 +127,7 @@ describe('AbstractMessageEndpointApi', () => {
       expect(routes.map((r) => r.url)).toEqual(['/ocpp/2.1/certificates/certificateSigned']);
     });
 
-    it('skips every protocol when the module is absent from config', async () => {
-      const config = aSystemConfig();
-      const { certificates: _omitted, ...modules } = config.modules;
-      const { routes } = await buildHarness(aRoute(), { ...config, modules });
-
-      expect(routes).toEqual([]);
-    });
-
-    it('registers the route when the module is present in config', async () => {
+    it('registers a single route for a single declared protocol', async () => {
       const { routes } = await buildHarness(
         aRoute({ protocols: [OCPPVersion.OCPP2_0_1] }),
         aSystemConfig(),
@@ -145,11 +137,10 @@ describe('AbstractMessageEndpointApi', () => {
     });
 
     it('registers routes through an encapsulated scope when exposeMessage is on', async () => {
-      const config = aSystemConfig();
-      const { routes } = await buildHarness(aRoute({ protocols: [OCPPVersion.OCPP2_0_1] }), {
-        ...config,
-        util: { ...config.util, swagger: { ...config.util.swagger!, exposeMessage: true } },
-      });
+      const { routes } = await buildHarness(
+        aRoute({ protocols: [OCPPVersion.OCPP2_0_1] }),
+        aSystemConfig({ swagger: { exposeMessage: true } }),
+      );
 
       expect(routes.map((r) => r.url)).toEqual(['/ocpp/2.0.1/certificates/certificateSigned']);
     });

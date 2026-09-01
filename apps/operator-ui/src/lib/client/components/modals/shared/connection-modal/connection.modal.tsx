@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useOne, useTranslate } from '@refinedev/core';
-import { Copy, Loader2, Play, HelpCircle } from 'lucide-react';
+import type { WebsocketServerConfig } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
 import {
   Dialog,
@@ -14,14 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@lib/client/components/ui/dialog';
-import { S3_BUCKET_FILE_CONFIG, S3_BUCKET_FILE_CORE_CONFIG } from '@lib/utils/consts';
-import config from '@lib/utils/config';
-import type { SystemConfig, WebsocketServerConfig } from '@citrineos/types';
-import { fetchFileAction } from '@lib/server/actions/file/fetchFileAction';
-import { BucketType } from '@lib/utils/enums';
 import { useTenantId } from '@lib/client/hooks/useTenantId';
 import { TENANT_DETAIL_QUERY } from '@lib/queries/tenants';
+import { fetchFileAction } from '@lib/server/actions/file/fetchFileAction';
 import { ResourceType } from '@lib/utils/access.types';
+import config from '@lib/utils/config';
+import { S3_BUCKET_FILE_CONFIG, S3_BUCKET_FILE_CORE_CONFIG } from '@lib/utils/consts';
+import { BucketType } from '@lib/utils/enums';
+import { useOne, useTranslate } from '@refinedev/core';
+import { Copy, HelpCircle, Loader2, Play } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export interface OperatorConfig {
   centralSystem: {
@@ -42,7 +42,7 @@ interface ConnectionModalProps {
 
 export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: ConnectionModalProps) => {
   const translate = useTranslate();
-  const [coreConfig, setCoreConfig] = useState<SystemConfig | null>(null);
+  const [coreConfig, setCoreConfig] = useState<WebsocketServerConfig[] | null>(null);
   const [operatorConfig, setOperatorConfig] = useState<OperatorConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
   const groupedServers: Record<number, WebsocketServerConfig[]> = {};
   const fallbackServers: Record<number, WebsocketServerConfig[]> = {};
 
-  coreConfig?.util?.networkConnection?.websocketServers?.forEach((server) => {
+  coreConfig?.forEach((server) => {
     // Servers resolving the tenant dynamically are only usable once this tenant has a path.
     if (server.dynamicTenantResolution) {
       if (tenantWebsocketServerPath) {
@@ -137,7 +137,7 @@ export const ConnectionModal = ({ open, onClose, isFirstLogin = false }: Connect
     return `${protocol}://${host}:${server.port}`;
   };
 
-  const hasConnections = coreConfig?.util?.networkConnection?.websocketServers?.length && host;
+  const hasConnections = coreConfig?.length && host;
 
   // Video URL configuration - can be easily replaced via environment variable
   const helpVideoUrl = config.helpVideoUrl;

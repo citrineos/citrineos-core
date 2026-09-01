@@ -39,7 +39,14 @@ describe('CertificateAuthorityService', () => {
   let certificateAuthorityService: CertificateAuthorityService;
 
   beforeAll(() => {
-    mockSystemConfig = {} as unknown as Mocked<SystemConfig>;
+    // Both integrations opted in so the constructor builds both clients — the factory
+    // hooks below are stubbed, so the mock clients are what actually get used.
+    mockSystemConfig = {
+      integrations: {
+        v2gCA: { name: 'hubject' },
+        chargingStationCA: { name: 'acme' },
+      },
+    } as unknown as Mocked<SystemConfig>;
 
     mockV2GClient = {
       getSignedCertificate: vi.fn(),

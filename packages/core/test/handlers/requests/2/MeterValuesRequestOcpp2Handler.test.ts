@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi } from 'vitest';
-import { type BootstrapConfig, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
   type SystemConfig,
@@ -17,17 +16,16 @@ import {
 import type { ITransactionEventRepository } from '@dal/interfaces/repositories.js';
 import { MeterValuesRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
+import { describe, expect, it, vi } from 'vitest';
 
-function makeConfig(sendCostUpdatedOnMeterValue: boolean): BootstrapConfig & SystemConfig {
+function makeConfig(sendCostUpdatedOnMeterValue: boolean): SystemConfig {
   return {
-    modules: {
-      transactions: {
-        requests: [],
-        responses: [],
-        sendCostUpdatedOnMeterValue,
-      },
+    transactions: {
+      requests: [],
+      responses: [],
+      sendCostUpdatedOnMeterValue,
     },
-  } as unknown as BootstrapConfig & SystemConfig;
+  } as unknown as SystemConfig;
 }
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {

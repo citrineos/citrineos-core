@@ -19,6 +19,7 @@ import {
   type INetworkConnection,
   type IWebsocketConnection,
   CacheNamespace,
+  ConfigLoader,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
@@ -54,6 +55,7 @@ import { TlsCredentialManager } from './TlsCertificateManager.js';
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
   protected _config: SystemConfig;
+  protected _websocketServers: WebsocketServerConfig[] = [];
   protected _logger: Logger<ILogObj>;
   private _identifierConnections: Map<string, WebSocket> = new Map();
   private _pingTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -123,15 +125,19 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   public async initialize(): Promise<void> {
+    this._websocketServers = await ConfigLoader.loadWebsocketServersConfig(
+      this._fileStorage,
+      this._config.websocketServerConfigFile,
+    );
     if (
-      this._config.util.networkConnection.websocketServers.some(
+      this._websocketServers.some(
         (websocketServerConfig) => websocketServerConfig.dynamicTenantResolution,
       )
     ) {
       this._warmTenantPathCache();
     }
 
-    for (const websocketServerConfig of this._config.util.networkConnection.websocketServers) {
+    for (const websocketServerConfig of this._websocketServers) {
       const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
       if (websocketServerConfig.securityProfile > 1) {
@@ -142,6 +148,24 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         );
         this._certManagersMap.set(websocketServerConfig.id, certManager);
       }
+    }
+  }
+
+  public getWebsocketServers(): WebsocketServerConfig[] {
+    return this._websocketServers;
+  }
+
+  public async saveWebsocketServersConfig(
+    websocketServers: WebsocketServerConfig[],
+  ): Promise<void> {
+    try {
+      await ConfigLoader.saveWebsocketServersConfig(
+        this._fileStorage,
+        this._config.websocketServerConfigFile,
+        websocketServers,
+      );
+    } catch (error) {
+      this._logger.error('Failed to save websocket servers config', error);
     }
   }
 

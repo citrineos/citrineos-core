@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { LocalStorage } from '@/util/files/localStorage.js';
-import type { IFileStorage } from '@citrineos/base';
+import { ConfigLoader, type IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
@@ -24,6 +23,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
   // Key: serverId, Value: [cert chain, sub ca private key]
   private _securityCertChainKeyMap: Map<string, [string, string]>;
 
+  private _config: SystemConfig;
   private _client: Client | undefined;
   private _logger: Logger<ILogObj>;
   private readonly _fileStorage: IFileStorage;
@@ -41,7 +41,8 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
-    this._email = config.util.certificateAuthority.chargingStationCA.acme?.email;
+    this._config = config;
+    this._email = config.integrations.chargingStationCA?.acme?.email;
   }
 
   static async create(
@@ -54,10 +55,12 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       ? logger.getSubLogger({ name: 'Acme' })
       : new Logger<ILogObj>({ name: 'Acme' });
 
-    // Collect all required file paths to check existence in configured file storage
-    const securityProfile3Servers = config.util.networkConnection.websocketServers.filter(
-      (s) => s.securityProfile === 3,
+    const websocketServersConfig = await ConfigLoader.loadWebsocketServersConfig(
+      fileStorage,
+      config.websocketServerConfigFile,
     );
+
+    const securityProfile3Servers = websocketServersConfig.filter((s) => s.securityProfile === 3);
     const requiredPaths = securityProfile3Servers.flatMap((s) => [
       s.tlsCertificateChainFilePath as string,
       s.mtlsCertificateAuthorityKeyFilePath as string,
@@ -65,26 +68,19 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     const existResults = await Promise.all(
       requiredPaths.map((p) => fileStorage.exists(p, undefined, { trusted: true })),
     );
-    const allExistInFileStorage = existResults.every(Boolean);
-    if (allExistInFileStorage) {
-      log.debug('Loading certificate files from configured file storage');
-    } else {
-      log.debug(
-        'Not all certificate files found in configured file storage, falling back to direct path lookup',
-      );
+    if (!existResults.every(Boolean)) {
+      throw new Error('Required certificate files missing in configured file storage.');
     }
-    const diskStorage = new LocalStorage('', '');
-    const storage: IFileStorage = allExistInFileStorage ? fileStorage : diskStorage;
 
     const securityCertChainKeyMap = new Map<string, [string, string]>();
     for (const server of securityProfile3Servers) {
       try {
-        const certChain = await storage.getFile(
+        const certChain = await fileStorage.getFile(
           server.tlsCertificateChainFilePath as string,
           undefined,
           { trusted: true },
         );
-        const mtlsKey = await storage.getFile(
+        const mtlsKey = await fileStorage.getFile(
           server.mtlsCertificateAuthorityKeyFilePath as string,
           undefined,
           { trusted: true },
@@ -103,7 +99,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
       }
     }
 
-    const acmeEnv = config.util.certificateAuthority.chargingStationCA?.acme?.env;
+    const acmeEnv = config.integrations.chargingStationCA?.acme?.env;
     const directoryUrl =
       acmeEnv === 'production'
         ? acme.directory.letsencrypt.production
@@ -111,9 +107,9 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
 
     let resolvedClient = client;
     if (!resolvedClient) {
-      const accountKeyFilePath = config.util.certificateAuthority.chargingStationCA?.acme
+      const accountKeyFilePath = config.integrations.chargingStationCA?.acme
         ?.accountKeyFilePath as string;
-      const accountKeyStr = await diskStorage.getFile(accountKeyFilePath, undefined, {
+      const accountKeyStr = await fileStorage.getFile(accountKeyFilePath, undefined, {
         trusted: true,
       });
       if (!accountKeyStr) {

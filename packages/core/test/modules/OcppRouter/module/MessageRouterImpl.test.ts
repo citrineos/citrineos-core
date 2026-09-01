@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type BootstrapConfig,
   type ICache,
   type IMessageHandler,
   type IMessageSender,
@@ -45,13 +44,17 @@ const IDENTIFIER = createIdentifier(TENANT_ID, STATION_ID);
 const PROTOCOL = OCPPVersion.OCPP2_0_1;
 const CORRELATION_ID = 'msg-123';
 
-function buildConfig(overrides?: Partial<SystemConfig & BootstrapConfig>): any {
+function buildConfig(overrides?: Partial<SystemConfig['timeouts']>): any {
   return {
-    maxCallLengthSeconds: 30,
-    maxCachingSeconds: 60,
-    maxReconnectDelay: 30,
     logLevel: 0,
-    ...overrides,
+    timeouts: {
+      maxCallLengthSeconds: 30,
+      maxCachingSeconds: 60,
+      shutdownGracePeriodSeconds: 30,
+      realTimeAuthDefaultTimeoutSeconds: 15,
+      notReadyThresholdSeconds: 60,
+      ...overrides,
+    },
   };
 }
 
@@ -958,7 +961,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         expect.stringMatching(new RegExp(`^${action}@`)),
         CacheNamespace.Transactions + IDENTIFIER,
-        config.maxCallLengthSeconds,
+        config.timeouts.maxCallLengthSeconds,
       );
     });
   });
@@ -1448,7 +1451,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         expect.stringMatching(new RegExp(`^${OCPP_CallAction.Heartbeat}@`)),
         CacheNamespace.Transactions + IDENTIFIER,
-        config.maxCallLengthSeconds,
+        config.timeouts.maxCallLengthSeconds,
       );
     });
 

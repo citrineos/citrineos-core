@@ -26,6 +26,5 @@ export * from '@handlers/index.js';
 
 // Server support services (bootstrap-agnostic; the concrete server lives in the app)
 export { HealthCheckService, type HealthCheckResult } from './src/server/HealthCheckService.js';
-export { loadSystemConfig } from './src/server/ConfigLoader.js';
 
 export { buildContainer, type Prebuilt } from './src/server/container.js';

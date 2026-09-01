@@ -27,7 +27,7 @@ import { RabbitMQChannelManager } from './ChannelManager.js';
  * The instance queue name is derived from `amqpConfig.instanceIdentifier`, defaulting to
  * `router-<Date.now()>` when not set. This value should be set to a stable, unique identifier
  * per process (e.g. the ECS task hostname or Kubernetes pod name) via the `INSTANCE_IDENTIFIER`
- * environment variable wired into `SystemConfig.util.messageBroker.amqp.instanceIdentifier`.
+ * environment variable wired into `SystemConfig.messageBroker.amqp.instanceIdentifier`.
  */
 export class RabbitMqReceiver extends AbstractMessageHandler {
   protected static readonly QUEUE_PREFIX = 'rabbit_queue_';
@@ -62,14 +62,14 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }) {
     super(logger, module);
     this._channelManager = channelManager;
-    const exchange = config.util.messageBroker.amqp?.exchange;
+    const exchange = config.messageBroker.amqp?.exchange;
     if (!exchange) {
       throw new Error('RabbitMQ exchange is not configured');
     }
     this.exchange = exchange;
     this._isRouterMode = !!routerMode;
     if (this._isRouterMode) {
-      const id = config.util.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
+      const id = config.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
       this._instanceQueueName = `rabbit_queue_router_${id}`;
     }
 

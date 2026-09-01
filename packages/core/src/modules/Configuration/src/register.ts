@@ -78,7 +78,7 @@ export function registerConfigurationServices(container: AwilixContainer): void 
         new BootNotificationService({
           bootRepository,
           cache,
-          config: config.modules.configuration,
+          config: config.ocpp,
           logger,
         }),
     ).scoped(),
