@@ -31,6 +31,7 @@ import type {
   OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
+  ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
@@ -64,7 +65,6 @@ import type { Location } from '../layers/sequelize/model/Location/Location.js';
 import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
-import type { Reservation } from '../layers/sequelize/model/Reservation.js';
 import type { Tariff } from '../layers/sequelize/model/Tariff/Tariffs.js';
 import type {
   MeterValue,
@@ -611,13 +611,25 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<number>;
 }
 
-export interface IReservationRepository extends CrudRepository<Reservation> {
+export interface IReservationRepository {
   createOrUpdateReservation(
     tenantId: number,
     reserveNowRequest: OCPP2_request_types.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
-  ): Promise<Reservation | undefined>;
+  ): Promise<ReservationDto | undefined>;
+  findByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+  ): Promise<ReservationDto | undefined>;
+  updateByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+    values: Partial<Pick<ReservationDto, 'isActive' | 'reserveStatus' | 'terminatedByTransaction'>>,
+  ): Promise<ReservationDto[]>;
+  getNextReservationId(tenantId: number, ocppConnectionName: string): Promise<number>;
 }
 
 export interface IOCPPMessageRepository {

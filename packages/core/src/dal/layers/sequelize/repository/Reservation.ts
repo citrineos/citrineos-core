@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type ReservationDto } from '@citrineos/types';
 import type { IReservationRepository } from '../../../interfaces/repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ILogObj } from 'tslog';
@@ -35,7 +35,7 @@ export class SequelizeReservationRepository
     reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
-  ): Promise<Reservation | undefined> {
+  ): Promise<ReservationDto | undefined> {
     let evseDBId: number | null = null;
     if (reserveNowRequest.evseId) {
       const [evse] = await this.evse.readAllByQuery(tenantId, {
@@ -84,6 +84,27 @@ export class SequelizeReservationRepository
     } else {
       return storedReservation;
     }
+  }
+
+  async findByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+  ): Promise<ReservationDto | undefined> {
+    return await this.readOnlyOneByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName, id: reservationId },
+    });
+  }
+
+  async updateByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+    values: Partial<Pick<ReservationDto, 'isActive' | 'reserveStatus' | 'terminatedByTransaction'>>,
+  ): Promise<ReservationDto[]> {
+    return await this.updateAllByQuery(tenantId, values, {
+      where: { tenantId, ocppConnectionName, id: reservationId },
+    });
   }
 
   async getNextReservationId(tenantId: number, ocppConnectionName: string): Promise<number> {

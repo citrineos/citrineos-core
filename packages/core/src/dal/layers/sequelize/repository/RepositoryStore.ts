@@ -35,6 +35,7 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -148,11 +149,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.reservationRepository = new SequelizeReservationRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
       this.bootRepository = new DrizzleBootRepository({
@@ -173,6 +169,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.reservationRepository = new DrizzleReservationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -203,6 +200,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.reservationRepository = new SequelizeReservationRepository({
         config,
         logger,
         sequelizeInstance,
