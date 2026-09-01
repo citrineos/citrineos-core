@@ -14,7 +14,7 @@
 //   MeterValue,
 //   TransactionEvent,
 //   Transaction,
-// } from '@citrineos/core';
+// } from '@citrineos/dal';
 // import { OCPP2_0_1 } from '@citrineos/types';
 
 // export class TransactionQueryBuilder {

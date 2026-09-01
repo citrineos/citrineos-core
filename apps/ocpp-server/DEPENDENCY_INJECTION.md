@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Dependency Injection (Awilix)
 
-How DI is orchestrated in the server. Read this alongside `packages/core/src/server/container.ts` and `apps/ocpp-server/src/citrineOSServer.ts`
+How DI is orchestrated in the server. Read this alongside `packages/ocpp/src/server/container.ts` and `apps/ocpp-server/src/citrineOSServer.ts`
 
 ## The model
 
@@ -93,7 +93,7 @@ Deliberate — don't "fix" these:
 
 ## Tests
 
-`packages/core/test/testContainer.ts` gives tests the same container settings as production
+`packages/ocpp/test/testContainer.ts` gives tests the same container settings as production
 
 - `createTestContainer()` → a container with a mock logger pre-registered.
 - `getTestInstance(container, Class, mocks)` → registers your mocks + the class, then resolves it. `mocks` is typed against the constructor, so a wrong or missing dependency name is a compile error.
@@ -151,7 +151,7 @@ asyncJobStatusRepository: asClass(SequelizeAsyncJobStatusRepository).singleton()
 
 A service used across modules or by the network stack.
 
-1. Give it a destructured constructor whose param names are existing tokens; export it from `@citrineos/core`.
+1. Give it a destructured constructor whose param names are existing tokens; export it from `@citrineos/ocpp`.
 2. Register it in `registerServices` as `asClass(X).singleton()` — or `asFunction(({ … }) => new X(…))` if construction needs a runtime choice or a narrowed input.
 
 **Example** — `realTimeAuthorizer` is a plain singleton, while `apiAuthProvider` uses `asFunction` because it picks an implementation at runtime. Both live in `registerServices`:

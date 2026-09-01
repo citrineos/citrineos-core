@@ -14,7 +14,7 @@ type AdditionalInfoType = OCPP2_0_1.AdditionalInfoType;
 import type {
   RealTimeAuthorizationRequestBody,
   RealTimeAuthorizationResponse,
-} from '@citrineos/core';
+} from '@citrineos/ocpp';
 import { InvalidParamException } from '../exception/InvalidParamException.js';
 import { MissingParamException } from '../exception/MissingParamException.js';
 import { UnknownTokenException } from '../exception/UnknownTokenException.js';

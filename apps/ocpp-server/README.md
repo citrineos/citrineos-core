@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 # CitrineOS Server (`@citrineos/ocpp-server`)
 
 This is the OCPP server application for CitrineOS — the runnable entrypoint that wires together
-[`@citrineos/base`](../../packages/base) and [`@citrineos/core`](../../packages/core) into a deployable
+[`@citrineos/base`](../../packages/base) and [`@citrineos/ocpp`](../../packages/ocpp) into a deployable
 service. It hosts the WebSocket endpoints that charging stations connect to, the OCPP message router, the
 HTTP/REST Data and Message APIs, and the Sequelize database migrations.
 

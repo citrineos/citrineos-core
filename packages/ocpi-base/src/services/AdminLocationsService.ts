@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // import { type ILogObj, Logger } from 'tslog';
-// import { ChargingStation, Location } from '@citrineos/core';
+// import { ChargingStation, Location } from '@citrineos/dal';
 // import { OcpiLocation } from '../model/OcpiLocation';
 // import { OcpiEvse } from '../model/OcpiEvse';
 // import { OcpiConnector } from '../model/OcpiConnector';

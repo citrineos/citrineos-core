@@ -8,7 +8,7 @@ import { HttpStatus } from '@citrineos/base';
 import type {
   RealTimeAuthorizationRequestBody,
   RealTimeAuthorizationResponse,
-} from '@citrineos/core';
+} from '@citrineos/ocpp';
 import type {
   OcpiEmptyResponse,
   SingleTokenRequest,

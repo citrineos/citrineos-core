@@ -107,7 +107,7 @@ citrineos-core/
 │   └── operator-ui/     # Operator web UI — Next.js + Refine (@citrineos/operator-ui)
 ├── packages/
 │   ├── base/            # Shared types, interfaces, and utilities (@citrineos/base)
-│   └── core/            # Core OCPP modules and logic (@citrineos/core)
+│   └── core/            # Core OCPP modules and logic (@citrineos/ocpp)
 ├── scripts/
 │   └── stack.mjs             # Docker stack launcher (selects compose files + profiles)
 ├── docker-compose.yml        # Base stack — published ghcr.io images, ui/ocpi profiles

@@ -1,5 +1,5 @@
 {
-  "watch": ["src", "../../packages/base", "../../packages/core", "../../packages/ocpi-base"],
+  "watch": ["src", "../../packages/base", "../../packages/ocpp", "../../packages/ocpi-base"],
   "ext": "ts,js",
   "ignore": ["**/dist/**", "**/node_modules/**"],
   "exec": "pnpm run build --prefix ../../ && pnpm run db:migrate && node --inspect=0.0.0.0:9229 ./dist/index.js"

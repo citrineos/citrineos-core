@@ -49,12 +49,12 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 - **Build `@citrineos/ocpi-base` first.** The mock deep-imports a handful of
   schemas from `@citrineos/ocpi-base/dist/...` (see `src/ocpi/barrel.ts`), and
   ocpi-base ships **only `dist/`** (no `src`, no `exports` map). ocpi-base's
-  `tsc -b` references `@citrineos/base` and `@citrineos/core`, so build the
+  `tsc -b` references `@citrineos/base` and `@citrineos/ocpp`, so build the
   closure in order:
 
   ```bash
   pnpm --filter @citrineos/base build
-  pnpm --filter @citrineos/core build
+  pnpm --filter @citrineos/ocpp build
   pnpm --filter @citrineos/ocpi-base build
   ```
 

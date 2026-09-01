@@ -40,21 +40,21 @@ HEALTH_URL="http://127.0.0.1:${PORT}/_mock/health"
 DASH_URL="http://localhost:${PORT}/"
 
 # Path aliases that tsc-alias is responsible for rewriting in the emitted JS.
-# base: @ocpp @config @interfaces @base-util | core: @ @dal @modules @util
+# base: @ocpp @config @interfaces @base-util | dal: @dal | core: @ @modules @util
 # Deliberately does NOT match real package specifiers like '@citrineos/base'.
 ALIAS_RE="['\"]@(interfaces|ocpp|config|base-util|dal|modules|util)/|['\"]@/"
 
 alias_broken_files() {
-  grep -rlE "$ALIAS_RE" packages/base/dist packages/core/dist \
+  grep -rlE "$ALIAS_RE" packages/base/dist packages/dal/dist packages/ocpp/dist \
     --include=*.js 2>/dev/null || true
 }
 
-# The documented recovery is `npx tsc-alias -p packages/{base,core,ocpi-base}/tsconfig.json`,
-# but tsc-alias -p accepts ONE project: brace expansion silently drops core and
-# ocpi-base. Run it once per project instead.
+# The documented recovery is `npx tsc-alias -p packages/{base,dal,core,ocpi-base}/tsconfig.json`,
+# but tsc-alias -p accepts ONE project: brace expansion silently drops the rest.
+# Run it once per project instead.
 repair_aliases() {
   local p
-  for p in base core ocpi-base; do
+  for p in base dal core ocpi-base; do
     say "tsc-alias -p packages/$p/tsconfig.json"
     npx tsc-alias -p "packages/$p/tsconfig.json" ||
       die "tsc-alias failed for packages/$p"
@@ -108,7 +108,7 @@ free_port
 step 4/5 "Starting mock-msp"
 : >"$LOG_FILE" || die "cannot write log file $LOG_FILE"
 # Run the COMPILED entrypoint. tsx/dev breaks under node 22 via a
-# @peculiar/webcrypto ESM interop issue pulled in through @citrineos/core.
+# @peculiar/webcrypto ESM interop issue pulled in through @citrineos/ocpp.
 MOCK_MSP_PORT="$PORT" MOCK_MSP_SCENARIO="$SCENARIO" \
   nohup node apps/mock-msp/dist/index.js >>"$LOG_FILE" 2>&1 &
 JOB_PID=$!

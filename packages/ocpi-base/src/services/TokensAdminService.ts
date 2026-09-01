@@ -26,7 +26,7 @@
 //   AsyncJobStatusResponse,
 // } from '../types/asyncJob.types';
 // import { buildPaginatedParams } from '../trigger/param/PaginatedParams';
-// import { Authorization } from '@citrineos/core';
+// import { Authorization } from '@citrineos/dal';
 // import { TokensMapper } from '../mapper/TokensMapper';
 
 // export class TokensAdminService {

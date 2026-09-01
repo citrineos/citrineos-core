@@ -5,7 +5,7 @@
 // import { ITransactionDatasource } from '../datasources/ITransactionDatasource';
 // import { PaginatedResult } from '../model/PaginatedResult';
 // import { OcpiGraphqlClient } from '../graphql/OcpiGraphqlClient';
-// import { Transaction } from '@citrineos/core';
+// import { Transaction } from '@citrineos/dal';
 // import { GET_TRANSACTIONS_QUERY } from '../graphql/queries/transaction.queries';
 // import { GetTransactionsQuery } from '../graphql/types/graphql';
 
