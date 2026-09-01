@@ -80,7 +80,6 @@ import {
   AdminApi,
   MessageRouterImpl,
   registerOcppRouterServices,
-  WebhookDispatcher,
 } from '@modules/OcppRouter/src/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/Reporting/src/index.js';
 import {
@@ -113,6 +112,7 @@ import {
   UnknownStationFilter,
   WebsocketNetworkConnection,
 } from '@util/index.js';
+import { registerMessagesServices } from '@modules/Messages/src/register.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -179,6 +179,7 @@ function registerModuleServices(container: AwilixContainer): void {
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);
+  registerMessagesServices(container);
 }
 
 // ============================================================
@@ -409,7 +410,6 @@ function registerNetwork(container: AwilixContainer): void {
     networkProfileFilter: asClass(NetworkProfileFilter).singleton(),
     basicAuthenticationFilter: asClass(BasicAuthenticationFilter).singleton(),
     authenticator: asClass(Authenticator).singleton(),
-    webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),
     adminApi: asClass(AdminApi).scoped(),

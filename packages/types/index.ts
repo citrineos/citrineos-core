@@ -5,6 +5,7 @@
 export {
   ErrorCode,
   MessageTypeId,
+  NO_ACTION,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
@@ -28,6 +29,31 @@ export {
   RetryMessageError,
 } from './src/interfaces/messages/internal-types.js';
 export type { HandlerProperties } from './src/interfaces/messages/internal-types.js';
+
+export {
+  ConnectionEventState,
+  FrameDirection,
+  isConnectionEvent,
+  isFrameEvent,
+  MESSAGES_DLX,
+  MESSAGES_EXCHANGE,
+  MESSAGES_QUEUES,
+  MessagesEventType,
+  MessagesEventSchema,
+  messagesEventRoutingKey,
+  ConnectionEventSchema,
+  FrameEventSchema,
+  type MessagesEvent,
+  type MessagesEventContext,
+  type MessagesQueueSpec,
+  type ConnectionEvent,
+  type FrameEvent,
+  type IConnectionEventProcessor,
+  type IFrameEventProcessor,
+  type IMessagesEventProcessor,
+  type MessagesRecordResult,
+  type IMessagesEventSink,
+} from '@interfaces/messages/messages-types.js';
 
 export { HttpMethod } from './src/interfaces/api/HttpMethods.js';
 

@@ -4,5 +4,5 @@
 
 export { AdminApi } from './module/AdminApi.js';
 export { MessageRouterImpl } from './module/router.js';
-export { WebhookDispatcher } from './module/webhook.dispatcher.js';
 export { registerOcppRouterServices } from './register.js';
+export { CallbackUrlNotifier } from './module/callback-url-notifier.js';

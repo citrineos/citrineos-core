@@ -90,6 +90,8 @@ export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
 
 export type CallAction = OCPP_CallAction;
 
+export declare const NO_ACTION = 'NoAction';
+
 export enum OCPP_CallAction {
   AdjustPeriodicEventStream = 'AdjustPeriodicEventStream',
   AFRRSignal = 'AFRRSignal',
