@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type BootstrapConfig,
   type ICache,
   type IMessage,
   type IMessageConfirmation,
@@ -11,7 +10,6 @@ import {
   type IMessageSender,
   type RpcMessage,
   AbstractMessageRouter,
-  BOOT_STATUS,
   CacheNamespace,
   Call,
   CallError,
@@ -80,7 +78,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Constructor for the class.
    *
-   * @param {BootstrapConfig & SystemConfig} config - the system configuration
+   * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
@@ -103,7 +101,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     ocppValidator,
     locationRepository,
   }: {
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     cache: ICache;
     routerSender: IMessageSender;
     routerHandler: IMessageHandler;
@@ -400,7 +398,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           correlationId,
           `${action}@${cacheTimestamp.toISOString()}`,
           transactionNamespace,
-          this._config.maxCallLengthSeconds,
+          this._config.timeouts.maxCallLengthSeconds,
         );
         const rawMessage = JSON.stringify(message);
         const successTimestamp = await this._sendMessage(
@@ -644,7 +642,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         `${action}@${timestamp.toISOString()}`,
         CacheNamespace.Transactions + identifier,
-        this._config.maxCallLengthSeconds,
+        this._config.timeouts.maxCallLengthSeconds,
       )
       .then((success) => {
         if (!success) {
@@ -724,7 +722,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         ErrorCode.InternalError,
         'MessageId not found, call may have timed out',
-        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+        { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
 
@@ -807,7 +805,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         ErrorCode.InternalError,
         'MessageId not found, call may have timed out',
-        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+        { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
 
@@ -913,7 +911,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
-    const status = await this._cache.get<string>(BOOT_STATUS, identifier);
+    const status = await this._cache.get<string>(CacheNamespace.BootStatus, identifier);
     if (
       status === OCPP2_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08

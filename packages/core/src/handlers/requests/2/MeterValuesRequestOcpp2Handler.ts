@@ -5,7 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   type IMessage,
   type IOcppSender,
   OcppError,
@@ -13,15 +12,15 @@ import {
 import {
   ErrorCode,
   type HandlerProperties,
+  OCPP2_request_types,
+  OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   type SystemConfig,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/types';
 import { type ITransactionEventRepository, Transaction } from '@dal/index.js';
-import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { CostNotifier } from '@modules/Transactions/src/module/CostNotifier.js';
+import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { SignedMeterValuesUtil } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.MeterValues)
@@ -43,7 +42,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     transactionEventRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     costNotifier: CostNotifier;
     ocppSender: IOcppSender;
     signedMeterValuesUtil: SignedMeterValuesUtil;
@@ -58,7 +57,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
 
-    this._sendCostUpdatedOnMeterValue = config.modules.transactions.sendCostUpdatedOnMeterValue;
+    this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
   }
 
   async handle(

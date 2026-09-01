@@ -1,17 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Boot, IBootRepository } from '@citrineos/core';
-import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
-import { BOOT_STATUS, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { Boot, IBootRepository, MemoryCache } from '@citrineos/core';
 import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, SystemConfig } from '@citrineos/types';
-import { MemoryCache } from '@util/cache/memory.js';
+import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
-type Configuration = SystemConfig['modules']['configuration'];
+type Configuration = SystemConfig['ocpp'];
 
 describe('BootService', () => {
   const { container } = createTestContainer();
@@ -37,17 +36,10 @@ describe('BootService', () => {
     mockConfig = {
       bootRetryInterval: 0,
       heartbeatInterval: 0,
-      requests: [],
-      responses: [],
-      ocpp2_0_1: {
-        unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
-        getBaseReportOnPending: false,
-        bootWithRejectedVariables: false,
-        autoAccept: false,
-      },
-      ocpp1_6: {
-        unknownChargerStatus: OCPP1_6.BootNotificationResponseStatus.Rejected,
-      },
+      unknownChargerStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      getBaseReportOnPending: false,
+      bootWithRejectedVariables: false,
+      autoAccept: false,
     };
 
     bootService = getTestInstance(container, BootNotificationService, {
@@ -98,9 +90,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
       const bootConfig = aValidBootConfig((item: Boot) => (item.getBaseReportOnPending = false));
 
-      if (mockConfig && mockConfig.ocpp2_0_1) {
-        mockConfig.ocpp2_0_1.autoAccept = true;
-      }
+      mockConfig.autoAccept = true;
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });
@@ -120,9 +110,7 @@ describe('BootService', () => {
     it('should return Accepted status when bootConfig.status is pending, no actions are needed, and autoAccept is true', () => {
       const bootConfig = aValidBootConfig();
 
-      if (mockConfig && mockConfig.ocpp2_0_1) {
-        mockConfig.ocpp2_0_1.autoAccept = true;
-      }
+      mockConfig.autoAccept = true;
 
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Accepted);
     });
@@ -283,7 +271,11 @@ describe('BootService', () => {
         null,
         OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       );
-      await realCache.set(BOOT_STATUS, OCPP2_0_1.RegistrationStatusEnumType.Rejected, IDENTIFIER);
+      await realCache.set(
+        CacheNamespace.BootStatus,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+        IDENTIFIER,
+      );
 
       await service.cacheChargerActionsPermissions(
         IDENTIFIER,
@@ -294,13 +286,17 @@ describe('BootService', () => {
       await expect(realCache.exists(OCPP_CallAction.StatusNotification, IDENTIFIER)).resolves.toBe(
         false,
       );
-      await expect(realCache.get(BOOT_STATUS, IDENTIFIER)).resolves.toBeNull();
+      await expect(realCache.get(CacheNamespace.BootStatus, IDENTIFIER)).resolves.toBeNull();
     });
 
     it('clears the OCPP 1.6 boot status on an accepted boot', async () => {
       // The 1.6 un-blacklist loop itself is separately broken (it destructures each action
       // name as an array) and is fixed by #865, so this only covers the boot status.
-      await realCache.set(BOOT_STATUS, OCPP1_6.BootNotificationResponseStatus.Rejected, IDENTIFIER);
+      await realCache.set(
+        CacheNamespace.BootStatus,
+        OCPP1_6.BootNotificationResponseStatus.Rejected,
+        IDENTIFIER,
+      );
 
       await service.cacheOcpp16ChargerActionsPermissions(
         IDENTIFIER,
@@ -308,7 +304,7 @@ describe('BootService', () => {
         OCPP1_6.BootNotificationResponseStatus.Accepted,
       );
 
-      await expect(realCache.get(BOOT_STATUS, IDENTIFIER)).resolves.toBeNull();
+      await expect(realCache.get(CacheNamespace.BootStatus, IDENTIFIER)).resolves.toBeNull();
     });
 
     it('does not blacklist a same-named station belonging to another tenant', async () => {

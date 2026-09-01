@@ -35,7 +35,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
-    const hubjectConfig = config.util.certificateAuthority.v2gCA.hubject;
+    const hubjectConfig = config.integrations.v2gCA?.hubject;
     if (!hubjectConfig) {
       throw new Error('Missing Hubject configuration');
     }

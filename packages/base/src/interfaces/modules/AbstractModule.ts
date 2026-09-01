@@ -2,22 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@config/bootstrap.config.js';
 import {
-  type SystemConfig,
+  type CallAction,
   type HandlerProperties,
+  type OcppRequest,
+  type OcppResponse,
+  type OCPPVersionType,
+  type SystemConfig,
+  ErrorCode,
   EventGroup,
   MessageOrigin,
   MessageState,
-  type OcppRequest,
-  type OcppResponse,
-  type CallAction,
-  type OCPPVersionType,
-  ErrorCode,
   OCPPVersion,
 } from '@citrineos/types';
-import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
+import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
+import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
+import type { IHandlerMetadata } from '@interfaces/handlers/HandlerMetadata.js';
+import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 import type {
   IMessage,
   IMessageConfirmation,
@@ -25,14 +27,11 @@ import type {
   IMessageSender,
 } from '@interfaces/messages/index.js';
 import type { IModule } from '@interfaces/modules/Module.js';
+import { OcppError } from '@ocpp/rpc/message.js';
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OCPPValidator } from './OCPPValidator.js';
-import { AS_HANDLER_CLASS_METADATA } from '@interfaces/handlers/AsHandlerClass.js';
-import type { IHandlerMetadata } from '@interfaces/handlers/HandlerMetadata.js';
-import type { AbstractHandler } from '@interfaces/handlers/AbstractHandler.js';
-import type { IOcppSender } from '@interfaces/handlers/IOcppSender.js';
 
 /** Two handler classes claiming one action and direction within the same module. */
 interface IHandlerConflict {
@@ -55,7 +54,7 @@ function describeConflicts(conflicts: Iterable<IHandlerConflict>): string[] {
  * module extends this with its own repositories and internal services.
  */
 export interface OcppModuleDependencies {
-  config: BootstrapConfig & SystemConfig;
+  config: SystemConfig;
   cache: ICache;
   sender: IMessageSender;
   handler: IMessageHandler;
@@ -98,6 +97,7 @@ export abstract class AbstractModule implements IModule {
     logger?: Logger<ILogObj>,
     ocppValidator?: OCPPValidator,
     handlers: AbstractHandler[] = [],
+    excludedActions?: { requests?: CallAction[]; responses?: CallAction[] },
   ) {
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
@@ -138,12 +138,11 @@ export abstract class AbstractModule implements IModule {
       }
     }
 
-    const excluded = this._excludedActions();
     this._requests = [...this._declaredRequests].filter(
-      (action) => !excluded.requests?.includes(action),
+      (action) => !excludedActions?.requests?.includes(action),
     );
     this._responses = [...this._declaredResponses].filter(
-      (action) => !excluded.responses?.includes(action),
+      (action) => !excludedActions?.responses?.includes(action),
     );
 
     if (conflicts.size > 0) {
@@ -178,20 +177,6 @@ export abstract class AbstractModule implements IModule {
    */
   private _declaredActions(type: MessageState): Set<CallAction> {
     return type === MessageState.Request ? this._declaredRequests : this._declaredResponses;
-  }
-
-  /**
-   * The actions this module's config asks it not to subscribe to
-   */
-  private _excludedActions(): { requests?: CallAction[]; responses?: CallAction[] } {
-    const modules: Partial<
-      Record<EventGroup, { excludedRequests?: CallAction[]; excludedResponses?: CallAction[] }>
-    > = this._config.modules;
-    const moduleConfig = modules[this._eventGroup];
-    return {
-      requests: moduleConfig?.excludedRequests,
-      responses: moduleConfig?.excludedResponses,
-    };
   }
 
   /**
@@ -288,7 +273,7 @@ export abstract class AbstractModule implements IModule {
           message.context.correlationId,
           JSON.stringify(message.payload),
           message.context.ocppConnectionName,
-          this._config.maxCachingSeconds,
+          this._config.timeouts.maxCachingSeconds,
         );
 
         break;

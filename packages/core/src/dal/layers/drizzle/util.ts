@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
 import type { Pool } from 'pg';
+import pg from 'pg';
 import { type ILogObj, Logger } from 'tslog';
 
 export class DefaultDrizzleInstance {
@@ -14,11 +14,11 @@ export class DefaultDrizzleInstance {
   private static instance: NodePgDatabase | null = null;
   private static pool: Pool | null = null;
   private static logger: Logger<ILogObj>;
-  private static config: BootstrapConfig;
+  private static config: SystemConfig;
 
   private constructor() {}
 
-  public static getInstance(config: BootstrapConfig, logger?: Logger<ILogObj>): NodePgDatabase {
+  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): NodePgDatabase {
     if (!DefaultDrizzleInstance.instance) {
       DefaultDrizzleInstance.config = config;
       DefaultDrizzleInstance.logger = logger
