@@ -159,6 +159,9 @@ importers:
       '@eslint/js':
         specifier: 'catalog:'
         version: 9.16.0
+      '@playwright/test':
+        specifier: ^1.49.0
+        version: 1.62.1
       '@types/node':
         specifier: ^25.3.3
         version: 25.9.5

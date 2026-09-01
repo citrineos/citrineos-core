@@ -15,9 +15,11 @@
 # What it does (ports the proven logic from
 # apps/operator-ui/tests/e2e/fixtures/everest.ts):
 #   1. docker compose up the everest project (manager / mqtt / nodered).
-#   2. Patch the device-model profile to OCPP20 + pin the CSMS URL. The
-#      start.sh default bakes OCPP21 (from OCPP_VERSION=2.1), but CitrineOS
-#      speaks OCPP 2.0.1 — without this the station never registers.
+#   2. Patch the device-model profile to OCPP20 + pin the CSMS URL, for a tree
+#      whose device model was baked at OCPP21. Default OCPP_VERSION here is
+#      2.0.1: core will happily accept a 2.1 connection and record the station
+#      as ocpp2.1, but OCPI only maps command handlers for ocpp1.6/ocpp2.0.1,
+#      so a 2.1 station fails every command with "communication failed".
 #   3. Wait until Hasura reports cp001 isOnline=true.
 #
 # Prereqs: the main OCPI stack must already be up (pnpm citrine --ocpi --local),
@@ -31,7 +33,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 . "$SCRIPT_DIR/demo-lib.sh"
 
 EVEREST_DIR="$REPO_ROOT/apps/ocpp-server/everest"
-OCPP_VERSION="${OCPP_VERSION:-2.1}"
+OCPP_VERSION="${OCPP_VERSION:-2.0.1}"
 EVEREST_IMAGE_TAG="${EVEREST_IMAGE_TAG:-2025.6.1-dt-esdp}"
 HASURA_URL="${CITRINE_HASURA_URL:-http://localhost:8090/v1/graphql}"
 STATION="${EVEREST_STATION:-cp001}"
@@ -72,9 +74,23 @@ done
 if printf '%s' "$current" | grep -q "host.docker.internal:8081/${STATION}" \
    && printf '%s' "$current" | grep -q '"ocppVersion":"OCPP20"'; then
   ok "profile already OCPP20 + correct CSMS URL — no patch needed"
-else
-  printf "UPDATE VARIABLE_ATTRIBUTE SET VALUE='%s' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');\n" \
-    "$PROFILE_JSON" | MSYS_NO_PATHCONV=1 docker exec -i "$MANAGER" sqlite3 "$DB" || die "sqlite patch failed"
+  # libocpp is still writing this DB during boot, so the UPDATE can hit
+  # SQLITE_BUSY ("database is locked"). Let sqlite wait on the lock and retry
+  # the whole statement a few times before giving up.
+  PATCH_SQL="UPDATE VARIABLE_ATTRIBUTE SET VALUE='$PROFILE_JSON' WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');"
+  patched=""
+  for _ in $(seq 1 5); do
+    if printf '%s\n' "$PATCH_SQL" | MSYS_NO_PATHCONV=1 docker exec -i "$MANAGER" sqlite3 -cmd '.timeout 10000' "$DB"; then
+      patched=1
+      break
+    fi
+    warn "sqlite patch attempt failed (database busy?) - retrying"
+    sleep 3
+  done
+  [ -n "$patched" ] || die "sqlite patch failed after 5 attempts"
+  # read it back so a lost write cannot slip through as success
+  current="$(MSYS_NO_PATHCONV=1 docker exec "$MANAGER" sqlite3 -readonly "$DB"     "SELECT VALUE FROM VARIABLE_ATTRIBUTE WHERE VARIABLE_ID = (SELECT ID FROM VARIABLE WHERE NAME='NetworkConnectionProfiles');" 2>/dev/null)"
+  printf '%s' "$current" | grep -q '"ocppVersion":"OCPP20"' || die "patch did not stick (profile still: $current)"
   docker restart "$MANAGER" >/dev/null || warn "manager restart returned nonzero"
   ok "patched profile to OCPP20 and restarted $MANAGER"
 fi

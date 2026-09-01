@@ -11,6 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { MockContext, FaultRule } from '../src/core/types.js';
+import { ModuleId } from '../src/ocpi/barrel.js';
 import {
   makeServer,
   registrationHeaders,
@@ -94,7 +95,7 @@ describe('FaultEngine injection', () => {
     ctx.faults.arm({
       id: 'drop-status-code',
       enabled: true,
-      match: { direction: 'inbound', module: 'sessions', method: 'PUT' },
+      match: { direction: 'inbound', module: ModuleId.Sessions, method: 'PUT' },
       action: { kind: 'malformBody', mutation: 'dropRequired', targetPath: 'status_code' },
     });
 

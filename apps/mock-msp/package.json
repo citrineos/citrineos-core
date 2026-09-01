@@ -14,7 +14,13 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc -b tsconfig.json --pretty",
+    "typecheck:all": "tsc -p tsconfig.typecheck.json --pretty",
     "test": "vitest run",
+    "test:live": "vitest run -c vitest.live.config.ts --dir test-live/pr",
+    "test:everest": "vitest run -c vitest.live.config.ts --dir test-live/everest",
+    "test:e2e": "playwright test --project=dashboard",
+    "test:e2e:live": "playwright test --project=dashboard-live",
+    "test:e2e:everest": "playwright test --project=dashboard-everest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -28,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
+    "@playwright/test": "^1.49.0",
     "@types/node": "^25.3.3",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

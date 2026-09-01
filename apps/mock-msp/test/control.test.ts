@@ -11,6 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { MockContext } from '../src/core/types.js';
+import { ModuleId } from '../src/ocpi/barrel.js';
 import { makeServer, functionalHeaders, validSession } from './harness.js';
 
 const tick = (ms = 50): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -61,7 +62,7 @@ describe('/_mock control API', () => {
   it('waitForReceived resolves on emitted inbound traffic (direct store primitive)', async () => {
     // Register the waiter FIRST (executor runs synchronously), then emit.
     const waitPromise = ctx.store.waitForReceived(
-      { direction: 'inbound', module: 'sessions', method: 'PUT' },
+      { direction: 'inbound', module: ModuleId.Sessions, method: 'PUT' },
       3000,
     );
     await putSession('WAIT-1');

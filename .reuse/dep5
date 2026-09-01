@@ -7,6 +7,6 @@ Files: package.json */package.json */*/package.json 00_Base/src/ocpp/persistence
 Copyright: Contributors to the CitrineOS Project
 License: Apache-2.0
 
-Files: apps/mock-msp/tsconfig.json apps/mock-msp/tsconfig.eslint.json apps/mock-msp/scenarios/*.json apps/mock-msp/scenarios/*/*.json
+Files: apps/mock-msp/tsconfig.json apps/mock-msp/tsconfig.eslint.json apps/mock-msp/tsconfig.typecheck.json apps/mock-msp/scenarios/*.json apps/mock-msp/scenarios/*/*.json
 Copyright: Contributors to the CitrineOS Project
 License: Apache-2.0
