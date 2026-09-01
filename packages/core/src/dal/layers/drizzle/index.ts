@@ -43,6 +43,42 @@ export {
   type ChangeConfigurationEntity,
   type ChangeConfigurationEntityInsert,
 } from './schema/ChangeConfiguration.js';
+export {
+  DrizzleDeleteCertificateAttemptRepository,
+  toDeleteCertificateAttemptDto,
+} from './repository/DeleteCertificateAttempt.js';
+export {
+  deleteCertificateAttemptTable,
+  tenantDeleteCertificateAttemptTable,
+  DeleteCertificateAttemptEntitySchema,
+  DeleteCertificateAttemptEntityInsertSchema,
+  type DeleteCertificateAttemptEntity,
+  type DeleteCertificateAttemptEntityInsert,
+} from './schema/DeleteCertificateAttempt.js';
+export {
+  DrizzleInstallCertificateAttemptRepository,
+  toInstallCertificateAttemptDto,
+} from './repository/InstallCertificateAttempt.js';
+export {
+  installCertificateAttemptTable,
+  tenantInstallCertificateAttemptTable,
+  InstallCertificateAttemptEntitySchema,
+  InstallCertificateAttemptEntityInsertSchema,
+  type InstallCertificateAttemptEntity,
+  type InstallCertificateAttemptEntityInsert,
+} from './schema/InstallCertificateAttempt.js';
+export {
+  DrizzleInstalledCertificateRepository,
+  toInstalledCertificateDto,
+} from './repository/InstalledCertificate.js';
+export {
+  installedCertificateTable,
+  tenantInstalledCertificateTable,
+  InstalledCertificateEntitySchema,
+  InstalledCertificateEntityInsertSchema,
+  type InstalledCertificateEntity,
+  type InstalledCertificateEntityInsert,
+} from './schema/InstalledCertificate.js';
 export { DrizzleSecurityEventRepository, toSecurityEventDto } from './repository/SecurityEvent.js';
 export {
   securityEventTable,

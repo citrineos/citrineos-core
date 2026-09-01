@@ -9,8 +9,18 @@ import type {
   CallAction,
   CertificateCreate,
   CertificateDto,
+  CertificateUseEnumType,
   ChangeConfigurationCreate,
   ChangeConfigurationDto,
+  DeleteCertificateAttemptCreate,
+  DeleteCertificateAttemptDto,
+  DeleteCertificateStatusEnumType,
+  HashAlgorithmEnumType,
+  InstallCertificateAttemptCreate,
+  InstallCertificateAttemptDto,
+  InstallCertificateStatusEnumType,
+  InstalledCertificateCreate,
+  InstalledCertificateDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -35,11 +45,6 @@ import type {
 } from '../layers/sequelize/mapper/2.0.1/ChargingProfileMapper.js';
 import type { LocalListVersion } from '../layers/sequelize/model/Authorization/LocalListVersion.js';
 import type { SendLocalList } from '../layers/sequelize/model/Authorization/SendLocalList.js';
-import type {
-  DeleteCertificateAttempt,
-  InstallCertificateAttempt,
-  InstalledCertificate,
-} from '../layers/sequelize/model/Certificate/index.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
@@ -467,11 +472,111 @@ export interface ICertificateRepository {
   createOrUpdateCertificate(tenantId: number, input: CertificateCreate): Promise<CertificateDto>;
 }
 
-export interface IInstalledCertificateRepository extends CrudRepository<InstalledCertificate> {}
-export interface IInstallCertificateAttemptRepository
-  extends CrudRepository<InstallCertificateAttempt> {}
-export interface IDeleteCertificateAttemptRepository
-  extends CrudRepository<DeleteCertificateAttempt> {}
+type InstalledCertificateHashData = Pick<
+  InstalledCertificateDto,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+>;
+type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
+  hashAlgorithm?: HashAlgorithmEnumType;
+  certificateId?: number | null;
+};
+
+export interface IInstalledCertificateRepository {
+  findByStationAndType(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+  ): Promise<InstalledCertificateDto | undefined>;
+  findByIdAndStation(
+    tenantId: number,
+    id: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto | undefined>;
+  getLinkedCertificate(
+    tenantId: number,
+    installedCertificateId: number,
+  ): Promise<CertificateDto | undefined>;
+  createInstalledCertificate(
+    tenantId: number,
+    input: InstalledCertificateCreateInput,
+  ): Promise<InstalledCertificateDto>;
+  setCertificateId(
+    tenantId: number,
+    id: number,
+    certificateId: number,
+  ): Promise<InstalledCertificateDto | undefined>;
+  updateHashData(
+    tenantId: number,
+    id: number,
+    hashData: InstalledCertificateHashData,
+  ): Promise<InstalledCertificateDto | undefined>;
+  findAllByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<InstalledCertificateDto[]>;
+  deleteById(tenantId: number, id: number): Promise<InstalledCertificateDto | undefined>;
+  deleteByStation(tenantId: number, ocppConnectionName: string): Promise<InstalledCertificateDto[]>;
+  deleteByStationAndType(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+  ): Promise<InstalledCertificateDto[]>;
+  deleteByStationAndHashData(
+    tenantId: number,
+    ocppConnectionName: string,
+    hashData: InstalledCertificateHashData,
+  ): Promise<InstalledCertificateDto[]>;
+}
+export interface IInstallCertificateAttemptRepository {
+  findPendingByStationTypeAndCertHash(
+    tenantId: number,
+    ocppConnectionName: string,
+    certificateType: CertificateUseEnumType,
+    certificateFileHash: string,
+    requestId?: number | null,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+    requestId?: number | null,
+    certificateType?: CertificateUseEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: InstallCertificateAttemptCreate,
+  ): Promise<InstallCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: InstallCertificateStatusEnumType,
+  ): Promise<InstallCertificateAttemptDto | undefined>;
+  getLinkedCertificate(tenantId: number, attemptId: number): Promise<CertificateDto | undefined>;
+}
+type DeleteCertificateHashData = Pick<
+  DeleteCertificateAttemptDto,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+>;
+
+export interface IDeleteCertificateAttemptRepository {
+  findPendingByStationAndHashData(
+    tenantId: number,
+    ocppConnectionName: string,
+    hashData: DeleteCertificateHashData,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  findPendingByStation(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+  createAttempt(
+    tenantId: number,
+    input: DeleteCertificateAttemptCreate,
+  ): Promise<DeleteCertificateAttemptDto>;
+  updateStatus(
+    tenantId: number,
+    id: number,
+    status: DeleteCertificateStatusEnumType,
+  ): Promise<DeleteCertificateAttemptDto | undefined>;
+}
 
 export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
   createOrUpdateChargingProfile(
