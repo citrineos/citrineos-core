@@ -8,10 +8,9 @@ import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
 import {
-  type BootstrapConfig,
-  ConfigStoreFactory,
   type IApiAuthProvider,
   type ICache,
+  type IFileStorage,
   OcppSender,
   OCPPValidator,
 } from '@citrineos/base';
@@ -63,26 +62,6 @@ import {
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
 } from '@dal/index.js';
-import {
-  Authenticator,
-  BasicAuthenticationFilter,
-  BrokerAwareMessageSender,
-  CertificateAuthorityService,
-  ConnectedStationFilter,
-  IdGenerator,
-  LocalBypassAuthProvider,
-  NetworkProfileFilter,
-  NetworkProfileService,
-  OIDCAuthProvider,
-  RabbitMQChannelManager,
-  RabbitMQConnectionManager,
-  RabbitMqReceiver,
-  RabbitMqSender,
-  RealTimeAuthorizer,
-  UnknownStationFilter,
-  WebsocketNetworkConnection,
-  DeviceModelService,
-} from '@util/index.js';
 import { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
 import { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
 import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
@@ -114,10 +93,31 @@ import {
   registerTransactionsServices,
   TransactionsModule,
 } from '@modules/Transactions/src/index.js';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  BrokerAwareMessageSender,
+  CertificateAuthorityService,
+  ConnectedStationFilter,
+  DeviceModelService,
+  IdGenerator,
+  LocalBypassAuthProvider,
+  NetworkProfileFilter,
+  NetworkProfileService,
+  OIDCAuthProvider,
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  RabbitMqReceiver,
+  RabbitMqSender,
+  RealTimeAuthorizer,
+  UnknownStationFilter,
+  WebsocketNetworkConnection,
+} from '@util/index.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
   cache: ICache;
+  fileStorage: IFileStorage;
   ocppValidator: OCPPValidator;
   server: FastifyInstance;
 };
@@ -144,7 +144,7 @@ export type Prebuilt = {
  *   API unit in its own (CitrineOSServer.initApiInScope) together with its
  *   endpoints, so they share one instance per scope without a singleton→transient leak.
  */
-export function buildContainer(config: BootstrapConfig & SystemConfig, prebuilt: Prebuilt) {
+export function buildContainer(config: SystemConfig, prebuilt: Prebuilt) {
   const container = createContainer({
     injectionMode: InjectionMode.PROXY,
     strict: true,
@@ -187,19 +187,18 @@ function registerModuleServices(container: AwilixContainer): void {
 // ============================================================
 function registerPrimitives(
   container: AwilixContainer,
-  config: BootstrapConfig & SystemConfig,
+  config: SystemConfig,
   prebuilt: Prebuilt,
 ): void {
-  const { logger, cache, ocppValidator, server } = prebuilt;
+  const { logger, cache, fileStorage, ocppValidator, server } = prebuilt;
 
   container.register({
     config: asValue(config),
-    fileStorage: asValue(ConfigStoreFactory.getInstance()),
-    configStore: asValue(ConfigStoreFactory.getInstance()),
-    exchange: asValue(config.util.messageBroker.amqp!.exchange),
-    amqpUrl: asValue(config.util.messageBroker.amqp!.url),
-    maxCallLengthSeconds: asValue(config.maxCallLengthSeconds),
-    maxReconnectDelay: asValue(config.maxReconnectDelay),
+    fileStorage: asValue(fileStorage),
+    exchange: asValue(config.messageBroker.amqp!.exchange),
+    amqpUrl: asValue(config.messageBroker.amqp!.url),
+    maxCallLengthSeconds: asValue(config.timeouts.maxCallLengthSeconds),
+    maxReconnectDelay: asValue(config.messageBroker.amqp!.maxReconnectDelaySeconds),
     logger: asValue(logger),
     ocppValidator: asValue(ocppValidator),
     cache: asValue(cache),
@@ -346,10 +345,15 @@ function registerServices(container: AwilixContainer): void {
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizers: asValue([]),
     apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-      if (config.util.authProvider.oidc) {
-        return new OIDCAuthProvider(config.util.authProvider.oidc, logger);
+      const oidc = (config as SystemConfig).auth.oidc;
+      if (oidc) {
+        const { cacheTimeSeconds, ...rest } = oidc;
+        return new OIDCAuthProvider(
+          { ...rest, ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }) },
+          logger,
+        );
       }
-      if (config.util.authProvider.localByPass) {
+      if ((config as SystemConfig).auth.localBypass) {
         return new LocalBypassAuthProvider(logger);
       }
       throw new Error('No valid API authentication provider configured');

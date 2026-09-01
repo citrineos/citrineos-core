@@ -5,8 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  BOOT_STATUS,
-  type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
   type ICache,
@@ -36,7 +34,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
@@ -54,7 +52,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
@@ -90,7 +88,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       await this._bootService.createOcpp16BootNotificationResponse(tenantId, ocppConnectionName);
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null = await this._cache.get(
-      BOOT_STATUS,
+      CacheNamespace.BootStatus,
       identifier,
     );
     // Blacklist or whitelist charger actions
@@ -152,7 +150,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       bootNotificationResponse.status !== OCPP1_6.BootNotificationResponseStatus.Accepted &&
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, identifier);
+      await this._cache.set(CacheNamespace.BootStatus, bootNotificationResponse.status, identifier);
     }
     // Boot.stationId is a non-null FK, so the station must be committed first.
     await stationUpdate;
@@ -190,7 +188,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
 
       const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
         correlationId,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
         ocppConnectionName,
       );
       const changeConfigurationResponseMessageConfirmation: IMessageConfirmation =

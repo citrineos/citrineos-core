@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type BootstrapConfig,
   type ICache,
   AbstractModule,
   createIdentifier,
@@ -55,7 +54,7 @@ export class WebhookDispatcher {
     subscriptionRepository: ISubscriptionRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
-    config?: BootstrapConfig & SystemConfig;
+    config?: SystemConfig;
   }) {
     this._ocppMessageRepository = ocppMessageRepository;
     this._subscriptionRepository = subscriptionRepository;

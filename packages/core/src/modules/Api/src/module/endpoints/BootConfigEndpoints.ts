@@ -4,12 +4,16 @@
 import {
   AbstractEndpoint,
   type AbstractEndpointDependencies,
-  type BootConfig,
   BootConfigSchema,
   type ICommandEndpointMetadata,
   NotFoundError,
 } from '@citrineos/base';
-import { type BootDto, HttpMethod, type OCPP2_response_types } from '@citrineos/types';
+import {
+  type BootCreate,
+  type BootDto,
+  HttpMethod,
+  type OCPP2_response_types,
+} from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@dal/interfaces/index.js';
 import { ChargingStationKeyQuerySchema } from '@dal/interfaces/index.js';
 import type { IBootRepository, IChargingStationRepository } from '@dal/interfaces/repositories.js';
@@ -63,7 +67,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
 
     return this._bootRepository.createOrUpdateByKey(
       tenantId,
-      request.body as BootConfig,
+      request.body as BootCreate,
       ocppConnectionName,
     );
   }

@@ -21,22 +21,20 @@ describe.skip('Integration Tests (requires real credentials)', () => {
     beforeEach(() => {
       // Read from environment variables
       systemConfig = {
-        util: {
-          certificateAuthority: {
-            v2gCA: {
-              name: 'hubject',
-              hubject: {
-                baseUrl: process.env.HUBJECT_BASE_URL,
-                tokenUrl: process.env.HUBJECT_TOKEN_URL,
-                clientId: process.env.HUBJECT_CLIENT_ID,
-                clientSecret: process.env.HUBJECT_CLIENT_SECRET,
-              },
+        integrations: {
+          v2gCA: {
+            name: 'hubject',
+            hubject: {
+              baseUrl: process.env.HUBJECT_BASE_URL,
+              tokenUrl: process.env.HUBJECT_TOKEN_URL,
+              clientId: process.env.HUBJECT_CLIENT_ID,
+              clientSecret: process.env.HUBJECT_CLIENT_SECRET,
             },
           },
         },
       } as SystemConfig;
 
-      if (!systemConfig.util.certificateAuthority.v2gCA.hubject?.clientId) {
+      if (!systemConfig.integrations.v2gCA?.hubject?.clientId) {
         throw new Error('HUBJECT_CLIENT_ID environment variable not set');
       }
 

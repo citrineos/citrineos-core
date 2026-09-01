@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootConfig, CrudRepository } from '@citrineos/base';
+import type { CrudRepository } from '@citrineos/base';
 import type {
   AuthorizationDto,
+  BootCreate,
   BootDto,
   CallAction,
   CertificateCreate,
@@ -99,7 +100,7 @@ export interface IAuthorizationRepository {
 export interface IBootRepository {
   createOrUpdateByKey: (
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ) => Promise<BootDto | undefined>;
   updateByKey: (tenantId: number, value: object, key: string) => Promise<BootDto | undefined>;

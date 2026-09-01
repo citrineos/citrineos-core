@@ -121,7 +121,8 @@ export class RealTimeAuthorizer implements IAuthorizer {
         ) {
           const lastAttempt = new Date(realTimeAuthLastAttempt.timestamp);
           const timeout =
-            authorization.realTimeAuthTimeout ?? this._config.realTimeAuthDefaultTimeoutSeconds;
+            authorization.realTimeAuthTimeout ??
+            this._config.timeouts.realTimeAuthDefaultTimeoutSeconds;
           const now = new Date();
           const diffInSeconds = (now.getTime() - lastAttempt.getTime()) / 1000;
           if (diffInSeconds < timeout) {

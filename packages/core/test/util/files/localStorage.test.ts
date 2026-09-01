@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
 import path from 'path';
-import type { SystemConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStorage } from '@util/index.js';
 
@@ -21,14 +20,9 @@ describe('LocalStorage', () => {
   const defaultRoot = 'uploads';
   let storage: LocalStorage;
 
-  const mockSystemConfig: SystemConfig = {
-    modules: {},
-    util: {},
-  } as SystemConfig;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    storage = new LocalStorage(defaultRoot, 'config.json', 'config-dir');
+    storage = new LocalStorage(defaultRoot);
   });
 
   const resolvedPath = (key: string, bucket?: string) =>
@@ -245,49 +239,6 @@ describe('LocalStorage', () => {
         storage.saveFile('/absolute/x.pem', content, undefined, { trusted: true }),
       ).resolves.toBeDefined();
       expect(fs.writeFileSync).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('fetchConfig', () => {
-    it('should return parsed SystemConfig', async () => {
-      vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockSystemConfig) as any);
-
-      const result = await storage.fetchConfig();
-
-      expect(result).toEqual(mockSystemConfig);
-    });
-
-    it('should return null if config file does not exist', async () => {
-      vi.mocked(fs.existsSync).mockReturnValue(false);
-
-      const result = await storage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on read error', async () => {
-      vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockImplementation(() => {
-        throw new Error('disk error');
-      });
-
-      const result = await storage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('saveConfig', () => {
-    it('should write serialized config to the config file', async () => {
-      await storage.saveConfig(mockSystemConfig);
-
-      const expectedContent = Buffer.from(JSON.stringify(mockSystemConfig, null, 2));
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        path.resolve(process.cwd(), 'config-dir', 'config.json'),
-        expectedContent,
-        'utf-8',
-      );
     });
   });
 });
