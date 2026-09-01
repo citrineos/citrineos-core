@@ -217,11 +217,11 @@ describe('smartCharging message endpoints', () => {
   });
 
   describe('GetCompositeScheduleEndpoint', () => {
-    let findEvseByIdAndConnectorId: ReturnType<typeof vi.fn>;
+    let readEvseByStationIdAndOcpp201EvseId: ReturnType<typeof vi.fn>;
     let findVariableCharacteristics: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      findEvseByIdAndConnectorId = vi.fn().mockResolvedValue({ id: 1 });
+      readEvseByStationIdAndOcpp201EvseId = vi.fn().mockResolvedValue({ id: 1 });
       findVariableCharacteristics = vi.fn().mockResolvedValue(undefined);
     });
 
@@ -229,9 +229,9 @@ describe('smartCharging message endpoints', () => {
       getTestInstance(container, GetCompositeScheduleEndpoint, {
         ocppSender: { sendCall },
         deviceModelRepository: {
-          findEvseByIdAndConnectorId,
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
+        locationRepository: { readEvseByStationIdAndOcpp201EvseId },
       });
 
     const handle = (request: OCPP2_0_1.GetCompositeScheduleRequest) =>
@@ -240,7 +240,7 @@ describe('smartCharging message endpoints', () => {
     it('sends for the whole station when evseId is 0, without an EVSE lookup', async () => {
       const confirmations = await handle({ duration: 60, evseId: 0 });
 
-      expect(findEvseByIdAndConnectorId).not.toHaveBeenCalled();
+      expect(readEvseByStationIdAndOcpp201EvseId).not.toHaveBeenCalled();
       expect(confirmations[0].success).toBe(true);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
         action: OCPP_CallAction.GetCompositeSchedule,
@@ -251,12 +251,16 @@ describe('smartCharging message endpoints', () => {
     it('looks up a non-zero EVSE before sending', async () => {
       const confirmations = await handle({ duration: 60, evseId: 2 });
 
-      expect(findEvseByIdAndConnectorId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, 2, null);
+      expect(readEvseByStationIdAndOcpp201EvseId).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        STATION,
+        2,
+      );
       expect(confirmations[0].success).toBe(true);
     });
 
     it('refuses an unknown EVSE without sending', async () => {
-      findEvseByIdAndConnectorId.mockResolvedValue(undefined);
+      readEvseByStationIdAndOcpp201EvseId.mockResolvedValue(undefined);
 
       const confirmations = await handle({ duration: 60, evseId: 2 });
 
