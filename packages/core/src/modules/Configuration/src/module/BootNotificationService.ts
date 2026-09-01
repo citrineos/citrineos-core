@@ -1,32 +1,32 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IBootRepository } from '@dal/interfaces/repositories.js';
-import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import {
-  type BootConfig,
+  CacheNamespace,
   type ICache,
   type IMessageConfirmation,
-  BOOT_STATUS,
   createIdentifier,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
   OCPP2_1_CALL_SCHEMA_RECORD,
 } from '@citrineos/base';
 import {
+  type BootCreate,
   type BootDto,
   OCPP1_6,
   OCPP2_0_1,
+  type OCPP2_response_types,
   OCPP_CallAction,
   RegistrationStatusEnum,
   type RegistrationStatusEnumType,
   type SystemConfig,
-  type OCPP2_response_types,
 } from '@citrineos/types';
+import type { IBootRepository } from '@dal/interfaces/repositories.js';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
-type Configuration = SystemConfig['modules']['configuration'];
+type Configuration = SystemConfig['ocpp'];
 
 export class BootNotificationService {
   protected _bootRepository: IBootRepository;
@@ -56,10 +56,10 @@ export class BootNotificationService {
   determineBootStatus(bootConfig: BootDto | undefined): RegistrationStatusEnumType {
     let bootStatus = bootConfig
       ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
-      : this._config.ocpp2_0_1!.unknownChargerStatus;
+      : this._config.unknownChargerStatus;
 
     if (bootStatus === RegistrationStatusEnum.Pending) {
-      let needToGetBaseReport = this._config.ocpp2_0_1!.getBaseReportOnPending;
+      let needToGetBaseReport = this._config.getBaseReportOnPending;
       let needToSetVariables = false;
       if (bootConfig) {
         if (
@@ -72,7 +72,7 @@ export class BootNotificationService {
           needToSetVariables = true;
         }
       }
-      if (!needToGetBaseReport && !needToSetVariables && this._config.ocpp2_0_1!.autoAccept) {
+      if (!needToGetBaseReport && !needToSetVariables && this._config.autoAccept) {
         bootStatus = RegistrationStatusEnum.Accepted;
       }
     }
@@ -110,7 +110,7 @@ export class BootNotificationService {
       ocppConnectionName,
     );
     if (!bootConfigDbEntity) {
-      const unknownChargerBootConfig: BootConfig = {
+      const unknownChargerBootConfig: BootCreate = {
         status: bootNotificationResponse.status,
         statusInfo: bootNotificationResponse.statusInfo,
       };
@@ -174,7 +174,7 @@ export class BootNotificationService {
         });
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, identifier);
+        await this._cache.remove(CacheNamespace.BootStatus, identifier);
         this._logger.debug('Cached boot status removed: ', cachedBootStatus);
       }
     } else if (!cachedBootStatus) {
@@ -267,12 +267,11 @@ export class BootNotificationService {
    */
 
   determineOcpp16BootStatus(
-    bootConfig: BootConfig | undefined,
+    bootConfig: BootDto | undefined,
   ): OCPP1_6.BootNotificationResponseStatus {
-    let bootStatus = bootConfig
-      ? OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
-      : this._config.ocpp1_6!.unknownChargerStatus;
-
+    let bootStatus = OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(
+      bootConfig ? bootConfig.status : this._config.unknownChargerStatus,
+    );
     if (bootStatus === OCPP1_6.BootNotificationResponseStatus.Pending) {
       let needToGetConfigurations = true;
       let needToChangeConfigurations = true;
@@ -341,8 +340,10 @@ export class BootNotificationService {
         });
         await Promise.all(promises);
         // Remove cached boot status
-        await this._cache.remove(BOOT_STATUS, identifier);
-        this._logger.debug(`Cached boot status ${cachedBootStatus} removed for ${identifier}.`);
+        await this._cache.remove(CacheNamespace.BootStatus, identifier);
+        this._logger.debug(
+          `Cached boot status ${cachedBootStatus} removed for station ${identifier}.`,
+        );
       }
     } else if (!cachedBootStatus) {
       // Status is not Accepted; i.e. Status is Rejected or Pending.
@@ -372,7 +373,7 @@ export class BootNotificationService {
         ? response.interval
         : undefined;
 
-    const unknownChargerBootConfig: BootConfig = {
+    const unknownChargerBootConfig: BootCreate = {
       status: response.status,
       heartbeatInterval,
       bootRetryInterval,

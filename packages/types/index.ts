@@ -32,14 +32,15 @@ export type { HandlerProperties } from './src/interfaces/messages/internal-types
 export { HttpMethod } from './src/interfaces/api/HttpMethods.js';
 
 export {
+  configSchema,
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
   OCPP_VERSION_LIST,
   RbacRulesSchema,
-  systemConfigInputSchema,
-  systemConfigSchema,
+  signedMeterValuesSigningMethods,
+  websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
   RbacRules,

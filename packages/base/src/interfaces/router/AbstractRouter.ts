@@ -4,20 +4,17 @@
 
 import type { ErrorObject } from 'ajv';
 
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
 import {
-  type CallAction,
-  type OCPPVersionType,
-  type SystemConfig,
   ErrorCode,
-  OCPPVersion,
   MessageOrigin,
   MessageState,
+  OCPPVersion,
+  type CallAction,
   type OcppRequest,
   type OcppResponse,
+  type OCPPVersionType,
+  type SystemConfig,
 } from '@citrineos/types';
-import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { IMessage } from '@interfaces/messages/Message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/MessageConfirmation.js';
@@ -25,6 +22,9 @@ import type { IMessageHandler } from '@interfaces/messages/MessageHandler.js';
 import type { IMessageSender } from '@interfaces/messages/MessageSender.js';
 import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
 import type { IMessageRouter } from '@interfaces/router/Router.js';
+import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -140,7 +140,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
         // guard is opt-in: it only drops when `staleCallMaxAgeSeconds` is configured, since some
         // deployments prefer late delivery over none, and fine-grained per-action staleness
         // handling is left as future work.
-        const staleCallMaxAgeSeconds = this._config.staleCallMaxAgeSeconds;
+        const staleCallMaxAgeSeconds = this._config.timeouts.staleCallMaxAgeSeconds;
         if (staleCallMaxAgeSeconds !== undefined) {
           const callAgeMs = Date.now() - new Date(message.context.timestamp).getTime();
           const maxCallAgeMs = staleCallMaxAgeSeconds * 1000;

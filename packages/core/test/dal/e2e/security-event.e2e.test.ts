@@ -34,7 +34,6 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { fileURLToPath } from 'url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
-import { createLocalConfig } from '../../../../../apps/ocpp-server/src/config/envs/local.js';
 import { aSecurityEventNotificationRequest } from '../providers/SecurityEvent.js';
 
 // ─── Paths (resolved relative to this file) ───────────────────────────────────
@@ -52,8 +51,8 @@ let pgPort: number;
 let rabbitPort: number;
 let tempDir: string;
 
-// Assigned in beforeAll. The config's fixed 8080/8081/8085 are deliberately not used - see the
-// comment where these are patched into the config.
+// Assigned in beforeAll. The schema defaults 8080/8081 are deliberately not used - see the
+// comment where these are reserved.
 let httpPort: number; // Fastify API + /health endpoint
 let wsPort: number; // OCPP WebSocket (allowUnknownChargingStations: true)
 
@@ -78,19 +77,21 @@ function reserveFreePort(): Promise<number> {
 function buildTestEnv(extraEnv: Record<string, string> = {}): NodeJS.ProcessEnv {
   return {
     ...process.env,
-    // DB connection — overrides the bootstrap config defaults so we hit the
-    // testcontainer PG instead of any local instance.
-    BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'localhost',
-    BOOTSTRAP_CITRINEOS_DATABASE_PORT: String(pgPort),
-    BOOTSTRAP_CITRINEOS_DATABASE_NAME: 'postgres',
-    BOOTSTRAP_CITRINEOS_DATABASE_USERNAME: 'postgres',
-    BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD: 'postgres',
-    // System config file — points at our pre-written config.json in tempDir.
-    BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local',
-    BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: tempDir,
-    BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json',
+    // DB connection — overrides the schema defaults so we hit the testcontainer PG
+    // instead of any local instance.
+    CITRINEOS_DATABASE_HOST: 'localhost',
+    CITRINEOS_DATABASE_PORT: String(pgPort),
+    CITRINEOS_DATABASE_DATABASE: 'postgres',
+    CITRINEOS_DATABASE_USERNAME: 'postgres',
+    CITRINEOS_DATABASE_PASSWORD: 'postgres',
+    // File storage rooted at tempDir, which is where websocket-servers.json is written.
+    CITRINEOS_FILEACCESS_TYPE: 'local',
+    CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: tempDir,
+    // The testcontainer RabbitMQ, whose port is only known once it has started.
+    CITRINEOS_MESSAGEBROKER_AMQP_URL: `amqp://guest:guest@localhost:${rabbitPort}`,
+    // The Fastify API port, reserved in beforeAll rather than left on the default 8080.
+    CITRINEOS_PORT: String(httpPort),
     // App config
-    APP_ENV: 'local',
     APP_NAME: 'all',
     ...extraEnv,
   };
@@ -185,34 +186,43 @@ beforeAll(async () => {
   pgPort = pgContainer.getMappedPort(5432);
   rabbitPort = rabbitContainer.getMappedPort(5672);
 
-  // Build the system config by reusing the real local.ts config function, then
-  // patch only the AMQP URL to point at the testcontainer RabbitMQ port.
-  // We also strip the second WS server (port 8082, securityProfile 1) to avoid
-  // a bind conflict when the first server is still releasing that port.
-  const config = createLocalConfig();
-  config.util.messageBroker.amqp!.url = `amqp://guest:guest@localhost:${rabbitPort}`;
-  config.util.networkConnection.websocketServers =
-    config.util.networkConnection.websocketServers.filter((s) => s.securityProfile === 0);
-
-  // Bind every listener to an ephemeral port instead of the config's fixed 8080/8081/8085.
+  // Bind both listeners to an ephemeral port instead of the schema defaults 8080/8081.
   // A developer running the docker-compose stack already owns those, and the server spawned below
   // then loses the race to bind - silently, because it dies before its logger produces output.
   // waitForHealth and the OCPP socket would go on to reach *that* server, which happily answers
   // and persists the SecurityEvent to its own database, leaving this test querying an empty
   // testcontainer and reporting a phantom persistence failure.
-  [httpPort, wsPort, config.ocpiServer.port] = await Promise.all([
-    reserveFreePort(),
-    reserveFreePort(),
-    reserveFreePort(),
-  ]);
-  config.centralSystem.port = httpPort;
-  config.util.networkConnection.websocketServers[0].port = wsPort;
+  [httpPort, wsPort] = await Promise.all([reserveFreePort(), reserveFreePort()]);
 
+  // Everything else about the system config comes from the schema defaults via
+  // buildTestEnv(). The websocket servers are the one part that is not an environment
+  // variable: they are read from a JSON file through file storage, whose root
+  // buildTestEnv() points at tempDir. Only the securityProfile 0 server is listed, so
+  // there is nothing on a second port to collide with a port the previous scenario is still
+  // releasing.
   tempDir = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
-  writeFileSync(join(tempDir, 'config.json'), JSON.stringify(config, null, 2));
+  writeFileSync(
+    join(tempDir, 'websocket-servers.json'),
+    JSON.stringify(
+      [
+        {
+          id: '0',
+          host: '0.0.0.0',
+          port: wsPort,
+          pingInterval: 60,
+          protocols: ['ocpp2.1', 'ocpp2.0.1', 'ocpp1.6'],
+          securityProfile: 0,
+          allowUnknownChargingStations: true,
+          tenantId: 1,
+        },
+      ],
+      null,
+      2,
+    ),
+  );
 
   // Run the real sequelize-cli migrations against the testcontainer DB.
-  // sequelize.bridge.config.ts reads BOOTSTRAP_CITRINEOS_DATABASE_* env vars,
+  // sequelize.bridge.config.ts reads CITRINEOS_DATABASE_* env vars,
   // so the same vars we use to start the server point migrations at test PG.
   // This also runs 20250430110000-create-default-tenant which seeds Tenant id=1.
   execSync('pnpm run db:migrate', {

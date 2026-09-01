@@ -2,14 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi } from 'vitest';
-import {
-  type BootstrapConfig,
-  type ICache,
-  type IMessage,
-  CacheNamespace,
-  DEFAULT_TENANT_ID,
-} from '@citrineos/base';
+import { type ICache, type IMessage, CacheNamespace, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
   type SystemConfig,
@@ -25,17 +18,14 @@ import {
 import type { ITransactionEventRepository } from '@dal/interfaces/repositories.js';
 import { TransactionEventRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
+import { describe, expect, it, vi } from 'vitest';
 
-function makeConfig(): BootstrapConfig & SystemConfig {
+function makeConfig(): SystemConfig {
   return {
-    modules: {
-      transactions: {
-        requests: [],
-        responses: [],
-        sendCostUpdatedOnMeterValue: false,
-      },
+    transactions: {
+      sendCostUpdatedOnMeterValue: false,
     },
-  } as unknown as BootstrapConfig & SystemConfig;
+  } as unknown as SystemConfig;
 }
 
 function makeMessage<T extends OcppRequest>(
@@ -63,7 +53,7 @@ function makeHandler(
     transactionEventRepository?: Partial<ITransactionEventRepository>;
     cache?: Partial<ICache>;
     transactionService?: Record<string, unknown>;
-    config?: BootstrapConfig & SystemConfig;
+    config?: SystemConfig;
     deviceModelVariables?: Record<string, { value: string | null }[]>;
   } = {},
 ) {

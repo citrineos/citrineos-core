@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { SystemConfig } from '@citrineos/types';
 import { Readable } from 'stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { S3Storage } from '@util/index.js';
@@ -32,14 +31,9 @@ describe('S3Storage', () => {
     s3ForcePathStyle: true,
   };
 
-  const mockSystemConfig: SystemConfig = {
-    modules: {},
-    util: {},
-  } as SystemConfig;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    s3Storage = new S3Storage(mockConfig, 'config.json', 'config-bucket');
+    s3Storage = new S3Storage(mockConfig);
   });
 
   describe('saveFile', () => {
@@ -241,47 +235,6 @@ describe('S3Storage', () => {
       mockSend.mockRejectedValue(error);
 
       await expect(s3Storage.deleteFile(key)).rejects.toEqual(error);
-    });
-  });
-
-  describe('fetchConfig', () => {
-    it('should fetch and parse config successfully', async () => {
-      mockSend.mockResolvedValue({ Body: createReadableStream(JSON.stringify(mockSystemConfig)) });
-
-      const result = await s3Storage.fetchConfig();
-
-      expect(result).toEqual(mockSystemConfig);
-    });
-
-    it('should return null if config does not exist', async () => {
-      mockSend.mockRejectedValue({ name: 'NoSuchKey' });
-
-      const result = await s3Storage.fetchConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it('should rethrow non-404 errors', async () => {
-      mockSend.mockRejectedValue(new Error('Access denied'));
-
-      await expect(s3Storage.fetchConfig()).rejects.toThrow('Access denied');
-    });
-  });
-
-  describe('saveConfig', () => {
-    it('should serialize and upload config as JSON', async () => {
-      mockSend.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
-
-      await s3Storage.saveConfig(mockSystemConfig);
-
-      const expectedBody = Buffer.from(JSON.stringify(mockSystemConfig, null, 2));
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          Body: expectedBody,
-          Key: 'config.json',
-          Bucket: 'config-bucket',
-        }),
-      );
     });
   });
 });

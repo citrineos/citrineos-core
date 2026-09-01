@@ -2,62 +2,62 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type BootstrapConfig } from '@citrineos/base';
+import { type SystemConfig } from '@citrineos/types';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
-import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
-import { Authorization } from './model/Authorization/Authorization.js';
-import { Boot } from './model/Boot.js';
 import { AsyncJobStatus } from './model/AsyncJob/AsyncJobStatus.js';
+import { Authorization } from './model/Authorization/Authorization.js';
+import { LocalListAuthorization } from './model/Authorization/LocalListAuthorization.js';
+import { LocalListVersion } from './model/Authorization/LocalListVersion.js';
+import { LocalListVersionAuthorization } from './model/Authorization/LocalListVersionAuthorization.js';
+import { SendLocalList } from './model/Authorization/SendLocalList.js';
+import { SendLocalListAuthorization } from './model/Authorization/SendLocalListAuthorization.js';
+import { Boot } from './model/Boot.js';
 import { Certificate } from './model/Certificate/Certificate.js';
+import { DeleteCertificateAttempt } from './model/Certificate/DeleteCertificateAttempt.js';
+import { InstallCertificateAttempt } from './model/Certificate/InstallCertificateAttempt.js';
+import { InstalledCertificate } from './model/Certificate/InstalledCertificate.js';
 import { ChangeConfiguration } from './model/ChangeConfiguration.js';
 import { ChargingNeeds } from './model/ChargingProfile/ChargingNeeds.js';
 import { ChargingProfile } from './model/ChargingProfile/ChargingProfile.js';
 import { ChargingSchedule } from './model/ChargingProfile/ChargingSchedule.js';
-import { ChargingStation } from './model/Location/ChargingStation.js';
-import { ChargingStationNetworkProfile } from './model/Location/ChargingStationNetworkProfile.js';
+import { CompositeSchedule } from './model/ChargingProfile/CompositeSchedule.js';
+import { SalesTariff } from './model/ChargingProfile/SalesTariff.js';
 import { ChargingStationSecurityInfo } from './model/ChargingStationSecurityInfo.js';
 import { ChargingStationSequence } from './model/ChargingStationSequence/ChargingStationSequence.js';
 import { Component } from './model/DeviceModel/Component.js';
-import { CompositeSchedule } from './model/ChargingProfile/CompositeSchedule.js';
-import { Connector } from './model/Location/Connector.js';
-import { DeleteCertificateAttempt } from './model/Certificate/DeleteCertificateAttempt.js';
-import { EventData } from './model/VariableMonitoring/EventData.js';
-import { Evse } from './model/Location/Evse.js';
+import { ComponentVariable } from './model/DeviceModel/ComponentVariable.js';
 import { EvseType } from './model/DeviceModel/EvseType.js';
-import { InstallCertificateAttempt } from './model/Certificate/InstallCertificateAttempt.js';
-import { InstalledCertificate } from './model/Certificate/InstalledCertificate.js';
+import { Variable } from './model/DeviceModel/Variable.js';
+import { VariableAttribute } from './model/DeviceModel/VariableAttribute.js';
+import { VariableCharacteristics } from './model/DeviceModel/VariableCharacteristics.js';
+import { VariableStatus } from './model/DeviceModel/VariableStatus.js';
+import { ChargingStation } from './model/Location/ChargingStation.js';
+import { ChargingStationNetworkProfile } from './model/Location/ChargingStationNetworkProfile.js';
+import { Connector } from './model/Location/Connector.js';
+import { Evse } from './model/Location/Evse.js';
 import { LatestStatusNotification } from './model/Location/LatestStatusNotification.js';
-import { LocalListAuthorization } from './model/Authorization/LocalListAuthorization.js';
-import { LocalListVersion } from './model/Authorization/LocalListVersion.js';
-import { LocalListVersionAuthorization } from './model/Authorization/LocalListVersionAuthorization.js';
 import { Location } from './model/Location/Location.js';
-import { MessageInfo } from './model/MessageInfo/MessageInfo.js';
-import { MeterValue } from './model/TransactionEvent/MeterValue.js';
-import { OCPPMessage } from './model/OCPPMessage.js';
-import { Reservation } from './model/Reservation.js';
-import { SalesTariff } from './model/ChargingProfile/SalesTariff.js';
-import { SecurityEvent } from './model/SecurityEvent.js';
-import { SendLocalList } from './model/Authorization/SendLocalList.js';
-import { SendLocalListAuthorization } from './model/Authorization/SendLocalListAuthorization.js';
 import { ServerNetworkProfile } from './model/Location/ServerNetworkProfile.js';
 import { SetNetworkProfile } from './model/Location/SetNetworkProfile.js';
-import { StartTransaction } from './model/TransactionEvent/StartTransaction.js';
 import { StatusNotification } from './model/Location/StatusNotification.js';
-import { StopTransaction } from './model/TransactionEvent/StopTransaction.js';
+import { MessageInfo } from './model/MessageInfo/MessageInfo.js';
+import { OCPPMessage } from './model/OCPPMessage.js';
+import { Reservation } from './model/Reservation.js';
+import { SecurityEvent } from './model/SecurityEvent.js';
 import { Subscription } from './model/Subscription/Subscription.js';
 import { Tariff } from './model/Tariff/Tariffs.js';
 import { Tenant } from './model/Tenant.js';
 import { TenantPartner } from './model/TenantPartner.js';
+import { MeterValue } from './model/TransactionEvent/MeterValue.js';
+import { StartTransaction } from './model/TransactionEvent/StartTransaction.js';
+import { StopTransaction } from './model/TransactionEvent/StopTransaction.js';
 import { Transaction } from './model/TransactionEvent/Transaction.js';
 import { TransactionEvent } from './model/TransactionEvent/TransactionEvent.js';
-import { Variable } from './model/DeviceModel/Variable.js';
-import { VariableAttribute } from './model/DeviceModel/VariableAttribute.js';
-import { VariableCharacteristics } from './model/DeviceModel/VariableCharacteristics.js';
+import { EventData } from './model/VariableMonitoring/EventData.js';
 import { VariableMonitoring } from './model/VariableMonitoring/VariableMonitoring.js';
 import { VariableMonitoringStatus } from './model/VariableMonitoring/VariableMonitoringStatus.js';
-import { VariableStatus } from './model/DeviceModel/VariableStatus.js';
 
 export class DefaultSequelizeInstance {
   /**
@@ -67,11 +67,11 @@ export class DefaultSequelizeInstance {
   private static readonly DEFAULT_RETRY_DELAY = 5000;
   private static instance: Sequelize | null = null;
   private static logger: Logger<ILogObj>;
-  private static config: BootstrapConfig;
+  private static config: SystemConfig;
 
   private constructor() {}
 
-  public static getInstance(config: BootstrapConfig, logger?: Logger<ILogObj>): Sequelize {
+  public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
       DefaultSequelizeInstance.logger = logger

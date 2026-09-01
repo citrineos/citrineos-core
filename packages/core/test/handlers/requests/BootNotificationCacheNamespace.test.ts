@@ -2,12 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi } from 'vitest';
 import {
-  type BootstrapConfig,
   type ICache,
   type IMessage,
-  BOOT_STATUS,
+  CacheNamespace,
   createIdentifier,
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
@@ -28,6 +26,7 @@ import {
   BootNotificationRequestOcpp2Handler,
 } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
+import { describe, expect, it, vi } from 'vitest';
 
 const STATION_ID = 'station-001';
 
@@ -38,17 +37,11 @@ const STATION_ID = 'station-001';
 // station of the same name share one entry.
 const IDENTIFIER = createIdentifier(DEFAULT_TENANT_ID, STATION_ID);
 
-function makeConfig(): BootstrapConfig & SystemConfig {
+function makeConfig(): SystemConfig {
   return {
-    maxCachingSeconds: 10,
-    modules: {
-      configuration: {
-        requests: [],
-        responses: [],
-        ocpp2_0_1: { getBaseReportOnPending: false },
-      },
-    },
-  } as unknown as BootstrapConfig & SystemConfig;
+    timeouts: { maxCachingSeconds: 10 },
+    ocpp: { getBaseReportOnPending: false },
+  } as unknown as SystemConfig;
 }
 
 function makeMessage<T extends OcppRequest>(payload: T, protocol: OCPPVersion): IMessage<T> {
@@ -122,7 +115,7 @@ describe('BootNotification cache namespacing', () => {
 
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP1_6));
 
-      expect(cache.get).toHaveBeenCalledWith(BOOT_STATUS, IDENTIFIER);
+      expect(cache.get).toHaveBeenCalledWith(CacheNamespace.BootStatus, IDENTIFIER);
     });
 
     it('writes the cached boot status under the tenant-scoped identifier', async () => {
@@ -131,7 +124,7 @@ describe('BootNotification cache namespacing', () => {
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP1_6));
 
       expect(cache.set).toHaveBeenCalledWith(
-        BOOT_STATUS,
+        CacheNamespace.BootStatus,
         OCPP1_6.BootNotificationResponseStatus.Rejected,
         IDENTIFIER,
       );
@@ -188,7 +181,7 @@ describe('BootNotification cache namespacing', () => {
 
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP2_0_1));
 
-      expect(cache.get).toHaveBeenCalledWith(BOOT_STATUS, IDENTIFIER);
+      expect(cache.get).toHaveBeenCalledWith(CacheNamespace.BootStatus, IDENTIFIER);
     });
 
     it('writes the cached boot status under the tenant-scoped identifier', async () => {
@@ -197,7 +190,7 @@ describe('BootNotification cache namespacing', () => {
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP2_0_1));
 
       expect(cache.set).toHaveBeenCalledWith(
-        BOOT_STATUS,
+        CacheNamespace.BootStatus,
         RegistrationStatusEnum.Rejected,
         IDENTIFIER,
       );

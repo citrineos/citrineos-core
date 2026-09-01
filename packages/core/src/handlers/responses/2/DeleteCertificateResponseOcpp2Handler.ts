@@ -68,42 +68,34 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
       originalRequest?.payload as OCPP2_request_types.DeleteCertificateRequest | undefined
     )?.certificateHashData;
 
-    const existingPendingDeleteCertificateAttempt =
-      await this._deleteCertificateAttemptRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          ocppConnectionName: ocppConnectionName,
-          status: null,
-          ...(certificateHashData
-            ? {
-                hashAlgorithm: certificateHashData.hashAlgorithm,
-                issuerNameHash: certificateHashData.issuerNameHash,
-                issuerKeyHash: certificateHashData.issuerKeyHash,
-                serialNumber: certificateHashData.serialNumber,
-              }
-            : {}),
-        },
-      });
+    const existingPendingDeleteCertificateAttempt = certificateHashData
+      ? await this._deleteCertificateAttemptRepository.findPendingByStationAndHashData(
+          tenantId,
+          ocppConnectionName,
+          certificateHashData,
+        )
+      : await this._deleteCertificateAttemptRepository.findPendingByStation(
+          tenantId,
+          ocppConnectionName,
+        );
     // should always be true
     if (existingPendingDeleteCertificateAttempt) {
-      existingPendingDeleteCertificateAttempt.status = message.payload.status;
-      await existingPendingDeleteCertificateAttempt.save();
-      if (existingPendingDeleteCertificateAttempt.status === DeleteCertificateStatusEnum.Accepted) {
-        const existingInstalledCertificates =
-          await this._installedCertificateRepository.readAllByQuery(tenantId, {
-            where: {
-              ocppConnectionName: ocppConnectionName,
-              hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
-              issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
-              issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
-              serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
-            },
-          });
-        // should always be true
-        if (existingInstalledCertificates) {
-          for (const existingInstalledCertificate of existingInstalledCertificates) {
-            await existingInstalledCertificate.destroy();
-          }
-        }
+      await this._deleteCertificateAttemptRepository.updateStatus(
+        tenantId,
+        existingPendingDeleteCertificateAttempt.id!,
+        message.payload.status,
+      );
+      if (message.payload.status === DeleteCertificateStatusEnum.Accepted) {
+        await this._installedCertificateRepository.deleteByStationAndHashData(
+          tenantId,
+          ocppConnectionName,
+          {
+            hashAlgorithm: existingPendingDeleteCertificateAttempt.hashAlgorithm,
+            issuerNameHash: existingPendingDeleteCertificateAttempt.issuerNameHash,
+            issuerKeyHash: existingPendingDeleteCertificateAttempt.issuerKeyHash,
+            serialNumber: existingPendingDeleteCertificateAttempt.serialNumber,
+          },
+        );
       }
     }
   }

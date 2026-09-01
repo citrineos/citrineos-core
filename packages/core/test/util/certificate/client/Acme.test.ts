@@ -4,12 +4,12 @@
 import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
+import * as CertificateUtil from '@util/certificate/CertificateUtil.js';
+import { Acme } from '@util/certificate/client/acme.js';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
-import * as CertificateUtil from '@util/certificate/CertificateUtil.js';
-import { Acme } from '@util/certificate/client/acme.js';
 import { aValidSignedCertificate } from '../../providers/ACME.js';
 
 vi.mock('@util/certificate/CertificateUtil');
@@ -29,10 +29,29 @@ describe('ACME', () => {
     global.fetch = vi.fn();
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
 
+    const websocketServersConfigFile = 'websocket-servers.json';
+    const websocketServers = [
+      {
+        id: '3',
+        host: '0.0.0.0',
+        port: 8444,
+        pingInterval: 60,
+        protocols: ['ocpp2.0.1'],
+        securityProfile: 3,
+        allowUnknownChargingStations: false,
+        dynamicTenantResolution: false,
+        tenantId: 1,
+        tlsKeyFilePath: faker.lorem.word(),
+        tlsCertificateChainFilePath: faker.lorem.word(),
+        mtlsCertificateAuthorityKeyFilePath: faker.lorem.word(),
+      },
+    ];
+
     mockFileStorage = {
       saveFile: vi.fn().mockResolvedValue(undefined),
       getFile: vi
         .fn()
+        .mockResolvedValueOnce(JSON.stringify(websocketServers))
         .mockResolvedValueOnce(mockTlsCertificateChain)
         .mockResolvedValueOnce(mockMtlsCertificateAuthorityKey)
         .mockResolvedValueOnce(faker.lorem.word()),
@@ -42,24 +61,14 @@ describe('ACME', () => {
     } as unknown as IFileStorage;
 
     systemConfig = {
-      util: {
-        networkConnection: {
-          websocketServers: [
-            {
-              id: '3',
-              securityProfile: 3,
-              tlsCertificateChainFilePath: faker.lorem.word(),
-              mtlsCertificateAuthorityKeyFilePath: faker.lorem.word(),
-            },
-          ],
-        },
-        certificateAuthority: {
-          chargingStationCA: {
-            name: 'acme',
-            acme: {
-              env: 'staging',
-              accountKeyFilePath: faker.lorem.word(),
-            },
+      websocketServerConfigFile: websocketServersConfigFile,
+      integrations: {
+        chargingStationCA: {
+          name: 'acme',
+          acme: {
+            env: 'staging',
+            accountKeyFilePath: faker.lorem.word(),
+            email: 'test@citrineos.com',
           },
         },
       },

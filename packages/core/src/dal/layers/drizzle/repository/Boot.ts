@@ -2,15 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, VariableAttributeDto } from '@citrineos/types';
+import { type IBootRepository } from '@/dal/index.js';
+import type { BootCreate, BootDto, VariableAttributeDto } from '@citrineos/types';
+import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
+import { and, eq } from 'drizzle-orm';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
 import { chargingStationTable } from '../schema/ChargingStation.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository, type DrizzleRepositoryDependencies } from './Base.js';
-import { type IBootRepository } from '@/dal/index.js';
-import { and, eq } from 'drizzle-orm';
-import type { BootConfig } from '@citrineos/base';
-import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external BootDto contract.
@@ -26,6 +25,7 @@ export function toBootDto(entity: BootEntity): BootDto {
     statusInfo: (entity.statusInfo as Record<string, any> | null) ?? null,
     getBaseReportOnPending: entity.getBaseReportOnPending ?? null,
     pendingBootSetVariables: undefined,
+    pendingBootSetVariableIds: undefined,
     variablesRejectedOnLastBoot:
       (entity.variablesRejectedOnLastBoot as Record<string, any>[] | null) ?? null,
     bootWithRejectedVariables: entity.bootWithRejectedVariables ?? null,
@@ -102,7 +102,7 @@ export class DrizzleBootRepository
 
   async createOrUpdateByKey(
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ): Promise<BootDto | undefined> {
     // A boot record cannot exist without its station: stationId is a non-null FK.
