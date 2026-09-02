@@ -182,6 +182,7 @@ export class SequelizeChargingProfileRepository
   ): Promise<ChargingNeeds> {
     const activeTransaction = await Transaction.findOne({
       where: {
+        tenantId,
         ocppConnectionName: ocppConnectionName,
         isActive: true,
       },
