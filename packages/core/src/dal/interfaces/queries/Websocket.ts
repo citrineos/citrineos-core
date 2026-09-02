@@ -81,6 +81,10 @@ export const WebsocketRequestSchema = QuerySchema('WebsocketRequestSchema', [
     type: 'string',
   },
   {
+    key: 'mtlsCertificateAuthorityCertificateFilePath',
+    type: 'string',
+  },
+  {
     key: 'rootCACertificateFilePath',
     type: 'string',
   },

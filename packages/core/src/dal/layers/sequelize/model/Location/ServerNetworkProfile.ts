@@ -69,6 +69,15 @@ export class ServerNetworkProfile
   @Column(DataType.STRING)
   declare mtlsCertificateAuthorityKeyFilePath?: string;
 
+  // Sub CA's own certificate, used as the issuer when
+  // signing a charging station's CSR (OCPP SignCertificate). Optional: when unset, the issuer falls
+  // back to the second entry of tlsCertificateChainFilePath, which only holds when the CSMS's own TLS
+  // certificate is issued by this same sub CA. Set it explicitly when tlsCertificateChainFilePath
+  // instead carries a publicly-issued certificate (e.g. Let's Encrypt) for the CSMS's TLS identity --
+  // otherwise the signed certificate's issuer will not match its actual signer.
+  @Column(DataType.STRING)
+  declare mtlsCertificateAuthorityCertificateFilePath?: string;
+
   @Column(DataType.STRING)
   declare rootCACertificateFilePath?: string;
 
