@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository } from '@citrineos/base';
-import { OCPP2_0_1, type ReservationDto } from '@citrineos/types';
+import type { OCPP2_request_types, ReservationDto } from '@citrineos/types';
 import type { IReservationRepository } from '../../../interfaces/repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
 import type { ILogObj } from 'tslog';
@@ -32,7 +32,7 @@ export class SequelizeReservationRepository
 
   async createOrUpdateReservation(
     tenantId: number,
-    reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
+    reserveNowRequest: OCPP2_request_types.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
   ): Promise<ReservationDto | undefined> {

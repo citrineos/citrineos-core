@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OCPP2_0_1, ReservationDto } from '@citrineos/types';
+import type { OCPP2_request_types, ReservationDto } from '@citrineos/types';
 import { and, eq, isNull, max } from 'drizzle-orm';
 import { evseTypeTable } from '../schema/EvseType.js';
 import {
@@ -53,7 +53,7 @@ export class DrizzleReservationRepository
 
   async createOrUpdateReservation(
     tenantId: number,
-    reserveNowRequest: OCPP2_0_1.ReserveNowRequest,
+    reserveNowRequest: OCPP2_request_types.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
   ): Promise<ReservationDto | undefined> {
