@@ -51,7 +51,7 @@
     "fastify": "catalog:",
     "sequelize": "^6.37.7",
     "sqlite3": "5.1.7",
-    "tslog": "4.9.2",
+    "tslog": "^4.11.0",
     "uuid": "11.1.1"
   },
   "engines": {

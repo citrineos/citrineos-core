@@ -65,7 +65,7 @@
     "qs": "6.15.3",
     "reflect-metadata": "0.1.13",
     "routing-controllers": "0.10.4",
-    "tslog": "4.9.2",
+    "tslog": "^4.11.0",
     "typed-rest-client": "2.1.0",
     "uuid": "11.1.1",
     "zod": "catalog:",

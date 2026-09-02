@@ -418,10 +418,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
        * See {@link IUpgradeError.terminateConnection}
        **/
       error?.terminateConnection?.(socket) || this._terminateConnectionInternalError(socket);
-      this._logger.warn('Connection upgrade failed', {
-        message: error?.message,
-        stack: error?.stack,
-      });
+      this._logger.warn('Connection upgrade failed', error);
     }
   }
 

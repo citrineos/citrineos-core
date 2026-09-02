@@ -56,7 +56,7 @@
     "sequelize": "^6.37.0",
     "sequelize-typescript": "2.1.6",
     "ssh2-sftp-client": "^10.0.3",
-    "tslog": "^4.9.2",
+    "tslog": "^4.11.0",
     "uuid": "^11.0.0",
     "ws": "^8.17.0"
   },
