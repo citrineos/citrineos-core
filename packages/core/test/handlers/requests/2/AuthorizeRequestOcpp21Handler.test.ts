@@ -82,7 +82,7 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       };
 
       const tariffRepository = {
-        readByKey: vi.fn().mockResolvedValue({
+        findById: vi.fn().mockResolvedValue({
           id: TARIFF_ID,
           tariffId: 'DriverTariff01',
           currency: 'EUR',

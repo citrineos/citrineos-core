@@ -97,6 +97,15 @@ export {
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
 } from './schema/ServerNetworkProfile.js';
+export { DrizzleTariffRepository, toTariffDto } from './repository/Tariff.js';
+export {
+  tariffTable,
+  tenantTariffTable,
+  TariffEntitySchema,
+  TariffEntityInsertSchema,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/Tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from './repository/Tenant.js';
 export {
   tenantTable,

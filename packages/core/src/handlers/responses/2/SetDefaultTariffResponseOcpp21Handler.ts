@@ -9,13 +9,14 @@ import {
 } from '@citrineos/base';
 import {
   type HandlerProperties,
+  type TariffDto,
   MessageOrigin,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
   TariffSetStatusEnum,
 } from '@citrineos/types';
-import { type IOCPPMessageRepository, type ITariffRepository, Tariff } from '@dal/index.js';
+import { type IOCPPMessageRepository, type ITariffRepository } from '@dal/index.js';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.SetDefaultTariff)
 export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
@@ -75,7 +76,7 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
     const request = storedRequest.payload as OCPP2_1.SetDefaultTariffRequest;
     const tariffData = request.tariff;
 
-    const newTariff = Tariff.build({
+    const newTariff: TariffDto = {
       tenantId,
       currency: tariffData.currency,
       pricePerKwh: 0,
@@ -90,7 +91,7 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
       reservationFixed: tariffData.reservationFixed ?? undefined,
       minCost: tariffData.minCost ?? undefined,
       maxCost: tariffData.maxCost ?? undefined,
-    });
+    };
 
     const storedTariff = await this._tariffRepository.upsertTariffByTariffId(tenantId, newTariff);
     this._logger.info(`Tariff ${storedTariff.id} stored for station ${ocppConnectionName}`);

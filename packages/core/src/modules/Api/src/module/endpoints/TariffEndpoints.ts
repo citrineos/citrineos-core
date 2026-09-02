@@ -7,11 +7,10 @@ import {
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type TariffDto } from '@citrineos/types';
 import type { TariffQueryString, TenantQueryString } from '@dal/interfaces/index.js';
 import { TariffQuerySchema, TariffSchema, TenantQuerySchema } from '@dal/interfaces/index.js';
 import type { ITariffRepository } from '@dal/interfaces/repositories.js';
-import { Tariff } from '@dal/layers/sequelize/index.js';
 import type { TariffData } from '@dal/layers/sequelize/model/Tariff/Tariffs.js';
 import type { FastifyRequest } from 'fastify';
 
@@ -40,11 +39,8 @@ export class UpsertTariffEndpoint extends AbstractEndpoint<TariffUpsertRoute> {
     this._tariffRepository = tariffRepository;
   }
 
-  async handle(request: FastifyRequest<TariffUpsertRoute>): Promise<Tariff> {
-    return this._tariffRepository.upsertTariff(
-      request.query.tenantId,
-      Tariff.newInstance(request.body),
-    );
+  async handle(request: FastifyRequest<TariffUpsertRoute>): Promise<TariffDto> {
+    return this._tariffRepository.upsertTariff(request.query.tenantId, request.body);
   }
 }
 
@@ -62,7 +58,7 @@ export class GetTariffsEndpoint extends AbstractEndpoint<TariffQueryRoute> {
     this._tariffRepository = tariffRepository;
   }
 
-  async handle(request: FastifyRequest<TariffQueryRoute>): Promise<Tariff[]> {
+  async handle(request: FastifyRequest<TariffQueryRoute>): Promise<TariffDto[]> {
     return this._tariffRepository.readAllByQuerystring(request.query.tenantId, request.query);
   }
 }

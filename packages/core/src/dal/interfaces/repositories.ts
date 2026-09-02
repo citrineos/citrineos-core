@@ -35,6 +35,7 @@ import type {
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
+  TariffDto,
   TenantDto,
   UpdateEnumType,
 } from '@citrineos/types';
@@ -66,7 +67,6 @@ import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNe
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
 import type { MessageInfo } from '../layers/sequelize/model/MessageInfo/MessageInfo.js';
 import type { Reservation } from '../layers/sequelize/model/Reservation.js';
-import type { Tariff } from '../layers/sequelize/model/Tariff/Tariffs.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -457,12 +457,13 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
   ): Promise<MessageInfo>;
 }
 
-export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined>;
-  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
-  upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
+export interface ITariffRepository {
+  findById(tenantId: number, id: number): Promise<TariffDto | undefined>;
+  findByConnectorId(tenantId: number, connectorId: number): Promise<TariffDto | undefined>;
+  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  upsertTariff(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
+  upsertTariffByTariffId(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
 }
 
 export interface ICertificateRepository {

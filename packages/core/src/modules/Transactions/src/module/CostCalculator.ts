@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ITariffRepository } from '@dal/interfaces/repositories.js';
-import { Tariff } from '@dal/layers/sequelize/model/Tariff/index.js';
+import type { TariffDto } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { TransactionService } from './TransactionService.js';
@@ -55,7 +55,7 @@ export class CostCalculator {
       return 0;
     }
     this._logger.debug(`Calculating total cost for connector ${transaction.connectorId}`);
-    const tariff: Tariff | undefined = await this._tariffRepository.findByConnectorId(
+    const tariff: TariffDto | undefined = await this._tariffRepository.findByConnectorId(
       tenantId,
       transaction.connectorId,
     );
