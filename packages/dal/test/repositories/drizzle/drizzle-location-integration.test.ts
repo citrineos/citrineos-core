@@ -13,7 +13,7 @@ import {
   DrizzleLocationRepository,
   Location,
   Tenant,
-} from '@dal/index.js';
+} from '../../../index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
