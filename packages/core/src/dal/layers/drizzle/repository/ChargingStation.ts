@@ -130,7 +130,7 @@ export class DrizzleChargingStationRepository
 
   // ─── IChargingStationRepository methods ──────────────────────────────────
 
-  async readChargingStationByStationId(
+  async readChargingStationByTenantAndOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationDto | undefined> {

@@ -72,7 +72,7 @@ export class SequelizeLocationRepository
     });
   }
 
-  async readChargingStationByStationId(
+  async readChargingStationByTenantAndOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStation | undefined> {

@@ -84,10 +84,11 @@ export class RealTimeAuthorizer implements IAuthorizer {
     let connectorId = undefined;
     let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
-      const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
-        context.tenantId,
-        context.ocppConnectionName,
-      );
+      const chargingStation =
+        await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+          context.tenantId,
+          context.ocppConnectionName,
+        );
 
       // Determine evseId and connectorId
       // Priority: provided evse and connector > provided evse with single connector > station with single evse and single connector

@@ -67,7 +67,7 @@ export class InstallRootCertificateEndpoint extends AbstractEndpoint<InstallRoot
 
     const resolution = await resolveStationProtocol(
       (tenantId: number, ocppConnectionName: string) =>
-        this._chargingStationRepository.readChargingStationByStationId(
+        this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
           tenantId,
           ocppConnectionName,
         ),

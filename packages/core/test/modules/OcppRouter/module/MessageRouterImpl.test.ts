@@ -104,7 +104,7 @@ function buildMockDispatcher(): Mocked<WebhookDispatcher> {
 function buildMockLocationRepository(): Mocked<IChargingStationRepository> {
   return {
     setChargingStationIsOnlineAndOCPPVersion: vi.fn().mockResolvedValue(undefined),
-    readChargingStationByStationId: vi.fn().mockResolvedValue(undefined),
+    readChargingStationByTenantAndOcppConnectionName: vi.fn().mockResolvedValue(undefined),
     updateChargingStationTimestamp: vi.fn().mockResolvedValue(undefined),
   } as unknown as Mocked<IChargingStationRepository>;
 }
@@ -218,17 +218,16 @@ describe('MessageRouterImpl', () => {
 
   describe('deregisterConnection', () => {
     it('should deregister dispatcher, set charger offline, and unsubscribe handler', async () => {
-      chargingStationRepository.readChargingStationByStationId.mockResolvedValue({
+      chargingStationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue({
         protocol: PROTOCOL,
       } as any);
 
       const result = await router.deregisterConnection(TENANT_ID, STATION_ID);
 
       expect(dispatcher.deregister).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
-      expect(chargingStationRepository.readChargingStationByStationId).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-      );
+      expect(
+        chargingStationRepository.readChargingStationByTenantAndOcppConnectionName,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
       expect(
         chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
       ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, PROTOCOL, null);
@@ -237,7 +236,9 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should set protocol to null when charging station is not found', async () => {
-      chargingStationRepository.readChargingStationByStationId.mockResolvedValue(undefined);
+      chargingStationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+        undefined,
+      );
 
       await router.deregisterConnection(TENANT_ID, STATION_ID);
 
@@ -247,7 +248,7 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should set protocol to null when readChargingStation throws', async () => {
-      chargingStationRepository.readChargingStationByStationId.mockRejectedValue(
+      chargingStationRepository.readChargingStationByTenantAndOcppConnectionName.mockRejectedValue(
         new Error('db error'),
       );
 

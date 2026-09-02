@@ -17,13 +17,13 @@ describe('configuration message endpoints', () => {
   const { container } = createTestContainer();
 
   let sendCall: ReturnType<typeof vi.fn>;
-  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
+  let readChargingStationByTenantAndOcppConnectionName: ReturnType<typeof vi.fn>;
   let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
-    readChargingStationByStationId = vi.fn().mockResolvedValue({ id: 1 });
+    readChargingStationByTenantAndOcppConnectionName = vi.fn().mockResolvedValue({ id: 1 });
     readOnlyOneByQuery = vi.fn().mockResolvedValue(undefined);
   });
 
@@ -33,7 +33,7 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, ChangeConfigurationEndpoint, {
         ocppSender: { sendCall },
-        chargingStationRepository: { readChargingStationByStationId },
+        chargingStationRepository: { readChargingStationByTenantAndOcppConnectionName },
       });
 
     it('is declared for OCPP 1.6 only', () => {
@@ -61,7 +61,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('refuses an unknown station without sending', async () => {
-      readChargingStationByStationId.mockResolvedValue(undefined);
+      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(undefined);
 
       const confirmations = await build().handle(
         [STATION],
@@ -78,8 +78,8 @@ describe('configuration message endpoints', () => {
     });
 
     it('reports per-station results when only one station is unknown', async () => {
-      readChargingStationByStationId.mockImplementation(async (_tenantId, name) =>
-        name === STATION ? { id: 1 } : undefined,
+      readChargingStationByTenantAndOcppConnectionName.mockImplementation(
+        async (_tenantId, name) => (name === STATION ? { id: 1 } : undefined),
       );
 
       const confirmations = await build().handle(
@@ -108,7 +108,7 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetConfigurationEndpoint, {
         ocppSender: { sendCall },
-        chargingStationRepository: { readChargingStationByStationId },
+        chargingStationRepository: { readChargingStationByTenantAndOcppConnectionName },
         changeConfigurationRepository: { readOnlyOneByQuery },
       });
 
@@ -187,7 +187,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('refuses an unknown station without sending', async () => {
-      readChargingStationByStationId.mockResolvedValue(undefined);
+      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(undefined);
 
       const confirmations = await handle({ key: ['a'] });
 

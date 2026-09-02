@@ -68,10 +68,11 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (!chargingStation) {
       this._logger.error(
         `Charging station ${ocppConnectionName} not found. Status notification cannot be associated with a charging station.`,
@@ -194,10 +195,11 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (chargingStation) {
       const matchingEvse = chargingStation.evses?.find((evse) =>
         evse.connectors?.find(

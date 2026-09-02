@@ -77,7 +77,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     };
 
     mockChargingStationRepository = {
-      readChargingStationByStationId: vi.fn().mockResolvedValue({
+      readChargingStationByTenantAndOcppConnectionName: vi.fn().mockResolvedValue({
         id: 1,
         ocppConnectionName: 'station-001',
       }),
@@ -429,7 +429,9 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('Error handling', () => {
     it('should return Rejected status when charging station not found', async () => {
-      (mockChargingStationRepository.readChargingStationByStationId as any).mockResolvedValue(null);
+      (
+        mockChargingStationRepository.readChargingStationByTenantAndOcppConnectionName as any
+      ).mockResolvedValue(null);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 

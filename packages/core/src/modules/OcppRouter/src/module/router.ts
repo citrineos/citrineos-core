@@ -181,10 +181,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     let protocol: OCPPVersion | null = null;
     try {
-      const chargingStation = await this._chargingStationRepository.readChargingStationByStationId(
-        tenantId,
-        ocppConnectionName,
-      );
+      const chargingStation =
+        await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+          tenantId,
+          ocppConnectionName,
+        );
       if (chargingStation?.protocol) {
         protocol = chargingStation.protocol as OCPPVersion;
       }

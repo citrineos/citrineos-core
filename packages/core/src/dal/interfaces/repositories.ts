@@ -242,7 +242,7 @@ export interface ILocationRepository {
 }
 
 export interface IChargingStationRepository {
-  readChargingStationByStationId: (
+  readChargingStationByTenantAndOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStationDto | undefined>;

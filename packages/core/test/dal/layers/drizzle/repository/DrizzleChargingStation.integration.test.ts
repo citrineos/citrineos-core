@@ -22,7 +22,7 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
 /**
- * readChargingStationByStationId is the contract-critical method here: the Sequelize
+ * readChargingStationByTenantAndOcppConnectionName is the contract-critical method here: the Sequelize
  * layer eager-loads two levels (`include: [{ model: Evse, include: [Connector] }]`) and
  * StatusNotificationService walks station.evses[].connectors[] to match an incoming
  * status to a connector. A flat Drizzle row carries no relations, so the nesting is
@@ -154,9 +154,12 @@ describe('DrizzleChargingStationRepository', () => {
     await aConnector(stationId, first.evseId, 2, second.evseTypeConnectorId);
   });
 
-  describe('readChargingStationByStationId', () => {
+  describe('readChargingStationByTenantAndOcppConnectionName', () => {
     it('maps the scalar columns', async () => {
-      const found = await aRepository().readChargingStationByStationId(DEFAULT_TENANT_ID, STATION);
+      const found = await aRepository().readChargingStationByTenantAndOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
 
       expect(found).toBeDefined();
       expect(found!.ocppConnectionName).toBe(STATION);
@@ -166,7 +169,10 @@ describe('DrizzleChargingStationRepository', () => {
     });
 
     it('nests connectors under their own evse, the shape callers walk', async () => {
-      const found = await aRepository().readChargingStationByStationId(DEFAULT_TENANT_ID, STATION);
+      const found = await aRepository().readChargingStationByTenantAndOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
 
       expect(found!.evses).toHaveLength(2);
 
@@ -182,14 +188,20 @@ describe('DrizzleChargingStationRepository', () => {
       await Connector.destroy({ where: {}, truncate: true, cascade: true });
       await Evse.destroy({ where: {}, truncate: true, cascade: true });
 
-      const found = await aRepository().readChargingStationByStationId(DEFAULT_TENANT_ID, STATION);
+      const found = await aRepository().readChargingStationByTenantAndOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
 
       expect(found).toBeDefined();
       expect(found!.evses).toEqual([]);
     });
 
     it('does not read a station belonging to another tenant', async () => {
-      const found = await aRepository().readChargingStationByStationId(OTHER_TENANT_ID, STATION);
+      const found = await aRepository().readChargingStationByTenantAndOcppConnectionName(
+        OTHER_TENANT_ID,
+        STATION,
+      );
 
       expect(found).toBeUndefined();
     });
@@ -313,7 +325,10 @@ describe('DrizzleChargingStationRepository', () => {
 
       await aRepository().updateChargingStationTimestamp(DEFAULT_TENANT_ID, STATION, when);
 
-      const found = await aRepository().readChargingStationByStationId(DEFAULT_TENANT_ID, STATION);
+      const found = await aRepository().readChargingStationByTenantAndOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
       expect(found!.latestOcppMessageTimestamp).toBe(when);
     });
   });
