@@ -127,7 +127,6 @@ CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm
 automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
 
-<<<<<<< HEAD
 ### Table Partitioning
 
 `OCPPMessages` is range partitioned on `createdAt`, one partition per ISO week, keeping a rolling retention window.
@@ -155,10 +154,7 @@ partition's lower bound will not meet the previous partition's upper bound.
 pnpm run db:partitions
 ```
 
-## Runtime Configuration
-=======
 ## Configuration
->>>>>>> 486f1e999a7edd6f09db23e09fce3d5294123f16
 
 Configuration comes from environment variables, validated on startup against the Zod schema in
 [`packages/types/src/config/types.ts`](../../packages/types/src/config/types.ts). That schema is the authoritative
