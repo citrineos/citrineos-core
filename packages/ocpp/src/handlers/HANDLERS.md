@@ -18,9 +18,9 @@ look like this:
       │  │  ├─ heartbeat-request-ocpp-2-handler.ts
       ├─ responses/
       │  ├─ 1.6/
-      │  │  ├─ HeartbeatResponseOcpp16handler.ts
+      │  │  ├─ heartbeat-response-ocpp-16-handler.ts
       │  ├─ 2/
-      │  │  ├─ HeartbeatResponseOcpp2handler.ts
+      │  │  ├─ heartbeat-response-ocpp-2-handler.ts
 
 All handlers are exported in `handlers/index.ts`.
 
@@ -29,7 +29,7 @@ All handlers are exported in `handlers/index.ts`.
 To register a handler to a particular module:
 
 1. Create your handler class under `requests/<version>/` or `responses/<version>/`, named
-   `<Action><Request|Response>Ocpp<version>handler.ts`.
+   `<action>-<request|response>-ocpp-<version>-handler.ts`.
 2. Extend `AbstractHandler`.
 3. Decorate your handler with either `@AsRequestHandler` or `@AsResponseHandler` (based on whether the handler processes
    a request or response).
@@ -48,9 +48,8 @@ subscribe to that action.
 ## Excluding an action a module has a handler for
 
 To keep a handler in the codebase but stop a deployment from receiving its action, list the action in
-that module's `excludedRequests` or `excludedResponses` in config, e.g.
-`config.modules.certificates.excludedRequests`. The handler is still constructed; the module simply
-does not subscribe, so nothing is routed to it.
+that module's `excludedActions` list, which is referenced in that module's constructor. The handler is still 
+constructed; the module simply does not subscribe, so nothing is routed to it.
 
 ## How do `@AsRequestHandler` and `@AsResponseHandler` work?
 
