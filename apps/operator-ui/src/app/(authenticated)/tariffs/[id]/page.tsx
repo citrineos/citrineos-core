@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { TariffDetail } from '@lib/client/pages/tariffs/detail/tariff.detail';
+import { TariffDetail } from '@lib/client/pages/tariffs/detail/tariff-detail';
 
 type PageProps = {
   params: Promise<{ id: string }>;

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { useGetShowUrl } from '@lib/client/hooks/getShowUrl';
+import { useGetShowUrl } from '@lib/client/hooks/get-show-url';
 import type { RowActionProps } from '.';
 import { RowAction } from '.';
 

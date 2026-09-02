@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 import { waitForEverestOffline } from '../../fixtures/everest';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });

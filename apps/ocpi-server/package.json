@@ -41,7 +41,8 @@
   },
   "dependencies": {
     "@citrineos/base": "workspace:*",
-    "@citrineos/core": "workspace:*",
+    "@citrineos/ocpp": "workspace:*",
+    "@citrineos/dal": "workspace:*",
     "@citrineos/ocpi-base": "workspace:*",
     "@citrineos/types": "workspace:*",
     "@directus/extensions": "~1.0.2",
