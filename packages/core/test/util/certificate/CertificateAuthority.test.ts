@@ -291,5 +291,43 @@ describe('CertificateAuthorityService', () => {
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
       expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
     });
+
+    // Regression guard. KJUR.asn1.ocsp.CertID does not validate in its constructor, so a
+    // request built with the wrong param names is only rejected when it gets encoded --
+    // which happens inside sendOCSPRequest, and that is mocked out above. The assertion
+    // `expect.any(KJUR.asn1.ocsp.Request)` therefore passes for a request that can never
+    // be put on the wire. Encoding it here is what actually pins the shape down:
+    //   - jsrsasign >= 11 expects issname / isskey / sbjsn, not namehash / keyhash / serial
+    //     (otherwise: "required param members not defined")
+    //   - the digest is resolved by OID name, which is lower case, while OCPP's
+    //     HashAlgorithmEnumType is upper case
+    //     (otherwise: "Name of ObjectIdentifier not defined: SHA256")
+    it.each([
+      OCPP2_0_1.HashAlgorithmEnumType.SHA256,
+      OCPP2_0_1.HashAlgorithmEnumType.SHA384,
+      OCPP2_0_1.HashAlgorithmEnumType.SHA512,
+    ])('builds an OCSP request that can be DER-encoded (%s)', async (hashAlgorithm) => {
+      const mockOCSPResponse = faker.lorem.word();
+      let encoded: string | undefined;
+      mockCertUtil.sendOCSPRequest.mockImplementation(async (ocspRequest) => {
+        encoded = ocspRequest.getEncodedHex();
+        return mockOCSPResponse;
+      });
+
+      // Hash lengths are not checked by the encoder, so SHA-256 sized values are fine
+      // for every algorithm here; the point is the algorithm *name*.
+      const actualResult = await certificateAuthorityService.validateCertificateHashData([
+        {
+          hashAlgorithm,
+          issuerNameHash: '0fd741fe2020f72842fa212a4dc59f00d8d9e04a48d6eb01ea68e63978ac0c4a',
+          issuerKeyHash: '12fe0b46efda4f18ef12ab80c467ac1ba3b70f775dc2503414e899521f94b7e9',
+          serialNumber: '3044',
+          responderURL: faker.internet.url(),
+        } as OCPP2_0_1.OCSPRequestDataType,
+      ]);
+
+      expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
+      expect(encoded).toMatch(/^30[0-9a-f]+$/); // DER SEQUENCE
+    });
   });
 });
