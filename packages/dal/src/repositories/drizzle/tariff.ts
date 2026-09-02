@@ -66,7 +66,6 @@ export class DrizzleTariffRepository
     return toTariffDto(row);
   }
 
-
   private toTariffValues(tariff: TariffDto, tenantId: number) {
     return {
       currency: tariff.currency,
