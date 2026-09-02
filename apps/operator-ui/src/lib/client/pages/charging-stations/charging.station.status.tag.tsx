@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { ChargingStationStatusEnum } from '@citrineos/types';
 import GenericTag from '@lib/client/components/tag';
 import {
-  ChargingStationStatus,
   getChargingStationStatus,
   type ChargingStationStatusCountsDto,
 } from '@lib/cls/charging.station.dto';
@@ -17,13 +17,14 @@ export const ChargingStationStatusTag = ({ station }: ChargingStationStatusTagPr
   return (
     <GenericTag
       colorMap={{
-        [ChargingStationStatus.AVAILABLE]: 'green',
-        [ChargingStationStatus.CHARGING]: 'blue',
-        [ChargingStationStatus.CHARGING_SUSPENDED]: 'violet',
-        [ChargingStationStatus.UNAVAILABLE]: 'gray',
-        [ChargingStationStatus.FAULTED]: 'red',
+        [ChargingStationStatusEnum.AVAILABLE]: 'green',
+        [ChargingStationStatusEnum.CHARGING]: 'blue',
+        [ChargingStationStatusEnum.CHARGING_SUSPENDED]: 'violet',
+        [ChargingStationStatusEnum.RESERVED]: 'cyan',
+        [ChargingStationStatusEnum.UNAVAILABLE]: 'gray',
+        [ChargingStationStatusEnum.FAULTED]: 'red',
       }}
-      enumType={ChargingStationStatus}
+      enumType={ChargingStationStatusEnum}
       enumValue={status}
     />
   );

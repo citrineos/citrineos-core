@@ -11,6 +11,7 @@ import {
 import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import * as OCPP1_6_Mapper from '@dal/layers/sequelize/mapper/1.6/index.js';
+import * as OCPP2_0_1_Mapper from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { Component, EvseType, Variable } from '@dal/layers/sequelize/model/DeviceModel/index.js';
 import { Connector, StatusNotification } from '@dal/layers/sequelize/model/Location/index.js';
 import type { ILogObj } from 'tslog';
@@ -71,6 +72,9 @@ export class StatusNotificationService {
       tenantId,
       ocppConnectionName: ocppConnectionName,
       ...statusNotificationRequest,
+      connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+        statusNotificationRequest.connectorStatus,
+      ),
     });
     await this._locationRepository.addStatusNotificationToChargingStation(
       tenantId,
@@ -271,7 +275,10 @@ export class StatusNotificationService {
         tenantId,
         ...statusNotificationRequest,
         ocppConnectionName: ocppConnectionName,
-        connectorStatus: statusNotificationRequest.status,
+        connectorStatus:
+          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+            statusNotificationRequest.status,
+          ),
       };
       if (matchingEvse) {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
