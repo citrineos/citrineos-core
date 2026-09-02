@@ -72,6 +72,9 @@ export class StatusNotificationService {
       tenantId,
       ocppConnectionName: ocppConnectionName,
       ...statusNotificationRequest,
+      connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+        statusNotificationRequest.connectorStatus,
+      ),
     });
 
     let matchingEvse = chargingStation.evses?.find(
@@ -260,7 +263,10 @@ export class StatusNotificationService {
         tenantId,
         ...statusNotificationRequest,
         ocppConnectionName: ocppConnectionName,
-        connectorStatus: statusNotificationRequest.status,
+        connectorStatus:
+          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+            statusNotificationRequest.status,
+          ),
       };
       if (matchingEvse) {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
