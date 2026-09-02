@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 # CitrineOS Server (`@citrineos/ocpp-server`)
 
 This is the OCPP server application for CitrineOS — the runnable entrypoint that wires together
-[`@citrineos/base`](../../packages/base) and [`@citrineos/core`](../../packages/core) into a deployable
+[`@citrineos/base`](../../packages/base) and [`@citrineos/ocpp`](../../packages/ocpp) into a deployable
 service. It hosts the WebSocket endpoints that charging stations connect to, the OCPP message router, the
 HTTP/REST Data and Message APIs, and the Sequelize database migrations.
 
@@ -195,7 +195,7 @@ Connection pooling and TLS are optional blocks: `CITRINEOS_DATABASE_POOL_MAX`, `
 `..._POOL_IDLE`, and `CITRINEOS_DATABASE_SSL_REQUIRE`, `..._SSL_REJECTUNAUTHORIZED`, `..._SSL_CA`.
 
 The migration runner reads the same variables, through
-[`src/config/sequelize.bridge.config.ts`](./src/config/sequelize.bridge.config.ts) — so `pnpm run db:migrate` and the
+[`src/config/sequelize-bridge.config.ts`](./src/config/sequelize-bridge.config.ts) — so `pnpm run db:migrate` and the
 server always agree on which database they are talking to.
 
 ### Message broker and cache
@@ -347,7 +347,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-The OCPP message validator is created in `apps/ocpp-server/src/citrineOSServer.ts`. Register a DataTransfer schema by
+The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
 compiling it onto that validator's AJV and passing it in:
 
 ```ts

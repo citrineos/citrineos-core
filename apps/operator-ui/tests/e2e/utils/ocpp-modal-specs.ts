@@ -6,7 +6,7 @@
 // dispatchable (each has a UI component, a ModalComponentType, a registry
 // entry, and is reachable via a command-bar button or the OtherCommandsModal
 // dispatcher). The parametric harness
-// (tests/e2e/specs/charging-stations/commands.parametric.spec.ts) smoke-tests
+// (tests/e2e/specs/charging-stations/commands-parametric.spec.ts) smoke-tests
 // every entry.
 //
 // Each entry maps a modal to:

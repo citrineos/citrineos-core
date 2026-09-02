@@ -186,12 +186,15 @@ importers:
       '@citrineos/base':
         specifier: workspace:*
         version: link:../../packages/base
-      '@citrineos/core':
+      '@citrineos/dal':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/dal
       '@citrineos/ocpi-base':
         specifier: workspace:*
         version: link:../../packages/ocpi-base
+      '@citrineos/ocpp':
+        specifier: workspace:*
+        version: link:../../packages/ocpp
       '@citrineos/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -272,9 +275,12 @@ importers:
       '@citrineos/base':
         specifier: workspace:*
         version: link:../../packages/base
-      '@citrineos/core':
+      '@citrineos/dal':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/dal
+      '@citrineos/ocpp':
+        specifier: workspace:*
+        version: link:../../packages/ocpp
       '@citrineos/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -324,18 +330,27 @@ importers:
       nodemon:
         specifier: 3.1.14
         version: 3.1.14
+      pg:
+        specifier: 8.11.3
+        version: 8.11.3
       sequelize:
         specifier: ^6.37.0
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 2.1.6
         version: 2.1.6(@types/node@25.9.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+      testcontainers:
+        specifier: ^11.0.0
+        version: 11.14.0
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.16.1)(@types/node@25.9.5)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.13)(yaml@2.9.0)
     optionalDependencies:
       bufferutil:
         specifier: 4.0.8
@@ -739,119 +754,38 @@ importers:
         specifier: 3.2.7
         version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.13)(yaml@2.9.0)
 
-  packages/core:
+  packages/dal:
     dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.0.0
-        version: 3.1101.0
       '@citrineos/base':
         specifier: workspace:*
         version: link:../base
       '@citrineos/types':
         specifier: workspace:*
         version: link:../types
-      '@fastify/auth':
-        specifier: ^5.0.0
-        version: 5.1.0
-      '@fastify/swagger':
-        specifier: ^9.4.0
-        version: 9.8.1
-      '@fastify/swagger-ui':
-        specifier: ^5.2.0
-        version: 5.2.6
-      '@google-cloud/storage':
-        specifier: ^7.0.0
-        version: 7.22.0(encoding@0.1.13)
-      '@opentelemetry/api':
-        specifier: 1.9.1
-        version: 1.9.1
-      '@peculiar/webcrypto':
-        specifier: ^1.4.6
-        version: 1.7.1
-      '@types/uuid':
-        specifier: 9.0.8
-        version: 9.0.8
-      acme-client:
-        specifier: ^5.3.0
-        version: 5.4.0
-      amqplib:
-        specifier: ^0.10.3
-        version: 0.10.9
-      asn1js:
-        specifier: ^3.0.0
-        version: 3.0.10
-      class-transformer:
-        specifier: ^0.5.1
-        version: 0.5.1
       drizzle-orm:
         specifier: ^0.45.0
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
-      fastify:
-        specifier: 'catalog:'
-        version: 5.8.5
-      fastify-plugin:
-        specifier: ^5.0.0
-        version: 5.1.0
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.3
-      jsrsasign:
-        specifier: ^11.0.0
-        version: 11.1.5
-      jwks-rsa:
-        specifier: ^4.0.0
-        version: 4.1.0
-      moment:
-        specifier: ^2.29.4
-        version: 2.30.1
-      node-cron:
-        specifier: ^3.0.3
-        version: 3.0.3
-      node-forge:
-        specifier: ^1.3.0
-        version: 1.4.0
-      nodemailer:
-        specifier: ^9.0.0
-        version: 9.1.0
-      openapi-types:
-        specifier: ^12.0.0
-        version: 12.1.3
       pg:
         specifier: 8.11.3
         version: 8.11.3
       pg-hstore:
         specifier: 2.3.4
         version: 2.3.4
-      pkijs:
-        specifier: ^3.0.0
-        version: 3.4.0
-      pvutils:
-        specifier: ^1.1.0
-        version: 1.2.0
-      redis:
-        specifier: ^4.6.6
-        version: 4.7.1
       sequelize:
         specifier: ^6.37.0
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 2.1.6
         version: 2.1.6(@types/node@25.9.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
-      ssh2-sftp-client:
-        specifier: ^10.0.3
-        version: 10.0.3
       tslog:
         specifier: ^4.9.2
         version: 4.9.2
       uuid:
         specifier: ^11.0.0
         version: 11.1.1
-      ws:
-        specifier: ^8.17.0
-        version: 8.21.3(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       zod:
         specifier: 4.1.12
         version: 4.1.12
@@ -862,21 +796,6 @@ importers:
       '@faker-js/faker':
         specifier: ^8.0.0
         version: 8.4.1
-      '@types/amqplib':
-        specifier: 0.10.8
-        version: 0.10.8
-      '@types/jsonwebtoken':
-        specifier: 9.0.10
-        version: 9.0.10
-      '@types/node-cron':
-        specifier: 3.0.11
-        version: 3.0.11
-      '@types/nodemailer':
-        specifier: 6.4.24
-        version: 6.4.24
-      '@types/ws':
-        specifier: ^8.5.0
-        version: 8.18.1
       awilix:
         specifier: ^13.0.3
         version: 13.0.3
@@ -910,9 +829,12 @@ importers:
       '@citrineos/base':
         specifier: workspace:*
         version: link:../base
-      '@citrineos/core':
+      '@citrineos/dal':
         specifier: workspace:*
-        version: link:../core
+        version: link:../dal
+      '@citrineos/ocpp':
+        specifier: workspace:*
+        version: link:../ocpp
       '@citrineos/types':
         specifier: workspace:*
         version: link:../types
@@ -1055,6 +977,160 @@ importers:
       typescript:
         specifier: ^6.0.0
         version: 6.0.3
+
+  packages/ocpp:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.0.0
+        version: 3.1101.0
+      '@citrineos/base':
+        specifier: workspace:*
+        version: link:../base
+      '@citrineos/dal':
+        specifier: workspace:*
+        version: link:../dal
+      '@citrineos/types':
+        specifier: workspace:*
+        version: link:../types
+      '@fastify/auth':
+        specifier: ^5.0.0
+        version: 5.1.0
+      '@fastify/swagger':
+        specifier: ^9.4.0
+        version: 9.8.1
+      '@fastify/swagger-ui':
+        specifier: ^5.2.0
+        version: 5.2.6
+      '@google-cloud/storage':
+        specifier: ^7.0.0
+        version: 7.22.0(encoding@0.1.13)
+      '@opentelemetry/api':
+        specifier: 1.9.1
+        version: 1.9.1
+      '@peculiar/webcrypto':
+        specifier: ^1.4.6
+        version: 1.7.1
+      '@types/uuid':
+        specifier: 9.0.8
+        version: 9.0.8
+      acme-client:
+        specifier: ^5.3.0
+        version: 5.4.0
+      amqplib:
+        specifier: ^0.10.3
+        version: 0.10.9
+      asn1js:
+        specifier: ^3.0.0
+        version: 3.0.10
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      fastify:
+        specifier: 'catalog:'
+        version: 5.8.5
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.3
+      jsrsasign:
+        specifier: ^11.0.0
+        version: 11.1.5
+      jwks-rsa:
+        specifier: ^4.0.0
+        version: 4.1.0
+      moment:
+        specifier: ^2.29.4
+        version: 2.30.1
+      node-cron:
+        specifier: ^3.0.3
+        version: 3.0.3
+      node-forge:
+        specifier: ^1.3.0
+        version: 1.4.0
+      nodemailer:
+        specifier: ^9.0.0
+        version: 9.1.0
+      openapi-types:
+        specifier: ^12.0.0
+        version: 12.1.3
+      pkijs:
+        specifier: ^3.0.0
+        version: 3.4.0
+      pvutils:
+        specifier: ^1.1.0
+        version: 1.2.0
+      redis:
+        specifier: ^4.6.6
+        version: 4.7.1
+      sequelize:
+        specifier: ^6.37.0
+        version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
+      sequelize-typescript:
+        specifier: 2.1.6
+        version: 2.1.6(@types/node@25.9.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+      ssh2-sftp-client:
+        specifier: ^10.0.3
+        version: 10.0.3
+      tslog:
+        specifier: ^4.9.2
+        version: 4.9.2
+      uuid:
+        specifier: ^11.0.0
+        version: 11.1.1
+      ws:
+        specifier: ^8.17.0
+        version: 8.21.3(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.16.0
+      '@faker-js/faker':
+        specifier: ^8.0.0
+        version: 8.4.1
+      '@types/amqplib':
+        specifier: 0.10.8
+        version: 0.10.8
+      '@types/jsonwebtoken':
+        specifier: 9.0.10
+        version: 9.0.10
+      '@types/node-cron':
+        specifier: 3.0.11
+        version: 3.0.11
+      '@types/nodemailer':
+        specifier: 6.4.24
+        version: 6.4.24
+      '@types/ws':
+        specifier: ^8.5.0
+        version: 8.18.1
+      awilix:
+        specifier: ^13.0.3
+        version: 13.0.3
+      eslint:
+        specifier: 'catalog:'
+        version: 9.16.0(jiti@2.7.0)
+      eslint-config-prettier:
+        specifier: 'catalog:'
+        version: 9.1.2(eslint@9.16.0(jiti@2.7.0))
+      eslint-plugin-prettier:
+        specifier: 'catalog:'
+        version: 5.2.3(eslint-config-prettier@9.1.2(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))(prettier@3.6.2)
+      testcontainers:
+        specifier: ^11.0.0
+        version: 11.14.0
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.13)(yaml@2.9.0)
 
   packages/types:
     dependencies:
@@ -13564,7 +13640,7 @@ snapshots:
 
   '@types/http-proxy@1.17.17':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
 
   '@types/js-cookie@3.0.6': {}
 
@@ -13675,7 +13751,7 @@ snapshots:
   '@types/request@2.48.13':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.6
 
@@ -13690,7 +13766,7 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 25.9.5
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
@@ -15726,7 +15802,7 @@ snapshots:
       '@typescript-eslint/parser': 8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.16.0(jiti@2.7.0))
@@ -15750,7 +15826,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3(supports-color@5.5.0)
@@ -15765,14 +15841,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)):
+  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7(supports-color@5.5.0)
     optionalDependencies:
       '@typescript-eslint/parser': 8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -15787,7 +15863,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.69.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
       hasown: 2.0.4
       is-core-module: 2.16.2
       is-glob: 4.0.3

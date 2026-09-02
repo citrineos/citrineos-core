@@ -15,7 +15,10 @@
       "path": "../../packages/base"
     },
     {
-      "path": "../../packages/core"
+      "path": "../../packages/dal"
+    },
+    {
+      "path": "../../packages/ocpp"
     }
   ]
 }

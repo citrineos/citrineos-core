@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "composite": true,
+    "paths": {
+      "@dal/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*", "**/*.json"],
+  "exclude": ["**/dist/**", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
+  "references": [
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../base"
+    }
+  ]
+}
