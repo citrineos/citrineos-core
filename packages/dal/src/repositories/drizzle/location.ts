@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ILocationRepository } from '@/dal/index.js';
+import type { ILocationRepository } from '@dal/repositories/repositories.js';
 import type { LocationDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
 import {
