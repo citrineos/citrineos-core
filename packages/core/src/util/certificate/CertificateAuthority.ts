@@ -228,11 +228,16 @@ export class CertificateAuthorityService {
     ocspRequestData: OCPP2_1.OCSPRequestDataType[],
   ): Promise<OCPP2_1.AuthorizeCertificateStatusEnumType> {
     for (const reqData of ocspRequestData) {
+      // jsrsasign >= 11 renamed the CertID params: namehash/keyhash/serial became
+      // issname/isskey/sbjsn. The constructor does not validate, so passing the old
+      // names only fails later in getEncodedHex() with "required param members not
+      // defined". The algorithm is resolved by OID name, which is lower case, while
+      // OCPP's HashAlgorithmEnumType is upper case.
       const ocspRequest = new Request({
-        alg: reqData.hashAlgorithm,
-        keyhash: reqData.issuerKeyHash,
-        namehash: reqData.issuerNameHash,
-        serial: reqData.serialNumber,
+        alg: reqData.hashAlgorithm.toLowerCase(),
+        isskey: reqData.issuerKeyHash,
+        issname: reqData.issuerNameHash,
+        sbjsn: reqData.serialNumber,
       });
       this._logger.debug(`OCSP request: ${JSON.stringify(ocspRequest)}`);
 
