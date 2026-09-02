@@ -119,11 +119,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._chargingStationRepository = chargingStationRepository;
   }
 
-  async doesChargingStationExistByStationId(
+  async doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean> {
-    return await this._chargingStationRepository.doesChargingStationExistByStationId(
+    return await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
       tenantId,
       ocppConnectionName,
     );
@@ -182,7 +182,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let protocol: OCPPVersion | null = null;
     try {
       const chargingStation =
-        await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+        await this._chargingStationRepository.readChargingStationByOcppConnectionName(
           tenantId,
           ocppConnectionName,
         );

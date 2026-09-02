@@ -73,7 +73,7 @@ function makeCache() {
 
 function makeLocationRepository() {
   return {
-    doesChargingStationExistByStationId: vi.fn().mockResolvedValue(true),
+    doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
     createOrUpdateChargingStation: vi.fn().mockResolvedValue(undefined),
   };
 }

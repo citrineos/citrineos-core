@@ -94,7 +94,7 @@ describe('StatusNotificationService', () => {
 
     locationRepository = {
       addStatusNotificationToChargingStation: vi.fn(),
-      readChargingStationByTenantAndOcppConnectionName: vi.fn(),
+      readChargingStationByOcppConnectionName: vi.fn(),
       createOrUpdateConnector: vi.fn(),
       createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
@@ -128,7 +128,7 @@ describe('StatusNotificationService', () => {
   });
 
   it('should save StatusNotification for Charging Station because Charging Station exists', async () => {
-    locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+    locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
       aChargingStation(),
     );
     componentRepository.readAllByQuery.mockResolvedValue([]);
@@ -146,9 +146,7 @@ describe('StatusNotificationService', () => {
   });
 
   it('should not save StatusNotification for Charging Station because Charging Station does not exist', async () => {
-    locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
-      undefined,
-    );
+    locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
     await statusNotificationService.processStatusNotification(
       DEFAULT_TENANT_ID,
@@ -160,7 +158,7 @@ describe('StatusNotificationService', () => {
   });
 
   it('should save Component and Variable ReportData because Station and Component and Variable exist', async () => {
-    locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+    locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
       aChargingStation(),
     );
     vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
@@ -271,7 +269,7 @@ describe('StatusNotificationService', () => {
       });
 
     beforeEach(() => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aTwoEvseChargingStation(),
       );
       componentRepository.readAllByQuery.mockResolvedValue([]);
@@ -337,7 +335,7 @@ describe('StatusNotificationService', () => {
     });
 
     it('should commission an EVSE and synthesize the connector when neither exists and allowUnknownChargingStations is true', async () => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [];
         }),
@@ -377,7 +375,7 @@ describe('StatusNotificationService', () => {
     });
 
     it('should reuse the existing EVSE and only synthesize the connector when the EVSE is known', async () => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),
@@ -408,7 +406,7 @@ describe('StatusNotificationService', () => {
       // The 2.0.1 path logs and returns rather than throwing: the StatusNotification
       // is already persisted as an audit record before the check, but nothing is
       // commissioned and the device model is left untouched.
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [];
         }),
@@ -440,7 +438,7 @@ describe('StatusNotificationService', () => {
 
   describe('Test process OCPP 1.6 StatusNotification', () => {
     it('should save StatusNotification and connector when Charging Station exists with a matching evse', async () => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),
@@ -478,7 +476,7 @@ describe('StatusNotificationService', () => {
       // Regression for citrineos/citrineos#160 — Connector model declares evseId
       // as allowNull:false, so the upsert must include the FK or it crashes with
       // "notNull Violation: Connector.evseId cannot be null".
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),
@@ -501,7 +499,7 @@ describe('StatusNotificationService', () => {
 
     it('should stamp evseTypeConnectorId on the Connector record when matching evse exists', async () => {
       // Connector model also requires evseTypeConnectorId (FK to EvseType, allowNull:false).
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),
@@ -527,7 +525,7 @@ describe('StatusNotificationService', () => {
       // but no EVSE/Connector records exist. With ad-hoc mode enabled, the handler should
       // commission a new evse on demand (1 connector → 1 evse for OCPP 1.6) instead of
       // crashing with an FK violation.
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [];
         }),
@@ -564,7 +562,7 @@ describe('StatusNotificationService', () => {
     });
 
     it('should throw and not upsert connector when allowUnknownChargingStations is false and no connector exists', async () => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [];
         }),
@@ -594,7 +592,7 @@ describe('StatusNotificationService', () => {
 
   describe('Test process OCPP 1.6 StatusNotification sets evseId in StatusNotification record', () => {
     it('should set evseId when matching evse is found for the connector', async () => {
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),
@@ -621,7 +619,7 @@ describe('StatusNotificationService', () => {
     it('should not set evseId on StatusNotification record when no matching evse is found, then auto-commission for the Connector record', async () => {
       // The StatusNotification record itself is saved without evseId (audit trail),
       // and the Connector record gets FKs from a freshly-commissioned evse.
-      locationRepository.readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [aEvse()];
         }),

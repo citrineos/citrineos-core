@@ -17,7 +17,7 @@ import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
-    readChargingStationByTenantAndOcppConnectionName: vi.fn().mockResolvedValue(chargingStation),
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(chargingStation),
   } as unknown as Mocked<IChargingStationRepository>;
 }
 

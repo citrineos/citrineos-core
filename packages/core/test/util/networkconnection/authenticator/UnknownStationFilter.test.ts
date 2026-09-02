@@ -11,11 +11,11 @@ import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 describe('UnknownStationFilter', () => {
   const { container } = createTestContainer();
-  const locationRepository = { doesChargingStationExistByStationId: vi.fn() };
+  const locationRepository = { doesChargingStationExistByOcppConnectionName: vi.fn() };
   const filter = getTestInstance(container, UnknownStationFilter, { locationRepository });
 
   afterEach(() => {
-    locationRepository.doesChargingStationExistByStationId.mockReset();
+    locationRepository.doesChargingStationExistByOcppConnectionName.mockReset();
   });
 
   it.each([true, false])(
@@ -46,7 +46,7 @@ describe('UnknownStationFilter', () => {
       ),
     ).rejects.toThrow(`Unknown identifier ${ocppConnectionName}`);
 
-    expect(locationRepository.doesChargingStationExistByStationId).toHaveBeenCalledWith(
+    expect(locationRepository.doesChargingStationExistByOcppConnectionName).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       ocppConnectionName,
     );
@@ -63,16 +63,16 @@ describe('UnknownStationFilter', () => {
       anAuthenticationOptions({ allowUnknownChargingStations: true }),
     );
 
-    expect(locationRepository.doesChargingStationExistByStationId).not.toHaveBeenCalledWith(
-      ocppConnectionName,
-    );
+    expect(
+      locationRepository.doesChargingStationExistByOcppConnectionName,
+    ).not.toHaveBeenCalledWith(ocppConnectionName);
   });
 
   function givenStationExists() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(true);
+    locationRepository.doesChargingStationExistByOcppConnectionName.mockResolvedValue(true);
   }
 
   function givenStationDoesNotExist() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(false);
+    locationRepository.doesChargingStationExistByOcppConnectionName.mockResolvedValue(false);
   }
 });

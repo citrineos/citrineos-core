@@ -9,7 +9,7 @@ import type { AuthenticationOptions } from '@citrineos/base';
 import { UpgradeUnknownError } from './errors/UnknownError.js';
 
 interface IStationExistenceChecker {
-  doesChargingStationExistByStationId(
+  doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean>;
@@ -42,10 +42,11 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     identifier: string,
     _request: IncomingMessage,
   ): Promise<void> {
-    const isStationKnown = await this._locationRepository.doesChargingStationExistByStationId(
-      tenantId,
-      identifier,
-    );
+    const isStationKnown =
+      await this._locationRepository.doesChargingStationExistByOcppConnectionName(
+        tenantId,
+        identifier,
+      );
     if (!isStationKnown) {
       throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }

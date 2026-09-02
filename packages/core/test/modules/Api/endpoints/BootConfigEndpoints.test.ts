@@ -15,16 +15,16 @@ describe('PutBootConfigEndpoint', () => {
   const { container } = createTestContainer();
 
   let createOrUpdateByKey: ReturnType<typeof vi.fn>;
-  let doesChargingStationExistByStationId: ReturnType<typeof vi.fn>;
+  let doesChargingStationExistByOcppConnectionName: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   async function mount(stationExists: boolean) {
     createOrUpdateByKey = vi.fn().mockResolvedValue({ id: 1, stationId: 7, status: 'Accepted' });
-    doesChargingStationExistByStationId = vi.fn().mockResolvedValue(stationExists);
+    doesChargingStationExistByOcppConnectionName = vi.fn().mockResolvedValue(stationExists);
 
     const endpoint = getTestInstance(container, PutBootConfigEndpoint, {
       bootRepository: { createOrUpdateByKey },
-      chargingStationRepository: { doesChargingStationExistByStationId },
+      chargingStationRepository: { doesChargingStationExistByOcppConnectionName },
     });
     mounted = await mountEndpoint(endpoint, PutBootConfigEndpoint.route);
   }
@@ -46,7 +46,10 @@ describe('PutBootConfigEndpoint', () => {
     const response = await put();
 
     expect(response.statusCode).toBe(200);
-    expect(doesChargingStationExistByStationId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION);
+    expect(doesChargingStationExistByOcppConnectionName).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      STATION,
+    );
     expect(createOrUpdateByKey).toHaveBeenCalledTimes(1);
     expect(createOrUpdateByKey.mock.calls[0][0]).toBe(DEFAULT_TENANT_ID);
     expect(createOrUpdateByKey.mock.calls[0][2]).toBe(STATION);

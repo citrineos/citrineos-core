@@ -69,7 +69,7 @@ export class StatusNotificationService {
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
     const chargingStation =
-      await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
         tenantId,
         ocppConnectionName,
       );
@@ -196,7 +196,7 @@ export class StatusNotificationService {
     statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
   ) {
     const chargingStation =
-      await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
         tenantId,
         ocppConnectionName,
       );

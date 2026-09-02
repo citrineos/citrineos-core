@@ -45,7 +45,7 @@ export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
     return Promise.all(
       identifiers.map(async (ocppConnectionName) => {
         const chargingStation =
-          await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+          await this._chargingStationRepository.readChargingStationByOcppConnectionName(
             tenantId,
             ocppConnectionName,
           );

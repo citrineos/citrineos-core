@@ -107,7 +107,7 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
 
     const resolution = await resolveStationProtocol(
       (tenantId: number, ocppConnectionName: string) =>
-        this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+        this._chargingStationRepository.readChargingStationByOcppConnectionName(
           tenantId,
           ocppConnectionName,
         ),

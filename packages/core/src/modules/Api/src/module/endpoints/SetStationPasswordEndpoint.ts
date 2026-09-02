@@ -100,7 +100,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     if (!request.body.setOnCharger) {
       const resolution = await resolveStationProtocol(
         (tenantId: number, ocppConnectionName: string) =>
-          this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
+          this._chargingStationRepository.readChargingStationByOcppConnectionName(
             tenantId,
             ocppConnectionName,
           ),

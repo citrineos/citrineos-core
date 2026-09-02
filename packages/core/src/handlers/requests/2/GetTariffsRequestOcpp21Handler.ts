@@ -69,11 +69,10 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
     try {
       // Get charging station
-      const station =
-        await this._chargingStationRepository.readChargingStationByTenantAndOcppConnectionName(
-          tenantId,
-          ocppConnectionName,
-        );
+      const station = await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
 
       if (!station) {
         this._logger.error(`Charging station not found: ${ocppConnectionName}`);

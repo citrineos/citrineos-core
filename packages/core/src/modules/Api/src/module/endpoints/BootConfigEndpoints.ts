@@ -59,10 +59,11 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
 
     // A boot record takes its identity from a non-null FK to the charging
     // station, so the station must already exist within this tenant.
-    const stationExists = await this._chargingStationRepository.doesChargingStationExistByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const stationExists =
+      await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (!stationExists) {
       throw new NotFoundError(
         `Charging station ${ocppConnectionName} does not exist for tenant ${tenantId}`,

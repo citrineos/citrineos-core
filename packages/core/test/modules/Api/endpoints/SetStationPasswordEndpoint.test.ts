@@ -35,7 +35,7 @@ describe('SetStationPasswordEndpoint', () => {
   let sendCall: ReturnType<typeof vi.fn>;
   let onChange: ReturnType<typeof vi.fn>;
   let provisionVariableAttributes: ReturnType<typeof vi.fn>;
-  let readChargingStationByTenantAndOcppConnectionName: ReturnType<typeof vi.fn>;
+  let readChargingStationByOcppConnectionName: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
@@ -43,7 +43,7 @@ describe('SetStationPasswordEndpoint', () => {
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
     onChange = vi.fn().mockResolvedValue(anAcceptedSetVariablesResponse());
     provisionVariableAttributes = vi.fn().mockResolvedValue([aVariableAttribute()]);
-    readChargingStationByTenantAndOcppConnectionName = vi
+    readChargingStationByOcppConnectionName = vi
       .fn()
       .mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
 
@@ -52,7 +52,7 @@ describe('SetStationPasswordEndpoint', () => {
       cache: { onChange },
       ocppSender: { sendCall },
       deviceModelService: { provisionVariableAttributes },
-      chargingStationRepository: { readChargingStationByTenantAndOcppConnectionName },
+      chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
     mounted = await mountEndpoint(endpoint, SetStationPasswordEndpoint.route);
   });
@@ -114,7 +114,7 @@ describe('SetStationPasswordEndpoint', () => {
         setOnCharger: true,
       });
 
-      expect(readChargingStationByTenantAndOcppConnectionName).not.toHaveBeenCalled();
+      expect(readChargingStationByOcppConnectionName).not.toHaveBeenCalled();
     });
 
     it('generates a password when none was supplied', async () => {
@@ -130,7 +130,7 @@ describe('SetStationPasswordEndpoint', () => {
 
   describe('station protocol', () => {
     it('sends using the protocol the station is recorded as speaking', async () => {
-      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue({
+      readChargingStationByOcppConnectionName.mockResolvedValue({
         protocol: OCPPVersion.OCPP2_1,
       });
 
@@ -144,7 +144,7 @@ describe('SetStationPasswordEndpoint', () => {
     });
 
     it('refuses a station whose protocol cannot serve the request', async () => {
-      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue({
+      readChargingStationByOcppConnectionName.mockResolvedValue({
         protocol: OCPPVersion.OCPP1_6,
       });
 
@@ -160,7 +160,7 @@ describe('SetStationPasswordEndpoint', () => {
     });
 
     it('refuses a station that has never connected', async () => {
-      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(undefined);
+      readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
       const response = await post({
         ocppConnectionName: 'cs001',

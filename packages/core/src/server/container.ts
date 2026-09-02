@@ -374,10 +374,10 @@ function registerNetwork(container: AwilixContainer): void {
   container.register({
     networkHook: asValue(async (_identifier: string, _message: string) => {}),
 
-    doesChargingStationExistByStationId: asFunction(
+    doesChargingStationExistByOcppConnectionName: asFunction(
       ({ chargingStationRepository }) =>
         (tenantId: number, ocppConnectionName: string): Promise<boolean> =>
-          chargingStationRepository.doesChargingStationExistByStationId(
+          chargingStationRepository.doesChargingStationExistByOcppConnectionName(
             tenantId,
             ocppConnectionName,
           ),

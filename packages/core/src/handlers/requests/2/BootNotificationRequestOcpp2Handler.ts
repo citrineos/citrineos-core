@@ -119,10 +119,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
         ? JSON.parse(connectionJson)
         : null;
       if (!connection?.allowUnknownChargingStations) {
-        const exists = await this._chargingStationRepository.doesChargingStationExistByStationId(
-          tenantId,
-          ocppConnectionName,
-        );
+        const exists =
+          await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          );
         if (!exists) {
           throw new Error(
             `Charging station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,

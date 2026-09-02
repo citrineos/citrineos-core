@@ -242,7 +242,7 @@ export interface ILocationRepository {
 }
 
 export interface IChargingStationRepository {
-  readChargingStationByTenantAndOcppConnectionName: (
+  readChargingStationByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStationDto | undefined>;
@@ -253,7 +253,7 @@ export interface IChargingStationRepository {
     ocppVersion: OCPPVersion | null,
     connectedWebsocketServerConfigId?: string | null,
   ) => Promise<ChargingStationDto | undefined>;
-  doesChargingStationExistByStationId: (
+  doesChargingStationExistByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<boolean>;

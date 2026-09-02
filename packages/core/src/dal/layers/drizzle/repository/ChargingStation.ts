@@ -130,7 +130,7 @@ export class DrizzleChargingStationRepository
 
   // ─── IChargingStationRepository methods ──────────────────────────────────
 
-  async readChargingStationByTenantAndOcppConnectionName(
+  async readChargingStationByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationDto | undefined> {
@@ -209,7 +209,7 @@ export class DrizzleChargingStationRepository
     return await this.updateById(tenantId, existing.id, { ...values, updatedAt: new Date() });
   }
 
-  async doesChargingStationExistByStationId(
+  async doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean> {

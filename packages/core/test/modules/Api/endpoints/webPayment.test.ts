@@ -24,14 +24,14 @@ describe(`POST ${URL}`, () => {
   let readAllByQuerystring: ReturnType<typeof vi.fn>;
   let cacheSet: ReturnType<typeof vi.fn>;
   let sendCall: ReturnType<typeof vi.fn>;
-  let readChargingStationByTenantAndOcppConnectionName: ReturnType<typeof vi.fn>;
+  let readChargingStationByOcppConnectionName: ReturnType<typeof vi.fn>;
   let server: FastifyInstance;
 
   beforeEach(async () => {
     readAllByQuerystring = vi.fn();
     cacheSet = vi.fn().mockResolvedValue(undefined);
     sendCall = vi.fn().mockResolvedValue(undefined);
-    readChargingStationByTenantAndOcppConnectionName = vi
+    readChargingStationByOcppConnectionName = vi
       .fn()
       .mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
 
@@ -39,7 +39,7 @@ describe(`POST ${URL}`, () => {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
       deviceModelRepository: { readAllByQuerystring },
-      chargingStationRepository: { readChargingStationByTenantAndOcppConnectionName },
+      chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
 
     server = Fastify({ logger: false });
@@ -290,7 +290,7 @@ describe(`POST ${URL}`, () => {
     });
 
     it('refuses a station whose protocol cannot receive the notification', async () => {
-      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue({
+      readChargingStationByOcppConnectionName.mockResolvedValue({
         protocol: OCPPVersion.OCPP2_0_1,
       });
 
@@ -306,7 +306,7 @@ describe(`POST ${URL}`, () => {
     });
 
     it('refuses a station that has never connected', async () => {
-      readChargingStationByTenantAndOcppConnectionName.mockResolvedValue(undefined);
+      readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
       const res = await server.inject({
         method: 'POST',
