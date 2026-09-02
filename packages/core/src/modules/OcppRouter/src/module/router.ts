@@ -29,7 +29,6 @@ import {
   ConnectionEventState,
   ErrorCode,
   EventGroup,
-  type IMessagesEventSink,
   MessageOrigin,
   MessageState,
   MessageTypeId,
@@ -62,7 +61,7 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
-import { buildConnectionEvent, buildFrameEvent } from '@/util/index.js';
+import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/util/index.js';
 
 /**
  * Implementation of the ocpp router
@@ -72,7 +71,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * Fields
    */
 
-  protected _messagesEventSink: IMessagesEventSink;
+  protected _messagesExchangeSink: MessagesExchangeSink;
   protected _callbackUrlNotifier: CallbackUrlNotifier;
   protected _cache: ICache;
   protected _sender: IMessageSender;
@@ -87,7 +86,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {ICache} [cache] - the cache object
    * @param {IMessageSender} [routerSender] - the message sender
    * @param {IMessageHandler} [routerHandler] - the message handler
-   * @param {IMessagesEventSink} [messagesEventSink] - where frame and connection events are published
+   * @param {MessagesExchangeSink} [messagesExchangeSink] - where frame and connection events are published
    * @param {CallbackUrlNotifier} [callbackUrlNotifier] - completes API commands that supplied a callback URL
    * @param {Function} [networkHook] - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
@@ -101,7 +100,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     cache,
     routerSender,
     routerHandler,
-    messagesEventSink,
+    messagesExchangeSink,
     callbackUrlNotifier,
     networkHook,
     logger,
@@ -112,7 +111,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     cache: ICache;
     routerSender: IMessageSender;
     routerHandler: IMessageHandler;
-    messagesEventSink: IMessagesEventSink;
+    messagesExchangeSink: MessagesExchangeSink;
     callbackUrlNotifier: CallbackUrlNotifier;
     networkHook: (identifier: string, message: string) => Promise<void>;
     logger: Logger<ILogObj>;
@@ -124,7 +123,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._cache = cache;
     this._sender = routerSender;
     this._handler = routerHandler;
-    this._messagesEventSink = messagesEventSink;
+    this._messagesExchangeSink = messagesExchangeSink;
     this._callbackUrlNotifier = callbackUrlNotifier;
     this._networkHook = networkHook;
     this._locationRepository = locationRepository;
@@ -147,7 +146,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersion,
     connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
-    const connectionEvent = this._messagesEventSink.record(
+    const connectionEvent = this._messagesExchangeSink.record(
       buildConnectionEvent({
         tenantId,
         ocppConnectionName,
@@ -189,7 +188,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {
-    this._messagesEventSink
+    this._messagesExchangeSink
       .record(
         buildConnectionEvent({
           tenantId,
@@ -313,7 +312,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         );
       }
       // A generated correlationId, so frames that never parsed cannot end up referencing each other.
-      await this._messagesEventSink.record(
+      await this._messagesExchangeSink.record(
         buildFrameEvent({
           tenantId,
           ocppConnectionName,
@@ -368,7 +367,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           );
         }
       } finally {
-        await this._messagesEventSink.record(
+        await this._messagesExchangeSink.record(
           buildFrameEvent({
             tenantId,
             ocppConnectionName,
@@ -921,7 +920,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
     }
     const sentFrame = rpcMessage.toJSON();
-    this._messagesEventSink
+    this._messagesExchangeSink
       .record(
         buildFrameEvent({
           tenantId: getTenantIdFromIdentifier(identifier),

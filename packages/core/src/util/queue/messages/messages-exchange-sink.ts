@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IMessagesEventSink, MessagesEvent, MessagesRecordResult } from '@citrineos/types';
+import type { MessagesEvent, MessagesRecordResult } from '@citrineos/types';
 import type { MessagesEventPublisher } from '@/util/index.js';
 
 /**
  * Publishes to the messages exchange and returns immediately.
  */
-export class MessagesExchangeSink implements IMessagesEventSink {
+export class MessagesExchangeSink {
   private readonly _publisher: MessagesEventPublisher;
 
   constructor({ messagesEventPublisher }: { messagesEventPublisher: MessagesEventPublisher }) {

@@ -37,7 +37,7 @@ export function registerOcppRouterServices(container: AwilixContainer): void {
     adminEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
       buildEndpoints(cradle.moduleScope, ADMIN_ENDPOINTS),
     ).scoped(),
-    messagesEventSink: asClass(MessagesExchangeSink).singleton(),
+    messagesExchangeSink: asClass(MessagesExchangeSink).singleton(),
     messagesEventPublisher: asClass(MessagesEventPublisher).singleton(),
     callbackUrlNotifier: asClass(CallbackUrlNotifier).singleton(),
   });

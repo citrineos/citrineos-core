@@ -153,13 +153,3 @@ export interface MessagesRecordResult {
   /** True when the broker accepted the event. */
   delivered: boolean;
 }
-
-/**
- * Where the router hands everything the messages module needs to see.
- *
- * Implementations must not throw: a failure in the messages plane may cost an audit row, but it
- * must never break OCPP traffic.
- */
-export interface IMessagesEventSink {
-  record(event: MessagesEvent): Promise<MessagesRecordResult>;
-}

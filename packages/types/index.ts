@@ -52,7 +52,6 @@ export {
   type IFrameEventProcessor,
   type IMessagesEventProcessor,
   type MessagesRecordResult,
-  type IMessagesEventSink,
 } from '@interfaces/messages/messages-types.js';
 
 export { HttpMethod } from './src/interfaces/api/HttpMethods.js';
