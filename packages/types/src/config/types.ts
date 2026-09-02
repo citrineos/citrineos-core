@@ -142,6 +142,14 @@ export const configSchema = z.object({
           exchange: z.string().default('citrineos'),
           instanceIdentifier: z.string().optional(),
           maxReconnectDelaySeconds: z.number().int().min(1).default(30),
+          // Type used when declaring queues. Quorum queues are Raft-replicated
+          // and recover from a network partition on their own; classic queues
+          // paired with a mirroring policy are Mnesia-replicated and do not.
+          // Quorum queues cannot be auto-delete, so this also decides whether
+          // per-identifier queues are cleaned up by the broker or explicitly on
+          // unsubscribe. Default stays `classic` so existing deployments are
+          // unaffected.
+          queueType: z.enum(['classic', 'quorum']).default('classic'),
         })
         .prefault({}),
     })

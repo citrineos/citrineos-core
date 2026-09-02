@@ -31,6 +31,28 @@ import { RabbitMQChannelManager } from './ChannelManager.js';
  */
 export class RabbitMqReceiver extends AbstractMessageHandler {
   protected static readonly QUEUE_PREFIX = 'rabbit_queue_';
+
+  protected readonly _queueType: 'classic' | 'quorum';
+
+  /**
+   * Declaration options for every queue this receiver asserts.
+   *
+   * A quorum queue cannot be auto-delete. When one is requested anyway the
+   * broker does not fail the declaration -- it quietly gives back a classic
+   * queue, so a `default_queue_type = quorum` vhost silently keeps producing
+   * classic queues. Asking for the type explicitly, and dropping autoDelete
+   * with it, is what makes the setting observable.
+   */
+  protected _queueOptions(): amqplib.Options.AssertQueue {
+    if (this._queueType === 'quorum') {
+      return {
+        durable: true,
+        exclusive: false,
+        arguments: { 'x-queue-type': 'quorum' },
+      };
+    }
+    return { durable: true, autoDelete: true, exclusive: false };
+  }
   protected static readonly CHANNEL_ID = 'receiver';
 
   protected _channelManager: RabbitMQChannelManager;
@@ -67,6 +89,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
       throw new Error('RabbitMQ exchange is not configured');
     }
     this.exchange = exchange;
+    this._queueType = config.messageBroker.amqp?.queueType ?? 'classic';
     this._isRouterMode = !!routerMode;
     if (this._isRouterMode) {
       const id = config.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
@@ -109,11 +132,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   async initializeInstanceQueue(queueName: string): Promise<void> {
     const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
+    await channel.assertQueue(queueName, this._queueOptions());
 
     const { consumerTag } = await channel.consume(queueName, (msg) =>
       this._onMessage(msg, channel),
@@ -167,11 +186,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     const channel = await this._channelManager.getChannel(RabbitMqReceiver.CHANNEL_ID);
 
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
+    await channel.assertQueue(queueName, this._queueOptions());
 
     // Re-bind all active charger subscriptions (idempotent if queue already has them)
     let reboundCount = 0;
@@ -287,11 +302,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
 
     // Assert exchange and queue
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
+    await channel.assertQueue(queueName, this._queueOptions());
 
     // Bind queue based on provided actions and filters
     if (actions && actions.length > 0) {
@@ -371,6 +382,21 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
         this._logger.debug(`Unsubscribed from ${identifier} with consumer tag ${consumerTag}.`);
       }
       this._consumerTags.delete(identifier);
+
+      if (this._queueType === 'quorum') {
+        // With a classic queue the broker removed this on its own once the
+        // last consumer went away. A quorum queue cannot be auto-delete, so
+        // without this every charger that ever connects leaves a queue
+        // behind. `ifUnused` protects a queue another consumer still holds.
+        const queueName = `${RabbitMqReceiver.QUEUE_PREFIX}${identifier}`;
+        try {
+          await channel.deleteQueue(queueName, { ifUnused: true });
+          this._logger.debug(`Deleted queue ${queueName} after unsubscribe.`);
+        } catch (error) {
+          this._logger.warn(`Could not delete queue ${queueName} after unsubscribe.`, error);
+        }
+      }
+
       return true;
     } else {
       this._logger.warn(`No consumer tag found for ${identifier} during unsubscribe.`);

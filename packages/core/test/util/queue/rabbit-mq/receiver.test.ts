@@ -78,6 +78,27 @@ describe('RabbitMqReceiver', () => {
         expect(mockChannel.consume).toHaveBeenCalledTimes(1);
       });
 
+      it('should declare a quorum queue without autoDelete when configured', async () => {
+        // A quorum queue cannot be auto-delete. Asking for one anyway makes the
+        // broker hand back a classic queue instead of failing, which is how a
+        // `default_queue_type = quorum` vhost silently keeps producing classic
+        // queues -- so the type has to be requested explicitly.
+        const quorumReceiver = getTestInstance(container, RabbitMqReceiver, {
+          config: aSystemConfigWithAmqp({ queueType: 'quorum' }),
+          channelManager: mockChannelManager,
+          module: undefined,
+          routerMode: undefined,
+        });
+
+        await quorumReceiver.subscribe('Provisioning', [OCPP_CallAction.BootNotification], {});
+
+        expect(mockChannel.assertQueue).toHaveBeenCalledWith('rabbit_queue_Provisioning', {
+          durable: true,
+          exclusive: false,
+          arguments: { 'x-queue-type': 'quorum' },
+        });
+      });
+
       it('should bind one entry per action when multiple actions are provided', async () => {
         await receiver.subscribe(
           'Transactions',
@@ -135,6 +156,33 @@ describe('RabbitMqReceiver', () => {
     });
 
     describe('unsubscribe()', () => {
+      it('should delete the queue on unsubscribe when queues are quorum', async () => {
+        // Classic queues are declared autoDelete, so the broker removed them
+        // once the last consumer left. Quorum queues cannot be, so without
+        // this every charger that ever connects leaves a queue behind.
+        const quorumReceiver = getTestInstance(container, RabbitMqReceiver, {
+          config: aSystemConfigWithAmqp({ queueType: 'quorum' }),
+          channelManager: mockChannelManager,
+          module: undefined,
+          routerMode: undefined,
+        });
+        await quorumReceiver.subscribe('Provisioning', [OCPP_CallAction.BootNotification], {});
+
+        await quorumReceiver.unsubscribe('Provisioning');
+
+        expect(mockChannel.deleteQueue).toHaveBeenCalledWith('rabbit_queue_Provisioning', {
+          ifUnused: true,
+        });
+      });
+
+      it('should leave queue removal to the broker when queues are classic', async () => {
+        await receiver.subscribe('Provisioning', [OCPP_CallAction.BootNotification], {});
+
+        await receiver.unsubscribe('Provisioning');
+
+        expect(mockChannel.deleteQueue).not.toHaveBeenCalled();
+      });
+
       it('should cancel the consumer and return true for a known identifier', async () => {
         (mockChannel.consume as any).mockResolvedValueOnce({ consumerTag: 'tag-abc' });
         await receiver.subscribe('Provisioning', [OCPP_CallAction.BootNotification], {});

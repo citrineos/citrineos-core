@@ -21,6 +21,7 @@ import type { RabbitMQChannelManager } from '@util/queue/rabbit-mq/ChannelManage
 export function aSystemConfigWithAmqp(override?: {
   exchange?: string;
   instanceIdentifier?: string;
+  queueType?: 'classic' | 'quorum';
   noAmqp?: boolean;
 }): SystemConfig {
   if (override?.noAmqp) {
@@ -34,6 +35,7 @@ export function aSystemConfigWithAmqp(override?: {
         ...(override?.instanceIdentifier !== undefined && {
           instanceIdentifier: override.instanceIdentifier,
         }),
+        ...(override?.queueType !== undefined && { queueType: override.queueType }),
       },
     },
   } as unknown as SystemConfig;
@@ -51,6 +53,7 @@ export function aMockAmqpChannel(): amqplib.Channel {
     assertQueue: vi.fn().mockResolvedValue({}),
     bindQueue: vi.fn().mockResolvedValue({}),
     unbindQueue: vi.fn().mockResolvedValue({}),
+    deleteQueue: vi.fn().mockResolvedValue({}),
     consume: vi
       .fn()
       .mockImplementation(() =>
