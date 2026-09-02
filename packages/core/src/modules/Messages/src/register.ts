@@ -4,8 +4,8 @@
 
 import type { IConnectionEventProcessor, IFrameEventProcessor } from '@citrineos/types';
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
-import { MessagesEventConsumer } from '@util/queue/messages/messages-event-consumer.js';
-import { MessagesEventPipeline } from '@util/queue/messages/messages-event-pipeline.js';
+import { MessagesEventConsumer } from '@util/queue/rabbit-mq/messages/messages-event-consumer.js';
+import { MessagesEventPipeline } from '@util/queue/rabbit-mq/messages/messages-event-pipeline.js';
 import { MessagesModule } from './module/messages.js';
 import { ConnectionWebhookProcessor } from './module/processors/connection-webhook-processor.js';
 import { FrameWebhookProcessor } from './module/processors/frame-webhook-processor.js';

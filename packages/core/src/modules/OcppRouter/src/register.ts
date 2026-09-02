@@ -17,7 +17,7 @@ import { GenerateCertificateChainEndpoint } from './module/endpoints/GenerateCer
 import { GetSubscriptionsEndpoint } from './module/endpoints/GetSubscriptionsEndpoint.js';
 import { PutWebsocketMappingEndpoint } from './module/endpoints/PutWebsocketMappingEndpoint.js';
 import { ReloadTlsCertificatesEndpoint } from './module/endpoints/ReloadTlsCertificatesEndpoint.js';
-import { MessagesExchangeSink } from '@util/queue/messages/messages-exchange-sink.js';
+import { MessagesExchangeSink } from '@util/queue/rabbit-mq/messages/messages-exchange-sink.js';
 import { CallbackUrlNotifier } from '@modules/OcppRouter/src/module/callback-url-notifier.js';
 import { MessagesEventPublisher } from '@/util/index.js';
 
