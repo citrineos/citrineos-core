@@ -38,11 +38,13 @@
   },
   "dependencies": {
     "@citrineos/base": "workspace:*",
-    "@citrineos/core": "workspace:*",
+    "@citrineos/ocpp": "workspace:*",
+    "@citrineos/dal": "workspace:*",
     "@citrineos/types": "workspace:*",
     "ajv": "8.18.0",
     "ajv-formats": "^3.0.1",
     "amqplib": "0.10.9",
+    "awilix": "13.0.3",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
     "class-validator-jsonschema": "5.0.0",
@@ -66,7 +68,6 @@
     "routing-controllers": "0.10.4",
     "tslog": "4.9.2",
     "typed-rest-client": "2.1.0",
-    "typedi": "0.10.0",
     "uuid": "11.1.1",
     "zod": "catalog:",
     "zod-to-json-schema": "3.24.6"

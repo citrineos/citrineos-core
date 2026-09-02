@@ -12,7 +12,7 @@ import {
   TableRow,
   Table as TableUi,
 } from '@lib/client/components/ui/table';
-import { DeleteProvider } from '@lib/providers/table/deleteProvider';
+import { DeleteProvider } from '@lib/providers/table/delete-provider';
 import { type PopoverContentProps } from '@radix-ui/react-popover';
 import { type BaseOption, type BaseRecord, type HttpError, useTranslate } from '@refinedev/core';
 import { type UseTableProps, type UseTableReturnType, useTable } from '@refinedev/react-table';
@@ -58,7 +58,7 @@ import { parseAsJson, useQueryState } from 'nuqs';
 import { TableQueryStateSchema } from '@lib/client/components/table/fields/table-query-state';
 import { isNullOrUndefined } from '@lib/utils/assertion';
 import { useSelector } from 'react-redux';
-import { getPageSizePreference } from '@lib/utils/store/table.preferences.slice';
+import { getPageSizePreference } from '@lib/utils/store/table-preferences-slice';
 import { DEFAULT_TABLE_STATE } from '@lib/utils/consts';
 
 export type TableListFilterOption = BaseOption & {

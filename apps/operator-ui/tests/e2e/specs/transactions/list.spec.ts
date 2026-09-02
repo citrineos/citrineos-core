@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { TransactionsListPage } from '../../pages/transactions/list.page';
+import { TransactionsListPage } from '../../pages/transactions/list-page';
 import {
   deleteTransaction,
   deleteStation,

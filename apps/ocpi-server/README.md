@@ -187,7 +187,7 @@ The following OCPI modules are mounted:
 
 ## Working with workspace packages
 
-The OCPI Server depends on `@citrineos/base`, `@citrineos/core`, and `@citrineos/ocpi-base` via `workspace:*`
+The OCPI Server depends on `@citrineos/base`, `@citrineos/ocpp`, and `@citrineos/ocpi-base` via `workspace:*`
 dependencies, so pnpm resolves them from the local `packages/` directory automatically — no `npm link` step is
 required. Just build the workspace packages so the compiled output is available:
 
@@ -213,6 +213,7 @@ and the `process.env.*` fallbacks in the config files), including `DB_HOST`, `DB
 
 - **CitrineOS Core / OCPP Server**
   - [Server README](../ocpp-server/README.md)
+  - [Dependency Injection](../ocpp-server/DEPENDENCY_INJECTION.md) - the Awilix model this server follows too
 - **CitrineOS Operator UI**
   - [Operator UI README](../operator-ui/README.MD)
 - **CitrineOS Project Docs**

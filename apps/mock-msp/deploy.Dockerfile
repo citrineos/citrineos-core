@@ -7,7 +7,7 @@
 # Node can run this app directly (see apps/mock-msp/README.md), so this image is
 # only for the containerized workflow (docker-compose.local.yml `mock-msp`
 # service). Build context is the monorepo root (citrineos-core): @citrineos/base,
-# @citrineos/core and @citrineos/ocpi-base resolve as workspace packages.
+# @citrineos/ocpp and @citrineos/ocpi-base resolve as workspace packages.
 #
 # The mock REUSES @citrineos/ocpi-base's compiled Zod schemas (its dist/ must
 # exist before the mock runs). `pnpm --filter "@citrineos/mock-msp..."` builds

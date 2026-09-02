@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { LocationsListPage } from '../../pages/locations/list.page';
-import { LocationFormPage } from '../../pages/locations/form.page';
-import { LocationDetailPage } from '../../pages/locations/detail.page';
+import { LocationsListPage } from '../../pages/locations/list-page';
+import { LocationFormPage } from '../../pages/locations/form-page';
+import { LocationDetailPage } from '../../pages/locations/detail-page';
 import { deleteLocation } from '../../fixtures/seeded-data';
 import { shortId } from '../../utils/random';
 import { blockGoogleMaps } from '../../utils/route-overrides';
