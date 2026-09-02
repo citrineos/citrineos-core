@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # What is Messages module?
 
 This module is responsible for processing all "business" messages, such as OCPP frame and general connection events. It
