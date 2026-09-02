@@ -180,8 +180,10 @@ export class SequelizeChargingProfileRepository
     chargingNeedsReq: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     ocppConnectionName: string,
   ): Promise<ChargingNeeds> {
+    // A station name is unique per tenant, not across them (ChargingStations_stationName_tenantId).
     const activeTransaction = await Transaction.findOne({
       where: {
+        tenantId,
         ocppConnectionName: ocppConnectionName,
         isActive: true,
       },

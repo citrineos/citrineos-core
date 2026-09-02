@@ -505,7 +505,7 @@ export class SequelizeTransactionEventRepository
 
   async getTransactionsCount(tenantId: number, dateFrom?: Date, dateTo?: Date): Promise<number> {
     const queryOptions: WhereOptions<any> = {
-      where: {},
+      where: { tenantId },
     };
 
     if (dateFrom) {
