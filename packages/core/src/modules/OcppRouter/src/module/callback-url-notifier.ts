@@ -74,5 +74,3 @@ export class CallbackUrlNotifier {
     }
   }
 }
-
-export default CallbackUrlNotifier;

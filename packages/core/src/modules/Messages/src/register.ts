@@ -4,6 +4,7 @@
 
 import type { IConnectionEventProcessor, IFrameEventProcessor } from '@citrineos/types';
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
+import { MessagesEventConsumer } from '@util/queue/messages/messages-event-consumer.js';
 import { MessagesEventPipeline } from '@util/queue/messages/messages-event-pipeline.js';
 import { MessagesModule } from './module/messages.js';
 import { ConnectionWebhookProcessor } from './module/processors/connection-webhook-processor.js';
@@ -38,6 +39,7 @@ export function registerMessagesServices(container: AwilixContainer): void {
     connectionWebhookProcessor: asClass(ConnectionWebhookProcessor).singleton(),
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
 
+    messagesEventConsumer: asClass(MessagesEventConsumer).singleton(),
     messagesEventPipeline: asClass(MessagesEventPipeline).singleton(),
     messagesModule: asClass(MessagesModule).singleton(),
   });

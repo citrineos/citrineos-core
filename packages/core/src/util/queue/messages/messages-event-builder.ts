@@ -8,8 +8,7 @@ import {
   FrameDirection,
   type FrameEvent,
   MessageOrigin,
-  MESSAGES_EVENT_VERSION,
-  MessagesEventKind,
+  MessagesEventType,
   MessageTypeId,
   type OCPPVersionType,
 } from '@citrineos/types';
@@ -61,12 +60,14 @@ export interface BuildFrameEventInput {
   meta?: Record<string, string>;
 }
 
+/**
+ * Usually an OCPP frame event.
+ */
 export function buildFrameEvent(input: BuildFrameEventInput): FrameEvent {
   const parsed = input.rpcMessage !== undefined && input.type !== undefined;
 
   return {
-    kind: MessagesEventKind.Frame,
-    v: MESSAGES_EVENT_VERSION,
+    kind: MessagesEventType.Frame,
     tenantId: input.tenantId,
     ocppConnectionName: input.ocppConnectionName,
     direction: directionFromOrigin(input.origin),
@@ -95,15 +96,10 @@ export interface BuildConnectionEventInput {
 
 /**
  * A station connected or disconnected.
- *
- * This is what replaces the router's direct `webhookDispatcher.register()` / `deregister()` calls:
- * the module needs a connect signal to load a station's subscriptions and to fire onConnect/onClose
- * webhooks, and the router's only outbound dependency is now the exchange.
  */
 export function buildConnectionEvent(input: BuildConnectionEventInput): ConnectionEvent {
   return {
-    kind: MessagesEventKind.Connection,
-    v: MESSAGES_EVENT_VERSION,
+    kind: MessagesEventType.Connection,
     tenantId: input.tenantId,
     ocppConnectionName: input.ocppConnectionName,
     state: input.state,

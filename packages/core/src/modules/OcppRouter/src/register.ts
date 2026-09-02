@@ -8,7 +8,7 @@ import {
   type EndpointClass,
   type EndpointResolverCradle,
 } from '@citrineos/base';
-import { asFunction, type AwilixContainer } from 'awilix';
+import { asClass, asFunction, type AwilixContainer } from 'awilix';
 import { CreateSubscriptionEndpoint } from './module/endpoints/CreateSubscriptionEndpoint.js';
 import { DeleteSubscriptionEndpoint } from './module/endpoints/DeleteSubscriptionEndpoint.js';
 import { DeleteWebsocketConnectionEndpoint } from './module/endpoints/DeleteWebsocketConnectionEndpoint.js';
@@ -17,6 +17,9 @@ import { GenerateCertificateChainEndpoint } from './module/endpoints/GenerateCer
 import { GetSubscriptionsEndpoint } from './module/endpoints/GetSubscriptionsEndpoint.js';
 import { PutWebsocketMappingEndpoint } from './module/endpoints/PutWebsocketMappingEndpoint.js';
 import { ReloadTlsCertificatesEndpoint } from './module/endpoints/ReloadTlsCertificatesEndpoint.js';
+import { MessagesExchangeSink } from '@util/queue/messages/messages-exchange-sink.js';
+import { CallbackUrlNotifier } from '@modules/OcppRouter/src/module/callback-url-notifier.js';
+import { MessagesEventPublisher } from '@/util/index.js';
 
 const ADMIN_ENDPOINTS = [
   CreateSubscriptionEndpoint,
@@ -34,5 +37,8 @@ export function registerOcppRouterServices(container: AwilixContainer): void {
     adminEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
       buildEndpoints(cradle.moduleScope, ADMIN_ENDPOINTS),
     ).scoped(),
+    messagesEventSink: asClass(MessagesExchangeSink).singleton(),
+    messagesEventPublisher: asClass(MessagesEventPublisher).singleton(),
+    callbackUrlNotifier: asClass(CallbackUrlNotifier).singleton(),
   });
 }

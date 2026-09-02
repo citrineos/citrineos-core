@@ -9,7 +9,7 @@ import { type ILogObj, Logger } from 'tslog';
 
 export interface MessagesModuleDependencies {
   config: SystemConfig;
-  messagesConsumer: MessagesEventConsumer;
+  messagesEventConsumer: MessagesEventConsumer;
   messagesEventPipeline: MessagesEventPipeline;
   webhookDispatcher: WebhookDispatcher;
   logger?: Logger<ILogObj>;
@@ -22,12 +22,12 @@ export class MessagesModule {
   private readonly _logger: Logger<ILogObj>;
 
   constructor({
-    messagesConsumer,
+    messagesEventConsumer,
     messagesEventPipeline,
     webhookDispatcher,
     logger,
   }: MessagesModuleDependencies) {
-    this._consumer = messagesConsumer;
+    this._consumer = messagesEventConsumer;
     this._pipeline = messagesEventPipeline;
     this._webhookDispatcher = webhookDispatcher;
     this._logger = logger
