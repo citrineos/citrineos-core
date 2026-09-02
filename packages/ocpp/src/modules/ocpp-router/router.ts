@@ -895,7 +895,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
-    state: MessageState,
+    _state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
     action?: string,
