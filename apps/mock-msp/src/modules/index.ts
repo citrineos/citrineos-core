@@ -14,7 +14,7 @@ import { locationsModule } from './locations.js';
 import { tariffsModule } from './tariffs.js';
 import { sessionsModule } from './sessions.js';
 import { cdrsModule } from './cdrs.js';
-import { chargingprofilesModule } from './chargingprofiles.js';
+import { chargingprofilesModule } from './charging-profiles.js';
 import { tokensModule } from './tokens.js';
 import { commandsModule } from './commands.js';
 

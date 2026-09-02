@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ResourceType } from '@lib/utils/access.types';
+import { ResourceType } from '@lib/utils/access-types';
 
 export const resources = [
   {

@@ -4,7 +4,7 @@
 'use client';
 
 import type { LocationDto } from '@citrineos/types';
-import type { GeoPoint } from '@lib/utils/GeoPoint';
+import type { GeoPoint } from '@lib/utils/geo-point';
 import type { ReactNode } from 'react';
 
 export interface MapMarkerData {

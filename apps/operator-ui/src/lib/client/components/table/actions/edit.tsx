@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { useGetEditUrl } from '@lib/client/hooks/getEditUrl';
+import { useGetEditUrl } from '@lib/client/hooks/get-edit-url';
 import type { RowActionProps } from '.';
 import { RowAction } from '.';
 
