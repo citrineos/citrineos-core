@@ -45,10 +45,6 @@ export class MessagesEventPublisher {
     });
   }
 
-  get droppedCount(): number {
-    return this._droppedCount;
-  }
-
   /**
    * @returns true when the broker accepted the event. Never throws: a failure in the messages plane
    * may cost an audit row, but it must not break OCPP traffic.
