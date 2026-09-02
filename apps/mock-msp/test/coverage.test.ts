@@ -22,7 +22,7 @@ import {
   type StubCpo,
 } from './harness.js';
 
-// The modules the endpoint always enumerates (COVERAGE_MODULES in controlApi.ts).
+// The modules the endpoint always enumerates (COVERAGE_MODULES in control-api.ts).
 const ALL_MODULES = [
   'locations',
   'tariffs',

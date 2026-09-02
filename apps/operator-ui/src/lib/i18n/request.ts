@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use server';
 
-import { getUserLocale } from '@lib/server/hooks/getUserLocale';
+import { getUserLocale } from '@lib/server/hooks/get-user-locale';
 import { getRequestConfig } from 'next-intl/server';
 
 const fallbackLocale = 'en';

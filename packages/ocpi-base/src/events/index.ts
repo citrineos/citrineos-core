@@ -7,16 +7,17 @@ export type {
   IDtoPayload,
   IDtoEvent,
   IDtoEventReceiver,
+  DtoEventReceiverFactory,
   IDtoModule,
   IDtoEventSender,
   IDtoEventSubscriber,
   IDtoRouter,
 } from './types.js';
 export { DtoEventType, DtoEventObjectType, DtoEvent } from './types.js';
-export type { IDtoEventHandlerDefinition } from './AsDtoEventHandler.js';
-export { AS_DTO_EVENT_HANDLER_METADATA, AsDtoEventHandler } from './AsDtoEventHandler.js';
+export type { IDtoEventHandlerDefinition } from './as-dto-event-handler.js';
+export { AS_DTO_EVENT_HANDLER_METADATA, AsDtoEventHandler } from './as-dto-event-handler.js';
 export { AbstractDtoModule } from './module.js';
 export { AbstractDtoEventReceiver, AbstractDtoEventSender } from './handlers.js';
-export { RabbitMqDtoReceiver } from './rabbitMQ/receiver.js';
-export { RabbitMqDtoSender } from './rabbitMQ/sender.js';
-export { PgNotifyEventSubscriber } from './pgNotify/subscriber.js';
+export { RabbitMqDtoReceiver } from './rabbit-mq/receiver.js';
+export { RabbitMqDtoSender } from './rabbit-mq/sender.js';
+export { PgNotifyEventSubscriber } from './pg-notify/subscriber.js';

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { AuthorizationsListPage } from '../../pages/authorizations/list.page';
-import { AuthorizationFormPage } from '../../pages/authorizations/form.page';
+import { AuthorizationsListPage } from '../../pages/authorizations/list-page';
+import { AuthorizationFormPage } from '../../pages/authorizations/form-page';
 import { deleteAuthorization } from '../../fixtures/seeded-data';
 import { shortId } from '../../utils/random';
 

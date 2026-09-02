@@ -3,221 +3,210 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { RoutingControllersOptions } from 'routing-controllers';
-import { useContainer } from 'routing-controllers';
-import type { Constructable } from 'typedi';
-import { Container } from 'typedi';
-import { OcpiModule } from './model/OcpiModule.js';
-import { KoaServer } from './util/KoaServer.js';
+import type { AwilixContainer } from 'awilix';
+import type { OcpiModuleToken } from './container.js';
+import { OcpiModule } from './model/ocpi-module.js';
+import { KoaServer } from './util/koa-server.js';
 import Koa from 'koa';
-import type { ICache } from '@citrineos/base';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { CacheWrapper } from './util/CacheWrapper.js';
-// import { SessionBroadcaster } from './broadcaster/SessionBroadcaster';
-// import { CdrBroadcaster } from './broadcaster/CdrBroadcaster';
 import * as packageJson from '../package.json' with { type: 'json' };
-import type { OcpiConfig } from './config/ocpi.types.js';
-import { OcpiConfigToken } from './config/ocpi.types.js';
+import type { OcpiConfig } from './config/ocpi-types.js';
 import type { IDtoModule } from './events/index.js';
-import { OcpiGraphqlClient } from './graphql/index.js';
-import { HealthController } from './util/KoaServerHealthController.js';
-import { Ajv } from 'ajv';
-import addFormats from 'ajv-formats';
+import { HealthController } from './util/koa-server-health-controller.js';
 
 export * from './broadcaster/index.js';
 export * from './mapper/index.js';
 export * from './graphql/index.js';
-export type { Version } from './model/Version.js';
-export { BodyWithSchema } from './util/decorators/BodyWithSchema.js';
-export { plainToClass } from './util/Util.js';
-export { OcpiErrorResponse, buildOcpiErrorResponse } from './model/OcpiErrorResponse.js';
-export type { AuthorizationInfo, AuthorizationInfoResponse } from './model/AuthorizationInfo.js';
-export { TokensClientApi } from './trigger/TokensClientApi.js';
-export { AuthorizationInfoAllowed } from './model/AuthorizationInfoAllowed.js';
-export type { PostTokenParams } from './trigger/param/tokens/PostTokenParams.js';
-export { UnsuccessfulRequestException } from './exception/UnsuccessfulRequestException.js';
-export { NotFoundException } from './exception/NotFoundException.js';
-export { FunctionalEndpointParams } from './util/decorators/FunctionEndpointParams.js';
-export type { PaginatedOcpiParams } from './trigger/param/PaginatedOcpiParams.js';
-export type { OcpiParams } from './trigger/util/OcpiParams.js';
-export type { ChargingPreferences } from './model/ChargingPreferences.js';
+export type { Version } from './model/version.js';
+export { BodyWithSchema } from './util/decorators/body-with-schema.js';
+export { plainToClass } from './util/util.js';
+export { OcpiErrorResponse, buildOcpiErrorResponse } from './model/ocpi-error-response.js';
+export type { AuthorizationInfo, AuthorizationInfoResponse } from './model/authorization-info.js';
+export { TokensClientApi } from './trigger/tokens-client-api.js';
+export { AuthorizationInfoAllowed } from './model/authorization-info-allowed.js';
+export type { PostTokenParams } from './trigger/param/tokens/post-token-params.js';
+export { UnsuccessfulRequestException } from './exception/unsuccessful-request-exception.js';
+export { NotFoundException } from './exception/not-found-exception.js';
+export { FunctionalEndpointParams } from './util/decorators/function-endpoint-params.js';
+export type { PaginatedOcpiParams } from './trigger/param/paginated-ocpi-params.js';
+export type { OcpiParams } from './trigger/util/ocpi-params.js';
+export type { ChargingPreferences } from './model/charging-preferences.js';
 export {
   ChargingPreferencesSchema,
   ChargingPreferencesSchemaName,
-} from './model/ChargingPreferences.js';
-export { PaginatedParams } from './controllers/param/PaginatedParams.js';
-export { Paginated } from './util/decorators/Paginated.js';
+} from './model/charging-preferences.js';
+export { PaginatedParams } from './controllers/param/paginated-params.js';
+export { Paginated } from './util/decorators/paginated.js';
 export {
-  OCPP_COMMAND_HANDLER,
   OCPPCommandHandler,
   OCPP1_6_CommandHandler,
   OCPP2_0_1_CommandHandler,
   OCPP2_1_CommandHandler,
-} from './util/ocppCommandHandlers/index.js';
-export type { ChargingPreferencesResponse } from './model/ChargingPreferencesResponse.js';
+} from './util/ocpp-command-handlers/index.js';
+export type { OcppCommandHandlerDependencies } from './util/ocpp-command-handlers/index.js';
+export type { ChargingPreferencesResponse } from './model/charging-preferences-response.js';
 export {
   ChargingPreferencesResponseSchema,
   ChargingPreferencesResponseSchemaName,
-} from './model/ChargingPreferencesResponse.js';
-export type { PaginatedSessionResponse, Session } from './model/Session.js';
+} from './model/charging-preferences-response.js';
+export type { PaginatedSessionResponse, Session } from './model/session.js';
 export {
   PaginatedSessionResponseSchema,
   PaginatedSessionResponseSchemaName,
-} from './model/Session.js';
-export { Role } from './model/Role.js';
-export { ImageCategory } from './model/ImageCategory.js';
-export { ImageType } from './model/ImageType.js';
-export { CountryCode } from './util/Util.js';
-export { KoaServer } from './util/KoaServer.js';
-export { InterfaceRole } from './model/InterfaceRole.js';
-export { AlreadyRegisteredException } from './exception/AlreadyRegisteredException.js';
-export { NotRegisteredException } from './exception/NotRegisteredException.js';
-export { VersionsClientApi } from './trigger/VersionsClientApi.js';
-// export { ChargingProfilesClientApi } from './trigger/ChargingProfilesClientApi';
-export type { CredentialsDTO } from './model/DTO/CredentialsDTO.js';
-export { CredentialsDTOSchema, CredentialsDTOSchemaName } from './model/DTO/CredentialsDTO.js';
-export type { AdminCredentialsRequestDTO } from './model/DTO/AdminCredentialsRequestDTO.js';
+} from './model/session.js';
+export { Role } from './model/role.js';
+export { ImageCategory } from './model/image-category.js';
+export { ImageType } from './model/image-type.js';
+export { CountryCode } from './util/util.js';
+export { KoaServer } from './util/koa-server.js';
+export { InterfaceRole } from './model/interface-role.js';
+export { AlreadyRegisteredException } from './exception/already-registered-exception.js';
+export { NotRegisteredException } from './exception/not-registered-exception.js';
+export { VersionsClientApi } from './trigger/versions-client-api.js';
+// export { ChargingProfilesClientApi } from './trigger/charging-profiles-client-api';
+export type { CredentialsDTO } from './model/dto/credentials-dto.js';
+export { CredentialsDTOSchema, CredentialsDTOSchemaName } from './model/dto/credentials-dto.js';
+export type { AdminCredentialsRequestDTO } from './model/dto/admin-credentials-request-dto.js';
 export {
   AdminCredentialsRequestDTOSchema,
   AdminCredentialsRequestDTOSchemaName,
-} from './model/DTO/AdminCredentialsRequestDTO.js';
-export type { SingleTokenRequest, TokenDTO, TokenResponse } from './model/DTO/TokenDTO.js';
+} from './model/dto/admin-credentials-request-dto.js';
+export type { SingleTokenRequest, TokenDTO, TokenResponse } from './model/dto/token-dto.js';
 export {
   SingleTokenRequestSchema,
   TokenDTOSchema,
   TokenResponseSchema,
   TokenResponseSchemaName,
   TokenDTOSchemaName,
-} from './model/DTO/TokenDTO.js';
+} from './model/dto/token-dto.js';
 
-export type { OcpiConfig, OcpiConfigInput } from './config/ocpi.types.js';
-export { defineOcpiConfig } from './config/defineOcpiConfig.js';
+export type { OcpiConfig, OcpiConfigInput } from './config/ocpi-types.js';
+export { defineOcpiConfig } from './config/define-ocpi-config.js';
 export { getOcpiSystemConfig } from './config/loader.js';
-export type { ServerConfig } from './config/ServerConfig.js';
-export { Env } from './config/ServerConfig.js';
+export type { ServerConfig } from './config/server-config.js';
+export { Env } from './config/server-config.js';
 
-export type { CommandResponse } from './model/CommandResponse.js';
-export type { ActiveChargingProfile } from './model/ActiveChargingProfile.js';
-export type { ActiveChargingProfileResult } from './model/ActiveChargingProfileResult.js';
-export type { ClearChargingProfileResult } from './model/ChargingprofilesClearProfileResult.js';
-export type { ChargingProfileResponse } from './model/ChargingProfileResponse.js';
-export type { ChargingProfileResult } from './model/ChargingProfileResult.js';
-export { ChargingProfileResultType } from './model/ChargingProfileResult.js';
+export type { CommandResponse } from './model/command-response.js';
+export type { ActiveChargingProfile } from './model/active-charging-profile.js';
+export type { ActiveChargingProfileResult } from './model/active-charging-profile-result.js';
+export type { ClearChargingProfileResult } from './model/charging-profiles-clear-profile-result.js';
+export type { ChargingProfileResponse } from './model/charging-profile-response.js';
+export type { ChargingProfileResult } from './model/charging-profile-result.js';
+export { ChargingProfileResultType } from './model/charging-profile-result.js';
 export {
   generateMockForSchema,
   generateMockOcpiPaginatedResponse,
   BaseController,
-} from './controllers/BaseController.js';
+} from './controllers/base-controller.js';
 export {
   buildOcpiPaginatedResponse,
   DEFAULT_OFFSET,
   DEFAULT_LIMIT,
-} from './model/PaginatedResponse.js';
-export { CommandType } from './model/CommandType.js';
-export type { CancelReservation } from './model/CancelReservation.js';
-export { CancelReservationSchema, CancelReservationSchemaName } from './model/CancelReservation.js';
-export type { ReserveNow } from './model/ReserveNow.js';
-export { ReserveNowSchema, ReserveNowSchemaName } from './model/ReserveNow.js';
-export type { SetChargingProfile } from './model/SetChargingProfile.js';
+} from './model/paginated-response.js';
+export { CommandType } from './model/command-type.js';
+export type { CancelReservation } from './model/cancel-reservation.js';
+export {
+  CancelReservationSchema,
+  CancelReservationSchemaName,
+} from './model/cancel-reservation.js';
+export type { ReserveNow } from './model/reserve-now.js';
+export { ReserveNowSchema, ReserveNowSchemaName } from './model/reserve-now.js';
+export type { SetChargingProfile } from './model/set-charging-profile.js';
 export {
   SetChargingProfileSchema,
   SetChargingProfileSchemaName,
-} from './model/SetChargingProfile.js';
-export type { StartSession } from './model/StartSession.js';
-export { StartSessionSchema, StartSessionSchemaName } from './model/StartSession.js';
-export type { StopSession } from './model/StopSession.js';
-export { StopSessionSchema, StopSessionSchemaName } from './model/StopSession.js';
-export type { UnlockConnector } from './model/UnlockConnector.js';
-export { UnlockConnectorSchema, UnlockConnectorSchemaName } from './model/UnlockConnector.js';
-export type { OcpiCommandResponse } from './model/CommandResponse.js';
-export { ModuleId } from './model/ModuleId.js';
-export type { CredentialsResponse } from './model/CredentialsResponse.js';
+} from './model/set-charging-profile.js';
+export type { StartSession } from './model/start-session.js';
+export { StartSessionSchema, StartSessionSchemaName } from './model/start-session.js';
+export type { StopSession } from './model/stop-session.js';
+export { StopSessionSchema, StopSessionSchemaName } from './model/stop-session.js';
+export type { UnlockConnector } from './model/unlock-connector.js';
+export { UnlockConnectorSchema, UnlockConnectorSchemaName } from './model/unlock-connector.js';
+export type { OcpiCommandResponse } from './model/command-response.js';
+export { ModuleId } from './model/module-id.js';
+export type { CredentialsResponse } from './model/credentials-response.js';
 export {
   CredentialsResponseSchema,
   CredentialsResponseSchemaName,
   buildCredentialsResponse,
-} from './model/CredentialsResponse.js';
-export type { OcpiEmptyResponse } from './model/OcpiEmptyResponse.js';
+} from './model/credentials-response.js';
+export type { OcpiEmptyResponse } from './model/ocpi-empty-response.js';
 export {
   OcpiEmptyResponseSchema,
   OcpiEmptyResponseSchemaName,
   buildOcpiEmptyResponse,
-} from './model/OcpiEmptyResponse.js';
-export type { OcpiStringResponse } from './model/OcpiStringResponse.js';
-export { VersionNumber } from './model/VersionNumber.js';
-export type { VersionDetailsResponseDTO } from './model/DTO/VersionDetailsResponseDTO.js';
-export type { VersionListResponseDTO } from './model/DTO/VersionListResponseDTO.js';
+} from './model/ocpi-empty-response.js';
+export type { OcpiStringResponse } from './model/ocpi-string-response.js';
+export { VersionNumber } from './model/version-number.js';
+export type { VersionDetailsResponseDTO } from './model/dto/version-details-response-dto.js';
+export type { VersionListResponseDTO } from './model/dto/version-list-response-dto.js';
 export {
   VersionListResponseDTOSchema,
   VersionListResponseDTOSchemaName,
-} from './model/DTO/VersionListResponseDTO.js';
-export { TokenType, TokenTypeSchema, TokenTypeSchemaName } from './model/TokenType.js';
-export { WhitelistType } from './model/WhitelistType.js';
-export type { VersionDetailsDTO } from './model/DTO/VersionDetailsDTO.js';
-export type { VersionDTO } from './model/DTO/VersionDTO.js';
+} from './model/dto/version-list-response-dto.js';
+export { TokenType, TokenTypeSchema, TokenTypeSchemaName } from './model/token-type.js';
+export { WhitelistType } from './model/whitelist-type.js';
+export type { VersionDetailsDTO } from './model/dto/version-details-dto.js';
+export type { VersionDTO } from './model/dto/version-dto.js';
 export {
   OcpiResponseSchema,
   OcpiResponseStatusCode,
   buildOcpiResponse,
-} from './model/OcpiResponse.js';
-export { OcpiModule } from './model/OcpiModule.js';
-export { CommandResultType } from './model/CommandResult.js';
-export { EnumQueryParam } from './util/decorators/EnumQueryParam.js';
-export type { CommandResult } from './model/CommandResult.js';
+} from './model/ocpi-response.js';
+export { OcpiModule } from './model/ocpi-module.js';
+export { CommandResultType } from './model/command-result.js';
+export { EnumQueryParam } from './util/decorators/enum-query-param.js';
+export type { CommandResult } from './model/command-result.js';
 export type {
   LocationDTO,
   LocationResponse,
   PaginatedLocationResponse,
-} from './model/DTO/LocationDTO.js';
+} from './model/dto/location-dto.js';
 export {
   LocationResponseSchema,
   LocationResponseSchemaName,
   PaginatedLocationResponseSchema,
   PaginatedLocationResponseSchemaName,
-} from './model/DTO/LocationDTO.js';
-export type { EvseDTO, EvseResponse } from './model/DTO/EvseDTO.js';
+} from './model/dto/location-dto.js';
+export type { EvseDTO, EvseResponse } from './model/dto/evse-dto.js';
 export {
   UID_FORMAT,
   EXTRACT_EVSE_ID,
   EXTRACT_STATION_ID,
   EvseResponseSchema,
   EvseResponseSchemaName,
-} from './model/DTO/EvseDTO.js';
-export type { ConnectorDTO, ConnectorResponse } from './model/DTO/ConnectorDTO.js';
+} from './model/dto/evse-dto.js';
+export type { ConnectorDTO, ConnectorResponse } from './model/dto/connector-dto.js';
 export {
   TEMPORARY_CONNECTOR_ID,
   ConnectorResponseSchema,
   ConnectorResponseSchemaName,
-} from './model/DTO/ConnectorDTO.js';
-export { LocationMapper } from './mapper/LocationMapper.js';
-export { TokensMapper } from './mapper/TokensMapper.js';
-export { SessionMapper } from './mapper/SessionMapper.js';
-export { AsOcpiFunctionalEndpoint } from './util/decorators/AsOcpiFunctionalEndpoint.js';
-export { MultipleTypes } from './util/decorators/MultipleTypes.js';
-export { OcpiNamespace } from './util/OcpiNamespace.js';
-export { OcpiLogger } from './util/OcpiLogger.js';
-export { AsOcpiRegistrationEndpoint } from './util/decorators/AsOcpiRegistrationEndpoint.js';
-export { OcpiHeaders } from './model/OcpiHeaders.js';
-export { AuthToken } from './util/decorators/AuthToken.js';
-export { VersionNumberParam } from './util/decorators/VersionNumberParam.js';
-export { EnumParam } from './util/decorators/EnumParam.js';
-export { OcpiExceptionHandler } from './util/middleware/OcpiExceptionHandler.js';
-export { AuthMiddleware, RegistrationAuthMiddleware } from './util/middleware/AuthMiddleware.js';
-export { InvalidParamException } from './exception/InvalidParamException.js';
-export { MissingParamException } from './exception/MissingParamException.js';
-export { UnknownTokenException } from './exception/UnknownTokenException.js';
-export { WrongClientAccessException } from './exception/WrongClientAccessException.js';
-export { ChargingProfilesService } from './services/ChargingProfilesService.js';
-// export { AsyncResponder } from './util/AsyncResponder.js';
-export { AsAdminEndpoint } from './util/decorators/AsAdminEndpoint.js';
+} from './model/dto/connector-dto.js';
+export { LocationMapper } from './mapper/location-mapper.js';
+export { TokensMapper } from './mapper/tokens-mapper.js';
+export { SessionMapper } from './mapper/session-mapper.js';
+export { AsOcpiFunctionalEndpoint } from './util/decorators/as-ocpi-functional-endpoint.js';
+export { MultipleTypes } from './util/decorators/multiple-types.js';
+export { OcpiNamespace } from './util/ocpi-namespace.js';
+export { AsOcpiRegistrationEndpoint } from './util/decorators/as-ocpi-registration-endpoint.js';
+export { OcpiHeaders } from './model/ocpi-headers.js';
+export { AuthToken } from './util/decorators/auth-token.js';
+export { VersionNumberParam } from './util/decorators/version-number-param.js';
+export { EnumParam } from './util/decorators/enum-param.js';
+export { OcpiExceptionHandler } from './util/middleware/ocpi-exception-handler.js';
+export { AuthMiddleware, RegistrationAuthMiddleware } from './util/middleware/auth-middleware.js';
+export { InvalidParamException } from './exception/invalid-param-exception.js';
+export { MissingParamException } from './exception/missing-param-exception.js';
+export { UnknownTokenException } from './exception/unknown-token-exception.js';
+export { WrongClientAccessException } from './exception/wrong-client-access-exception.js';
+export { ChargingProfilesService } from './services/charging-profiles-service.js';
+// export { AsyncResponder } from './util/async-responder.js';
+export { AsAdminEndpoint } from './util/decorators/as-admin-endpoint.js';
 
-export { MessageSenderWrapper } from './util/MessageSenderWrapper.js';
-export { MessageHandlerWrapper } from './util/MessageHandlerWrapper.js';
-export { CacheWrapper } from './util/CacheWrapper.js';
-export { ResponseGenerator } from './util/response.generator.js';
-export { versionIdParam } from './util/decorators/VersionNumberParam.js';
-export type { PutChargingProfileParams } from './trigger/param/charging.profiles/PutChargingProfileParams.js';
-export { buildPutChargingProfileParams } from './trigger/param/charging.profiles/PutChargingProfileParams.js';
+export { CacheWrapper } from './util/cache-wrapper.js';
+export { ResponseGenerator } from './util/response-generator.js';
+export { versionIdParam } from './util/decorators/version-number-param.js';
+export type { PutChargingProfileParams } from './trigger/param/charging-profiles/put-charging-profile-params.js';
+export { buildPutChargingProfileParams } from './trigger/param/charging-profiles/put-charging-profile-params.js';
 
 export {
   AUTH_CONTROLLER_COMPONENT,
@@ -229,117 +218,104 @@ export {
   NOT_APPLICABLE,
   CREATE,
   UPDATE,
-} from './util/Consts.js';
+} from './util/consts.js';
 
 export { ResponseSchema, OpenAPI } from './openapi-spec-helper/decorators.js';
-export { BaseClientApi } from './trigger/BaseClientApi.js';
-export { LocationsClientApi } from './trigger/LocationsClientApi.js';
+export { BaseClientApi } from './trigger/base-client-api.js';
+export { LocationsClientApi } from './trigger/locations-client-api.js';
 
-export { CommandsService } from './services/CommandsService.js';
-export { CredentialsService } from './services/CredentialsService.js';
-export { TokensService } from './services/TokensService.js';
-// export { TokensAdminService } from './services/TokensAdminService.js';
-export { LocationsService } from './services/LocationsService.js';
-export { VersionService } from './services/VersionService.js';
-export { SessionsService } from './services/SessionsService.js';
-// export { AdminLocationsService } from './services/AdminLocationsService.js';
+export { CommandsService } from './services/commands-service.js';
+export { CredentialsService } from './services/credentials-service.js';
+export { TokensService } from './services/tokens-service.js';
+// export { TokensAdminService } from './services/tokens-admin-service.js';
+export { LocationsService } from './services/locations-service.js';
+export { VersionService } from './services/version-service.js';
+export { SessionsService } from './services/sessions-service.js';
+// export { AdminLocationsService } from './services/admin-locations-service.js';
 
 // Export AsyncJob types
 export type {
   AsyncJobStatusResponse,
   AsyncJobRequest,
   AsyncJobPaginatedParams,
-} from './types/asyncJob.types.js';
-export { AsyncJobAction, AsyncJobName } from './types/asyncJob.types.js';
+} from './types/async-job-types.js';
+export { AsyncJobAction, AsyncJobName } from './types/async-job-types.js';
 
-export { TariffsService } from './services/TariffsService.js';
-export { TariffMapper } from './mapper/TariffMapper.js';
+export { TariffsService } from './services/tariffs-service.js';
+export { TariffMapper } from './mapper/tariff-mapper.js';
 
-export { OcpiHttpHeader } from './util/OcpiHttpHeader.js';
+export { OcpiHttpHeader } from './util/ocpi-http-header.js';
 
-export { CdrsService } from './services/CdrsService.js';
-export type { PaginatedCdrResponse } from './model/Cdr.js';
-export { BaseBroadcaster } from './broadcaster/BaseBroadcaster.js';
-export type { PaginatedTariffResponse, TariffDTO } from './model/DTO/tariffs/TariffDTO.js';
+export { CdrsService } from './services/cdrs-service.js';
+export type { PaginatedCdrResponse } from './model/cdr.js';
+export { BaseBroadcaster } from './broadcaster/base-broadcaster.js';
+export type { PaginatedTariffResponse, TariffDTO } from './model/dto/tariffs/tariff-dto.js';
 export {
   PaginatedTariffResponseSchema,
   PaginatedTariffResponseSchemaName,
-} from './model/DTO/tariffs/TariffDTO.js';
-export { BodyWithExample } from './util/decorators/BodyWithExample.js';
-export { CommandExecutor } from './util/CommandExecutor.js';
-export type { PutTariffRequest } from './model/DTO/tariffs/PutTariffRequest.js';
+} from './model/dto/tariffs/tariff-dto.js';
+export { BodyWithExample } from './util/decorators/body-with-example.js';
+export { CommandExecutor } from './util/command-executor.js';
+export type { PutTariffRequest } from './model/dto/tariffs/put-tariff-request.js';
 export {
   PutTariffRequestSchema,
   PutTariffRequestSchemaName,
-} from './model/DTO/tariffs/PutTariffRequest.js';
+} from './model/dto/tariffs/put-tariff-request.js';
 export type {
   AdminLocationDTO,
   AdminEvseDTO,
   AdminConnectorDTO,
-} from './model/DTO/admin/AdminLocationDTO.js';
+} from './model/dto/admin/admin-location-dto.js';
 export {
   ChargingStationVariableAttributes,
   CONSTRUCT_CHARGING_STATION_VARIABLE_ATTRIBUTES_QUERY,
-} from './model/variableattributes/ChargingStationVariableAttributes.js';
+} from './model/variable-attributes/charging-station-variable-attributes.js';
 export {
   EvseVariableAttributes,
   CONSTRUCT_EVSE_VARIABLE_ATTRIBUTES_QUERY,
-} from './model/variableattributes/EvseVariableAttributes.js';
+} from './model/variable-attributes/evse-variable-attributes.js';
 export {
   ConnectorVariableAttributes,
   CONSTRUCT_CONNECTOR_VARIABLE_ATTRIBUTES_QUERY,
-} from './model/variableattributes/ConnectorVariableAttributes.js';
-export type { UnregisterClientRequestDTO } from './model/UnregisterClientRequestDTO.js';
+} from './model/variable-attributes/connector-variable-attributes.js';
+export type { UnregisterClientRequestDTO } from './model/unregister-client-request-dto.js';
 export {
   UnregisterClientRequestDTOSchema,
   UnregisterClientRequestDTOSchemaName,
-} from './model/UnregisterClientRequestDTO.js';
+} from './model/unregister-client-request-dto.js';
 export * from './events/index.js';
 
-useContainer(Container);
-
-export { Container } from 'typedi';
-export { getDtoEventHandlerMetaData } from './events/AsDtoEventHandler.js';
-export { LocationsBroadcaster } from './broadcaster/LocationsBroadcaster.js';
+export { getDtoEventHandlerMetaData } from './events/as-dto-event-handler.js';
+export { LocationsBroadcaster } from './broadcaster/locations-broadcaster.js';
 
 export class OcpiServer extends KoaServer {
   private readonly ocpiConfig: OcpiConfig;
-  private readonly cache: ICache;
-  private readonly logger: Logger<ILogObj>;
+  private readonly container: AwilixContainer;
   private _modules: (OcpiModule | IDtoModule)[] = [];
   get modules(): (OcpiModule | IDtoModule)[] {
     return this._modules;
   }
 
-  private moduleList: Constructable<OcpiModule | IDtoModule>[] = [];
+  private readonly moduleList: OcpiModuleToken[];
 
-  constructor(
-    ocpiConfig: OcpiConfig,
-    cache: ICache,
-    logger: Logger<ILogObj>,
-    moduleList: Constructable<OcpiModule | IDtoModule>[],
-  ) {
+  constructor(ocpiConfig: OcpiConfig, container: AwilixContainer, moduleList: OcpiModuleToken[]) {
     super();
 
     this.ocpiConfig = ocpiConfig;
-    this.cache = cache;
-    this.logger = logger;
+    this.container = container;
     this.moduleList = moduleList;
-    this.initContainer();
   }
 
   public async initialize() {
-    for (const moduleListElement of this.moduleList) {
-      const constructedModule = Container.get(moduleListElement) as OcpiModule & IDtoModule;
-      if (constructedModule) {
-        if (constructedModule.init) {
-          await constructedModule.init();
-        }
-        if (constructedModule.initHandlers) {
-          await constructedModule.initHandlers();
-        }
-        this._modules.push(constructedModule);
+    for (const moduleToken of this.moduleList) {
+      const constructedModule = this.container.resolve<OcpiModule & IDtoModule>(moduleToken);
+      if (constructedModule.init) {
+        await constructedModule.init();
       }
+      if (constructedModule.initHandlers) {
+        await constructedModule.initHandlers();
+      }
+      this._modules.push(constructedModule);
     }
     this.initKoaServer();
   }
@@ -373,48 +349,25 @@ export class OcpiServer extends KoaServer {
       process.exit(1);
     }
   }
-
-  private initContainer() {
-    Container.set(OcpiConfigToken, this.ocpiConfig);
-    Container.set(CacheWrapper, new CacheWrapper(this.cache));
-    Container.set(Logger, this.logger);
-
-    Container.set(
-      OcpiGraphqlClient,
-      new OcpiGraphqlClient(this.ocpiConfig.graphql.endpoint, this.ocpiConfig.graphql.headers),
-    );
-
-    const ajv = new Ajv({
-      removeAdditional: 'all',
-      useDefaults: true,
-      coerceTypes: 'array',
-      strict: false,
-    });
-    addFormats.default(ajv, {
-      mode: 'fast',
-      formats: ['date-time'],
-    });
-    Container.set(Ajv, ajv);
-
-    this.onContainerInitialized();
-  }
-
-  private onContainerInitialized() {
-    // Container.get(SessionBroadcaster); // init session broadcaster
-    // Container.get(CdrBroadcaster);
-  }
 }
 
-export { OcpiConfigToken };
+export { CommandResponseSchema, CommandResponseSchemaName } from './model/command-response.js';
+export { ChargingProfileResponseSchemaName } from './model/charging-profile-response.js';
+export { ChargingProfileResponseSchema } from './model/charging-profile-response.js';
 
-export { CommandResponseSchema, CommandResponseSchemaName } from './model/CommandResponse.js';
-export { ChargingProfileResponseSchemaName } from './model/ChargingProfileResponse.js';
-export { ChargingProfileResponseSchema } from './model/ChargingProfileResponse.js';
-
-export { PaginatedCdrResponseSchema, PaginatedCdrResponseSchemaName } from './model/Cdr.js';
+export { PaginatedCdrResponseSchema, PaginatedCdrResponseSchemaName } from './model/cdr.js';
 
 // OCPI modules (folded in from the former 03_Modules/* packages).
 // Must remain the last export so foundational symbols (OcpiModule,
 // AbstractDtoModule, decorators, ...) are initialized before the module
 // classes that extend/decorate them evaluate within the import cycle.
 export * from './modules/index.js';
+
+export { buildOcpiContainer, type OcpiModuleToken, type OcpiPrebuilt } from './container.js';
+export type {
+  OcpiClientApiDependencies,
+  OcpiConfiguredDependencies,
+  OcpiDependencies,
+  OcpiGraphqlDependencies,
+  OcpiModuleDependencies,
+} from './dependencies.js';

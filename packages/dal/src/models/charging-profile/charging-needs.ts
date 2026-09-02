@@ -1,0 +1,116 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import {
+  type ACChargingParametersType,
+  type ChargingNeedsDto,
+  type DCChargingParametersType,
+  type EnergyTransferModeEnumType,
+  type EvseDto,
+  type TenantDto,
+  type TransactionDto,
+  OCPP2_0_1,
+} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Evse } from '../location/index.js';
+import { Tenant } from '../tenant.js';
+import { Transaction } from '../transaction-event/transaction.js';
+
+@Table
+export class ChargingNeeds extends Model implements ChargingNeedsDto {
+  static readonly MODEL_NAME: string = OCPP2_Namespace.ChargingNeeds;
+
+  /**
+   * Fields
+   */
+  @Column(DataType.JSONB)
+  declare acChargingParameters?: ACChargingParametersType | null;
+
+  @Column(DataType.JSONB)
+  declare dcChargingParameters?: DCChargingParametersType | null;
+
+  @Column({
+    type: DataType.DATE,
+    get() {
+      const departureTime: Date = this.getDataValue('departureTime');
+      return departureTime ? departureTime.toISOString() : null;
+    },
+  })
+  declare departureTime?: string | null;
+
+  @Column(DataType.STRING)
+  declare requestedEnergyTransfer: EnergyTransferModeEnumType;
+
+  @Column(DataType.INTEGER)
+  declare maxScheduleTuples?: number | null;
+
+  /**
+   * Relations
+   */
+  @ForeignKey(() => Evse)
+  @Column(DataType.INTEGER)
+  declare evseId: number;
+
+  @BelongsTo(() => Evse, 'evseId')
+  declare evse: EvseDto;
+
+  // No @ForeignKey annotation: the database constraint is composite
+  // (transactionDatabaseId, transactionCreatedAt) -> Transactions(id, "createdAt"),
+  @Column(DataType.INTEGER)
+  declare transactionDatabaseId: number;
+
+  // Partition key: the owning transaction's "createdAt", or now() when unlinked.
+  @Column(DataType.DATE)
+  declare transactionCreatedAt?: Date;
+
+  @BelongsTo(() => Transaction, 'transactionDatabaseId')
+  declare transaction: TransactionDto;
+
+  declare customData?: OCPP2_0_1.CustomDataType | null;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare tenantId: number;
+
+  @BelongsTo(() => Tenant, 'tenantId')
+  declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: ChargingNeeds): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
+
+  @BeforeUpdate
+  @BeforeCreate
+  static setDefaultTenant(instance: ChargingNeeds) {
+    if (instance.tenantId == null) {
+      instance.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+
+  constructor(...args: any[]) {
+    super(...args);
+    if (this.tenantId == null) {
+      this.tenantId = DEFAULT_TENANT_ID;
+    }
+  }
+}

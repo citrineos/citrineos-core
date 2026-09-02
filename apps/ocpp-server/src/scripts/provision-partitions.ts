@@ -7,7 +7,7 @@
  * monthly. Runs on every container start, because the partitioning migrations run once
  * but partitions must keep being created.
  */
-import { loadBootstrapConfig } from '@citrineos/base';
+import { ConfigLoader } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
 /** Weeks of "OCPPMessages" partitions to keep ahead of the current one. */
@@ -43,7 +43,8 @@ async function rotate(sequelize: Sequelize, procedure: string, future: number): 
 }
 
 async function main(): Promise<void> {
-  const { host, port, database, username, password, ssl } = loadBootstrapConfig().database;
+  const { host, port, database, username, password, ssl } = (await ConfigLoader.loadConfig())
+    .database;
 
   const sequelize = new Sequelize({
     dialect: 'postgres',
