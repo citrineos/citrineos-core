@@ -26,9 +26,8 @@ export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingStationRepository: IChargingStationRepository;
-  protected _locationRepository: IConnectorRepository &
-    IEvseRepository &
-    IStatusNotificationRepository;
+  protected _evseRepository: IEvseRepository;
+  protected _locationRepository: IConnectorRepository & IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -36,6 +35,7 @@ export class StatusNotificationService {
     componentRepository,
     deviceModelRepository,
     chargingStationRepository,
+    evseRepository,
     locationRepository,
     cache,
     logger,
@@ -43,13 +43,15 @@ export class StatusNotificationService {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
     chargingStationRepository: IChargingStationRepository;
-    locationRepository: IConnectorRepository & IEvseRepository & IStatusNotificationRepository;
+    evseRepository: IEvseRepository;
+    locationRepository: IConnectorRepository & IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
     this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._chargingStationRepository = chargingStationRepository;
+    this._evseRepository = evseRepository;
     this._locationRepository = locationRepository;
     this._cache = cache;
     this._logger = logger
@@ -114,7 +116,7 @@ export class StatusNotificationService {
       }
     } else if (!matchingConnector) {
       if (!matchingEvse) {
-        matchingEvse = await this._locationRepository.createOrUpdateEvse(tenantId, {
+        matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
           evseTypeId: statusNotificationRequest.evseId,
           ocppConnectionName,
         });
@@ -262,7 +264,7 @@ export class StatusNotificationService {
               `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
             );
           }
-          const commissioned = await this._locationRepository.commissionEvseForOcpp16Connector(
+          const commissioned = await this._evseRepository.commissionEvseForOcpp16Connector(
             tenantId,
             ocppConnectionName,
             statusNotificationRequest.connectorId,

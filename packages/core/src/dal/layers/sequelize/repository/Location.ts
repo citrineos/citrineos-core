@@ -394,10 +394,9 @@ export class SequelizeLocationRepository
     return await this.s.transaction(async (sequelizeTransaction) => {
       // OCPP 1.6 has no native EVSE concept. Conservative default: each connector
       // maps to its own (Evse, EvseType) pair using the 1.6 connectorId as the
-      // OCPP 2.0.1 evse id. EvseType.connectorId stays null because the EVSE
-      // is implicit (single-connector hardware abstraction). The Evse's
-      // stationId FK is auto-resolved from ocppConnectionName by the
-      // BeforeCreate hook on the Evse model.
+      // OCPP 2.0.1 evse id. connectorId is null because this EvseType denotes the
+      // whole EVSE — the partial unique index `evse_types_tenantId_id` (WHERE
+      // connectorId IS NULL) then permits exactly one such row per EVSE
       const [evseType] = await EvseType.findOrCreate({
         where: { tenantId, id: connectorId, connectorId: null },
         defaults: { tenantId, id: connectorId, connectorId: null },

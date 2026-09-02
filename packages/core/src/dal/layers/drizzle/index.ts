@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export { DefaultDrizzleInstance } from './util.js';
-export { DrizzleRepository, type DrizzleRepositoryDependencies } from './repository/Base.js';
+export {
+  DrizzleRepository,
+  type DrizzleRepositoryDependencies,
+  type DrizzleExecutor,
+  type DrizzleWriteContext,
+} from './repository/Base.js';
 export { DrizzleAuthorizationRepository, toAuthorizationDto } from './repository/Authorization.js';
 export {
   authorizationTable,
@@ -43,6 +48,15 @@ export {
   type ChargingStationEntity,
   type ChargingStationEntityInsert,
 } from './schema/ChargingStation.js';
+export { DrizzleEvseRepository, toEvseDto } from './repository/Evse.js';
+export {
+  evseTable,
+  tenantEvseTable,
+  EvseEntitySchema,
+  EvseEntityInsertSchema,
+  type EvseEntity,
+  type EvseEntityInsert,
+} from './schema/Evse.js';
 export { DrizzleLocationRepository, toLocationDto } from './repository/Location.js';
 export {
   locationTable,

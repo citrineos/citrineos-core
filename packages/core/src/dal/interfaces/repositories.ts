@@ -61,7 +61,6 @@ import type { VariableAttribute } from '../layers/sequelize/model/DeviceModel/Va
 import type { VariableCharacteristics } from '../layers/sequelize/model/DeviceModel/VariableCharacteristics.js';
 import type { ChargingStationNetworkProfile } from '../layers/sequelize/model/Location/ChargingStationNetworkProfile.js';
 import type { Connector } from '../layers/sequelize/model/Location/Connector.js';
-import type { Evse } from '../layers/sequelize/model/Location/Evse.js';
 import type { Location } from '../layers/sequelize/model/Location/Location.js';
 import type { SetNetworkProfile } from '../layers/sequelize/model/Location/SetNetworkProfile.js';
 import type { StatusNotification } from '../layers/sequelize/model/Location/StatusNotification.js';
@@ -303,7 +302,7 @@ export interface IEvseRepository {
     tenantId: number,
     ocppConnectionName: string,
     ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
+  ) => Promise<EvseDto | undefined>;
   createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
   /**
    * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
