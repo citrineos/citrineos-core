@@ -6,14 +6,15 @@
  * Provisions upcoming "OCPPMessages" weekly partitions. Runs on every container start,
  * because the partitioning migration runs once but partitions must keep being created.
  */
-import { loadBootstrapConfig } from '@citrineos/base';
+import { ConfigLoader } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
 /** Weeks of partitions to keep ahead of the current one. */
 const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 1);
 
 async function main(): Promise<void> {
-  const { host, port, database, username, password, ssl } = loadBootstrapConfig().database;
+  const { host, port, database, username, password, ssl } = (await ConfigLoader.loadConfig())
+    .database;
 
   const sequelize = new Sequelize({
     dialect: 'postgres',
