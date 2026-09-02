@@ -61,10 +61,13 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     );
 
     const securityProfile3Servers = websocketServersConfig.filter((s) => s.securityProfile === 3);
-    const requiredPaths = securityProfile3Servers.flatMap((s) => [
-      s.tlsCertificateChainFilePath as string,
-      s.mtlsCertificateAuthorityKeyFilePath as string,
-    ]);
+    const requiredPaths = securityProfile3Servers.flatMap((s) =>
+      [
+        s.tlsCertificateChainFilePath as string,
+        s.mtlsCertificateAuthorityKeyFilePath as string,
+        s.mtlsCertificateAuthorityCertificateFilePath as string | undefined,
+      ].filter((p): p is string => !!p),
+    );
     const existResults = await Promise.all(
       requiredPaths.map((p) => fileStorage.exists(p, undefined, { trusted: true })),
     );
@@ -75,20 +78,51 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     const securityCertChainKeyMap = new Map<string, [string, string]>();
     for (const server of securityProfile3Servers) {
       try {
-        const certChain = await fileStorage.getFile(
-          server.tlsCertificateChainFilePath as string,
-          undefined,
-          { trusted: true },
-        );
+        // What gets stored here is the certificate that will issue charging
+        // station certificates, not the CSMS's own TLS chain. The two are the
+        // same only when the CSMS's TLS certificate happens to be issued by
+        // this sub CA.
+        let subCACertPem: string;
+        const dedicatedSubCACertPath = server.mtlsCertificateAuthorityCertificateFilePath;
+        if (dedicatedSubCACertPath) {
+          const dedicatedSubCACert = await fileStorage.getFile(dedicatedSubCACertPath, undefined, {
+            trusted: true,
+          });
+          if (dedicatedSubCACert === undefined) {
+            throw new Error(`Sub CA certificate file not found for server ${server.id}`);
+          }
+          subCACertPem = dedicatedSubCACert;
+        } else {
+          // Fallback for servers that do not name the sub CA certificate: the
+          // second entry of the TLS chain issued the CSMS's own leaf, which is
+          // the sub CA only in the self-issued case.
+          const certChain = await fileStorage.getFile(
+            server.tlsCertificateChainFilePath as string,
+            undefined,
+            { trusted: true },
+          );
+          if (certChain === undefined) {
+            throw new Error(`Certificate file not found for server ${server.id}`);
+          }
+          const certChainArray: string[] = parseCertificateChainPem(certChain);
+          if (certChainArray.length < 2) {
+            throw new Error(
+              `The size of the chain is ${certChainArray.length}. Sub CA certificate for signing not found`,
+            );
+          }
+          subCACertPem = certChainArray[1];
+        }
+
         const mtlsKey = await fileStorage.getFile(
           server.mtlsCertificateAuthorityKeyFilePath as string,
           undefined,
           { trusted: true },
         );
-        if (certChain === undefined || mtlsKey === undefined) {
+        if (mtlsKey === undefined) {
           throw new Error(`Certificate file not found for server ${server.id}`);
         }
-        securityCertChainKeyMap.set(server.id, [certChain, mtlsKey]);
+
+        securityCertChainKeyMap.set(server.id, [subCACertPem, mtlsKey]);
       } catch (error) {
         log.error(
           'Unable to start Certificates module due to invalid security certificates for {}: {}',
@@ -205,26 +239,20 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     if (!nextEntry) {
       throw new Error('Failed to get certificate chain, securityCertChainKeyMap is empty');
     }
-    const [serverId, [certChain, subCAPrivateKey]] = nextEntry;
-    this._logger.debug(`Found certificate chain in server ${serverId}: ${certChain}`);
-
-    const certChainArray: string[] = parseCertificateChainPem(certChain);
-    if (certChainArray.length < 2) {
-      throw new Error(
-        `The size of the chain is ${certChainArray.length}. Sub CA certificate for signing not found`,
-      );
-    }
-    this._logger.info(`Found Sub CA certificate: ${certChainArray[1]}`);
+    // The map already holds the resolved sub CA certificate, not a chain --
+    // create() picked it from mtlsCertificateAuthorityCertificateFilePath, or
+    // derived it from the TLS chain once at startup.
+    const [serverId, [subCACertPem, subCAPrivateKey]] = nextEntry;
+    this._logger.info(`Found Sub CA certificate for server ${serverId}: ${subCACertPem}`);
 
     const signedCertPem: string = createSignedCertificateFromCSR(
       csrString,
-      certChainArray[1],
+      subCACertPem,
       subCAPrivateKey,
     ).getPEM();
 
-    // Generate and return certificate chain for signed certificate
-    certChainArray[0] = signedCertPem.replace(/\n+$/, '');
-    return certChainArray.join('\n');
+    // Signed leaf followed by the sub CA that issued it
+    return `${signedCertPem.replace(/\n+$/, '')}\n${subCACertPem}`;
   }
 
   updateCertificateChainKeyMap(

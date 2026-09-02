@@ -18,6 +18,9 @@ export const ServerNetworkProfileSchema = BaseSchema.extend({
   tlsKeyFilePath: z.string().optional(),
   tlsCertificateChainFilePath: z.string().optional(),
   mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
+  // Sub CA certificate used as the issuer when signing charging station CSRs. See
+  // websocketServerSchema in ../../config/types.ts for when this must be set.
+  mtlsCertificateAuthorityCertificateFilePath: z.string().optional(),
   rootCACertificateFilePath: z.string().optional(),
   chargingStations: z.array(ChargingStationSchema).nullable().optional(),
 });

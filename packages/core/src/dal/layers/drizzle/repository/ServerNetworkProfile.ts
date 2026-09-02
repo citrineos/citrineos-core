@@ -32,6 +32,8 @@ export function toServerNetworkProfileDto(
     tlsKeyFilePath: entity.tlsKeyFilePath ?? undefined,
     tlsCertificateChainFilePath: entity.tlsCertificateChainFilePath ?? undefined,
     mtlsCertificateAuthorityKeyFilePath: entity.mtlsCertificateAuthorityKeyFilePath ?? undefined,
+    mtlsCertificateAuthorityCertificateFilePath:
+      entity.mtlsCertificateAuthorityCertificateFilePath ?? undefined,
     rootCACertificateFilePath: entity.rootCACertificateFilePath ?? undefined,
     chargingStations: undefined,
     tenantId: entity.tenantId ?? undefined,
@@ -82,6 +84,8 @@ export class DrizzleServerNetworkProfileRepository
       tlsCertificateChainFilePath: websocketServerConfig.tlsCertificateChainFilePath ?? null,
       mtlsCertificateAuthorityKeyFilePath:
         websocketServerConfig.mtlsCertificateAuthorityKeyFilePath ?? null,
+      mtlsCertificateAuthorityCertificateFilePath:
+        websocketServerConfig.mtlsCertificateAuthorityCertificateFilePath ?? null,
       rootCACertificateFilePath: websocketServerConfig.rootCACertificateFilePath ?? null,
       tenantId,
     };

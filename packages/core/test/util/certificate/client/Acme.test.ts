@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IFileStorage } from '@citrineos/base';
+import { ConfigLoader, type IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import * as CertificateUtil from '@util/certificate/CertificateUtil.js';
@@ -17,6 +17,8 @@ vi.mock('@util/certificate/CertificateUtil');
 describe('ACME', () => {
   const mockTlsCertificateChain = faker.lorem.word();
   const mockMtlsCertificateAuthorityKey = faker.lorem.word();
+  const mockLeafPem = faker.lorem.word();
+  const mockSubCAPem = faker.lorem.word();
   let mockCertUtil: Mocked<typeof CertificateUtil>;
   let mockClient: Mocked<Client>;
   let mockFileStorage: IFileStorage;
@@ -28,6 +30,9 @@ describe('ACME', () => {
   beforeAll(async () => {
     global.fetch = vi.fn();
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
+    // No mtlsCertificateAuthorityCertificateFilePath on this server, so create()
+    // falls back to the second entry of the tls certificate chain.
+    mockCertUtil.parseCertificateChainPem.mockReturnValue([mockLeafPem, mockSubCAPem]);
 
     const websocketServersConfigFile = 'websocket-servers.json';
     const websocketServers = [
@@ -82,11 +87,10 @@ describe('ACME', () => {
   });
 
   describe('getCertificateChain', () => {
-    it('succeeds', async () => {
-      const mockLeafPem = faker.lorem.word();
-      const mockSubCAPem = faker.lorem.word();
+    it('signs against the sub CA cert derived from the tls certificate chain', async () => {
+      // The chain is parsed once in create(); by the time a CSR arrives the map
+      // already holds the sub CA certificate itself.
       const mockCertificate = aValidSignedCertificate();
-      mockCertUtil.parseCertificateChainPem.mockReturnValueOnce([mockLeafPem, mockSubCAPem]);
       mockCertUtil.createSignedCertificateFromCSR.mockReturnValueOnce(mockCertificate);
 
       const givenCSR = faker.lorem.word();
@@ -94,12 +98,76 @@ describe('ACME', () => {
 
       const expectedResult = mockCertificate.getPEM().replace(/\n+$/, '') + '\n' + mockSubCAPem;
       expect(actualResult).toBe(expectedResult);
-      expect(mockCertUtil.parseCertificateChainPem).toHaveBeenCalledWith(mockTlsCertificateChain);
       expect(mockCertUtil.createSignedCertificateFromCSR).toHaveBeenCalledWith(
         givenCSR,
         mockSubCAPem,
         mockMtlsCertificateAuthorityKey,
       );
+    });
+
+    it('signs against mtlsCertificateAuthorityCertificateFilePath when set, ignoring the tls chain', async () => {
+      // The case the fallback gets wrong: the CSMS's own TLS chain is issued by
+      // a public CA, so its second entry is that CA -- not the sub CA that must
+      // appear as the issuer of a charging station certificate.
+      const dedicatedSubCAPem = faker.lorem.word();
+      const dedicatedMtlsKey = faker.lorem.word();
+      const dedicatedServers = [
+        {
+          id: '3',
+          host: '0.0.0.0',
+          port: 8444,
+          pingInterval: 60,
+          protocols: ['ocpp2.0.1'],
+          securityProfile: 3,
+          allowUnknownChargingStations: false,
+          dynamicTenantResolution: false,
+          tenantId: 1,
+          tlsKeyFilePath: faker.lorem.word(),
+          tlsCertificateChainFilePath: faker.lorem.word(),
+          mtlsCertificateAuthorityKeyFilePath: faker.lorem.word(),
+          mtlsCertificateAuthorityCertificateFilePath: faker.lorem.word(),
+        },
+      ];
+      const dedicatedFileStorage = {
+        saveFile: vi.fn().mockResolvedValue(undefined),
+        getFile: vi
+          .fn()
+          .mockResolvedValueOnce(JSON.stringify(dedicatedServers))
+          .mockResolvedValueOnce(dedicatedSubCAPem)
+          .mockResolvedValueOnce(dedicatedMtlsKey)
+          .mockResolvedValueOnce(faker.lorem.word()),
+        exists: vi.fn().mockResolvedValue(true),
+        createDirectory: vi.fn().mockResolvedValue(undefined),
+        deleteFile: vi.fn().mockResolvedValue(undefined),
+      } as unknown as IFileStorage;
+
+      // loadWebsocketServersConfig caches the parsed servers on a static, so a
+      // second create() would otherwise reuse the ones from beforeAll.
+      (ConfigLoader as unknown as { websocketServers: unknown }).websocketServers = undefined;
+
+      const dedicatedAcme = await Acme.create(
+        systemConfig,
+        dedicatedFileStorage,
+        logger,
+        mockClient,
+      );
+
+      const mockCertificate = aValidSignedCertificate();
+      mockCertUtil.createSignedCertificateFromCSR.mockReturnValueOnce(mockCertificate);
+      const givenCSR = faker.lorem.word();
+
+      const actualResult = await dedicatedAcme.getCertificateChain(givenCSR);
+
+      expect(actualResult).toBe(
+        mockCertificate.getPEM().replace(/\n+$/, '') + '\n' + dedicatedSubCAPem,
+      );
+      expect(mockCertUtil.createSignedCertificateFromCSR).toHaveBeenCalledWith(
+        givenCSR,
+        dedicatedSubCAPem,
+        dedicatedMtlsKey,
+      );
+      // The tls chain is never read when a dedicated sub CA certificate is set.
+      expect(mockCertUtil.parseCertificateChainPem).not.toHaveBeenCalled();
     });
   });
 

@@ -37,6 +37,8 @@ export class SequelizeServerNetworkProfileRepository
       websocketServerConfig.tlsCertificateChainFilePath;
     serverNetworkProfile.mtlsCertificateAuthorityKeyFilePath =
       websocketServerConfig.mtlsCertificateAuthorityKeyFilePath;
+    serverNetworkProfile.mtlsCertificateAuthorityCertificateFilePath =
+      websocketServerConfig.mtlsCertificateAuthorityCertificateFilePath;
     serverNetworkProfile.rootCACertificateFilePath =
       websocketServerConfig.rootCACertificateFilePath;
     serverNetworkProfile.tenantId = websocketServerConfig.tenantId;

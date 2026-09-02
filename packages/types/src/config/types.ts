@@ -42,6 +42,13 @@ export const websocketServerSchema = z
     tlsKeyFilePath: z.string().optional(),
     tlsCertificateChainFilePath: z.string().optional(),
     mtlsCertificateAuthorityKeyFilePath: z.string().optional(),
+    // Sub CA's own certificate, used as the issuer when signing a charging station's CSR
+    // (OCPP SignCertificate). Optional: when unset, the issuer falls back to the second entry
+    // of tlsCertificateChainFilePath, which only holds when the CSMS's own TLS certificate is
+    // issued by this same sub CA. Set it explicitly when tlsCertificateChainFilePath instead
+    // carries a publicly-issued certificate (e.g. Let's Encrypt) for the CSMS's TLS identity --
+    // otherwise the signed certificate's issuer will not match its actual signer.
+    mtlsCertificateAuthorityCertificateFilePath: z.string().optional(),
     rootCACertificateFilePath: z.string().optional(),
     tenantId: z.number().int().positive().optional(),
     // When true, tenant is resolved at connection upgrade time from the request path
