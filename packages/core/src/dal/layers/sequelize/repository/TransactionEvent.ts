@@ -28,6 +28,7 @@ import { StopTransaction } from '../model/TransactionEvent/StopTransaction.js';
 import { Transaction } from '../model/TransactionEvent/Transaction.js';
 import { TransactionEvent } from '../model/TransactionEvent/TransactionEvent.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
+import { resolveStationId } from './resolveStationId.js';
 import { SequelizeChargingStationSequenceRepository } from './ChargingStationSequence.js';
 
 export class SequelizeTransactionEventRepository
@@ -131,6 +132,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
           });
           evseId = evse.id;
         }
@@ -142,6 +146,9 @@ export class SequelizeTransactionEventRepository
               tenantId,
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
+            },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
             },
           });
           const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
@@ -220,6 +227,9 @@ export class SequelizeTransactionEventRepository
               tenantId,
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
+            },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
             },
           });
           newTransaction.set('evseId', evse.id);

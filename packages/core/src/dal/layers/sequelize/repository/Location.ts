@@ -20,6 +20,7 @@ import { LatestStatusNotification } from '../model/Location/LatestStatusNotifica
 import { Location } from '../model/Location/Location.js';
 import { StatusNotification } from '../model/Location/StatusNotification.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './Base.js';
+import { resolveStationId } from './resolveStationId.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -325,6 +326,9 @@ export class SequelizeLocationRepository
         },
         defaults: {
           ...evse,
+          stationId:
+            evse.stationId ??
+            (await resolveStationId(tenantId, evse.ocppConnectionName, sequelizeTransaction)),
         },
         transaction: sequelizeTransaction,
       });
@@ -404,7 +408,12 @@ export class SequelizeLocationRepository
       });
       const [evse] = await Evse.findOrCreate({
         where: { tenantId, ocppConnectionName, evseTypeId: connectorId },
-        defaults: { tenantId, ocppConnectionName, evseTypeId: connectorId },
+        defaults: {
+          tenantId,
+          ocppConnectionName,
+          evseTypeId: connectorId,
+          stationId: await resolveStationId(tenantId, ocppConnectionName, sequelizeTransaction),
+        },
         transaction: sequelizeTransaction,
       });
       return { evseId: evse.id, evseTypeConnectorId: evseType.databaseId };

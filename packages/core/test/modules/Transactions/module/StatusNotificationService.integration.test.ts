@@ -76,7 +76,7 @@ beforeEach(async () => {
 describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 integration)', () => {
   it('creates an Evse and returns ids that satisfy the Connector FK constraints', async () => {
     const ocppConnectionName = 'CS-1.6-clean-db';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     } as ChargingStation);
@@ -95,6 +95,7 @@ describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 int
     const evse = await Evse.findOne({ where: { id: evseId } });
     expect(evse).not.toBeNull();
     expect(evse?.ocppConnectionName).toBe(ocppConnectionName);
+    expect(evse?.stationId).toBe(station.id);
 
     // Critical: verify the returned ids satisfy whatever FK rules the live DB enforces
     // by actually inserting a Connector row.
