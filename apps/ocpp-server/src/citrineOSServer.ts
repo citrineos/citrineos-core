@@ -47,6 +47,7 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
+import { MessagesModule } from '@citrineos/core/dist/src/modules/Messages/src/index.js';
 
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {
@@ -74,6 +75,7 @@ export class CitrineOSServer {
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
+  protected _messagesModule?: MessagesModule;
 
   protected readonly appName: string;
   protected _isShuttingDown = false;
@@ -193,6 +195,8 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
+    // After initDb to ensure messages get stored as they’re processed.
+    await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
   }
@@ -406,6 +410,15 @@ export class CitrineOSServer {
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(['adminApi']);
+  }
+
+  /**
+   * Starts the messages module, which consumes the `messages` exchange.
+   */
+  protected async initMessagesModule(): Promise<void> {
+    this._logger.info('Initializing messages module (general message processing)');
+    this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
+    await this._messagesModule.start();
   }
 
   protected async initAllModules() {
