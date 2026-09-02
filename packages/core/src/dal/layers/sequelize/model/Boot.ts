@@ -2,9 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, TenantDto, VariableAttributeDto } from '@citrineos/types';
+import type {
+  BootDto,
+  ChargingStationDto,
+  TenantDto,
+  VariableAttributeDto,
+} from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
+  AutoIncrement,
   BeforeCreate,
   BeforeUpdate,
   BelongsTo,
@@ -17,18 +23,30 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { VariableAttribute } from './DeviceModel/VariableAttribute.js';
+import { ChargingStation } from './Location/index.js';
 import { Tenant } from './Tenant.js';
 
 @Table
 export class Boot extends Model implements BootDto {
   static readonly MODEL_NAME: string = Namespace.BootConfig;
 
-  /**
-   * StationId
-   */
+  @AutoIncrement
   @PrimaryKey
-  @Column(DataType.STRING)
-  declare id: string;
+  @Column(DataType.INTEGER)
+  declare id: number;
+
+  @ForeignKey(() => ChargingStation)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    unique: 'Boots_stationId_key',
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
+  declare stationId: number;
+
+  @BelongsTo(() => ChargingStation, 'stationId')
+  declare chargingStation?: ChargingStationDto;
 
   @Column({
     type: DataType.DATE,

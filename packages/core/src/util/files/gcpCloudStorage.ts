@@ -2,22 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootstrapConfig, ConfigStore } from '@citrineos/base';
+import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { Bucket, Storage } from '@google-cloud/storage';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
-export class GcpCloudStorage implements ConfigStore {
+export class GcpCloudStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
   private storageClient: Storage;
-  private configBucketName: string;
-  private configFileName: string;
+  private defaultBucketName: string;
 
   constructor(
-    config: BootstrapConfig['fileAccess']['gcp'],
-    configFileName: string,
-    configBucket?: string,
+    config: SystemConfig['fileAccess']['gcp'],
+    defaultBucket?: string,
     logger?: Logger<ILogObj>,
   ) {
     if (!config) {
@@ -27,8 +25,7 @@ export class GcpCloudStorage implements ConfigStore {
       projectId: config.projectId,
       credentials: config.credentials,
     });
-    this.configBucketName = configBucket || 'default';
-    this.configFileName = configFileName;
+    this.defaultBucketName = defaultBucket || config.defaultBucketName;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
@@ -43,7 +40,7 @@ export class GcpCloudStorage implements ConfigStore {
    * @returns The key used to store the object.
    */
   async saveFile(key: string, content: Buffer, bucket?: string): Promise<string> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Saving file to ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
@@ -73,7 +70,7 @@ export class GcpCloudStorage implements ConfigStore {
    * @returns Object content, or undefined if the key does not exist.
    */
   async getFile(key: string, bucket?: string): Promise<string | undefined> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Getting file from ${bucketName}/${key}`);
     const file = this.getBucket(bucketName).file(key);
 
@@ -101,7 +98,7 @@ export class GcpCloudStorage implements ConfigStore {
    * @returns True if the object exists.
    */
   async exists(key: string, bucket?: string): Promise<boolean> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Checking existence of ${bucketName}/${key}`);
     try {
       const [exists] = await this.getBucket(bucketName).file(key).exists();
@@ -126,7 +123,7 @@ export class GcpCloudStorage implements ConfigStore {
     _bucket?: string,
     _options?: { recursive?: boolean },
   ): Promise<void> {
-    this._logger.debug(`Creating directory ${_bucket ?? this.configBucketName}/${_key}`);
+    this._logger.debug(`Creating directory ${_bucket ?? this.defaultBucketName}/${_key}`);
     return;
   }
 
@@ -141,7 +138,7 @@ export class GcpCloudStorage implements ConfigStore {
     bucket?: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void> {
-    const bucketName = bucket ?? this.configBucketName;
+    const bucketName = bucket ?? this.defaultBucketName;
     this._logger.debug(`Deleting ${bucketName}/${key}`);
     try {
       if (options?.recursive) {
@@ -156,36 +153,6 @@ export class GcpCloudStorage implements ConfigStore {
       this._logger.error(`Error deleting "${key}" from GCP Cloud Storage:`, error);
       throw error;
     }
-  }
-
-  /**
-   * Load JSON config from GCS and parse as SystemConfig.
-   */
-  async fetchConfig(): Promise<SystemConfig | null> {
-    try {
-      const configString = await this.getFile(this.configFileName, this.configBucketName);
-      if (!configString) return null;
-      return JSON.parse(configString) as SystemConfig;
-    } catch (error: any) {
-      if (this.isNotFoundError(error)) {
-        this._logger.warn('Config not found in GCP Cloud Storage.');
-        return null;
-      }
-      this._logger.error('Error fetching config from GCP Cloud Storage:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Serialize and save SystemConfig JSON to GCS.
-   */
-  async saveConfig(config: SystemConfig): Promise<void> {
-    await this.saveFile(
-      this.configFileName,
-      Buffer.from(JSON.stringify(config, null, 2)),
-      this.configBucketName,
-    );
-    this._logger.info('Config saved to GCP Cloud Storage.');
   }
 
   private getBucket(name: string): Bucket {

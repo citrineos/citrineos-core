@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Constructable } from 'typedi';
+import type { Constructable } from '@citrineos/base';
 
 export abstract class OcpiModule {
   public abstract getController(): Constructable<any>;

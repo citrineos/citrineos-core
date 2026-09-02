@@ -22,8 +22,7 @@ import {
   ResponseSchema,
   versionIdParam,
 } from '../../../index.js';
-
-import { Service } from 'typedi';
+import type { OcpiDependencies } from '../../../dependencies.js';
 
 const MOCK_PAGINATED_CDRS = await generateMockOcpiPaginatedResponse(
   PaginatedCdrResponseSchema,
@@ -31,11 +30,17 @@ const MOCK_PAGINATED_CDRS = await generateMockOcpiPaginatedResponse(
   new PaginatedParams(),
 );
 
+export interface CdrsModuleApiDependencies extends OcpiDependencies {
+  cdrsService: CdrsService;
+}
+
 @JsonController(`/:${versionIdParam}/${ModuleId.Cdrs}`)
-@Service()
 export class CdrsModuleApi extends BaseController implements ICdrsModuleApi {
-  constructor(readonly cdrsService: CdrsService) {
-    super();
+  readonly cdrsService: CdrsService;
+
+  constructor(dependencies: CdrsModuleApiDependencies) {
+    super(dependencies);
+    this.cdrsService = dependencies.cdrsService;
   }
 
   @Get()

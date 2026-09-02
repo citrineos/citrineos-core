@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { createIdentifier } from '@base-util/identifiers.js';
+import { RequestBuilder } from '@base-util/request.js';
 import {
   ErrorCode,
   OCPPVersion,
@@ -8,26 +10,24 @@ import {
   type OcppResponse,
   type SystemConfig,
 } from '@citrineos/types';
-import { OcppError } from '@ocpp/rpc/message.js';
-import {
-  type IMessage,
-  type IMessageConfirmation,
-  type IMessageSender,
-  MessageOrigin,
-} from '@interfaces/messages/index.js';
-import { createIdentifier } from '@base-util/identifiers.js';
-import { v4 as uuidv4 } from 'uuid';
-import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
 import type { ICache } from '@interfaces/cache/cache.js';
-import { type ILogObj, Logger } from 'tslog';
 import { CacheNamespace, type IWebsocketConnection } from '@interfaces/cache/types.js';
-import { RequestBuilder } from '@base-util/request.js';
 import type {
   IOcppSender,
   SendCallArgs,
   SendCallErrorArgs,
   SendCallResultArgs,
 } from '@interfaces/handlers/IOcppSender.js';
+import {
+  type IMessage,
+  type IMessageConfirmation,
+  type IMessageSender,
+  MessageOrigin,
+} from '@interfaces/messages/index.js';
+import { OCPPValidator } from '@interfaces/modules/OCPPValidator.js';
+import { OcppError } from '@ocpp/rpc/message.js';
+import { type ILogObj, Logger } from 'tslog';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * OcppSender is primarily for abstracting any OCPP message calls that
@@ -105,7 +105,7 @@ export class OcppSender implements IOcppSender {
           _correlationId,
           callbackUrl,
           this.CALLBACK_URL_CACHE_PREFIX + ocppConnectionName,
-          this._config.maxCachingSeconds,
+          this._config.timeouts.maxCachingSeconds,
         )
         .then((value) => {
           if (value) {

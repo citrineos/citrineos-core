@@ -10,11 +10,13 @@ import {
   DEFAULT_TENANT_ID,
   IMessageQuerystringSchema,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { type CertificateCreate, type InstalledCertificateDto, HttpMethod } from '@citrineos/types';
 import type { RegenerateExistingCertificate } from '@dal/interfaces/index.js';
 import { RegenerateInstalledCertificateSchema } from '@dal/interfaces/index.js';
-import type { IInstalledCertificateRepository } from '@dal/interfaces/repositories.js';
-import { Certificate, InstalledCertificate } from '@dal/layers/sequelize/index.js';
+import type {
+  ICertificateRepository,
+  IInstalledCertificateRepository,
+} from '@dal/interfaces/repositories.js';
 import type { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import { generateCertificate } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
@@ -23,6 +25,7 @@ import moment from 'moment';
 
 interface RegenerateCertificateEndpointDependencies extends AbstractEndpointDependencies {
   fileStorage: IFileStorage;
+  certificateRepository: ICertificateRepository;
   installedCertificateRepository: IInstalledCertificateRepository;
   installCertificateHelperService: InstallCertificateHelperService;
 }
@@ -41,42 +44,50 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
   };
 
   private readonly _fileStorage: IFileStorage;
+  private readonly _certificateRepository: ICertificateRepository;
   private readonly _installedCertificateRepository: IInstalledCertificateRepository;
   private readonly _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
     logger,
     fileStorage,
+    certificateRepository,
     installedCertificateRepository,
     installCertificateHelperService,
   }: RegenerateCertificateEndpointDependencies) {
     super(logger);
     this._fileStorage = fileStorage;
+    this._certificateRepository = certificateRepository;
     this._installedCertificateRepository = installedCertificateRepository;
     this._installCertificateHelperService = installCertificateHelperService;
   }
 
   async handle(
     request: FastifyRequest<RegenerateCertificateEndpointRoute>,
-  ): Promise<InstalledCertificate> {
+  ): Promise<InstalledCertificateDto> {
     const installedCertificateId = request.body.installedCertificateId;
     const validBeforeParam = request.body.validBefore;
-    const ocppConnectionName = request.query.identifier;
+    const ocppConnectionName = Array.isArray(request.query.identifier)
+      ? request.query.identifier[0]
+      : request.query.identifier;
     const tenantId = request.query.tenantId || DEFAULT_TENANT_ID;
     this._logger.info(
       `Regenerating existing certificate ${installedCertificateId} for charger ${ocppConnectionName}`,
     );
     const existingInstalledCertificate =
-      await this._installedCertificateRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          id: installedCertificateId,
-          ocppConnectionName: ocppConnectionName,
-        },
-      });
+      await this._installedCertificateRepository.findByIdAndStation(
+        tenantId,
+        installedCertificateId,
+        ocppConnectionName,
+      );
     if (!existingInstalledCertificate) {
       throw new Error('Installed certificate not found');
     }
-    const existingCertificateRecord = await existingInstalledCertificate.$get('certificate');
+    const existingCertificateRecord =
+      await this._installedCertificateRepository.getLinkedCertificate(
+        tenantId,
+        existingInstalledCertificate.id!,
+      );
     if (!existingCertificateRecord) {
       throw new Error('Certificate not found');
     }
@@ -98,19 +109,21 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
     const existingCertificate = new jsrsasign.X509();
     existingCertificate.readCertPEM(existingCertificateString);
     const existingSubjectString = existingCertificate.getSubjectString();
-    let newCertificateRecord = new Certificate();
-    newCertificateRecord.serialNumber = moment().valueOf();
-    newCertificateRecord.issuerName = existingSubjectString;
-    newCertificateRecord.organizationName = existingCertificateRecord.organizationName;
-    newCertificateRecord.commonName = existingCertificateRecord.commonName;
-    newCertificateRecord.keyLength = existingCertificateRecord.keyLength;
-    newCertificateRecord.validBefore = validBeforeParam;
-    newCertificateRecord.signatureAlgorithm = existingCertificateRecord.signatureAlgorithm;
-    newCertificateRecord.countryName = existingCertificateRecord.countryName;
-    newCertificateRecord.isCA = existingCertificateRecord.isCA;
-    newCertificateRecord.pathLen = existingCertificateRecord.pathLen;
-    newCertificateRecord.signedBy = existingCertificateRecord.id;
-    newCertificateRecord.certificateFileHash = existingCertificateRecord.certificateFileHash;
+    const newCertificateRecord: CertificateCreate = {
+      tenantId,
+      serialNumber: moment().valueOf(),
+      issuerName: existingSubjectString,
+      organizationName: existingCertificateRecord.organizationName,
+      commonName: existingCertificateRecord.commonName,
+      keyLength: existingCertificateRecord.keyLength,
+      validBefore: validBeforeParam,
+      signatureAlgorithm: existingCertificateRecord.signatureAlgorithm,
+      countryName: existingCertificateRecord.countryName,
+      isCA: existingCertificateRecord.isCA,
+      pathLen: existingCertificateRecord.pathLen,
+      signedBy: existingCertificateRecord.id,
+      certificateFileHash: existingCertificateRecord.certificateFileHash,
+    };
     const [newCertificatePem, newPrivateKeyPem] = generateCertificate(
       newCertificateRecord,
       this._logger,
@@ -127,9 +140,16 @@ export class RegenerateCertificateEndpoint extends AbstractEndpoint<RegenerateCe
       `Regenerated_Key_${newCertificateRecord.serialNumber}.pem`,
       Buffer.from(newPrivateKeyPem),
     );
-    newCertificateRecord = await newCertificateRecord.save();
-    existingInstalledCertificate.certificateId = newCertificateRecord.id;
-    await existingInstalledCertificate.save();
-    return existingInstalledCertificate;
+    const savedCertificate = await this._certificateRepository.createCertificate(
+      tenantId,
+      newCertificateRecord,
+    );
+    return (
+      (await this._installedCertificateRepository.setCertificateId(
+        tenantId,
+        existingInstalledCertificate.id!,
+        savedCertificate.id!,
+      )) ?? existingInstalledCertificate
+    );
   }
 }

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type BootstrapConfig,
   type ICache,
   type IMessage,
   type IMessageConfirmation,
@@ -11,7 +10,6 @@ import {
   type IMessageSender,
   type RpcMessage,
   AbstractMessageRouter,
-  BOOT_STATUS,
   CacheNamespace,
   Call,
   CallError,
@@ -37,7 +35,6 @@ import {
   MessageOrigin,
   MessageState,
   MessageTypeId,
-  NO_ACTION,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
@@ -81,7 +78,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Constructor for the class.
    *
-   * @param {BootstrapConfig & SystemConfig} config - the system configuration
+   * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
    * @param {IMessageSender} [sender] - the message sender
    * @param {IMessageHandler} [handler] - the message handler
@@ -104,7 +101,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     ocppValidator,
     locationRepository,
   }: {
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     cache: ICache;
     routerSender: IMessageSender;
     routerHandler: IMessageHandler;
@@ -288,10 +285,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Response,
           rawMessage,
           callError,
+          action,
         );
       }
       await this._webhookDispatcher.dispatchMessageReceivedUnparsed(
@@ -308,7 +305,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       const action =
         parsedMessage.messageTypeId === MessageTypeId.Call
           ? (parsedMessage as Call).action
-          : NO_ACTION;
+          : undefined;
       try {
         switch (parsedMessage.messageTypeId) {
           case MessageTypeId.Call: {
@@ -338,10 +335,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           await this._sendMessage(
             identifier,
             protocol,
-            action,
             MessageState.Response,
             rawMessage,
             callError,
+            action,
           );
         }
       } finally {
@@ -401,16 +398,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           correlationId,
           `${action}@${cacheTimestamp.toISOString()}`,
           transactionNamespace,
-          this._config.maxCallLengthSeconds,
+          this._config.timeouts.maxCallLengthSeconds,
         );
         const rawMessage = JSON.stringify(message);
         const successTimestamp = await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Request,
           rawMessage,
           message,
+          action,
         );
         if (successTimestamp != undefined) {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.Sent);
@@ -490,10 +487,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -556,10 +553,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -645,7 +642,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         `${action}@${timestamp.toISOString()}`,
         CacheNamespace.Transactions + identifier,
-        this._config.maxCallLengthSeconds,
+        this._config.timeouts.maxCallLengthSeconds,
       )
       .then((success) => {
         if (!success) {
@@ -725,7 +722,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         ErrorCode.InternalError,
         'MessageId not found, call may have timed out',
-        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+        { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
 
@@ -808,7 +805,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         messageId,
         ErrorCode.InternalError,
         'MessageId not found, call may have timed out',
-        { maxCallLengthSeconds: this._config.maxCallLengthSeconds },
+        { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
 
@@ -869,10 +866,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
-    action: string,
     state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
+    action?: string,
     receivedIsoTimestamp?: string,
   ): Promise<Date | undefined> {
     try {
@@ -914,7 +911,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
     message: Call,
   ): Promise<boolean> {
-    const status = await this._cache.get<string>(BOOT_STATUS, identifier);
+    const status = await this._cache.get<string>(CacheNamespace.BootStatus, identifier);
     if (
       status === OCPP2_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
@@ -1048,12 +1045,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let action;
     switch (messageTypeId) {
       case MessageTypeId.Call:
-        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : NO_ACTION;
+        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : undefined;
         break;
       case MessageTypeId.CallResult:
       case MessageTypeId.CallError:
       default:
-        action = NO_ACTION;
+        action = undefined;
         break;
     }
     return action;

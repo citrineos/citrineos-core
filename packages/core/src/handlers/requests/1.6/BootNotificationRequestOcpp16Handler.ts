@@ -5,8 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  BOOT_STATUS,
-  type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
   type ICache,
@@ -36,7 +34,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
@@ -54,7 +52,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
@@ -83,18 +81,19 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const tenantId = message.context.tenantId;
     const request = message.payload;
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     // 1. Send BootNotification response
     const bootNotificationResponse: OCPP1_6.BootNotificationResponse =
       await this._bootService.createOcpp16BootNotificationResponse(tenantId, ocppConnectionName);
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null = await this._cache.get(
-      BOOT_STATUS,
-      ocppConnectionName,
+      CacheNamespace.BootStatus,
+      identifier,
     );
     // Blacklist or whitelist charger actions
     await this._bootService.cacheOcpp16ChargerActionsPermissions(
-      ocppConnectionName,
+      identifier,
       cachedBootStatus,
       bootNotificationResponse.status,
     );
@@ -103,11 +102,8 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       await this._ocppSender.sendCallResultWithMessage(message, bootNotificationResponse);
     // Create or update charging station
     this._logger.debug(`Creating or updating charging station: ${ocppConnectionName}`);
-    (async () => {
-      const connectionJson = await this._cache.get<string>(
-        createIdentifier(tenantId, ocppConnectionName),
-        CacheNamespace.Connections,
-      );
+    const stationUpdate = (async () => {
+      const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
         : null;
@@ -154,10 +150,13 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
       bootNotificationResponse.status !== OCPP1_6.BootNotificationResponseStatus.Accepted &&
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(CacheNamespace.BootStatus, bootNotificationResponse.status, identifier);
     }
+    // Boot.stationId is a non-null FK, so the station must be committed first.
+    await stationUpdate;
+
     // Update boot with details of most recently sent BootNotificationResponse
-    const bootEntity = await this._bootService.updateOcpp16BootConfig(
+    await this._bootService.updateOcpp16BootConfig(
       bootNotificationResponse,
       tenantId,
       ocppConnectionName,
@@ -182,14 +181,14 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
         },
       });
     // Remove ChangeConfiguration call action from blacklist
-    await this._cache.remove(OCPP_CallAction.ChangeConfiguration, ocppConnectionName);
+    await this._cache.remove(OCPP_CallAction.ChangeConfiguration, identifier);
     // Set each configuration on Charging Station
     for (const config of configurations) {
       const correlationId = uuidv4();
 
       const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
         correlationId,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
         ocppConnectionName,
       );
       const changeConfigurationResponseMessageConfirmation: IMessageConfirmation =
@@ -214,7 +213,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
 
     // Get Configurations from charging station
     // Remove GetConfiguration call action from blacklist
-    await this._cache.remove(OCPP_CallAction.GetConfiguration, ocppConnectionName);
+    await this._cache.remove(OCPP_CallAction.GetConfiguration, identifier);
     // Send GetConfiguration request to charger
     const getConfigurationResponseMessageConfirmation: IMessageConfirmation =
       await this._ocppSender.sendCall({
@@ -235,11 +234,11 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
         changeConfigurationsOnPending,
         getConfigurationsOnPending,
       },
-      bootEntity.id,
+      ocppConnectionName,
     );
 
     // 4. Trigger another boot when pending
-    await this._cache.remove(OCPP_CallAction.TriggerMessage, ocppConnectionName);
+    await this._cache.remove(OCPP_CallAction.TriggerMessage, identifier);
     await this._ocppSender.sendCall({
       ocppConnectionName,
       tenantId,

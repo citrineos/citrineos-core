@@ -5,8 +5,6 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  BOOT_STATUS,
-  type BootstrapConfig,
   CacheNamespace,
   createIdentifier,
   type ICache,
@@ -19,6 +17,9 @@ import {
   type BootDto,
   EventGroup,
   type HandlerProperties,
+  OCPP2_common_types,
+  OCPP2_request_types,
+  OCPP2_response_types,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   RegistrationStatusEnum,
@@ -26,9 +27,6 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
   type SystemConfig,
-  OCPP2_common_types,
-  OCPP2_request_types,
-  OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@dal/interfaces/repositories.js';
 import { ChargingStation } from '@dal/layers/sequelize/index.js';
@@ -40,7 +38,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -58,7 +56,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
     deviceModelRepository: IDeviceModelRepository;
@@ -88,19 +86,20 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const timestamp = message.context.timestamp;
     const chargingStation = message.payload.chargingStation;
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
 
     const bootNotificationResponse: OCPP2_response_types.BootNotificationResponse =
       await this._bootService.createBootNotificationResponse(tenantId, ocppConnectionName);
 
     // Check cached boot status for charger. Only Pending and Rejected statuses are cached.
     const cachedBootStatus: RegistrationStatusEnumType | null = await this._cache.get(
-      BOOT_STATUS,
-      ocppConnectionName,
+      CacheNamespace.BootStatus,
+      identifier,
     );
 
     // Blacklist or whitelist charger actions in cache
     await this._bootService.cacheChargerActionsPermissions(
-      ocppConnectionName,
+      identifier,
       cachedBootStatus,
       bootNotificationResponse.status,
     );
@@ -111,11 +110,8 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     // Update charging station first, then device model.
     // Order matters: updateDeviceModel creates VariableAttributes with a FK
     // reference to the ChargingStation record, so the station must exist first.
-    (async () => {
-      const connectionJson = await this._cache.get<string>(
-        createIdentifier(tenantId, ocppConnectionName),
-        CacheNamespace.Connections,
-      );
+    const stationUpdate = (async () => {
+      const connectionJson = await this._cache.get<string>(identifier, CacheNamespace.Connections);
       const connection: IWebsocketConnection | null = connectionJson
         ? JSON.parse(connectionJson)
         : null;
@@ -165,8 +161,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       (!cachedBootStatus || bootNotificationResponse.status !== cachedBootStatus)
     ) {
       // Cache boot status for charger if (not accepted) and ((not already cached) or (different status from cached status)).
-      await this._cache.set(BOOT_STATUS, bootNotificationResponse.status, ocppConnectionName);
+      await this._cache.set(CacheNamespace.BootStatus, bootNotificationResponse.status, identifier);
     }
+
+    // Boot.stationId is a non-null FK, so the station must be committed first.
+    await stationUpdate;
 
     // Update charger-specific boot config with details of most recently sent BootNotificationResponse
     const bootConfigDbEntity: BootDto = await this._bootService.updateBootConfig(
@@ -186,16 +185,14 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
 
     // GetBaseReport
     // TODO Consider refactoring GetBaseReport and SetVariables sections as methods to be used by their respective message api endpoints as well
-    if (
-      bootConfigDbEntity.getBaseReportOnPending ??
-      this._config.modules.configuration.ocpp2_0_1?.getBaseReportOnPending
-    ) {
+    if (bootConfigDbEntity.getBaseReportOnPending ?? this._config.ocpp.getBaseReportOnPending) {
       // Remove Notify Report from blacklist
-      await this._cache.remove(OCPP_CallAction.NotifyReport, ocppConnectionName);
+      await this._cache.remove(OCPP_CallAction.NotifyReport, identifier);
 
       const getBaseReportRequest = await this._bootService.createGetBaseReportRequest(
+        tenantId,
         ocppConnectionName,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
       );
 
       const getBaseReportConfirmation = await this._ocppSender.sendCall({
@@ -208,10 +205,11 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       });
 
       await this._bootService.confirmGetBaseReportSuccess(
+        tenantId,
         ocppConnectionName,
         getBaseReportRequest.requestId.toString(),
         getBaseReportConfirmation,
-        this._config.maxCachingSeconds,
+        this._config.timeouts.maxCachingSeconds,
       );
 
       // Make sure GetBaseReport doesn't re-trigger on next boot attempt
@@ -249,7 +247,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
 
         const cacheCallbackPromise: Promise<string | null> = this._cache.onChange(
           correlationId,
-          this._config.maxCachingSeconds,
+          this._config.timeouts.maxCachingSeconds,
           ocppConnectionName,
         ); // x2 fudge factor for any network lag
 
@@ -292,7 +290,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       const doNotBootWithRejectedVariables = !(
         (
           bootConfigDbEntity.bootWithRejectedVariables ??
-          this._config.modules.configuration.ocpp2_0_1?.bootWithRejectedVariables
+          this._config.ocpp.bootWithRejectedVariables
         ) //TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
       );
 
@@ -306,8 +304,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       }
     }
 
-    if (this._config.modules.configuration.ocpp2_0_1?.autoAccept) {
-      // TODO: When we add 2.1 config, we will need to adjust this logic to vary by message protocol
+    if (this._config.ocpp.autoAccept) {
       // TODO: Determine how/if StatusInfo should be generated
       await this._bootService.updateBoot(
         tenantId,

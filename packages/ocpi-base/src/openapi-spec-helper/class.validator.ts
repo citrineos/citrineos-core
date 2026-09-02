@@ -18,7 +18,7 @@ import type { ValidationMetadata } from 'class-validator/types/metadata/Validati
 import { defaultMetadataStorage } from 'class-transformer/cjs/storage.js';
 import { SchemaStore } from './schema.store.js';
 import { OPTIONAL_PARAM } from '../util/decorators/Optional.js';
-import type { Constructable } from 'typedi';
+import type { Constructable } from '@citrineos/base';
 
 export const refPointerPrefix = '#/components/schemas/';
 

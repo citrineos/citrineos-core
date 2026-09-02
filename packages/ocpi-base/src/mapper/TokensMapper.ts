@@ -12,27 +12,33 @@ import {
   IdTokenEnum,
   OCPP2_0_1,
 } from '@citrineos/types';
-import { Container } from 'typedi';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
+import type { OcpiDependencies } from '../dependencies.js';
 import type { TokenDTO } from '../model/DTO/TokenDTO.js';
 import { TokenType } from '../model/TokenType.js';
 import { WhitelistType } from '../model/WhitelistType.js';
 
 export class TokensMapper {
-  public static toDto(authorization: AuthorizationDto): TokenDTO {
+  private readonly logger: Logger<ILogObj>;
+
+  constructor({ logger }: OcpiDependencies) {
+    this.logger = logger;
+  }
+
+  toDto(authorization: AuthorizationDto): TokenDTO {
     const tokenDto: TokenDTO = {
       country_code: authorization.tenantPartner!.countryCode!,
       party_id: authorization.tenantPartner!.partyId!,
       uid: authorization.idToken,
-      type: TokensMapper.mapOcppIdTokenTypeToOcpiTokenType(
+      type: this.mapOcppIdTokenTypeToOcpiTokenType(
         authorization.idTokenType ? authorization.idTokenType : null,
       ),
       contract_id: this.getContractId(authorization),
-      visual_number: TokensMapper.getVisualNumber(authorization),
-      issuer: TokensMapper.getIssuer(authorization),
+      visual_number: this.getVisualNumber(authorization),
+      issuer: this.getIssuer(authorization),
       group_id: authorization.groupAuthorization?.idToken,
       valid: authorization.status === AuthorizationStatusEnum.Accepted,
-      whitelist: TokensMapper.mapRealTimeEnumType(authorization.realTimeAuth),
+      whitelist: this.mapRealTimeEnumType(authorization.realTimeAuth),
       language: authorization.language1,
       // default_profile_type: token.default_profile_type,
       // energy_contract: token.energy_contract,
@@ -42,7 +48,7 @@ export class TokensMapper {
     return tokenDto;
   }
 
-  public static mapOcpiTokenTypeToOcppIdTokenType(type: TokenType): IdTokenEnumType {
+  mapOcpiTokenTypeToOcppIdTokenType(type: TokenType): IdTokenEnumType {
     switch (type) {
       case TokenType.RFID:
         // If you are actually using ISO15693, you need to change this
@@ -58,9 +64,7 @@ export class TokensMapper {
     }
   }
 
-  public static mapOcppIdTokenTypeToOcpiTokenType(
-    type: IdTokenEnumType | null | undefined,
-  ): TokenType {
+  mapOcppIdTokenTypeToOcpiTokenType(type: IdTokenEnumType | null | undefined): TokenType {
     switch (type) {
       case IdTokenEnum.ISO14443:
         // If you are actually using ISO15693, you need to change this
@@ -69,12 +73,13 @@ export class TokensMapper {
         return TokenType.AD_HOC_USER;
       case IdTokenEnum.Central:
         return TokenType.APP_USER;
+      case IdTokenEnum.Other:
       case null:
         return TokenType.OTHER;
       default: {
         // OCPI has only 4 token types; every other OCPP idTokenType (Other, eMAID, ISO15693,
         // KeyCode, MacAddress) maps to OTHER rather than throwing.
-        Container.get(Logger).warn(
+        this.logger.warn(
           `Unmapped OCPP idToken type "${type}"; defaulting to OCPI TokenType.OTHER`,
         );
         return TokenType.OTHER;
@@ -82,9 +87,7 @@ export class TokensMapper {
     }
   }
 
-  public static mapRealTimeEnumType(
-    type: AuthorizationWhitelistEnumType | null | undefined,
-  ): WhitelistType {
+  mapRealTimeEnumType(type: AuthorizationWhitelistEnumType | null | undefined): WhitelistType {
     switch (type) {
       case AuthorizationWhitelistEnum.Allowed:
         return WhitelistType.ALLOWED;
@@ -97,7 +100,7 @@ export class TokensMapper {
     }
   }
 
-  public static mapWhitelistType(
+  mapWhitelistType(
     whitelist: WhitelistType | undefined,
   ): AuthorizationWhitelistEnumType | null | undefined {
     switch (whitelist) {
@@ -114,12 +117,10 @@ export class TokensMapper {
     }
   }
 
-  public static mapOcpiTokenToPartialOcppAuthorization(
-    tokenDto: Partial<TokenDTO>,
-  ): Partial<AuthorizationDto> {
+  mapOcpiTokenToPartialOcppAuthorization(tokenDto: Partial<TokenDTO>): Partial<AuthorizationDto> {
     const idToken: string | undefined = tokenDto.uid;
     const idTokenType: IdTokenEnumType | undefined =
-      tokenDto.type && TokensMapper.mapOcpiTokenTypeToOcppIdTokenType(tokenDto.type);
+      tokenDto.type && this.mapOcpiTokenTypeToOcppIdTokenType(tokenDto.type);
 
     const partialAdditionalInfo: OCPP2_0_1.AdditionalInfoType[] = [];
 
@@ -161,8 +162,9 @@ export class TokensMapper {
 
     const language1: string | undefined = tokenDto.language ?? undefined;
 
-    const realTimeAuth: AuthorizationWhitelistEnumType | null | undefined =
-      TokensMapper.mapWhitelistType(tokenDto.whitelist);
+    const realTimeAuth: AuthorizationWhitelistEnumType | null | undefined = this.mapWhitelistType(
+      tokenDto.whitelist,
+    );
 
     return {
       additionalInfo,
@@ -174,10 +176,14 @@ export class TokensMapper {
     };
   }
 
-  public static getContractId(authorization: AuthorizationDto): string {
-    const contractId = authorization.additionalInfo!.find(
+  findContractId(authorization: AuthorizationDto): string | undefined {
+    return authorization.additionalInfo?.find(
       (info) => info.type === OCPP2_0_1.IdTokenEnumType.eMAID,
     )?.additionalIdToken;
+  }
+
+  getContractId(authorization: AuthorizationDto): string {
+    const contractId = this.findContractId(authorization);
     if (!contractId) {
       throw new Error(
         'Contract ID not found in authorization additional info, authorization is incomplete for OCPI token mapping. Please add additional info with type eMAID.',
@@ -186,8 +192,8 @@ export class TokensMapper {
     return contractId;
   }
 
-  public static getVisualNumber(authorization: AuthorizationDto): string | undefined {
-    const visualNumber = authorization.additionalInfo!.find(
+  getVisualNumber(authorization: AuthorizationDto): string | undefined {
+    const visualNumber = authorization.additionalInfo?.find(
       (info) => info.type === 'visual_number',
     )?.additionalIdToken;
     if (!visualNumber) {
@@ -196,8 +202,8 @@ export class TokensMapper {
     return visualNumber;
   }
 
-  public static getIssuer(authorization: AuthorizationDto): string {
-    const issuer = authorization.additionalInfo!.find(
+  getIssuer(authorization: AuthorizationDto): string {
+    const issuer = authorization.additionalInfo?.find(
       (info) => info.type === 'issuer',
     )?.additionalIdToken;
     if (!issuer) {
@@ -238,11 +244,11 @@ export class TokensMapper {
   //   return idTokenInfo;
   // }
 
-  public static toGraphqlWhere(token: TokenDTO): any {
+  toGraphqlWhere(token: TokenDTO): any {
     return {
       idToken: { _eq: token.uid },
       IdTokenType: {
-        _eq: TokensMapper.mapOcpiTokenTypeToOcppIdTokenType(token.type),
+        _eq: this.mapOcpiTokenTypeToOcppIdTokenType(token.type),
       },
       TenantPartner: {
         countryCode: { _eq: token.country_code },
@@ -251,8 +257,8 @@ export class TokensMapper {
     };
   }
 
-  public static toGraphqlSet(token: Partial<TokenDTO>): any {
-    const set: any = TokensMapper.mapOcpiTokenToPartialOcppAuthorization(token);
+  toGraphqlSet(token: Partial<TokenDTO>): any {
+    const set: any = this.mapOcpiTokenToPartialOcppAuthorization(token);
     return set;
   }
 }

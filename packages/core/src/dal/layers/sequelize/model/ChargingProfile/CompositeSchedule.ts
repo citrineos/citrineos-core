@@ -24,8 +24,8 @@ export class CompositeSchedule extends Model implements CompositeScheduleDto {
   declare ocppConnectionName: string;
 
   @ForeignKey(() => Evse)
-  @Column(DataType.INTEGER)
-  declare evseId: number;
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare evseId?: number | null;
 
   @BelongsTo(() => Evse, 'evseId')
   declare evse?: EvseDto;

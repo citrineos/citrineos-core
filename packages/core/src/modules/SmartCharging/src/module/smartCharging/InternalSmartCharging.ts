@@ -119,7 +119,9 @@ export class InternalSmartCharging implements ISmartCharging {
       ? new Date(chargingNeeds.departureTime)
       : undefined;
     const currentTime = new Date();
-    const duration = departureTime ? departureTime.getTime() - currentTime.getTime() : undefined;
+    const duration = departureTime
+      ? Math.floor((departureTime.getTime() - currentTime.getTime()) / 1000)
+      : undefined;
 
     // Create charging period
     const chargingSchedulePeriod: [
@@ -201,11 +203,9 @@ export class InternalSmartCharging implements ISmartCharging {
     evMaxPower?: number | null,
   ): [OCPP2_0_1.ChargingRateUnitEnumType, number] {
     if (evMaxPower && evMaxPower < evMaxCurrent * evMaxVoltage) {
-      // when charging rate unit is W, multiply by 1000
-      // based on OCPP 2.0.1 V3 Part 6 TC_K_57_CS
-      return [OCPP2_0_1.ChargingRateUnitEnumType.W, evMaxPower * 1000];
+      return [OCPP2_0_1.ChargingRateUnitEnumType.W, evMaxPower];
     }
-    return [OCPP2_0_1.ChargingRateUnitEnumType.A, evMaxCurrent * evMaxVoltage];
+    return [OCPP2_0_1.ChargingRateUnitEnumType.A, evMaxCurrent];
   }
 
   private async _findExistingChargingProfileWithHighestStackLevel(

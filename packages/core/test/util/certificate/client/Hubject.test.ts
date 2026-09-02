@@ -36,16 +36,14 @@ describe('Hubject', () => {
     global.fetch = vi.fn();
     cache = new MemoryCache();
     systemConfig = {
-      util: {
-        certificateAuthority: {
-          v2gCA: {
-            name: 'hubject',
-            hubject: {
-              baseUrl: mockBaseURL,
-              tokenUrl: mockTokenURL,
-              clientId: mockClientID,
-              clientSecret: mockClientSecret,
-            },
+      integrations: {
+        v2gCA: {
+          name: 'hubject',
+          hubject: {
+            baseUrl: mockBaseURL,
+            tokenUrl: mockTokenURL,
+            clientId: mockClientID,
+            clientSecret: mockClientSecret,
           },
         },
       },
@@ -72,16 +70,14 @@ describe('Hubject', () => {
 
       // Create a new instance with default credentials
       const defaultConfig: SystemConfig = {
-        util: {
-          certificateAuthority: {
-            v2gCA: {
-              name: 'hubject',
-              hubject: {
-                baseUrl: HUBJECT_DEFAULT_BASEURL,
-                tokenUrl: HUBJECT_DEFAULT_TOKENURL,
-                clientId: HUBJECT_DEFAULT_CLIENTID,
-                clientSecret: HUBJECT_DEFAULT_CLIENTSECRET,
-              },
+        integrations: {
+          v2gCA: {
+            name: 'hubject',
+            hubject: {
+              baseUrl: HUBJECT_DEFAULT_BASEURL,
+              tokenUrl: HUBJECT_DEFAULT_TOKENURL,
+              clientId: HUBJECT_DEFAULT_CLIENTID,
+              clientSecret: HUBJECT_DEFAULT_CLIENTSECRET,
             },
           },
         },

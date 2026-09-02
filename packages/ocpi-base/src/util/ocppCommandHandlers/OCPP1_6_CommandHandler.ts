@@ -9,8 +9,7 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IRequestOptions } from 'typed-rest-client';
-import { Service } from 'typedi';
-import { OCPP_COMMAND_HANDLER, OCPPCommandHandler } from './base.js';
+import { OCPPCommandHandler } from './base.js';
 import type { StartSession } from '../../model/StartSession.js';
 import type { IRequestQueryParams } from 'typed-rest-client/Interfaces.js';
 import { CommandType } from '../../model/CommandType.js';
@@ -18,7 +17,6 @@ import type { StopSession } from '../../model/StopSession.js';
 import type { UnlockConnector } from '../../index.js';
 import { CommandResultType } from '../../index.js';
 
-@Service({ id: OCPP_COMMAND_HANDLER, multiple: true })
 export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
   public readonly supportedVersion = OCPPVersion.OCPP1_6;
 
@@ -40,8 +38,22 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       this.config.commands.ocpiBaseUrl +
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.START_SESSION}/${commandId}`;
     options.queryParameters = queryParameters;
+    let connectorId: number | undefined;
+    if (startSession.connector_id !== null && startSession.connector_id !== undefined) {
+      connectorId = this.resolveOcpp16ConnectorId(chargingStation, startSession.connector_id);
+      if (connectorId === undefined) {
+        this.reportConnectorNotFound(
+          'StartSession',
+          startSession,
+          tenantPartner,
+          startSession.response_url,
+          commandId,
+        );
+        return;
+      }
+    }
     const remoteStartTransactionRequest: OCPP1_6.RemoteStartTransactionRequest = {
-      connectorId: Number(startSession.connector_id),
+      ...(connectorId !== undefined ? { connectorId } : {}),
       idTag: startSession.token.uid,
     };
     await this.sendOCPPMessage(
@@ -105,33 +117,18 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       `/2.2.1/commands/callback/${tenantPartner.id}/${this.supportedVersion}/${CommandType.UNLOCK_CONNECTOR}/${commandId}`;
     options.queryParameters = queryParameters;
 
-    const ocpp1_6ConnectorId = Array.from(chargingStation.connectors || []).find(
-      (connector) => connector.id === Number(unlockConnector.connector_id),
-    )?.connectorId;
+    const ocpp1_6ConnectorId = this.resolveOcpp16ConnectorId(
+      chargingStation,
+      unlockConnector.connector_id,
+    );
     if (ocpp1_6ConnectorId === undefined) {
-      this.logger.error('UnlockConnector failed, Connector not found', {
+      this.reportConnectorNotFound(
+        'UnlockConnector',
         unlockConnector,
-      });
-      this.commandsClientApi
-        .postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
-          unlockConnector.response_url,
-          {
-            result: CommandResultType.FAILED,
-            message: {
-              language: 'en',
-              text: 'Charging station communication failed',
-            },
-          },
-          commandId,
-        )
-        .catch((error) => {
-          this.logger.error('Failed to post command result', { error });
-        });
+        tenantPartner,
+        unlockConnector.response_url,
+        commandId,
+      );
       return;
     }
     const unlockConnectorRequest: OCPP1_6.UnlockConnectorRequest = {
@@ -145,6 +142,44 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
       unlockConnector.response_url,
       commandId,
     );
+  }
+
+  private resolveOcpp16ConnectorId(
+    chargingStation: ChargingStationDto,
+    ocpiConnectorId: string | null | undefined,
+  ): number | undefined {
+    if (ocpiConnectorId === null || ocpiConnectorId === undefined) {
+      return undefined;
+    }
+    return Array.from(chargingStation.connectors || []).find(
+      (connector) => connector.id === Number(ocpiConnectorId),
+    )?.connectorId;
+  }
+
+  private reportConnectorNotFound(
+    command: string,
+    request: unknown,
+    tenantPartner: TenantPartnerDto,
+    responseUrl: string,
+    commandId: string,
+  ): void {
+    this.logger.error(`${command} failed, Connector not found`, request);
+    this.commandsClientApi
+      .postCommandResult(
+        tenantPartner,
+        responseUrl,
+        {
+          result: CommandResultType.FAILED,
+          message: {
+            language: 'en',
+            text: 'Connector not found on charging station',
+          },
+        },
+        commandId,
+      )
+      .catch((error) => {
+        this.logger.error('Failed to post command result', { error });
+      });
   }
 
   public async handleAsyncCommandResponse(
@@ -191,11 +226,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.RemoteStartTransactionResponseStatus.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -209,11 +240,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.RemoteStartTransactionResponseStatus.Rejected:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.EVSE_OCCUPIED,
@@ -242,11 +269,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.RemoteStopTransactionResponseStatus.Accepted:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -260,11 +283,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.RemoteStopTransactionResponseStatus.Rejected:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.REJECTED,
@@ -293,11 +312,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
     switch (validatedResponse.status) {
       case OCPP1_6.UnlockConnectorResponseStatus.Unlocked:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.ACCEPTED,
@@ -311,11 +326,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.UnlockConnectorResponseStatus.NotSupported:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.NOT_SUPPORTED,
@@ -329,11 +340,7 @@ export class OCPP1_6_CommandHandler extends OCPPCommandHandler {
         return;
       case OCPP1_6.UnlockConnectorResponseStatus.UnlockFailed:
         await this.commandsClientApi.postCommandResult(
-          tenantPartner.countryCode!,
-          tenantPartner.partyId!,
-          tenantPartner.tenant!.countryCode!,
-          tenantPartner.tenant!.partyId!,
-          tenantPartner.partnerProfileOCPI!,
+          tenantPartner,
           responseUrl,
           {
             result: CommandResultType.FAILED,

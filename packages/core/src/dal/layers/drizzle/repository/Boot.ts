@@ -2,20 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { BootDto, VariableAttributeDto } from '@citrineos/types';
+import { type IBootRepository } from '@/dal/index.js';
+import type { BootCreate, BootDto, VariableAttributeDto } from '@citrineos/types';
+import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
+import { and, eq } from 'drizzle-orm';
 import { type BootEntity, bootTable, tenantBootTable } from '../schema/Boot.js';
+import { chargingStationTable } from '../schema/ChargingStation.js';
 import { type Explicit } from '../types.js';
 import { DrizzleRepository, type DrizzleRepositoryDependencies } from './Base.js';
-import { type IBootRepository } from '@/dal/index.js';
-import { and, eq } from 'drizzle-orm';
-import type { BootConfig } from '@citrineos/base';
-import type { DrizzleVariableAttributeRepository } from '@dal/layers/drizzle/repository/VariableAttribute.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external BootDto contract.
 export function toBootDto(entity: BootEntity): BootDto {
   const dto: Explicit<BootDto> = {
     id: entity.id,
+    stationId: entity.stationId,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     lastBootTime: entity.lastBootTime ? entity.lastBootTime.toISOString() : null,
     heartbeatInterval: entity.heartbeatInterval ?? null,
@@ -24,6 +25,7 @@ export function toBootDto(entity: BootEntity): BootDto {
     statusInfo: (entity.statusInfo as Record<string, any> | null) ?? null,
     getBaseReportOnPending: entity.getBaseReportOnPending ?? null,
     pendingBootSetVariables: undefined,
+    pendingBootSetVariableIds: undefined,
     variablesRejectedOnLastBoot:
       (entity.variablesRejectedOnLastBoot as Record<string, any>[] | null) ?? null,
     bootWithRejectedVariables: entity.bootWithRejectedVariables ?? null,
@@ -73,15 +75,21 @@ export class DrizzleBootRepository
   }
 
   // ──────────── IBootRepository methods ─────────────────────────────
-  // Note that for many of the methods below, we purposely DO NOT use the equivalent Drizzle methods
-  // because they only accept key as a number, but Boot stores id as a string equal to the
-  // ocppConnectionName of the relevant station.
+  // Callers address a boot record by its station's ocppConnectionName, whereas the
+  // record is keyed by stationId and its own `id` is an unrelated serial primary key.
 
   async updateByKey(tenantId: number, value: object, key: string): Promise<BootDto | undefined> {
+    const stationId = await this.findStationId(tenantId, key);
+    if (stationId === undefined) return undefined;
+
+    // Not allowed different tenants or stations in given value
+    const { tenantId: _tenantId, stationId: _stationId, ...safeValue } = value as any;
+
     const rows = (await this.db
       .update(bootTable)
-      .set(toBootEntity(value))
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .set(toBootEntity(safeValue))
+      // stationId is a ChargingStations primary key, so it is unique across tenants
+      .where(eq(bootTable.stationId, stationId))
       .returning()) as BootEntity[];
 
     if (!rows[0]) return undefined;
@@ -94,9 +102,17 @@ export class DrizzleBootRepository
 
   async createOrUpdateByKey(
     tenantId: number,
-    value: BootConfig,
+    value: BootCreate,
     key: string,
   ): Promise<BootDto | undefined> {
+    // A boot record cannot exist without its station: stationId is a non-null FK.
+    const stationId = await this.findStationId(tenantId, key);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot store boot configuration: no charging station ${key} exists for tenant ${tenantId}`,
+      );
+    }
+
     // Wrapping in a transaction to match the Sequelize repo and "just in case" - unfortunately
     // means the db logic has to be repeated to use the transaction over the db
     let savedBoot: BootDto | undefined;
@@ -106,18 +122,18 @@ export class DrizzleBootRepository
       const existingBoots = await tx
         .select({ id: bootTable.id })
         .from(bootTable)
-        .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+        .where(eq(bootTable.stationId, stationId))
         .limit(1);
 
       bootExists = existingBoots.length > 0;
 
-      const bootEntityToSave = toBootEntity({ ...value, tenantId, id: key });
+      const bootEntityToSave = toBootEntity({ ...value, tenantId, stationId });
 
       if (bootExists) {
         const savedBootsResult = (await tx
           .update(bootTable)
           .set(bootEntityToSave)
-          .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+          .where(eq(bootTable.stationId, stationId))
           .returning()) as BootEntity[];
 
         if (!savedBootsResult[0]) return undefined;
@@ -138,7 +154,7 @@ export class DrizzleBootRepository
           tenantId,
           value.pendingBootSetVariableIds,
           key,
-          savedBoot.id,
+          savedBoot.id!,
         );
       }
 
@@ -149,9 +165,12 @@ export class DrizzleBootRepository
   }
 
   async deleteByKey(tenantId: number, key: string): Promise<BootDto | undefined> {
+    const stationId = await this.findStationId(tenantId, key);
+    if (stationId === undefined) return undefined;
+
     const rows = (await this.db
       .delete(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .where(eq(bootTable.stationId, stationId))
       .returning()) as BootEntity[];
 
     if (!rows[0]) return undefined;
@@ -161,30 +180,55 @@ export class DrizzleBootRepository
   }
 
   async existsByKey(tenantId: number, key: string): Promise<boolean> {
+    const stationId = await this.findStationId(tenantId, key);
+    if (stationId === undefined) return false;
+
     const rows = await this.db
       .select({ id: bootTable.id })
       .from(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .where(eq(bootTable.stationId, stationId))
       .limit(1);
 
     return rows.length > 0;
   }
 
   async readByKey(tenantId: number, key: string): Promise<BootDto | undefined> {
+    const stationId = await this.findStationId(tenantId, key);
+    if (stationId === undefined) return undefined;
+
     const rows = await this.db
       .select()
       .from(bootTable)
-      .where(and(eq(bootTable.tenantId, tenantId), eq(bootTable.id, key)))
+      .where(eq(bootTable.stationId, stationId))
       .limit(1);
 
     return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
+  // Resolves a tenant-scoped `ocppConnectionName` to a ChargingStation id.
+  private async findStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | undefined> {
+    const rows = await this.db
+      .select({ id: chargingStationTable.id })
+      .from(chargingStationTable)
+      .where(
+        and(
+          eq(chargingStationTable.tenantId, tenantId),
+          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
+        ),
+      )
+      .limit(1);
+
+    return rows[0]?.id;
   }
 
   private async manageSetVariables(
     tenantId: number,
     setVariableIds: number[],
     ocppConnectionName: string,
-    bootConfigId: string,
+    bootConfigId: number,
   ) {
     const managedSetVariables: VariableAttributeDto[] = [];
 

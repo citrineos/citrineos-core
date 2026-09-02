@@ -5,12 +5,10 @@
 // import { BaseClientApi } from './BaseClientApi';
 // import { PutChargingProfileParams } from './param/charging.profiles/PutChargingProfileParams';
 // import { IHeaders } from 'typed-rest-client/Interfaces';
-// import { Service } from 'typedi';
 // import { ModuleId } from '../model/ModuleId';
 // import { InterfaceRole } from '../model/InterfaceRole';
 // import { OcpiEmptyResponse } from '../model/OcpiEmptyResponse';
 
-// @Service()
 // export class ChargingProfilesClientApi extends BaseClientApi {
 //   CONTROLLER_PATH = ModuleId.ChargingProfiles;
 

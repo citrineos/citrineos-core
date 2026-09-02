@@ -1,17 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import {
-  BadRequestError,
-  ConfigStoreFactory,
-  NotFoundError,
-  type ConfigStore,
-  type INetworkConnection,
-} from '@citrineos/base';
-import { type WebsocketServerConfig } from '@citrineos/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BadRequestError, NotFoundError, type IFileStorage } from '@citrineos/base';
+import { type SystemConfig, type WebsocketServerConfig } from '@citrineos/types';
 import { GenerateCertificateChainEndpoint } from '@modules/OcppRouter/src/module/endpoints/GenerateCertificateChainEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TENANT_ID = 1;
 
@@ -39,20 +33,14 @@ function buildRequest(serverId: string | string[], body: any = {}): any {
 describe('GenerateCertificateChainEndpoint', () => {
   const { container } = createTestContainer();
   let endpoint: GenerateCertificateChainEndpoint;
-  let mockNetworkConnection: INetworkConnection;
+  let mockNetworkConnection: {
+    getWebsocketServers: ReturnType<typeof vi.fn>;
+    saveWebsocketServersConfig: ReturnType<typeof vi.fn>;
+    reloadTlsCertificates: ReturnType<typeof vi.fn>;
+  };
   let mockServerNetworkProfileRepository: any;
   let mockInstallCertificateHelperService: any;
   let websocketServers: WebsocketServerConfig[];
-
-  // ConfigStoreFactory is a process-wide singleton that only accepts setConfigStore()
-  // once; re-registering a fresh mock object every test would silently no-op after the
-  // first test. Instead, register one mock instance up front and reconfigure its
-  // fetchConfig/saveConfig behavior per test.
-  const mockConfigStore = {
-    fetchConfig: vi.fn(),
-    saveConfig: vi.fn().mockResolvedValue(undefined),
-  };
-  ConfigStoreFactory.setConfigStore(mockConfigStore as unknown as ConfigStore);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -63,8 +51,10 @@ describe('GenerateCertificateChainEndpoint', () => {
     ];
 
     mockNetworkConnection = {
+      getWebsocketServers: vi.fn().mockReturnValue(websocketServers),
+      saveWebsocketServersConfig: vi.fn().mockResolvedValue(undefined),
       reloadTlsCertificates: vi.fn().mockResolvedValue(undefined),
-    } as any;
+    };
 
     mockServerNetworkProfileRepository = {
       upsertServerNetworkProfile: vi.fn().mockResolvedValue(undefined),
@@ -82,19 +72,10 @@ describe('GenerateCertificateChainEndpoint', () => {
         ),
     };
 
-    mockConfigStore.fetchConfig.mockResolvedValue({
-      util: { networkConnection: { websocketServers } },
-      maxCallLengthSeconds: 30,
-    });
-    mockConfigStore.saveConfig.mockResolvedValue(undefined);
-
     endpoint = getTestInstance(container, GenerateCertificateChainEndpoint, {
-      config: {
-        util: { networkConnection: { websocketServers } },
-        maxCallLengthSeconds: 30,
-      } as any,
-      configStore: mockConfigStore as unknown as ConfigStore,
-      networkConnection: mockNetworkConnection,
+      config: { timeouts: { maxCallLengthSeconds: 30 } } as SystemConfig,
+      networkConnection: mockNetworkConnection as any,
+      fileStorage: {} as IFileStorage,
       serverNetworkProfileRepository: mockServerNetworkProfileRepository,
       installCertificateHelperService: mockInstallCertificateHelperService,
     });
@@ -128,7 +109,7 @@ describe('GenerateCertificateChainEndpoint', () => {
       expect.objectContaining({ id: 'server-1' }),
       expect.anything(),
     );
-    expect(mockConfigStore.saveConfig).toHaveBeenCalledTimes(1);
+    expect(mockNetworkConnection.saveWebsocketServersConfig).toHaveBeenCalledTimes(1);
     expect(mockServerNetworkProfileRepository.upsertServerNetworkProfile).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'server-1', ...filePaths }),
       30,
@@ -310,7 +291,7 @@ describe('GenerateCertificateChainEndpoint', () => {
       // No server-scoped work: no grouping, no per-server generation, no persist, no reload.
       expect(mockInstallCertificateHelperService.groupServersForGeneration).not.toHaveBeenCalled();
       expect(mockInstallCertificateHelperService.generateCertificateChain).not.toHaveBeenCalled();
-      expect(mockConfigStore.saveConfig).not.toHaveBeenCalled();
+      expect(mockNetworkConnection.saveWebsocketServersConfig).not.toHaveBeenCalled();
       expect(mockServerNetworkProfileRepository.upsertServerNetworkProfile).not.toHaveBeenCalled();
       expect(mockNetworkConnection.reloadTlsCertificates).not.toHaveBeenCalled();
       // Standalone response: certificates + filePaths, no serverId.

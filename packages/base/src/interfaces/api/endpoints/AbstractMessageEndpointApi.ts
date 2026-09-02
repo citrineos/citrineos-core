@@ -1,6 +1,27 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
+import {
+  type CallAction,
+  type EventGroup,
+  HttpMethod,
+  type OcppRequest,
+  type OCPPVersion,
+  type SystemConfig,
+} from '@citrineos/types';
+import type {
+  AbstractMessageEndpoint,
+  IMessageEndpointMetadata,
+} from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
+import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
+import {
+  type IMessageQuerystring,
+  IMessageQuerystringSchema,
+} from '@interfaces/api/MessageQuerystring.js';
+import type { IMessageConfirmation } from '@interfaces/messages/index.js';
+import { MessageConfirmationSchema } from '@ocpp/persistence/querySchema.js';
 import type {
   FastifyInstance,
   FastifyRequest,
@@ -10,27 +31,6 @@ import type {
   RouteOptions,
 } from 'fastify';
 import { type ILogObj, Logger } from 'tslog';
-import {
-  HttpMethod,
-  type CallAction,
-  type EventGroup,
-  type OcppRequest,
-  type OCPPVersion,
-  type SystemConfig,
-} from '@citrineos/types';
-import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/buildMessageEndpoints.js';
-import type {
-  AbstractMessageEndpoint,
-  IMessageEndpointMetadata,
-} from '@interfaces/api/endpoints/AbstractMessageEndpoint.js';
-import { joinRoutePath } from '@base-util/endpoints/paths.js';
-import { registerRouteSchema } from '@base-util/endpoints/routeSchemas.js';
-import {
-  type IMessageQuerystring,
-  IMessageQuerystringSchema,
-} from '@interfaces/api/MessageQuerystring.js';
-import { MessageConfirmationSchema } from '@ocpp/persistence/querySchema.js';
-import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 
 interface MessageRoute {
   Body: OcppRequest;
@@ -82,13 +82,6 @@ export abstract class AbstractMessageEndpointApi {
     endpoint: AbstractMessageEndpoint,
     version: OCPPVersion,
   ): void {
-    if (!(route.eventGroup in this._config.modules)) {
-      this._logger.debug(
-        `Skipping message route for ${route.action} — ${route.eventGroup} is not configured`,
-      );
-      return;
-    }
-
     const bodySchema = route.bodySchema(version);
     if (!bodySchema) {
       this._logger.debug(
@@ -135,7 +128,7 @@ export abstract class AbstractMessageEndpointApi {
       response: responseSchema,
     };
 
-    if (this._config.util.swagger?.exposeMessage) {
+    if (this._config.swagger?.exposeMessage) {
       this._registerWithSharedSchemas(url, handler, version, schemas);
       return;
     }

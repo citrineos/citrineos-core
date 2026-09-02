@@ -52,7 +52,7 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
     if (chargingProfile.chargingProfileId) {
       if (
         chargingProfile.chargingProfilePurpose ||
-        chargingProfile.stackLevel ||
+        chargingProfile.stackLevel !== undefined ||
         chargingProfile.chargingLimitSource
       ) {
         return identifiers.map(() => ({
@@ -63,7 +63,7 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
       }
     } else if (
       !chargingProfile.chargingProfilePurpose &&
-      !chargingProfile.stackLevel &&
+      chargingProfile.stackLevel === undefined &&
       !chargingProfile.chargingLimitSource
     ) {
       return identifiers.map(() => ({

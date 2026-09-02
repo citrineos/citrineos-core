@@ -12,14 +12,15 @@ import {
 import {
   ErrorCode,
   type HandlerProperties,
-  OCPP_2_VER_LIST,
-  OCPP_CallAction,
   OCPP2_request_types,
   OCPP2_response_types,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  type SystemConfig,
 } from '@citrineos/types';
 import { type ITransactionEventRepository, Transaction } from '@dal/index.js';
-import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { CostNotifier } from '@modules/Transactions/src/module/CostNotifier.js';
+import type { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import type { SignedMeterValuesUtil } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.MeterValues)
@@ -35,11 +36,13 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
   constructor({
     logger,
     ocppSender,
+    config,
     costNotifier,
     signedMeterValuesUtil,
     transactionEventRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
+    config: SystemConfig;
     costNotifier: CostNotifier;
     ocppSender: IOcppSender;
     signedMeterValuesUtil: SignedMeterValuesUtil;
@@ -53,6 +56,8 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     this._signedMeterValuesUtil = signedMeterValuesUtil;
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
+
+    this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
   }
 
   async handle(
@@ -72,7 +77,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     const evseId = message.payload.evseId;
 
     // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
-    if (this._sendCostUpdatedOnMeterValue && evseId !== 0) {
+    if (evseId !== 0) {
       const activeTransaction: Transaction | undefined =
         await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
           tenantId,
@@ -97,11 +102,13 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
 
       if (activeTransaction) {
         await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
-        await this._costNotifier.calculateCostAndNotify(
-          activeTransaction,
-          message.context.tenantId,
-          message.protocol,
-        );
+        if (this._sendCostUpdatedOnMeterValue) {
+          await this._costNotifier.calculateCostAndNotify(
+            activeTransaction,
+            message.context.tenantId,
+            message.protocol,
+          );
+        }
       }
     } else {
       await this._transactionService.createMeterValues(tenantId, meterValues);

@@ -9,14 +9,10 @@ import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHar
 
 const URL = '/commands/regenerateCertificate';
 
-function anInstalledCertificate(certificate: unknown) {
+function anInstalledCertificate() {
   return {
     id: 5,
     certificateId: 1,
-    $get: vi.fn().mockResolvedValue(certificate),
-    save: vi.fn().mockImplementation(async function (this: unknown) {
-      return this;
-    }),
   };
 }
 
@@ -40,22 +36,33 @@ function aCertificateRecord(override: Record<string, unknown> = {}) {
 describe('RegenerateCertificateEndpoint', () => {
   const { container } = createTestContainer();
 
-  let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+  let findByIdAndStation: ReturnType<typeof vi.fn>;
+  let getLinkedCertificate: ReturnType<typeof vi.fn>;
+  let setCertificateId: ReturnType<typeof vi.fn>;
   let getFile: ReturnType<typeof vi.fn>;
   let saveFile: ReturnType<typeof vi.fn>;
   let getCertificateHash: ReturnType<typeof vi.fn>;
+  let createCertificate: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    readOnlyOneByQuery = vi.fn();
+    findByIdAndStation = vi.fn();
+    getLinkedCertificate = vi.fn();
+    setCertificateId = vi.fn().mockResolvedValue({ id: 5, certificateId: 2 });
     getFile = vi.fn().mockResolvedValue(Buffer.from('pem'));
     saveFile = vi.fn().mockResolvedValue('new-file-id');
     getCertificateHash = vi.fn().mockReturnValue('new-hash');
+    createCertificate = vi.fn().mockResolvedValue({ id: 2 });
 
     const endpoint = getTestInstance(container, RegenerateCertificateEndpoint, {
       fileStorage: { getFile, saveFile },
-      installedCertificateRepository: { readOnlyOneByQuery },
+      certificateRepository: { createCertificate },
+      installedCertificateRepository: {
+        findByIdAndStation,
+        getLinkedCertificate,
+        setCertificateId,
+      },
       installCertificateHelperService: { getCertificateHash },
     });
     mounted = await mountEndpoint(endpoint, RegenerateCertificateEndpoint.route);
@@ -71,17 +78,15 @@ describe('RegenerateCertificateEndpoint', () => {
   const errorCount = () => mounted.loggedErrors.length;
 
   it('looks the certificate up scoped to the tenant and station', async () => {
-    readOnlyOneByQuery.mockResolvedValue(undefined);
+    findByIdAndStation.mockResolvedValue(undefined);
 
     await post();
 
-    expect(readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: { id: 5, ocppConnectionName: 'cs001' },
-    });
+    expect(findByIdAndStation).toHaveBeenCalledWith(DEFAULT_TENANT_ID, 5, 'cs001');
   });
 
   it('fails when the installed certificate does not exist', async () => {
-    readOnlyOneByQuery.mockResolvedValue(undefined);
+    findByIdAndStation.mockResolvedValue(undefined);
 
     const response = await post();
 
@@ -90,7 +95,8 @@ describe('RegenerateCertificateEndpoint', () => {
   });
 
   it('fails when the installed certificate has no associated certificate', async () => {
-    readOnlyOneByQuery.mockResolvedValue(anInstalledCertificate(undefined));
+    findByIdAndStation.mockResolvedValue(anInstalledCertificate());
+    getLinkedCertificate.mockResolvedValue(undefined);
 
     const response = await post();
 
@@ -99,9 +105,8 @@ describe('RegenerateCertificateEndpoint', () => {
   });
 
   it('fails when the certificate has no certificate file', async () => {
-    readOnlyOneByQuery.mockResolvedValue(
-      anInstalledCertificate(aCertificateRecord({ certificateFileId: undefined })),
-    );
+    findByIdAndStation.mockResolvedValue(anInstalledCertificate());
+    getLinkedCertificate.mockResolvedValue(aCertificateRecord({ certificateFileId: undefined }));
 
     const response = await post();
 
@@ -110,9 +115,8 @@ describe('RegenerateCertificateEndpoint', () => {
   });
 
   it('fails when the certificate has no private key file', async () => {
-    readOnlyOneByQuery.mockResolvedValue(
-      anInstalledCertificate(aCertificateRecord({ privateKeyFileId: undefined })),
-    );
+    findByIdAndStation.mockResolvedValue(anInstalledCertificate());
+    getLinkedCertificate.mockResolvedValue(aCertificateRecord({ privateKeyFileId: undefined }));
 
     const response = await post();
 
@@ -121,7 +125,8 @@ describe('RegenerateCertificateEndpoint', () => {
   });
 
   it('fails when either stored file is missing from storage', async () => {
-    readOnlyOneByQuery.mockResolvedValue(anInstalledCertificate(aCertificateRecord()));
+    findByIdAndStation.mockResolvedValue(anInstalledCertificate());
+    getLinkedCertificate.mockResolvedValue(aCertificateRecord());
     getFile.mockResolvedValueOnce(Buffer.from('cert')).mockResolvedValueOnce(undefined);
 
     const response = await post();
@@ -138,7 +143,7 @@ describe('RegenerateCertificateEndpoint', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(findByIdAndStation).not.toHaveBeenCalled();
   });
 
   it('rejects a request without an identifier', async () => {
@@ -149,6 +154,6 @@ describe('RegenerateCertificateEndpoint', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(findByIdAndStation).not.toHaveBeenCalled();
   });
 });

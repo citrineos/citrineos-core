@@ -12,7 +12,7 @@ import { DrizzleRepository } from './Base.js';
 export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
   const dto: Explicit<ConnectorDto> = {
     id: entity.id,
-    stationId: entity.stationId,
+    stationId: entity.stationId ?? undefined,
     ocppConnectionName: entity.ocppConnectionName,
     evseId: entity.evseId,
     connectorId: entity.connectorId,

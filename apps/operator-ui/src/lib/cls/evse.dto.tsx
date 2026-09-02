@@ -8,7 +8,7 @@ export class EvseClass implements Partial<EvseDto> {
   id?: number;
   ocppConnectionName!: string;
   evseTypeId?: number;
-  evseId!: string;
+  evseId?: string | null;
   physicalReference?: string | null;
   removed?: boolean;
   chargingStation?: ChargingStationDto;

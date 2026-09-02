@@ -16,7 +16,7 @@ import type {
   IDeviceModelRepository,
   ITransactionEventRepository,
 } from '@dal/interfaces/repositories.js';
-import type { ChargingNeeds, EvseType, Transaction } from '@dal/layers/sequelize/index.js';
+import type { ChargingNeeds, Transaction } from '@dal/layers/sequelize/index.js';
 import { VariableAttribute } from '@dal/layers/sequelize/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -42,7 +42,6 @@ export function validateLanguageTag(languageTag: string): boolean {
 
 export interface ChargingProfileTransactionContext {
   transaction: Transaction;
-  evse: EvseType;
   chargingNeeds: ChargingNeeds | undefined;
 }
 
@@ -106,19 +105,16 @@ export async function validateChargingProfileType(
         `Transaction ${chargingProfileType.transactionId} not found on station ${ocppConnectionName}.`,
       );
     }
-    const evse = await deviceModelRepository.findEvseByIdAndConnectorId(tenantId, evseId, null);
-    if (!evse) {
-      throw new Error(`Evse ${evseId} not found.`);
+    if (transaction.evseId != null) {
+      receivedChargingNeeds =
+        await chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
+          tenantId,
+          transaction.evseId,
+          transaction.id,
+        );
     }
-    logger.info(`Found evse: ${JSON.stringify(evse)}`);
-    receivedChargingNeeds =
-      await chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
-        tenantId,
-        evse.databaseId,
-        transaction.id,
-      );
     logger.info(`Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`);
-    transactionContext = { transaction, evse, chargingNeeds: receivedChargingNeeds };
+    transactionContext = { transaction, chargingNeeds: receivedChargingNeeds };
   }
 
   const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(

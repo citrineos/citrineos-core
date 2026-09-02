@@ -5,10 +5,10 @@ import {
   AbstractHandler,
   type AbstractHandlerDependencies,
   AsRequestHandler,
-  type BootstrapConfig,
   type ICache,
   type IMessage,
   type IOcppSender,
+  createIdentifier,
   OcppError,
 } from '@citrineos/base';
 import {
@@ -33,7 +33,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
 
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
-  protected _config: BootstrapConfig & SystemConfig;
+  protected _config: SystemConfig;
   protected _deviceModelRepository: IDeviceModelRepository;
 
   constructor({
@@ -45,7 +45,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
-    config: BootstrapConfig & SystemConfig;
+    config: SystemConfig;
     deviceModelRepository: IDeviceModelRepository;
   }) {
     super(logger);
@@ -124,7 +124,7 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       const success = await this._cache.set(
         message.payload.requestId.toString(),
         NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_COMPLETE_CACHE_VALUE,
-        ocppConnectionName,
+        createIdentifier(tenantId, ocppConnectionName),
       );
       this._logger.info('GetBaseReport Completed', success, message.payload.requestId);
     } else {
@@ -133,8 +133,8 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
       const success = await this._cache.set(
         message.payload.requestId.toString(),
         NotifyReportRequestOcpp2Handler.GET_BASE_REPORT_ONGOING_CACHE_VALUE,
-        ocppConnectionName,
-        this._config.maxCachingSeconds,
+        createIdentifier(tenantId, ocppConnectionName),
+        this._config.timeouts.maxCachingSeconds,
       );
       this._logger.info('GetBaseReport Ongoing', success, message.payload.requestId);
     }
