@@ -306,10 +306,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Response,
           rawMessage,
           callError,
+          action,
         );
       }
       // A generated correlationId, so frames that never parsed cannot end up referencing each other.
@@ -331,7 +331,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       const action =
         parsedMessage.messageTypeId === MessageTypeId.Call
           ? (parsedMessage as Call).action
-          : NO_ACTION;
+          : undefined;
       try {
         switch (parsedMessage.messageTypeId) {
           case MessageTypeId.Call: {
@@ -361,10 +361,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           await this._sendMessage(
             identifier,
             protocol,
-            action,
             MessageState.Response,
             rawMessage,
             callError,
+            action,
           );
         }
       } finally {
@@ -434,10 +434,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         const successTimestamp = await this._sendMessage(
           identifier,
           protocol,
-          action,
           MessageState.Request,
           rawMessage,
           message,
+          action,
         );
         if (successTimestamp != undefined) {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.Sent);
@@ -517,10 +517,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -583,10 +583,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._sendMessage(
           identifier,
           protocol,
-          cachedAction,
           MessageState.Response,
           rawMessage,
           message,
+          cachedAction,
           cachedTimestamp,
         ),
         this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
@@ -896,10 +896,10 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
-    action: string,
-    _state: MessageState,
+    state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
+    action?: string,
     receivedIsoTimestamp?: string,
   ): Promise<Date | undefined> {
     try {

@@ -390,6 +390,9 @@ export class CitrineOSServer {
       );
       await this.initAllModules();
       this.initAllApis();
+    } else if (this.eventGroup === EventGroup.Messages) {
+      // Log only because MessagesModule will be initialized by initMessagesModule()
+      this._logger.info('Initializing in MESSAGES mode: general frame processing only');
     } else if (CitrineOSServer.API_SPECS[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
       this.initApiInScope(CitrineOSServer.API_SPECS[this.eventGroup]!.apiTokens);
@@ -416,6 +419,13 @@ export class CitrineOSServer {
    * Starts the messages module, which consumes the `messages` exchange.
    */
   protected async initMessagesModule(): Promise<void> {
+    // TODO when SHOULD messages module actually run?
+    const shouldRun =
+      this.eventGroup === EventGroup.Messages ||
+      this.eventGroup === EventGroup.All ||
+      this.eventGroup === EventGroup.Router;
+    if (!shouldRun) return;
+
     this._logger.info('Initializing messages module (general message processing)');
     this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
     await this._messagesModule.start();

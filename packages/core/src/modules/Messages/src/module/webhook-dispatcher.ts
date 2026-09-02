@@ -64,6 +64,7 @@ export class WebhookDispatcher {
   async register(tenantId: number, ocppConnectionName: string) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     try {
+      this._logger.debug(`Registering ${identifier}`);
       await this._loadSubscriptionsForConnection(tenantId, ocppConnectionName);
       await Promise.all(
         this._onConnectionCallbacks.get(identifier)?.map((callback) => callback()) ?? [],
@@ -77,6 +78,8 @@ export class WebhookDispatcher {
   async deregister(tenantId: number, ocppConnectionName: string) {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     try {
+      this._logger.debug(`Deregistering ${identifier}`);
+
       await Promise.all(
         this._onCloseCallbacks.get(identifier)?.map((callback) => callback()) ?? [],
       );
