@@ -4,13 +4,12 @@
 
 import type { IConnectionEventProcessor, IFrameEventProcessor } from '@citrineos/types';
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
-import { MessagesEventConsumer } from '@util/queue/rabbit-mq/messages/messages-event-consumer.js';
-import { MessagesEventPipeline } from '@util/queue/rabbit-mq/messages/messages-event-pipeline.js';
-import { MessagesModule } from './module/messages.js';
-import { ConnectionWebhookProcessor } from './module/processors/connection-webhook-processor.js';
-import { FrameWebhookProcessor } from './module/processors/frame-webhook-processor.js';
-import { OcppMessagePersistProcessor } from './module/processors/ocpp-message-persist-processor.js';
-import { WebhookDispatcher } from './module/webhook-dispatcher.js';
+import { MessagesEventConsumer, MessagesEventPipeline } from '@/transport/index.js';
+import { MessagesModule } from './messages.js';
+import { ConnectionWebhookProcessor } from '@modules/messages/processors/connection-webhook-processor.js';
+import { FrameWebhookProcessor } from '@modules/messages/processors/frame-webhook-processor.js';
+import { OcppMessagePersistProcessor } from '@modules/messages/processors/ocpp-message-persist-processor.js';
+import { WebhookDispatcher } from './webhook-dispatcher.js';
 
 /** The processors this registrar resolves out of the container. */
 interface MessagesCradle {

@@ -49,7 +49,7 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
-import { MessagesModule } from '@citrineos/core/dist/src/modules/Messages/src/index.js';
+import { MessagesModule } from '@citrineos/ocpp/dist/src/modules/messages/index.js';
 
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {

@@ -13,7 +13,7 @@ import {
 import type * as amqplib from 'amqplib';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { RabbitMQChannelManager } from '@util/index.js';
+import type { RabbitMQChannelManager } from '@/transport/index.js';
 
 export type MessagesEventHandler = (event: MessagesEvent) => Promise<void>;
 

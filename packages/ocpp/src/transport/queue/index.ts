@@ -7,4 +7,4 @@ export { RabbitMQChannelManager } from './rabbit-mq/channel-manager.js';
 export { RabbitMQConnectionManager } from './rabbit-mq/connection-manager.js';
 export { RabbitMqReceiver } from './rabbit-mq/receiver.js';
 export { RabbitMqSender } from './rabbit-mq/sender.js';
-export * from '@util/queue/rabbit-mq/messages/index.js';
+export * from './rabbit-mq/messages/index.js';

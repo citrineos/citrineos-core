@@ -61,58 +61,51 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-} from '@dal/index.js';
-import { CommandsApi } from '@modules/Api/src/module/CommandsApi.js';
-import { OcppMessageApi } from '@modules/Api/src/module/OcppMessageApi.js';
-import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
-import { registerApiServices } from '@modules/Api/src/register.js';
-import {
-  CertificatesModule,
-  registerCertificatesServices,
-} from '@modules/Certificates/src/index.js';
+} from '@citrineos/dal';
+import { AdminApi } from '@/apis/admin-api.js';
+import { CommandsApi } from '@/apis/commands-api.js';
+import { OcppMessageApi } from '@/apis/ocpp-message-api.js';
+import { WebPaymentApi } from '@/apis/web-payment-api.js';
+import { registerApiServices } from '@/apis/register.js';
+import { CertificatesModule, registerCertificatesServices } from '@modules/certificates/index.js';
 import {
   ConfigurationModule,
   registerConfigurationServices,
-} from '@modules/Configuration/src/index.js';
-import { EVDriverModule, registerEVDriverServices } from '@modules/EVDriver/src/index.js';
-import { MonitoringModule, registerMonitoringServices } from '@modules/Monitoring/src/index.js';
-import {
-  AdminApi,
-  MessageRouterImpl,
-  registerOcppRouterServices,
-} from '@modules/OcppRouter/src/index.js';
-import { registerReportingServices, ReportingModule } from '@modules/Reporting/src/index.js';
+} from '@modules/configuration/index.js';
+import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
+import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
+import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
+import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
   InternalSmartCharging,
   registerSmartChargingServices,
   SmartChargingModule,
-} from '@modules/SmartCharging/src/index.js';
-import { TenantModule } from '@modules/Tenant/src/index.js';
+} from '@modules/smart-charging/index.js';
+import { TenantModule } from '@modules/tenant/index.js';
+import { registerTransactionsServices, TransactionsModule } from '@modules/transactions/index.js';
+import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
-  registerTransactionsServices,
-  TransactionsModule,
-} from '@modules/Transactions/src/index.js';
+  CertificateAuthorityService,
+  DeviceModelService,
+  InstallCertificateHelperService,
+  NetworkProfileService,
+  RealTimeAuthorizer,
+} from '@/services/index.js';
 import {
   Authenticator,
   BasicAuthenticationFilter,
   BrokerAwareMessageSender,
-  CertificateAuthorityService,
   ConnectedStationFilter,
-  DeviceModelService,
-  IdGenerator,
-  LocalBypassAuthProvider,
   NetworkProfileFilter,
-  NetworkProfileService,
-  OIDCAuthProvider,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   RabbitMqReceiver,
   RabbitMqSender,
-  RealTimeAuthorizer,
   UnknownStationFilter,
   WebsocketNetworkConnection,
-} from '@util/index.js';
-import { registerMessagesServices } from '@modules/Messages/src/register.js';
+} from '@/transport/index.js';
+import { IdGenerator } from '@util/index.js';
+import { registerMessagesServices } from '@modules/messages/register.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -258,7 +251,7 @@ function registerMessaging(container: AwilixContainer): void {
 }
 
 // ============================================================
-// Repositories — all singletons, registered from @citrineos/core named exports.
+// Repositories — all singletons, registered from @citrineos/dal named exports.
 // Every repository class takes a single destructured dependency object, which is
 // what PROXY injection hands it, so all of them register with asClass.
 // The Drizzle repositories override their Sequelize counterparts when enabled.
@@ -340,6 +333,7 @@ function registerServices(container: AwilixContainer): void {
   container.register({
     idGenerator: asClass(IdGenerator).singleton(),
     certificateAuthorityService: asClass(CertificateAuthorityService).singleton(),
+    installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     deviceModelService: asClass(DeviceModelService).singleton(),
     networkProfileService: asClass(NetworkProfileService).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),

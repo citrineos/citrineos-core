@@ -4,7 +4,7 @@
 
 import { AbstractModule, type ICache } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
-import { OidcTokenProvider } from '@util/authorization/index.js';
+import { OidcTokenProvider } from '@/apis/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

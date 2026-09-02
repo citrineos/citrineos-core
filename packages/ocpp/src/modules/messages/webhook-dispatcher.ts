@@ -14,10 +14,7 @@ import {
   type SubscriptionDto,
   type SystemConfig,
 } from '@citrineos/types';
-import type {
-  IOCPPMessageRepository,
-  ISubscriptionRepository,
-} from '@dal/interfaces/repositories.js';
+import type { IOCPPMessageRepository, ISubscriptionRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

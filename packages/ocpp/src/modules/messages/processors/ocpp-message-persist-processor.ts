@@ -9,7 +9,7 @@ import {
   MessageState,
   MessageTypeId,
 } from '@citrineos/types';
-import type { IOCPPMessageRepository } from '@dal/interfaces/repositories.js';
+import type { IOCPPMessageRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 

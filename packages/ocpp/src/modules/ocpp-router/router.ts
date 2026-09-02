@@ -42,7 +42,7 @@ import {
   RetryMessageError,
   type SystemConfig,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@dal/interfaces/repositories.js';
+import type { ILocationRepository } from '@citrineos/dal';
 import {
   CallHandledOutcome,
   CallResponseOutcome,
@@ -56,12 +56,12 @@ import {
   recordOcppMessageReceived,
   recordOcppMessageRouted,
   UNKNOWN_ACTION,
-} from '@util/metrics.js';
+} from '@/transport/metrics.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
-import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/util/index.js';
+import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
 
 /**
  * Implementation of the ocpp router

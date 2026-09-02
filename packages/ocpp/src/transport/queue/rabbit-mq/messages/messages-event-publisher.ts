@@ -12,7 +12,7 @@ import {
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import type { RabbitMQChannelManager } from '@util/index.js';
+import type { RabbitMQChannelManager } from '@/transport/index.js';
 
 /**
  * The actual publisher of messages to the messages exchange.

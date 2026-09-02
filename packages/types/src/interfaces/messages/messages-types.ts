@@ -6,7 +6,7 @@ import {
   MessageOriginSchema,
   MessageTypeSchema,
   OCPPVersionSchema,
-} from '@interfaces/dto/types/ocpp.message.js';
+} from '@interfaces/dto/types/ocpp-message.js';
 import { z } from 'zod';
 
 /**

@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
-import {
-  MessagesEventConsumer,
-  MessagesEventPipeline,
-} from '@util/queue/rabbit-mq/messages/index.js';
+import { MessagesEventConsumer, MessagesEventPipeline } from '@/transport/index.js';
 import type WebhookDispatcher from './webhook-dispatcher.js';
 import { type ILogObj, Logger } from 'tslog';
 

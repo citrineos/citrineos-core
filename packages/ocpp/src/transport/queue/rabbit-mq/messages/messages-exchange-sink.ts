@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { MessagesEvent, MessagesRecordResult } from '@citrineos/types';
-import type { MessagesEventPublisher } from '@/util/index.js';
+import type { MessagesEventPublisher } from '@/transport/index.js';
 
 /**
  * Publishes to the messages exchange and returns immediately.
