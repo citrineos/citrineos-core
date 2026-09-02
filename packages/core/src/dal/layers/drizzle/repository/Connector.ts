@@ -15,8 +15,8 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
     stationId: entity.stationId ?? undefined,
     ocppConnectionName: entity.ocppConnectionName,
     evseId: entity.evseId,
-    connectorId: entity.connectorId,
-    evseTypeConnectorId: entity.evseTypeConnectorId,
+    connectorId: entity.connectorId ?? undefined,
+    evseTypeConnectorId: entity.evseTypeConnectorId ?? undefined,
     // Enums stored as strings in the DB — cast back to the DTO's enum unions.
     status: entity.status as ConnectorDto['status'],
     type: entity.type as ConnectorDto['type'],
