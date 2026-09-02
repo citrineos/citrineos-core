@@ -9,13 +9,6 @@ import {
 } from '@interfaces/dto/types/ocpp-message.js';
 import { z } from 'zod';
 
-/**
- * What a processor may hand to the processors that run after it.
- *
- * Mutable on purpose: the persistence processor writes back the action the DB correlation trigger
- * resolved for a CALLRESULT/CALLERROR, and the webhook dispatcher wants that value — nothing else in
- * the pipeline can know it.
- */
 export interface MessagesEventContext {
   /** Action as stored, after `ocpp_correlate_response()` filled it in from the CALL. */
   persistedAction?: string;
