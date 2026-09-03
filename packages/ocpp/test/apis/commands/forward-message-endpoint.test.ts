@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   buildMessageEndpoints,
-  forwardMessageEndpoint,
   DEFAULT_TENANT_ID,
-  type MessageEndpointClass,
+  forwardMessageEndpoint,
   type IEndpointBuilder,
+  type MessageEndpointClass,
 } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { asValue, createContainer, InjectionMode, type AwilixContainer } from 'awilix';
@@ -28,11 +28,6 @@ describe('forwardMessageEndpoint', () => {
 
   const buildEndpoint = () => {
     const endpointClasses: ReadonlyArray<MessageEndpointClass> = [ResetEndpoint];
-    // buildMessageEndpoints takes an IEndpointBuilder, whose build() declares
-    // `new (...args: never[]) => T`. awilix's container.build() wants
-    // `new (...args: any[]) => T`, and under strictFunctionTypes those are
-    // contravariantly incompatible even though the call is correct at runtime,
-    // so the target is re-cast at that boundary.
     const builder: IEndpointBuilder = {
       build: <T>(target: new (...args: never[]) => T) =>
         container.build(target as unknown as new (...args: any[]) => T),

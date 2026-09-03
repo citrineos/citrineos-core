@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import {
-  type OcppRequest,
   EventGroup,
   MessageOrigin,
   MessageState,
-  OCPP_CallAction,
   OCPP2_0_1,
+  OCPP_CallAction,
   type OCPP2_request_types,
+  type OcppRequest,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import { NotifyDisplayMessagesRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const STATION_ID = 'station-001';
 const REQUEST_ID = 42;
@@ -38,8 +38,6 @@ function aNotifyDisplayMessagesMessage<T extends OcppRequest>(payload: T): Messa
 function aNotifyDisplayMessagesRequest(): OCPP2_request_types.NotifyDisplayMessagesRequest {
   return {
     requestId: REQUEST_ID,
-    // messageInfo is a non-empty tuple in the schema, and the handler validates
-    // each entry's content, so this carries one well-formed ASCII message.
     messageInfo: [
       {
         id: 1,

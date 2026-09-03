@@ -2,22 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractEndpointApi,
   type AbstractEndpoint,
   type BuiltEndpoint,
   type ICommandEndpointMetadata,
-  AbstractEndpointApi,
 } from '@citrineos/base';
 import fastify, { type FastifyInstance } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
 
-/**
- * A route-carrying endpoint class, as the OcppRouter admin endpoints declare
- * themselves (`static readonly route: ICommandEndpointMetadata`).
- *
- * Tests used to type this parameter as `Parameters<typeof getTestInstance>[1]`,
- * which collapses that generic to its constraint (`Constructor<object>`) and so
- * loses both the AbstractEndpoint instance type and the static `route`.
- */
 export type EndpointClass = (new (...args: any[]) => AbstractEndpoint) & {
   route: ICommandEndpointMetadata;
 };

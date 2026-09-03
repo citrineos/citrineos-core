@@ -18,10 +18,7 @@ type AnyClass = Constructor<object>;
 //  - the outer level because logger is pre-registered and Awilix strict:true
 //    enforces any other missing dep at resolve time;
 //  - each individual dep because a test double only ever stubs the members the
-//    code under test actually calls. The interfaces they stand in for are large
-//    (ILocationRepository has 16 members, ITransactionEventRepository 14), so
-//    demanding the full surface produced ~70 "is missing the following
-//    properties" errors across the suite.
+//    code under test actually calls.
 //
 // Members that ARE stubbed stay typechecked: a misspelled name is an excess
 // property and a wrong signature still fails, so this admits omissions without
@@ -32,12 +29,6 @@ export type Deps<T extends AnyClass> = {
 
 const TARGET_KEY = '__target';
 
-// Intersected with Logger<ILogObj> so it can be passed wherever a real tslog
-// logger is expected. tslog's Logger has ~20 members (log, silly, runtime,
-// stackDepthLevel, ...) that a test double has no reason to implement, and
-// without this every `new Handler({ logger, ... })` reported "Type 'MockLogger'
-// is missing the following properties". The Mock-typed members stay Mocks, so
-// assertions like logger.debug.mock.calls keep working.
 export type MockLogger = Logger<ILogObj> & {
   debug: Mock;
   info: Mock;
@@ -60,9 +51,6 @@ function makeDefaultLogger(): MockLogger {
     fatal: vi.fn(),
     trace: vi.fn(),
     getSubLogger: () => logger,
-    // Asserted once here rather than at every call site: the literal covers the
-    // members tests use, and the rest of tslog's Logger surface is unreachable
-    // from a test double. The annotation above is what types the self-reference.
   } as unknown as MockLogger;
   return logger;
 }
