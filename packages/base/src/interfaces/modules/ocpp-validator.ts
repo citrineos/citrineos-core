@@ -22,6 +22,17 @@ import {
 } from '@citrineos/types';
 import { OcppError } from '@ocpp/rpc/message.js';
 
+/**
+ * OCPP states its decimal step constraints as multipleOf: 0.1. Ajv checks those by dividing in
+ * binary floating point, where 8.1 / 0.1 is 81.00000000000001 rather than 81, so an unqualified
+ * check refuses about a third of the one-decimal values the spec allows - including 8.1, which
+ * OCPP 2.0.1 gives as its own example of an accepted charging limit. multipleOfPrecision rounds the
+ * quotient to this many significant digits before testing it for integrality; six is far above the
+ * one decimal place the constraint is expressing and far below the point at which a genuinely
+ * two-decimal value would start to pass.
+ */
+const MULTIPLE_OF_PRECISION = 6;
+
 export class OCPPValidator {
   protected _ajv: Ajv;
   protected readonly _logger: Logger<ILogObj>;
@@ -50,6 +61,7 @@ export class OCPPValidator {
         coerceTypes: true, // HTTP query/path params arrive as strings and need coercion
         strict: false,
         allErrors: true,
+        multipleOfPrecision: MULTIPLE_OF_PRECISION,
       });
 
     OCPPValidator.addFormats(ajvInstance);
@@ -76,6 +88,7 @@ export class OCPPValidator {
         strictNumbers: true, // Reject numeric strings where a number is required
         validateFormats: true,
         allErrors: true,
+        multipleOfPrecision: MULTIPLE_OF_PRECISION,
       });
 
     OCPPValidator.addOcppKeywords(ajvInstance);
