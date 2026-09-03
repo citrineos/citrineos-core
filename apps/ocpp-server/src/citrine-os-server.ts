@@ -22,6 +22,7 @@ import {
 } from '@citrineos/dal';
 import {
   apiAuthPluginFp,
+  assertSequelizeSchemaMatches,
   BrokerAwareMessageSender,
   buildContainer,
   GcpCloudStorage,
@@ -463,7 +464,7 @@ export class CitrineOSServer {
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
 
-    this._schemaValidationReport = await sequelize.assertSequelizeSchemaMatches(
+    this._schemaValidationReport = await assertSequelizeSchemaMatches(
       this._sequelizeInstance,
       this._config,
       this._logger,

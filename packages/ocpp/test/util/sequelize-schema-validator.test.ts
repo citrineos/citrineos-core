@@ -22,7 +22,7 @@ import {
   type SchemaFinding,
   SchemaValidationError,
   validateSequelizeSchema,
-} from '@dal/layers/sequelize/SequelizeSchemaValidator.js';
+} from '../../src/util';
 import { Logger } from 'tslog';
 
 /**

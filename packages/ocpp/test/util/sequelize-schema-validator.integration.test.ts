@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
+import type { BootstrapConfig } from 'packages/base';
 import { DefaultSequelizeInstance } from '@dal/index.js';
 import { validateSequelizeSchema } from '@dal/layers/sequelize/SequelizeSchemaValidator.js';
 
