@@ -286,13 +286,6 @@ export interface IConnectorRepository {
     tenantId: number,
     connector: ConnectorDto,
   ): Promise<ConnectorDto | undefined>;
-  /**
-   * Applies `value` to every connector at one station.
-   *
-   * Replaced a `query: object` parameter that took a raw Sequelize where-clause —
-   * the only caller passed `{ where: { stationId, tenantId } }`, and an ORM-shaped
-   * query cannot be served by a non-Sequelize implementation.
-   */
   updateAllConnectorsByStationId(
     tenantId: number,
     stationId: number,
