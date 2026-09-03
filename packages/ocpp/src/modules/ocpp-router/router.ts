@@ -2,13 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type ICache,
-  type IMessage,
-  type IMessageConfirmation,
-  type IMessageHandler,
-  type IMessageRouter,
-  type IMessageSender,
-  type RpcMessage,
   AbstractMessageRouter,
   CacheNamespace,
   Call,
@@ -17,28 +10,37 @@ import {
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
+  type ICache,
+  type IMessage,
+  type IMessageConfirmation,
+  type IMessageHandler,
+  type IMessageRouter,
+  type IMessageSender,
   mapToCallAction,
   OcppError,
   OCPPValidator,
   readMessageId,
   RequestBuilder,
+  type RpcMessage,
   UNREADABLE_MESSAGE_ID,
 } from '@citrineos/base';
 import {
   type CallAction,
-  type OcppRequest,
-  type OcppResponse,
-  type OCPPVersionType,
-  type SystemConfig,
+  ConnectionEventState,
   ErrorCode,
   EventGroup,
   MessageOrigin,
   MessageState,
   MessageTypeId,
+  NO_ACTION,
   OCPP2_1,
   OCPP_CallAction,
+  type OcppRequest,
+  type OcppResponse,
   OCPPVersion,
+  type OCPPVersionType,
   RetryMessageError,
+  type SystemConfig,
 } from '@citrineos/types';
 import type { ILocationRepository } from '@citrineos/dal';
 import {
@@ -58,7 +60,8 @@ import {
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
-import { WebhookDispatcher } from './webhook-dispatcher.js';
+import { type CallbackUrlNotifier } from './callback-url-notifier.js';
+import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
 
 /**
  * Implementation of the ocpp router
@@ -68,7 +71,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * Fields
    */
 
-  protected _webhookDispatcher: WebhookDispatcher;
+  protected _messagesExchangeSink: MessagesExchangeSink;
+  protected _callbackUrlNotifier: CallbackUrlNotifier;
   protected _cache: ICache;
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
@@ -78,12 +82,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   /**
    * Constructor for the class.
    *
-   * @param {SystemConfig} config - the system configuration
-   * @param {ICache} cache - the cache object
-   * @param {IMessageSender} [sender] - the message sender
-   * @param {IMessageHandler} [handler] - the message handler
-   * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
-   * @param {Function} networkHook - the network hook needed to send messages to chargers
+   * @param {SystemConfig} [config] - the system configuration
+   * @param {ICache} [cache] - the cache object
+   * @param {IMessageSender} [routerSender] - the message sender
+   * @param {IMessageHandler} [routerHandler] - the message handler
+   * @param {MessagesExchangeSink} [messagesExchangeSink] - where frame and connection events are published
+   * @param {CallbackUrlNotifier} [callbackUrlNotifier] - completes API commands that supplied a callback URL
+   * @param {Function} [networkHook] - the network hook needed to send messages to chargers
    * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
    * represents a repository for accessing and manipulating variable data.
    * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
@@ -95,7 +100,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     cache,
     routerSender,
     routerHandler,
-    webhookDispatcher,
+    messagesExchangeSink,
+    callbackUrlNotifier,
     networkHook,
     logger,
     ocppValidator,
@@ -105,7 +111,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     cache: ICache;
     routerSender: IMessageSender;
     routerHandler: IMessageHandler;
-    webhookDispatcher: WebhookDispatcher;
+    messagesExchangeSink: MessagesExchangeSink;
+    callbackUrlNotifier: CallbackUrlNotifier;
     networkHook: (identifier: string, message: string) => Promise<void>;
     logger: Logger<ILogObj>;
     ocppValidator: OCPPValidator;
@@ -116,7 +123,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._cache = cache;
     this._sender = routerSender;
     this._handler = routerHandler;
-    this._webhookDispatcher = webhookDispatcher;
+    this._messagesExchangeSink = messagesExchangeSink;
+    this._callbackUrlNotifier = callbackUrlNotifier;
     this._networkHook = networkHook;
     this._locationRepository = locationRepository;
   }
@@ -138,7 +146,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersion,
     connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
-    const dispatcherRegistration = this._webhookDispatcher.register(tenantId, ocppConnectionName);
+    const connectionEvent = this._messagesExchangeSink.record(
+      buildConnectionEvent({
+        tenantId,
+        ocppConnectionName,
+        state: ConnectionEventState.Connected,
+        timestamp: new Date().toISOString(),
+        protocol,
+      }),
+    );
 
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
@@ -163,12 +179,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       connectedWebsocketServerConfigId,
     );
 
-    return Promise.all([
-      dispatcherRegistration,
-      requestSubscription,
-      responseSubscription,
-      onlineCharger,
-    ])
+    return Promise.all([connectionEvent, requestSubscription, responseSubscription, onlineCharger])
       .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
       .catch((error) => {
         this._logger.error(`Error registering connection for ${connectionIdentifier}: ${error}`);
@@ -177,9 +188,18 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {
-    this._webhookDispatcher.deregister(tenantId, ocppConnectionName).catch((err) => {
-      this._logger.error('_webhookDispatcher deregister failed', err);
-    });
+    this._messagesExchangeSink
+      .record(
+        buildConnectionEvent({
+          tenantId,
+          ocppConnectionName,
+          state: ConnectionEventState.Closed,
+          timestamp: new Date().toISOString(),
+        }),
+      )
+      .catch((err) => {
+        this._logger.error('Failed to publish connection-closed event', err);
+      });
 
     let protocol: OCPPVersion | null = null;
     try {
@@ -205,7 +225,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     );
 
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
-    // TODO: ensure that all queue implementations in 02_Util only unsubscribe 1 queue per call
+    // TODO: ensure that all queue implementations in ocpp/util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
     return await this._handler.unsubscribe(connectionIdentifier);
   }
@@ -291,14 +311,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           action,
         );
       }
-      await this._webhookDispatcher.dispatchMessageReceivedUnparsed(
-        tenantId,
-        ocppConnectionName,
-        message,
-        timestamp.toISOString(),
-        protocol,
-        action,
-        messageTypeId,
+      // A generated correlationId, so frames that never parsed cannot end up referencing each other.
+      await this._messagesExchangeSink.record(
+        buildFrameEvent({
+          tenantId,
+          ocppConnectionName,
+          origin: MessageOrigin.ChargingStation,
+          correlationId: uuidv4(),
+          protocol,
+          raw: message,
+          timestamp: timestamp.toISOString(),
+          type: messageTypeId,
+          action,
+        }),
       );
     }
     if (parsedMessage && success) {
@@ -342,15 +367,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           );
         }
       } finally {
-        await this._webhookDispatcher.dispatchMessageReceived(
-          tenantId,
-          ocppConnectionName,
-          timestamp.toISOString(),
-          protocol,
-          message,
-          parsedMessage.messageTypeId,
-          parsedMessage.toJSON(),
-          action,
+        await this._messagesExchangeSink.record(
+          buildFrameEvent({
+            tenantId,
+            ocppConnectionName,
+            origin: MessageOrigin.ChargingStation,
+            correlationId: readMessageId(rpcMessage),
+            protocol,
+            raw: message,
+            timestamp: timestamp.toISOString(),
+            type: parsedMessage.messageTypeId,
+            action,
+            rpcMessage: parsedMessage.toJSON(),
+          }),
         );
       }
     }
@@ -857,7 +886,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {string} identifier - The identifier of the client, e.g. "tenantId:ocppConnectionName".
    * @param {OCPPVersionType} protocol - The OCPP protocol version.
    * @param {string} action - The OCPP CallAction to be sent. See {@link CallAction}.
-   * @param {MessageState} state - The state of the message. Used for dispatching in webhook.
+   * @param {MessageState} _state - The state of the message. Used for dispatching in webhook.
    * @param {string} rawMessage - The raw message string to be sent, i.e. the stringified version of the rpc message. Used for sending in webhook and logging.
    * @param {RpcMessage} rpcMessage - the rpc message being sent, as a model object. Used for logging and dispatching in webhook.
    * @param {string} receivedIsoTimestamp - The ISO timestamp of when the Call was received, if this is a response to a Call. Used for logging the time taken for the message to be sent since it was received.
@@ -866,7 +895,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
-    state: MessageState,
+    _state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
     action?: string,
@@ -890,18 +919,24 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         rpcMessage,
       );
     }
-    this._webhookDispatcher
-      .dispatchMessageSent(
-        identifier,
-        sentTimestamp.toISOString(),
-        protocol,
-        rawMessage,
-        rpcMessage.messageTypeId,
-        rpcMessage.toJSON(),
-        action,
+    const sentFrame = rpcMessage.toJSON();
+    this._messagesExchangeSink
+      .record(
+        buildFrameEvent({
+          tenantId: getTenantIdFromIdentifier(identifier),
+          ocppConnectionName: getStationIdFromIdentifier(identifier),
+          origin: MessageOrigin.ChargingStationManagementSystem,
+          correlationId: readMessageId(sentFrame),
+          protocol,
+          raw: rawMessage,
+          timestamp: sentTimestamp.toISOString(),
+          type: rpcMessage.messageTypeId,
+          action,
+          rpcMessage: sentFrame,
+        }),
       )
       .catch((err) => {
-        this._logger.error('dispatchMessageSent failed', err);
+        this._logger.error('Failed to publish outbound frame event', err);
       });
     return sentTimestamp;
   }
@@ -912,7 +947,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     message: Call,
   ): Promise<boolean> {
     const status = await this._cache.get<string>(CacheNamespace.BootStatus, identifier);
-    if (
+    return !(
       status === OCPP2_1.RegistrationStatusEnumType.Rejected &&
       // TriggerMessage<BootNotification> is the only message allowed to be sent during Rejected BootStatus B03.FR.08
       !(
@@ -920,10 +955,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         (message.payload as OCPP2_1.TriggerMessageRequest).requestedMessage ==
           OCPP2_1.MessageTriggerEnumType.BootNotification
       )
-    ) {
-      return false;
-    }
-    return true;
+    );
   }
 
   private async _routeCall(
@@ -977,11 +1009,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
-    // Fire callback before broker
-    // so upstream is notified as soon as the charger responds
-    this._webhookDispatcher
-      .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
-      .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
+    this._callbackUrlNotifier
+      .notify(messageId, ocppConnectionName, payload)
+      .catch((err) => this._logger.error('callback url notification failed', err));
 
     return this.emitMessage(_message);
   }
@@ -1010,10 +1040,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       timestamp,
     );
 
-    // Fulfill callback for api, if needed
-    this._webhookDispatcher
-      .dispatchCallbackUrl(messageId, ocppConnectionName, payload)
-      .catch((err) => this._logger.error('dispatchCallbackUrl failed', err));
+    this._callbackUrlNotifier
+      .notify(messageId, ocppConnectionName, payload)
+      .catch((err) => this._logger.error('callback url notification failed', err));
 
     return this.emitMessage(_message);
   }
@@ -1045,16 +1074,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     let action;
     switch (messageTypeId) {
       case MessageTypeId.Call:
-        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : undefined;
+        action = rpcMessage && rpcMessage.length > 2 ? rpcMessage[2] : NO_ACTION;
         break;
       case MessageTypeId.CallResult:
       case MessageTypeId.CallError:
       default:
-        action = undefined;
+        action = NO_ACTION;
         break;
     }
     return action;
   }
 }
-
-export default MessageRouterImpl;

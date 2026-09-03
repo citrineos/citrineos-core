@@ -49,6 +49,7 @@ import type {
 } from 'fastify/types/schema.js';
 import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
+import { MessagesModule } from '@citrineos/ocpp/dist/src/modules/messages/index.js';
 
 /** The container tokens needed to initialize a module and its APIs in a scope. */
 interface ModuleInitSpec {
@@ -76,6 +77,7 @@ export class CitrineOSServer {
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
+  protected _messagesModule?: MessagesModule;
 
   protected readonly appName: string;
   protected _isShuttingDown = false;
@@ -195,6 +197,7 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
+    await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
   }
@@ -388,6 +391,9 @@ export class CitrineOSServer {
       );
       await this.initAllModules();
       this.initAllApis();
+    } else if (this.eventGroup === EventGroup.Messages) {
+      // Log only because MessagesModule will be initialized by initMessagesModule()
+      this._logger.info('Initializing in MESSAGES mode: general frame processing only');
     } else if (CitrineOSServer.API_SPECS[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
       this.initApiInScope(CitrineOSServer.API_SPECS[this.eventGroup]!.apiTokens);
@@ -408,6 +414,18 @@ export class CitrineOSServer {
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(['adminApi']);
+  }
+
+  /**
+   * Starts the messages module, which consumes the `messages` exchange.
+   */
+  protected async initMessagesModule(): Promise<void> {
+    const shouldRun = this.eventGroup === EventGroup.Messages || this.eventGroup === EventGroup.All;
+    if (!shouldRun) return;
+
+    this._logger.info('Initializing messages module (general message processing)');
+    this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
+    await this._messagesModule.start();
   }
 
   protected async initAllModules() {

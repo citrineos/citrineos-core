@@ -27,12 +27,14 @@ import {
   MessageState,
   MessageTypeId,
   OCPP2_0_1,
+  NO_ACTION,
   OCPP_CallAction,
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/ocpp-router/router.js';
-import { WebhookDispatcher } from '@modules/ocpp-router/webhook-dispatcher.js';
+import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
+import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { type Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -90,15 +92,24 @@ function buildMockHandler(): Mocked<IMessageHandler> {
   } as unknown as Mocked<IMessageHandler>;
 }
 
-function buildMockDispatcher(): Mocked<WebhookDispatcher> {
+function buildMockSink(): Mocked<MessagesExchangeSink> {
   return {
-    register: vi.fn().mockResolvedValue(undefined),
-    deregister: vi.fn().mockResolvedValue(undefined),
-    dispatchMessageReceivedUnparsed: vi.fn().mockResolvedValue(undefined),
-    dispatchMessageReceived: vi.fn().mockResolvedValue(undefined),
-    dispatchMessageSent: vi.fn().mockResolvedValue(undefined),
-    dispatchCallbackUrl: vi.fn().mockResolvedValue(undefined),
-  } as unknown as Mocked<WebhookDispatcher>;
+    record: vi.fn().mockResolvedValue({ delivered: true }),
+  } as unknown as Mocked<MessagesExchangeSink>;
+}
+
+function buildMockNotifier(): Mocked<CallbackUrlNotifier> {
+  return {
+    notify: vi.fn().mockResolvedValue(undefined),
+  } as unknown as Mocked<CallbackUrlNotifier>;
+}
+
+function recorded(sink: Mocked<MessagesExchangeSink>, kind: 'frame' | 'connection') {
+  return sink.record.mock.calls.map((call) => call[0]).filter((event: any) => event.kind === kind);
+}
+
+function frames(sink: Mocked<MessagesExchangeSink>, direction: 'inbound' | 'outbound') {
+  return recorded(sink, 'frame').filter((event: any) => event.direction === direction);
 }
 
 function buildMockLocationRepository(): Mocked<ILocationRepository> {
@@ -117,7 +128,8 @@ describe('MessageRouterImpl', () => {
   let cache: Mocked<ICache>;
   let sender: Mocked<IMessageSender>;
   let handler: Mocked<IMessageHandler>;
-  let dispatcher: Mocked<WebhookDispatcher>;
+  let sink: Mocked<MessagesExchangeSink>;
+  let notifier: Mocked<CallbackUrlNotifier>;
   let networkHook: ReturnType<typeof vi.fn>;
   let locationRepository: Mocked<ILocationRepository>;
   let router: MessageRouterImpl;
@@ -127,7 +139,8 @@ describe('MessageRouterImpl', () => {
     cache = buildMockCache();
     sender = buildMockSender();
     handler = buildMockHandler();
-    dispatcher = buildMockDispatcher();
+    sink = buildMockSink();
+    notifier = buildMockNotifier();
     networkHook = vi.fn().mockResolvedValue(undefined);
     locationRepository = buildMockLocationRepository();
 
@@ -136,7 +149,8 @@ describe('MessageRouterImpl', () => {
       cache,
       routerSender: sender,
       routerHandler: handler,
-      webhookDispatcher: dispatcher,
+      messagesExchangeSink: sink,
+      callbackUrlNotifier: notifier,
       networkHook,
       ocppValidator: undefined,
       locationRepository,
@@ -159,10 +173,17 @@ describe('MessageRouterImpl', () => {
   // ─── registerConnection ────────────────────────────────────────────────────
 
   describe('registerConnection', () => {
-    it('should register webhook dispatcher, subscribe request and response, and set charger online', async () => {
+    it('should publish a connection event, subscribe request and response, and set charger online', async () => {
       const result = await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
 
-      expect(dispatcher.register).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
+      expect(recorded(sink, 'connection')).toEqual([
+        expect.objectContaining({
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          state: 'connected',
+          protocol: PROTOCOL,
+        }),
+      ]);
 
       expect(handler.subscribe).toHaveBeenCalledTimes(2);
       // Request subscription
@@ -221,14 +242,20 @@ describe('MessageRouterImpl', () => {
   // ─── deregisterConnection ─────────────────────────────────────────────────
 
   describe('deregisterConnection', () => {
-    it('should deregister dispatcher, set charger offline, and unsubscribe handler', async () => {
+    it('should publish a close event, set charger offline, and unsubscribe handler', async () => {
       locationRepository.readChargingStationByStationId.mockResolvedValue({
         protocol: PROTOCOL,
       } as any);
 
       const result = await router.deregisterConnection(TENANT_ID, STATION_ID);
 
-      expect(dispatcher.deregister).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
+      expect(recorded(sink, 'connection')).toEqual([
+        expect.objectContaining({
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          state: 'closed',
+        }),
+      ]);
       expect(locationRepository.readChargingStationByStationId).toHaveBeenCalledWith(
         TENANT_ID,
         STATION_ID,
@@ -272,8 +299,8 @@ describe('MessageRouterImpl', () => {
       );
     });
 
-    it('should not throw when dispatcher.deregister fails', async () => {
-      dispatcher.deregister.mockRejectedValue(new Error('deregister failed'));
+    it('should not throw when publishing the close event fails', async () => {
+      sink.record.mockRejectedValue(new Error('publish failed'));
 
       // Should not throw
       const result = await router.deregisterConnection(TENANT_ID, STATION_ID);
@@ -306,7 +333,7 @@ describe('MessageRouterImpl', () => {
         const result = await router.onMessage(IDENTIFIER, rawMessage, timestamp, PROTOCOL);
 
         expect(result).toBe(true);
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
+        expect(recorded(sink, 'frame')).toHaveLength(1);
         expect(locationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
           TENANT_ID,
           STATION_ID,
@@ -318,8 +345,7 @@ describe('MessageRouterImpl', () => {
         const result = await router.onMessage(IDENTIFIER, 'not-json', timestamp, PROTOCOL);
 
         expect(result).toBe(false);
-        // Should still dispatch webhook and update timestamp
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(frames(sink, 'inbound')).toEqual([expect.objectContaining({ parsed: false })]);
       });
 
       it('should return false and send CallError for unknown message type id', async () => {
@@ -330,8 +356,7 @@ describe('MessageRouterImpl', () => {
         expect(result).toBe(false);
         // Should send a CallError back via network hook
         expect(networkHook).toHaveBeenCalled();
-        // Should still dispatch webhook and update timestamp
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
+        expect(frames(sink, 'inbound')).toEqual([expect.objectContaining({ parsed: false })]);
       });
 
       it('should send CallError with FormationViolation for ocpp1.6 unknown message type', async () => {
@@ -363,7 +388,7 @@ describe('MessageRouterImpl', () => {
         // CallResult errors should not trigger a CallError response
         expect(networkHook).not.toHaveBeenCalled();
         // The networkHook should be called with a CallError
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
+        expect(recorded(sink, 'frame')).toHaveLength(1);
       });
 
       it('should not send CallError for failed CallError processing', async () => {
@@ -377,7 +402,7 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
+        expect(recorded(sink, 'frame')).toHaveLength(1);
       });
     });
 
@@ -426,16 +451,19 @@ describe('MessageRouterImpl', () => {
     it('should always dispatch webhook even on error', async () => {
       await router.onMessage(IDENTIFIER, 'invalid-json', timestamp, PROTOCOL);
 
-      expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        'invalid-json',
-        timestamp.toISOString(),
-        PROTOCOL,
-        undefined,
-        // Unparseable message — no messageTypeId could be read off the frame.
-        undefined,
-      );
+      expect(frames(sink, 'inbound')).toEqual([
+        expect.objectContaining({
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          origin: MessageOrigin.ChargingStation,
+          raw: 'invalid-json',
+          timestamp: timestamp.toISOString(),
+          protocol: PROTOCOL,
+          action: NO_ACTION,
+          type: undefined,
+          parsed: false,
+        }),
+      ]);
     });
 
     it('should always attempt to update timestamp', async () => {
@@ -544,9 +572,6 @@ describe('MessageRouterImpl', () => {
 
   // ─── action attribution ────────────────────────────────────────────────────
 
-  // An action that cannot be determined is recorded as undefined
-  // only a Call carries an action of its own, and a
-  // CallResult/CallError inherits the action of the Call it is correlated to.
   describe('action attribution', () => {
     const timestamp = new Date('2025-01-01T00:00:00Z');
 
@@ -563,37 +588,37 @@ describe('MessageRouterImpl', () => {
         ).toBe(OCPP_CallAction.Heartbeat);
       });
 
-      it('should return undefined for a Call frame truncated before the action', () => {
-        expect(getAction([MessageTypeId.Call, CORRELATION_ID], MessageTypeId.Call)).toBeUndefined();
+      it('should fall back to NO_ACTION for a Call frame truncated before the action', () => {
+        expect(getAction([MessageTypeId.Call, CORRELATION_ID], MessageTypeId.Call)).toBe(NO_ACTION);
       });
 
-      it('should return undefined when the frame itself could not be parsed', () => {
-        expect(getAction(undefined, MessageTypeId.Call)).toBeUndefined();
+      it('should fall back to NO_ACTION when the frame itself could not be parsed', () => {
+        expect(getAction(undefined, MessageTypeId.Call)).toBe(NO_ACTION);
       });
 
-      it('should return undefined for a CallResult frame', () => {
+      it('should fall back to NO_ACTION for a CallResult frame', () => {
         expect(
           getAction([MessageTypeId.CallResult, CORRELATION_ID, {}], MessageTypeId.CallResult),
-        ).toBeUndefined();
+        ).toBe(NO_ACTION);
       });
 
-      it('should return undefined for a CallError frame', () => {
+      it('should fall back to NO_ACTION for a CallError frame', () => {
         expect(
           getAction(
             [MessageTypeId.CallError, CORRELATION_ID, ErrorCode.InternalError, 'boom', {}],
             MessageTypeId.CallError,
           ),
-        ).toBeUndefined();
+        ).toBe(NO_ACTION);
       });
 
-      it('should return undefined when the messageTypeId could not be read', () => {
-        expect(getAction(undefined, undefined)).toBeUndefined();
+      it('should fall back to NO_ACTION when the messageTypeId could not be read', () => {
+        expect(getAction(undefined, undefined)).toBe(NO_ACTION);
       });
 
-      it('should return undefined for an unknown messageTypeId even if slot 2 looks like an action', () => {
+      it('should fall back to NO_ACTION for an unknown messageTypeId even if slot 2 looks like an action', () => {
         expect(
           getAction([99, CORRELATION_ID, OCPP_CallAction.Heartbeat, {}], 99 as MessageTypeId),
-        ).toBeUndefined();
+        ).toBe(NO_ACTION);
       });
     });
 
@@ -609,38 +634,39 @@ describe('MessageRouterImpl', () => {
         const result = await router.onMessage(IDENTIFIER, malformedCall, timestamp, PROTOCOL);
 
         expect(result).toBe(false);
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          malformedCall,
-          timestamp.toISOString(),
-          PROTOCOL,
-          OCPP_CallAction.Heartbeat,
-          MessageTypeId.Call,
-        );
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.CallError,
-          expect.anything(),
-          OCPP_CallAction.Heartbeat,
-        );
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            tenantId: TENANT_ID,
+            ocppConnectionName: STATION_ID,
+            raw: malformedCall,
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            action: OCPP_CallAction.Heartbeat,
+            type: MessageTypeId.Call,
+            parsed: false,
+          }),
+        ]);
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            origin: MessageOrigin.ChargingStationManagementSystem,
+            protocol: PROTOCOL,
+            type: MessageTypeId.CallError,
+            action: OCPP_CallAction.Heartbeat,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should leave the action undefined on the CallError reply to an unparseable frame', async () => {
         await router.onMessage(IDENTIFIER, 'not-json', timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.CallError,
-          expect.anything(),
-          undefined,
-        );
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            protocol: PROTOCOL,
+            type: MessageTypeId.CallError,
+            action: NO_ACTION,
+          }),
+        ]);
       });
 
       it('should leave the action undefined for an unknown messageTypeId', async () => {
@@ -648,15 +674,16 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, badMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          badMessage,
-          timestamp.toISOString(),
-          PROTOCOL,
-          undefined,
-          99,
-        );
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            raw: badMessage,
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            action: NO_ACTION,
+            type: 99,
+            parsed: false,
+          }),
+        ]);
       });
 
       it('should leave the action undefined for a malformed CallResult and send no reply', async () => {
@@ -672,15 +699,17 @@ describe('MessageRouterImpl', () => {
         expect(result).toBe(false);
         // A CallResult is never answered with a CallError.
         expect(networkHook).not.toHaveBeenCalled();
-        expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          malformedCallResult,
-          timestamp.toISOString(),
-          PROTOCOL,
-          undefined,
-          MessageTypeId.CallResult,
-        );
+        expect(frames(sink, 'outbound')).toHaveLength(0);
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            raw: malformedCallResult,
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            action: NO_ACTION,
+            type: MessageTypeId.CallResult,
+            parsed: false,
+          }),
+        ]);
       });
     });
 
@@ -698,16 +727,18 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          timestamp.toISOString(),
-          PROTOCOL,
-          callMessage,
-          MessageTypeId.Call,
-          expect.anything(),
-          OCPP_CallAction.Heartbeat,
-        );
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            tenantId: TENANT_ID,
+            ocppConnectionName: STATION_ID,
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            raw: callMessage,
+            type: MessageTypeId.Call,
+            action: OCPP_CallAction.Heartbeat,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should record a CallResult without an action, leaving correlation to supply it', async () => {
@@ -720,16 +751,16 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callResultMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          timestamp.toISOString(),
-          PROTOCOL,
-          callResultMessage,
-          MessageTypeId.CallResult,
-          expect.anything(),
-          undefined,
-        );
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            raw: callResultMessage,
+            type: MessageTypeId.CallResult,
+            action: undefined,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should record a CallError without an action, leaving correlation to supply it', async () => {
@@ -747,16 +778,16 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callErrorMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageReceived).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          timestamp.toISOString(),
-          PROTOCOL,
-          callErrorMessage,
-          MessageTypeId.CallError,
-          expect.anything(),
-          undefined,
-        );
+        expect(frames(sink, 'inbound')).toEqual([
+          expect.objectContaining({
+            timestamp: timestamp.toISOString(),
+            protocol: PROTOCOL,
+            raw: callErrorMessage,
+            type: MessageTypeId.CallError,
+            action: undefined,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should attribute the CallError reply to the action of the Call it rejects', async () => {
@@ -771,15 +802,13 @@ describe('MessageRouterImpl', () => {
 
         await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.CallError,
-          expect.anything(),
-          OCPP_CallAction.Heartbeat,
-        );
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            protocol: PROTOCOL,
+            type: MessageTypeId.CallError,
+            action: OCPP_CallAction.Heartbeat,
+          }),
+        ]);
       });
     });
 
@@ -796,15 +825,17 @@ describe('MessageRouterImpl', () => {
           CORRELATION_ID,
         );
 
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.Call,
-          expect.anything(),
-          OCPP_CallAction.GetBaseReport,
-        );
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            tenantId: TENANT_ID,
+            ocppConnectionName: STATION_ID,
+            origin: MessageOrigin.ChargingStationManagementSystem,
+            protocol: PROTOCOL,
+            type: MessageTypeId.Call,
+            action: OCPP_CallAction.GetBaseReport,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should attribute a sent CallResult to the cached action of the Call it answers', async () => {
@@ -815,15 +846,15 @@ describe('MessageRouterImpl', () => {
           status: 'Accepted',
         } as unknown as OcppResponse);
 
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.CallResult,
-          expect.anything(),
-          action,
-        );
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            origin: MessageOrigin.ChargingStationManagementSystem,
+            protocol: PROTOCOL,
+            type: MessageTypeId.CallResult,
+            action,
+            parsed: true,
+          }),
+        ]);
       });
 
       it('should attribute a sent CallError to the cached action of the Call it answers', async () => {
@@ -839,15 +870,15 @@ describe('MessageRouterImpl', () => {
           new OcppError(CORRELATION_ID, ErrorCode.InternalError, 'boom', {}),
         );
 
-        expect(dispatcher.dispatchMessageSent).toHaveBeenCalledWith(
-          IDENTIFIER,
-          expect.any(String),
-          PROTOCOL,
-          expect.any(String),
-          MessageTypeId.CallError,
-          expect.anything(),
-          action,
-        );
+        expect(frames(sink, 'outbound')).toEqual([
+          expect.objectContaining({
+            origin: MessageOrigin.ChargingStationManagementSystem,
+            protocol: PROTOCOL,
+            type: MessageTypeId.CallError,
+            action,
+            parsed: true,
+          }),
+        ]);
       });
     });
   });
@@ -944,12 +975,12 @@ describe('MessageRouterImpl', () => {
       );
     });
 
-    it('should dispatch webhook on successful send', async () => {
+    it('should publish the sent frame on a successful send', async () => {
       cache.get.mockResolvedValue(null);
 
       await router.sendCall(STATION_ID, TENANT_ID, PROTOCOL, action, payload, CORRELATION_ID);
 
-      expect(dispatcher.dispatchMessageSent).toHaveBeenCalled();
+      expect(recorded(sink, 'frame').some((e: any) => e.direction === 'outbound')).toBe(true);
     });
 
     it('should set cache entry with correlationId key and action@timestamp value', async () => {
@@ -992,7 +1023,8 @@ describe('MessageRouterImpl', () => {
         cache,
         routerSender: sender,
         routerHandler: handler,
-        webhookDispatcher: dispatcher,
+        messagesExchangeSink: sink,
+        callbackUrlNotifier: notifier,
         networkHook,
         ocppValidator: undefined,
         locationRepository,
@@ -1117,7 +1149,7 @@ describe('MessageRouterImpl', () => {
 
       await router.sendCallResult(CORRELATION_ID, STATION_ID, TENANT_ID, PROTOCOL, action, payload);
 
-      expect(dispatcher.dispatchMessageSent).toHaveBeenCalled();
+      expect(recorded(sink, 'frame').some((e: any) => e.direction === 'outbound')).toBe(true);
     });
   });
 
@@ -1233,12 +1265,12 @@ describe('MessageRouterImpl', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(dispatcher.dispatchMessageSent).not.toHaveBeenCalled();
+      expect(recorded(sink, 'frame').some((e: any) => e.direction === 'outbound')).toBe(false);
     });
 
-    it('should not throw when webhook dispatch fails after successful send', async () => {
+    it('should not throw when publishing the sent frame fails after a successful send', async () => {
       cache.get.mockResolvedValue(null);
-      dispatcher.dispatchMessageSent.mockRejectedValue(new Error('webhook error'));
+      sink.record.mockRejectedValue(new Error('publish failed'));
 
       const result = await router.sendCall(
         STATION_ID,
@@ -1408,7 +1440,7 @@ describe('MessageRouterImpl', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should call dispatchCallbackUrl on the webhook dispatcher', async () => {
+    it('should notify the callback url', async () => {
       const message = new CallError(CORRELATION_ID, ErrorCode.InternalError, 'test error', {
         detail: 'some detail',
       });
@@ -1417,7 +1449,7 @@ describe('MessageRouterImpl', () => {
 
       await (router as any)._routeCallError(IDENTIFIER, message, action, timestamp, PROTOCOL);
 
-      expect(dispatcher.dispatchCallbackUrl).toHaveBeenCalledWith(
+      expect(notifier.notify).toHaveBeenCalledWith(
         CORRELATION_ID,
         STATION_ID,
         expect.any(OcppError),

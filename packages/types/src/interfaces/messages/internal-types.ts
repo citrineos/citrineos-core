@@ -26,6 +26,7 @@ export enum EventGroup {
   All = 'all',
   Router = 'router',
   Modules = 'modules',
+  Messages = 'messages',
   Api = 'api',
   Certificates = 'certificates',
   Configuration = 'configuration',
