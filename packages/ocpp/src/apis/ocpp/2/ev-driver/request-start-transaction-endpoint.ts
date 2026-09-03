@@ -117,6 +117,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
             this._chargingProfileRepository,
             this._transactionEventRepository,
             this._logger,
+            version,
             request.evseId,
           );
 

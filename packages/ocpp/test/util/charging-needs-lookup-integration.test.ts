@@ -7,7 +7,7 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { Logger } from 'tslog';
 import type { Sequelize } from 'sequelize-typescript';
 import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPP2_common_types } from '@citrineos/types';
+import { OCPP2_common_types, OCPPVersion } from '@citrineos/types';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -175,6 +175,7 @@ describe('Charging needs for a transaction on a station EVSE', () => {
       chargingProfileRepository,
       transactionEventRepository,
       new Logger({ type: 'hidden' }),
+      OCPPVersion.OCPP2_0_1,
       OCPP_EVSE_NUMBER,
     );
   }
@@ -200,6 +201,7 @@ describe('Charging needs for a transaction on a station EVSE', () => {
       chargingProfileRepository,
       transactionEventRepository,
       new Logger({ type: 'hidden' }),
+      OCPPVersion.OCPP2_0_1,
       OCPP_EVSE_NUMBER,
     );
 

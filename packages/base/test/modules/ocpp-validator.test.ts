@@ -127,6 +127,56 @@ describe('OCPPValidator', () => {
     });
   });
 
+  describe('OCPP 2.1 charging schedule decimals', () => {
+    /**
+     * OCPP 2.1 dropped the one-decimal restriction that 2.0.1 put on a charging limit. Part 2
+     * §2.1.4 now says of the decimal datatype: "For data being reported by the Charging Station,
+     * the full resolution of the source data must be preserved. The decimal sent towards the
+     * Charging Station SHALL NOT have more than six decimal places." The field tables for
+     * ChargingSchedulePeriodType.limit and ChargingScheduleType.minChargingRate carry no step
+     * constraint at all, and neither does the published Part 3 schema.
+     */
+    function aSetChargingProfileRequest(overrides: { limit?: number; minChargingRate?: number }) {
+      return {
+        evseId: 1,
+        chargingProfile: {
+          id: 1,
+          stackLevel: 0,
+          chargingProfilePurpose: 'TxDefaultProfile',
+          chargingProfileKind: 'Relative',
+          chargingSchedule: [
+            {
+              id: 1,
+              chargingRateUnit: 'A',
+              minChargingRate: overrides.minChargingRate,
+              chargingSchedulePeriod: [{ startPeriod: 0, limit: overrides.limit ?? 16 }],
+            },
+          ],
+        },
+      };
+    }
+
+    function validate(overrides: { limit?: number; minChargingRate?: number }) {
+      return validator.validateOCPPRequest(
+        OCPP_CallAction.SetChargingProfile,
+        aSetChargingProfileRequest(overrides),
+        OCPPVersion.OCPP2_1,
+      );
+    }
+
+    it('accepts a limit with two decimal places', () => {
+      expect(validate({ limit: 16.25 }).isValid).toBe(true);
+    });
+
+    it('accepts a limit with six decimal places', () => {
+      expect(validate({ limit: 16.123456 }).isValid).toBe(true);
+    });
+
+    it('accepts a minChargingRate with two decimal places', () => {
+      expect(validate({ minChargingRate: 6.25 }).isValid).toBe(true);
+    });
+  });
+
   describe('validateOCPPRequest', () => {
     describe('OCPP 1.6', () => {
       it('should validate a valid BootNotification request', () => {
