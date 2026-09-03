@@ -322,36 +322,43 @@ describe('MessageRouterImpl', () => {
         expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
       });
 
-      it('should return false and send CallError for unknown message type id', async () => {
-        const badMessage = JSON.stringify([99, CORRELATION_ID, 'SomeAction', {}]);
+      /**
+       * OCPP-J Part 4 §4.1.3, in 2.0.1 Edition 4 and 2.1 Edition 2 alike: "When a system receives a
+       * message with a Message Type Number not in this list, it SHALL ignore the message payload."
+       * The 2026-02 errata clarifies that the whole message is to be ignored, and deprecates the
+       * MessageTypeNotSupported error code because an unsupported message type number is silently
+       * ignored. 2.1 added CALLRESULTERROR (5) and SEND (6); N15.FR.02 adds that a SEND is not to
+       * be confirmed with a CALLRESULT or a CALLERROR.
+       */
+      it.each([
+        ['SEND, added by OCPP 2.1', 6],
+        ['CALLRESULTERROR, added by OCPP 2.1', 5],
+        ['a number no version defines', 99],
+      ])('ignores %s rather than answering it', async (_label, messageTypeId) => {
+        const message = JSON.stringify([messageTypeId, CORRELATION_ID, 'SomeAction', {}]);
 
-        const result = await router.onMessage(IDENTIFIER, badMessage, timestamp, PROTOCOL);
+        await router.onMessage(IDENTIFIER, message, timestamp, PROTOCOL);
 
-        expect(result).toBe(false);
-        // Should send a CallError back via network hook
-        expect(networkHook).toHaveBeenCalled();
-        // Should still dispatch webhook and update timestamp
+        expect(networkHook).not.toHaveBeenCalled();
+      });
+
+      it.each(['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1'])(
+        'ignores an unknown message type id on %s',
+        async (protocol) => {
+          const message = JSON.stringify([99, CORRELATION_ID, 'SomeAction', {}]);
+
+          await router.onMessage(IDENTIFIER, message, timestamp, protocol as typeof PROTOCOL);
+
+          expect(networkHook).not.toHaveBeenCalled();
+        },
+      );
+
+      it('still records the message it ignored', async () => {
+        const message = JSON.stringify([6, CORRELATION_ID, 'SomeAction', {}]);
+
+        await router.onMessage(IDENTIFIER, message, timestamp, PROTOCOL);
+
         expect(dispatcher.dispatchMessageReceivedUnparsed).toHaveBeenCalled();
-      });
-
-      it('should send CallError with FormationViolation for ocpp1.6 unknown message type', async () => {
-        const badMessage = JSON.stringify([99, CORRELATION_ID, 'SomeAction', {}]);
-
-        await router.onMessage(IDENTIFIER, badMessage, timestamp, 'ocpp1.6');
-
-        expect(networkHook).toHaveBeenCalled();
-        const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
-        expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
-      });
-
-      it('should send CallError with FormatViolation for ocpp2.0.1 unknown message type', async () => {
-        const badMessage = JSON.stringify([99, CORRELATION_ID, 'SomeAction', {}]);
-
-        await router.onMessage(IDENTIFIER, badMessage, timestamp, 'ocpp2.0.1');
-
-        expect(networkHook).toHaveBeenCalled();
-        const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
-        expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
       });
 
       it('should not send CallError for failed CallResult processing', async () => {
