@@ -5,28 +5,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from 'packages/base';
-import { DefaultSequelizeInstance } from '@dal/index.js';
-import { validateSequelizeSchema } from '@dal/layers/sequelize/SequelizeSchemaValidator.js';
-
-// ---------------------------------------------------------------------------
-// Acceptance coverage for the startup schema gate, against every real model.
-//
-// The schema here is produced by `sequelize.sync()`, so its column types are by
-// construction exactly what the models declare. That makes this a test of the
-// validator's type canonicalization rather than of the migrations: a type
-// finding means the validator and Postgres disagree about a column type this
-// codebase actually uses, which would be a false positive at startup.
-//
-// Nullability is the one place where sync() is not a mirror of the models: it
-// derives NOT NULL from `primaryKey`, which the validator deliberately does not
-// when the attribute also says allowNull:true. See the exemption on the warnings
-// test below.
-//
-// Still not covered: whether `apps/ocpp-server/migrations` produces the same
-// shape as the models. That needs `sequelize-cli db:migrate` against the
-// container instead of sync(), and is the check that will surface real drift.
-// ---------------------------------------------------------------------------
+import { DefaultSequelizeInstance } from '@citrineos/dal';
+import { validateSequelizeSchema } from '../../src/util';
+import { SystemConfig } from '@citrineos/types';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
@@ -57,7 +38,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
