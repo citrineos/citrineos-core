@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
-import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization.fields';
+import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization-fields';
 
 export const AUTHORIZATIONS_LIST_QUERY = gql`
   query AuthorizationsList(

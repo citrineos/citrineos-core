@@ -12,8 +12,8 @@ import Fastify from 'fastify';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { MockContext } from './core/types.js';
 import { registerAllModules } from './core/registry.js';
-import { registerControlApi } from './control/controlApi.js';
-import type { StatusProbes } from './control/statusCache.js';
+import { registerControlApi } from './control/control-api.js';
+import type { StatusProbes } from './control/status-cache.js';
 import { registerDashboard } from './control/dashboard.js';
 
 // probeOverride lets tests inject a fake docker/EVerest probe (Hasura + OCPI are

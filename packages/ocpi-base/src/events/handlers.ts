@@ -12,7 +12,7 @@ import type {
   IDtoPayload,
 } from './types.js';
 import { DtoEventObjectType, DtoEventType } from './types.js';
-import type { OcpiConfig } from '../config/ocpi.types.js';
+import type { OcpiConfig } from '../config/ocpi-types.js';
 
 /**
  * Abstract class implementing {@link IDtoEventReceiver}.

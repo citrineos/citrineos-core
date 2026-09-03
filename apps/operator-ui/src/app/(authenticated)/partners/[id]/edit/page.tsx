@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { PartnersUpsert } from '@lib/client/pages/partners/upsert/partners.upsert';
+import { PartnersUpsert } from '@lib/client/pages/partners/upsert/partners-upsert';
 
 type PageProps = {
   params: Promise<{ id: string }>;
