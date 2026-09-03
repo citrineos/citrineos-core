@@ -55,6 +55,7 @@ function makeHandler(
     transactionService?: Record<string, unknown>;
     config?: SystemConfig;
     deviceModelVariables?: Record<string, { value: string | null }[]>;
+    totalCost?: number;
   } = {},
 ) {
   const { logger } = createTestContainer();
@@ -99,7 +100,9 @@ function makeHandler(
     }),
   };
   const signedMeterValuesUtil = { validateMeterValues: vi.fn().mockResolvedValue(true) };
-  const costCalculator = { calculateTotalCost: vi.fn().mockResolvedValue(0) };
+  const costCalculator = {
+    calculateTotalCost: vi.fn().mockResolvedValue(overrides.totalCost ?? 0),
+  };
   const costNotifier = { notifyWhileActive: vi.fn() };
 
   const handler = new TransactionEventRequestOcpp2Handler({
@@ -123,7 +126,8 @@ function makeHandler(
     transactionEventRepository,
     cache,
     transactionService,
-    deviceModelRepository,
+    costCalculator,
+    signedMeterValuesUtil,
   };
 }
 
@@ -1023,6 +1027,130 @@ describe('TransactionEventRequestOcpp2Handler', () => {
         ).not.toHaveBeenCalled();
         expect(createOrUpdateSpy).toHaveBeenCalledOnce();
       });
+    });
+  });
+
+  describe('transaction bookkeeping is independent of the idToken', () => {
+    // A driver stopping a session by tapping their card produces TransactionEvent(Ended)
+    // *with* an idToken. The cost, settlement and signed-meter-value work must not depend
+    // on whether the charger happened to include one.
+    const ENDED_WITH_IDTOKEN: OCPP2_0_1.TransactionEventRequest = {
+      eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
+      timestamp: new Date().toISOString(),
+      triggerReason: OCPP2_0_1.TriggerReasonEnumType.StopAuthorized,
+      seqNo: 9,
+      transactionInfo: { transactionId: 'txn-ended' },
+      idToken: { idToken: 'TAG-1', type: OCPP2_0_1.IdTokenEnumType.ISO14443 },
+    };
+
+    const ENDED_WITHOUT_IDTOKEN: OCPP2_0_1.TransactionEventRequest = {
+      eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
+      timestamp: new Date().toISOString(),
+      triggerReason: OCPP2_0_1.TriggerReasonEnumType.EVCommunicationLost,
+      seqNo: 9,
+      transactionInfo: { transactionId: 'txn-ended' },
+    };
+
+    function makeEndedHandler() {
+      return makeHandler({
+        totalCost: 4.25,
+        transactionEventRepository: {
+          createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
+            id: 55,
+            transactionId: 'txn-ended',
+            isActive: false,
+            connectorId: 3,
+            totalKwh: 17,
+          }),
+        },
+        transactionService: {
+          authorizeOcpp201IdToken: vi.fn().mockResolvedValue({
+            idTokenInfo: { status: AuthorizationStatusEnum.Accepted },
+          }),
+        },
+      });
+    }
+
+    it('calculates totalCost for an Ended event that carries an idToken', async () => {
+      const { handler, costCalculator } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({ id: 55, totalKwh: 17 }),
+      );
+    });
+
+    it('stores totalCost for an Ended event that carries an idToken', async () => {
+      const { handler, transactionEventRepository } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        4.25,
+        55,
+      );
+    });
+
+    it('returns totalCost to the charger for an Ended event that carries an idToken', async () => {
+      const { handler, ocppSender } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ totalCost: 4.25 }),
+      );
+    });
+
+    it('validates signed meter values on an event that carries an idToken', async () => {
+      const { handler, signedMeterValuesUtil } = makeEndedHandler();
+
+      await handler.handle(
+        makeMessage({
+          ...ENDED_WITH_IDTOKEN,
+          meterValue: [
+            {
+              timestamp: new Date().toISOString(),
+              sampledValue: [{ value: 17 }],
+            },
+          ],
+        } as OCPP2_0_1.TransactionEventRequest),
+      );
+
+      expect(signedMeterValuesUtil.validateMeterValues).toHaveBeenCalledOnce();
+    });
+
+    it('still calculates and stores totalCost when the Ended event carries no idToken', async () => {
+      const { handler, costCalculator, transactionEventRepository } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITHOUT_IDTOKEN));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({ id: 55, totalKwh: 17 }),
+      );
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        4.25,
+        55,
+      );
+    });
+
+    it('still returns the authorization result alongside the cost', async () => {
+      const { handler, ocppSender } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          idTokenInfo: { status: AuthorizationStatusEnum.Accepted },
+          totalCost: 4.25,
+        }),
+      );
     });
   });
 });
