@@ -165,7 +165,11 @@ export class CitrineOSServer {
     // Create a separate OCPPValidator with its own Ajv instance for OCPP message validation.
     // This must be distinct from _ajv: OCPP messages are parsed JSON (no coercion needed),
     // whereas _ajv coerces types for Fastify's HTTP schema compilation.
-    this._ocppValidator = new OCPPValidator(this._logger);
+    const signedMeterValuesConfiguration = this._config.modules.transactions?.signedMeterValuesConfiguration;
+    this._ocppValidator = new OCPPValidator(this._logger, undefined, {
+      signedMeterDataMaxLength: signedMeterValuesConfiguration?.signedMeterDataMaxLength,
+      publicKeyMaxLength: signedMeterValuesConfiguration?.publicKeyMaxLength,
+    });
 
     // Set cache implementation
     this._cache = this.initCache(cache);

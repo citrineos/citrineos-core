@@ -37,6 +37,124 @@ describe('OCPPValidator', () => {
     });
   });
 
+  describe('applySignedMeterValueLimits', () => {
+    // These tests mutate the shared, process-wide TransactionEventRequest/MeterValuesRequest schema
+    // objects (imported once and reused by every OCPPValidator instance), so each test restores the
+    // OCPP 2.0.1 spec default (2500) afterward to avoid leaking state into other tests.
+    afterEach(() => {
+      OCPPValidator.applySignedMeterValueLimits({
+        signedMeterDataMaxLength: 2500,
+        publicKeyMaxLength: 2500,
+      });
+    });
+
+    const meterValuePayload = (signedMeterData: string, publicKey: string) => ({
+      eventType: 'Updated',
+      timestamp: '2026-01-01T00:00:00Z',
+      triggerReason: 'MeterValuePeriodic',
+      seqNo: 0,
+      transactionInfo: { transactionId: 'tx-1' },
+      meterValue: [
+        {
+          timestamp: '2026-01-01T00:00:00Z',
+          sampledValue: [
+            {
+              value: 0,
+              signedMeterValue: {
+                signedMeterData,
+                signingMethod: 'ECDSA',
+                encodingMethod: 'OCMF',
+                publicKey,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    it('rejects signedMeterData past the OCPP 2.0.1 spec default of 2500 characters', () => {
+      // A fresh instance is required: ajv caches a compiled validator per schema $id on first use,
+      // so an already-constructed `validator` from beforeEach may have compiled before this test runs.
+      const freshValidator = new OCPPValidator();
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.TransactionEvent,
+        meterValuePayload('x'.repeat(2600), 'y'.repeat(100)),
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toBeDefined();
+    });
+
+    it('accepts longer signedMeterData once signedMeterDataMaxLength is widened', () => {
+      OCPPValidator.applySignedMeterValueLimits({ signedMeterDataMaxLength: 10000 });
+
+      const freshValidator = new OCPPValidator();
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.TransactionEvent,
+        meterValuePayload('x'.repeat(2600), 'y'.repeat(100)),
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(true);
+    });
+
+    it('accepts longer publicKey once publicKeyMaxLength is widened', () => {
+      OCPPValidator.applySignedMeterValueLimits({ publicKeyMaxLength: 10000 });
+
+      const freshValidator = new OCPPValidator();
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.TransactionEvent,
+        meterValuePayload('x'.repeat(100), 'y'.repeat(2600)),
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(true);
+    });
+
+    it('also widens the limit for MeterValues requests, not just TransactionEvent', () => {
+      OCPPValidator.applySignedMeterValueLimits({ signedMeterDataMaxLength: 10000 });
+
+      const freshValidator = new OCPPValidator();
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.MeterValues,
+        {
+          evseId: 1,
+          meterValue: meterValuePayload('x'.repeat(2600), 'y'.repeat(100)).meterValue,
+        },
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(true);
+    });
+
+    it('is a no-op when called with no overrides', () => {
+      OCPPValidator.applySignedMeterValueLimits({});
+
+      const freshValidator = new OCPPValidator();
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.TransactionEvent,
+        meterValuePayload('x'.repeat(2600), 'y'.repeat(100)),
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(false);
+    });
+
+    it('applies limits automatically when passed to the constructor', () => {
+      const freshValidator = new OCPPValidator(undefined, undefined, {
+        signedMeterDataMaxLength: 10000,
+      });
+      const result = freshValidator.validateOCPPRequest(
+        OCPP_CallAction.TransactionEvent,
+        meterValuePayload('x'.repeat(2600), 'y'.repeat(100)),
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(result.isValid).toBe(true);
+    });
+  });
+
   describe('createServerAjvInstance', () => {
     it('should create a new Ajv instance when none is provided', () => {
       const ajv = OCPPValidator.createServerAjvInstance();

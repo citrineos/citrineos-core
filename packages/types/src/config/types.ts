@@ -197,6 +197,16 @@ export const systemConfigInputSchema = z.object({
           publicKeyFileId: z.string(),
           signingMethod: z.enum(signedMeterValuesSigningMethods),
           rejectUnsupportedSignedMeterValues: z.boolean().default(false).optional(),
+          // OCPP 2.0.1's own SignedMeterValueType.signedMeterData/publicKey schema caps both fields at 2500
+          // characters -- the OCA's own spec limit, not a CitrineOS restriction. In practice some real charging
+          // stations occasionally submit OCMF-signed meter data (e.g. with an embedded certificate chain or
+          // multiple register readings) that exceeds 2500 characters, which otherwise gets rejected outright as
+          // a FormatViolation and silently drops that station's meter values for the rest of the transaction.
+          // OCPP 2.1 itself raised signedMeterData's limit to 32768 for exactly this reason. These fields let a
+          // deployment widen the OCPP 2.0.1 limit to match real-world station behavior; unset keeps the spec
+          // default (2500) unchanged.
+          signedMeterDataMaxLength: z.number().int().positive().optional(),
+          publicKeyMaxLength: z.number().int().positive().optional(),
         })
         .optional(),
       /** Base URL for generating receipt URLs when ReceiptByCSMS is true (C21). */
@@ -521,6 +531,10 @@ export const systemConfigSchema = z
               publicKeyFileId: z.string(),
               signingMethod: z.enum(signedMeterValuesSigningMethods),
               rejectUnsupportedSignedMeterValues: z.boolean().optional(),
+              // See the matching field in the output schema above for why this exists: some real charging
+              // stations submit OCMF-signed meter data past OCPP 2.0.1's spec-mandated 2500-character limit.
+              signedMeterDataMaxLength: z.number().int().positive().optional(),
+              publicKeyMaxLength: z.number().int().positive().optional(),
             })
             .optional(),
           /** Base URL for generating receipt URLs when ReceiptByCSMS is true (C21). */
