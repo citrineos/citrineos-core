@@ -197,7 +197,6 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
-    // After initDb to ensure messages get stored as they’re processed.
     await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
@@ -421,11 +420,7 @@ export class CitrineOSServer {
    * Starts the messages module, which consumes the `messages` exchange.
    */
   protected async initMessagesModule(): Promise<void> {
-    // TODO when SHOULD messages module actually run?
-    const shouldRun =
-      this.eventGroup === EventGroup.Messages ||
-      this.eventGroup === EventGroup.All ||
-      this.eventGroup === EventGroup.Router;
+    const shouldRun = this.eventGroup === EventGroup.Messages || this.eventGroup === EventGroup.All;
     if (!shouldRun) return;
 
     this._logger.info('Initializing messages module (general message processing)');

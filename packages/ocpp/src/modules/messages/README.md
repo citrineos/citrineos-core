@@ -59,7 +59,7 @@ out of the "hot path" and expand to process messages more flexibly without addin
     │                           ▼
     │        ┌────────────────────────────────────────────────────────────────────────┐
     │        │   MessagesModule (via MessagesEventConsumer) → MessagesEventPipeline   │
-    │        │      Dispatches by type (presently frame.# or connection.#)           │
+    │        │      Dispatches by type (presently frame.# or connection.#)            │
     │        └────────────────────────────────────────────────────────────────────────┘
     │
     ├──── CallbackUrlNotifier ──► the API caller's callback URL
