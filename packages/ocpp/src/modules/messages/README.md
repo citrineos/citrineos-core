@@ -70,3 +70,15 @@ out of the "hot path" and expand to process messages more flexibly without addin
 
 A new "messages" exchange was added to RabbitMQ handle all "business" messages, and presently
 holds two queues: one for frame events and one for websocket connections.
+
+# Dead-letter queues
+
+Each work queue names "messages.dlx" as its dead-letter exchange, and each has its own dead-letter
+queue: "messages.ocpp.dlq" and "messages.connections.dlq". An event lands there when it is poison
+(a non-JSON body, or an envelope the schema rejects) or when a critical processor fails twice — the
+first failure is requeued once, the second dead-letters.
+
+MessagesDeadLetterConsumer drains both. For now, it only reports: each arrival is logged at error
+level with the whole body, the "x-death" reason, the queue it died on, and the envelope facets it
+could still read, and is then acked. Nothing replays a dead-lettered event yet, so the log line is
+the only remaining record of it. A proper dead-letter queue process will be implemented in the future.

@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { MessagesEventConsumer, MessagesEventPipeline } from '@/transport/index.js';
+import type {
+  MessagesDeadLetterConsumer,
+  MessagesEventConsumer,
+  MessagesEventPipeline,
+} from '@/transport/index.js';
 import { MessagesModule } from '@modules/messages/messages.js';
 import type { WebhookDispatcher } from '@modules/messages/webhook-dispatcher.js';
 import { aConnectionEvent, aFrameEvent } from '@test/providers/messages-event-provider.js';
@@ -16,6 +20,11 @@ describe('MessagesModule', () => {
     shutdown: ReturnType<typeof vi.fn>;
     consumedQueues: string[];
   };
+  let deadLetterConsumer: {
+    start: ReturnType<typeof vi.fn>;
+    shutdown: ReturnType<typeof vi.fn>;
+    consumedQueues: string[];
+  };
   let pipeline: {
     run: ReturnType<typeof vi.fn>;
     processorNames: { frame: string[]; connection: string[] };
@@ -25,6 +34,7 @@ describe('MessagesModule', () => {
   function buildModule(): MessagesModule {
     return getTestInstance(container, MessagesModule, {
       messagesEventConsumer: consumer as unknown as MessagesEventConsumer,
+      messagesDeadLetterConsumer: deadLetterConsumer as unknown as MessagesDeadLetterConsumer,
       messagesEventPipeline: pipeline as unknown as MessagesEventPipeline,
       webhookDispatcher: webhookDispatcher as unknown as WebhookDispatcher,
     });
@@ -40,6 +50,11 @@ describe('MessagesModule', () => {
       start: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
       consumedQueues: ['messages.ocpp', 'messages.connections'],
+    };
+    deadLetterConsumer = {
+      start: vi.fn().mockResolvedValue(undefined),
+      shutdown: vi.fn().mockResolvedValue(undefined),
+      consumedQueues: ['messages.ocpp.dlq', 'messages.connections.dlq'],
     };
     pipeline = {
       run: vi.fn().mockResolvedValue({}),
@@ -104,15 +119,33 @@ describe('MessagesModule', () => {
 
   // ─── shutdown ──────────────────────────────────────────────────────────────
 
+  describe('dead-letter reporting', () => {
+    it('should start draining the dead-letter queues', async () => {
+      await buildModule().start();
+
+      expect(deadLetterConsumer.start).toHaveBeenCalled();
+    });
+
+    it('should serve live traffic even when dead-letter reporting cannot start', async () => {
+      deadLetterConsumer.start.mockRejectedValue(new Error('dlq locked'));
+
+      await expect(buildModule().start()).resolves.toBeUndefined();
+
+      expect(consumer.start).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+    });
+  });
+
   describe('shutdown', () => {
-    it('should stop consuming before releasing the dispatchers refresh timer', async () => {
+    it('should stop both consumers before releasing the dispatchers refresh timer', async () => {
       const order: string[] = [];
       consumer.shutdown.mockImplementation(async () => void order.push('consumer'));
+      deadLetterConsumer.shutdown.mockImplementation(async () => void order.push('dead-letter'));
       webhookDispatcher.shutdown.mockImplementation(() => void order.push('dispatcher'));
 
       await buildModule().shutdown();
 
-      expect(order).toEqual(['consumer', 'dispatcher']);
+      expect(order).toEqual(['consumer', 'dead-letter', 'dispatcher']);
     });
   });
 });
