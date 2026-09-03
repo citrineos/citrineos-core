@@ -58,7 +58,9 @@ describe('monitoring message endpoints', () => {
       build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('persists the requested values before sending', async () => {
-      const request = { setVariableData: [aSetVariableData('A')] };
+      const request: OCPP2_0_1.SetVariablesRequest = {
+        setVariableData: [aSetVariableData('A')],
+      };
 
       await handle(request);
 
@@ -240,7 +242,9 @@ describe('monitoring message endpoints', () => {
         { id: 1 },
         { id: 2, variableCharacteristics: { dataType: OCPP2_0_1.DataEnumType.string } },
       ]);
-      const request = { setMonitoringData: [aMonitor({ type: OCPP2_0_1.MonitorEnumType.Delta })] };
+      const request: OCPP2_0_1.SetVariableMonitoringRequest = {
+        setMonitoringData: [aMonitor({ type: OCPP2_0_1.MonitorEnumType.Delta })],
+      };
 
       await handle(request);
 
@@ -252,7 +256,9 @@ describe('monitoring message endpoints', () => {
         { id: 1 },
         { id: 2, variableCharacteristics: { dataType: OCPP2_0_1.DataEnumType.decimal } },
       ]);
-      const request = { setMonitoringData: [aMonitor({ type: OCPP2_0_1.MonitorEnumType.Delta })] };
+      const request: OCPP2_0_1.SetVariableMonitoringRequest = {
+        setMonitoringData: [aMonitor({ type: OCPP2_0_1.MonitorEnumType.Delta })],
+      };
 
       await handle(request);
 

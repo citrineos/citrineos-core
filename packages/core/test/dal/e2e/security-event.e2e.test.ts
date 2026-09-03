@@ -261,10 +261,12 @@ afterAll(async () => {
 
 // ─── Test scenarios ───────────────────────────────────────────────────────────
 
-describe.each([
+const SCENARIOS: ReadonlyArray<{ label: string; extraEnv: Record<string, string> }> = [
   { label: 'Sequelize', extraEnv: {} },
   { label: 'Drizzle', extraEnv: { CITRINEOS_USE_DRIZZLE: 'true' } },
-])('SecurityEventNotification [$label]', ({ label, extraEnv }) => {
+];
+
+describe.each(SCENARIOS)('SecurityEventNotification [$label]', ({ label, extraEnv }) => {
   let server: ChildProcess;
   let db: Client;
 

@@ -91,7 +91,7 @@ function sentResponse(
 }
 
 const request: OCPP2_0_1.AuthorizeRequest = {
-  idToken: { idToken: 'TAG001', type: IdTokenEnum.Central },
+  idToken: { idToken: 'TAG001', type: OCPP2_0_1.IdTokenEnumType.Central },
 };
 
 const acceptedAuthorization = {

@@ -8,10 +8,12 @@ import {
   MessageOrigin,
   MessageState,
   OCPP_CallAction,
+  OCPP2_0_1,
+  type OCPP2_request_types,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, Message, type OCPP2_request_types } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import { NotifyDisplayMessagesRequestOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
+import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/testContainer.js';
 
 const STATION_ID = 'station-001';
 const REQUEST_ID = 42;
@@ -36,7 +38,15 @@ function aNotifyDisplayMessagesMessage<T extends OcppRequest>(payload: T): Messa
 function aNotifyDisplayMessagesRequest(): OCPP2_request_types.NotifyDisplayMessagesRequest {
   return {
     requestId: REQUEST_ID,
-    messageInfo: [],
+    // messageInfo is a non-empty tuple in the schema, and the handler validates
+    // each entry's content, so this carries one well-formed ASCII message.
+    messageInfo: [
+      {
+        id: 1,
+        priority: OCPP2_0_1.MessagePriorityEnumType.NormalCycle,
+        message: { format: OCPP2_0_1.MessageFormatEnumType.ASCII, content: 'Charging' },
+      },
+    ],
   };
 }
 
@@ -58,13 +68,15 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
     messageInfoRepository = { createOrUpdateByMessageInfoTypeAndStationId: vi.fn() };
     ocppSender = makeMockOcppSender();
 
-    handler = new NotifyDisplayMessagesRequestOcpp2Handler({
-      logger,
-      ocppSender,
-      ocppMessageRepository,
-      deviceModelRepository,
-      messageInfoRepository,
-    });
+    handler = new NotifyDisplayMessagesRequestOcpp2Handler(
+      mockDeps<typeof NotifyDisplayMessagesRequestOcpp2Handler>({
+        logger,
+        ocppSender,
+        ocppMessageRepository,
+        deviceModelRepository,
+        messageInfoRepository,
+      }),
+    );
   });
 
   it('correlates the requestId against the stored payload and acknowledges', async () => {

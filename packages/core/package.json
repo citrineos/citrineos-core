@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "tsc -b tsconfig.src.json && tsc-alias -p tsconfig.src.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run"

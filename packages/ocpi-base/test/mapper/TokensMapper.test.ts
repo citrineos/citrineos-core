@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { AuthorizationStatusEnum, IdTokenEnum } from '@citrineos/types';
-import { Logger } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 import type { TokenDTO } from '../../src/model/DTO/TokenDTO.js';
 import { TokenType } from '../../src/model/TokenType.js';
@@ -27,7 +27,7 @@ function aToken(overrides: Partial<TokenDTO> = {}): Partial<TokenDTO> {
   };
 }
 
-const logger = new Logger({ type: 'hidden' });
+const logger = new Logger<ILogObj>({ type: 'hidden' });
 const tokensMapper = new TokensMapper({ logger });
 
 describe('TokensMapper.mapOcpiTokenToPartialOcppAuthorization', () => {

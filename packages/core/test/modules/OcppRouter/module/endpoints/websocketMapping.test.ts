@@ -5,7 +5,11 @@ import { CacheNamespace } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/types';
 import { DeleteWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/DeleteWebsocketMappingEndpoint.js';
 import { PutWebsocketMappingEndpoint } from '@modules/OcppRouter/src/module/endpoints/PutWebsocketMappingEndpoint.js';
-import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
+import {
+  mountEndpoint,
+  type EndpointClass,
+  type MountedEndpoint,
+} from '@test/providers/endpointHarness.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -45,9 +49,7 @@ describe('websocket mapping admin endpoints', () => {
     cacheRemove = vi.fn().mockResolvedValue(true);
   });
 
-  const mount = (
-    endpointClass: Parameters<typeof getTestInstance>[1],
-  ): Promise<MountedEndpoint> => {
+  const mount = (endpointClass: EndpointClass): Promise<MountedEndpoint> => {
     const endpoint = getTestInstance(container, endpointClass, {
       cache: { set: cacheSet, remove: cacheRemove },
       tenantRepository: {

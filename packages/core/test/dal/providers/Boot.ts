@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { faker } from '@faker-js/faker';
-import { Boot, VariableAttribute } from '@dal/index.js';
 import { OCPP2_0_1 } from '@citrineos/types';
+import { Boot, VariableAttribute } from '@dal/index.js';
+import { faker } from '@faker-js/faker';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/UpdateUtil.js';
 
 export function aSetVariable(
   updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>,
@@ -58,7 +58,7 @@ export function aBoot(updateFunction?: UpdateFunction<Boot>): Boot {
       } as VariableAttribute,
     ],
     bootWithRejectedVariables: faker.datatype.boolean(),
-  } as Boot;
+  } as unknown as Boot;
 
   return applyUpdateFunction(boot, updateFunction);
 }

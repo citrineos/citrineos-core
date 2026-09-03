@@ -7,7 +7,11 @@ import { CreateSubscriptionEndpoint } from '@modules/OcppRouter/src/module/endpo
 import { DeleteSubscriptionEndpoint } from '@modules/OcppRouter/src/module/endpoints/DeleteSubscriptionEndpoint.js';
 import { GetSubscriptionsEndpoint } from '@modules/OcppRouter/src/module/endpoints/GetSubscriptionsEndpoint.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
-import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpointHarness.js';
+import {
+  mountEndpoint,
+  type EndpointClass,
+  type MountedEndpoint,
+} from '@test/providers/endpointHarness.js';
 
 const PREFIX = '/ocpprouter';
 const URL = `${PREFIX}/subscription`;
@@ -26,9 +30,7 @@ describe('subscription admin endpoints', () => {
     deleteByKey = vi.fn().mockResolvedValue(undefined);
   });
 
-  const mount = (
-    endpointClass: Parameters<typeof getTestInstance>[1],
-  ): Promise<MountedEndpoint> => {
+  const mount = (endpointClass: EndpointClass): Promise<MountedEndpoint> => {
     const endpoint = getTestInstance(container, endpointClass, {
       subscriptionRepository: { create, readAllByStationId, deleteByKey },
     });

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { faker } from '@faker-js/faker';
 import {
   createPemBlock,
   createSignedCertificateFromCSR,
@@ -11,9 +12,8 @@ import {
   sendOCSPRequest,
 } from '@util/index.js';
 import jsrsasign from 'jsrsasign';
-import { faker } from '@faker-js/faker';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 import { readFile } from '../utils/FileUtil.js';
-import { describe, expect, it, Mock, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 

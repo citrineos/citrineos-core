@@ -1,22 +1,28 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, IAuthorizer } from '@citrineos/base';
-import { AuthorizationStatusEnum, OCPP1_6, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
+import { DEFAULT_TENANT_ID, type IAuthorizer } from '@citrineos/base';
 import {
-  IAuthorizationRepository,
-  ILocationRepository,
-  IOCPPMessageRepository,
-  IReservationRepository,
-  ITransactionEventRepository,
+  type IAuthorizationRepository,
+  type ILocationRepository,
+  type IOCPPMessageRepository,
+  type IReservationRepository,
+  type ITransactionEventRepository,
 } from '@citrineos/core';
+import {
+  AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
+  OCPP1_6,
+  OCPP2_0_1,
+  OCPP2_1,
+} from '@citrineos/types';
 import { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
 import { anAuthorization } from '../providers/AuthorizationProvider.js';
 import { anIdToken } from '../providers/IdTokenProvider.js';
 
 import { faker } from '@faker-js/faker';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { aMessageContext } from '../providers/MessageContextProvider.js';
 import { aTransaction, aTransactionEventRequest } from '../providers/TransactionProvider.js';
 
@@ -329,7 +335,7 @@ describe('TransactionService', () => {
 
     it('should not accept an authorization that has no status', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = undefined as unknown as AuthorizationStatusEnum;
+        auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
@@ -349,7 +355,7 @@ describe('TransactionService', () => {
 
     it('should not consult the authorizers for an authorization that has no status', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = undefined as unknown as AuthorizationStatusEnum;
+        auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);

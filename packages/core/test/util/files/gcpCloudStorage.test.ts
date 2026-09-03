@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { Storage } from '@google-cloud/storage';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GcpCloudStorage } from '@util/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@google-cloud/storage', () => {
   const mockFile = {
@@ -36,6 +36,7 @@ describe('GcpCloudStorage', () => {
 
   const mockConfig = {
     projectId: 'test-project',
+    defaultBucketName: 'test-bucket',
   };
 
   beforeEach(() => {

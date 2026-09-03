@@ -4,7 +4,6 @@
 
 import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import {
   validateASCIIContent,
   validateChargingProfileType,
@@ -21,6 +20,7 @@ import {
   validateURIContent,
   validateUTF8Content,
 } from '@util/index.js';
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import {
   aChargingNeeds,
   aChargingProfileType,
@@ -49,7 +49,7 @@ import {
   VALID_LANGUAGE_TAGS,
   VALID_URI_CONTENT,
   VALID_UTF8_CONTENT,
-} from '../providers/ValidatorProvider';
+} from '../providers/ValidatorProvider.js';
 
 describe('validateLanguageTag', () => {
   it.each(VALID_LANGUAGE_TAGS)('should return true for valid language tag "%s"', (languageTag) => {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IdTokenEnum, OCPP2_1 } from '@citrineos/types';
-import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.1';
+import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.1/index.js';
 import { describe, expect, it } from 'vitest';
 import { aAuthorization } from '@test/dal/providers/Authorization.js';
 

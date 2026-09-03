@@ -5,35 +5,15 @@ import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
-// The package barrel reaches BaseClientApi, whose `@Inject()` is evaluated as the module loads and
-// needs design:type metadata that esbuild does not emit. Stub the barrel down to the handful of
-// values this handler and its base class read from it.
-vi.mock('../../../src/index.js', async () => {
-  const { Token } = await import('typedi');
-  return {
-    CommandResultType: { ACCEPTED: 'ACCEPTED', REJECTED: 'REJECTED', FAILED: 'FAILED' },
-    CommandType: { START_SESSION: 'START_SESSION', UNLOCK_CONNECTOR: 'UNLOCK_CONNECTOR' },
-    ModuleId: { Commands: 'commands' },
-    OcpiConfigToken: new Token('OcpiConfig'),
-  };
-});
+// The package barrel reaches BaseClientApi and pulls in far more than this handler needs at module
+// load. Stub it down to the handful of values this handler and its base class read from it.
+vi.mock('../../../src/index.js', () => ({
+  CommandResultType: { ACCEPTED: 'ACCEPTED', REJECTED: 'REJECTED', FAILED: 'FAILED' },
+  CommandType: { START_SESSION: 'START_SESSION', UNLOCK_CONNECTOR: 'UNLOCK_CONNECTOR' },
+  ModuleId: { Commands: 'commands' },
+}));
 vi.mock('../../../src/graphql/index.js', () => ({ OcpiGraphqlClient: class {} }));
 vi.mock('../../../src/trigger/CommandsClientApi.js', () => ({ CommandsClientApi: class {} }));
-
-// typedi's bare `@Inject()` resolves the property type from design:type metadata, which esbuild
-// does not emit, so the decorators throw as the class is defined. The dependencies this test needs
-// are assigned explicitly below, so the decorators can be inert here.
-vi.mock('typedi', () => {
-  const noop = () => () => undefined;
-  return {
-    Service: noop,
-    Inject: noop,
-    Token: class Token {
-      constructor(public name?: string) {}
-    },
-    Container: { get: () => undefined, set: () => undefined },
-  };
-});
 
 import { OCPP1_6_CommandHandler } from '../../../src/util/ocppCommandHandlers/OCPP1_6_CommandHandler.js';
 

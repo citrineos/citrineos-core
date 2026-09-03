@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { ITariffRepository, Tariff } from '@citrineos/core';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { type ITariffRepository, Tariff } from '@citrineos/core';
 import { CostCalculator } from '@modules/Transactions/src/module/CostCalculator.js';
 import { TransactionService } from '@modules/Transactions/src/module/TransactionService.js';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { aTariff } from '../providers/Tariff.js';
 import { aTransaction } from '../providers/TransactionProvider.js';
 
@@ -66,13 +66,15 @@ describe('CostCalculator', () => {
     });
 
     it('should add time cost using minutes converted from timeSpentCharging seconds', async () => {
-      givenTariff(aTariff({ pricePerKwh: null, pricePerMin: 0.3, pricePerSession: null }));
+      givenTariff(aTariff({ pricePerKwh: undefined, pricePerMin: 0.3, pricePerSession: null }));
       const transaction = aChargingTransaction(0, 120);
       expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, transaction)).toBe(0.6);
     });
 
     it('should add per-session cost', async () => {
-      givenTariff(aTariff({ pricePerKwh: null, pricePerMin: null, pricePerSession: 1.5 }));
+      givenTariff(
+        aTariff({ pricePerKwh: undefined, pricePerMin: undefined, pricePerSession: 1.5 }),
+      );
       const transaction = aChargingTransaction(0, 0);
       expect(await costCalculator.calculateTotalCost(DEFAULT_TENANT_ID, transaction)).toBe(1.5);
     });

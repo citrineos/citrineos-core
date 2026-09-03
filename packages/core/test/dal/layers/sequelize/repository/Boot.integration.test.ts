@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import type { BootConfig, BootstrapConfig } from '@citrineos/base';
+import type { BootDto, SystemConfig } from '@citrineos/types';
 import {
   Boot,
   ChargingStation,
@@ -13,6 +10,9 @@ import {
   SequelizeBootRepository,
   Tenant,
 } from '@dal/index.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 // Regression coverage for the Boot tenant leak: keyed by OCPP connection name
 // alone, "Boots" was globally unique, so two tenants with a same-named station
@@ -50,7 +50,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
@@ -69,11 +69,11 @@ beforeEach(async () => {
 });
 
 function makeRepo(): SequelizeBootRepository {
-  return new SequelizeBootRepository({ config: {} as BootstrapConfig, sequelizeInstance });
+  return new SequelizeBootRepository({ config: {} as SystemConfig, sequelizeInstance });
 }
 
-function aBootConfig(status: string): BootConfig {
-  return { status } as BootConfig;
+function aBootConfig(status: string): BootDto {
+  return { status } as BootDto;
 }
 
 async function aStation(tenantId: number, ocppConnectionName = SHARED_NAME) {

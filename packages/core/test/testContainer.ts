@@ -8,17 +8,37 @@ import {
   type AwilixContainer,
   type Constructor,
 } from 'awilix';
+import { type ILogObj, type Logger } from 'tslog';
 import { vi, type Mock } from 'vitest';
 
 type AnyClass = Constructor<object>;
 
-// The deps object the class constructor destructures. Partial because logger is pre-registered
-// and Awilix strict:true enforces any other missing dep at resolve time.
-type Deps<T extends AnyClass> = Partial<ConstructorParameters<T>[0]>;
+// The deps object the class constructor destructures. Partial at two levels:
+//
+//  - the outer level because logger is pre-registered and Awilix strict:true
+//    enforces any other missing dep at resolve time;
+//  - each individual dep because a test double only ever stubs the members the
+//    code under test actually calls. The interfaces they stand in for are large
+//    (ILocationRepository has 16 members, ITransactionEventRepository 14), so
+//    demanding the full surface produced ~70 "is missing the following
+//    properties" errors across the suite.
+//
+// Members that ARE stubbed stay typechecked: a misspelled name is an excess
+// property and a wrong signature still fails, so this admits omissions without
+// giving up on the parts a test actually asserts against.
+export type Deps<T extends AnyClass> = {
+  [K in keyof ConstructorParameters<T>[0]]?: Partial<ConstructorParameters<T>[0][K]>;
+};
 
 const TARGET_KEY = '__target';
 
-export type MockLogger = {
+// Intersected with Logger<ILogObj> so it can be passed wherever a real tslog
+// logger is expected. tslog's Logger has ~20 members (log, silly, runtime,
+// stackDepthLevel, ...) that a test double has no reason to implement, and
+// without this every `new Handler({ logger, ... })` reported "Type 'MockLogger'
+// is missing the following properties". The Mock-typed members stay Mocks, so
+// assertions like logger.debug.mock.calls keep working.
+export type MockLogger = Logger<ILogObj> & {
   debug: Mock;
   info: Mock;
   warn: Mock;
@@ -40,7 +60,10 @@ function makeDefaultLogger(): MockLogger {
     fatal: vi.fn(),
     trace: vi.fn(),
     getSubLogger: () => logger,
-  };
+    // Asserted once here rather than at every call site: the literal covers the
+    // members tests use, and the rest of tslog's Logger surface is unreachable
+    // from a test double. The annotation above is what types the self-reference.
+  } as unknown as MockLogger;
   return logger;
 }
 
@@ -65,6 +88,18 @@ export function makeMockOcppSender(): MockOcppSender {
     sendCallError: vi.fn().mockResolvedValue({ success: true }),
     sendCallErrorWithMessage: vi.fn().mockResolvedValue({ success: true }),
   };
+}
+
+/**
+ * Types a deps object for a class the test constructs itself with `new`, the
+ * same way Deps<T> types the ones getTestInstance resolves: each dep may be
+ * partial, and the members that are present stay checked.
+ *
+ * Keeps direct-construction tests on the same footing as container-resolved
+ * ones without having to import each dependency interface just to name it.
+ */
+export function mockDeps<T extends AnyClass>(deps: Deps<T>): ConstructorParameters<T>[0] {
+  return deps as ConstructorParameters<T>[0];
 }
 
 function toValueResolvers(deps: Record<string, unknown>) {

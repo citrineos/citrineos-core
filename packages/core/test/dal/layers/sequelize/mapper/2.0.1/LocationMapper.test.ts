@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { ConnectorStatusEnum, OCPP2_0_1 } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { LocationMapper } from '@dal/layers/sequelize/mapper/2.0.1';
+import { LocationMapper } from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 
 describe('LocationMapper', () => {
   describe('mapConnectorStatus', () => {

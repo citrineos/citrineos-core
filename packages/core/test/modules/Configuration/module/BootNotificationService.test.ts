@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
-import { Boot, IBootRepository, MemoryCache } from '@citrineos/core';
-import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, SystemConfig } from '@citrineos/types';
+import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, type ICache } from '@citrineos/base';
+import { Boot, type IBootRepository, MemoryCache } from '@citrineos/core';
+import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, type SystemConfig } from '@citrineos/types';
 import { BootNotificationService } from '@modules/Configuration/src/module/BootNotificationService.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { aValidBootConfig } from '../providers/BootConfigProvider.js';
 import { aMessageConfirmation, MOCK_REQUEST_ID } from '../providers/SendCall.js';
 

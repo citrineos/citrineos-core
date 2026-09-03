@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type AuthorizationStatusType,
-  type IdTokenType,
+  type AuthorizationStatusEnumType,
+  type IdTokenEnumType,
   AuthorizationStatusEnum,
   IdTokenEnum,
   OCPP2_0_1,
 } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.0.1';
+import { AuthorizationMapper } from '@dal/layers/sequelize/mapper/2.0.1/index.js';
 import { aAuthorization } from '@test/dal/providers/Authorization.js';
 
 // Helper function to validate common structure
@@ -83,7 +83,7 @@ describe('AuthenticationMapper', () => {
   describe('Enum Mappings', () => {
     describe('toAuthorizationStatusEnumType', () => {
       const statuses: {
-        input: AuthorizationStatusType;
+        input: AuthorizationStatusEnumType;
         output: OCPP2_0_1.AuthorizationStatusEnumType;
       }[] = [
         {
@@ -138,7 +138,7 @@ describe('AuthenticationMapper', () => {
       it('should throw an error for unknown statuses', () => {
         expect(() =>
           AuthorizationMapper.fromAuthorizationStatusEnumType(
-            'InvalidStatus' as AuthorizationStatusType,
+            'InvalidStatus' as AuthorizationStatusEnumType,
           ),
         ).toThrow('Unknown authorization status');
       });
@@ -205,7 +205,7 @@ describe('AuthenticationMapper', () => {
     });
 
     describe('toIdTokenEnumType', () => {
-      const tokenTypes: { input: IdTokenType; output: OCPP2_0_1.IdTokenEnumType }[] = [
+      const tokenTypes: { input: IdTokenEnumType; output: OCPP2_0_1.IdTokenEnumType }[] = [
         { input: IdTokenEnum.Central, output: OCPP2_0_1.IdTokenEnumType.Central },
         { input: IdTokenEnum.eMAID, output: OCPP2_0_1.IdTokenEnumType.eMAID },
         { input: IdTokenEnum.ISO14443, output: OCPP2_0_1.IdTokenEnumType.ISO14443 },
@@ -226,7 +226,7 @@ describe('AuthenticationMapper', () => {
 
       it('should throw an error for unknown types', () => {
         expect(() =>
-          AuthorizationMapper.toIdTokenEnumType('InvalidType' as unknown as IdTokenType),
+          AuthorizationMapper.toIdTokenEnumType('InvalidType' as unknown as IdTokenEnumType),
         ).toThrow('Unknown idToken type');
       });
     });

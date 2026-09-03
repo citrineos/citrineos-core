@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP1_6, type SampledValue, type MeterValueDto } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { MeterValueMapper } from '@dal/layers/sequelize/mapper/1.6';
+import { MeterValueMapper } from '@dal/layers/sequelize/mapper/1.6/index.js';
 
 describe('MeterValueMapper (OCPP 1.6)', () => {
   describe('ReadingContext conversions', () => {

@@ -7,18 +7,18 @@ import {
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
-  SystemConfig,
+  type SystemConfig,
 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
-import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 import { Hubject } from '@util/certificate/client/hubject.js';
 import { MemoryCache } from '@util/index.js';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
   aValidRootCertificates,
   aValidSignedContractData,
   HUBJECT_DEFAULT_AUTH_TOKEN,
 } from '../../providers/Hubject.js';
-import { createTestContainer, getTestInstance } from '@test/testContainer.js';
 
 describe('Hubject', () => {
   const { container } = createTestContainer();

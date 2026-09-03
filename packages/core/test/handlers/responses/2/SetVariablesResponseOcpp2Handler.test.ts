@@ -2,8 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { MessageOrigin, MessageTypeId, OCPP2_0_1, OCPPVersion } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import {
+  MessageOrigin,
+  MessageTypeId,
+  OCPP2_0_1,
+  OCPPVersion,
+  type SystemConfig,
+} from '@citrineos/types';
 import {
   ChargingStation,
   Component,
@@ -69,7 +75,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
@@ -102,7 +108,7 @@ beforeEach(async () => {
 // ---------------------------------------------------------------------------
 
 function makeRepos() {
-  const config = {} as BootstrapConfig;
+  const config = {} as SystemConfig;
   return {
     deviceModelRepo: new SequelizeDeviceModelRepository({ config, sequelizeInstance }),
     ocppMessageRepo: new SequelizeOCPPMessageRepository({ config, sequelizeInstance }),

@@ -9,7 +9,7 @@ import { Acme } from '@util/certificate/client/acme.js';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { beforeAll, beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, type Mock, type Mocked, vi } from 'vitest';
 import { aValidSignedCertificate } from '../../providers/ACME.js';
 
 vi.mock('@util/certificate/CertificateUtil');

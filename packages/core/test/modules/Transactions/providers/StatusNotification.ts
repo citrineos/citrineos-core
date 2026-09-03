@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
-import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModelProvider.js';
 import { StatusNotification } from '@citrineos/core';
+import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/UpdateUtil.js';
+import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './DeviceModelProvider.js';
 
 export function aStatusNotificationRequest(
   updateFunction?: UpdateFunction<OCPP2_0_1.StatusNotificationRequest>,

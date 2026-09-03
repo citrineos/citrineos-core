@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
-import { BootstrapConfig } from '@citrineos/base';
-import { ChargingStationSequenceTypeEnum } from '@citrineos/types';
-import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
-import { ChargingStationSequence } from '@dal/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence';
-import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/repository/ChargingStationSequence';
+import { ChargingStationSequenceTypeEnum, type SystemConfig } from '@citrineos/types';
+import { ChargingStationSequence } from '@dal/layers/sequelize/model/ChargingStationSequence/ChargingStationSequence.js';
+import { SequelizeChargingStationSequenceRepository } from '@dal/layers/sequelize/repository/ChargingStationSequence.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { Sequelize } from 'sequelize-typescript';
+import { type ILogObj, Logger } from 'tslog';
+import { beforeEach, describe, expect, it, type Mock, type Mocked, vi } from 'vitest';
 
 // Mock the util module to avoid circular dependency issues during test loading
 vi.mock('@dal/layers/sequelize/util', () => ({
@@ -23,7 +22,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
   let mockSequelize: Mocked<Sequelize>;
   let mockTransaction: Mock;
   let mockLogger: Mocked<Logger<ILogObj>>;
-  let mockConfig: BootstrapConfig;
+  let mockConfig: SystemConfig;
 
   const tenantId = 1;
   const ocppConnectionName = 'CP_TEST_001';
@@ -45,7 +44,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       getSubLogger: vi.fn().mockReturnThis(),
     } as unknown as Mocked<Logger<ILogObj>>;
 
-    mockConfig = {} as BootstrapConfig;
+    mockConfig = {} as SystemConfig;
 
     repository = getTestInstance(container, SequelizeChargingStationSequenceRepository, {
       config: mockConfig,

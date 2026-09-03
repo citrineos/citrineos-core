@@ -132,7 +132,7 @@ export class SequelizeAsyncJobStatusRepository extends SequelizeRepository<Async
     logger,
     sequelizeInstance,
   }: {
-    config: BootstrapConfig;
+    config: SystemConfig;
     logger?: Logger<ILogObj>;
     sequelizeInstance?: Sequelize;
   }) {

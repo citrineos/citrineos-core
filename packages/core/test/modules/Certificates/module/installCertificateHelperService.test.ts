@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { BadRequestError } from '@citrineos/base';
 import {
   type CertificateAuthorityService,
   CertificateGenerationScope,
@@ -10,15 +11,17 @@ import {
   type IDeviceModelRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
-  WebsocketNetworkConnection,
 } from '@citrineos/core';
-import { BadRequestError } from '@citrineos/base';
 import { type WebsocketServerConfig } from '@citrineos/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService';
-import { mockFileStorage, mockFileStorageGetFile, mockFileStorageSaveFile } from '../vitest.setup';
-import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider';
+import { InstallCertificateHelperService } from '@modules/Certificates/src/module/installCertificateHelperService.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MOCK_CERTIFICATE } from '../providers/InstallCertificateRequestProvider.js';
+import {
+  mockFileStorage,
+  mockFileStorageGetFile,
+  mockFileStorageSaveFile,
+} from '../vitest.setup.js';
 
 // Define constants BEFORE mocks to avoid hoisting issues
 const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.hoisted(() => ({
@@ -165,7 +168,6 @@ describe('InstallCertificateHelperService', () => {
   let mockDeleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   let mockDeviceModelRepository: IDeviceModelRepository;
   let mockCertificateAuthorityService: CertificateAuthorityService;
-  let mockNetworkConnection: WebsocketNetworkConnection;
 
   const mockHash = 'abc123hash';
   const tenantId = 1;
@@ -238,7 +240,6 @@ describe('InstallCertificateHelperService', () => {
       createAttempt: mockDeleteCertificateAttemptCreate,
     } as any;
     mockCertificateAuthorityService = {} as any;
-    mockNetworkConnection = {} as any;
 
     service = getTestInstance(container, InstallCertificateHelperService, {
       certificateRepository: mockCertificateRepository,
@@ -247,7 +248,6 @@ describe('InstallCertificateHelperService', () => {
       deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
       deviceModelRepository: mockDeviceModelRepository,
       certificateAuthorityService: mockCertificateAuthorityService,
-      networkConnection: mockNetworkConnection,
       fileStorage: mockFileStorage,
     });
 

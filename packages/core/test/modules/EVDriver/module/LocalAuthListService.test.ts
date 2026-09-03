@@ -2,20 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  IChangeConfigurationRepository,
-  IDeviceModelRepository,
-  ILocalAuthListRepository,
+  type IChangeConfigurationRepository,
+  type IDeviceModelRepository,
+  type ILocalAuthListRepository,
   LocalListVersion,
   SendLocalList,
   VariableAttribute,
   VariableCharacteristics,
 } from '@citrineos/core';
-import { LocalAuthListService } from '@modules/EVDriver/src/module/LocalAuthListService.js';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { LocalAuthListService } from '@modules/EVDriver/src/module/LocalAuthListService.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 
 describe('LocalAuthListService', () => {
   const { container } = createTestContainer();

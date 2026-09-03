@@ -35,7 +35,9 @@ describe('ProvisionStationVariablesEndpoint', () => {
     mounted = await mountEndpoint(endpoint, ProvisionStationVariablesEndpoint.route);
   });
 
-  const post = (query: string, body: unknown) =>
+  // `unknown` widened past InjectPayload, which also stopped inject()'s
+  // overloads resolving to Promise<Response> — hence no .json()/.statusCode.
+  const post = (query: string, body: object) =>
     mounted.server.inject({ method: 'PUT', url: `${URL}?${query}`, payload: body });
 
   it('provisions without recording acceptance when the flag is absent', async () => {

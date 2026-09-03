@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { Logger } from 'tslog';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { CertificateUseEnum, InstallCertificateStatusEnum } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import {
+  CertificateUseEnum,
+  InstallCertificateStatusEnum,
+  type SystemConfig,
+} from '@citrineos/types';
 import {
   Certificate,
   ChargingStation,
@@ -21,6 +21,10 @@ import {
   Tenant,
 } from '@dal/index.js';
 import { InstallCertificateHelperService } from '@modules/Certificates/src/index.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { Logger } from 'tslog';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * A station can have more than one certificate install in flight: the endpoint prepares an attempt
@@ -36,7 +40,7 @@ const STATION = 'CP-PNC-1';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -63,7 +67,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

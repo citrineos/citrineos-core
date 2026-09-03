@@ -2,19 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
-import { faker } from '@faker-js/faker';
 import {
   ChargingNeeds,
   Evse,
-  IChargingProfileRepository,
-  IDeviceModelRepository,
-  ITransactionEventRepository,
+  type IChargingProfileRepository,
+  type IDeviceModelRepository,
+  type ITransactionEventRepository,
   TransactionEvent,
   VariableAttribute,
 } from '@citrineos/core';
-import { ILogObj, Logger } from 'tslog';
-import { vi, Mocked } from 'vitest';
+import { OCPP2_0_1 } from '@citrineos/types';
+import { faker } from '@faker-js/faker';
+import { type ILogObj, Logger } from 'tslog';
+import { vi, type Mocked } from 'vitest';
 
 // Mock logger that can be used in tests
 export function createMockLogger(): Mocked<Logger<ILogObj>> {

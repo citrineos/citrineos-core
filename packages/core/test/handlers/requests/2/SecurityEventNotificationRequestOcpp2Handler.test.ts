@@ -11,7 +11,7 @@ import {
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import { SecurityEventNotificationRequestOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/testContainer.js';
+import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/testContainer.js';
 import { aSecurityEventNotificationRequest } from '@test/dal/providers/SecurityEvent.js';
 
 const STATION_ID = 'station-001';
@@ -45,11 +45,13 @@ describe('SecurityEventNotificationRequestOcpp2Handler', () => {
     securityEventRepository = { createByStationId: vi.fn().mockResolvedValue({ id: 1 }) };
     ocppSender = makeMockOcppSender();
 
-    handler = new SecurityEventNotificationRequestOcpp2Handler({
-      logger,
-      ocppSender,
-      securityEventRepository,
-    });
+    handler = new SecurityEventNotificationRequestOcpp2Handler(
+      mockDeps<typeof SecurityEventNotificationRequestOcpp2Handler>({
+        logger,
+        ocppSender,
+        securityEventRepository,
+      }),
+    );
   });
 
   it('persists and acknowledges a standard (listed) security event type without logging a warning', async () => {

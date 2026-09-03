@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP2_0_1 } from '@citrineos/types';
 
-import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/UpdateUtil.js';
 import { Transaction } from '@citrineos/core';
+import { faker } from '@faker-js/faker';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/UpdateUtil.js';
 
 export function aTransaction(updateFunction?: UpdateFunction<Transaction>): Transaction {
   const item: Transaction = {

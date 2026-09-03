@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "rootDir": ".",
+
+    // Mirrors resolve.alias in vitest.config.ts. That alias map is global to
+    // the workspace, so this mirror is too. The two must stay in sync.
+    "paths": {
+      "@/*": ["./packages/core/src/*"],
+      "@dal": ["./packages/core/src/dal"],
+      "@dal/*": ["./packages/core/src/dal/*"],
+      "@handlers": ["./packages/core/src/handlers"],
+      "@handlers/*": ["./packages/core/src/handlers/*"],
+      "@modules": ["./packages/core/src/modules"],
+      "@modules/*": ["./packages/core/src/modules/*"],
+      "@util": ["./packages/core/src/util"],
+      "@util/*": ["./packages/core/src/util/*"],
+      "@test": ["./packages/core/test"],
+      "@test/*": ["./packages/core/test/*"],
+      "@citrineos/core": ["./packages/core/index.ts"],
+      "@ocpp": ["./packages/base/src/ocpp"],
+      "@ocpp/*": ["./packages/base/src/ocpp/*"],
+      "@config": ["./packages/base/src/config"],
+      "@config/*": ["./packages/base/src/config/*"],
+      "@interfaces": ["./packages/base/src/interfaces"],
+      "@interfaces/*": ["./packages/base/src/interfaces/*"],
+      "@base-util": ["./packages/base/src/util"],
+      "@base-util/*": ["./packages/base/src/util/*"]
+    }
+  }
+}

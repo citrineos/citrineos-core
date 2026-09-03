@@ -6,7 +6,7 @@ import { CacheNamespace, DEFAULT_TENANT_ID } from '@citrineos/base';
 import { AttributeEnum, EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TotpUtil } from '@util';
+import { TotpUtil } from '@util/index.js';
 import { InitiateWebPaymentEndpoint } from '@modules/Api/src/module/endpoints/webPayment/InitiateWebPaymentEndpoint.js';
 import { WebPaymentApi } from '@modules/Api/src/module/WebPaymentApi.js';
 import { createTestContainer, getTestInstance } from '@test/testContainer.js';

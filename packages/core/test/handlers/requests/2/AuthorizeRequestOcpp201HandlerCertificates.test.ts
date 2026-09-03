@@ -75,7 +75,7 @@ function sentResponse(
 // Not eMAID: validateIdToken enforces the eMAID check digit before the certificate block is
 // reached, and the token type is irrelevant to what these tests exercise.
 const request: OCPP2_0_1.AuthorizeRequest = {
-  idToken: { idToken: 'TAG001', type: IdTokenEnum.Central },
+  idToken: { idToken: 'TAG001', type: OCPP2_0_1.IdTokenEnumType.Central },
 };
 
 const A_CONTRACT_CERTIFICATE_CHAIN = '-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----';

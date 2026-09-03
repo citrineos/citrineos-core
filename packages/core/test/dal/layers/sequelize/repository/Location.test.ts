@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { BootstrapConfig } from '@citrineos/base';
-import type { ConnectorDto } from '@citrineos/types';
+import type { ConnectorDto, SystemConfig } from '@citrineos/types';
 import { Connector } from '@dal/layers/sequelize/model/Location/Connector.js';
 import { Evse } from '@dal/layers/sequelize/model/Location/Evse.js';
 import { Tariff } from '@dal/layers/sequelize/model/Tariff/Tariffs.js';
@@ -45,7 +44,7 @@ describe('SequelizeLocationRepository', () => {
     } as unknown as Mocked<Logger<ILogObj>>;
 
     repository = getTestInstance(container, SequelizeLocationRepository, {
-      config: {} as BootstrapConfig,
+      config: {} as SystemConfig,
       logger: mockLogger,
       sequelizeInstance: mockSequelize,
     });
