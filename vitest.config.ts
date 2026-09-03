@@ -30,17 +30,18 @@ export default defineConfig({
   resolve: {
     // Mirror TypeScript path aliases for testing (point to source files, not built files)
     alias: {
-      '@': fileURLToPath(new URL('./packages/core/src', import.meta.url)),
-      '@test': fileURLToPath(new URL('./packages/core/test', import.meta.url)),
-      '@dal': fileURLToPath(new URL('./packages/core/src/dal', import.meta.url)),
-      '@handlers': fileURLToPath(new URL('./packages/core/src/handlers', import.meta.url)),
-      '@modules': fileURLToPath(new URL('./packages/core/src/modules', import.meta.url)),
-      '@util': fileURLToPath(new URL('./packages/core/src/util', import.meta.url)),
+      '@': fileURLToPath(new URL('./packages/ocpp/src', import.meta.url)),
+      '@test': fileURLToPath(new URL('./packages/ocpp/test', import.meta.url)),
+      '@dal': fileURLToPath(new URL('./packages/dal/src', import.meta.url)),
+      '@handlers': fileURLToPath(new URL('./packages/ocpp/src/handlers', import.meta.url)),
+      '@modules': fileURLToPath(new URL('./packages/ocpp/src/modules', import.meta.url)),
+      '@util': fileURLToPath(new URL('./packages/ocpp/src/util', import.meta.url)),
       '@ocpp': fileURLToPath(new URL('./packages/base/src/ocpp', import.meta.url)),
       '@config': fileURLToPath(new URL('./packages/base/src/config', import.meta.url)),
       '@interfaces': fileURLToPath(new URL('./packages/base/src/interfaces', import.meta.url)),
       '@base-util': fileURLToPath(new URL('./packages/base/src/util', import.meta.url)),
-      '@citrineos/core': fileURLToPath(new URL('./packages/core/index.ts', import.meta.url)),
+      '@citrineos/dal': fileURLToPath(new URL('./packages/dal/index.ts', import.meta.url)),
+      '@citrineos/ocpp': fileURLToPath(new URL('./packages/ocpp/index.ts', import.meta.url)),
     },
   },
 });

@@ -12,7 +12,7 @@ import {
   MessageState,
 } from '@citrineos/types';
 import { OcppError } from '@ocpp/rpc/message.js';
-import type { IMessage } from '@interfaces/messages/Message.js';
+import type { IMessage } from '@interfaces/messages/message.js';
 
 export class RequestBuilder {
   static buildCall(
