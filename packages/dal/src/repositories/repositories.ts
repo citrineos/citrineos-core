@@ -27,6 +27,7 @@ import type {
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
   EvseDto,
+  StatusNotificationDto,
   LocationDto,
   MeterValueDto,
   OCPP1_6,
@@ -62,7 +63,6 @@ import type { VariableCharacteristics } from '../models/device-model/variable-ch
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
-import type { StatusNotification } from '../models/location/status-notification.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
 import type { Reservation } from '../models/reservation.js';
 import type { Tariff } from '../models/tariff/tariffs.js';
@@ -267,7 +267,7 @@ export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void>;
 }
 

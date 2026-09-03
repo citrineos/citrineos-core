@@ -7,6 +7,7 @@ import {
   type ChargingStationDto,
   type ConnectorDto,
   type EvseDto,
+  type StatusNotificationDto,
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
@@ -137,16 +138,18 @@ export class SequelizeLocationRepository
   async addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      statusNotification,
+      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
     );
     try {
       await this.updateLatestStatusNotification(
         tenantId,
         ocppConnectionName,
+        stationId,
         savedStatusNotification,
       );
     } catch (e: any) {
@@ -157,6 +160,7 @@ export class SequelizeLocationRepository
   async updateLatestStatusNotification(
     tenantId: number,
     ocppConnectionName: string,
+    stationId: number | undefined,
     statusNotification: StatusNotification,
   ): Promise<void> {
     const evseId = statusNotification.evseId;
@@ -195,6 +199,7 @@ export class SequelizeLocationRepository
         tenantId,
         ocppConnectionName: ocppConnectionName,
         statusNotificationId,
+        stationId,
       }),
     );
   }

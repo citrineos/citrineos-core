@@ -159,7 +159,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
 
@@ -231,7 +231,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
 
