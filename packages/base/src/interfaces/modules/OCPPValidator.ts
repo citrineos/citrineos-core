@@ -22,15 +22,76 @@ import {
 } from '@citrineos/types';
 import { OcppError } from '@ocpp/rpc/message.js';
 
+/**
+ * Overrides for OCPP 2.0.1's SignedMeterValueType.signedMeterData/publicKey maxLength (spec default: 2500
+ * characters each). Some real charging stations submit OCMF-signed meter data past that spec limit -- see
+ * OCPPValidator.applySignedMeterValueLimits for details.
+ */
+export interface SignedMeterValueLimits {
+  signedMeterDataMaxLength?: number;
+  publicKeyMaxLength?: number;
+}
+
 export class OCPPValidator {
   protected _ajv: Ajv;
   protected readonly _logger: Logger<ILogObj>;
 
-  constructor(logger?: Logger<ILogObj>, ajv?: Ajv) {
+  constructor(
+    logger?: Logger<ILogObj>,
+    ajv?: Ajv,
+    signedMeterValueLimits?: SignedMeterValueLimits,
+  ) {
     this._ajv = ajv || OCPPValidator.createValidatorAjvInstance();
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new Logger<ILogObj>({ name: this.constructor.name });
+
+    if (signedMeterValueLimits) {
+      OCPPValidator.applySignedMeterValueLimits(signedMeterValueLimits, this._logger);
+    }
+  }
+
+  /**
+   * Widens OCPP 2.0.1's built-in SignedMeterValueType.signedMeterData/publicKey maxLength (spec default: 2500
+   * characters each) in the shared TransactionEventRequest/MeterValuesRequest schemas, before they're compiled
+   * by ajv. 2500 is the OCA's own OCPP 2.0.1 spec value, not a CitrineOS restriction -- but it's proven too
+   * small in practice for some real charging stations' OCMF-signed meter data (e.g. with an embedded
+   * certificate chain or multiple register readings), which otherwise gets rejected outright as a
+   * FormatViolation, silently dropping that station's meter values for the rest of the transaction. OCPP 2.1
+   * itself raised signedMeterData's limit to 32768 for exactly this reason.
+   *
+   * Must be called before the first validateOCPPRequest() call for TransactionEvent/MeterValues -- ajv caches
+   * a compiled validator per schema $id on first use, so any override applied afterward has no effect on an
+   * already-compiled validator. In practice this means calling it once at startup, e.g. when constructing the
+   * single shared OCPPValidator instance.
+   *
+   * @param limits - Override values; a field left undefined keeps the OCPP 2.0.1 spec default (2500) unchanged.
+   * @param logger - Optional logger for debug output.
+   */
+  static applySignedMeterValueLimits(
+    limits: SignedMeterValueLimits,
+    logger?: Logger<ILogObj>,
+  ): void {
+    if (limits.signedMeterDataMaxLength === undefined && limits.publicKeyMaxLength === undefined) {
+      return;
+    }
+    for (const action of [OCPP_CallAction.TransactionEvent, OCPP_CallAction.MeterValues]) {
+      const schema = OCPP2_0_1_CALL_SCHEMA_RECORD[action] as any;
+      const signedMeterValueType = schema?.definitions?.SignedMeterValueType?.properties;
+      if (!signedMeterValueType) {
+        continue;
+      }
+      if (limits.signedMeterDataMaxLength !== undefined && signedMeterValueType.signedMeterData) {
+        signedMeterValueType.signedMeterData.maxLength = limits.signedMeterDataMaxLength;
+      }
+      if (limits.publicKeyMaxLength !== undefined && signedMeterValueType.publicKey) {
+        signedMeterValueType.publicKey.maxLength = limits.publicKeyMaxLength;
+      }
+      logger?.debug(
+        `Applied signed meter value length overrides to OCPP 2.0.1 ${action} schema`,
+        limits,
+      );
+    }
   }
 
   /**
