@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type {
+  ISetNetworkProfileRepository,
+  SetNetworkProfileCreateInput,
+} from '@dal/repositories/repositories.js';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SetNetworkProfileDto } from '@citrineos/types';
+import { and, eq } from 'drizzle-orm';
+import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import {
   type SetNetworkProfileEntity,
   setNetworkProfileTable,
@@ -39,10 +46,10 @@ export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetw
   return dto;
 }
 
-export class DrizzleSetNetworkProfileRepository extends DrizzleRepository<
-  typeof setNetworkProfileTable,
-  SetNetworkProfileDto
-> {
+export class DrizzleSetNetworkProfileRepository
+  extends DrizzleRepository<typeof setNetworkProfileTable, SetNetworkProfileDto>
+  implements ISetNetworkProfileRepository
+{
   protected getTable(tenantId: number): typeof setNetworkProfileTable {
     return this.useTenantSchema ? tenantSetNetworkProfileTable(tenantId) : setNetworkProfileTable;
   }
@@ -51,5 +58,44 @@ export class DrizzleSetNetworkProfileRepository extends DrizzleRepository<
     return toSetNetworkProfileDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto> {
+    const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
+    const stationId = await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined);
+    return this.insert(tenantId, {
+      stationId,
+      ocppConnectionName: values.ocppConnectionName,
+      correlationId: values.correlationId,
+      websocketServerConfigId: values.websocketServerConfigId,
+      configurationSlot: values.configurationSlot,
+      ocppVersion: values.ocppVersion,
+      ocppTransport: values.ocppTransport,
+      ocppCsmsUrl: values.ocppCsmsUrl,
+      messageTimeout: values.messageTimeout,
+      securityProfile: values.securityProfile,
+      ocppInterface: values.ocppInterface,
+      apn: values.apn,
+      vpn: values.vpn,
+    });
+  }
+
+  // Formerly the model's @BeforeCreate resolveStationId hook; resolved explicitly here instead.
+  private async resolveStationId(
+    tenantId: number,
+    ocppConnectionName?: string,
+  ): Promise<number | undefined> {
+    if (!ocppConnectionName) {
+      return undefined;
+    }
+    const rows = await this.db
+      .select({ id: chargingStationTable.id })
+      .from(chargingStationTable)
+      .where(
+        and(
+          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
+          eq(chargingStationTable.tenantId, tenantId),
+        ),
+      )
+      .limit(1);
+    return rows[0]?.id;
+  }
 }

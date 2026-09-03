@@ -124,19 +124,6 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  @BeforeCreate
-  static async resolveStationId(instance: SetNetworkProfile): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
-
   @BeforeUpdate
   @BeforeCreate
   static setDefaultTenant(instance: SetNetworkProfile) {

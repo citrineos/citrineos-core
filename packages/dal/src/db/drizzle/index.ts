@@ -89,6 +89,18 @@ export {
   type SecurityEventEntityInsert,
 } from './schema/security-event.js';
 export {
+  DrizzleSetNetworkProfileRepository,
+  toSetNetworkProfileDto,
+} from '../../repositories/drizzle/set-network-profile.js';
+export {
+  setNetworkProfileTable,
+  tenantSetNetworkProfileTable,
+  SetNetworkProfileEntitySchema,
+  SetNetworkProfileEntityInsertSchema,
+  type SetNetworkProfileEntity,
+  type SetNetworkProfileEntityInsert,
+} from './schema/set-network-profile.js';
+export {
   DrizzleSubscriptionRepository,
   toSubscriptionDto,
 } from '../../repositories/drizzle/subscription.js';
