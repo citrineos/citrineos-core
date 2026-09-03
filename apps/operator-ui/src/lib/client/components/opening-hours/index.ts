@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { OpeningHoursForm } from './opening.hours.form';
-export { OpeningHoursDisplay } from './opening.hours.display';
+export { OpeningHoursForm } from './opening-hours-form';
+export { OpeningHoursDisplay } from './opening-hours-display';

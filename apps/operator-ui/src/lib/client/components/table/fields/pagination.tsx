@@ -25,7 +25,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   getPageSizePreference,
   setPageSizePreference,
-} from '@lib/utils/store/table.preferences.slice';
+} from '@lib/utils/store/table-preferences-slice';
 
 interface DataTablePaginationProps<TData extends BaseRecord = BaseRecord> {
   table: UseTableReturnType<TData>['reactTable'];

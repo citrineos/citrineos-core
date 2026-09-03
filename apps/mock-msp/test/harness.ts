@@ -23,15 +23,15 @@ import type { AddressInfo } from 'node:net';
 import type { FastifyInstance } from 'fastify';
 import type { MockConfig, MockContext } from '../src/core/types.js';
 import { buildIdentity } from '../src/identity.js';
-import { createStore } from '../src/core/Store.js';
+import { createStore } from '../src/core/store.js';
 import { createFaultEngine } from '../src/core/faults.js';
-import { createWireLogger } from '../src/core/wireLog.js';
+import { createWireLogger } from '../src/core/wire-log.js';
 import { createOcpiClient } from '../src/core/client.js';
 import { ok, empty, error } from '../src/core/envelope.js';
 import { encodeToken } from '../src/core/auth.js';
 import { buildServer } from '../src/server.js';
 import { resetScenarioRuntime } from '../src/control/scenario.js';
-import type { StatusProbes } from '../src/control/statusCache.js';
+import type { StatusProbes } from '../src/control/status-cache.js';
 
 // The plaintext tokens the harness uses. Any consistent values work; the auth
 // layer base64-encodes on the wire and decodes+compares the plaintext.
