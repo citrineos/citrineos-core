@@ -11,21 +11,21 @@ import type {
   CertificateCreate,
   CertificateDto,
   CertificateUseEnumType,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingStateEnumType,
-  ChargingStationSequenceTypeEnumType,
-  ConnectorDto,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
-  EvseDto,
-  HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  HashAlgorithmEnumType,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingStateEnumType,
+  ChargingStationSequenceTypeEnumType,
+  ConnectorDto,
+  EvseDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -254,11 +254,6 @@ export interface ILocationRepository extends CrudRepository<Location> {
     ocppConnectionName: string,
     ocpp201EvseType: OCPP2_common_types.EVSEType,
   ) => Promise<Connector | undefined>;
-  readConnectorsWithTariffsByStationId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    evseTypeId?: number,
-  ) => Promise<Connector[]>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
@@ -280,21 +275,25 @@ export interface ILocationRepository extends CrudRepository<Location> {
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
   createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
-  createOrUpdateOcpp16Connector(
+  createOrUpdateConnector(
     tenantId: number,
-    connector: ConnectorDto & { connectorId: number },
+    connector: ConnectorDto,
   ): Promise<Connector | undefined>;
-  createOrUpdateOcpp2Connector(
-    tenantId: number,
-    connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined>;
-  autocommissionEvseForOcpp16Connector(
+  /**
+   * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
+   * Used in ad-hoc/`allowUnknownChargingStations` flows where the charge point arrives
+   * uncommissioned (OCPP 1.6 has no native EVSE concept). Conservative default:
+   * one connector → one evse. Returns the FK ids the caller should stamp on the
+   * Connector record being upserted.
+   */
+  commissionEvseForOcpp16Connector(
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<{ evseId: number }>;
+    connectorId: number,
+  ): Promise<{ evseId: number; evseTypeConnectorId: number }>;
   updateAllConnectorsByQuery(
     tenantId: number,
-    value: ConnectorDto,
+    value: Partial<Connector>,
     query: object,
   ): Promise<Connector[]>;
   updateChargingStationTimestamp(
