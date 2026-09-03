@@ -4,7 +4,10 @@
 
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location-fields';
-import { CHARGING_STATION_CORE_FIELDS,   CHARGING_STATION_DETAIL_FIELDS } from '@lib/queries/fields/charging-station-fields';
+import {
+  CHARGING_STATION_CORE_FIELDS,
+  CHARGING_STATION_DETAIL_FIELDS,
+} from '@lib/queries/fields/charging-station-fields';
 import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization-fields';
 import { TRANSACTION_DETAIL_FIELDS } from '@lib/queries/fields/transaction-fields';
 import { TARIFF_FIELDS } from '@lib/queries/fields/tariff-fields';

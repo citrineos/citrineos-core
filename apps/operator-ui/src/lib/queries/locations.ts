@@ -8,7 +8,10 @@ import { CONNECTOR_STATUS_FIELDS } from '@lib/queries/fields/connector-fields';
 import { STATUS_NOTIFICATION_FIELDS } from '@lib/queries/fields/status-notification-fields';
 import { ACTIVE_TRANSACTION_FIELDS } from '@lib/queries/fields/transaction-fields';
 import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse-fields';
-import { CHARGING_STATION_CORE_FIELDS,   CHARGING_STATION_DETAIL_FIELDS } from '@lib/queries/fields/charging-station-fields';
+import {
+  CHARGING_STATION_CORE_FIELDS,
+  CHARGING_STATION_DETAIL_FIELDS,
+} from '@lib/queries/fields/charging-station-fields';
 
 export const LOCATIONS_LIST_QUERY = gql`
   query LocationsList(
