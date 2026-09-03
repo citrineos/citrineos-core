@@ -97,7 +97,7 @@ describe('StatusNotificationService', () => {
       createOrUpdateConnector: vi.fn(),
       createOrUpdateEvse: vi.fn(),
       commissionEvseForOcpp16Connector: vi.fn(),
-      updateAllConnectorsByQuery: vi.fn(),
+      updateAllConnectorsByStationId: vi.fn(),
     } as unknown as Mocked<
       IChargingStationRepository &
         IConnectorRepository &
@@ -122,6 +122,7 @@ describe('StatusNotificationService', () => {
       deviceModelRepository,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });

@@ -363,6 +363,13 @@ export class SequelizeLocationRepository
           },
           defaults: {
             ...connector,
+            stationId:
+              connector.stationId ??
+              (await resolveStationId(
+                tenantId,
+                connector.ocppConnectionName,
+                sequelizeTransaction,
+              )),
           },
           transaction: sequelizeTransaction,
         },
@@ -382,12 +389,14 @@ export class SequelizeLocationRepository
     return result;
   }
 
-  async updateAllConnectorsByQuery(
+  async updateAllConnectorsByStationId(
     tenantId: number,
-    value: Partial<Connector>,
-    query: object,
+    stationId: number,
+    value: Partial<ConnectorDto>,
   ): Promise<Connector[]> {
-    return await this.connector.updateAllByQuery(tenantId, value, query);
+    return await this.connector.updateAllByQuery(tenantId, value, {
+      where: { stationId, tenantId },
+    });
   }
 
   async commissionEvseForOcpp16Connector(

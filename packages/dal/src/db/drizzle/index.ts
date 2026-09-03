@@ -54,6 +54,18 @@ export {
   type ChargingStationEntity,
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
+export {
+  DrizzleConnectorRepository,
+  toConnectorDto,
+} from '../../repositories/drizzle/connector.js';
+export {
+  connectorTable,
+  tenantConnectorTable,
+  ConnectorEntitySchema,
+  ConnectorEntityInsertSchema,
+  type ConnectorEntity,
+  type ConnectorEntityInsert,
+} from './schema/connector.js';
 export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
 export {
   evseTable,

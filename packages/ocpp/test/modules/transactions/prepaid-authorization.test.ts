@@ -63,6 +63,7 @@ describe('C17 - Prepaid Card Authorization', () => {
       transactionEventRepository,
       authorizationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       reservationRepository,
       ocppMessageRepository,

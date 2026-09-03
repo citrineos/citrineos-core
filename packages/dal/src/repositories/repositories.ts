@@ -60,7 +60,6 @@ import type { Variable } from '../models/device-model/variable.js';
 import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { Connector } from '../models/location/connector.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
@@ -277,21 +276,28 @@ export interface IConnectorRepository {
     tenantId: number,
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
+  ) => Promise<ConnectorDto | undefined>;
   readConnectorByStationIdAndOcpp201EvseType: (
     tenantId: number,
     ocppConnectionName: string,
     ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
+  ) => Promise<ConnectorDto | undefined>;
   createOrUpdateConnector(
     tenantId: number,
     connector: ConnectorDto,
-  ): Promise<Connector | undefined>;
-  updateAllConnectorsByQuery(
+  ): Promise<ConnectorDto | undefined>;
+  /**
+   * Applies `value` to every connector at one station.
+   *
+   * Replaced a `query: object` parameter that took a raw Sequelize where-clause —
+   * the only caller passed `{ where: { stationId, tenantId } }`, and an ORM-shaped
+   * query cannot be served by a non-Sequelize implementation.
+   */
+  updateAllConnectorsByStationId(
     tenantId: number,
-    value: Partial<Connector>,
-    query: object,
-  ): Promise<Connector[]>;
+    stationId: number,
+    value: Partial<ConnectorDto>,
+  ): Promise<ConnectorDto[]>;
 }
 
 export interface IEvseRepository {

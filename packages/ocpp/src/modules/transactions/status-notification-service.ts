@@ -27,7 +27,8 @@ export class StatusNotificationService {
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _evseRepository: IEvseRepository;
-  protected _locationRepository: IConnectorRepository & IStatusNotificationRepository;
+  protected _connectorRepository: IConnectorRepository;
+  protected _locationRepository: IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -36,6 +37,7 @@ export class StatusNotificationService {
     deviceModelRepository,
     chargingStationRepository,
     evseRepository,
+    connectorRepository,
     locationRepository,
     cache,
     logger,
@@ -44,7 +46,8 @@ export class StatusNotificationService {
     deviceModelRepository: IDeviceModelRepository;
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
-    locationRepository: IConnectorRepository & IStatusNotificationRepository;
+    connectorRepository: IConnectorRepository;
+    locationRepository: IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
@@ -52,6 +55,7 @@ export class StatusNotificationService {
     this._deviceModelRepository = deviceModelRepository;
     this._chargingStationRepository = chargingStationRepository;
     this._evseRepository = evseRepository;
+    this._connectorRepository = connectorRepository;
     this._locationRepository = locationRepository;
     this._cache = cache;
     this._logger = logger
@@ -144,7 +148,7 @@ export class StatusNotificationService {
       }
     }
 
-    await this._locationRepository.createOrUpdateConnector(tenantId, matchingConnector);
+    await this._connectorRepository.createOrUpdateConnector(tenantId, matchingConnector);
 
     let components = await this._componentRepository.readAllByQuery(tenantId, {
       where: {
@@ -240,14 +244,12 @@ export class StatusNotificationService {
       if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
         // update all connectors at this station — connectorId stripped so we
         // don't overwrite the per-row connectorId values
-        await this._locationRepository.updateAllConnectorsByQuery(
+        await this._connectorRepository.updateAllConnectorsByStationId(
           tenantId,
+          chargingStation.id!,
           {
             ...connector,
             connectorId: undefined,
-          },
-          {
-            where: { stationId: chargingStation.id, tenantId },
           },
         );
       } else if (statusNotificationRequest.connectorId !== 0) {
@@ -281,7 +283,7 @@ export class StatusNotificationService {
           connector.evseTypeConnectorId = matchingConnector!.evseTypeConnectorId as number;
         }
 
-        await this._locationRepository.createOrUpdateConnector(tenantId, connector);
+        await this._connectorRepository.createOrUpdateConnector(tenantId, connector);
       }
 
       // Now that the Connector record exists (upserted above, or pre-existing in

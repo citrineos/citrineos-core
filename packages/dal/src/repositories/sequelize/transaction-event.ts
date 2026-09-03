@@ -158,6 +158,9 @@ export class SequelizeTransactionEventRepository
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
             include: [Tariff],
           });
           connectorId = connector.id;
@@ -241,7 +244,10 @@ export class SequelizeTransactionEventRepository
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
-              defaults: { connectorId: value.evse.connectorId },
+              defaults: {
+                connectorId: value.evse.connectorId,
+                stationId: await resolveStationId(tenantId, ocppConnectionName),
+              },
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
