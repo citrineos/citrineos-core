@@ -1,0 +1,65 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import {
+  AbstractHandler,
+  type AbstractHandlerDependencies,
+  AsRequestHandler,
+  type IMessage,
+  type IOcppSender,
+} from '@citrineos/base';
+import {
+  ErrorCode,
+  type HandlerProperties,
+  OCPP2_1,
+  OCPP_2_VER_LIST,
+  OCPP_CallAction,
+  OCPP2_request_types,
+  OCPP2_response_types,
+} from '@citrineos/types';
+import { createOcspRequest, sendOCSPRequest } from '@/services/index.js';
+
+@AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
+export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
+  protected _ocppSender: IOcppSender;
+
+  constructor({
+    logger,
+    ocppSender,
+  }: AbstractHandlerDependencies & {
+    ocppSender: IOcppSender;
+  }) {
+    super(logger);
+
+    this._ocppSender = ocppSender;
+  }
+
+  async handle(
+    message: IMessage<OCPP2_request_types.GetCertificateStatusRequest>,
+    props?: HandlerProperties,
+  ) {
+    this._logger.debug(
+      this.createHandlerReceivedMessageLog('GetCertificateStatusRequest'),
+      message,
+      props,
+    );
+
+    const reqData = message.payload.ocspRequestData;
+    try {
+      const ocspRequest = createOcspRequest(reqData);
+      const ocspResult = await sendOCSPRequest(ocspRequest, reqData.responderURL);
+      const response: OCPP2_response_types.GetCertificateStatusResponse = {
+        status: OCPP2_1.GetCertificateStatusEnumType.Accepted,
+        ocspResult,
+      };
+      await this._ocppSender.sendCallResultWithMessage(message, response);
+    } catch (error) {
+      this._logger.error(`GetCertificateStatus failed: ${error}`);
+      const response: OCPP2_response_types.GetCertificateStatusResponse = {
+        status: OCPP2_1.GetCertificateStatusEnumType.Failed,
+        statusInfo: { reasonCode: ErrorCode.GenericError },
+      };
+      await this._ocppSender.sendCallResultWithMessage(message, response);
+    }
+  }
+}

@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import {
+  type AuthenticationOptions,
+  type ICache,
+  CacheNamespace,
+  createIdentifier,
+  notNull,
+} from '@citrineos/base';
+import { IncomingMessage } from 'http';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+import { AuthenticatorFilter } from './authenticator-filter.js';
+import { UpgradeAuthenticationError } from './errors/authentication-error.js';
+
+/**
+ * Filter used to prevent multiple simultaneous connections for the same charging station.
+ */
+export class ConnectedStationFilter extends AuthenticatorFilter {
+  private _cache: ICache;
+
+  constructor({ cache, logger }: { cache: ICache; logger: Logger<ILogObj> }) {
+    super(logger);
+    this._cache = cache;
+  }
+
+  protected shouldFilter(_options: AuthenticationOptions) {
+    return true;
+  }
+
+  protected async filter(
+    tenantId: number,
+    ocppConnectionName: string,
+    _request: IncomingMessage,
+  ): Promise<void> {
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
+    const isAlreadyConnected = notNull(
+      await this._cache.get(identifier, CacheNamespace.Connections),
+    );
+    if (isAlreadyConnected) {
+      throw new UpgradeAuthenticationError(
+        `New connection attempted for already connected identifier ${identifier}`,
+      );
+    }
+  }
+}
+
+export default ConnectedStationFilter;

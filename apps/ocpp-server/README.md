@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 # CitrineOS Server (`@citrineos/ocpp-server`)
 
 This is the OCPP server application for CitrineOS — the runnable entrypoint that wires together
-[`@citrineos/base`](../../packages/base) and [`@citrineos/core`](../../packages/core) into a deployable
+[`@citrineos/base`](../../packages/base) and [`@citrineos/ocpp`](../../packages/ocpp) into a deployable
 service. It hosts the WebSocket endpoints that charging stations connect to, the OCPP message router, the
 HTTP/REST Data and Message APIs, and the Sequelize database migrations.
 
@@ -28,9 +28,20 @@ bootstrap sequence — is documented in [`DEPENDENCY_INJECTION.md`](./DEPENDENCY
   - [Without Docker](#without-docker)
 - [Attaching a Debugger](#attaching-a-debugger)
 - [Server Ports](#server-ports)
-- [Database Sync vs. Migration](#database-sync-vs-migration)
-- [Runtime Configuration](#runtime-configuration)
-- [Bootstrap Configuration Environment Variables](#bootstrap-configuration-environment-variables)
+- [Database Migrations](#database-migrations)
+- [Configuration](#configuration)
+  - [Naming](#naming)
+  - [Server and logging](#server-and-logging)
+  - [Database](#database)
+  - [Message broker and cache](#message-broker-and-cache)
+  - [File access](#file-access)
+  - [Websocket servers](#websocket-servers)
+  - [OCPP behaviour](#ocpp-behaviour)
+  - [Timeouts](#timeouts)
+  - [Modules](#modules)
+  - [API authentication](#api-authentication)
+  - [Certificate authorities](#certificate-authorities)
+  - [Running several instances side by side](#running-several-instances-side-by-side)
 - [Generating OCPP Interfaces](#generating-ocpp-interfaces)
 - [Validating Custom OCPP DataTransfer Messages](#validating-custom-ocpp-datatransfer-messages)
 - [Allow Unknown Charging Stations & Auto-Commissioning](#allow-unknown-charging-stations--auto-commissioning)
@@ -73,9 +84,10 @@ pnpm run start
 This launches the server via `nodemon` (see `nodemon.json`), which builds the workspace, runs database migrations,
 and then starts the process with the Node.js inspector listening on port 9229.
 
-CitrineOS requires configuration to allow your OCPP 1.6 and OCPP 2.0.1 compliant charging stations to connect.
-To change the configuration used outside of Docker, adjust the configuration file at
-`apps/ocpp-server/src/config/envs/local.ts`. Make sure any changes to the local configuration do not make it into your PR.
+The schema defaults are the local-development values, so this needs no configuration to come up. To change how your
+OCPP 1.6 and 2.0.1 charging stations connect, set the environment variables described under
+[Configuration](#configuration), or edit [`src/assets/websocket-servers.json`](./src/assets/websocket-servers.json)
+for the websocket endpoints themselves. Make sure local-only changes to that file do not make it into your PR.
 
 ## Attaching a Debugger
 
@@ -99,11 +111,14 @@ pnpm run build --prefix ../../ && pnpm run db:migrate && node --inspect-brk=0.0.
 When running, the server container exposes the following ports (see the root `docker-compose.yml`):
 
 - `8080`: webserver HTTP — [Swagger](http://localhost:8080/docs)
-- `8081`: websocket server TCP connection without auth
-- `8082`: websocket server TCP connection with basic HTTP auth
-- `8083`: additional websocket server
-- `8443` / `8444`: TLS websocket servers
+- `8081`: websocket server, security profile 0 (no auth)
+- `8082`: websocket server, security profile 1 (basic HTTP auth)
+- `8443`: websocket server, security profile 2 (TLS)
+- `8444`: websocket server, security profile 3 (mTLS)
 - `9229`: Node.js debugger
+
+The websocket ports come from [`src/assets/websocket-servers.json`](./src/assets/websocket-servers.json); change that
+file and the published ports in `docker-compose.yml` together.
 
 ## Database Migrations
 
@@ -111,80 +126,215 @@ CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm
 automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
 
-## Runtime Configuration
+## Configuration
 
-Values from configuration files (`local.ts`, `docker.ts`, `swarm.docker.ts`) may be overridden at runtime via
-environment variables. Environment variables prefixed with `citrineos_` and hierarchically separated by an
-underscore will override the corresponding value. For example, the amqp URL:
+Configuration comes from environment variables, validated on startup against the Zod schema in
+[`packages/types/src/config/types.ts`](../../packages/types/src/config/types.ts). That schema is the authoritative
+reference — the tables below list the settings most people need, not every field.
 
-```json
-util: {
-    (...)
-    messageBroker: {
-        amqp: {
-            url: 'amqp://guest:guest@localhost:5672'
-            (...)
-        }
-        (...)
-    }
-    (...)
-}
+Two things are not environment variables: the [websocket servers](#websocket-servers) come from a mounted JSON file,
+and `APP_NAME` selects what the process runs (`all`, `router`, `modules`, or a single module name).
+
+If you are coming from a checkout that used `src/config/envs/local.ts` and `docker.ts`, see
+[Migrating from the Old Configuration](../../README.md#migrating-from-the-old-configuration) in the root README for a
+field-by-field mapping.
+
+### Naming
+
+Take `CITRINEOS_` and append the path to the field, uppercased, with one underscore per level:
+
+| Setting                            | Variable                                     |
+| ---------------------------------- | -------------------------------------------- |
+| `logLevel`                         | `CITRINEOS_LOGLEVEL`                         |
+| `database.host`                    | `CITRINEOS_DATABASE_HOST`                    |
+| `messageBroker.amqp.url`           | `CITRINEOS_MESSAGEBROKER_AMQP_URL`           |
+| `timeouts.maxCallLengthSeconds`    | `CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS`    |
+| `fileAccess.local.defaultFilePath` | `CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH` |
+
+The underscore separates **levels, not words** — a camelCase field name stays one segment. Names are matched
+case-insensitively, so `citrineos_database_host` works too.
+
+Values are parsed as JSON when they can be and used as a raw string otherwise, so numbers and booleans need no
+quoting, an object can set a whole block at once (`CITRINEOS_DATABASE='{"host":"db","port":5432}'`), and `'{}'` opts
+into an optional block using all of its defaults.
+
+Anything you do not set takes its schema default, and the defaults are the local-development values — so running
+outside Docker generally needs no environment at all. A variable that does not resolve to a schema field is reported
+at startup as `refers to unknown configuration field '<segment>'` and ignored, so check the first lines of output
+after changing configuration.
+
+### Server and logging
+
+| Variable                     | Default               | Notes                                                 |
+| ---------------------------- | --------------------- | ----------------------------------------------------- |
+| `CITRINEOS_ENV`              | `development`         | `development` or `production`; affects log formatting |
+| `CITRINEOS_HOST`             | `0.0.0.0`             | HTTP bind address                                     |
+| `CITRINEOS_PORT`             | `8080`                | HTTP port                                             |
+| `CITRINEOS_LOGLEVEL`         | `2`                   | 0–6; 2 is debug                                       |
+| `CITRINEOS_SWAGGER_ENABLED`  | `true`                | Set `false` to stop serving the docs                  |
+| `CITRINEOS_SWAGGER_PATH`     | `/docs`               | Where the docs are mounted                            |
+| `CITRINEOS_SWAGGER_LOGOPATH` | `src/assets/logo.png` | Resolved from the working directory, not `fileAccess` |
+
+### Database
+
+| Variable                        | Default     |
+| ------------------------------- | ----------- |
+| `CITRINEOS_DATABASE_HOST`       | `localhost` |
+| `CITRINEOS_DATABASE_PORT`       | `5432`      |
+| `CITRINEOS_DATABASE_DATABASE`   | `citrine`   |
+| `CITRINEOS_DATABASE_USERNAME`   | `citrine`   |
+| `CITRINEOS_DATABASE_PASSWORD`   | `citrine`   |
+| `CITRINEOS_DATABASE_DIALECT`    | `postgres`  |
+| `CITRINEOS_DATABASE_SYNC`       | `false`     |
+| `CITRINEOS_DATABASE_ALTER`      | `false`     |
+| `CITRINEOS_DATABASE_FORCE`      | `false`     |
+| `CITRINEOS_DATABASE_MAXRETRIES` | `3`         |
+| `CITRINEOS_DATABASE_RETRYDELAY` | `1000`      |
+
+Connection pooling and TLS are optional blocks: `CITRINEOS_DATABASE_POOL_MAX`, `..._POOL_MIN`, `..._POOL_ACQUIRE`,
+`..._POOL_IDLE`, and `CITRINEOS_DATABASE_SSL_REQUIRE`, `..._SSL_REJECTUNAUTHORIZED`, `..._SSL_CA`.
+
+The migration runner reads the same variables, through
+[`src/config/sequelize-bridge.config.ts`](./src/config/sequelize-bridge.config.ts) — so `pnpm run db:migrate` and the
+server always agree on which database they are talking to.
+
+### Message broker and cache
+
+| Variable                                                | Default                             |
+| ------------------------------------------------------- | ----------------------------------- |
+| `CITRINEOS_MESSAGEBROKER_AMQP_URL`                      | `amqp://guest:guest@localhost:5672` |
+| `CITRINEOS_MESSAGEBROKER_AMQP_EXCHANGE`                 | `citrineos`                         |
+| `CITRINEOS_MESSAGEBROKER_AMQP_MAXRECONNECTDELAYSECONDS` | `30`                                |
+| `CITRINEOS_MESSAGEBROKER_AMQP_INSTANCEIDENTIFIER`       | unset                               |
+| `CITRINEOS_CACHE_TYPE`                                  | `memory`                            |
+
+For Redis, set `CITRINEOS_CACHE_TYPE=redis` and `CITRINEOS_CACHE_URL` to a `redis://` or `rediss://` URL. There is no
+host/port form.
+
+### File access
+
+`fileAccess` is the storage the server reads its runtime files through — the websocket servers file, TLS material, the
+ACME account key, RBAC rules. Keys inside it resolve against the configured root.
+
+| Variable                    | Default                               |
+| --------------------------- | ------------------------------------- |
+| `CITRINEOS_FILEACCESS_TYPE` | `local` — one of `local`, `s3`, `gcp` |
+
+When `local`:
+
+- `CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH` — root directory, relative to the process working directory
+  (default `src/assets`). The working directory differs between setups: running with pnpm from this package it is
+  `apps/ocpp-server`, while in the Docker image it is the repository root, which is why `docker-compose.yml` sets this
+  to `apps/ocpp-server/src/assets`.
+
+When `s3`:
+
+- `CITRINEOS_FILEACCESS_S3_REGION` — AWS region (optional)
+- `CITRINEOS_FILEACCESS_S3_ENDPOINT` — endpoint URL, for MinIO or a custom S3
+- `CITRINEOS_FILEACCESS_S3_DEFAULTBUCKETNAME` — bucket name (default `citrineos-s3-bucket`)
+- `CITRINEOS_FILEACCESS_S3_S3FORCEPATHSTYLE` — force path style (default `true`)
+- `CITRINEOS_FILEACCESS_S3_ACCESSKEYID` / `CITRINEOS_FILEACCESS_S3_SECRETACCESSKEY` — credentials; the AWS SDK's own
+  `AWS_*` variables also work
+
+When `gcp`:
+
+- `CITRINEOS_FILEACCESS_GCP_PROJECTID` — project ID (required)
+- `CITRINEOS_FILEACCESS_GCP_DEFAULTBUCKETNAME` — bucket name (default `citrineos-s3-bucket`)
+- `CITRINEOS_FILEACCESS_GCP_CREDENTIALS` — credentials object as JSON. If unset, Application Default Credentials are
+  used (`GOOGLE_APPLICATION_CREDENTIALS`, or gcloud CLI credentials)
+
+### Websocket servers
+
+The websocket endpoints charging stations connect to are listed in a JSON file read through `fileAccess`, not in
+environment variables — [`src/assets/websocket-servers.json`](./src/assets/websocket-servers.json) by default,
+relocatable with `CITRINEOS_WEBSOCKETSERVERCONFIGFILE`.
+
+Each entry requires `id` (unique), `host`, `port`, `protocols`, `securityProfile`, and **exactly one** of `tenantId`
+or `dynamicTenantResolution`. Security profiles 2 and 3 additionally require TLS material — `tlsKeyFilePath` and
+`tlsCertificateChainFilePath`, plus `mtlsCertificateAuthorityKeyFilePath` for profile 3. Those paths resolve against
+the `fileAccess` root, so they are written as `certificates/leafKey.pem`.
+
+The file is validated on startup and a bad entry stops the server with the failing index and reason.
+
+### OCPP behaviour
+
+| Variable                                   | Default    | Notes                                                                    |
+| ------------------------------------------ | ---------- | ------------------------------------------------------------------------ |
+| `CITRINEOS_OCPP_HEARTBEATINTERVAL`         | `60`       | Seconds, sent to stations on boot                                        |
+| `CITRINEOS_OCPP_BOOTRETRYINTERVAL`         | `15`       | Seconds, sent when a boot is Pending or Rejected                         |
+| `CITRINEOS_OCPP_UNKNOWNCHARGERSTATUS`      | `Accepted` | `Accepted`, `Pending` or `Rejected`, for stations with no BootConfig row |
+| `CITRINEOS_OCPP_GETBASEREPORTONPENDING`    | `true`     |                                                                          |
+| `CITRINEOS_OCPP_BOOTWITHREJECTEDVARIABLES` | `false`    |                                                                          |
+| `CITRINEOS_OCPP_AUTOACCEPT`                | `true`     | When `false`, boot status is never promoted automatically                |
+
+These apply to every OCPP version; there is no longer a per-protocol split. See
+[Allow Unknown Charging Stations & Auto-Commissioning](#allow-unknown-charging-stations--auto-commissioning) for how
+they interact with station provisioning.
+
+### Timeouts
+
+| Variable                                               | Default |
+| ------------------------------------------------------ | ------- |
+| `CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS`              | `20`    |
+| `CITRINEOS_TIMEOUTS_MAXCACHINGSECONDS`                 | `30`    |
+| `CITRINEOS_TIMEOUTS_SHUTDOWNGRACEPERIODSECONDS`        | `30`    |
+| `CITRINEOS_TIMEOUTS_REALTIMEAUTHDEFAULTTIMEOUTSECONDS` | `15`    |
+| `CITRINEOS_TIMEOUTS_NOTREADYTHRESHOLDSECONDS`          | `60`    |
+| `CITRINEOS_TIMEOUTS_STALECALLMAXAGESECONDS`            | unset   |
+
+`maxCachingSeconds` may not be lower than `maxCallLengthSeconds`; the schema rejects that combination.
+
+### Modules
+
+| Variable                                                         | Default |
+| ---------------------------------------------------------------- | ------- |
+| `CITRINEOS_TRANSACTIONS_COSTUPDATEDINTERVAL`                     | `60`    |
+| `CITRINEOS_TRANSACTIONS_SENDCOSTUPDATEDONMETERVALUE`             | unset   |
+| `CITRINEOS_TRANSACTIONS_RECEIPTBASEURL`                          | unset   |
+| `CITRINEOS_EVDRIVER_ENABLEGETCHARGINGPROFILESONSTARTTRANSACTION` | `false` |
+
+Exactly one of `costUpdatedInterval` or `sendCostUpdatedOnMeterValue` must be set. Signed meter values are an optional
+block: `CITRINEOS_TRANSACTIONS_SIGNEDMETERVALUES_PUBLICKEYFILEID`, `..._SIGNINGMETHOD`,
+`..._REJECTUNSUPPORTEDSIGNEDMETERVALUES`.
+
+### API authentication
+
+`auth.localBypass` defaults to `true`, which accepts every request and is intended for development only. For OIDC,
+set `CITRINEOS_AUTH_LOCALBYPASS=false` and the OIDC block:
+
+- `CITRINEOS_AUTH_OIDC_JWKSURI`, `CITRINEOS_AUTH_OIDC_ISSUER`, `CITRINEOS_AUTH_OIDC_AUDIENCE`
+- `CITRINEOS_AUTH_OIDC_CACHETIMESECONDS`, `CITRINEOS_AUTH_OIDC_RATELIMIT` (optional)
+
+Either the OIDC block or `localBypass` must be present. Role rules are loaded from a file under `fileAccess`:
+`CITRINEOS_RBAC_RULESFILENAME` (default `rbac-rules.json`) and `CITRINEOS_RBAC_RULESDIR`.
+
+### Certificate authorities
+
+Both CAs are opt-in and off by default. Each is zero-config once enabled, so an empty object is enough:
+
+```shell
+CITRINEOS_INTEGRATIONS_V2GCA='{}'              # Hubject test PKI
+CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA='{}'  # ACME, Let's Encrypt staging
 ```
 
-may be overridden by setting the environment variable `CITRINEOS_util_messageBroker_amqp_url` (case-insensitive).
+Override individual fields as needed — `CITRINEOS_INTEGRATIONS_V2GCA_HUBJECT_CLIENTID` and `..._CLIENTSECRET` (the
+defaults are placeholders and cannot issue anything real), or
+`CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA_ACME_ENV` (`staging` / `production`), `..._ACME_EMAIL` and
+`..._ACME_ACCOUNTKEYFILEPATH` (default `certificates/acme_account_key.pem`, resolved against the `fileAccess` root).
 
-## Bootstrap Configuration Environment Variables
+With neither enabled, the certificate-signing endpoints and the Certificates module's CA-backed operations raise an
+error when used; everything else runs normally.
 
-All environment variables use the `CITRINEOS_` prefix.
-Additional prefixes can be added by passing the `--env-prefix` argument to nodemon (e.g.
-`nodemon --env-prefix=instance1_`), which is useful for running multiple instances side by side.
-Here's the complete list of environment variables used in bootstrapping the application (this is not the full system
-configuration):
+### Running several instances side by side
 
-### Basic Bootstrap Configuration
+The prefix itself can be changed by passing `--env-prefix=` to the server process:
 
-- `BOOTSTRAP_CITRINEOS_CONFIG_FILENAME` - Name of the main config file (default: `config.json`)
-- `BOOTSTRAP_CITRINEOS_CONFIG_BUCKET` - Bucket contains the config file (optional)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE` - Type of file access: `local`, `s3`, or `gcp`
+```shell
+node dist/index.js --env-prefix=instance1_
+```
 
-### Database Configuration
-
-Database connection details (moved from system config to bootstrap config for better security and 12-factor compliance):
-
-- `BOOTSTRAP_CITRINEOS_DATABASE_HOST` - Database host (default: `localhost`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_PORT` - Database port (default: `5432`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_NAME` - Database name (default: `citrine`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_DIALECT` - Database dialect (default: `postgres`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_USERNAME` - Database username (optional)
-- `BOOTSTRAP_CITRINEOS_DATABASE_PASSWORD` - Database password (optional)
-- `BOOTSTRAP_CITRINEOS_DATABASE_SYNC` - Enable database sync (via sequelize) (true/false, default: `false`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_ALTER` - Enable database alter (via sequelize) (true/false, default: `false`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_MAX_RETRIES` - Maximum connection retries (default: `3`)
-- `BOOTSTRAP_CITRINEOS_DATABASE_RETRY_DELAY` - Retry delay in milliseconds (default: `1000`)
-
-### Local File Access
-
-When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=local`:
-
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH` - Default file path (default: `/data`)
-
-### S3 File Access
-
-When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=s3`:
-
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_REGION` - AWS region (optional)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ENDPOINT` - S3 endpoint URL (for MinIO or custom S3)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_DEFAULT_BUCKET_NAME` - S3 bucket name (default: `citrineos-s3-bucket`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_FORCE_PATH_STYLE` - Force path style (true/false, default: `true`)
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_ACCESS_KEY_ID` - S3 access key ID
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_S3_SECRET_ACCESS_KEY` - S3 secret access key
-
-### GCP File Access
-
-When `BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE=gcp`:
-
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_PROJECTID` - Project ID
-- `BOOTSTRAP_CITRINEOS_FILE_ACCESS_GCP_CREDENTIALS` - GCP Credentials object (Optional, if not set will use Application Default Credentials such as the `GOOGLE_APPLICATION_CREDENTIALS` environment variable or gcloud CLI credentials)
+That instance then reads `INSTANCE1_*` variables. The flag **replaces** the prefix rather than adding one, so
+`CITRINEOS_*` names are ignored for that process.
 
 ## Generating OCPP Interfaces
 
@@ -197,7 +347,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-The OCPP message validator is created in `apps/ocpp-server/src/citrineOSServer.ts`. Register a DataTransfer schema by
+The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
 compiling it onto that validator's AJV and passing it in:
 
 ```ts

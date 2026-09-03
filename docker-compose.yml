@@ -21,17 +21,40 @@ services:
     image: ghcr.io/citrineos/citrineos-server:latest
     pull_policy: always
     environment:
+      # Which process this container runs (EventGroup): 'all' = router + every module + APIs.
       APP_NAME: 'all'
-      APP_ENV: 'docker'
+      # Read by entrypoint.sh, not by the config loader.
+      DB_STRATEGY: 'migrate'
+      # Only consumed by the AWS SDK if fileAccess is switched to s3 (points it at minio).
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
-      DB_STRATEGY: 'migrate'
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: 'ocpp-db'
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: 'config.json'
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: 'local'
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: '/data'
-      CONFIG_CITRINEOS_WIPE_FILE_ON_START: 'false'
+
+      # ── SystemConfig overrides ──
+      # Every field of packages/types/src/config/types.ts can be set as
+      # CITRINEOS_<PATH_TO_FIELD> (case-insensitive, one segment per underscore, e.g.
+      # CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS). Values are JSON-parsed, falling back
+      # to the raw string. The schema defaults are the local-dev values, so only what
+      # actually differs inside Docker is listed here.
+      CITRINEOS_HOST: '0.0.0.0'
+      CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      CITRINEOS_MESSAGEBROKER_AMQP_URL: 'amqp://guest:guest@amqp-broker:5672'
+      CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS: '20'
+      # The fileAccess root, which websocket-servers.json, the TLS material and the ACME
+      # account key are all read relative to. It has to be respelled here because it is
+      # itself relative to the process working directory, and in the image that is the
+      # repo root (entrypoint.sh runs `node <repo>/apps/ocpp-server/dist/index.js` from
+      # WORKDIR /usr/local/apps/citrineos) rather than the app directory as it is locally.
+      CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: 'apps/ocpp-server/src/assets'
+      # The Swagger logo is the one path read straight from the working directory instead
+      # of through fileAccess, so it needs the full prefix.
+      CITRINEOS_SWAGGER_LOGOPATH: 'apps/ocpp-server/src/assets/logo.png'
+
+      # Certificate authorities are opt-in and off by default; the stack turns both on.
+      # '{}' takes every default of the block: the Hubject test PKI, and ACME against the
+      # Let's Encrypt staging directory with the account key from the fileAccess root.
+      CITRINEOS_INTEGRATIONS_V2GCA: '{}'
+      CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA: '{}'
     depends_on:
       ocpp-db:
         condition: service_healthy
