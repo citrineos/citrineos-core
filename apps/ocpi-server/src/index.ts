@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ICache, IModule } from '@citrineos/base';
 import { EventGroup, eventGroupFromString } from '@citrineos/types';
-import { MemoryCache, RedisCache } from '@citrineos/core';
+import { MemoryCache, RedisCache } from '@citrineos/ocpp';
 import type { AwilixContainer } from 'awilix';
 import {
   type OcpiConfig,

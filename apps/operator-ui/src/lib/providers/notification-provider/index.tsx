@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { UndoableNotification } from '@lib/client/components/ui/undoable-notification';
-import { HasuraClaimType } from '@lib/utils/hasura.types';
+import { HasuraClaimType } from '@lib/utils/hasura-types';
 import type { NotificationProvider } from '@refinedev/core';
 import { toast } from 'sonner';
 
