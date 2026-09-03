@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
-import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location.fields';
-import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization.fields';
-import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging.station.fields';
-import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse.fields';
-import { TRANSACTION_DETAIL_FIELDS } from '@lib/queries/fields/transaction.fields';
-import { CONNECTOR_CORE_FIELDS } from '@lib/queries/fields/connector.fields';
-import { TARIFF_FIELDS } from '@lib/queries/fields/tariff.fields';
+import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location-fields';
+import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization-fields';
+import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging-station-fields';
+import { EVSE_CORE_FIELDS } from '@lib/queries/fields/evse-fields';
+import { TRANSACTION_DETAIL_FIELDS } from '@lib/queries/fields/transaction-fields';
+import { CONNECTOR_CORE_FIELDS } from '@lib/queries/fields/connector-fields';
+import { TARIFF_FIELDS } from '@lib/queries/fields/tariff-fields';
 
 export const TRANSACTION_LIST_QUERY = gql`
   query TransactionList(

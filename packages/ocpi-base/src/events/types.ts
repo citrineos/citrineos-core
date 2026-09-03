@@ -66,6 +66,8 @@ export interface IDtoEvent<T extends IDtoPayload> {
 /**
  * Dto event receiver interface
  */
+export type DtoEventReceiverFactory = () => IDtoEventReceiver;
+
 export interface IDtoEventReceiver {
   init(): Promise<void>;
 

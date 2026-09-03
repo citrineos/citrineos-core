@@ -22,7 +22,7 @@
     "@aws-sdk/s3-request-presigner": "3.1101.0",
     "@citrineos/types": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
-    "@google-cloud/storage": "7.21.0",
+    "@google-cloud/storage": "7.22.0",
     "@googlemaps/markerclusterer": "2.6.2",
     "@hookform/resolvers": "5.7.1",
     "@radix-ui/react-alert-dialog": "1.1.23",
