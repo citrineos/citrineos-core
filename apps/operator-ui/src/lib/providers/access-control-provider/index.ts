@@ -6,7 +6,7 @@ import {
   ActionType,
   type ListCanReturnType,
   type OperatorCanParams,
-} from '@lib/utils/access.types';
+} from '@lib/utils/access-types';
 import type { AccessControlProvider, CanReturnType } from '@refinedev/core';
 
 /**

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { OverviewPage } from '../../pages/overview.page';
+import { OverviewPage } from '../../pages/overview-page';
 import { blockGoogleMaps } from '../../utils/route-overrides';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });

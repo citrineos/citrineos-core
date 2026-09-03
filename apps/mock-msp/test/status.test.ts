@@ -20,7 +20,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { MockContext } from '../src/core/types.js';
-import type { StatusProbes } from '../src/control/statusCache.js';
+import type { StatusProbes } from '../src/control/status-cache.js';
 import {
   makeServer,
   startStubCpo,

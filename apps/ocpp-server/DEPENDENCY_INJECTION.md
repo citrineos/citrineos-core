@@ -6,11 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Dependency Injection (Awilix)
 
-How DI is orchestrated in the server. Read this alongside `packages/core/src/server/container.ts` and `apps/ocpp-server/src/citrineOSServer.ts`
+How DI is orchestrated in the server. Read this alongside `packages/ocpp/src/server/container.ts` and `apps/ocpp-server/src/citrine-os-server.ts`
 
 ## The model
 
-One Awilix container, built once at a single composition root: `buildContainer()` in `container.ts`. The server `citrineOSServer.ts` builds it in its constructor and then resolves everything from it.
+One Awilix container, built once at a single composition root: `buildContainer()` in `container.ts`. The server `citrine-os-server.ts` builds it in its constructor and then resolves everything from it.
 
 The container runs in PROXY mode: a class declares its dependencies as a destructured constructor object, and Awilix supplies them by matching parameter name → registered token name.
 
@@ -93,7 +93,7 @@ Deliberate — don't "fix" these:
 
 ## Tests
 
-`packages/core/test/testContainer.ts` gives tests the same container settings as production
+`packages/ocpp/test/test-container.ts` gives tests the same container settings as production
 
 - `createTestContainer()` → a container with a mock logger pre-registered.
 - `getTestInstance(container, Class, mocks)` → registers your mocks + the class, then resolves it. `mocks` is typed against the constructor, so a wrong or missing dependency name is a compile error.
@@ -151,7 +151,7 @@ asyncJobStatusRepository: asClass(SequelizeAsyncJobStatusRepository).singleton()
 
 A service used across modules or by the network stack.
 
-1. Give it a destructured constructor whose param names are existing tokens; export it from `@citrineos/core`.
+1. Give it a destructured constructor whose param names are existing tokens; export it from `@citrineos/ocpp`.
 2. Register it in `registerServices` as `asClass(X).singleton()` — or `asFunction(({ … }) => new X(…))` if construction needs a runtime choice or a narrowed input.
 
 **Example** — `realTimeAuthorizer` is a plain singleton, while `apiAuthProvider` uses `asFunction` because it picks an implementation at runtime. Both live in `registerServices`:
@@ -197,7 +197,7 @@ constructor({ monitoringService }: { /* … */ }) {
 
 1. If it has internal services: add `register<Module>Services` in the package and export it.
 2. Register the module in `container.ts` (`registerModules`).
-3. Add one row to `MODULE_SPECS` in `citrineOSServer.ts`: `{ moduleToken, configKey }`.
+3. Add one row to `MODULE_SPECS` in `citrine-os-server.ts`: `{ moduleToken, configKey }`.
 
 **Example** — the Tenant module (no internal services, so no `register.ts`). Its module is registered in `container.ts`:
 
@@ -205,7 +205,7 @@ constructor({ monitoringService }: { /* … */ }) {
 tenantModule: asClass(TenantModule).scoped(),
 ```
 
-and one row in `citrineOSServer.ts` drives its startup:
+and one row in `citrine-os-server.ts` drives its startup:
 
 ```ts
 [EventGroup.Tenant]: {

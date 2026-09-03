@@ -33,14 +33,18 @@
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "nodemon": "3.1.14",
+    "pg": "8.11.3",
     "sequelize": "^6.37.0",
     "sequelize-typescript": "2.1.6",
+    "testcontainers": "^11.0.0",
     "ts-node": "10.9.2",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "^3.0.0"
   },
   "dependencies": {
     "@citrineos/base": "workspace:*",
-    "@citrineos/core": "workspace:*",
+    "@citrineos/ocpp": "workspace:*",
+    "@citrineos/dal": "workspace:*",
     "@citrineos/types": "workspace:*",
     "@fastify/cors": "10.1.0",
     "awilix": "^13.0.3",
