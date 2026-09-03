@@ -61,7 +61,6 @@ describe('CertificateAuthorityService', () => {
     } as unknown as Mocked<IChargingStationCertificateAuthorityClient>;
 
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
-
     type WithFactoryHooks = typeof CertificateAuthorityService & {
       _instantiateV2GClient: (...args: unknown[]) => IV2GCertificateAuthorityClient;
       _instantiateChargingStationClient: (
@@ -298,7 +297,7 @@ describe('CertificateAuthorityService', () => {
       ]);
 
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
-        expect.any(KJUR.asn1.ocsp.Request),
+        expect.any(KJUR.asn1.ocsp.OCSPRequest),
         givenResponderURL,
       );
       const capturedRequest = mockCertUtil.sendOCSPRequest.mock.calls.find(
@@ -308,6 +307,30 @@ describe('CertificateAuthorityService', () => {
       expect(capturedRequest.getEncodedHex()).toMatch(/^[0-9a-f]+$/i);
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
       expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
+    });
+
+    it('sends hash data the responder can parse back', async () => {
+      mockCertUtil.sendOCSPRequest.mockReturnValue(Promise.resolve(faker.lorem.word()));
+
+      const givenOCSPRequest = {
+        hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType.SHA256,
+        issuerNameHash: 'aa'.repeat(32),
+        issuerKeyHash: 'bb'.repeat(32),
+        serialNumber: '0102030405',
+        responderURL: faker.internet.url(),
+      } as OCPP2_0_1.OCSPRequestDataType;
+      await certificateAuthorityService.validateCertificateHashData([givenOCSPRequest]);
+
+      const [sentRequest] = mockCertUtil.sendOCSPRequest.mock.lastCall!;
+      const parsed = new KJUR.asn1.ocsp.OCSPParser().getOCSPRequest(sentRequest.getEncodedHex());
+      expect(parsed.array).toEqual([
+        {
+          alg: 'sha256',
+          issname: givenOCSPRequest.issuerNameHash,
+          isskey: givenOCSPRequest.issuerKeyHash,
+          sbjsn: givenOCSPRequest.serialNumber,
+        },
+      ]);
     });
   });
 });
