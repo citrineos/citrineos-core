@@ -55,11 +55,11 @@ out of the "hot path" and expand to process messages more flexibly without addin
     │        │   messages.connections  ← connection.#   │
     │        │     both durable, each with a .dlq       │
     │        └──────────────────┬───────────────────────┘
-    │                           │ one channel + prefetch per queue
+    │                           │ one channel per queue
     │                           ▼
     │        ┌────────────────────────────────────────────────────────────────────────┐
     │        │   MessagesModule (via MessagesEventConsumer) → MessagesEventPipeline   │
-    │        │      Dispatches by type (presently frame.# or connection.#)            │
+    │        │      Dispatches by kind (presently frame.# or connection.#)            │
     │        └────────────────────────────────────────────────────────────────────────┘
     │
     ├──── CallbackUrlNotifier ──► the API caller's callback URL
@@ -82,3 +82,9 @@ MessagesDeadLetterConsumer drains both. For now, it only reports: each arrival i
 level with the whole body, the "x-death" reason, the queue it died on, and the envelope facets it
 could still read, and is then acked. Nothing replays a dead-lettered event yet, so the log line is
 the only remaining record of it. A proper dead-letter queue process will be implemented in the future.
+
+# Future features
+
+1. Dead-letter queue processing (that isn't just logging the failed message)
+2. Adding prefetch (if needed)
+3. Additional message kinds

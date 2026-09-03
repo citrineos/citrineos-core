@@ -8,7 +8,7 @@ import {
   FrameDirection,
   type FrameEvent,
   MessageOrigin,
-  MessagesEventType,
+  MessagesEventKind,
   MessageTypeId,
   type OCPPVersionType,
 } from '@citrineos/types';
@@ -67,7 +67,7 @@ export function buildFrameEvent(input: BuildFrameEventInput): FrameEvent {
   const parsed = input.rpcMessage !== undefined && input.type !== undefined;
 
   return {
-    kind: MessagesEventType.Frame,
+    kind: MessagesEventKind.Frame,
     tenantId: input.tenantId,
     ocppConnectionName: input.ocppConnectionName,
     direction: directionFromOrigin(input.origin),
@@ -99,7 +99,7 @@ export interface BuildConnectionEventInput {
  */
 export function buildConnectionEvent(input: BuildConnectionEventInput): ConnectionEvent {
   return {
-    kind: MessagesEventType.Connection,
+    kind: MessagesEventKind.Connection,
     tenantId: input.tenantId,
     ocppConnectionName: input.ocppConnectionName,
     state: input.state,

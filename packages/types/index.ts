@@ -38,7 +38,7 @@ export {
   MESSAGES_DLX,
   MESSAGES_EXCHANGE,
   MESSAGES_QUEUES,
-  MessagesEventType,
+  MessagesEventKind,
   MessagesEventSchema,
   messagesEventRoutingKey,
   ConnectionEventSchema,

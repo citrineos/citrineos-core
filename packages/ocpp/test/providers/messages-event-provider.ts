@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  type ConnectionEvent,
   ConnectionEventState,
   FrameDirection,
+  type FrameEvent,
   MessageOrigin,
-  MessagesEventType,
+  type MessagesEvent,
+  MessagesEventKind,
   MessageTypeId,
   OCPP_CallAction,
   OCPPVersion,
-  type ConnectionEvent,
-  type FrameEvent,
-  type MessagesEvent,
 } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
 import { EventEmitter } from 'events';
@@ -24,7 +24,7 @@ export const STATION_ID = 'CS001';
 
 export function aFrameEvent(override?: Partial<FrameEvent>): FrameEvent {
   return {
-    kind: MessagesEventType.Frame,
+    kind: MessagesEventKind.Frame,
     tenantId: TENANT_ID,
     ocppConnectionName: STATION_ID,
     direction: FrameDirection.Inbound,
@@ -44,7 +44,7 @@ export function aFrameEvent(override?: Partial<FrameEvent>): FrameEvent {
 
 export function aConnectionEvent(override?: Partial<ConnectionEvent>): ConnectionEvent {
   return {
-    kind: MessagesEventType.Connection,
+    kind: MessagesEventKind.Connection,
     tenantId: TENANT_ID,
     ocppConnectionName: STATION_ID,
     state: ConnectionEventState.Connected,

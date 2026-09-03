@@ -5,16 +5,16 @@
 import {
   ConnectionEventState,
   FrameDirection,
+  isConnectionEvent,
+  isFrameEvent,
   MessageOrigin,
-  MessagesEventSchema,
-  MessagesEventType,
-  MessageTypeId,
   MESSAGES_DLX,
   MESSAGES_EXCHANGE,
   MESSAGES_QUEUES,
+  MessagesEventKind,
   messagesEventRoutingKey,
-  isConnectionEvent,
-  isFrameEvent,
+  MessagesEventSchema,
+  MessageTypeId,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
@@ -122,7 +122,7 @@ describe('buildFrameEvent', () => {
     );
 
     expect(event).toMatchObject({
-      kind: MessagesEventType.Frame,
+      kind: MessagesEventKind.Frame,
       parsed: true,
       payload: { a: 1 },
       frame: rpcMessage,
@@ -166,7 +166,7 @@ describe('buildConnectionEvent', () => {
     });
 
     expect(event).toMatchObject({
-      kind: MessagesEventType.Connection,
+      kind: MessagesEventKind.Connection,
       state: ConnectionEventState.Connected,
       protocol: OCPPVersion.OCPP2_0_1,
     });
@@ -263,13 +263,13 @@ describe('messages-plane topology constants', () => {
   it('should name one queue per event kind, each with its own dead-letter queue', () => {
     expect(MESSAGES_QUEUES).toEqual([
       {
-        kind: MessagesEventType.Frame,
+        kind: MessagesEventKind.Frame,
         queue: 'messages.ocpp',
         dlq: 'messages.ocpp.dlq',
         binding: 'frame.#',
       },
       {
-        kind: MessagesEventType.Connection,
+        kind: MessagesEventKind.Connection,
         queue: 'messages.connections',
         dlq: 'messages.connections.dlq',
         binding: 'connection.#',

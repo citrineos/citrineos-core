@@ -22,7 +22,7 @@ export interface MessagesEventContext {
  *   subscriptions on connect and fires onConnect/onClose callbacks, so without this it would have no
  *   idea a station exists.
  */
-export enum MessagesEventType {
+export enum MessagesEventKind {
   Frame = 'frame',
   Connection = 'connection',
 }
@@ -49,7 +49,7 @@ const messagesEventBase = {
 
 export const FrameEventSchema = z.object({
   ...messagesEventBase,
-  kind: z.literal(MessagesEventType.Frame),
+  kind: z.literal(MessagesEventKind.Frame),
   direction: z.enum(FrameDirection),
   correlationId: z.string(),
   origin: MessageOriginSchema,
@@ -66,7 +66,7 @@ export const FrameEventSchema = z.object({
 
 export const ConnectionEventSchema = z.object({
   ...messagesEventBase,
-  kind: z.literal(MessagesEventType.Connection),
+  kind: z.literal(MessagesEventKind.Connection),
   state: z.enum(ConnectionEventState),
   /** Known on connect; absent on a close where the protocol could not be recovered. */
   protocol: OCPPVersionSchema.optional(),
@@ -82,10 +82,10 @@ export type ConnectionEvent = z.infer<typeof ConnectionEventSchema>;
 export type MessagesEvent = z.infer<typeof MessagesEventSchema>;
 
 export const isFrameEvent = (event: MessagesEvent): event is FrameEvent =>
-  event.kind === MessagesEventType.Frame;
+  event.kind === MessagesEventKind.Frame;
 
 export const isConnectionEvent = (event: MessagesEvent): event is ConnectionEvent =>
-  event.kind === MessagesEventType.Connection;
+  event.kind === MessagesEventKind.Connection;
 
 export const MESSAGES_EXCHANGE = 'messages';
 
@@ -96,13 +96,13 @@ export const MESSAGES_DLX = `${MESSAGES_EXCHANGE}.dlx`;
  */
 export const MESSAGES_QUEUES = [
   {
-    kind: MessagesEventType.Frame,
+    kind: MessagesEventKind.Frame,
     queue: `${MESSAGES_EXCHANGE}.ocpp`,
     dlq: `${MESSAGES_EXCHANGE}.ocpp.dlq`,
     binding: 'frame.#',
   },
   {
-    kind: MessagesEventType.Connection,
+    kind: MessagesEventKind.Connection,
     queue: `${MESSAGES_EXCHANGE}.connections`,
     dlq: `${MESSAGES_EXCHANGE}.connections.dlq`,
     binding: 'connection.#',
