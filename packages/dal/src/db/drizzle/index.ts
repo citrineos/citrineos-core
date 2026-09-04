@@ -77,6 +77,18 @@ export {
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
 export {
+  DrizzleMessageInfoRepository,
+  toMessageInfoDto,
+} from '../../repositories/drizzle/message-info.js';
+export {
+  messageInfoTable,
+  tenantMessageInfoTable,
+  MessageInfoEntitySchema,
+  MessageInfoEntityInsertSchema,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
+export {
   DrizzleSecurityEventRepository,
   toSecurityEventDto,
 } from '../../repositories/drizzle/security-event.js';

@@ -5,7 +5,7 @@
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { MessageInfo } from '../../models/message-info/message-info.js';
 import type { IMessageInfoRepository } from '../repositories.js';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type MessageInfoDto } from '@citrineos/types';
 
 export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>
@@ -36,7 +36,7 @@ export class SequelizeMessageInfoRepository
     message: OCPP2_0_1.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
-  ): Promise<MessageInfo> {
+  ): Promise<MessageInfoDto> {
     return await this.s.transaction(async (transaction) => {
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
