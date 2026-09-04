@@ -11,6 +11,8 @@ import type {
   CertificateCreate,
   CertificateDto,
   CertificateUseEnumType,
+  ChangeConfigurationCreate,
+  ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -49,7 +51,6 @@ import type {
 } from '../mappers/2.0.1/charging-profile-mapper.js';
 import type { LocalListVersion } from '../models/authorization/local-list-version.js';
 import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type { ChangeConfiguration } from '../models/change-configuration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
@@ -688,11 +689,17 @@ export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkP
   createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
 }
 
-export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+export interface IChangeConfigurationRepository {
+  findByStationAndKey(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<ChangeConfigurationDto | undefined>;
+  listByStation(tenantId: number, ocppConnectionName: string): Promise<ChangeConfigurationDto[]>;
   createOrUpdateChangeConfiguration(
     tenantId: number,
-    configuration: ChangeConfiguration,
-  ): Promise<ChangeConfiguration | undefined>;
+    input: ChangeConfigurationCreate,
+  ): Promise<ChangeConfigurationDto | undefined>;
 }
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;

@@ -50,6 +50,18 @@ export {
   type LocationEntityInsert,
 } from './schema/location.js';
 export {
+  DrizzleChangeConfigurationRepository,
+  toChangeConfigurationDto,
+} from '../../repositories/drizzle/change-configuration.js';
+export {
+  changeConfigurationTable,
+  tenantChangeConfigurationTable,
+  ChangeConfigurationEntitySchema,
+  ChangeConfigurationEntityInsertSchema,
+  type ChangeConfigurationEntity,
+  type ChangeConfigurationEntityInsert,
+} from './schema/change-configuration.js';
+export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
 } from '../../repositories/drizzle/delete-certificate-attempt.js';

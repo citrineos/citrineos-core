@@ -14,6 +14,7 @@ import {
   type IWebsocketConnection,
 } from '@citrineos/base';
 import {
+  type ChangeConfigurationDto,
   EventGroup,
   type HandlerProperties,
   OCPP1_6,
@@ -26,7 +27,7 @@ import type {
   IChangeConfigurationRepository,
   IChargingStationRepository,
 } from '@citrineos/dal';
-import { ChangeConfiguration, ChargingStation } from '@citrineos/dal';
+import { ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -174,12 +175,8 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     let changeConfigurationsOnPending: boolean = false;
     let getConfigurationsOnPending: boolean = true;
     // Change Configurations on charging station
-    const configurations: ChangeConfiguration[] =
-      await this._changeConfigurationRepository.readAllByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-        },
-      });
+    const configurations: ChangeConfigurationDto[] =
+      await this._changeConfigurationRepository.listByStation(tenantId, ocppConnectionName);
     // Remove ChangeConfiguration call action from blacklist
     await this._cache.remove(OCPP_CallAction.ChangeConfiguration, identifier);
     // Set each configuration on Charging Station
