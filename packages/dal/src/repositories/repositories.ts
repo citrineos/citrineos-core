@@ -65,7 +65,6 @@ import type { VariableCharacteristics } from '../models/device-model/variable-ch
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Connector } from '../models/location/connector.js';
-import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
@@ -309,7 +308,7 @@ export interface IEvseRepository {
     tenantId: number,
     ocppConnectionName: string,
     ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
+  ) => Promise<EvseDto | undefined>;
   createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
   autoCommissionEvseForOcpp16Connector(
     tenantId: number,

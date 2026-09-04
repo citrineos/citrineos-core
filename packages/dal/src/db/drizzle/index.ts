@@ -6,6 +6,8 @@ export { DefaultDrizzleInstance } from './util.js';
 export {
   DrizzleRepository,
   type DrizzleRepositoryDependencies,
+  type DrizzleExecutor,
+  type DrizzleWriteContext,
 } from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,
@@ -52,6 +54,15 @@ export {
   type ChargingStationEntity,
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
+export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
+export {
+  evseTable,
+  tenantEvseTable,
+  EvseEntitySchema,
+  EvseEntityInsertSchema,
+  type EvseEntity,
+  type EvseEntityInsert,
+} from './schema/evse.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   locationTable,

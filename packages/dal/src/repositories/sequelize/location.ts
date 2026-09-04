@@ -20,6 +20,7 @@ import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -325,6 +326,9 @@ export class SequelizeLocationRepository
         },
         defaults: {
           ...evse,
+          stationId:
+            evse.stationId ??
+            (await resolveStationId(tenantId, evse.ocppConnectionName, sequelizeTransaction)),
         },
         transaction: sequelizeTransaction,
       });
@@ -414,6 +418,7 @@ export class SequelizeLocationRepository
     const evse = await Evse.create({
       tenantId,
       ocppConnectionName,
+      stationId: await resolveStationId(tenantId, ocppConnectionName),
     });
     return { evseId: evse.id };
   }

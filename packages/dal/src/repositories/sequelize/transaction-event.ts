@@ -23,6 +23,7 @@ import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { MeterValue } from '../../models/transaction-event/meter-value.js';
+import { resolveStationId } from './resolve-station-id.js';
 import { StartTransaction } from '../../models/transaction-event/start-transaction.js';
 import { StopTransaction } from '../../models/transaction-event/stop-transaction.js';
 import { Transaction } from '../../models/transaction-event/transaction.js';
@@ -131,6 +132,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
           });
           evseId = evse.id;
         }
@@ -142,6 +146,9 @@ export class SequelizeTransactionEventRepository
               tenantId,
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
+            },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
             },
           });
           const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
@@ -220,6 +227,9 @@ export class SequelizeTransactionEventRepository
               tenantId,
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
+            },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
             },
           });
           newTransaction.set('evseId', evse.id);
