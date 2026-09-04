@@ -7,7 +7,11 @@ import { CreateSubscriptionEndpoint } from '@/apis/router/create-subscription-en
 import { DeleteSubscriptionEndpoint } from '@/apis/router/delete-subscription-endpoint.js';
 import { GetSubscriptionsEndpoint } from '@/apis/router/get-subscriptions-endpoint.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpoint-harness.js';
+import {
+  mountEndpoint,
+  type MountedEndpoint,
+  type EndpointClass,
+} from '@test/providers/endpoint-harness.js';
 
 const PREFIX = '/ocpprouter';
 const URL = `${PREFIX}/subscription`;
@@ -26,9 +30,7 @@ describe('subscription admin endpoints', () => {
     deleteByKey = vi.fn().mockResolvedValue(undefined);
   });
 
-  const mount = (
-    endpointClass: Parameters<typeof getTestInstance>[1],
-  ): Promise<MountedEndpoint> => {
+  const mount = (endpointClass: EndpointClass): Promise<MountedEndpoint> => {
     const endpoint = getTestInstance(container, endpointClass, {
       subscriptionRepository: { create, readAllByStationId, deleteByKey },
     });

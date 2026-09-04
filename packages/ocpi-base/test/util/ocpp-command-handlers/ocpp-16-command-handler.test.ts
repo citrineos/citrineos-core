@@ -5,18 +5,13 @@ import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
-// The package barrel reaches BaseClientApi, whose `@Inject()` is evaluated as the module loads and
-// needs design:type metadata that esbuild does not emit. Stub the barrel down to the handful of
-// values this handler and its base class read from it.
-vi.mock('../../../src/index.js', async () => {
-  const { Token } = await import('typedi');
-  return {
-    CommandResultType: { ACCEPTED: 'ACCEPTED', REJECTED: 'REJECTED', FAILED: 'FAILED' },
-    CommandType: { START_SESSION: 'START_SESSION', UNLOCK_CONNECTOR: 'UNLOCK_CONNECTOR' },
-    ModuleId: { Commands: 'commands' },
-    OcpiConfigToken: new Token('OcpiConfig'),
-  };
-});
+// The package barrel reaches BaseClientApi and pulls in far more than this handler needs at module
+// load. Stub it down to the handful of values this handler and its base class read from it.
+vi.mock('../../../src/index.js', () => ({
+  CommandResultType: { ACCEPTED: 'ACCEPTED', REJECTED: 'REJECTED', FAILED: 'FAILED' },
+  CommandType: { START_SESSION: 'START_SESSION', UNLOCK_CONNECTOR: 'UNLOCK_CONNECTOR' },
+  ModuleId: { Commands: 'commands' },
+}));
 vi.mock('../../../src/graphql/index.js', () => ({ OcpiGraphqlClient: class {} }));
 vi.mock('../../../src/trigger/commands-client-api.js', () => ({ CommandsClientApi: class {} }));
 

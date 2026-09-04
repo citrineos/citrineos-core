@@ -5,7 +5,7 @@
 // Cross-cutting layer exports
 export * from '@/config/index.js';
 export * from '@/transport/index.js';
-export * from '@/services/index.js';
+export * from '@services/index.js';
 export * from '@/apis/index.js';
 export * from '@util/index.js';
 
