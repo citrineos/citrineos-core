@@ -35,22 +35,26 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _chargingStationRepository: IChargingStationRepository;
+  protected _locationRepository: IConnectorRepository;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
     chargingStationRepository,
+    locationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     chargingStationRepository: IChargingStationRepository;
+    locationRepository: IConnectorRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._chargingStationRepository = chargingStationRepository;
+    this._locationRepository = locationRepository;
   }
 
   async handle(

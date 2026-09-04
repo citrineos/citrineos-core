@@ -12,7 +12,11 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
+import type {
+  IAuthorizationRepository,
+  IChargingStationRepository,
+  IConnectorRepository,
+} from '@citrineos/dal';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,6 +55,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
   let mockChargingStationRepository: Partial<IChargingStationRepository>;
+  let mockLocationRepository: Partial<IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
@@ -75,6 +80,8 @@ describe('GetTariffsRequestOcpp21Handler', () => {
         id: 1,
         ocppConnectionName: 'station-001',
       }),
+    };
+    mockLocationRepository = {
       readConnectorsWithTariffsByStationId: mockReadConnectorsWithTariffs,
     };
 
@@ -87,6 +94,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
       chargingStationRepository:
         mockChargingStationRepository as unknown as IChargingStationRepository,
+      locationRepository: mockLocationRepository as unknown as IConnectorRepository,
     });
   });
 
@@ -140,7 +148,9 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     });
 
     it('should not read connectors at all when the station is unknown', async () => {
-      mockLocationRepository.readChargingStationByStationId = vi.fn().mockResolvedValue(undefined);
+      mockChargingStationRepository.readChargingStationByOcppConnectionName = vi
+        .fn()
+        .mockResolvedValue(undefined);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 

@@ -376,7 +376,7 @@ describe('StatusNotificationService', () => {
       // The 2.0.1 connectorId is scoped to the EVSE, so reusing it as the station-wide
       // 1.6 connectorId collides with a real connector on a multi-EVSE station. The
       // synthesized record carries evseTypeConnectorId only and leaves connectorId unset.
-      locationRepository.readChargingStationByStationId.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.evses = [
             aEvse((evse) => {
@@ -725,7 +725,7 @@ describe('StatusNotificationService', () => {
     it('should strip connectorId when fanning a connector-0 status out to every connector', async () => {
       // connectorId is the row's own identity; carrying the reported 0 into the bulk
       // update would overwrite every connector's number with 0.
-      locationRepository.readChargingStationByStationId.mockResolvedValue(
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aChargingStation((cs) => {
           cs.use16StatusNotification0 = true;
           cs.evses = [aEvse()];
