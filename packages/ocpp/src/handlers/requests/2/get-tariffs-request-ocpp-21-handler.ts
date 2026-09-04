@@ -34,22 +34,26 @@ import { Op } from 'sequelize';
 export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _locationRepository: IChargingStationRepository & IConnectorRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
+  protected _locationRepository: IConnectorRepository;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
+    chargingStationRepository,
     locationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: IChargingStationRepository & IConnectorRepository;
+    chargingStationRepository: IChargingStationRepository;
+    locationRepository: IConnectorRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._locationRepository = locationRepository;
   }
 
@@ -69,7 +73,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
     try {
       // Get charging station
-      const station = await this._locationRepository.readChargingStationByStationId(
+      const station = await this._chargingStationRepository.readChargingStationByOcppConnectionName(
         tenantId,
         ocppConnectionName,
       );

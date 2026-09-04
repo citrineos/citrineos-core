@@ -20,7 +20,7 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
-    readChargingStationByStationId: vi.fn().mockResolvedValue(chargingStation),
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(chargingStation),
   } as unknown as Mocked<IChargingStationRepository>;
 }
 
@@ -86,7 +86,12 @@ describe('RealTimeAuthorizer', () => {
   });
 
   it('does not throw when ChargingStation has no Location (locationId is null)', async () => {
-    const authorizer = buildAuthorizer({ locationId: null, evses: [] });
+    const chargingStation = { locationId: null, evses: [] };
+    const repo = buildMockLocationRepository(chargingStation);
+    const authorizer = getTestInstance(container, RealTimeAuthorizer, {
+      chargingStationRepository: repo,
+      config: {} as SystemConfig,
+    });
 
     const result = await authorizer.authorize(
       buildAuthorization(),

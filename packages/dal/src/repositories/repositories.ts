@@ -14,6 +14,7 @@ import type {
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
+  ChargingStationDto,
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
@@ -63,7 +64,6 @@ import type { VariableAttribute } from '../models/device-model/variable-attribut
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { ChargingStation } from '../models/location/charging-station.js';
 import type { Connector } from '../models/location/connector.js';
 import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
@@ -244,34 +244,37 @@ export interface ILocationRepository {
 }
 
 export interface IChargingStationRepository {
-  readChargingStationByStationId: (
+  readChargingStationByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
-  ) => Promise<ChargingStation | undefined>;
+  ) => Promise<ChargingStationDto | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
     connectedWebsocketServerConfigId?: string | null,
-  ) => Promise<ChargingStation | undefined>;
-  doesChargingStationExistByStationId: (
+  ) => Promise<ChargingStationDto | undefined>;
+  doesChargingStationExistByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<boolean>;
-  addStatusNotificationToChargingStation(
-    tenantId: number,
-    ocppConnectionName: string,
-    statusNotification: StatusNotification,
-  ): Promise<void>;
   createOrUpdateChargingStation(
     tenantId: number,
-    chargingStation: ChargingStation,
-  ): Promise<ChargingStation>;
+    chargingStation: ChargingStationDto,
+  ): Promise<ChargingStationDto>;
   updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,
     timestamp: string,
+  ): Promise<void>;
+}
+
+export interface IStatusNotificationRepository {
+  addStatusNotificationToChargingStation(
+    tenantId: number,
+    ocppConnectionName: string,
+    statusNotification: StatusNotification,
   ): Promise<void>;
 }
 
@@ -323,6 +326,7 @@ export interface ILocationDomainRepository
   extends CrudRepository<Location>,
     ILocationRepository,
     IChargingStationRepository,
+    IStatusNotificationRepository,
     IConnectorRepository,
     IEvseRepository {}
 

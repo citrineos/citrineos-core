@@ -36,24 +36,24 @@ export interface RealTimeAuthorizationResponse {
 }
 
 export class RealTimeAuthorizer implements IAuthorizer {
-  private _locationRepository: IChargingStationRepository;
+  private _chargingStationRepository: IChargingStationRepository;
   private _authorizationRepository: IAuthorizationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   constructor({
-    locationRepository,
+    chargingStationRepository,
     authorizationRepository,
     config,
     logger,
   }: {
-    locationRepository: IChargingStationRepository;
+    chargingStationRepository: IChargingStationRepository;
     authorizationRepository: IAuthorizationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._authorizationRepository = authorizationRepository;
     this._config = config;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
@@ -88,10 +88,11 @@ export class RealTimeAuthorizer implements IAuthorizer {
     let connectorId = undefined;
     let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
-      const chargingStation = await this._locationRepository.readChargingStationByStationId(
-        context.tenantId,
-        context.ocppConnectionName,
-      );
+      const chargingStation =
+        await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+          context.tenantId,
+          context.ocppConnectionName,
+        );
 
       // Determine evseId and connectorId
       // Priority: provided evse and connector > provided evse with single connector > station with single evse and single connector
