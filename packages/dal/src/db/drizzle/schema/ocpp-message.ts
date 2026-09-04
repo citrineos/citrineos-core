@@ -22,8 +22,6 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function ocppMessageColumns() {
   return {
-    // Not a standalone primary key: the table is partitioned on "createdAt", so the
-    // key must contain the partition column. Declared as a composite below.
     id: serial('id'),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
@@ -59,7 +57,6 @@ function ocppMessageColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const ocppMessageTable = pgTable(TableName.OCPPMessages, ocppMessageColumns(), (t) => [
-  // A unique constraint on a partitioned table must contain every partition key
   primaryKey({ columns: [t.id, t.createdAt] }),
   index('ocpp_messages_ocpp_connection_name').on(t.ocppConnectionName),
   index('ocpp_messages_correlation_id').on(t.correlationId),
