@@ -21,6 +21,7 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
+  StatusNotificationDto,
   LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
@@ -66,7 +67,6 @@ import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
-import type { StatusNotification } from '../models/location/status-notification.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
 import type { Reservation } from '../models/reservation.js';
 import type {
@@ -267,7 +267,7 @@ export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void>;
 }
 

@@ -28,6 +28,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChargingStationRepository,
   DrizzleConnectorRepository,
+  DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
@@ -302,6 +303,9 @@ function registerRepositories(container: AwilixContainer): void {
     ).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    statusNotificationRepository: asFunction(
+      ({ locationRepository }) => locationRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -316,16 +320,17 @@ function registerRepositories(container: AwilixContainer): void {
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
-      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
+      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       installCertificateAttemptRepository: asClass(
         DrizzleInstallCertificateAttemptRepository,
       ).singleton(),
       installedCertificateRepository: asClass(DrizzleInstalledCertificateRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),

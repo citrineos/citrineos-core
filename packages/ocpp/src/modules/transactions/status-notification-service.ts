@@ -33,7 +33,7 @@ export class StatusNotificationService {
   protected _chargingStationRepository: IChargingStationRepository;
   protected _evseRepository: IEvseRepository;
   protected _connectorRepository: IConnectorRepository;
-  protected _locationRepository: IStatusNotificationRepository;
+  protected _statusNotificationRepository: IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -43,7 +43,7 @@ export class StatusNotificationService {
     chargingStationRepository,
     evseRepository,
     connectorRepository,
-    locationRepository,
+    statusNotificationRepository,
     cache,
     logger,
   }: {
@@ -52,7 +52,7 @@ export class StatusNotificationService {
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
-    locationRepository: IStatusNotificationRepository;
+    statusNotificationRepository: IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
@@ -61,7 +61,7 @@ export class StatusNotificationService {
     this._chargingStationRepository = chargingStationRepository;
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
-    this._locationRepository = locationRepository;
+    this._statusNotificationRepository = statusNotificationRepository;
     this._cache = cache;
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
@@ -145,7 +145,7 @@ export class StatusNotificationService {
 
     await this._connectorRepository.createOrUpdateOcpp2Connector(tenantId, connector);
 
-    await this._locationRepository.addStatusNotificationToChargingStation(
+    await this._statusNotificationRepository.addStatusNotificationToChargingStation(
       tenantId,
       ocppConnectionName,
       statusNotification,
@@ -291,7 +291,7 @@ export class StatusNotificationService {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
       }
       const statusNotification = StatusNotification.build(statusNotificationInput);
-      await this._locationRepository.addStatusNotificationToChargingStation(
+      await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
         statusNotification,

@@ -124,7 +124,7 @@ describe('StatusNotificationService', () => {
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
   });
