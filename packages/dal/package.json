@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/dal",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "The data access layer: Sequelize and Drizzle models, repositories, and mappers.",
   "type": "module",
   "main": "dist/index.js",

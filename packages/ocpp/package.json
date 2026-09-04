@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/ocpp",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "OCPP protocol modules, handlers, transport, services, and APIs.",
   "type": "module",
   "main": "dist/index.js",
