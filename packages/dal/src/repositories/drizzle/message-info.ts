@@ -73,10 +73,7 @@ export class DrizzleMessageInfoRepository
 
     // Upsert key mirrors the unique index (ocppConnectionName, id, tenantId). The Sequelize
     // impl omits tenantId in its lookup; including it here is safer and matches the constraint.
-    const conditions = [
-      eq(table.ocppConnectionName, ocppConnectionName),
-      eq(table.id, message.id),
-    ];
+    const conditions = [eq(table.ocppConnectionName, ocppConnectionName), eq(table.id, message.id)];
     if (!this.useTenantSchema) {
       conditions.push(eq(table.tenantId, tenantId));
     }
