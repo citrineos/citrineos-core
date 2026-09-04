@@ -20,13 +20,13 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
-  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  LocationDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -48,11 +48,7 @@ import type {
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
 import type { LocalListVersion, SendLocalList } from '@dal/models/authorization/index.js';
-import type {
-  ChangeConfiguration,
-  ChargingStationSecurityInfo,
-  Reservation,
-} from '@dal/models/index.js';
+import type { ChangeConfiguration, ChargingStationSecurityInfo } from '@dal/models/index.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
