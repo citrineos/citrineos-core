@@ -64,7 +64,6 @@ import type { VariableAttribute } from '../models/device-model/variable-attribut
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { Connector } from '../models/location/connector.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
@@ -277,30 +276,30 @@ export interface IConnectorRepository {
     tenantId: number,
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
+  ) => Promise<ConnectorDto | undefined>;
   readConnectorByStationIdAndOcpp201EvseType: (
     tenantId: number,
     ocppConnectionName: string,
     ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
+  ) => Promise<ConnectorDto | undefined>;
+  updateAllConnectorsByStationId(
+    tenantId: number,
+    stationId: number,
+    value: Partial<ConnectorDto>,
+  ): Promise<ConnectorDto[]>;
   createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: ConnectorDto,
-    query: object,
-  ): Promise<Connector[]>;
+  ): Promise<ConnectorDto | undefined>;
   readConnectorsWithTariffsByStationId: (
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
-  ) => Promise<Connector[]>;
+  ) => Promise<ConnectorDto[]>;
   createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined>;
+  ): Promise<ConnectorDto | undefined>;
 }
 
 export interface IEvseRepository {

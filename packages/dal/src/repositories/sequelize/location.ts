@@ -350,7 +350,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       ocppConnectionName: connector.ocppConnectionName,
@@ -361,7 +361,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       evseId: connector.evseId,
@@ -382,6 +382,13 @@ export class SequelizeLocationRepository
           where,
           defaults: {
             ...connector,
+            stationId:
+              connector.stationId ??
+              (await resolveStationId(
+                tenantId,
+                connector.ocppConnectionName,
+                sequelizeTransaction,
+              )),
           },
           transaction: sequelizeTransaction,
         },
@@ -401,12 +408,14 @@ export class SequelizeLocationRepository
     return result;
   }
 
-  async updateAllConnectorsByQuery(
+  async updateAllConnectorsByStationId(
     tenantId: number,
+    stationId: number,
     value: Partial<ConnectorDto>,
-    query: object,
   ): Promise<Connector[]> {
-    return await this.connector.updateAllByQuery(tenantId, value, query);
+    return await this.connector.updateAllByQuery(tenantId, value, {
+      where: { stationId, tenantId },
+    });
   }
 
   async autoCommissionEvseForOcpp16Connector(
@@ -490,7 +499,7 @@ export class SequelizeLocationRepository
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
-  ): Promise<Connector[]> {
+  ): Promise<ConnectorDto[]> {
     return await this.connector.readAllByQuery(tenantId, {
       where: {
         tenantId,

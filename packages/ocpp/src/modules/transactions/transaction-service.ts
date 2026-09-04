@@ -35,7 +35,7 @@ export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizationRepository: IAuthorizationRepository;
   private _evseRepository: IEvseRepository;
-  private _locationRepository: IConnectorRepository;
+  private _connectorRepository: IConnectorRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -45,7 +45,7 @@ export class TransactionService {
     transactionEventRepository,
     authorizationRepository,
     evseRepository,
-    locationRepository,
+    connectorRepository,
     reservationRepository,
     ocppMessageRepository,
     realTimeAuthorizer,
@@ -55,7 +55,7 @@ export class TransactionService {
     transactionEventRepository: ITransactionEventRepository;
     authorizationRepository: IAuthorizationRepository;
     evseRepository: IEvseRepository;
-    locationRepository: IConnectorRepository;
+    connectorRepository: IConnectorRepository;
     reservationRepository: IReservationRepository;
     ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
@@ -65,7 +65,7 @@ export class TransactionService {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizationRepository = authorizationRepository;
     this._evseRepository = evseRepository;
-    this._locationRepository = locationRepository;
+    this._connectorRepository = connectorRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
     this._logger = logger
@@ -161,7 +161,7 @@ export class TransactionService {
       let connector: ConnectorDto | undefined = undefined;
       if (transactionEvent.evse) {
         if (transactionEvent.evse.connectorId) {
-          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+          connector = await this._connectorRepository.readConnectorByStationIdAndOcpp201EvseType(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse,
@@ -243,7 +243,7 @@ export class TransactionService {
       let connector: ConnectorDto | undefined = undefined;
       if (transactionEvent.evse) {
         if (transactionEvent.evse.connectorId) {
-          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+          connector = await this._connectorRepository.readConnectorByStationIdAndOcpp201EvseType(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse,
@@ -372,11 +372,12 @@ export class TransactionService {
       }
 
       // Check authorizers
-      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
-        tenantId,
-        context.ocppConnectionName,
-        connectorId,
-      );
+      const connector =
+        await this._connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+          tenantId,
+          context.ocppConnectionName,
+          connectorId,
+        );
       response.idTagInfo.status =
         OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
           await this._applyAuthorizers(authorization, context, connector?.evse, connector),
@@ -436,11 +437,12 @@ export class TransactionService {
     let evseTypeId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
-      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
-        tenantId,
-        ocppConnectionName,
-        evseIdentifier,
-      );
+      const connector =
+        await this._connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+          tenantId,
+          ocppConnectionName,
+          evseIdentifier,
+        );
       evseTypeId = connector?.evse?.evseTypeId;
     } else {
       evseTypeId = evseIdentifier.id;
