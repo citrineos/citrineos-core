@@ -13,6 +13,7 @@ import type {
   IConnectorRepository,
   IDeviceModelRepository,
   IEvseRepository,
+  IStatusNotificationRepository,
 } from '@citrineos/dal';
 import {
   Component,
@@ -29,27 +30,31 @@ import { Logger } from 'tslog';
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: IChargingStationRepository &
-    IConnectorRepository &
-    IEvseRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
+  protected _locationRepository: IConnectorRepository &
+    IEvseRepository &
+    IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
   constructor({
     componentRepository,
     deviceModelRepository,
+    chargingStationRepository,
     locationRepository,
     cache,
     logger,
   }: {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: IChargingStationRepository & IConnectorRepository & IEvseRepository;
+    chargingStationRepository: IChargingStationRepository;
+    locationRepository: IConnectorRepository & IEvseRepository & IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
     this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._locationRepository = locationRepository;
     this._cache = cache;
     this._logger = logger
@@ -68,10 +73,11 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP2_0_1.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._locationRepository.readChargingStationByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (!chargingStation) {
       this._logger.error(
         `Charging station ${ocppConnectionName} not found. Status notification cannot be associated with a charging station.`,
@@ -193,10 +199,11 @@ export class StatusNotificationService {
     ocppConnectionName: string,
     statusNotificationRequest: OCPP1_6.StatusNotificationRequest,
   ) {
-    const chargingStation = await this._locationRepository.readChargingStationByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (chargingStation) {
       const matchingEvse = chargingStation.evses?.find((evse) =>
         evse.connectors?.find(

@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OCPPVersion } from '@citrineos/types';
-import type { ChargingStation } from '@citrineos/dal';
+import type { ChargingStationDto, OCPPVersion } from '@citrineos/types';
 
 export type ReadChargingStation = (
   tenantId: number,
   ocppConnectionName: string,
-) => Promise<ChargingStation | undefined>;
+) => Promise<ChargingStationDto | undefined>;
 
 export type StationProtocolResolution =
   | { supported: true; protocol: OCPPVersion }
