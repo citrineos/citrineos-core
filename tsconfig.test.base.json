@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "rootDir": ".",
+
+    // Mirrors resolve.alias in vitest.config.ts. That alias map is global to
+    // the workspace, so this mirror is too. The two must stay in sync.
+    // Bare specifiers are listed alongside the wildcards because vite's
+    // prefix aliases match them but TypeScript's `paths` patterns do not.
+    "paths": {
+      "@": ["./packages/ocpp/src"],
+      "@/*": ["./packages/ocpp/src/*"],
+      "@test": ["./packages/ocpp/test"],
+      "@test/*": ["./packages/ocpp/test/*"],
+      "@dal": ["./packages/dal/src"],
+      "@dal/*": ["./packages/dal/src/*"],
+      "@handlers": ["./packages/ocpp/src/handlers"],
+      "@handlers/*": ["./packages/ocpp/src/handlers/*"],
+      "@modules": ["./packages/ocpp/src/modules"],
+      "@modules/*": ["./packages/ocpp/src/modules/*"],
+      "@util": ["./packages/ocpp/src/util"],
+      "@util/*": ["./packages/ocpp/src/util/*"],
+      "@services": ["./packages/ocpp/src/services"],
+      "@services/*": ["./packages/ocpp/src/services/*"],
+      "@ocpp": ["./packages/base/src/ocpp"],
+      "@ocpp/*": ["./packages/base/src/ocpp/*"],
+      "@config": ["./packages/base/src/config"],
+      "@config/*": ["./packages/base/src/config/*"],
+      "@interfaces": ["./packages/base/src/interfaces"],
+      "@interfaces/*": ["./packages/base/src/interfaces/*"],
+      "@base-util": ["./packages/base/src/util"],
+      "@base-util/*": ["./packages/base/src/util/*"],
+      "@citrineos/dal": ["./packages/dal/index.ts"],
+      "@citrineos/ocpp": ["./packages/ocpp/index.ts"]
+    }
+  }
+}

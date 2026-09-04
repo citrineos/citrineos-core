@@ -1,17 +1,19 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import {
-  type OcppRequest,
   EventGroup,
   MessageOrigin,
   MessageState,
+  OCPP2_0_1,
   OCPP_CallAction,
+  type OCPP2_request_types,
+  type OcppRequest,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, Message, type OCPP2_request_types } from '@citrineos/base';
 import { NotifyDisplayMessagesRequestOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const STATION_ID = 'station-001';
 const REQUEST_ID = 42;
@@ -36,7 +38,13 @@ function aNotifyDisplayMessagesMessage<T extends OcppRequest>(payload: T): Messa
 function aNotifyDisplayMessagesRequest(): OCPP2_request_types.NotifyDisplayMessagesRequest {
   return {
     requestId: REQUEST_ID,
-    messageInfo: [],
+    messageInfo: [
+      {
+        id: 1,
+        priority: OCPP2_0_1.MessagePriorityEnumType.NormalCycle,
+        message: { format: OCPP2_0_1.MessageFormatEnumType.ASCII, content: 'Charging' },
+      },
+    ],
   };
 }
 
@@ -58,13 +66,15 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
     messageInfoRepository = { createOrUpdateByMessageInfoTypeAndStationId: vi.fn() };
     ocppSender = makeMockOcppSender();
 
-    handler = new NotifyDisplayMessagesRequestOcpp2Handler({
-      logger,
-      ocppSender,
-      ocppMessageRepository,
-      deviceModelRepository,
-      messageInfoRepository,
-    });
+    handler = new NotifyDisplayMessagesRequestOcpp2Handler(
+      mockDeps<typeof NotifyDisplayMessagesRequestOcpp2Handler>({
+        logger,
+        ocppSender,
+        ocppMessageRepository,
+        deviceModelRepository,
+        messageInfoRepository,
+      }),
+    );
   });
 
   it('correlates the requestId against the stored payload and acknowledges', async () => {

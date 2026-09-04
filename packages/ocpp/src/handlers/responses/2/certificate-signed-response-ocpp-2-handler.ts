@@ -19,7 +19,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned)
 export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {

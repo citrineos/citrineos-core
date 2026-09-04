@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { MessageOrigin, OCPP2_0_1 } from '@citrineos/types';
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
 export const aClearMonitoringResult = (
   updateFunction?: UpdateFunction<OCPP2_0_1.ClearMonitoringResultType>,

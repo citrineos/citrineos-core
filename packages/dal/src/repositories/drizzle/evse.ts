@@ -4,7 +4,7 @@
 
 import type { IEvseRepository } from '@dal/repositories/repositories.js';
 import type { EvseDto } from '@citrineos/types';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
   chargingStationTable,
   tenantChargingStationTable,
@@ -15,7 +15,6 @@ import {
   tenantConnectorTable,
 } from '../../db/drizzle/schema/connector.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
-import { evseTypeTable, tenantEvseTypeTable } from '../../db/drizzle/schema/evse-type.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 import { toConnectorDto } from './connector.js';
@@ -61,10 +60,6 @@ export class DrizzleEvseRepository
 
   protected toDto(row: EvseEntity): EvseDto {
     return toEvseDto(row);
-  }
-
-  private getEvseTypeTable(tenantId: number): typeof evseTypeTable {
-    return this.useTenantSchema ? tenantEvseTypeTable(tenantId) : evseTypeTable;
   }
 
   private getConnectorTable(tenantId: number): typeof connectorTable {
@@ -177,77 +172,18 @@ export class DrizzleEvseRepository
     });
   }
 
-  async commissionEvseForOcpp16Connector(
+  async autoCommissionEvseForOcpp16Connector(
     tenantId: number,
     ocppConnectionName: string,
-    connectorId: number,
-  ): Promise<{ evseId: number; evseTypeConnectorId: number }> {
-    // Both rows must land together: an EvseType without its Evse leaves the caller
-    // without the FK pair it needs to insert a Connector, while the orphan persists.
+  ): Promise<{ evseId: number }> {
+    // OCPP 1.6 has no native EVSE concept. Conservative default: each connector maps
+    // to its own Evse.
     return await this.withAtomicWrite(async (ctx) => {
-      const evseTypes = this.getEvseTypeTable(tenantId);
-      const table = this.getTable(tenantId);
+      const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined, ctx);
 
-      // OCPP 1.6 has no native EVSE concept. Conservative default: each connector
-      // maps to its own (Evse, EvseType) pair using the 1.6 connectorId as the
-      // OCPP 2.0.1 evse id. connectorId is null because this EvseType denotes the
-      // whole EVSE — the partial unique index `evse_types_tenantId_id` (WHERE
-      // connectorId IS NULL) then permits exactly one such row per EVSE.
-      const evseTypeWhere = and(
-        eq(evseTypes.id, connectorId),
-        isNull(evseTypes.connectorId),
-        this.tenantFilter(evseTypes, tenantId),
-      );
-      let evseTypeRows = await ctx.db
-        .select({ databaseId: evseTypes.databaseId })
-        .from(evseTypes)
-        .where(evseTypeWhere)
-        .limit(1);
+      const created = await this.insert(tenantId, { ocppConnectionName, stationId }, ctx);
 
-      if (!evseTypeRows[0]) {
-        const inserted = await ctx.db
-          .insert(evseTypes)
-          .values({ tenantId, id: connectorId, connectorId: null })
-          .onConflictDoNothing()
-          .returning({ databaseId: evseTypes.databaseId });
-
-        evseTypeRows = inserted.length
-          ? inserted
-          : await ctx.db
-              .select({ databaseId: evseTypes.databaseId })
-              .from(evseTypes)
-              .where(evseTypeWhere)
-              .limit(1);
-      }
-
-      const evseWhere = and(
-        eq(table.ocppConnectionName, ocppConnectionName),
-        eq(table.evseTypeId, connectorId),
-        this.tenantFilter(table, tenantId),
-      );
-      let evseRows = (await ctx.db.select().from(table).where(evseWhere).limit(1)) as EvseEntity[];
-
-      if (!evseRows[0]) {
-        const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined, ctx);
-        const inserted = (await ctx.db
-          .insert(table)
-          .values({ tenantId, ocppConnectionName, evseTypeId: connectorId, stationId })
-          .onConflictDoNothing()
-          .returning()) as EvseEntity[];
-
-        evseRows = inserted.length
-          ? inserted
-          : ((await ctx.db.select().from(table).where(evseWhere).limit(1)) as EvseEntity[]);
-
-        if (inserted.length) {
-          ctx.events.push({ name: 'created', payload: [this.toDto(inserted[0])] });
-        }
-      }
-
-      return {
-        evseId: evseRows[0].id,
-        evseTypeConnectorId: evseTypeRows[0].databaseId,
-      };
+      return { evseId: created.id! };
     });
   }
 }

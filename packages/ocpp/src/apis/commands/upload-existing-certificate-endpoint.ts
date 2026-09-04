@@ -12,7 +12,7 @@ import {
 import { type InstalledCertificateDto, HttpMethod } from '@citrineos/types';
 import type { UploadExistingCertificate } from '@citrineos/dal';
 import { UploadExistingCertificateSchema } from '@citrineos/dal';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import type { FastifyRequest } from 'fastify';
 
 interface UploadExistingCertificateEndpointDependencies extends AbstractEndpointDependencies {
