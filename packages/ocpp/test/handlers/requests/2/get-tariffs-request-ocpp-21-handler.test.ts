@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
@@ -13,9 +12,14 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, ILocationRepository } from '@citrineos/dal';
+import type {
+  IAuthorizationRepository,
+  IChargingStationRepository,
+  IConnectorRepository,
+} from '@citrineos/dal';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock sequelize models
 vi.mock('@dal/models/location/connector.js', () => ({
@@ -50,9 +54,9 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let mockLocationRepository: Partial<ILocationRepository>;
+  let mockLocationRepository: Partial<IChargingStationRepository & IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
-  let mockConnectorFindAll: any;
+  let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
   let mockTransactionFindAll: any;
 
@@ -61,8 +65,6 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     const { Connector } = await import('@dal/models/location/connector.js');
     const { Transaction } = await import('@dal/models/transaction-event/transaction.js');
 
-    // Mock the sequelize.Connector.findAll which is what the handler actually uses
-    mockConnectorFindAll = vi.mocked(Connector.findAll);
     mockTransactionFindAll = vi.mocked(Transaction.findAll);
 
     // Driver tariffs come from the authorization repository, not the model directly.
@@ -71,11 +73,14 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       findAllAuthorizationsWithTariffs: mockAuthorizationFindAll,
     };
 
+    // Default tariffs come from the location repository.
+    mockReadConnectorsWithTariffs = vi.fn();
     mockLocationRepository = {
       readChargingStationByStationId: vi.fn().mockResolvedValue({
         id: 1,
         ocppConnectionName: 'station-001',
       }),
+      readConnectorsWithTariffsByStationId: mockReadConnectorsWithTariffs,
     };
 
     const { logger } = createTestContainer();
@@ -85,7 +90,8 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
-      locationRepository: mockLocationRepository as unknown as ILocationRepository,
+      locationRepository: mockLocationRepository as unknown as IChargingStationRepository &
+        IConnectorRepository,
     });
   });
 
@@ -98,7 +104,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('I09.FR.03 - No tariffs returns NoTariff status', () => {
     it('should return NoTariff status when no tariffs exist', async () => {
-      mockConnectorFindAll.mockResolvedValue([]);
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([]);
       mockTransactionFindAll.mockResolvedValue([]);
 
@@ -109,9 +115,48 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     });
   });
 
+  describe('Default tariffs are read through the location repository', () => {
+    beforeEach(() => {
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
+      mockAuthorizationFindAll.mockResolvedValue([]);
+      mockTransactionFindAll.mockResolvedValue([]);
+    });
+
+    it('should ask for every EVSE when evseId=0 (I09.FR.01)', async () => {
+      // evseId 0 addresses the station as a whole, so it must not be forwarded as a
+      // filter — doing so would look for an EVSE numbered 0 and find nothing.
+      await handleAndGetResponse({ evseId: 0 });
+
+      expect(mockReadConnectorsWithTariffs).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        'station-001',
+        undefined,
+      );
+    });
+
+    it('should ask only for the requested EVSE when evseId>0 (I09.FR.02)', async () => {
+      await handleAndGetResponse({ evseId: 3 });
+
+      expect(mockReadConnectorsWithTariffs).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        'station-001',
+        3,
+      );
+    });
+
+    it('should not read connectors at all when the station is unknown', async () => {
+      mockLocationRepository.readChargingStationByStationId = vi.fn().mockResolvedValue(undefined);
+
+      const response = await handleAndGetResponse({ evseId: 0 });
+
+      expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Rejected);
+      expect(mockReadConnectorsWithTariffs).not.toHaveBeenCalled();
+    });
+  });
+
   describe('I09.FR.01 & I09.FR.04 - evseId=0 returns all default tariffs with evseIds', () => {
     it('should return default tariffs for all EVSEs when evseId=0', async () => {
-      mockConnectorFindAll.mockResolvedValue([
+      mockReadConnectorsWithTariffs.mockResolvedValue([
         {
           id: 1,
           tariffId: 1,
@@ -151,7 +196,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('I09.FR.02 - evseId>0 returns tariffs only for that EVSE', () => {
     it('should return tariffs only for requested EVSE when evseId>0', async () => {
-      mockConnectorFindAll.mockResolvedValue([
+      mockReadConnectorsWithTariffs.mockResolvedValue([
         {
           id: 1,
           tariffId: 1,
@@ -176,7 +221,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('I09.FR.05 - DriverTariff includes idTokens list', () => {
     it('should return driver-specific tariffs with idTokens', async () => {
-      mockConnectorFindAll.mockResolvedValue([]);
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([
         {
           id: 1,
@@ -224,7 +269,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('I09.FR.06 - DriverTariff with active transaction includes evseIds', () => {
     it('should include evseIds for driver tariffs with active transactions', async () => {
-      mockConnectorFindAll.mockResolvedValue([]);
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([
         {
           id: 1,
@@ -272,7 +317,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('I09.FR.07 - Include validFrom when present', () => {
     it('should include validFrom field when tariff has validFrom date', async () => {
-      mockConnectorFindAll.mockResolvedValue([
+      mockReadConnectorsWithTariffs.mockResolvedValue([
         {
           id: 1,
           tariffId: 1,
@@ -294,7 +339,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     });
 
     it('should NOT include validFrom field when tariff has no validFrom date', async () => {
-      mockConnectorFindAll.mockResolvedValue([]);
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([
         {
           id: 1,
@@ -319,7 +364,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   describe('Complete scenario from I09 use case', () => {
     it('should return all tariffs as described in I09 scenario', async () => {
       // Setup: Default tariff on all EVSEs
-      mockConnectorFindAll.mockResolvedValue([
+      mockReadConnectorsWithTariffs.mockResolvedValue([
         {
           id: 1,
           tariffId: 1,
@@ -432,7 +477,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     });
 
     it('should return Rejected status when database query fails', async () => {
-      mockConnectorFindAll.mockRejectedValue(new Error('Database connection failed'));
+      mockReadConnectorsWithTariffs.mockRejectedValue(new Error('Database connection failed'));
 
       const response = await handleAndGetResponse({ evseId: 0 });
 

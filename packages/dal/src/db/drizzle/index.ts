@@ -40,6 +40,15 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/certificate.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  locationTable,
+  tenantLocationTable,
+  LocationEntitySchema,
+  LocationEntityInsertSchema,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
 export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
@@ -124,6 +133,15 @@ export {
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
 } from './schema/server-network-profile.js';
+export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
+export {
+  tariffTable,
+  tenantTariffTable,
+  TariffEntitySchema,
+  TariffEntityInsertSchema,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
   tenantTable,

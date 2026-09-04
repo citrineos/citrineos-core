@@ -1,24 +1,31 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, IAuthorizer } from '@citrineos/base';
-import { AuthorizationStatusEnum, OCPP1_6, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
+import { DEFAULT_TENANT_ID, type IAuthorizer } from '@citrineos/base';
 import {
-  IAuthorizationRepository,
-  ILocationRepository,
-  IOCPPMessageRepository,
-  IReservationRepository,
-  ITransactionEventRepository,
+  type IAuthorizationRepository,
+  type IConnectorRepository,
+  type IEvseRepository,
+  type IOCPPMessageRepository,
+  type IReservationRepository,
+  type ITransactionEventRepository,
 } from '@citrineos/dal';
 import { TransactionService } from '@modules/transactions/transaction-service.js';
 import { anAuthorization } from './providers/authorization-provider.js';
 import { anIdToken } from './providers/id-token-provider.js';
 
 import { faker } from '@faker-js/faker';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { aMessageContext } from './providers/message-context-provider.js';
 import { aTransaction, aTransactionEventRequest } from './providers/transaction-provider.js';
+import {
+  AuthorizationStatusEnum,
+  OCPP1_6,
+  OCPP2_0_1,
+  OCPP2_1,
+  type AuthorizationStatusEnumType,
+} from '@citrineos/types';
 
 describe('TransactionService', () => {
   // idToken of the group Authorization that groupAuthorizationId points at.
@@ -28,7 +35,7 @@ describe('TransactionService', () => {
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
   let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
@@ -47,7 +54,7 @@ describe('TransactionService', () => {
     locationRepository = {
       readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
       readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
-    } as unknown as Mocked<ILocationRepository>;
+    } as unknown as Mocked<IConnectorRepository & IEvseRepository>;
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
 
@@ -329,7 +336,7 @@ describe('TransactionService', () => {
 
     it('should not accept an authorization that has no status', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = undefined as unknown as AuthorizationStatusEnum;
+        auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
@@ -349,7 +356,7 @@ describe('TransactionService', () => {
 
     it('should not consult the authorizers for an authorization that has no status', async () => {
       const authorization = anAuthorization((auth) => {
-        auth.status = undefined as unknown as AuthorizationStatusEnum;
+        auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
       transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
@@ -415,7 +422,7 @@ describe('TransactionService', () => {
   describe('TransactionService.deactivateOtherActiveTransactionsAtEvse', () => {
     let transactionService: TransactionService;
     let transactionEventRepository: Mocked<ITransactionEventRepository>;
-    let locationRepository: Mocked<ILocationRepository>;
+    let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
     let realTimeAuthorizer: Mocked<IAuthorizer>;
 
     const STATION_ID = 'station-001';
@@ -432,7 +439,7 @@ describe('TransactionService', () => {
       locationRepository = {
         readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
         readConnectorByStationIdAndOcpp201EvseType: vi.fn(),
-      } as unknown as Mocked<ILocationRepository>;
+      } as unknown as Mocked<IConnectorRepository & IEvseRepository>;
 
       realTimeAuthorizer = {
         authorize: vi.fn(),

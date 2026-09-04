@@ -7,12 +7,12 @@ import {
   type TariffTimeType,
   type PriceType,
   type MessageContentType,
+  type TariffDto,
   OCPP2_1,
 } from '@citrineos/types';
-import { Tariff } from '../../models/tariff/tariffs.js';
 export class TariffMapper {
   /**
-   * Maps a {@link Tariff} DB model to an OCPP 2.1 {@link OCPP2_1.TariffType}.
+   * Maps a {@link TariffDto} to an OCPP 2.1 {@link OCPP2_1.TariffType}.
    *
    * - `tariffId` falls back to the DB primary key string when not explicitly set.
    * - All complex fields (`energy`, `chargingTime`, etc.) are stored as JSONB and
@@ -20,7 +20,7 @@ export class TariffMapper {
    *
    * @throws {Error} if `currency` is missing (required by spec).
    */
-  static toTariffType(tariff: Tariff): OCPP2_1.TariffType {
+  static toTariffType(tariff: TariffDto): OCPP2_1.TariffType {
     if (!tariff.currency) {
       throw new Error(`Tariff id=${tariff.id} is missing required field: currency`);
     }

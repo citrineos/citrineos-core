@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { Logger } from 'tslog';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPP2_common_types } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPP2_common_types, type SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -20,6 +16,10 @@ import {
   Transaction,
 } from '@citrineos/dal';
 import { validateChargingProfileType } from '@util/index.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { Logger } from 'tslog';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * ChargingNeeds rows are written against the EVSE the transaction is on - Evse.id, taken from
@@ -33,7 +33,7 @@ const TRANSACTION_ID = 'T-NEEDS-1';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -60,7 +60,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

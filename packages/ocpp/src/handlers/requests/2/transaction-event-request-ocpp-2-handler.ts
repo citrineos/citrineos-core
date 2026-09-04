@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { SignedMeterValuesUtil } from '@/services/index.js';
+import { SignedMeterValuesUtil } from '@services/index.js';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,

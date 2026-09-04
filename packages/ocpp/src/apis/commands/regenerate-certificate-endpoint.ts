@@ -14,8 +14,8 @@ import { type CertificateCreate, type InstalledCertificateDto, HttpMethod } from
 import type { RegenerateExistingCertificate } from '@citrineos/dal';
 import { RegenerateInstalledCertificateSchema } from '@citrineos/dal';
 import type { ICertificateRepository, IInstalledCertificateRepository } from '@citrineos/dal';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
-import { generateCertificate } from '@/services/index.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
+import { generateCertificate } from '@services/index.js';
 import type { FastifyRequest } from 'fastify';
 import jsrsasign from 'jsrsasign';
 import moment from 'moment';

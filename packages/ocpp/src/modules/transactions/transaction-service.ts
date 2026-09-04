@@ -19,7 +19,8 @@ import {
 } from '@citrineos/types';
 import type {
   IAuthorizationRepository,
-  ILocationRepository,
+  IConnectorRepository,
+  IEvseRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
@@ -33,7 +34,7 @@ import { Logger } from 'tslog';
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizationRepository: IAuthorizationRepository;
-  private _locationRepository: ILocationRepository;
+  private _locationRepository: IConnectorRepository & IEvseRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -51,7 +52,7 @@ export class TransactionService {
   }: {
     transactionEventRepository: ITransactionEventRepository;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IConnectorRepository & IEvseRepository;
     reservationRepository: IReservationRepository;
     ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
