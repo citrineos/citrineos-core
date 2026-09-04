@@ -100,6 +100,7 @@ export {
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleLocationRepository,
+  DrizzleMessageInfoRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,

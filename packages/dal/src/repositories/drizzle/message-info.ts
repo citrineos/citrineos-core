@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { MessageInfoDto } from '@citrineos/types';
+import type { IMessageInfoRepository } from '@dal/repositories/repositories.js';
+import { OCPP2_0_1, type MessageInfoDto } from '@citrineos/types';
+import { and, eq } from 'drizzle-orm';
 import {
   type MessageInfoEntity,
   messageInfoTable,
@@ -35,10 +37,10 @@ export function toMessageInfoDto(entity: MessageInfoEntity): MessageInfoDto {
   } as MessageInfoDto;
 }
 
-export class DrizzleMessageInfoRepository extends DrizzleRepository<
-  typeof messageInfoTable,
-  MessageInfoDto
-> {
+export class DrizzleMessageInfoRepository
+  extends DrizzleRepository<typeof messageInfoTable, MessageInfoDto>
+  implements IMessageInfoRepository
+{
   protected getTable(tenantId: number): typeof messageInfoTable {
     return this.useTenantSchema ? tenantMessageInfoTable(tenantId) : messageInfoTable;
   }
@@ -47,5 +49,57 @@ export class DrizzleMessageInfoRepository extends DrizzleRepository<
     return toMessageInfoDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  // ─── IMessageInfoRepository methods ──────────────────────────────────────
+
+  async deactivateAllByStationId(tenantId: number, ocppConnectionName: string): Promise<void> {
+    const table = this.getTable(tenantId);
+    const conditions = [eq(table.ocppConnectionName, ocppConnectionName), eq(table.active, true)];
+    if (!this.useTenantSchema) {
+      conditions.push(eq(table.tenantId, tenantId));
+    }
+    await this.db
+      .update(table)
+      .set({ active: false })
+      .where(and(...conditions));
+  }
+
+  async createOrUpdateByMessageInfoTypeAndStationId(
+    tenantId: number,
+    message: OCPP2_0_1.MessageInfoType,
+    ocppConnectionName: string,
+    componentId?: number,
+  ): Promise<MessageInfoDto> {
+    const table = this.getTable(tenantId);
+
+    // Upsert key mirrors the unique index (ocppConnectionName, id, tenantId). The Sequelize
+    // impl omits tenantId in its lookup; including it here is safer and matches the constraint.
+    const conditions = [eq(table.ocppConnectionName, ocppConnectionName), eq(table.id, message.id)];
+    if (!this.useTenantSchema) {
+      conditions.push(eq(table.tenantId, tenantId));
+    }
+    const existing = await this.db
+      .select({ databaseId: table.databaseId })
+      .from(table)
+      .where(and(...conditions))
+      .limit(1);
+
+    const values = {
+      ocppConnectionName,
+      displayComponentId: componentId ?? null,
+      id: message.id,
+      priority: message.priority,
+      state: message.state ?? null,
+      // timestamptz mode:'date' expects Date; OCPP delivers ISO strings.
+      startDateTime: message.startDateTime ? new Date(message.startDateTime) : null,
+      endDateTime: message.endDateTime ? new Date(message.endDateTime) : null,
+      transactionId: message.transactionId ?? null,
+      message: message.message,
+      active: true,
+    };
+
+    if (existing[0]) {
+      return (await this.updateById(tenantId, existing[0].databaseId, values))!;
+    }
+    return this.insert(tenantId, values);
+  }
 }

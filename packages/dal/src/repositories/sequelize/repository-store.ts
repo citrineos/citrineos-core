@@ -36,6 +36,7 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleMessageInfoRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -140,11 +141,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.messageInfoRepository = new SequelizeMessageInfoRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
       config,
       logger,
@@ -175,6 +171,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.messageInfoRepository = new DrizzleMessageInfoRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
@@ -206,6 +203,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.messageInfoRepository = new SequelizeMessageInfoRepository({
         config,
         logger,
         sequelizeInstance,

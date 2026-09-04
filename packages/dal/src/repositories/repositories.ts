@@ -27,6 +27,7 @@ import type {
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  MessageInfoDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -69,7 +70,6 @@ import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
-import type { MessageInfo } from '../models/message-info/message-info.js';
 import type { Reservation } from '../models/reservation.js';
 import type {
   MeterValue,
@@ -462,14 +462,14 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
+export interface IMessageInfoRepository {
   deactivateAllByStationId(tenantId: number, ocppConnectionName: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
-  ): Promise<MessageInfo>;
+  ): Promise<MessageInfoDto>;
 }
 
 export interface ITariffRepository {
