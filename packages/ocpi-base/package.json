@@ -64,7 +64,7 @@
     "openapi3-ts": "3.2.0",
     "path-to-regexp": "6.3.0",
     "pg": "catalog:",
-    "qs": "6.15.3",
+    "qs": "6.16.0",
     "reflect-metadata": "catalog:",
     "routing-controllers": "0.10.4",
     "tslog": "catalog:",
