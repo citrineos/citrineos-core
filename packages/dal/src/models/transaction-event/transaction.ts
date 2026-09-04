@@ -45,11 +45,6 @@ import { StartTransaction } from './start-transaction.js';
 import { StopTransaction } from './stop-transaction.js';
 import { TransactionEvent } from './transaction-event.js';
 
-/**
- * Range partitioned on "createdAt", one partition per month, with a rolling retention
- * window. The primary key is (id, "createdAt"), so children reference this table through
- * the composite key (transactionDatabaseId, transactionCreatedAt).
- */
 @Table
 export class Transaction extends Model implements TransactionDto {
   static readonly MODEL_NAME: string = Namespace.TransactionType;
@@ -63,7 +58,6 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Location, 'locationId')
   location?: LocationDto;
 
-  // The "TransactionKeys" registry enforces the uniqueness globally.
   @ForeignKey(() => ChargingStation)
   @Column(DataType.INTEGER)
   declare stationId: number;
@@ -104,7 +98,6 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tariff, 'tariffId')
   tariff?: TariffDto;
 
-  // Uniqueness with stationId is enforced by "TransactionKeys";
   @Column(DataType.STRING)
   declare transactionId: string;
 
@@ -187,12 +180,6 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  /**
-   * Resolves the "transactionCreatedAt" partition key for a child row. The database cannot
-   * fill it in: tuple routing to a partition happens before any BEFORE INSERT trigger fires,
-   * so a null key fails with "no partition of relation found for row". Falls back to now()
-   * when there is no transaction, matching the migration's backfill for unlinked rows.
-   */
   static async resolveCreatedAt(transactionDatabaseId?: number | null): Promise<Date> {
     if (transactionDatabaseId != null) {
       const transaction = await Transaction.findOne({

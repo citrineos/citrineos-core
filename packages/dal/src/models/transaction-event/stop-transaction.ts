@@ -31,15 +31,12 @@ export class StopTransaction extends Model implements StopTransactionDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  // No @ForeignKey annotation: the database constraint is composite
-  // (transactionDatabaseId, transactionCreatedAt) -> Transactions(id, "createdAt"),
   @Column({
     type: DataType.INTEGER,
     unique: 'transactionDatabaseId_transactionCreatedAt',
   })
   declare transactionDatabaseId: number;
 
-  // Partition key
   @Column({
     type: DataType.DATE,
     unique: 'transactionDatabaseId_transactionCreatedAt',

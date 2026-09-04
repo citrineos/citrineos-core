@@ -31,7 +31,6 @@ function chargingNeedsColumns() {
     maxScheduleTuples: integer('maxScheduleTuples'),
     evseId: integer('evseId'),
     transactionDatabaseId: integer('transactionDatabaseId'),
-    // Partition key: mirrors the owning transaction's "createdAt"
     transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
       .notNull()
       .$defaultFn(() => new Date()),

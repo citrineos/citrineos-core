@@ -59,9 +59,6 @@ function transactionColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const transactionTable = pgTable(TableName.Transactions, transactionColumns(), (t) => [
-  // Range partitioned on "createdAt", so the key must contain it and the old
-  // (stationId, transactionId) unique index cannot exist. The unpartitioned
-  // "TransactionKeys" registry enforces that pair globally instead.
   primaryKey({ columns: [t.id, t.createdAt] }),
 ]);
 

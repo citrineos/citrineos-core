@@ -27,8 +27,6 @@ function startTransactionColumns() {
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
     reservationId: integer('reservationId'),
     transactionDatabaseId: integer('transactionDatabaseId').notNull(),
-    // Partition key: mirrors the owning transaction's "createdAt", or now() when unlinked.
-    // Part of the primary key, so it must be supplied on insert.
     transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
       .notNull()
       .$defaultFn(() => new Date()),

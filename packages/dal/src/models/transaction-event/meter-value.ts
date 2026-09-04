@@ -33,8 +33,6 @@ import { TransactionEvent } from './transaction-event.js';
 export class MeterValue extends Model implements MeterValueDto {
   static readonly MODEL_NAME: string = Namespace.MeterValue;
 
-  // No @ForeignKey annotation: the database constraint is composite,
-  // pairing this column with "transactionCreatedAt".
   // @BelongsTo associations below still work for reads.
   @Column(DataType.INTEGER)
   declare transactionEventId?: number | null;
@@ -42,18 +40,15 @@ export class MeterValue extends Model implements MeterValueDto {
   @BelongsTo(() => TransactionEvent, 'transactionEventId')
   declare transactionEvent?: TransactionEventDto;
 
-  // Use composite FK, as above.
   @Column(DataType.INTEGER)
   declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;
 
-  // Use composite FK, as above.
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
 
-  // Partition key, shared by all three composite foreign keys above.
   @Column(DataType.DATE)
   declare transactionCreatedAt?: Date;
 

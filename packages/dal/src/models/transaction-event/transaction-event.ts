@@ -68,11 +68,8 @@ export class TransactionEvent extends Model implements TransactionEventDto {
   @Column(DataType.INTEGER)
   declare reservationId?: number | null;
 
-  // No @ForeignKey: the database constraint is composite
-  // (transactionDatabaseId, transactionCreatedAt) -> Transactions(id, "createdAt"),
   declare transactionDatabaseId?: number;
 
-  // Partition key
   @Column(DataType.DATE)
   declare transactionCreatedAt?: Date;
 
