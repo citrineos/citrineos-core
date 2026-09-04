@@ -113,7 +113,7 @@ describe('RealTimeAuthorizer', () => {
 
     const [tenantId, value, key] = authorizationRepository.updateByKey.mock.calls[0];
     expect(tenantId).toBe(context.tenantId);
-    expect(key).toBe(authorization.id);
+    expect(key).toBe(String(authorization.id));
     expect(value).toBe(authorization);
     expect((value as Authorization).realTimeAuthLastAttempt).toEqual({
       timestamp: expect.any(String),
