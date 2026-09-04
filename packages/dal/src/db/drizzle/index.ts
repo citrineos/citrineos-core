@@ -41,6 +41,27 @@ export {
   type CertificateEntityInsert,
 } from './schema/certificate.js';
 export {
+  DrizzleChargingStationRepository,
+  toChargingStationDto,
+} from '../../repositories/drizzle/charging-station.js';
+export {
+  chargingStationTable,
+  tenantChargingStationTable,
+  ChargingStationEntitySchema,
+  ChargingStationEntityInsertSchema,
+  type ChargingStationEntity,
+  type ChargingStationEntityInsert,
+} from './schema/charging-station.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  locationTable,
+  tenantLocationTable,
+  LocationEntitySchema,
+  LocationEntityInsertSchema,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
+export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
 } from '../../repositories/drizzle/delete-certificate-attempt.js';
@@ -112,6 +133,15 @@ export {
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
 } from './schema/server-network-profile.js';
+export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
+export {
+  tariffTable,
+  tenantTariffTable,
+  TariffEntitySchema,
+  TariffEntityInsertSchema,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
   tenantTable,

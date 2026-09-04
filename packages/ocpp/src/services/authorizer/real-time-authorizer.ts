@@ -11,7 +11,7 @@ import {
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import type { Authorization } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -36,21 +36,21 @@ export interface RealTimeAuthorizationResponse {
 }
 
 export class RealTimeAuthorizer implements IAuthorizer {
-  private _locationRepository: ILocationRepository;
+  private _chargingStationRepository: IChargingStationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   constructor({
-    locationRepository,
+    chargingStationRepository,
     config,
     logger,
   }: {
-    locationRepository: ILocationRepository;
+    chargingStationRepository: IChargingStationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._config = config;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     if (config.oidcClient) {
@@ -84,10 +84,11 @@ export class RealTimeAuthorizer implements IAuthorizer {
     let connectorId = undefined;
     let result: AuthorizationStatusEnumType = AuthorizationStatusEnum.Invalid;
     try {
-      const chargingStation = await this._locationRepository.readChargingStationByStationId(
-        context.tenantId,
-        context.ocppConnectionName,
-      );
+      const chargingStation =
+        await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+          context.tenantId,
+          context.ocppConnectionName,
+        );
 
       // Determine evseId and connectorId
       // Priority: provided evse and connector > provided evse with single connector > station with single evse and single connector

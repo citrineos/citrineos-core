@@ -74,7 +74,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private _router: IMessageRouter;
   private _connectionManager?: IConnectionManager;
   private _fileStorage: IFileStorage;
-  private _doesChargingStationExistByStationId?: (
+  private _doesChargingStationExistByOcppConnectionName?: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<boolean>;
@@ -89,7 +89,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router,
     fileStorage,
     logger,
-    doesChargingStationExistByStationId,
+    doesChargingStationExistByOcppConnectionName,
     getMaxChargingStationsForTenant,
     getTenantIdByWebsocketServerPath,
     getAllTenantWebsocketServerPaths,
@@ -101,7 +101,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     router: IMessageRouter;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
-    doesChargingStationExistByStationId: (
+    doesChargingStationExistByOcppConnectionName: (
       tenantId: number,
       ocppConnectionName: string,
     ) => Promise<boolean>;
@@ -115,7 +115,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._getAllTenantWebsocketServerPaths = getAllTenantWebsocketServerPaths;
     this._cache = cache;
     this._config = config;
-    this._doesChargingStationExistByStationId = doesChargingStationExistByStationId;
+    this._doesChargingStationExistByOcppConnectionName = doesChargingStationExistByOcppConnectionName;
     this._connectionManager = connectionManager;
     this._fileStorage = fileStorage;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
@@ -517,8 +517,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const connLogger = this._connLogger(identifier);
 
       const checker =
-        this._doesChargingStationExistByStationId ??
-        this._router.doesChargingStationExistByStationId?.bind(this._router);
+        this._doesChargingStationExistByOcppConnectionName ??
+        this._router.doesChargingStationExistByOcppConnectionName?.bind(this._router);
 
       if (!checker) {
         throw new Error('No method available to check if charging station exists');

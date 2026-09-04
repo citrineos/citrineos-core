@@ -852,7 +852,7 @@
     "evseId": {
       "description": "The EVSE to which the charging limit is set. If absent or when zero, it applies to the entire Charging Station.\r\n",
       "type": "integer",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 2147483647
     },
     "chargingLimit": {

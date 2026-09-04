@@ -26,12 +26,14 @@ import {
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
+  DrizzleChargingStationRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
   SequelizeAsyncJobStatusRepository,
@@ -90,7 +92,7 @@ import {
   DeviceModelService,
   NetworkProfileService,
   RealTimeAuthorizer,
-} from '@/services/index.js';
+} from '@services/index.js';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -292,6 +294,10 @@ function registerRepositories(container: AwilixContainer): void {
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
     componentRepository: asClass(SequelizeComponentRepository).singleton(),
+    // use asFunction to return an already existing instance
+    chargingStationRepository: asFunction(
+      ({ locationRepository }) => locationRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -305,6 +311,7 @@ function registerRepositories(container: AwilixContainer): void {
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
+      chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
@@ -315,6 +322,7 @@ function registerRepositories(container: AwilixContainer): void {
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
+      tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
     });
@@ -360,10 +368,13 @@ function registerNetwork(container: AwilixContainer): void {
   container.register({
     networkHook: asValue(async (_identifier: string, _message: string) => {}),
 
-    doesChargingStationExistByStationId: asFunction(
-      ({ locationRepository }) =>
+    doesChargingStationExistByOcppConnectionName: asFunction(
+      ({ chargingStationRepository }) =>
         (tenantId: number, ocppConnectionName: string): Promise<boolean> =>
-          locationRepository.doesChargingStationExistByStationId(tenantId, ocppConnectionName),
+          chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          ),
     ).singleton(),
     getMaxChargingStationsForTenant: asFunction(
       ({ tenantRepository }) =>

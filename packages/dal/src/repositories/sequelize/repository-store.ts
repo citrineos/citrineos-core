@@ -14,11 +14,12 @@ import type {
   IChargingProfileRepository,
   IChargingStationSequenceRepository,
   IDeleteCertificateAttemptRepository,
+  IChargingStationRepository,
   IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocalAuthListRepository,
-  ILocationRepository,
+  ILocationDomainRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
@@ -33,12 +34,14 @@ import type {
 import {
   DrizzleAuthorizationRepository,
   DrizzleCertificateRepository,
+  DrizzleChargingStationRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
 } from '../../db/drizzle/index.js';
@@ -82,7 +85,8 @@ export class RepositoryStore {
   componentRepository: CrudRepository<Component>;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
-  locationRepository: ILocationRepository;
+  chargingStationRepository: IChargingStationRepository;
+  locationRepository: ILocationDomainRepository;
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   reservationRepository: IReservationRepository;
@@ -139,6 +143,9 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
+    // Defaults to the Location aggregate; the Drizzle branch below swaps in a
+    // station-only implementation, matching the container registration.
+    this.chargingStationRepository = this.locationRepository;
     this.messageInfoRepository = new SequelizeMessageInfoRepository({
       config,
       logger,
@@ -162,6 +169,7 @@ export class RepositoryStore {
         variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
       });
       this.certificateRepository = new DrizzleCertificateRepository({ config, logger });
+      this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
         logger,
@@ -181,6 +189,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.tariffRepository = new DrizzleTariffRepository({ config, logger });
     } else {
       this.authorizationRepository = new SequelizeAuthorizationRepository({
         config,
@@ -224,9 +233,9 @@ export class RepositoryStore {
         logger,
         sequelizeInstance,
       });
+      this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
     }
 
-    this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
       config,
       logger,

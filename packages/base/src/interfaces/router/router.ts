@@ -33,7 +33,7 @@ export interface IMessageRouter extends IModule {
    * @param ocppConnectionName - The connection name of the charging station
    * @returns true if the station exists for this tenant, false otherwise
    */
-  doesChargingStationExistByStationId?(
+  doesChargingStationExistByOcppConnectionName?(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean>;

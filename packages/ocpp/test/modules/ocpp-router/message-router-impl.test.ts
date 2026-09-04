@@ -13,7 +13,7 @@ import {
   OcppError,
   RequestBuilder,
 } from '@citrineos/base';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   type OcppResponse,
@@ -101,12 +101,12 @@ function buildMockDispatcher(): Mocked<WebhookDispatcher> {
   } as unknown as Mocked<WebhookDispatcher>;
 }
 
-function buildMockLocationRepository(): Mocked<ILocationRepository> {
+function buildMockLocationRepository(): Mocked<IChargingStationRepository> {
   return {
     setChargingStationIsOnlineAndOCPPVersion: vi.fn().mockResolvedValue(undefined),
-    readChargingStationByStationId: vi.fn().mockResolvedValue(undefined),
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(undefined),
     updateChargingStationTimestamp: vi.fn().mockResolvedValue(undefined),
-  } as unknown as Mocked<ILocationRepository>;
+  } as unknown as Mocked<IChargingStationRepository>;
 }
 
 // ─── Test Suite ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ describe('MessageRouterImpl', () => {
   let handler: Mocked<IMessageHandler>;
   let dispatcher: Mocked<WebhookDispatcher>;
   let networkHook: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let chargingStationRepository: Mocked<IChargingStationRepository>;
   let router: MessageRouterImpl;
 
   beforeEach(() => {
@@ -129,7 +129,7 @@ describe('MessageRouterImpl', () => {
     handler = buildMockHandler();
     dispatcher = buildMockDispatcher();
     networkHook = vi.fn().mockResolvedValue(undefined);
-    locationRepository = buildMockLocationRepository();
+    chargingStationRepository = buildMockLocationRepository();
 
     router = getTestInstance(container, MessageRouterImpl, {
       config,
@@ -139,7 +139,7 @@ describe('MessageRouterImpl', () => {
       webhookDispatcher: dispatcher,
       networkHook,
       ocppValidator: undefined,
-      locationRepository,
+      chargingStationRepository,
     });
   });
 
@@ -150,9 +150,9 @@ describe('MessageRouterImpl', () => {
   // ─── Constructor ───────────────────────────────────────────────────────────
 
   describe('constructor', () => {
-    it('should use provided locationRepository', () => {
+    it('should use provided chargingStationRepository', () => {
       // Verify it doesn't try to create a default one by checking our mock is used
-      expect(router['_locationRepository']).toBe(locationRepository);
+      expect(router['_chargingStationRepository']).toBe(chargingStationRepository);
     });
   });
 
@@ -180,13 +180,9 @@ describe('MessageRouterImpl', () => {
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
       });
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        true,
-        PROTOCOL,
-        undefined,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, true, PROTOCOL, undefined);
 
       expect(result).toBe(true);
     });
@@ -222,54 +218,45 @@ describe('MessageRouterImpl', () => {
 
   describe('deregisterConnection', () => {
     it('should deregister dispatcher, set charger offline, and unsubscribe handler', async () => {
-      locationRepository.readChargingStationByStationId.mockResolvedValue({
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockResolvedValue({
         protocol: PROTOCOL,
       } as any);
 
       const result = await router.deregisterConnection(TENANT_ID, STATION_ID);
 
       expect(dispatcher.deregister).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
-      expect(locationRepository.readChargingStationByStationId).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-      );
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        PROTOCOL,
-        null,
-      );
+      expect(
+        chargingStationRepository.readChargingStationByOcppConnectionName,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, PROTOCOL, null);
       expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
       expect(result).toBe(true);
     });
 
     it('should set protocol to null when charging station is not found', async () => {
-      locationRepository.readChargingStationByStationId.mockResolvedValue(undefined);
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
+        undefined,
+      );
 
       await router.deregisterConnection(TENANT_ID, STATION_ID);
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        null,
-        null,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, null, null);
     });
 
     it('should set protocol to null when readChargingStation throws', async () => {
-      locationRepository.readChargingStationByStationId.mockRejectedValue(new Error('db error'));
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockRejectedValue(
+        new Error('db error'),
+      );
 
       await router.deregisterConnection(TENANT_ID, STATION_ID);
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        null,
-        null,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, null, null);
     });
 
     it('should not throw when dispatcher.deregister fails', async () => {
@@ -307,7 +294,7 @@ describe('MessageRouterImpl', () => {
 
         expect(result).toBe(true);
         expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
-        expect(locationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
+        expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
           TENANT_ID,
           STATION_ID,
           timestamp.toISOString(),
@@ -451,7 +438,7 @@ describe('MessageRouterImpl', () => {
 
       await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      expect(locationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
+      expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
         TENANT_ID,
         STATION_ID,
         timestamp.toISOString(),
@@ -459,7 +446,9 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should not throw when updateChargingStationTimestamp fails', async () => {
-      locationRepository.updateChargingStationTimestamp.mockRejectedValue(new Error('db error'));
+      chargingStationRepository.updateChargingStationTimestamp.mockRejectedValue(
+        new Error('db error'),
+      );
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
       cache.exists.mockResolvedValue(false);
 
@@ -498,6 +487,36 @@ describe('MessageRouterImpl', () => {
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[0]).toBe(MessageTypeId.CallError);
       expect(sentMessage[2]).toBe(ErrorCode.SecurityError);
+    });
+
+    /**
+     * OCPP-J 4.3: "NotImplemented - Requested Action is not known by receiver." InternalError is
+     * "an internal error occurred and the receiver was not able to process the requested Action",
+     * which is what a station was told when it merely spoke a newer dialect.
+     */
+    it.each([
+      ['an action no version defines', 'NotAnAction', OCPPVersion.OCPP2_0_1],
+      ['a 2.1 action on a 2.0.1 connection', 'NotifyPriorityCharging', OCPPVersion.OCPP2_0_1],
+      ['a 2.x action on a 1.6 connection', 'TransactionEvent', OCPPVersion.OCPP1_6],
+    ])('answers %s with NotImplemented', async (_label, action, protocol) => {
+      const callMessage = JSON.stringify([MessageTypeId.Call, CORRELATION_ID, action, {}]);
+
+      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, protocol);
+
+      expect(result).toBe(false);
+      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
+      expect(sentMessage[0]).toBe(MessageTypeId.CallError);
+      expect(sentMessage[1]).toBe(CORRELATION_ID);
+      expect(sentMessage[2]).toBe(ErrorCode.NotImplemented);
+      expect(sender.send).not.toHaveBeenCalled();
+    });
+
+    it('still records a Call whose action it does not know', async () => {
+      const callMessage = JSON.stringify([MessageTypeId.Call, CORRELATION_ID, 'NotAnAction', {}]);
+
+      await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+
+      expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
     });
 
     it('should send CallError when validation fails', async () => {
@@ -979,7 +998,7 @@ describe('MessageRouterImpl', () => {
         TENANT_ID,
         action,
         payload,
-        EventGroup.General,
+        EventGroup.Reporting,
         MessageOrigin.ChargingStationManagementSystem,
         PROTOCOL,
         new Date(Date.now() - ageMs),
@@ -995,7 +1014,7 @@ describe('MessageRouterImpl', () => {
         webhookDispatcher: dispatcher,
         networkHook,
         ocppValidator: undefined,
-        locationRepository,
+        chargingStationRepository,
       });
     }
 

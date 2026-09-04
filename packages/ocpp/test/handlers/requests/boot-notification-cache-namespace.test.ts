@@ -19,7 +19,6 @@ import {
   OCPP2_0_1,
   OCPP_CallAction,
   OCPPVersion,
-  RegistrationStatusEnum,
 } from '@citrineos/types';
 import {
   BootNotificationRequestOcpp16Handler,
@@ -73,7 +72,7 @@ function makeCache() {
 
 function makeLocationRepository() {
   return {
-    doesChargingStationExistByStationId: vi.fn().mockResolvedValue(true),
+    doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
     createOrUpdateChargingStation: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -99,7 +98,7 @@ describe('BootNotification cache namespacing', () => {
         bootNotificationService: bootNotificationService as any,
         bootRepository: { updateByKey: vi.fn().mockResolvedValue({}) } as any,
         changeConfigurationRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-        locationRepository: makeLocationRepository() as any,
+        chargingStationRepository: makeLocationRepository() as any,
       });
 
       return { handler, cache, bootNotificationService };
@@ -165,7 +164,7 @@ describe('BootNotification cache namespacing', () => {
         bootNotificationService: bootNotificationService as any,
         configurationDeviceModelService: { updateDeviceModel: vi.fn() } as any,
         deviceModelRepository: {} as any,
-        locationRepository: makeLocationRepository() as any,
+        chargingStationRepository: makeLocationRepository() as any,
       });
 
       return { handler, cache, bootNotificationService };
@@ -177,7 +176,7 @@ describe('BootNotification cache namespacing', () => {
     } as OCPP2_0_1.BootNotificationRequest;
 
     it('reads the cached boot status under the tenant-scoped identifier', async () => {
-      const { handler, cache } = makeHandler(RegistrationStatusEnum.Accepted);
+      const { handler, cache } = makeHandler(OCPP2_0_1.RegistrationStatusEnumType.Accepted);
 
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP2_0_1));
 
@@ -185,26 +184,28 @@ describe('BootNotification cache namespacing', () => {
     });
 
     it('writes the cached boot status under the tenant-scoped identifier', async () => {
-      const { handler, cache } = makeHandler(RegistrationStatusEnum.Rejected);
+      const { handler, cache } = makeHandler(OCPP2_0_1.RegistrationStatusEnumType.Rejected);
 
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP2_0_1));
 
       expect(cache.set).toHaveBeenCalledWith(
         CacheNamespace.BootStatus,
-        RegistrationStatusEnum.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
         IDENTIFIER,
       );
     });
 
     it('blacklists actions under the tenant-scoped identifier', async () => {
-      const { handler, bootNotificationService } = makeHandler(RegistrationStatusEnum.Rejected);
+      const { handler, bootNotificationService } = makeHandler(
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
+      );
 
       await handler.handle(makeMessage(REQUEST, OCPPVersion.OCPP2_0_1));
 
       expect(bootNotificationService.cacheChargerActionsPermissions).toHaveBeenCalledWith(
         IDENTIFIER,
         null,
-        RegistrationStatusEnum.Rejected,
+        OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       );
     });
   });

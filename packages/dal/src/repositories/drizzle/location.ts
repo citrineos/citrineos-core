@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { ILocationRepository } from '@dal/repositories/repositories.js';
 import type { LocationDto } from '@citrineos/types';
+import { and, eq } from 'drizzle-orm';
+import {
+  type ChargingStationEntity,
+  chargingStationTable,
+  tenantChargingStationTable,
+} from '../../db/drizzle/schema/charging-station.js';
 import {
   type LocationEntity,
   locationTable,
@@ -10,6 +17,7 @@ import {
 } from '../../db/drizzle/schema/location.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
+import { toChargingStationDto } from './charging-station.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external LocationDto contract.
@@ -40,10 +48,10 @@ export function toLocationDto(entity: LocationEntity): LocationDto {
   return dto;
 }
 
-export class DrizzleLocationRepository extends DrizzleRepository<
-  typeof locationTable,
-  LocationDto
-> {
+export class DrizzleLocationRepository
+  extends DrizzleRepository<typeof locationTable, LocationDto>
+  implements ILocationRepository
+{
   protected getTable(tenantId: number): typeof locationTable {
     return this.useTenantSchema ? tenantLocationTable(tenantId) : locationTable;
   }
@@ -52,5 +60,31 @@ export class DrizzleLocationRepository extends DrizzleRepository<
     return toLocationDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  private getChargingStationTable(tenantId: number): typeof chargingStationTable {
+    return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
+  }
+
+  async readLocationById(tenantId: number, id: number): Promise<LocationDto | undefined> {
+    const table = this.getTable(tenantId);
+
+    const rows = (await this.db
+      .select()
+      .from(table)
+      .where(and(eq(table.id, id), this.tenantFilter(table, tenantId)))
+      .limit(1)) as LocationEntity[];
+
+    if (!rows[0]) {
+      return undefined;
+    }
+
+    const stationTable = this.getChargingStationTable(tenantId);
+    const stationRows = (await this.db
+      .select()
+      .from(stationTable)
+      .where(
+        and(eq(stationTable.locationId, id), this.tenantFilter(stationTable, tenantId)),
+      )) as ChargingStationEntity[];
+
+    return { ...this.toDto(rows[0]), chargingPool: stationRows.map(toChargingStationDto) };
+  }
 }
