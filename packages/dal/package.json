@@ -1,0 +1,49 @@
+{
+  "name": "@citrineos/dal",
+  "version": "2.0.0-beta4",
+  "description": "The data access layer: Sequelize and Drizzle models, repositories, and mappers.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.src.json && tsc-alias -p tsconfig.src.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "ocpp",
+    "persistence"
+  ],
+  "author": "S44",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/types": "workspace:*",
+    "drizzle-orm": "^0.45.0",
+    "drizzle-zod": "^0.8.3",
+    "pg": "catalog:",
+    "pg-hstore": "2.3.4",
+    "sequelize": "catalog:",
+    "sequelize-typescript": "catalog:",
+    "tslog": "catalog:",
+    "uuid": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@faker-js/faker": "catalog:",
+    "awilix": "catalog:",
+    "drizzle-kit": "^0.31.0",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "testcontainers": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
+  }
+}

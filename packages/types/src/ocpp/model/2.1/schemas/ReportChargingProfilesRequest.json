@@ -975,7 +975,7 @@
     "evseId": {
       "description": "The evse to which the charging profile applies. If evseId = 0, the message contains an overall limit for the Charging Station.\r\n",
       "type": "integer",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 2147483647
     },
     "customData": {

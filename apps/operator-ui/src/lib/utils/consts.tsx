@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { CrudFilter } from '@refinedev/core';
-import { ResourceType } from '@lib/utils/access.types';
+import { ResourceType } from '@lib/utils/access-types';
 
 export const I18N_COOKIE_NAME = 'NEXT_LOCALE';
 export const DEFAULT_LOCALE = 'en';

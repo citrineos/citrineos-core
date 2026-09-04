@@ -4,14 +4,14 @@
 'use client';
 
 import { authProvider } from '@lib/providers/auth-provider';
-import { ResourceType } from '@lib/utils/access.types';
+import { ResourceType } from '@lib/utils/access-types';
 import config from '@lib/utils/config';
-import { HasuraHeader } from '@lib/utils/hasura.types';
+import { HasuraHeader } from '@lib/utils/hasura-types';
 import dataProviderHasura, {
   GraphQLClient,
   type HasuraDataProviderOptions,
 } from '@refinedev/hasura';
-import { getHasuraAdminSecretAction } from '@lib/server/actions/getHasuraAdminSecretAction';
+import { getHasuraAdminSecretAction } from '@lib/server/actions/get-hasura-admin-secret-action';
 
 const requestMiddleware = async (request: any) => {
   const requestHeaders = {

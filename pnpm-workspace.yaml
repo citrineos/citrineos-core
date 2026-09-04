@@ -1,19 +1,89 @@
 packages:
-  - 'packages/types'
-  - 'packages/base'
-  - 'packages/core'
-  - 'packages/ocpi-base'
-  - 'apps/ocpp-server'
-  - 'apps/ocpi-server'
-  - 'apps/operator-ui'
-  - 'apps/mock-msp'
+  - "packages/types"
+  - "packages/base"
+  - "packages/dal"
+  - "packages/ocpp"
+  - "packages/ocpi-base"
+  - "apps/ocpp-server"
+  - "apps/ocpi-server"
+  - "apps/operator-ui"
+  - "apps/mock-msp"
 
+# Single source of truth for any dependency used by more than one workspace package.
+# Reference it as `"<name>": "catalog:"` in the package.json; bump it here once.
 catalog:
-  fastify: 5.8.5
+  # -- Toolchain --
+  typescript: 6.0.3
+  ts-node: 10.9.2
+  tsx: 4.23.13
+  nodemon: 3.1.14
+  cross-env: 7.0.3
   eslint: 9.16.0
-  '@eslint/js': 9.16.0
+  "@eslint/js": 9.16.0
   typescript-eslint: 8.17.0
   eslint-config-prettier: 9.1.2
   eslint-plugin-prettier: 5.2.3
   prettier: 3.6.2
+
+  # -- Testing --
+  vitest: 3.2.7
+  "@vitest/coverage-v8": 3.2.7
+  testcontainers: 11.14.0
+  "@faker-js/faker": 10.5.0
+
+  # -- HTTP / Fastify --
+  fastify: 5.12.1
+  "@fastify/auth": 5.1.0
+  "@fastify/swagger": 9.8.1
+  "@fastify/swagger-ui": 5.2.6
+  "@fastify/type-provider-json-schema-to-ts": 4.0.1
+
+  # -- Schema & validation --
   zod: 4.1.12
+  ajv: 8.18.0
+  ajv-formats: 3.0.1
+  class-transformer: 0.5.1
+  class-validator: 0.14.2
+  json-schema-to-typescript: 12.0.0
+  json-schema-to-zod: 1.2.0
+  openapi-types: 12.1.3
+
+  # -- Persistence & messaging --
+  sequelize: 6.37.8
+  sequelize-typescript: 2.1.6
+  pg: 8.11.3
+  redis: 4.7.1
+  amqplib: 0.10.9
+  sqlite3: 5.1.7
+
+  # -- Crypto & auth --
+  acme-client: 5.4.0
+  asn1js: 3.0.10
+  jsonwebtoken: 9.0.3
+  jsrsasign: 11.1.5
+  jwks-rsa: 4.1.0
+  "@peculiar/webcrypto": 1.7.1
+  pkijs: 3.4.0
+  pvutils: 1.2.0
+
+  # -- Runtime & infrastructure --
+  awilix: 13.0.3
+  reflect-metadata: 0.2.2
+  tslog: 4.11.0
+  uuid: 11.1.1
+  graphql-request: 5.2.0
+  ws: 8.21.3
+  bufferutil: 4.1.0
+  utf-8-validate: 6.0.6
+  "@opentelemetry/api": 1.9.1
+  "@aws-sdk/client-s3": 3.1101.0
+  "@google-cloud/storage": 7.22.0
+
+  # -- Types --
+  "@types/amqplib": 0.10.8
+  "@types/jsonwebtoken": 9.0.10
+  "@types/node": 25.9.5
+  "@types/pg": 8.23.1
+  "@types/uuid": 9.0.8
+  "@types/validator": 13.15.10
+  "@types/ws": 8.18.1

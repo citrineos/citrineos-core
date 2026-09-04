@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationsListPage } from '../../pages/charging-stations/list.page';
-import { ChargingStationFormPage } from '../../pages/charging-stations/form.page';
+import { ChargingStationsListPage } from '../../pages/charging-stations/list-page';
+import { ChargingStationFormPage } from '../../pages/charging-stations/form-page';
 import { deleteStation } from '../../fixtures/seeded-data';
 import { shortId } from '../../utils/random';
 

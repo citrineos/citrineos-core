@@ -21,17 +21,40 @@ services:
     image: ghcr.io/citrineos/citrineos-server:latest
     pull_policy: always
     environment:
-      APP_NAME: "all"
-      APP_ENV: "docker"
+      # Which process this container runs (EventGroup): 'all' = router + every module + APIs.
+      APP_NAME: 'all'
+      # Read by entrypoint.sh, not by the config loader.
+      DB_STRATEGY: 'migrate'
+      # Only consumed by the AWS SDK if fileAccess is switched to s3 (points it at minio).
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
-      DB_STRATEGY: "migrate"
-      BOOTSTRAP_CITRINEOS_DATABASE_HOST: "ocpp-db"
-      BOOTSTRAP_CITRINEOS_CONFIG_FILENAME: "config.json"
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_TYPE: "local"
-      BOOTSTRAP_CITRINEOS_FILE_ACCESS_LOCAL_DEFAULT_FILE_PATH: "/data"
-      CONFIG_CITRINEOS_WIPE_FILE_ON_START: "false"
+
+      # ── SystemConfig overrides ──
+      # Every field of packages/types/src/config/types.ts can be set as
+      # CITRINEOS_<PATH_TO_FIELD> (case-insensitive, one segment per underscore, e.g.
+      # CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS). Values are JSON-parsed, falling back
+      # to the raw string. The schema defaults are the local-dev values, so only what
+      # actually differs inside Docker is listed here.
+      CITRINEOS_HOST: '0.0.0.0'
+      CITRINEOS_DATABASE_HOST: 'ocpp-db'
+      CITRINEOS_MESSAGEBROKER_AMQP_URL: 'amqp://guest:guest@amqp-broker:5672'
+      CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS: '20'
+      # The fileAccess root, which websocket-servers.json, the TLS material and the ACME
+      # account key are all read relative to. It has to be respelled here because it is
+      # itself relative to the process working directory, and in the image that is the
+      # repo root (entrypoint.sh runs `node <repo>/apps/ocpp-server/dist/index.js` from
+      # WORKDIR /usr/local/apps/citrineos) rather than the app directory as it is locally.
+      CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: 'apps/ocpp-server/src/assets'
+      # The Swagger logo is the one path read straight from the working directory instead
+      # of through fileAccess, so it needs the full prefix.
+      CITRINEOS_SWAGGER_LOGOPATH: 'apps/ocpp-server/src/assets/logo.png'
+
+      # Certificate authorities are opt-in and off by default; the stack turns both on.
+      # '{}' takes every default of the block: the Hubject test PKI, and ACME against the
+      # Let's Encrypt staging directory with the account key from the fileAccess root.
+      CITRINEOS_INTEGRATIONS_V2GCA: '{}'
+      CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA: '{}'
     depends_on:
       ocpp-db:
         condition: service_healthy
@@ -49,7 +72,7 @@ services:
       - 9229:9229
     healthcheck:
       test: [
-          "CMD-SHELL",
+          'CMD-SHELL',
           "node -e \"const net = require(\\\"net\\\"); const client =
           net.createConnection(8080, \\\"127.0.0.1\\\", () => { client.end();
           process.exit(0); }); client.on(\\\"error\\\", () =>
@@ -82,11 +105,11 @@ services:
     profiles:
       - ocpi
     environment:
-      APP_NAME: "ocpi"
-      APP_ENV: "docker"
-      DB_HOST: "ocpp-db"
-      AMQP_URL: "amqp://guest:guest@amqp-broker:5672"
-      AMQP_EXCHANGE: "citrineos"
+      APP_NAME: 'ocpi'
+      APP_ENV: 'docker'
+      DB_HOST: 'ocpp-db'
+      AMQP_URL: 'amqp://guest:guest@amqp-broker:5672'
+      AMQP_EXCHANGE: 'citrineos'
     ports:
       - 8085:8085
       # - 9229:9229
@@ -104,8 +127,8 @@ services:
       - 15672:15672
       - 5672:5672
     environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
     volumes:
       - ./apps/ocpp-server/data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
@@ -124,10 +147,9 @@ services:
     environment:
       POSTGRES_DB: citrine
       POSTGRES_USER: citrine
-      POSTGRES_PASSWORD: "citrine"
+      POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U citrine -d citrine"]
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 5432 -U citrine -d citrine']
       interval: 5s
       timeout: 10s
       retries: 5
@@ -137,8 +159,8 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -148,7 +170,7 @@ services:
       - ./apps/ocpp-server/data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 30s
       timeout: 10s
       retries: 5
@@ -177,12 +199,11 @@ services:
         condition: service_healthy
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://citrine:citrine@ocpp-db:5432/citrine
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true'
+      HASURA_GRAPHQL_DEV_MODE: 'true'
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
-      HASURA_GRAPHQL_METADATA_DEFAULTS:
-        "{\"backend_configs\":{\"dataconnector\":{\"a\
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: 'false'
+      HASURA_GRAPHQL_METADATA_DEFAULTS: "{\"backend_configs\":{\"dataconnector\":{\"a\
         thena\":{\"uri\":\"http://data-connector-agent:8081/api/v1/athena\"},\"\
         mariadb\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mariadb\"},\
         \"mysql8\":{\"uri\":\"http://data-connector-agent:8081/api/v1/mysql\"},\
@@ -190,7 +211,7 @@ services:
         \"snowflake\":{\"uri\":\"http://data-connector-agent:8081/api/v1/snowfl\
         ake\"}}}}"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://graphql-engine:8080/healthz"]
+      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
       interval: 5s
       timeout: 10s
       retries: 20
