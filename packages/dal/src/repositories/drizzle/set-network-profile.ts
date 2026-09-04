@@ -78,7 +78,6 @@ export class DrizzleSetNetworkProfileRepository
     });
   }
 
-  // Formerly the model's @BeforeCreate resolveStationId hook; resolved explicitly here instead.
   private async resolveStationId(
     tenantId: number,
     ocppConnectionName?: string,
