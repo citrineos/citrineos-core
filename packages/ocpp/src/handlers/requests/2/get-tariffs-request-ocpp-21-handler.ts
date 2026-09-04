@@ -14,6 +14,7 @@ import {
   Evse,
   type IAuthorizationRepository,
   type IChargingStationRepository,
+  type IConnectorRepository,
   Tariff,
   Transaction,
 } from '@citrineos/dal';
@@ -33,7 +34,7 @@ import { Op } from 'sequelize';
 export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _locationRepository: IChargingStationRepository;
+  protected _locationRepository: IChargingStationRepository & IConnectorRepository;
 
   constructor({
     logger,
@@ -43,7 +44,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: IChargingStationRepository;
+    locationRepository: IChargingStationRepository & IConnectorRepository;
   }) {
     super(logger);
 

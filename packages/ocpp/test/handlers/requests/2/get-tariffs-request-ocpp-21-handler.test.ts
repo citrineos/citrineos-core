@@ -12,7 +12,11 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
+import type {
+  IAuthorizationRepository,
+  IChargingStationRepository,
+  IConnectorRepository,
+} from '@citrineos/dal';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,7 +54,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let mockLocationRepository: Partial<IChargingStationRepository>;
+  let mockLocationRepository: Partial<IChargingStationRepository & IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
@@ -86,7 +90,8 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
-      locationRepository: mockLocationRepository as unknown as IChargingStationRepository,
+      locationRepository: mockLocationRepository as unknown as IChargingStationRepository &
+        IConnectorRepository,
     });
   });
 

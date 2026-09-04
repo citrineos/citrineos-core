@@ -12,7 +12,7 @@ import {
   type IChargingStationRepository,
   type IConnectorRepository,
   type IDeviceModelRepository,
-  type IEvseRepository,,
+  type IEvseRepository,
   StatusNotification,
 } from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';

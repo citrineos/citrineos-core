@@ -5,7 +5,6 @@
 import { describe, expect, it } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  type OcppRequest,
   EventGroup,
   MessageOrigin,
   MessageState,
@@ -46,7 +45,7 @@ function handlersDeclaring(protocol: OCPPVersion, action: string, type: MessageS
 function makeMessage(
   payload: OCPP2_request_types.PublishFirmwareStatusNotificationRequest,
   protocol: OCPPVersion = OCPPVersion.OCPP2_0_1,
-): IMessage<OcppRequest> {
+): IMessage<OCPP2_request_types.PublishFirmwareStatusNotificationRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -60,7 +59,7 @@ function makeMessage(
     action: OCPP_CallAction.PublishFirmwareStatusNotification,
     state: MessageState.Request,
     protocol,
-  } as unknown as IMessage<OcppRequest>;
+  } as unknown as IMessage<OCPP2_request_types.PublishFirmwareStatusNotificationRequest>;
 }
 
 function makeHandler() {
