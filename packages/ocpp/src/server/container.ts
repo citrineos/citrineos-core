@@ -90,7 +90,7 @@ import {
   DeviceModelService,
   NetworkProfileService,
   RealTimeAuthorizer,
-} from '@/services/index.js';
+} from '@services/index.js';
 import {
   Authenticator,
   BasicAuthenticationFilter,

@@ -5,12 +5,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import {
-  type BootstrapConfig,
-  type ICache,
-  type IWebsocketConnection,
-  DEFAULT_TENANT_ID,
-} from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   Connector,
@@ -51,14 +47,14 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
 
   locationRepository = new SequelizeLocationRepository({
-    config: {} as BootstrapConfig,
+    config: {} as SystemConfig,
     sequelizeInstance,
   });
 }, 90_000);
@@ -70,7 +66,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'default' } as Tenant);
+  await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'default' } as never);
 });
 
 describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 integration)', () => {
@@ -79,7 +75,7 @@ describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 int
     await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
-    } as ChargingStation);
+    });
 
     const { evseId, evseTypeConnectorId } =
       await locationRepository.commissionEvseForOcpp16Connector(
@@ -107,7 +103,7 @@ describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 int
       status: 'Available',
       timestamp: new Date(),
       errorCode: 'NoError',
-    } as unknown as Connector);
+    });
     expect(dbConnector.id).toBeGreaterThan(0);
   });
 
@@ -116,7 +112,7 @@ describe('SequelizeLocationRepository.commissionEvseForOcpp16Connector (#160 int
     await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
-    } as ChargingStation);
+    });
 
     const first = await locationRepository.commissionEvseForOcpp16Connector(
       DEFAULT_TENANT_ID,
@@ -139,10 +135,11 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
-    } as ChargingStation);
+    });
 
     const websocketConnection: IWebsocketConnection = {
       id: 'test-server',
+      timeConnected: new Date().toISOString(),
       protocol: 'ocpp1.6',
       allowUnknownChargingStations: true,
     };
@@ -192,7 +189,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
-    } as ChargingStation);
+    });
     // Use the commission helper for a clean pre-existing setup, then upsert
     // a Connector tied to it so the matching-evse branch fires in the handler.
     const { evseId, evseTypeConnectorId } =
@@ -210,10 +207,11 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       status: 'Available',
       timestamp: new Date(),
       errorCode: 'NoError',
-    } as unknown as Connector);
+    });
 
     const websocketConnection: IWebsocketConnection = {
       id: 'test-server',
+      timeConnected: new Date().toISOString(),
       protocol: 'ocpp1.6',
       allowUnknownChargingStations: false, // strict — relies on commissioned record
     };

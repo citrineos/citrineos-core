@@ -7,11 +7,11 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import { Component, IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
+import { Component, type IDeviceModelRepository, type ILocationRepository } from '@citrineos/dal';
 import { StatusNotification } from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import {
   aChargingStation,
   aComponent,

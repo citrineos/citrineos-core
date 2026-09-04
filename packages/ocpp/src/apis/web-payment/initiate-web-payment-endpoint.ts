@@ -21,7 +21,7 @@ import {
 import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
 import type { InitiateWebPaymentRequest } from '@modules/ev-driver/interface.js';
 import { InitiateWebPaymentRequestSchema } from '@modules/ev-driver/interface.js';
-import { TotpUtil } from '@/services/index.js';
+import { TotpUtil } from '@services/index.js';
 import { resolveStationProtocol } from '@util/index.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 

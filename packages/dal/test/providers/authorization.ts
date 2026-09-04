@@ -4,7 +4,7 @@
 import { type AdditionalInfo, AuthorizationStatusEnum, IdTokenEnum } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { Authorization } from '@citrineos/dal';
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(

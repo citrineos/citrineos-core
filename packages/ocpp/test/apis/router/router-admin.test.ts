@@ -5,8 +5,12 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteWebsocketConnectionEndpoint } from '@/apis/router/delete-websocket-connection-endpoint.js';
 import { ReloadTlsCertificatesEndpoint } from '@/apis/router/reload-tls-certificates-endpoint.js';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpoint-harness.js';
+import { createTestContainer, getTestInstance, type Deps } from '@test/test-container.js';
+import {
+  mountEndpoint,
+  type MountedEndpoint,
+  type EndpointClass,
+} from '@test/providers/endpoint-harness.js';
 
 const PREFIX = '/ocpprouter';
 
@@ -23,8 +27,8 @@ describe('router admin endpoints', () => {
   });
 
   const mount = (
-    endpointClass: Parameters<typeof getTestInstance>[1],
-    deps: Record<string, unknown> = {},
+    endpointClass: EndpointClass,
+    deps: Deps<EndpointClass> = {},
   ): Promise<MountedEndpoint> => {
     const endpoint = getTestInstance(container, endpointClass, deps);
     return mountEndpoint(endpoint, endpointClass.route, PREFIX);
