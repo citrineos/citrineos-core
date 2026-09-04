@@ -350,7 +350,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       ocppConnectionName: connector.ocppConnectionName,
@@ -361,7 +361,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       evseId: connector.evseId,
@@ -499,7 +499,7 @@ export class SequelizeLocationRepository
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
-  ): Promise<Connector[]> {
+  ): Promise<ConnectorDto[]> {
     return await this.connector.readAllByQuery(tenantId, {
       where: {
         tenantId,

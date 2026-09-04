@@ -4,7 +4,7 @@
 
 import type { IConnectorRepository } from '@dal/repositories/repositories.js';
 import type { ConnectorDto, OCPP2_common_types } from '@citrineos/types';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import {
   chargingStationTable,
   tenantChargingStationTable,
@@ -18,6 +18,12 @@ import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/sc
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 import { toEvseDto } from './evse.js';
+import {
+  type TariffEntity,
+  tariffTable,
+  tenantTariffTable,
+} from '../../db/drizzle/schema/tariff.js';
+import { toTariffDto } from './tariff.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external ConnectorDto contract.
@@ -99,6 +105,10 @@ export class DrizzleConnectorRepository
 
   private getEvseTable(tenantId: number): typeof evseTable {
     return this.useTenantSchema ? tenantEvseTable(tenantId) : evseTable;
+  }
+
+  private getTariffTable(tenantId: number): typeof tariffTable {
+    return this.useTenantSchema ? tenantTariffTable(tenantId) : tariffTable;
   }
 
   private getChargingStationTable(tenantId: number): typeof chargingStationTable {
@@ -206,9 +216,10 @@ export class DrizzleConnectorRepository
     };
   }
 
-  async createOrUpdateConnector(
+  private async upsertConnector(
     tenantId: number,
     connector: ConnectorDto,
+    match: (table: ReturnType<DrizzleConnectorRepository['getTable']>) => ReturnType<typeof and>,
   ): Promise<ConnectorDto | undefined> {
     return await this.withAtomicWrite(async (ctx) => {
       const table = this.getTable(tenantId);
@@ -216,13 +227,7 @@ export class DrizzleConnectorRepository
       const existing = (await ctx.db
         .select()
         .from(table)
-        .where(
-          and(
-            eq(table.ocppConnectionName, connector.ocppConnectionName),
-            eq(table.connectorId, connector.connectorId),
-            this.tenantFilter(table, tenantId),
-          ),
-        )
+        .where(and(match(table), this.tenantFilter(table, tenantId)))
         .limit(1)) as ConnectorEntity[];
 
       if (existing[0]) {
@@ -248,6 +253,66 @@ export class DrizzleConnectorRepository
         ctx,
       );
     });
+  }
+
+  async createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<ConnectorDto | undefined> {
+    return await this.upsertConnector(tenantId, connector, (table) =>
+      and(
+        eq(table.ocppConnectionName, connector.ocppConnectionName),
+        eq(table.connectorId, connector.connectorId),
+      ),
+    );
+  }
+
+  async createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<ConnectorDto | undefined> {
+    return await this.upsertConnector(tenantId, connector, (table) =>
+      and(
+        eq(table.evseId, connector.evseId),
+        eq(table.evseTypeConnectorId, connector.evseTypeConnectorId),
+      ),
+    );
+  }
+
+  async readConnectorsWithTariffsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<ConnectorDto[]> {
+    const table = this.getTable(tenantId);
+    const evses = this.getEvseTable(tenantId);
+    const tariffs = this.getTariffTable(tenantId);
+
+    const rows = await this.db
+      .select({ connector: table, evse: evses, tariff: tariffs })
+      .from(table)
+      .innerJoin(
+        evses,
+        and(
+          eq(table.evseId, evses.id),
+          evseTypeId !== undefined ? eq(evses.evseTypeId, evseTypeId) : undefined,
+          this.tenantFilter(evses, tenantId),
+        ),
+      )
+      .innerJoin(tariffs, and(eq(table.tariffId, tariffs.id), this.tenantFilter(tariffs, tenantId)))
+      .where(
+        and(
+          eq(table.ocppConnectionName, ocppConnectionName),
+          isNotNull(table.tariffId),
+          this.tenantFilter(table, tenantId),
+        ),
+      );
+
+    return rows.map((row) => ({
+      ...this.toDto(row.connector as ConnectorEntity),
+      evse: toEvseDto(row.evse as EvseEntity),
+      tariff: toTariffDto(row.tariff as TariffEntity),
+    }));
   }
 
   async updateAllConnectorsByStationId(

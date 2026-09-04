@@ -290,21 +290,16 @@ export interface IConnectorRepository {
   createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: ConnectorDto,
-    query: object,
-  ): Promise<Connector[]>;
+  ): Promise<ConnectorDto | undefined>;
   readConnectorsWithTariffsByStationId: (
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
-  ) => Promise<Connector[]>;
+  ) => Promise<ConnectorDto[]>;
   createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined>;
+  ): Promise<ConnectorDto | undefined>;
 }
 
 export interface IEvseRepository {

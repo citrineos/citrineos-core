@@ -743,10 +743,10 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(locationRepository.updateAllConnectorsByQuery).toHaveBeenCalledWith(
+      expect(locationRepository.updateAllConnectorsByStationId).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
         expect.objectContaining({ connectorId: undefined }),
-        { where: { stationId: MOCK_STATION_ID, tenantId: DEFAULT_TENANT_ID } },
       );
       expect(locationRepository.createOrUpdateOcpp16Connector).not.toHaveBeenCalled();
     });
