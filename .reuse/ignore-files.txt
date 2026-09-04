@@ -47,6 +47,9 @@ packages/dal/tsconfig.json
 packages/ocpp/tsconfig.eslint.json
 packages/ocpp/tsconfig.src.json
 packages/ocpp/tsconfig.json
+packages/ocpi-base/tsconfig.eslint.json
+packages/ocpi-base/tsconfig.src.json
+packages/ocpi-base/tsconfig.json
 apps/ocpp-server/tsconfig.eslint.json
 apps/ocpp-server/tsconfig.json
 apps/ocpp-server/tsconfig.src.json

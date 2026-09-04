@@ -2,23 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi } from 'vitest';
 import { type IAuthorizer, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   AuthorizationStatusEnum,
   EventGroup,
-  IdTokenEnum,
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import type { CertificateAuthorityService } from '@services/index.js';
+import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import { describe, expect, it, vi } from 'vitest';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
