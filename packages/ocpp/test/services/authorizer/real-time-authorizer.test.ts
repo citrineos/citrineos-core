@@ -9,8 +9,11 @@ import {
   type EvseDto,
   type SystemConfig,
 } from '@citrineos/types';
-import type { Authorization } from '@citrineos/dal';
-import type { IChargingStationRepository } from '@citrineos/dal';
+import type {
+  Authorization,
+  IAuthorizationRepository,
+  IChargingStationRepository,
+} from '@citrineos/dal';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { RealTimeAuthorizer } from '@services/authorizer/real-time-authorizer.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -56,7 +59,7 @@ const connector = { id: 100 } as ConnectorDto;
 describe('RealTimeAuthorizer', () => {
   const { container, logger } = createTestContainer();
   let fetchMock: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<IChargingStationRepository>;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
 
   function buildAuthorizer(
