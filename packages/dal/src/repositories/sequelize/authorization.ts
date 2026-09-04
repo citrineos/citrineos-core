@@ -47,6 +47,14 @@ export class SequelizeAuthorizationRepository
     });
   }
 
+  async updateByKey(
+    tenantId: number,
+    value: object,
+    key: string,
+  ): Promise<Authorization | undefined> {
+    return await this._updateByKey(tenantId, value, key);
+  }
+
   /**
    * Private Methods
    */

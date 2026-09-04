@@ -21,13 +21,13 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
-  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  LocationDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -89,6 +89,11 @@ export interface IAuthorizationRepository {
     query: AuthorizationQuerystring,
   ) => Promise<AuthorizationDto | undefined>;
   findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
+  updateByKey: (
+    tenantId: number,
+    value: object,
+    key: string,
+  ) => Promise<AuthorizationDto | undefined>;
 }
 
 /**
