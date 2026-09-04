@@ -17,7 +17,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { createOcspRequest, sendOCSPRequest } from '@/services/index.js';
+import { createOcspRequest, sendOCSPRequest } from '@services/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {

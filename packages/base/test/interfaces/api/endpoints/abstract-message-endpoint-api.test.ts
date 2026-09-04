@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { EventGroup, OCPP_CallAction, OCPPVersion, type SystemConfig } from '@citrineos/types';
-import fastify, { type FastifyInstance } from 'fastify';
-import { Logger, type ILogObj } from 'tslog';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AbstractMessageEndpoint,
   type IMessageEndpointMetadata,
@@ -13,6 +10,9 @@ import { AbstractMessageEndpointApi } from '@interfaces/api/endpoints/abstract-m
 import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/build-message-endpoints.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
 import { aSystemConfig } from '../../../providers/system-config.js';
+import fastify, { type FastifyInstance } from 'fastify';
+import { Logger, type ILogObj } from 'tslog';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BODY_SCHEMA = {
   $id: 'TestRequestSchema',

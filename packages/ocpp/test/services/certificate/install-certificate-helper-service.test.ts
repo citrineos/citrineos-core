@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { BadRequestError } from '@citrineos/base';
 import {
   CertificateGenerationScope,
   type GenerateCertificateChainRequest,
@@ -10,19 +11,17 @@ import {
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
 } from '@citrineos/dal';
-import type { CertificateAuthorityService } from '@/services/index.js';
-import { WebsocketNetworkConnection } from '@/transport/index.js';
-import { BadRequestError } from '@citrineos/base';
 import { type WebsocketServerConfig } from '@citrineos/types';
+import { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
+import type { CertificateAuthorityService } from '@services/index.js';
+import { MOCK_CERTIFICATE } from '@test/modules/certificates/providers/install-certificate-request-provider.js';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
 import {
   mockFileStorage,
   mockFileStorageGetFile,
   mockFileStorageSaveFile,
 } from './vitest.setup.js';
-import { MOCK_CERTIFICATE } from '@test/modules/certificates/providers/install-certificate-request-provider.js';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 // Define constants BEFORE mocks to avoid hoisting issues
 const { MOCK_CERT_TYPE_V2G, MOCK_STATUS_REJECTED, MOCK_STATUS_ACCEPTED } = vi.hoisted(() => ({
@@ -56,9 +55,8 @@ vi.mock('jsrsasign', async (importOriginal) => {
   };
 });
 
-vi.mock('@/services/certificate/certificate-util.js', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/services/certificate/certificate-util.js')>();
+vi.mock('@services/certificate/certificate-util.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@services/certificate/certificate-util.js')>();
   return {
     ...actual,
     extractCertificateDetails: mockExtractCertificateDetails,
@@ -170,7 +168,6 @@ describe('InstallCertificateHelperService', () => {
   let mockDeleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   let mockDeviceModelRepository: IDeviceModelRepository;
   let mockCertificateAuthorityService: CertificateAuthorityService;
-  let mockNetworkConnection: WebsocketNetworkConnection;
 
   const mockHash = 'abc123hash';
   const tenantId = 1;
@@ -243,7 +240,6 @@ describe('InstallCertificateHelperService', () => {
       createAttempt: mockDeleteCertificateAttemptCreate,
     } as any;
     mockCertificateAuthorityService = {} as any;
-    mockNetworkConnection = {} as any;
 
     service = getTestInstance(container, InstallCertificateHelperService, {
       certificateRepository: mockCertificateRepository,
@@ -252,7 +248,6 @@ describe('InstallCertificateHelperService', () => {
       deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
       deviceModelRepository: mockDeviceModelRepository,
       certificateAuthorityService: mockCertificateAuthorityService,
-      networkConnection: mockNetworkConnection,
       fileStorage: mockFileStorage,
     });
 

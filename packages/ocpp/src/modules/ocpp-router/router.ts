@@ -40,7 +40,7 @@ import {
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   CallHandledOutcome,
   CallResponseOutcome,
@@ -73,20 +73,18 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   /**
    * Constructor for the class.
    *
    * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
-   * @param {IMessageSender} [sender] - the message sender
-   * @param {IMessageHandler} [handler] - the message handler
-   * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
+   * @param {IMessageSender} [routerSender] - the message sender
+   * @param {IMessageHandler} [routerHandler] - the message handler
+   * @param {WebhookDispatcher} [webhookDispatcher] - the webhook dispatcher
    * @param {Function} networkHook - the network hook needed to send messages to chargers
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
+   * @param {IChargingStationRepository} locationRepository - repository for charging station reads
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
    */
@@ -109,7 +107,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     networkHook: (identifier: string, message: string) => Promise<void>;
     logger: Logger<ILogObj>;
     ocppValidator: OCPPValidator;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(config, cache, routerHandler, routerSender, networkHook, logger, ocppValidator);
 
@@ -604,7 +602,19 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     this._logger.debug('_onCall:', identifier, message, timestamp.toISOString(), protocol);
 
-    const action = mapToCallAction(protocol, message.action);
+    let action: CallAction;
+    try {
+      action = mapToCallAction(protocol, message.action);
+    } catch {
+      // OCPP-J 4.3: "NotImplemented - Requested Action is not known by receiver." That covers an
+      // action no version defines and one this protocol version does not, e.g. a 2.1 message on a
+      // 2.0.1 connection. InternalError tells the station the CSMS broke; it did not.
+      throw new OcppError(
+        messageId,
+        ErrorCode.NotImplemented,
+        `Action ${message.action} is not known for ${protocol}`,
+      );
+    }
     const isAllowed = await this._onCallIsAllowed(action, identifier);
     if (!isAllowed) {
       throw new OcppError(messageId, ErrorCode.SecurityError, `Action ${action} not allowed`);
@@ -771,7 +781,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   /**
-   * Handles the CallError that may have occured during a Call exchange.
+   * Handles the CallError that may have occurred during a Call exchange.
    *
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.
