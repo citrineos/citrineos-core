@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { GraphQLClient } from 'graphql-request';
+import { GraphQLClient, type Variables } from 'graphql-request';
 
 export interface IOcpiGraphqlClient {
-  request<T, V extends object | undefined>(query: string, variables?: V): Promise<T>;
+  request<T, V extends Variables | undefined>(query: string, variables?: V): Promise<T>;
 }
 
 export class OcpiGraphqlClient implements IOcpiGraphqlClient {
@@ -15,7 +15,7 @@ export class OcpiGraphqlClient implements IOcpiGraphqlClient {
     this.client = new GraphQLClient(endpoint, { headers });
   }
 
-  async request<T, V extends object | undefined>(query: string, variables?: V): Promise<T> {
+  async request<T, V extends Variables | undefined>(query: string, variables?: V): Promise<T> {
     return this.client.request<T>(query, variables);
   }
 }

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { VariableAttribute, VariableStatus } from '@citrineos/dal';
-import { faker } from '@faker-js/faker';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { IVariableAttributeDto, OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1 } from '@citrineos/types';
+import { faker } from '@faker-js/faker';
 
 export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
@@ -25,11 +25,11 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
     },
     variableId: faker.number.int({ min: 1, max: 100_000 }),
     ...override,
-  } as IVariableAttributeDto;
+  } as VariableAttribute;
 
   variableAttribute.statuses =
     override?.statuses?.map(
-      (status) => ({ ...status, variable: variableAttribute }) as VariableStatus,
+      (status) => ({ ...status, variable: variableAttribute }) as unknown as VariableStatus,
     ) ??
     ([
       {
@@ -37,7 +37,7 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
         status: 'Accepted',
         variable: variableAttribute,
       },
-    ] as VariableStatus[]);
+    ] as unknown as VariableStatus[]);
 
   return variableAttribute as VariableAttribute;
 }

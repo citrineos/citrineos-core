@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { SystemConfig } from '@citrineos/types';
+import { type SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Hubject } from '@/services/certificate/client/hubject.js';
+import { Hubject } from '@services/certificate/client/hubject.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MemoryCache } from '@/services/index.js';
+import { MemoryCache } from '@services/index.js';
 
 describe.skip('Integration Tests (requires real credentials)', () => {
   let systemConfig: SystemConfig;

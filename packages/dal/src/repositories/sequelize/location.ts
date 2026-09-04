@@ -11,15 +11,15 @@ import {
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
-import { Op } from 'sequelize';
+import { Op, type WhereOptions } from 'sequelize';
 import { type ILocationDomainRepository } from '../repositories.js';
-import { EvseType } from '../../models/device-model/evse-type.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
 import { LatestStatusNotification } from '../../models/location/latest-status-notification.js';
 import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
+import { Tariff } from '../../models/tariff/tariffs.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { resolveStationId } from './resolve-station-id.js';
 
@@ -352,20 +352,39 @@ export class SequelizeLocationRepository
     return result!;
   }
 
-  async createOrUpdateConnector(
+  async createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<ConnectorDto | undefined> {
+    return await this.upsertConnector(tenantId, connector, {
+      tenantId,
+      ocppConnectionName: connector.ocppConnectionName,
+      connectorId: connector.connectorId,
+    });
+  }
+
+  async createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<ConnectorDto | undefined> {
+    return await this.upsertConnector(tenantId, connector, {
+      tenantId,
+      evseId: connector.evseId,
+      evseTypeConnectorId: connector.evseTypeConnectorId,
+    });
+  }
+
+  private async upsertConnector(
     tenantId: number,
     connector: ConnectorDto,
+    where: WhereOptions<Connector>,
   ): Promise<Connector | undefined> {
     let result;
     await this.s.transaction(async (sequelizeTransaction) => {
       const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
         tenantId,
         {
-          where: {
-            tenantId,
-            ocppConnectionName: connector.ocppConnectionName,
-            connectorId: connector.connectorId,
-          },
+          where,
           defaults: {
             ...connector,
             stationId:
@@ -404,34 +423,18 @@ export class SequelizeLocationRepository
     });
   }
 
-  async commissionEvseForOcpp16Connector(
+  async autoCommissionEvseForOcpp16Connector(
     tenantId: number,
     ocppConnectionName: string,
-    connectorId: number,
-  ): Promise<{ evseId: number; evseTypeConnectorId: number }> {
-    return await this.s.transaction(async (sequelizeTransaction) => {
-      // OCPP 1.6 has no native EVSE concept. Conservative default: each connector
-      // maps to its own (Evse, EvseType) pair using the 1.6 connectorId as the
-      // OCPP 2.0.1 evse id. connectorId is null because this EvseType denotes the
-      // whole EVSE — the partial unique index `evse_types_tenantId_id` (WHERE
-      // connectorId IS NULL) then permits exactly one such row per EVSE
-      const [evseType] = await EvseType.findOrCreate({
-        where: { tenantId, id: connectorId, connectorId: null },
-        defaults: { tenantId, id: connectorId, connectorId: null },
-        transaction: sequelizeTransaction,
-      });
-      const [evse] = await Evse.findOrCreate({
-        where: { tenantId, ocppConnectionName, evseTypeId: connectorId },
-        defaults: {
-          tenantId,
-          ocppConnectionName,
-          evseTypeId: connectorId,
-          stationId: await resolveStationId(tenantId, ocppConnectionName, sequelizeTransaction),
-        },
-        transaction: sequelizeTransaction,
-      });
-      return { evseId: evse.id, evseTypeConnectorId: evseType.databaseId };
+  ): Promise<{ evseId: number }> {
+    // OCPP 1.6 has no native EVSE concept. Conservative default: each connector
+    // maps to its own Evse
+    const evse = await Evse.create({
+      tenantId,
+      ocppConnectionName,
+      stationId: await resolveStationId(tenantId, ocppConnectionName),
     });
+    return { evseId: evse.id };
   }
 
   async updateChargingStationTimestamp(
@@ -495,6 +498,33 @@ export class SequelizeLocationRepository
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
       })) ?? undefined
     );
+  }
+
+  async readConnectorsWithTariffsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<ConnectorDto[]> {
+    return await this.connector.readAllByQuery(tenantId, {
+      where: {
+        tenantId,
+        ocppConnectionName,
+        tariffId: { [Op.ne]: null },
+      },
+      include: [
+        {
+          model: Evse,
+          as: 'evse',
+          required: true,
+          ...(evseTypeId !== undefined && { where: { evseTypeId } }),
+        },
+        {
+          model: Tariff,
+          as: 'tariff',
+          required: true,
+        },
+      ],
+    });
   }
 }
 

@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { AttributeEnum, MutabilityEnum, SetVariableStatusEnum } from '@citrineos/types';
-import type { OCPP2_common_types } from '@citrineos/base';
+import {
+  AttributeEnum,
+  MutabilityEnum,
+  OCPP2_0_1,
+  type OCPP2_common_types,
+  SetVariableStatusEnum,
+} from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeviceModelService } from '@/services/device-model/device-model-service.js';
+import { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('DeviceModelService.provisionVariableAttributes', () => {
@@ -104,9 +109,9 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
       ocppConnectionName,
       aReportData([
         {
-          type: AttributeEnum.Actual,
+          type: OCPP2_0_1.AttributeEnumType.Actual,
           value: 'a-password',
-          mutability: MutabilityEnum.WriteOnly,
+          mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
         },
       ]),
       true,
@@ -117,7 +122,9 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
   });
 
   it('does not mutate the caller-supplied report data', async () => {
-    const reportData = aReportData([{ type: AttributeEnum.Actual, value: 'a-value' }]);
+    const reportData = aReportData([
+      { type: OCPP2_0_1.AttributeEnumType.Actual, value: 'a-value' },
+    ]);
 
     await service.provisionVariableAttributes(tenantId, ocppConnectionName, reportData, false);
 
