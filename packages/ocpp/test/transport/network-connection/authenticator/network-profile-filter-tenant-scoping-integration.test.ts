@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { AuthenticationOptions } from '@citrineos/base';
-import { OCPPVersion, type SystemConfig } from '@citrineos/types';
+import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
+import type { IDeviceModelRepository } from '@citrineos/dal';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
@@ -12,7 +13,6 @@ import {
   SetNetworkProfile,
   Tenant,
 } from '@citrineos/dal';
-import type { IDeviceModelRepository } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
 import type { Sequelize } from 'sequelize-typescript';

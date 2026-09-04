@@ -22,7 +22,7 @@ import {
   type SchemaFinding,
   SchemaValidationError,
   validateSequelizeSchema,
-} from '../../src/util';
+} from '@/util/index.js';
 import { Logger } from 'tslog';
 
 /**
@@ -88,7 +88,7 @@ async function findingsFor(models: any[], rows: FakeColumn[]): Promise<SchemaFin
 }
 
 function kinds(findings: SchemaFinding[]): string[] {
-  return findings.map((f) => f.kind);
+  return findings.map((f: SchemaFinding) => f.kind);
 }
 
 // --- Models used by the tests -------------------------------------------------

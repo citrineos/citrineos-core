@@ -69,8 +69,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: TENANT_A as any, name: TENANT_A });
-  await Tenant.create({ id: TENANT_B as any, name: TENANT_B });
+  await Tenant.create({ id: TENANT_A as any, name: String(TENANT_A) });
+  await Tenant.create({ id: TENANT_B as any, name: String(TENANT_B) });
 });
 
 async function aStation(tenantId: number, ocppConnectionName = SHARED_STATION_NAME) {

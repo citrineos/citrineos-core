@@ -44,6 +44,7 @@ import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 import { buildContainer } from './container.js';
 import { type HealthCheckResult, HealthCheckService } from './health-check-service.js';
+import { assertSequelizeSchemaMatches, type SchemaValidationReport } from '@/util/index.js';
 
 /** The container token needed to initialize a module in its own scope. */
 export interface ModuleInitSpec {

@@ -6,8 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import { DefaultSequelizeInstance } from '@citrineos/dal';
-import { validateSequelizeSchema } from '../../src/util';
-import { SystemConfig } from '@citrineos/types';
+import { validateSequelizeSchema } from '@/util/index.js';
+import type { SystemConfig } from '@citrineos/types';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;

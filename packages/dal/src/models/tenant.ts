@@ -58,6 +58,7 @@ import { EventData } from './variable-monitoring/event-data.js';
 
 export enum TenantAttributeProps {
   id = 'id',
+  name = 'name',
   tenantWebsocketServerPath = 'tenantWebsocketServerPath',
   createdAt = 'createdAt',
   updatedAt = 'updatedAt',
@@ -65,6 +66,7 @@ export enum TenantAttributeProps {
 
 export interface TenantAttributes {
   [TenantAttributeProps.id]: string;
+  [TenantAttributeProps.name]: string;
   [TenantAttributeProps.tenantWebsocketServerPath]?: string | null;
   [TenantAttributeProps.createdAt]: Date;
   [TenantAttributeProps.updatedAt]: Date;
