@@ -418,6 +418,7 @@ export class SequelizeLocationRepository
     const evse = await Evse.create({
       tenantId,
       ocppConnectionName,
+      stationId: await resolveStationId(tenantId, ocppConnectionName),
     });
     return { evseId: evse.id };
   }

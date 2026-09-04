@@ -216,6 +216,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -315,6 +316,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
