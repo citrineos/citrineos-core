@@ -7,7 +7,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Server-side authentication middleware.
+ * Server-side authentication proxy.
  *
  * Uses next-auth/jwt getToken() to validate the encrypted session cookie on
  * every matched request before any page renders or server action executes.
@@ -17,7 +17,7 @@ import { NextResponse } from 'next/server';
  * Protected: all routes except /login, /api/auth/**, /api/health, and
  * Next.js internal paths / static assets (see matcher below).
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,

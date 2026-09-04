@@ -459,12 +459,13 @@ export class CitrineOSServer {
   }
 
   protected initSequelizeInstance() {
-    this._sequelizeInstance = this._container.resolve('sequelizeInstance');
+    this._sequelizeInstance = this._container.resolve<Sequelize>('sequelizeInstance');
   }
 
   protected async initMessageBrokerConnection(): Promise<void> {
-    this._connectionManager = this._container.resolve('connectionManager');
-    this._channelManager = this._container.resolve('channelManager');
+    this._connectionManager =
+      this._container.resolve<RabbitMQConnectionManager>('connectionManager');
+    this._channelManager = this._container.resolve<RabbitMQChannelManager>('channelManager');
     await this._connectionManager.connect();
   }
 
@@ -494,9 +495,10 @@ export class CitrineOSServer {
   }
 
   protected async initNetworkConnection() {
-    this._authenticator = this._container.resolve('authenticator');
-    this._router = this._container.resolve('router');
-    this._networkConnection = this._container.resolve('networkConnection');
+    this._authenticator = this._container.resolve<IAuthenticator>('authenticator');
+    this._router = this._container.resolve<IMessageRouter>('router');
+    this._networkConnection =
+      this._container.resolve<WebsocketNetworkConnection>('networkConnection');
 
     const routerSender = this._container.resolve<BrokerAwareMessageSender>('routerSender');
     routerSender.onCallTimeout = (ocppConnectionName, tenantId) =>
