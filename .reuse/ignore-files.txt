@@ -13,6 +13,7 @@ apps/ocpp-server/entrypoint.sh
 logo_black.png
 logo_white.png
 renovate.json
+tsconfig.test.base.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
@@ -35,15 +36,23 @@ package-lock.json
 
 # TypeScript config files
 packages/types/tsconfig.eslint.json
+packages/types/tsconfig.src.json
 packages/types/tsconfig.json
 packages/base/tsconfig.eslint.json
+packages/base/tsconfig.src.json
 packages/base/tsconfig.json
 packages/dal/tsconfig.eslint.json
+packages/dal/tsconfig.src.json
 packages/dal/tsconfig.json
 packages/ocpp/tsconfig.eslint.json
+packages/ocpp/tsconfig.src.json
 packages/ocpp/tsconfig.json
 apps/ocpp-server/tsconfig.eslint.json
 apps/ocpp-server/tsconfig.json
+apps/ocpp-server/tsconfig.src.json
+apps/mock-msp/tsconfig.eslint.json
+apps/mock-msp/tsconfig.json
+apps/mock-msp/tsconfig.src.json
 tsconfig.build.json
 tsconfig.eslint.json
 tsconfig.json
@@ -190,6 +199,7 @@ apps/ocpi-server/src/assets/certificates/leafKey.pem
 apps/ocpi-server/src/assets/certificates/rootCertificate.pem
 apps/ocpi-server/src/assets/certificates/subCAKey.pem
 apps/ocpi-server/tsconfig.eslint.json
+apps/ocpi-server/tsconfig.src.json
 apps/ocpi-server/tsconfig.json
 apps/ocpi-server/tsconfig.migrations.json
 packages/ocpi-base/tsconfig.eslint.json

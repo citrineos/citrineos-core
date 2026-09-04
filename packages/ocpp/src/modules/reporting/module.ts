@@ -4,7 +4,7 @@
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
 
-import type { DeviceModelService } from '@/services/device-model/device-model-service.js';
+import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 
 export interface ReportingModuleDependencies extends OcppModuleDependencies {
   deviceModelService: DeviceModelService;

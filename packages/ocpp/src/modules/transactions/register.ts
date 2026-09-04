@@ -10,7 +10,7 @@ import {
   type HandlerResolverCradle,
 } from '@citrineos/base';
 import { OCPP_CallAction } from '@citrineos/types';
-import { SignedMeterValuesUtil } from '@/services/security/signed-meter-values-util.js';
+import { SignedMeterValuesUtil } from '@services/security/signed-meter-values-util.js';
 import { CostCalculator } from './cost-calculator.js';
 import { CostNotifier, type CostUpdatedNotifier } from './cost-notifier.js';
 import { StatusNotificationService } from './status-notification-service.js';

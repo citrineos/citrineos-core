@@ -16,6 +16,7 @@ const alias = {
   '@handlers': r('./packages/ocpp/src/handlers'),
   '@modules': r('./packages/ocpp/src/modules'),
   '@util': r('./packages/ocpp/src/util'),
+  '@services': r('./packages/ocpp/src/services'),
   '@ocpp': r('./packages/base/src/ocpp'),
   '@config': r('./packages/base/src/config'),
   '@interfaces': r('./packages/base/src/interfaces'),

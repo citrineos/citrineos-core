@@ -4,9 +4,9 @@
 import { type SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { Hubject } from '@/services/certificate/client/hubject.js';
+import { Hubject } from '@services/certificate/client/hubject.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MemoryCache } from '@/services/index.js';
+import { MemoryCache } from '@services/index.js';
 
 describe.skip('Integration Tests (requires real credentials)', () => {
   let systemConfig: SystemConfig;

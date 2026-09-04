@@ -20,7 +20,7 @@ import {
   SequelizeInstalledCertificateRepository,
   Tenant,
 } from '@citrineos/dal';
-import { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { Logger } from 'tslog';

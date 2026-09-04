@@ -9,6 +9,7 @@
       "@handlers/*": ["./src/handlers/*"],
       "@modules/*": ["./src/modules/*"],
       "@util/*": ["./src/util/*"],
+      "@services/*": ["./src/services/*"],
       "@test/*": ["./test/*"]
     }
   },

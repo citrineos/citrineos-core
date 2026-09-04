@@ -4,15 +4,15 @@
 import type { IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
-import * as CertificateUtil from '@/services/certificate/certificate-util.js';
-import { Acme } from '@/services/certificate/client/acme.js';
+import * as CertificateUtil from '@services/certificate/certificate-util.js';
+import { Acme } from '@services/certificate/client/acme.js';
 import { Client } from 'acme-client';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { beforeAll, beforeEach, describe, expect, it, type Mock, type Mocked, vi } from 'vitest';
 import { aValidSignedCertificate } from '../../../providers/acme.js';
 
-vi.mock('@/services/certificate/certificate-util.js');
+vi.mock('@services/certificate/certificate-util.js');
 
 describe('ACME', () => {
   const mockTlsCertificateChain = faker.lorem.word();

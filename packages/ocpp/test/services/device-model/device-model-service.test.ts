@@ -11,7 +11,7 @@ import {
   SetVariableStatusEnum,
 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeviceModelService } from '@/services/device-model/device-model-service.js';
+import { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('DeviceModelService.provisionVariableAttributes', () => {

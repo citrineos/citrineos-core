@@ -10,7 +10,7 @@ import {
   extractEncodedContentFromCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
-} from '@/services/index.js';
+} from '@services/index.js';
 import jsrsasign from 'jsrsasign';
 import { readFile } from '../../utils/file-util.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';

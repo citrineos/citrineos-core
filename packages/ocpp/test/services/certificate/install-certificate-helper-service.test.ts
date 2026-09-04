@@ -11,11 +11,11 @@ import {
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
 } from '@citrineos/dal';
-import type { CertificateAuthorityService } from '@/services/index.js';
+import type { CertificateAuthorityService } from '@services/index.js';
 import { WebsocketNetworkConnection } from '@/transport/index.js';
 import { type WebsocketServerConfig } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import {
   mockFileStorage,
   mockFileStorageGetFile,
@@ -56,9 +56,9 @@ vi.mock('jsrsasign', async (importOriginal) => {
   };
 });
 
-vi.mock('@/services/certificate/certificate-util.js', async (importOriginal) => {
+vi.mock('@services/certificate/certificate-util.js', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@/services/certificate/certificate-util.js')>();
+    await importOriginal<typeof import('@services/certificate/certificate-util.js')>();
   return {
     ...actual,
     extractCertificateDetails: mockExtractCertificateDetails,

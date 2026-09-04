@@ -11,8 +11,8 @@ import {
 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { Hubject } from '@/services/certificate/client/hubject.js';
-import { MemoryCache } from '@/services/index.js';
+import { Hubject } from '@services/certificate/client/hubject.js';
+import { MemoryCache } from '@services/index.js';
 import {
   aValidRootCertificates,
   aValidSignedContractData,
