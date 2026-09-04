@@ -18,7 +18,7 @@ import type {
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocalAuthListRepository,
-  ILocationRepository,
+  ILocationDomainRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
@@ -83,7 +83,7 @@ export class RepositoryStore {
   componentRepository: CrudRepository<Component>;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
-  locationRepository: ILocationRepository;
+  locationRepository: ILocationDomainRepository;
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   reservationRepository: IReservationRepository;

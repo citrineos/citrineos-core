@@ -13,7 +13,7 @@ import {
   OcppError,
   RequestBuilder,
 } from '@citrineos/base';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   type OcppResponse,
@@ -101,12 +101,12 @@ function buildMockDispatcher(): Mocked<WebhookDispatcher> {
   } as unknown as Mocked<WebhookDispatcher>;
 }
 
-function buildMockLocationRepository(): Mocked<ILocationRepository> {
+function buildMockLocationRepository(): Mocked<IChargingStationRepository> {
   return {
     setChargingStationIsOnlineAndOCPPVersion: vi.fn().mockResolvedValue(undefined),
     readChargingStationByStationId: vi.fn().mockResolvedValue(undefined),
     updateChargingStationTimestamp: vi.fn().mockResolvedValue(undefined),
-  } as unknown as Mocked<ILocationRepository>;
+  } as unknown as Mocked<IChargingStationRepository>;
 }
 
 // ─── Test Suite ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ describe('MessageRouterImpl', () => {
   let handler: Mocked<IMessageHandler>;
   let dispatcher: Mocked<WebhookDispatcher>;
   let networkHook: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<IChargingStationRepository>;
   let router: MessageRouterImpl;
 
   beforeEach(() => {

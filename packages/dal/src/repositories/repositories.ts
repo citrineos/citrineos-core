@@ -20,6 +20,7 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
+  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
@@ -233,32 +234,15 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<LocalListVersion>;
 }
 
-export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
+export interface ILocationRepository {
+  readLocationById: (tenantId: number, id: number) => Promise<LocationDto | undefined>;
+}
+
+export interface IChargingStationRepository {
   readChargingStationByStationId: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStation | undefined>;
-  readConnectorByStationIdAndOcpp16ConnectorId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
-  readEvseByStationIdAndOcpp201EvseId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
-  readConnectorByStationIdAndOcpp201EvseType: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
-  readConnectorsWithTariffsByStationId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    evseTypeId?: number,
-  ) => Promise<Connector[]>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
@@ -279,30 +263,63 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
-  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
-  createOrUpdateOcpp16Connector(
-    tenantId: number,
-    connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined>;
-  createOrUpdateOcpp2Connector(
-    tenantId: number,
-    connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined>;
-  autoCommissionEvseForOcpp16Connector(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<{ evseId: number }>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: ConnectorDto,
-    query: object,
-  ): Promise<Connector[]>;
   updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,
     timestamp: string,
   ): Promise<void>;
 }
+
+export interface IConnectorRepository {
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseType: OCPP2_common_types.EVSEType,
+  ) => Promise<Connector | undefined>;
+  createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: ConnectorDto,
+    query: object,
+  ): Promise<Connector[]>;
+  readConnectorsWithTariffsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ) => Promise<Connector[]>;
+  createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<Connector | undefined>;
+}
+
+export interface IEvseRepository {
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  autoCommissionEvseForOcpp16Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<{ evseId: number }>;
+}
+
+export interface ILocationDomainRepository
+  extends CrudRepository<Location>,
+    ILocationRepository,
+    IChargingStationRepository,
+    IConnectorRepository,
+    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (

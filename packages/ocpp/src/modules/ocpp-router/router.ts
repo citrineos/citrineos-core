@@ -40,7 +40,7 @@ import {
   OCPPVersion,
   RetryMessageError,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   CallHandledOutcome,
   CallResponseOutcome,
@@ -73,20 +73,18 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   /**
    * Constructor for the class.
    *
    * @param {SystemConfig} config - the system configuration
    * @param {ICache} cache - the cache object
-   * @param {IMessageSender} [sender] - the message sender
-   * @param {IMessageHandler} [handler] - the message handler
-   * @param {WebhookDispatcher} [dispatcher] - the webhook dispatcher
+   * @param {IMessageSender} [routerSender] - the message sender
+   * @param {IMessageHandler} [routerHandler] - the message handler
+   * @param {WebhookDispatcher} [webhookDispatcher] - the webhook dispatcher
    * @param {Function} networkHook - the network hook needed to send messages to chargers
-   * @param {ILocationRepository} [locationRepository] - An optional parameter of type {@link ILocationRepository} which
-   * represents a repository for accessing and manipulating variable data.
-   * If no `locationRepository` is provided, a default {@link locationRepository} instance is created and used.
+   * @param {IChargingStationRepository} locationRepository - repository for charging station reads
    * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
    */
@@ -109,7 +107,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     networkHook: (identifier: string, message: string) => Promise<void>;
     logger: Logger<ILogObj>;
     ocppValidator: OCPPValidator;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(config, cache, routerHandler, routerSender, networkHook, logger, ocppValidator);
 
@@ -783,7 +781,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   /**
-   * Handles the CallError that may have occured during a Call exchange.
+   * Handles the CallError that may have occurred during a Call exchange.
    *
    * @param {string} identifier - The client identifier.
    * @param {CallError} message - The error message.

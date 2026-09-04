@@ -9,8 +9,10 @@ import {
 } from '@citrineos/base';
 import {
   Component,
+  type IChargingStationRepository,
+  type IConnectorRepository,
   type IDeviceModelRepository,
-  type ILocationRepository,
+  type IEvseRepository,
   StatusNotification,
 } from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
@@ -68,7 +70,9 @@ describe('StatusNotificationService', () => {
   let statusNotificationService: StatusNotificationService;
   let componentRepository: Mocked<CrudRepository<Component>>;
   let deviceModelRepository: Mocked<IDeviceModelRepository>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<
+    IChargingStationRepository & IConnectorRepository & IEvseRepository
+  >;
   let cache: Mocked<ICache>;
 
   beforeEach(() => {
@@ -88,7 +92,7 @@ describe('StatusNotificationService', () => {
       createOrUpdateEvse: vi.fn(),
       autoCommissionEvseForOcpp16Connector: vi.fn(),
       updateAllConnectorsByQuery: vi.fn(),
-    } as unknown as Mocked<ILocationRepository>;
+    } as unknown as Mocked<IChargingStationRepository & IConnectorRepository & IEvseRepository>;
 
     const mockConnection: IWebsocketConnection = {
       id: 'test-server',

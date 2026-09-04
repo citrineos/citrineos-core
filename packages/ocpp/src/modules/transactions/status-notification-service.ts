@@ -8,7 +8,12 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
+import type {
+  IChargingStationRepository,
+  IConnectorRepository,
+  IDeviceModelRepository,
+  IEvseRepository,
+} from '@citrineos/dal';
 import {
   Component,
   EvseType,
@@ -24,7 +29,9 @@ import { Logger } from 'tslog';
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository &
+    IConnectorRepository &
+    IEvseRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -37,7 +44,7 @@ export class StatusNotificationService {
   }: {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository & IConnectorRepository & IEvseRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {

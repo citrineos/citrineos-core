@@ -40,6 +40,15 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/certificate.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  locationTable,
+  tenantLocationTable,
+  LocationEntitySchema,
+  LocationEntityInsertSchema,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
 export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
