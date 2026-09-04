@@ -47,14 +47,16 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
-import type { LocalListVersion, SendLocalList } from '@dal/models/authorization/index.js';
-import type { ChangeConfiguration, ChargingStationSecurityInfo } from '@dal/models/index.js';
+import type { LocalListVersion } from '../models/authorization/local-list-version.js';
+import type { SendLocalList } from '../models/authorization/send-local-list.js';
+import type { ChangeConfiguration } from '../models/change-configuration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { ChargingStationSequence } from '@dal/models/charging-station-sequence/index.js';
+import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
+import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
 import type { EvseType } from '../models/device-model/evse-type.js';
 import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
@@ -74,7 +76,7 @@ import type {
   StopTransaction,
   Transaction,
 } from '../models/transaction-event/index.js';
-import type { TransactionEvent } from '@dal/models/transaction-event/index.js';
+import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
 
 export interface IAuthorizationRepository {

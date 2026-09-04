@@ -12,7 +12,7 @@ import {
   type AuthorizationEntity,
   authorizationTable,
   tenantAuthorizationTable,
-} from '../../db/drizzle/schema/authorization.js'; // import not shortened on purpose to avoid circular dependency
+} from '../../db/drizzle/schema/authorization.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
 import type { AuthorizationQuerystring } from '@dal/interfaces/queries/authorization.js';
