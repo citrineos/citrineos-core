@@ -112,7 +112,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
     },
     sorters: [
       {
-        field: tableQueryState?.sortBy ?? OCPPMessageProps.timestamp,
+        field: tableQueryState?.sortBy ?? OCPPMessageProps.createdAt,
         order: tableQueryState?.direction ?? 'desc',
       },
     ],
@@ -292,7 +292,7 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
             resource: ResourceType.OCPP_MESSAGES,
             liveMode,
             sorters: {
-              initial: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
+              initial: [{ field: OCPPMessageProps.createdAt, order: 'desc' }],
             },
             filters: {
               permanent: filters,
@@ -393,8 +393,8 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               }}
             />,
             <Table.Column
-              id="timestamp"
-              key="timestamp"
+              id="createdAt"
+              key="createdAt"
               accessorKey="timestamp"
               header={translate('ChargingStations.ocppMessages.timestamp')}
               enableSorting
