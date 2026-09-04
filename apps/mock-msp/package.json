@@ -28,12 +28,12 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@types/node": "^25.3.3",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "engines": {

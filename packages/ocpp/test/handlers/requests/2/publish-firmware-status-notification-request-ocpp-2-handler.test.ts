@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   EventGroup,
@@ -15,6 +14,7 @@ import {
 } from '@citrineos/types';
 import * as allHandlers from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import { describe, expect, it } from 'vitest';
 
 // Importing the handler barrel loads @citrineos/base, which installs the reflect-metadata polyfill.
 const AS_HANDLER_CLASS_METADATA = 'AS_HANDLER_CLASS_METADATA';

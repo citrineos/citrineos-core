@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/types",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "Shared type definitions for CitrineOS: OCPP model types, DTO shapes, Zod schemas, enums, and protocol types. This package contains no server runtime and is safe to consume from browser apps.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,18 +23,18 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@vitest/coverage-v8": "3.2.7",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "prettier": "catalog:",
-    "typescript": "^6.0.0",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "3.2.7"
+    "vitest": "catalog:"
   },
   "dependencies": {
-    "class-transformer": "0.5.1",
-    "reflect-metadata": "0.1.13",
+    "class-transformer": "catalog:",
+    "reflect-metadata": "catalog:",
     "zod": "catalog:"
   }
 }
