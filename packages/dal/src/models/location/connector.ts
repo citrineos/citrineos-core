@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import type {
   ChargingStationDto,
   ConnectorDto,
@@ -18,7 +19,6 @@ import type {
   TenantDto,
   TransactionDto,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -68,15 +68,12 @@ export class Connector extends Model implements ConnectorDto {
 
   @Column({
     unique: 'stationId_connectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare connectorId: number; // This is the serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per Charging Station.
 
-  @ForeignKey(() => EvseType)
   @Column({
     unique: 'evseId_evseTypeConnectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseTypeConnectorId?: number; // This is the serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
@@ -136,9 +133,6 @@ export class Connector extends Model implements ConnectorDto {
 
   @BelongsTo(() => Evse, 'evseId')
   declare evse?: EvseDto;
-
-  @BelongsTo(() => EvseType, 'evseTypeConnectorId')
-  declare evseTypeByConnector?: EvseTypeDto;
 
   @HasMany(() => EvseType, 'connectorId')
   declare evseTypes?: EvseTypeDto[];

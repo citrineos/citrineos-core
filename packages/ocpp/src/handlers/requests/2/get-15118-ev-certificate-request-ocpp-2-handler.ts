@@ -17,7 +17,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { CertificateAuthorityService } from '@/services/index.js';
+import { CertificateAuthorityService } from '@services/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.Get15118EVCertificate)
 export class Get15118EVCertificateRequestOcpp2Handler extends AbstractHandler {

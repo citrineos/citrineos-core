@@ -7,11 +7,10 @@ import {
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type TariffDto } from '@citrineos/types';
 import type { TariffQueryString, TenantQueryString } from '@citrineos/dal';
 import { TariffQuerySchema, TariffSchema, TenantQuerySchema } from '@citrineos/dal';
 import type { ITariffRepository } from '@citrineos/dal';
-import { Tariff } from '@citrineos/dal';
 import type { TariffData } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
@@ -40,11 +39,8 @@ export class UpsertTariffEndpoint extends AbstractEndpoint<TariffUpsertRoute> {
     this._tariffRepository = tariffRepository;
   }
 
-  async handle(request: FastifyRequest<TariffUpsertRoute>): Promise<Tariff> {
-    return this._tariffRepository.upsertTariff(
-      request.query.tenantId,
-      Tariff.newInstance(request.body),
-    );
+  async handle(request: FastifyRequest<TariffUpsertRoute>): Promise<TariffDto> {
+    return this._tariffRepository.upsertTariff(request.query.tenantId, request.body);
   }
 }
 
@@ -62,7 +58,7 @@ export class GetTariffsEndpoint extends AbstractEndpoint<TariffQueryRoute> {
     this._tariffRepository = tariffRepository;
   }
 
-  async handle(request: FastifyRequest<TariffQueryRoute>): Promise<Tariff[]> {
+  async handle(request: FastifyRequest<TariffQueryRoute>): Promise<TariffDto[]> {
     return this._tariffRepository.readAllByQuerystring(request.query.tenantId, request.query);
   }
 }

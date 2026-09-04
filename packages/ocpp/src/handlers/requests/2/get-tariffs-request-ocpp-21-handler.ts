@@ -9,16 +9,16 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import { Op } from 'sequelize';
 import {
   Authorization,
-  Connector,
   Evse,
   type IAuthorizationRepository,
   type IChargingStationRepository,
+  type IConnectorRepository,
   Tariff,
   Transaction,
 } from '@citrineos/dal';
+import { Op } from 'sequelize';
 
 /**
  * Handle OCPP 2.1 GetTariffs request
@@ -35,22 +35,26 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _chargingStationRepository: IChargingStationRepository;
+  protected _locationRepository: IConnectorRepository;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
     chargingStationRepository,
+    locationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     chargingStationRepository: IChargingStationRepository;
+    locationRepository: IConnectorRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._chargingStationRepository = chargingStationRepository;
+    this._locationRepository = locationRepository;
   }
 
   async handle(
@@ -97,28 +101,11 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
       // Query default tariffs from Connectors
       // I09.FR.01 & I09.FR.02: Filter by evseId if requested
-      const connectors = await Connector.findAll({
-        where: {
-          tenantId,
-          ocppConnectionName,
-          tariffId: { [Op.ne]: null },
-        },
-        include: [
-          {
-            model: Evse,
-            as: 'evse',
-            required: true,
-            ...(requestedEvseId > 0 && {
-              where: { evseTypeId: requestedEvseId },
-            }),
-          },
-          {
-            model: Tariff,
-            as: 'tariff',
-            required: true,
-          },
-        ],
-      });
+      const connectors = await this._locationRepository.readConnectorsWithTariffsByStationId(
+        tenantId,
+        ocppConnectionName,
+        requestedEvseId > 0 ? requestedEvseId : undefined,
+      );
 
       // I09.FR.04: DefaultTariff includes evseIds list
       for (const connector of connectors) {

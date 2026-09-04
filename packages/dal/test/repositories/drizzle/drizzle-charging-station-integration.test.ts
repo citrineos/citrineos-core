@@ -5,9 +5,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/types';
+import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   Connector,
@@ -35,7 +34,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let drizzleInstance: NodePgDatabase;
 let drizzlePool: pg.Pool;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -62,7 +61,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   // Both layers describe the same schema; Sequelize is used to create it.
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
@@ -95,21 +94,13 @@ function aRepository(): DrizzleChargingStationRepository {
   return new DrizzleChargingStationRepository({ config, drizzleInstance });
 }
 
-// The Evse/EvseType/Connector FK graph is fiddly to build by hand; the Sequelize
-// repository already has a helper that returns FK-valid ids, so seeding goes through it.
 let locationRepository: SequelizeLocationRepository;
 
-async function aConnector(
-  stationId: number,
-  evseId: number,
-  connectorId: number,
-  evseTypeConnectorId: number,
-): Promise<void> {
+async function aConnector(stationId: number, evseId: number, connectorId: number): Promise<void> {
   await Connector.create({
     stationId,
     evseId,
     connectorId,
-    evseTypeConnectorId,
     ocppConnectionName: STATION,
     status: 'Available',
     errorCode: 'NoError',
@@ -136,22 +127,14 @@ describe('DrizzleChargingStationRepository', () => {
     } as never);
     stationId = (station as unknown as { id: number }).id;
 
-    // Two commissioned connectors give two FK-valid evseTypeConnectorIds. Both Connector
-    // rows are hung off the FIRST evse so the test covers grouping (an evse with two
-    // connectors) and the empty case (an evse with none) in the same fixture.
-    const first = await locationRepository.commissionEvseForOcpp16Connector(
+    const first = await locationRepository.autoCommissionEvseForOcpp16Connector(
       DEFAULT_TENANT_ID,
       STATION,
-      1,
     );
-    const second = await locationRepository.commissionEvseForOcpp16Connector(
-      DEFAULT_TENANT_ID,
-      STATION,
-      2,
-    );
+    await locationRepository.autoCommissionEvseForOcpp16Connector(DEFAULT_TENANT_ID, STATION);
     primaryEvseId = first.evseId;
-    await aConnector(stationId, first.evseId, 1, first.evseTypeConnectorId);
-    await aConnector(stationId, first.evseId, 2, second.evseTypeConnectorId);
+    await aConnector(stationId, first.evseId, 1);
+    await aConnector(stationId, first.evseId, 2);
   });
 
   describe('readChargingStationByOcppConnectionName', () => {

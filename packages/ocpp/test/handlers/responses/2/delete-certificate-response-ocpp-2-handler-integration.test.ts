@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
   CertificateUseEnum,
   DeleteCertificateStatusEnum,
@@ -17,6 +14,7 @@ import {
   OCPP_CallAction,
   type OcppRequest,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/types';
 import {
   ChargingStation,
@@ -31,6 +29,9 @@ import {
 } from '@citrineos/dal';
 import { DeleteCertificateResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * DeleteCertificate carries the certificate to remove as certificateHashData, and the endpoint
@@ -61,7 +62,7 @@ const CERT_B = {
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -88,7 +89,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

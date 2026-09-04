@@ -5,8 +5,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -29,7 +29,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let drizzleInstance: NodePgDatabase;
 let drizzlePool: pg.Pool;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -56,7 +56,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   // Both layers describe the same schema; Sequelize is used to create it.
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);

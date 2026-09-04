@@ -34,6 +34,7 @@ import {
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
   SequelizeAsyncJobStatusRepository,
@@ -92,7 +93,7 @@ import {
   DeviceModelService,
   NetworkProfileService,
   RealTimeAuthorizer,
-} from '@/services/index.js';
+} from '@services/index.js';
 import {
   Authenticator,
   BasicAuthenticationFilter,
@@ -324,6 +325,7 @@ function registerRepositories(container: AwilixContainer): void {
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
+      tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
     });
