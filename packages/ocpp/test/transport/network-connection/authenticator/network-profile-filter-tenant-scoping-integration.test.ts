@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import type { AuthenticationOptions, BootstrapConfig } from '@citrineos/base';
-import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
+import type { AuthenticationOptions } from '@citrineos/base';
+import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
@@ -18,7 +15,10 @@ import {
 import type { IDeviceModelRepository } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { Logger } from 'tslog';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * ServerNetworkProfile has a tenantId, but its primary key is an operator-chosen string shared
@@ -61,7 +61,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

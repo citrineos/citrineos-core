@@ -25,6 +25,4 @@ COPY --from=build /usr/local/apps/citrineos /usr/local/apps/citrineos
 
 WORKDIR /usr/local/apps/citrineos/apps/ocpi-server
 
-EXPOSE ${PORT}
-
 CMD ["pnpm", "run", "start:docker:cloud"]

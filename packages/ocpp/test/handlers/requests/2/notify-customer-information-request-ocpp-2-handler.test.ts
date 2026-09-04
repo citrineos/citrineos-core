@@ -8,10 +8,11 @@ import {
   MessageOrigin,
   MessageState,
   OCPP_CallAction,
+  type OCPP2_request_types,
 } from '@citrineos/types';
-import { DEFAULT_TENANT_ID, Message, type OCPP2_request_types } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, Message } from '@citrineos/base';
 import { NotifyCustomerInformationRequestOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-container.js';
 
 const STATION_ID = 'station-001';
 const REQUEST_ID = 9940;
@@ -54,11 +55,13 @@ describe('NotifyCustomerInformationRequestOcpp2Handler', () => {
     ocppMessageRepository = { readAllByQuery: vi.fn() };
     ocppSender = makeMockOcppSender();
 
-    handler = new NotifyCustomerInformationRequestOcpp2Handler({
-      logger,
-      ocppSender,
-      ocppMessageRepository,
-    });
+    handler = new NotifyCustomerInformationRequestOcpp2Handler(
+      mockDeps<typeof NotifyCustomerInformationRequestOcpp2Handler>({
+        logger,
+        ocppSender,
+        ocppMessageRepository,
+      }),
+    );
   });
 
   it('correlates the requestId against the stored payload and acknowledges', async () => {

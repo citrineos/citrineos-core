@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, IMessageContext } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessageContext } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
 export const aMessageContext = (
   updateFunction?: UpdateFunction<IMessageContext>,

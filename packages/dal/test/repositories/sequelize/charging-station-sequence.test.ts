@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { beforeEach, describe, expect, it, Mock, Mocked, vi } from 'vitest';
-import { BootstrapConfig } from '@citrineos/base';
+import { beforeEach, describe, expect, it, type Mock, type Mocked, vi } from 'vitest';
+import type { SystemConfig } from '@citrineos/types';
 import { ChargingStationSequenceTypeEnum } from '@citrineos/types';
 import { Sequelize } from 'sequelize-typescript';
-import { ILogObj, Logger } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 import { ChargingStationSequence } from '@dal/models/charging-station-sequence/charging-station-sequence.js';
 import { SequelizeChargingStationSequenceRepository } from '@dal/repositories/sequelize/charging-station-sequence.js';
 import { createTestContainer, getTestInstance } from '../../test-container.js';
@@ -23,7 +23,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
   let mockSequelize: Mocked<Sequelize>;
   let mockTransaction: Mock;
   let mockLogger: Mocked<Logger<ILogObj>>;
-  let mockConfig: BootstrapConfig;
+  let mockConfig: SystemConfig;
 
   const tenantId = 1;
   const ocppConnectionName = 'CP_TEST_001';
@@ -45,7 +45,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       getSubLogger: vi.fn().mockReturnThis(),
     } as unknown as Mocked<Logger<ILogObj>>;
 
-    mockConfig = {} as BootstrapConfig;
+    mockConfig = {} as SystemConfig;
 
     repository = getTestInstance(container, SequelizeChargingStationSequenceRepository, {
       config: mockConfig,

@@ -24,7 +24,7 @@ import {
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
-  ILocationRepository,
+  IChargingStationRepository,
 } from '@citrineos/dal';
 import { ChangeConfiguration, ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
@@ -38,7 +38,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -56,7 +56,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;

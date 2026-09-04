@@ -26,7 +26,7 @@ import {
   GenerateCertificateChainQuerySchema,
   GenerateCertificateChainSchema,
 } from '@citrineos/dal';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import type { FastifyRequest } from 'fastify';
 
 interface Deps extends AbstractEndpointDependencies {
