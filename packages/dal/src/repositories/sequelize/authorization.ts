@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type IAuthorizationRepository } from '../repositories.js';
-import { type AuthorizationQuerystring } from '../../interfaces/queries/authorization.js';
-import { Authorization } from '../../models/authorization/authorization.js';
+import { type AuthorizationQuerystring } from '@dal/interfaces/index.js';
+import { Authorization } from '@dal/models/authorization/index.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { Op } from 'sequelize';
 import { Tariff } from '@dal/models/tariff/tariffs.js';
@@ -45,6 +45,14 @@ export class SequelizeAuthorizationRepository
         },
       ],
     });
+  }
+
+  async updateByKey(
+    tenantId: number,
+    value: object,
+    key: string,
+  ): Promise<Authorization | undefined> {
+    return await this._updateByKey(tenantId, value, key);
   }
 
   /**

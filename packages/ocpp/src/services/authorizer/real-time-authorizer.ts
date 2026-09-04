@@ -4,18 +4,17 @@
 import { type IAuthorizer, type IMessageContext } from '@citrineos/base';
 import {
   AuthorizationStatusEnum,
-  AuthorizationWhitelistEnum,
   type AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnum,
   type ConnectorDto,
   type EvseDto,
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/dal';
-import type { Authorization } from '@citrineos/dal';
+import type { Authorization, IAuthorizationRepository, ILocationRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { OidcTokenProvider } from '../../apis/authorization/index.js';
+import { OidcTokenProvider } from '@/apis/index.js';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
@@ -37,20 +36,24 @@ export interface RealTimeAuthorizationResponse {
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _locationRepository: ILocationRepository;
+  private _authorizationRepository: IAuthorizationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   constructor({
     locationRepository,
+    authorizationRepository,
     config,
     logger,
   }: {
     locationRepository: ILocationRepository;
+    authorizationRepository: IAuthorizationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
     this._locationRepository = locationRepository;
+    this._authorizationRepository = authorizationRepository;
     this._config = config;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     if (config.oidcClient) {
@@ -210,11 +213,18 @@ export class RealTimeAuthorizer implements IAuthorizer {
       evseId: evseId,
       connectorId: connectorId!,
     };
-    authorization.save().catch((error) => {
+
+    try {
+      await this._authorizationRepository.updateByKey(
+        context.tenantId,
+        authorization,
+        authorization.id,
+      );
+    } catch (error) {
       this._logger.error(
         `Failed to save realTimeAuthLastAttempt for authorization ${authorization.id}: ${error}`,
       );
-    });
+    }
 
     return result;
   }

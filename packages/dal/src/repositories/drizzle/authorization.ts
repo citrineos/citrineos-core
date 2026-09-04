@@ -12,7 +12,7 @@ import {
   type AuthorizationEntity,
   authorizationTable,
   tenantAuthorizationTable,
-} from '../../db/drizzle/schema/authorization.js';
+} from '@dal/db/drizzle/index.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
 import type { AuthorizationQuerystring } from '@dal/interfaces/queries/authorization.js';
@@ -149,5 +149,13 @@ export class DrizzleAuthorizationRepository
       ...this.toDto(authorization as AuthorizationEntity),
       tariff: toTariffDto(tariff as TariffEntity),
     }));
+  }
+
+  async updateByKey(
+    tenantId: number,
+    value: object,
+    key: string,
+  ): Promise<AuthorizationDto | undefined> {
+    return this.updateById(tenantId, Number(key), value);
   }
 }

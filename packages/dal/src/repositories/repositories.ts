@@ -11,21 +11,21 @@ import type {
   CertificateCreate,
   CertificateDto,
   CertificateUseEnumType,
-  DeleteCertificateAttemptCreate,
-  DeleteCertificateAttemptDto,
-  DeleteCertificateStatusEnumType,
-  InstallCertificateAttemptCreate,
-  InstallCertificateAttemptDto,
-  InstallCertificateStatusEnumType,
-  InstalledCertificateCreate,
-  InstalledCertificateDto,
-  HashAlgorithmEnumType,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
+  DeleteCertificateAttemptCreate,
+  DeleteCertificateAttemptDto,
+  DeleteCertificateStatusEnumType,
   EvseDto,
+  HashAlgorithmEnumType,
+  InstallCertificateAttemptCreate,
+  InstallCertificateAttemptDto,
+  InstallCertificateStatusEnumType,
+  InstalledCertificateCreate,
+  InstalledCertificateDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -42,41 +42,45 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
-import type { LocalListVersion } from '../models/authorization/local-list-version.js';
-import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type { ChangeConfiguration } from '../models/change-configuration.js';
+import type { LocalListVersion, SendLocalList } from '@dal/models/authorization/index.js';
+import type {
+  ChangeConfiguration,
+  ChargingStationSecurityInfo,
+  Reservation,
+} from '@dal/models/index.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
+import type { ChargingStationSequence } from '@dal/models/charging-station-sequence/index.js';
 import type { Component } from '../models/device-model/component.js';
 import type { EvseType } from '../models/device-model/evse-type.js';
 import type { Variable } from '../models/device-model/variable.js';
-import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
-import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
-import type { ChargingStation } from '../models/location/charging-station.js';
-import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
+import type { VariableAttribute, VariableCharacteristics } from '@dal/models/device-model/index.js';
+import type {
+  ChargingStation,
+  ChargingStationNetworkProfile,
+  SetNetworkProfile,
+  StatusNotification,
+} from '@dal/models/location/index.js';
 import type { Connector } from '../models/location/connector.js';
 import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
-import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
-import type { StatusNotification } from '../models/location/status-notification.js';
-import type { MessageInfo } from '../models/message-info/message-info.js';
-import type { Reservation } from '../models/reservation.js';
+import type { MessageInfo } from '@dal/models/message-info/index.js';
 import type { Tariff } from '../models/tariff/tariffs.js';
 import type {
   MeterValue,
   StopTransaction,
   Transaction,
 } from '../models/transaction-event/index.js';
-import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
+import type { TransactionEvent } from '@dal/models/transaction-event/index.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
-import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
-import type { TariffQueryString } from '../interfaces/queries/tariff.js';
-import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
+import type {
+  AuthorizationQuerystring,
+  TariffQueryString,
+  VariableAttributeQuerystring,
+} from '@dal/interfaces/index.js';
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
@@ -88,6 +92,11 @@ export interface IAuthorizationRepository {
     query: AuthorizationQuerystring,
   ) => Promise<AuthorizationDto | undefined>;
   findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
+  updateByKey: (
+    tenantId: number,
+    value: object,
+    key: string,
+  ) => Promise<AuthorizationDto | undefined>;
 }
 
 /**
