@@ -20,6 +20,7 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
+  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
@@ -36,6 +37,7 @@ import type {
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
+  TariffDto,
   TenantDto,
   UpdateEnumType,
 } from '@citrineos/types';
@@ -69,7 +71,6 @@ import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
 import type { Reservation } from '../models/reservation.js';
-import type { Tariff } from '../models/tariff/tariffs.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -233,32 +234,15 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<LocalListVersion>;
 }
 
-export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
+export interface ILocationRepository {
+  readLocationById: (tenantId: number, id: number) => Promise<LocationDto | undefined>;
+}
+
+export interface IChargingStationRepository {
   readChargingStationByStationId: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStation | undefined>;
-  readConnectorByStationIdAndOcpp16ConnectorId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
-  readEvseByStationIdAndOcpp201EvseId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
-  readConnectorByStationIdAndOcpp201EvseType: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
-  readConnectorsWithTariffsByStationId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    evseTypeId?: number,
-  ) => Promise<Connector[]>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
@@ -279,30 +263,63 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
-  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
-  createOrUpdateOcpp16Connector(
-    tenantId: number,
-    connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined>;
-  createOrUpdateOcpp2Connector(
-    tenantId: number,
-    connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined>;
-  autoCommissionEvseForOcpp16Connector(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<{ evseId: number }>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: ConnectorDto,
-    query: object,
-  ): Promise<Connector[]>;
   updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,
     timestamp: string,
   ): Promise<void>;
 }
+
+export interface IConnectorRepository {
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseType: OCPP2_common_types.EVSEType,
+  ) => Promise<Connector | undefined>;
+  createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: ConnectorDto,
+    query: object,
+  ): Promise<Connector[]>;
+  readConnectorsWithTariffsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ) => Promise<Connector[]>;
+  createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<Connector | undefined>;
+}
+
+export interface IEvseRepository {
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  autoCommissionEvseForOcpp16Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<{ evseId: number }>;
+}
+
+export interface ILocationDomainRepository
+  extends CrudRepository<Location>,
+    ILocationRepository,
+    IChargingStationRepository,
+    IConnectorRepository,
+    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (
@@ -455,12 +472,13 @@ export interface IMessageInfoRepository {
   ): Promise<MessageInfoDto>;
 }
 
-export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined>;
-  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
-  upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
+export interface ITariffRepository {
+  findById(tenantId: number, id: number): Promise<TariffDto | undefined>;
+  findByConnectorId(tenantId: number, connectorId: number): Promise<TariffDto | undefined>;
+  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  upsertTariff(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
+  upsertTariffByTariffId(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
 }
 
 export interface ICertificateRepository {

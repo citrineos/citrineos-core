@@ -18,7 +18,7 @@ import type {
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocalAuthListRepository,
-  ILocationRepository,
+  ILocationDomainRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
@@ -40,6 +40,7 @@ import {
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
 } from '../../db/drizzle/index.js';
@@ -83,7 +84,7 @@ export class RepositoryStore {
   componentRepository: CrudRepository<Component>;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
-  locationRepository: ILocationRepository;
+  locationRepository: ILocationDomainRepository;
   messageInfoRepository: IMessageInfoRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   reservationRepository: IReservationRepository;
@@ -178,6 +179,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.tariffRepository = new DrizzleTariffRepository({ config, logger });
     } else {
       this.authorizationRepository = new SequelizeAuthorizationRepository({
         config,
@@ -226,9 +228,9 @@ export class RepositoryStore {
         logger,
         sequelizeInstance,
       });
+      this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
     }
 
-    this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
       config,
       logger,

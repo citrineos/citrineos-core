@@ -6,11 +6,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # Dependency Injection (Awilix)
 
-How DI is orchestrated in the server. Read this alongside `packages/ocpp/src/server/container.ts` and `apps/ocpp-server/src/citrine-os-server.ts`
+How DI is orchestrated in the server. Read this alongside [`container.ts`](./container.ts) and
+[`citrineos-server.ts`](./citrineos-server.ts); for subclassing the server from a downstream
+distribution, see [Extending `citrineos-server`](./README.md).
 
 ## The model
 
-One Awilix container, built once at a single composition root: `buildContainer()` in `container.ts`. The server `citrine-os-server.ts` builds it in its constructor and then resolves everything from it.
+One Awilix container, built once at a single composition root: `buildContainer()` in `container.ts`. The server `citrineos-server.ts` builds it during `initialize()` — then hands it to the overridable `registerAdditionalServices()` hook, so a downstream distribution can add or replace registrations — and resolves everything from it.
 
 The container runs in PROXY mode: a class declares its dependencies as a destructured constructor object, and Awilix supplies them by matching parameter name → registered token name.
 
@@ -27,12 +29,17 @@ A handful of registrations use `asFunction` instead of `asClass` — where const
 ## Bootstrap flow
 
 ```
-constructor   build the prebuilt primitives the container needs (logger, cache,
-              ocppValidator, server, fileStorage), then buildContainer(config, {…})
+constructor   validate + store config only — no wiring, so a subclass's own fields
+              are initialized before any of the steps below run
 
-initialize()  resolve & wire from the container, in order:
+initialize()  initPrimitives   build what the container depends on (logger, server,
+                               ajv, ocppValidator, cache, fileStorage)
+              initContainer    buildContainer(config, {…}), then the
+                               registerAdditionalServices() hook
+              then resolve & wire from the container, in order:
               registerHttpPlugins → sequelize → message broker
-              → initSystem (modules) → db → health → shutdown handlers
+              → initSystem (modules/APIs) → db → health → shutdown handlers
+              → onInitialized()
 ```
 
 Those few primitives are built before the container because the container depends on them; they're passed in and registered as values.
@@ -160,8 +167,8 @@ A service used across modules or by the network stack.
 realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
 
 apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-  if (config.util.authProvider.oidc) return new OIDCAuthProvider(config.util.authProvider.oidc, logger);
-  if (config.util.authProvider.localByPass) return new LocalBypassAuthProvider(logger);
+  if (config.auth.oidc) return new OIDCAuthProvider(config.auth.oidc, logger);
+  if (config.auth.localBypass) return new LocalBypassAuthProvider(logger);
   throw new Error('No valid API authentication provider configured');
 }).singleton(),
 ```
@@ -197,7 +204,8 @@ constructor({ monitoringService }: { /* … */ }) {
 
 1. If it has internal services: add `register<Module>Services` in the package and export it.
 2. Register the module in `container.ts` (`registerModules`).
-3. Add one row to `MODULE_SPECS` in `citrine-os-server.ts`: `{ moduleToken, configKey }`.
+3. Add one row to `DEFAULT_MODULE_SPECS` in `citrineos-server.ts`: `{ moduleToken }`. A downstream
+   distribution adds its own modules by overriding the `moduleSpecs` getter instead of editing this map.
 
 **Example** — the Tenant module (no internal services, so no `register.ts`). Its module is registered in `container.ts`:
 
@@ -205,12 +213,11 @@ constructor({ monitoringService }: { /* … */ }) {
 tenantModule: asClass(TenantModule).scoped(),
 ```
 
-and one row in `citrine-os-server.ts` drives its startup:
+and one row in `citrineos-server.ts` drives its startup:
 
 ```ts
 [EventGroup.Tenant]: {
   moduleToken: 'tenantModule',
-  configKey: 'tenant',
 },
 ```
 
