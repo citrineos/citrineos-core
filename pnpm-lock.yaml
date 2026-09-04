@@ -13,8 +13,8 @@ catalogs:
       specifier: 9.16.0
       version: 9.16.0
     '@faker-js/faker':
-      specifier: 8.4.1
-      version: 8.4.1
+      specifier: 10.5.0
+      version: 10.5.0
     '@fastify/auth':
       specifier: 5.1.0
       version: 5.1.0
@@ -837,7 +837,7 @@ importers:
         version: 9.16.0
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 8.4.1
+        version: 10.5.0
       '@fastify/auth':
         specifier: 'catalog:'
         version: 5.1.0
@@ -925,7 +925,7 @@ importers:
         version: 9.16.0
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 8.4.1
+        version: 10.5.0
       awilix:
         specifier: 'catalog:'
         version: 13.0.3
@@ -1242,7 +1242,7 @@ importers:
         version: 9.16.0
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 8.4.1
+        version: 10.5.0
       '@types/amqplib':
         specifier: 'catalog:'
         version: 0.10.8
@@ -2189,9 +2189,9 @@ packages:
     resolution: {integrity: sha512-ZAoA40rNMPwSm+AeHpCq8STiNAwzWLJuP8Xv4CHIc9wv/PSuExjMrmjfYNj682vW0OOiZ1HKxzvjQr9XZIisQA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@faker-js/faker@8.4.1':
-    resolution: {integrity: sha512-XQ3cU+Q8Uqmrbf2e0cIC/QN43sTBSC8KF12u29Mb47tWrt2hAgBXSgpZMj4Ao8Uk0iJcU99QsOCaIL8934obCg==}
-    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0, npm: '>=6.14.13'}
+  '@faker-js/faker@10.5.0':
+    resolution: {integrity: sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@fastify/accept-negotiator@2.1.0':
     resolution: {integrity: sha512-F3EVbzWt+xcnVaOHmWyIlpuFtbxOln7HDZQsh09MtMmMm/CipMayNt8hnIL8VQi54u2ZociDbf+iluGYkf7B1A==}
@@ -11517,7 +11517,7 @@ snapshots:
       '@eslint/core': 0.13.0
       levn: 0.4.1
 
-  '@faker-js/faker@8.4.1': {}
+  '@faker-js/faker@10.5.0': {}
 
   '@fastify/accept-negotiator@2.1.0': {}
 
