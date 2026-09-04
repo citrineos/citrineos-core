@@ -22,7 +22,7 @@
     },
     "placeholders": {
       "currency": "e.g. USD",
-      "tariffAltText": "{ \"en\": \"Standard tariff\", \"de\": \"Standardtarif\" }"
+      "tariffAltText": "'{ \"en\": \"Standard tariff\", \"de\": \"Standardtarif\" '}"
     },
     "detail": {
       "currency": "Currency",
@@ -31,7 +31,8 @@
       "pricePerSession": "Price / session",
       "authorizationAmount": "Authorization Amount",
       "paymentFee": "Payment Fee",
-      "taxRate": "Tax Rate (%)"
+      "taxRate": "Tax Rate (%)",
+      "tariffAltText": "Tariff Alt Text"
     }
   }
 }

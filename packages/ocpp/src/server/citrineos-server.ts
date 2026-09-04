@@ -44,6 +44,7 @@ import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 import { buildContainer } from './container.js';
 import { type HealthCheckResult, HealthCheckService } from './health-check-service.js';
+import { assertSequelizeSchemaMatches, type SchemaValidationReport } from '@/util/index.js';
 
 /** The container token needed to initialize a module in its own scope. */
 export interface ModuleInitSpec {
@@ -115,6 +116,7 @@ export class CitrineOSServer {
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
   protected _isShuttingDown = false;
+  protected _schemaValidationReport: SchemaValidationReport | null = null;
 
   // Single source of truth mapping each module's EventGroup to the container token
   // needed to initialize it. initAllModules() and initModule() both read from this
@@ -557,6 +559,13 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
+
+    this._schemaValidationReport = await assertSequelizeSchemaMatches(
+      this._sequelizeInstance,
+      this._config,
+      this._logger,
+    );
+
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
@@ -574,6 +583,7 @@ export class CitrineOSServer {
       this._config.timeouts.notReadyThresholdSeconds,
       this._logger,
     );
+    this._healthCheckService.setSchemaValidationReport(this._schemaValidationReport);
   }
 
   protected registerShutdownHandlers(): void {

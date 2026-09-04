@@ -119,6 +119,13 @@ export const configSchema = z.object({
           ca: z.string().optional(),
         })
         .optional(),
+      schema: z.string().default('public'),
+      // Verify at startup that the live schema still matches the Sequelize models
+      // and refuse to start if it does not. `validateSchemaSeverity: 'warn'`
+      // reports drift without blocking startup, for rolling this out onto an
+      // existing deployment before switching it to a hard gate.
+      validateSchema: z.boolean().default(true),
+      validateSchemaSeverity: z.enum(['error', 'warn']).default('error'),
     })
     .prefault({}),
 
