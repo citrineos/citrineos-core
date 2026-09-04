@@ -43,12 +43,17 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @Column(DataType.INTEGER)
   declare reservationId?: number | null;
 
-  @ForeignKey(() => Transaction)
   @Column({
     type: DataType.INTEGER,
-    unique: true,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
   })
   declare transactionDatabaseId: number;
+
+  @Column({
+    type: DataType.DATE,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
+  })
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
@@ -70,6 +75,15 @@ export class StartTransaction extends Model implements StartTransactionDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: StartTransaction): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

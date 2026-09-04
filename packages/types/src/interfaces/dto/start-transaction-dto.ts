@@ -13,6 +13,7 @@ export const StartTransactionSchema = BaseSchema.extend({
   timestamp: z.iso.datetime(),
   reservationId: z.number().int().nullable().optional(),
   transactionDatabaseId: z.number().int(),
+  transactionCreatedAt: z.date().optional(),
   connectorDatabaseId: z.number().int(),
   connector: ConnectorSchema.optional(),
 });
