@@ -11,7 +11,7 @@ import {
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import type { Authorization } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -36,7 +36,7 @@ export interface RealTimeAuthorizationResponse {
 }
 
 export class RealTimeAuthorizer implements IAuthorizer {
-  private _locationRepository: ILocationRepository;
+  private _locationRepository: IChargingStationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
@@ -46,7 +46,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
     config,
     logger,
   }: {
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {

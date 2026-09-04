@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   buildMessageEndpoints,
-  forwardMessageEndpoint,
   DEFAULT_TENANT_ID,
+  forwardMessageEndpoint,
+  type IEndpointBuilder,
   type MessageEndpointClass,
 } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
@@ -27,7 +28,11 @@ describe('forwardMessageEndpoint', () => {
 
   const buildEndpoint = () => {
     const endpointClasses: ReadonlyArray<MessageEndpointClass> = [ResetEndpoint];
-    return buildMessageEndpoints(container, endpointClasses)[0];
+    const builder: IEndpointBuilder = {
+      build: <T>(target: new (...args: never[]) => T) =>
+        container.build(target as unknown as new (...args: any[]) => T),
+    };
+    return buildMessageEndpoints(builder, endpointClasses)[0];
   };
 
   beforeEach(() => {

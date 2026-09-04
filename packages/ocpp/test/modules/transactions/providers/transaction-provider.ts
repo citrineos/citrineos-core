@@ -4,7 +4,7 @@
 import { OCPP2_0_1 } from '@citrineos/types';
 
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 import { Transaction } from '@citrineos/dal';
 
 export function aTransaction(updateFunction?: UpdateFunction<Transaction>): Transaction {

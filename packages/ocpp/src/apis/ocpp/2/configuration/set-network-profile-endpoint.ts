@@ -15,7 +15,7 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { NetworkProfileService } from '@/services/network-profile/network-profile-service.js';
+import type { NetworkProfileService } from '@services/network-profile/network-profile-service.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 
 const WEBSOCKET_SERVER_CONFIG_ID = 'websocketServerConfigId';

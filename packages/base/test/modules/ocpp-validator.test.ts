@@ -415,6 +415,85 @@ describe('OCPPValidator', () => {
         expect(result.isValid).toBe(true);
       });
     });
+
+    /**
+     * evseId 0 is the Charging Station itself: MeterValues from the grid meter (J01.FR.14),
+     * a limit that applies to the whole station (K11), a ClearChargingProfile of the
+     * ChargingStationMaxProfile (K10). The Part 3 schemas bound it at 0, not 1.
+     */
+    describe('evseId 0 addresses the Charging Station', () => {
+      const meterValuesForTheGridMeter = {
+        evseId: 0,
+        meterValue: [
+          {
+            timestamp: '2026-06-10T13:42:56.340Z',
+            sampledValue: [{ value: 3.4, location: 'Inlet' }],
+          },
+        ],
+      };
+
+      it.each([OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1])(
+        'accepts a MeterValuesRequest for the grid meter on %s',
+        (protocol) => {
+          const result = validator.validateOCPPRequest(
+            OCPP_CallAction.MeterValues,
+            meterValuesForTheGridMeter,
+            protocol,
+          );
+
+          expect(result.isValid).toBe(true);
+          expect(result.errors).toBeUndefined();
+        },
+      );
+
+      it.each([OCPPVersion.OCPP2_0_1, OCPPVersion.OCPP2_1])(
+        'still refuses a negative evseId in a MeterValuesRequest on %s',
+        (protocol) => {
+          const result = validator.validateOCPPRequest(
+            OCPP_CallAction.MeterValues,
+            { ...meterValuesForTheGridMeter, evseId: -1 },
+            protocol,
+          );
+
+          expect(result.isValid).toBe(false);
+        },
+      );
+
+      it('accepts a NotifyChargingLimitRequest for the whole station on OCPP 2.1', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.NotifyChargingLimit,
+          { evseId: 0, chargingLimit: { chargingLimitSource: 'EMS' } },
+          OCPPVersion.OCPP2_1,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+
+      it('accepts a ClearedChargingLimitRequest for the whole station on OCPP 2.1', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.ClearedChargingLimit,
+          { evseId: 0, chargingLimitSource: 'EMS' },
+          OCPPVersion.OCPP2_1,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+
+      it('lets the CSMS clear the ChargingStationMaxProfile on OCPP 2.1', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.ClearChargingProfile,
+          {
+            chargingProfileCriteria: {
+              evseId: 0,
+              chargingProfilePurpose: 'ChargingStationMaxProfile',
+            },
+          },
+          OCPPVersion.OCPP2_1,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+    });
   });
 
   describe('validateOCPPResponse', () => {
@@ -524,6 +603,26 @@ describe('OCPPValidator', () => {
       );
 
       expect(result.isValid).toBe(false);
+    });
+
+    it('accepts a station-wide composite schedule (evseId 0) on OCPP 2.1', () => {
+      const result = validator.validateOCPPResponse(
+        OCPP_CallAction.GetCompositeSchedule,
+        {
+          status: 'Accepted',
+          schedule: {
+            evseId: 0,
+            duration: 3600,
+            scheduleStart: '2026-06-10T13:42:56.340Z',
+            chargingRateUnit: 'A',
+            chargingSchedulePeriod: [{ startPeriod: 0, limit: 32 }],
+          },
+        },
+        OCPPVersion.OCPP2_1,
+      );
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toBeUndefined();
     });
   });
 

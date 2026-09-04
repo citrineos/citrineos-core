@@ -13,7 +13,7 @@ import {
   OcppError,
   RequestBuilder,
 } from '@citrineos/base';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   type OcppResponse,
@@ -112,12 +112,12 @@ function frames(sink: Mocked<MessagesExchangeSink>, direction: 'inbound' | 'outb
   return recorded(sink, 'frame').filter((event: any) => event.direction === direction);
 }
 
-function buildMockLocationRepository(): Mocked<ILocationRepository> {
+function buildMockLocationRepository(): Mocked<IChargingStationRepository> {
   return {
     setChargingStationIsOnlineAndOCPPVersion: vi.fn().mockResolvedValue(undefined),
     readChargingStationByStationId: vi.fn().mockResolvedValue(undefined),
     updateChargingStationTimestamp: vi.fn().mockResolvedValue(undefined),
-  } as unknown as Mocked<ILocationRepository>;
+  } as unknown as Mocked<IChargingStationRepository>;
 }
 
 // ─── Test Suite ────────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ describe('MessageRouterImpl', () => {
   let sink: Mocked<MessagesExchangeSink>;
   let notifier: Mocked<CallbackUrlNotifier>;
   let networkHook: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<ILocationRepository>;
+  let locationRepository: Mocked<IChargingStationRepository>;
   let router: MessageRouterImpl;
 
   beforeEach(() => {
@@ -526,6 +526,36 @@ describe('MessageRouterImpl', () => {
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[0]).toBe(MessageTypeId.CallError);
       expect(sentMessage[2]).toBe(ErrorCode.SecurityError);
+    });
+
+    /**
+     * OCPP-J 4.3: "NotImplemented - Requested Action is not known by receiver." InternalError is
+     * "an internal error occurred and the receiver was not able to process the requested Action",
+     * which is what a station was told when it merely spoke a newer dialect.
+     */
+    it.each([
+      ['an action no version defines', 'NotAnAction', OCPPVersion.OCPP2_0_1],
+      ['a 2.1 action on a 2.0.1 connection', 'NotifyPriorityCharging', OCPPVersion.OCPP2_0_1],
+      ['a 2.x action on a 1.6 connection', 'TransactionEvent', OCPPVersion.OCPP1_6],
+    ])('answers %s with NotImplemented', async (_label, action, protocol) => {
+      const callMessage = JSON.stringify([MessageTypeId.Call, CORRELATION_ID, action, {}]);
+
+      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, protocol);
+
+      expect(result).toBe(false);
+      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
+      expect(sentMessage[0]).toBe(MessageTypeId.CallError);
+      expect(sentMessage[1]).toBe(CORRELATION_ID);
+      expect(sentMessage[2]).toBe(ErrorCode.NotImplemented);
+      expect(sender.send).not.toHaveBeenCalled();
+    });
+
+    it('still records a Call whose action it does not know', async () => {
+      const callMessage = JSON.stringify([MessageTypeId.Call, CORRELATION_ID, 'NotAnAction', {}]);
+
+      await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+
+      expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
     });
 
     it('should send CallError when validation fails', async () => {
@@ -1010,7 +1040,7 @@ describe('MessageRouterImpl', () => {
         TENANT_ID,
         action,
         payload,
-        EventGroup.General,
+        EventGroup.Reporting,
         MessageOrigin.ChargingStationManagementSystem,
         PROTOCOL,
         new Date(Date.now() - ageMs),

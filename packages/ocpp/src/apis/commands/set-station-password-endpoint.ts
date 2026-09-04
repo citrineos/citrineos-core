@@ -28,10 +28,10 @@ import {
 } from '@citrineos/types';
 import type { UpdateChargingStationPasswordQueryString } from '@citrineos/dal';
 import { UpdateChargingStationPasswordQuerySchema } from '@citrineos/dal';
-import type { ILocationRepository } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import { VariableAttribute } from '@citrineos/dal';
-import type { DeviceModelService } from '@/services/device-model/device-model-service.js';
-import { generatePassword, isValidPassword } from '@/services/index.js';
+import type { DeviceModelService } from '@services/device-model/device-model-service.js';
+import { generatePassword, isValidPassword } from '@services/index.js';
 import { resolveStationProtocol } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,7 +41,7 @@ interface SetStationPasswordEndpointDependencies extends AbstractEndpointDepende
   cache: ICache;
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type SetStationPasswordEndpointRoute = {
@@ -61,7 +61,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
   private readonly _cache: ICache;
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,

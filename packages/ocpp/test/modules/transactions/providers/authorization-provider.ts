@@ -5,7 +5,7 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { AuthorizationStatusEnum, AuthorizationWhitelistEnum, IdTokenEnum } from '@citrineos/types';
 import { Authorization } from '@citrineos/dal';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
 export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   const item = Object.create(Authorization.prototype) as Authorization;

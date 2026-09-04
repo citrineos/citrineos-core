@@ -10,12 +10,12 @@ import {
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import type { IChangeConfigurationRepository, ILocationRepository } from '@citrineos/dal';
+import type { IChangeConfigurationRepository, IChargingStationRepository } from '@citrineos/dal';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
 }
 
@@ -28,7 +28,7 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
   private readonly _changeConfigurationRepository: IChangeConfigurationRepository;
 
   constructor({

@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, type ICache } from '@citrineos/base';
 import { faker } from '@faker-js/faker';
 import { aRequest } from '../../../providers/incoming-message-provider.js';
 import { anAuthenticationOptions } from '../../../providers/authentication-options-provider.js';
-import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
 import { ConnectedStationFilter } from '@/transport/index.js';
-import { afterEach, describe, expect, it, Mock, vi } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('ConnectedStationFilter', () => {

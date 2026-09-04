@@ -5,7 +5,8 @@
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import type { ITariffRepository } from '../repositories.js';
 import type { TariffQueryString } from '../../interfaces/queries/tariff.js';
-import { Tariff } from '../../models/tariff/tariffs.js';
+import type { TariffDto } from '@citrineos/types';
+import { Tariff, type TariffData } from '../../models/tariff/tariffs.js';
 import { Connector } from '../../models/location/connector.js';
 
 export class SequelizeTariffRepository
@@ -16,7 +17,11 @@ export class SequelizeTariffRepository
     super({ config, namespace: Tariff.MODEL_NAME, logger, sequelizeInstance });
   }
 
-  async findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined> {
+  async findById(tenantId: number, id: number): Promise<TariffDto | undefined> {
+    return super.readByKey(tenantId, id);
+  }
+
+  async findByConnectorId(tenantId: number, connectorId: number): Promise<TariffDto | undefined> {
     return super.readOnlyOneByQuery(tenantId, {
       include: [
         {
@@ -28,45 +33,47 @@ export class SequelizeTariffRepository
     });
   }
 
-  async upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff> {
-    tariff.tenantId = tenantId;
+  async upsertTariff(tenantId: number, tariff: TariffDto): Promise<TariffDto> {
+    const model = Tariff.newInstance(tariff as TariffData);
+    model.tenantId = tenantId;
     return await this.s.transaction(async (transaction) => {
       const savedTariff = await this.readOnlyOneByQuery(tenantId, {
-        where: { id: tariff.id },
+        where: { id: model.id },
         transaction,
       });
       if (savedTariff) {
-        const updatedTariff = await savedTariff.set(tariff.data).save({ transaction });
+        const updatedTariff = await savedTariff.set(model.data).save({ transaction });
         this.emit('updated', [updatedTariff]);
         return updatedTariff;
       }
-      const createdTariff = await tariff.save({ transaction });
+      const createdTariff = await model.save({ transaction });
       this.emit('created', [createdTariff]);
       return createdTariff;
     });
   }
 
-  async upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff> {
-    tariff.tenantId = tenantId;
+  async upsertTariffByTariffId(tenantId: number, tariff: TariffDto): Promise<TariffDto> {
+    const model = Tariff.newInstance(tariff as TariffData);
+    model.tenantId = tenantId;
     return await this.s.transaction(async (transaction) => {
-      const savedTariff = tariff.tariffId
+      const savedTariff = model.tariffId
         ? await this.readOnlyOneByQuery(tenantId, {
-            where: { tariffId: tariff.tariffId },
+            where: { tariffId: model.tariffId },
             transaction,
           })
         : undefined;
       if (savedTariff) {
-        const updatedTariff = await savedTariff.set(tariff.data).save({ transaction });
+        const updatedTariff = await savedTariff.set(model.data).save({ transaction });
         this.emit('updated', [updatedTariff]);
         return updatedTariff;
       }
-      const createdTariff = await tariff.save({ transaction });
+      const createdTariff = await model.save({ transaction });
       this.emit('created', [createdTariff]);
       return createdTariff;
     });
   }
 
-  async readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]> {
+  async readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]> {
     return super.readAllByQuery(tenantId, {
       where: {
         ...(query.id && { id: query.id }),
@@ -74,7 +81,7 @@ export class SequelizeTariffRepository
     });
   }
 
-  async deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]> {
+  async deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]> {
     if (!query.id) {
       throw new Error('Must specify at least one query parameter');
     }

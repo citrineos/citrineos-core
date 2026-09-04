@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
   EventGroup,
   MessageOrigin,
@@ -13,6 +10,7 @@ import {
   OCPP_CallAction,
   type OcppResponse,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/types';
 import {
   ChargingStation,
@@ -25,6 +23,9 @@ import {
 import { CompositeSchedule } from '@dal/db/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const STATION = 'CS-COMPOSITE-1';
 const OTHER_STATION = 'CS-COMPOSITE-2';
@@ -33,7 +34,7 @@ const UNCOMMISSIONED_EVSE = 6;
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -60,7 +61,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

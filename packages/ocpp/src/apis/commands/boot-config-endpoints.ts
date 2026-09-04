@@ -16,12 +16,12 @@ import {
 } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@citrineos/dal';
 import { ChargingStationKeyQuerySchema } from '@citrineos/dal';
-import type { IBootRepository, ILocationRepository } from '@citrineos/dal';
+import type { IBootRepository, IChargingStationRepository } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
   bootRepository: IBootRepository;
-  locationRepository: ILocationRepository;
+  locationRepository: IChargingStationRepository;
 }
 
 type BootConfigReadRoute = { Querystring: ChargingStationKeyQuerystring };
@@ -42,7 +42,7 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
   };
 
   private readonly _bootRepository: IBootRepository;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _locationRepository: IChargingStationRepository;
 
   constructor({ logger, bootRepository, locationRepository }: BootConfigEndpointDependencies) {
     super(logger);

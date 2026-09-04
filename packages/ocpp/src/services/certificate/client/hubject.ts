@@ -11,7 +11,7 @@ import {
   HUBJECT_DEFAULT_TOKENURL,
   type SystemConfig,
 } from '@citrineos/types';
-import { createPemBlock } from '@/services/certificate/certificate-util.js';
+import { createPemBlock } from '@services/certificate/certificate-util.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type { IV2GCertificateAuthorityClient } from './interface.js';

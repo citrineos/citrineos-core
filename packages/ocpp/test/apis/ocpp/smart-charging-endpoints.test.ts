@@ -331,19 +331,32 @@ describe('smartCharging message endpoints', () => {
         transactionEventRepository: {},
       });
 
-    const aProfile = (override: Record<string, unknown> = {}) => ({
+    const aProfile = (
+      override: Partial<OCPP2_0_1.ChargingProfileType> = {},
+    ): OCPP2_0_1.SetChargingProfileRequest => ({
       evseId: 0,
       chargingProfile: {
         id: 1,
         stackLevel: 0,
         chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile,
         chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
-        chargingSchedule: [],
+        // chargingSchedule is a 1-3 element tuple in the schema; one minimal
+        // period covers the profile-level rules these tests exercise.
+        chargingSchedule: [
+          {
+            id: 1,
+            // Absolute is the kind above, and the endpoint requires a
+            // startSchedule for Absolute and Recurring profiles.
+            startSchedule: new Date().toISOString(),
+            chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.A,
+            chargingSchedulePeriod: [{ startPeriod: 0, limit: 16 }],
+          },
+        ],
         ...override,
       },
     });
 
-    const handle = (request: ReturnType<typeof aProfile>) =>
+    const handle = (request: OCPP2_0_1.SetChargingProfileRequest) =>
       build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('reports a validation failure as an unsuccessful confirmation without sending', async () => {
@@ -366,7 +379,7 @@ describe('smartCharging message endpoints', () => {
     });
 
     /** A schedule whose single period asks the station to charge on one specific phase. */
-    const aPhaseToUseSchedule = () => ({
+    const aPhaseToUseSchedule = (): Partial<OCPP2_0_1.ChargingProfileType> => ({
       chargingSchedule: [
         {
           id: 1,

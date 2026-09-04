@@ -28,7 +28,7 @@ import {
   SetVariableStatusEnum,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
+import type { IDeviceModelRepository, IChargingStationRepository } from '@citrineos/dal';
 import { ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import type { DeviceModelService } from '@modules/configuration/device-model-service.js';
@@ -42,7 +42,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _locationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -60,7 +60,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: ILocationRepository;
+    locationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;

@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractEndpointApi,
   type AbstractEndpoint,
   type BuiltEndpoint,
   type ICommandEndpointMetadata,
-  AbstractEndpointApi,
 } from '@citrineos/base';
 import fastify, { type FastifyInstance } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
+
+export type EndpointClass = (new (...args: any[]) => AbstractEndpoint) & {
+  route: ICommandEndpointMetadata;
+};
 
 class HarnessApi extends AbstractEndpointApi {}
 

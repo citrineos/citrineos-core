@@ -2,19 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type IMessage, DEFAULT_TENANT_ID, type BootstrapConfig } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
-  type OcppRequest,
   EventGroup,
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
   OCPP_CallAction,
+  type OCPP2_response_types,
   OCPPVersion,
   SetNetworkProfileStatusEnum,
+  type SystemConfig,
 } from '@citrineos/types';
 import {
   ChargingStation,
@@ -26,6 +24,9 @@ import {
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * prepareSetNetworkProfile mints one correlation id for the whole batch and writes a
@@ -65,7 +66,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig);
+  } as unknown as SystemConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
 }, 90_000);
@@ -75,7 +76,9 @@ afterAll(async () => {
   await pgContainer?.stop();
 });
 
-function aResponse(ocppConnectionName: string): IMessage<OcppRequest> {
+function aResponse(
+  ocppConnectionName: string,
+): IMessage<OCPP2_response_types.SetNetworkProfileResponse> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -89,7 +92,7 @@ function aResponse(ocppConnectionName: string): IMessage<OcppRequest> {
     action: OCPP_CallAction.SetNetworkProfile,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
-  } as unknown as IMessage<OcppRequest>;
+  } as unknown as IMessage<OCPP2_response_types.SetNetworkProfileResponse>;
 }
 
 async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {

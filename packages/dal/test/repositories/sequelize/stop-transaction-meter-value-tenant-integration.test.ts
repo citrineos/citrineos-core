@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { MeterValueDto } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { MeterValueDto, SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -14,6 +11,9 @@ import {
   Tenant,
   Transaction,
 } from '../../../index.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * An OCPP 1.6 StopTransaction carries the session's readings in transactionData. The periodic
@@ -53,7 +53,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

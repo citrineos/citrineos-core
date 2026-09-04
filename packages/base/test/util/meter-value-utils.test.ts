@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import type { MeterValueDto, SampledValue } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { MeterValueUtils, type MeterValueDto, type SampledValue } from '../../index';
+import { MeterValueUtils } from '../../index.js';
 
 function makeMeterValue(
   ts: string,

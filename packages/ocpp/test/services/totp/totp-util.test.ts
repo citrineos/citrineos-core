@@ -12,7 +12,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { TotpUtil } from '@/services/totp/totp-util.js';
+import { TotpUtil } from '@services/totp/totp-util.js';
 import { createHmac } from 'node:crypto';
 
 // ─── helpers (mirrors TotpUtil internals) ────────────────────────────────────

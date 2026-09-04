@@ -10,6 +10,7 @@
 // ============================================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { ModuleId } from '@citrineos/ocpi-base';
 import type { MockContext, FaultRule } from '../src/core/types.js';
 import {
   makeServer,
@@ -94,7 +95,7 @@ describe('FaultEngine injection', () => {
     ctx.faults.arm({
       id: 'drop-status-code',
       enabled: true,
-      match: { direction: 'inbound', module: 'sessions', method: 'PUT' },
+      match: { direction: 'inbound', module: ModuleId.Sessions, method: 'PUT' },
       action: { kind: 'malformBody', mutation: 'dropRequired', targetPath: 'status_code' },
     });
 
