@@ -7,8 +7,12 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import { Component, type IDeviceModelRepository, type ILocationRepository } from '@citrineos/dal';
-import { StatusNotification } from '@citrineos/dal';
+import {
+  Component,
+  type IDeviceModelRepository,
+  type ILocationRepository,
+  StatusNotification,
+} from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
@@ -82,7 +86,7 @@ describe('StatusNotificationService', () => {
       createOrUpdateOcpp16Connector: vi.fn(),
       createOrUpdateOcpp2Connector: vi.fn(),
       createOrUpdateEvse: vi.fn(),
-      autocommissionEvseForOcpp16Connector: vi.fn(),
+      autoCommissionEvseForOcpp16Connector: vi.fn(),
       updateAllConnectorsByQuery: vi.fn(),
     } as unknown as Mocked<ILocationRepository>;
 
@@ -573,7 +577,7 @@ describe('StatusNotificationService', () => {
         }),
       );
       const newEvseId = 99;
-      locationRepository.autocommissionEvseForOcpp16Connector.mockResolvedValue({
+      locationRepository.autoCommissionEvseForOcpp16Connector.mockResolvedValue({
         evseId: newEvseId,
       });
       vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
@@ -586,9 +590,9 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      // The 1.6 connectorId is deliberately not passed: autocommissioning no longer
+      // The 1.6 connectorId is deliberately not passed: auto-commissioning no longer
       // derives the EVSE (or its EvseType) from it.
-      expect(locationRepository.autocommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
+      expect(locationRepository.autoCommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
       );
@@ -666,7 +670,7 @@ describe('StatusNotificationService', () => {
           cs.evses = [aEvse()];
         }),
       );
-      locationRepository.autocommissionEvseForOcpp16Connector.mockResolvedValue({
+      locationRepository.autoCommissionEvseForOcpp16Connector.mockResolvedValue({
         evseId: 50,
       });
 
@@ -685,7 +689,7 @@ describe('StatusNotificationService', () => {
 
       expect(buildSpy).toHaveBeenCalled();
       expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
-      expect(locationRepository.autocommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
+      expect(locationRepository.autoCommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
       );

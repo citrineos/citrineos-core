@@ -11,8 +11,6 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import { Op, type WhereOptions } from 'sequelize';
-import { type ILocationRepository } from '../repositories.js';
-import { EvseType } from '../../models/device-model/evse-type.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
@@ -20,6 +18,7 @@ import { LatestStatusNotification } from '../../models/location/latest-status-no
 import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
+import { type ILocationRepository } from '../repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 
 export class SequelizeLocationRepository
@@ -406,7 +405,7 @@ export class SequelizeLocationRepository
     return await this.connector.updateAllByQuery(tenantId, value, query);
   }
 
-  async autocommissionEvseForOcpp16Connector(
+  async autoCommissionEvseForOcpp16Connector(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<{ evseId: number }> {

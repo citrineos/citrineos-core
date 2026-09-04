@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   Connector,
@@ -12,6 +11,7 @@ import {
   SequelizeLocationRepository,
   Tenant,
 } from '@citrineos/dal';
+import type { SystemConfig } from '@citrineos/types';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -69,7 +69,7 @@ beforeEach(async () => {
   await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'default' } as never);
 });
 
-describe('SequelizeLocationRepository.autocommissionEvseForOcpp16Connector (#160 integration)', () => {
+describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160 integration)', () => {
   it('creates an Evse whose id satisfies the Connector FK constraints', async () => {
     const ocppConnectionName = 'CS-1.6-clean-db';
     await ChargingStation.create({
@@ -77,7 +77,7 @@ describe('SequelizeLocationRepository.autocommissionEvseForOcpp16Connector (#160
       tenantId: DEFAULT_TENANT_ID,
     });
 
-    const { evseId } = await locationRepository.autocommissionEvseForOcpp16Connector(
+    const { evseId } = await locationRepository.autoCommissionEvseForOcpp16Connector(
       DEFAULT_TENANT_ID,
       ocppConnectionName,
     );
@@ -190,8 +190,8 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     expect(lookedUp?.id).toBe(connector?.id);
   });
 
-  it('does not autocommission a second Evse when the same connector reports again', async () => {
-    // autocommissionEvseForOcpp16Connector creates unconditionally, so the guard against
+  it('does not auto-commission a second Evse when the same connector reports again', async () => {
+    // auto-commissionEvseForOcpp16Connector creates unconditionally, so the guard against
     // an Evse per StatusNotification is the matching-evse lookup ahead of it.
     const ocppConnectionName = 'CS-1.6-e2e-repeat';
     await ChargingStation.create({
@@ -245,7 +245,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     });
     // Use the commission helper for a clean pre-existing setup, then upsert
     // a Connector tied to it so the matching-evse branch fires in the handler.
-    const { evseId } = await locationRepository.autocommissionEvseForOcpp16Connector(
+    const { evseId } = await locationRepository.autoCommissionEvseForOcpp16Connector(
       DEFAULT_TENANT_ID,
       ocppConnectionName,
     );

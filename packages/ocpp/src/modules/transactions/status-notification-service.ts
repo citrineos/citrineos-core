@@ -8,11 +8,16 @@ import {
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
 import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
-import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/dal';
-import { Component, EvseType, Variable } from '@citrineos/dal';
-import { Connector, StatusNotification } from '@citrineos/dal';
+import {
+  Component,
+  EvseType,
+  OCPP1_6_Mapper,
+  OCPP2_0_1_Mapper,
+  StatusNotification,
+  Variable,
+} from '@citrineos/dal';
+import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -79,9 +84,6 @@ export class StatusNotificationService {
     let matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
     );
-    // let matchingConnector: ConnectorDto | undefined = (
-    //   matchingEvse?.connectors as Connector[] | undefined
-    // )?.find((c) => c.evseTypeConnectorId === statusNotificationRequest.connectorId);
 
     const connectionJson = await this._cache.get<string>(
       createIdentifier(tenantId, ocppConnectionName),
@@ -244,7 +246,7 @@ export class StatusNotificationService {
               `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
             );
           }
-          const commissioned = await this._locationRepository.autocommissionEvseForOcpp16Connector(
+          const commissioned = await this._locationRepository.autoCommissionEvseForOcpp16Connector(
             tenantId,
             ocppConnectionName,
           );

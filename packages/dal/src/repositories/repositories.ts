@@ -38,6 +38,9 @@ import type {
   TenantDto,
   UpdateEnumType,
 } from '@citrineos/types';
+import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
+import type { TariffQueryString } from '../interfaces/queries/tariff.js';
+import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
@@ -54,11 +57,11 @@ import type { ChargingStationSecurityInfo } from '../models/charging-station-sec
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
 import type { EvseType } from '../models/device-model/evse-type.js';
-import type { Variable } from '../models/device-model/variable.js';
 import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
-import type { ChargingStation } from '../models/location/charging-station.js';
+import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
+import type { ChargingStation } from '../models/location/charging-station.js';
 import type { Connector } from '../models/location/connector.js';
 import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
@@ -74,9 +77,6 @@ import type {
 } from '../models/transaction-event/index.js';
 import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
-import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
-import type { TariffQueryString } from '../interfaces/queries/tariff.js';
-import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
@@ -288,7 +288,7 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
   ): Promise<Connector | undefined>;
-  autocommissionEvseForOcpp16Connector(
+  autoCommissionEvseForOcpp16Connector(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<{ evseId: number }>;
