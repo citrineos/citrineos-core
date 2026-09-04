@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type IAuthorizer, type IMessageContext } from '@citrineos/base';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
   AuthorizationWhitelistEnum,
@@ -11,7 +12,7 @@ import {
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { Authorization, IAuthorizationRepository, ILocationRepository } from '@citrineos/dal';
+import type { IAuthorizationRepository, ILocationRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { OidcTokenProvider } from '@/apis/index.js';
@@ -62,7 +63,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
   }
 
   async authorize(
-    authorization: Authorization,
+    authorization: AuthorizationDto,
     context: IMessageContext,
     evse?: EvseDto,
     connector?: ConnectorDto,
@@ -218,7 +219,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       await this._authorizationRepository.updateByKey(
         context.tenantId,
         authorization,
-        authorization.id,
+        String(authorization.id!),
       );
     } catch (error) {
       this._logger.error(
