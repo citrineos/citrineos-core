@@ -59,16 +59,16 @@ const connector = { id: 100 } as ConnectorDto;
 describe('RealTimeAuthorizer', () => {
   const { container, logger } = createTestContainer();
   let fetchMock: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<IChargingStationRepository>;
+  let chargingStationRepository: Mocked<IChargingStationRepository>;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
 
   function buildAuthorizer(
     chargingStation: unknown = { locationId: null, evses: [] },
   ): RealTimeAuthorizer {
-    locationRepository = buildMockLocationRepository(chargingStation);
+    chargingStationRepository = buildMockLocationRepository(chargingStation);
     authorizationRepository = buildMockAuthorizationRepository();
     return getTestInstance(container, RealTimeAuthorizer, {
-      locationRepository,
+      chargingStationRepository,
       authorizationRepository,
       config: {} as SystemConfig,
     });
@@ -90,6 +90,7 @@ describe('RealTimeAuthorizer', () => {
     const repo = buildMockLocationRepository(chargingStation);
     const authorizer = getTestInstance(container, RealTimeAuthorizer, {
       chargingStationRepository: repo,
+      authorizationRepository,
       config: {} as SystemConfig,
     });
 
