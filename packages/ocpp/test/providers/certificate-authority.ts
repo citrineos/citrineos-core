@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import * as asn1js from 'asn1js';
-import { CertificateSetItem } from 'pkijs';
+import { type CertificateSetItem } from 'pkijs';
 import * as pkijs from 'pkijs';
 import jsrsasign from 'jsrsasign';
 import X509 = jsrsasign.X509;

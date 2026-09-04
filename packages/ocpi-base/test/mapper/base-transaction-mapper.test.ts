@@ -5,7 +5,7 @@ import 'reflect-metadata';
 import type { AuthorizationDto, TransactionDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { describe, expect, it, vi } from 'vitest';
-import { Logger } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 
 // LocationsService sits on an import cycle with this mapper.
 // The batch token mapping never touches it, so a bare stub is enough to load the module.
@@ -21,7 +21,7 @@ import type { TokenDTO } from '../../src/model/dto/token-dto.js';
  */
 class TestTransactionMapper extends BaseTransactionMapper {
   constructor() {
-    const logger = new Logger({ type: 'hidden' });
+    const logger = new Logger<ILogObj>({ type: 'hidden' });
     super({
       logger,
       locationsService: {},
@@ -70,7 +70,7 @@ describe('TokensMapper.toDto on an authorization with no additionalInfo', () => 
     // additionalInfo is nullable on AuthorizationDto, and every Authorization not created through
     // OCPI has it unset. The getters used a non-null assertion, so the descriptive errors below
     // them were unreachable and callers saw a TypeError instead.
-    const tokensMapper = new TokensMapper({ logger: new Logger({ type: 'hidden' }) });
+    const tokensMapper = new TokensMapper({ logger: new Logger<ILogObj>({ type: 'hidden' }) });
     expect(() => tokensMapper.toDto(aDepotVehicleAuthorization())).toThrowError(/Contract ID/i);
   });
 });

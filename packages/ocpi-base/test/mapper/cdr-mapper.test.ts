@@ -5,7 +5,7 @@ import 'reflect-metadata';
 import type { AuthorizationDto, LocationDto, TariffDto, TransactionDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { describe, expect, it, vi } from 'vitest';
-import { Logger } from 'tslog';
+import { type ILogObj, Logger } from 'tslog';
 
 // LocationsService is a typedi-decorated service sitting on an import cycle with these mappers.
 // Every transaction below carries its own location, so it is never reached.
@@ -94,7 +94,7 @@ function aTransaction(overrides: Partial<TransactionDto> = {}): TransactionDto {
 }
 
 function cdrMapper(tariffLookup: TariffDto[] = [aTariff()]): CdrMapper {
-  const logger = new Logger({ type: 'hidden' });
+  const logger = new Logger<ILogObj>({ type: 'hidden' });
   const graphql = { request: async () => ({ Tariffs: tariffLookup }) } as never;
   const connectorMapper = new ConnectorMapper({ logger });
   const evseMapper = new EvseMapper({ logger, connectorMapper });
@@ -153,7 +153,7 @@ describe('CdrMapper.mapTransactionsToCdrs', () => {
     // deactivateActiveTransactionsByStationIdAndEvseId clears isActive on a stale transaction
     // when a new one starts on the same EVSE, and sets no endTime. end_date_time is required on a
     // CDR, so such a transaction is not billable and must not produce one.
-    const abandoned = aTransaction({ endTime: null } as Partial<TransactionDto>);
+    const abandoned = aTransaction({ endTime: null } as unknown as Partial<TransactionDto>);
 
     const cdrs = await cdrMapper().mapTransactionsToCdrs([abandoned]);
 
