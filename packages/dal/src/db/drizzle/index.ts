@@ -67,6 +67,15 @@ export {
   type ConnectorEntityInsert,
 } from './schema/connector.js';
 export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
+export { DrizzleEvseTypeRepository, toEvseTypeDto } from '../../repositories/drizzle/evse-type.js';
+export {
+  evseTypeTable,
+  tenantEvseTypeTable,
+  EvseTypeEntitySchema,
+  EvseTypeEntityInsertSchema,
+  type EvseTypeEntity,
+  type EvseTypeEntityInsert,
+} from './schema/evse-type.js';
 export {
   evseTable,
   tenantEvseTable,

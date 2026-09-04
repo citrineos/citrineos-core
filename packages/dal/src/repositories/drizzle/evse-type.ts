@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { IEvseTypeRepository } from '@dal/repositories/repositories.js';
 import type { EvseTypeDto } from '@citrineos/types';
+import { and, eq, isNull } from 'drizzle-orm';
 import {
   type EvseTypeEntity,
   evseTypeTable,
@@ -27,10 +29,10 @@ export function toEvseTypeDto(entity: EvseTypeEntity): EvseTypeDto {
   return dto;
 }
 
-export class DrizzleEvseTypeRepository extends DrizzleRepository<
-  typeof evseTypeTable,
-  EvseTypeDto
-> {
+export class DrizzleEvseTypeRepository
+  extends DrizzleRepository<typeof evseTypeTable, EvseTypeDto>
+  implements IEvseTypeRepository
+{
   protected getTable(tenantId: number): typeof evseTypeTable {
     return this.useTenantSchema ? tenantEvseTypeTable(tenantId) : evseTypeTable;
   }
@@ -39,5 +41,28 @@ export class DrizzleEvseTypeRepository extends DrizzleRepository<
     return toEvseTypeDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  // ─── IEvseTypeRepository methods ─────────────────────────────────────────
+
+  async findEvseByIdAndConnectorId(
+    tenantId: number,
+    id: number,
+    connectorId: number | null,
+  ): Promise<EvseTypeDto | undefined> {
+    const table = this.getTable(tenantId);
+
+    // `id` is the OCPP EVSE id, not the primary key.
+    const rows = (await this.db
+      .select()
+      .from(table)
+      .where(
+        and(
+          eq(table.id, id),
+          connectorId === null ? isNull(table.connectorId) : eq(table.connectorId, connectorId),
+          this.tenantFilter(table, tenantId),
+        ),
+      )
+      .limit(1)) as EvseTypeEntity[];
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
 }

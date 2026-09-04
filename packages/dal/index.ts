@@ -100,6 +100,7 @@ export {
   DrizzleChargingStationRepository,
   DrizzleConnectorRepository,
   DrizzleEvseRepository,
+  DrizzleEvseTypeRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,

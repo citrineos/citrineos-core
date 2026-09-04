@@ -30,6 +30,7 @@ import {
   DrizzleConnectorRepository,
   DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
+  DrizzleEvseTypeRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
@@ -301,6 +302,9 @@ function registerRepositories(container: AwilixContainer): void {
       ({ locationRepository }) => locationRepository,
     ).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    evseTypeRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
+    ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
@@ -324,6 +328,7 @@ function registerRepositories(container: AwilixContainer): void {
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
       evseRepository: asClass(DrizzleEvseRepository).singleton(),
+      evseTypeRepository: asClass(DrizzleEvseTypeRepository).singleton(),
       installCertificateAttemptRepository: asClass(
         DrizzleInstallCertificateAttemptRepository,
       ).singleton(),
