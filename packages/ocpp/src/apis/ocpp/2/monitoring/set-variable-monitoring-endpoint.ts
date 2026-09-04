@@ -24,6 +24,13 @@ import { COMPONENT_MONITORING_CTRLR } from '../components.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 import { sendInBatches } from './send-in-batches.js';
 
+// `SetVariableMonitoringRequest` is a union of the 2.0.1 and 2.1 request shapes, so
+// `setMonitoringData` is a union of two array types. Naming the element union lets us fix
+// `sendInBatches`' type parameter explicitly; left to inference it picks a single
+// constituent and then rejects the other.
+type SetMonitoringDataElement =
+  OCPP2_request_types.SetVariableMonitoringRequest['setMonitoringData'][number];
+
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
@@ -96,7 +103,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
           )) ?? setMonitoringData.length;
 
         confirmations.push(
-          ...(await sendInBatches({
+          ...(await sendInBatches<SetMonitoringDataElement>({
             ocppSender: this._ocppSender,
             ocppConnectionName,
             tenantId,

@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const withNextIntl = createNextIntlPlugin(resolve(__dirname, 'src/lib/i18n/request.ts'));
+// next-intl requires a project-relative path here, not an absolute one.
+const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -20,12 +21,6 @@ const nextConfig = {
   devIndicators: {
     position: 'bottom-right',
   },
-  eslint: {
-    // Next 15's built-in lint runner does not currently load the flat
-    // eslint.config.mjs + typescript-eslint parser correctly here, causing
-    // spurious "import is reserved" errors. Run lint via `pnpm lint` instead.
-    ignoreDuringBuilds: true,
-  },
   images: {
     remotePatterns: [
       {
@@ -35,6 +30,10 @@ const nextConfig = {
       },
     ],
   },
+  // Built with `next build --webpack`: Turbopack is the default bundler in Next 16,
+  // but its standalone output still mishandles external module aliases, and this app
+  // is shipped from .next/standalone. The alias below is required by
+  // src/lib/utils/default-metadata-storage.ts.
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

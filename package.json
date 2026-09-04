@@ -42,22 +42,22 @@
     "node": ">=24.16.0"
   },
   "devDependencies": {
-    "prettier": "catalog:",
-    "eslint": "catalog:",
     "@eslint/js": "catalog:",
-    "typescript-eslint": "catalog:",
-    "eslint-config-prettier": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
-    "vitest": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
     "@types/jsrsasign": "^10.5.15",
     "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
     "madge": "^8.0.0",
     "openapi-types": "catalog:",
-    "@types/pg": "catalog:",
-    "tsc-alias": "^1.8.16",
+    "prettier": "catalog:",
     "testcontainers": "catalog:",
-    "typescript": "catalog:"
+    "tsc-alias": "^1.8.16",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   },
   "dependencies": {
     "@fastify/swagger": "catalog:",

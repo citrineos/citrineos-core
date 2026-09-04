@@ -13,8 +13,7 @@ packages:
 # Reference it as `"<name>": "catalog:"` in the package.json; bump it here once.
 catalog:
   # -- Toolchain --
-  typescript: 6.0.3
-  ts-node: 10.9.2
+  typescript: 7.0.2
   tsx: 4.23.13
   nodemon: 3.1.14
   cross-env: 7.0.3

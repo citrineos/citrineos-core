@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.src.json && tsc -p tsconfig.migrations.json && pnpm run copy-assets",
-    "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
+    "copy-assets": "tsx ./copy-assets.ts ./src/assets ./dist/assets",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
@@ -34,7 +34,7 @@
     "nodemon": "catalog:",
     "sequelize": "catalog:",
     "sequelize-typescript": "catalog:",
-    "ts-node": "catalog:",
+    "tsx": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "dependencies": {
