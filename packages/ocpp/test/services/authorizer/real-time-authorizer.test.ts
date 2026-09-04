@@ -9,15 +9,16 @@ import {
   type EvseDto,
   type SystemConfig,
 } from '@citrineos/types';
-import type { Authorization, IAuthorizationRepository, ILocationRepository } from '@citrineos/dal';
+import type { Authorization } from '@citrineos/dal';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
-import { RealTimeAuthorizer } from '@/services/authorizer/real-time-authorizer.js';
+import { RealTimeAuthorizer } from '@services/authorizer/real-time-authorizer.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
-function buildMockLocationRepository(chargingStation: unknown): Mocked<ILocationRepository> {
+function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
     readChargingStationByStationId: vi.fn().mockResolvedValue(chargingStation),
-  } as unknown as Mocked<ILocationRepository>;
+  } as unknown as Mocked<IChargingStationRepository>;
 }
 
 function buildMockAuthorizationRepository(): Mocked<IAuthorizationRepository> {

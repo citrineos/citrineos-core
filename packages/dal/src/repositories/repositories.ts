@@ -20,6 +20,7 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
+  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
@@ -35,9 +36,13 @@ import type {
   SecurityEventDto,
   ServerNetworkProfileDto,
   SubscriptionDto,
+  TariffDto,
   TenantDto,
   UpdateEnumType,
 } from '@citrineos/types';
+import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
+import type { TariffQueryString } from '../interfaces/queries/tariff.js';
+import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
@@ -56,19 +61,18 @@ import type {
 import type { ChargingStationSequence } from '@dal/models/charging-station-sequence/index.js';
 import type { Component } from '../models/device-model/component.js';
 import type { EvseType } from '../models/device-model/evse-type.js';
+import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
+import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
-import type { VariableAttribute, VariableCharacteristics } from '@dal/models/device-model/index.js';
-import type {
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  SetNetworkProfile,
-  StatusNotification,
-} from '@dal/models/location/index.js';
+import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
+import type { ChargingStation } from '../models/location/charging-station.js';
 import type { Connector } from '../models/location/connector.js';
 import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
-import type { MessageInfo } from '@dal/models/message-info/index.js';
-import type { Tariff } from '../models/tariff/tariffs.js';
+import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
+import type { StatusNotification } from '../models/location/status-notification.js';
+import type { MessageInfo } from '../models/message-info/message-info.js';
+import type { Reservation } from '../models/reservation.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -76,11 +80,6 @@ import type {
 } from '../models/transaction-event/index.js';
 import type { TransactionEvent } from '@dal/models/transaction-event/index.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
-import type {
-  AuthorizationQuerystring,
-  TariffQueryString,
-  VariableAttributeQuerystring,
-} from '@dal/interfaces/index.js';
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
@@ -242,27 +241,15 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<LocalListVersion>;
 }
 
-export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
+export interface ILocationRepository {
+  readLocationById: (tenantId: number, id: number) => Promise<LocationDto | undefined>;
+}
+
+export interface IChargingStationRepository {
   readChargingStationByStationId: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<ChargingStation | undefined>;
-  readConnectorByStationIdAndOcpp16ConnectorId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
-  readEvseByStationIdAndOcpp201EvseId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
-  readConnectorByStationIdAndOcpp201EvseType: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
@@ -283,34 +270,63 @@ export interface ILocationRepository extends CrudRepository<Location> {
     tenantId: number,
     chargingStation: ChargingStation,
   ): Promise<ChargingStation>;
-  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
-  createOrUpdateConnector(
-    tenantId: number,
-    connector: ConnectorDto,
-  ): Promise<Connector | undefined>;
-  /**
-   * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
-   * Used in ad-hoc/`allowUnknownChargingStations` flows where the charge point arrives
-   * uncommissioned (OCPP 1.6 has no native EVSE concept). Conservative default:
-   * one connector → one evse. Returns the FK ids the caller should stamp on the
-   * Connector record being upserted.
-   */
-  commissionEvseForOcpp16Connector(
-    tenantId: number,
-    ocppConnectionName: string,
-    connectorId: number,
-  ): Promise<{ evseId: number; evseTypeConnectorId: number }>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: Partial<Connector>,
-    query: object,
-  ): Promise<Connector[]>;
   updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,
     timestamp: string,
   ): Promise<void>;
 }
+
+export interface IConnectorRepository {
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<Connector | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseType: OCPP2_common_types.EVSEType,
+  ) => Promise<Connector | undefined>;
+  createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<Connector | undefined>;
+  updateAllConnectorsByQuery(
+    tenantId: number,
+    value: ConnectorDto,
+    query: object,
+  ): Promise<Connector[]>;
+  readConnectorsWithTariffsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ) => Promise<Connector[]>;
+  createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<Connector | undefined>;
+}
+
+export interface IEvseRepository {
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+  ) => Promise<Evse | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  autoCommissionEvseForOcpp16Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<{ evseId: number }>;
+}
+
+export interface ILocationDomainRepository
+  extends CrudRepository<Location>,
+    ILocationRepository,
+    IChargingStationRepository,
+    IConnectorRepository,
+    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (
@@ -463,12 +479,13 @@ export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
   ): Promise<MessageInfo>;
 }
 
-export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined>;
-  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
-  upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
+export interface ITariffRepository {
+  findById(tenantId: number, id: number): Promise<TariffDto | undefined>;
+  findByConnectorId(tenantId: number, connectorId: number): Promise<TariffDto | undefined>;
+  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  upsertTariff(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
+  upsertTariffByTariffId(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
 }
 
 export interface ICertificateRepository {

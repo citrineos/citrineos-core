@@ -21,7 +21,7 @@ import {
 import { type ITransactionEventRepository, Transaction } from '@citrineos/dal';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
-import type { SignedMeterValuesUtil } from '@/services/index.js';
+import type { SignedMeterValuesUtil } from '@services/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.MeterValues)
 export class MeterValuesRequestOcpp2Handler extends AbstractHandler {

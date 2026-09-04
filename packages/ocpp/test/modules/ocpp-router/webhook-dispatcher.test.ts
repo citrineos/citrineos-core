@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AbstractModule, createIdentifier, DEFAULT_TENANT_ID, ICache } from '@citrineos/base';
+import { AbstractModule, createIdentifier, DEFAULT_TENANT_ID, type ICache } from '@citrineos/base';
 import {
-  IOCPPMessageRepository,
-  ISubscriptionRepository,
+  type IOCPPMessageRepository,
+  type ISubscriptionRepository,
   OCPPMessage,
   Subscription,
 } from '@citrineos/dal';
@@ -12,7 +12,7 @@ import { MessageOrigin, MessageState, MessageTypeId } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { WebhookDispatcher } from '@modules/ocpp-router/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { aSubscription } from './providers/subscription-provider.js';
 
 describe('WebhookDispatcher', () => {

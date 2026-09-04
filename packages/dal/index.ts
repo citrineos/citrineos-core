@@ -99,9 +99,11 @@ export {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
 } from './src/db/drizzle/index.js';
