@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
   SequelizeTariffRepository,
@@ -51,7 +51,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
@@ -70,7 +70,7 @@ beforeEach(async () => {
 });
 
 function makeRepo(): SequelizeTariffRepository {
-  return new SequelizeTariffRepository({ config: {} as BootstrapConfig, sequelizeInstance });
+  return new SequelizeTariffRepository({ config: {} as SystemConfig, sequelizeInstance });
 }
 
 function aTariffForTenantB(): Promise<Tariff> {

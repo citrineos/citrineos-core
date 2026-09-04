@@ -19,7 +19,7 @@ import {
 import type { IChargingStationRepository } from '@citrineos/dal';
 import type { InstallRootCertificateRequest } from '@citrineos/dal';
 import { InstallRootCertificateSchema } from '@citrineos/dal';
-import { type CertificateAuthorityService } from '@/services/index.js';
+import { type CertificateAuthorityService } from '@services/index.js';
 import { resolveStationProtocol } from '@util/index.js';
 import type { FastifyRequest } from 'fastify';
 

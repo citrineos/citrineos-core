@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IVariableMonitoringRepository } from '@citrineos/dal';
+import { type IVariableMonitoringRepository } from '@citrineos/dal';
 import { MonitoringService } from '@modules/monitoring/monitoring-service.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { aClearMonitoringResult } from './providers/monitoring.js';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('MonitoringService', () => {

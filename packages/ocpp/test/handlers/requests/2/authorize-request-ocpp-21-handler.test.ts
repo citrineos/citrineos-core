@@ -20,7 +20,7 @@ import type {
   ITariffRepository,
 } from '@citrineos/dal';
 import { AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
-import type { CertificateAuthorityService } from '@/services/index.js';
+import type { CertificateAuthorityService } from '@services/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
 const TARIFF_ID = 7;

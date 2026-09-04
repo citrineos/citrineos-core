@@ -2,17 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import type { BootstrapConfig } from '@citrineos/base';
-import { AuthorizationStatusEnum, IdTokenEnum, OCPP2_0_1 } from '@citrineos/types';
+import {
+  AuthorizationStatusEnum,
+  IdTokenEnum,
+  OCPP2_0_1,
+  type SystemConfig,
+} from '@citrineos/types';
 import {
   Authorization,
   DefaultSequelizeInstance,
   SequelizeLocalAuthListRepository,
   Tenant,
 } from '../../../index.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const TENANT_A = 1;
 const TENANT_B = 2;
@@ -47,7 +51,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
@@ -67,7 +71,7 @@ beforeEach(async () => {
 
 function aRepo(): SequelizeLocalAuthListRepository {
   return new SequelizeLocalAuthListRepository({
-    config: {} as BootstrapConfig,
+    config: {} as SystemConfig,
     sequelizeInstance,
   } as never);
 }

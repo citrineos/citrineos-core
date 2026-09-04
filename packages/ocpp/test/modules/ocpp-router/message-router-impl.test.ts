@@ -979,7 +979,7 @@ describe('MessageRouterImpl', () => {
         TENANT_ID,
         action,
         payload,
-        EventGroup.General,
+        EventGroup.Reporting,
         MessageOrigin.ChargingStationManagementSystem,
         PROTOCOL,
         new Date(Date.now() - ageMs),

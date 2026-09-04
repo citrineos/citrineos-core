@@ -28,7 +28,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { CertificateAuthorityService } from '@/services/index.js';
+import { CertificateAuthorityService } from '@services/index.js';
 import { validateOcpp21IdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
