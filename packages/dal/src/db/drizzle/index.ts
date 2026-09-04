@@ -112,6 +112,15 @@ export {
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
 } from './schema/server-network-profile.js';
+export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
+export {
+  tariffTable,
+  tenantTariffTable,
+  TariffEntitySchema,
+  TariffEntityInsertSchema,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
   tenantTable,

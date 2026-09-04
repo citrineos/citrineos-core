@@ -307,7 +307,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
       // has to be compared, not coerced.
       if (tariffEnabled[0]?.value?.toLowerCase() === 'true') {
         if (authorization.tariffId != null) {
-          const tariff = await this._tariffRepository.readByKey(
+          const tariff = await this._tariffRepository.findById(
             context.tenantId,
             authorization.tariffId,
           );
