@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/ocpp-server",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "The OCPP server implementation which acts right on top of an asynchronous WebSocket.",
   "type": "module",
   "main": "dist/index.js",
@@ -26,36 +26,28 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
-    "@types/amqplib": "0.10.8",
-    "@types/ws": "8.18.1",
+    "@types/amqplib": "catalog:",
+    "@types/ws": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "nodemon": "3.1.14",
-    "pg": "8.11.3",
-    "sequelize": "^6.37.0",
-    "sequelize-typescript": "2.1.6",
-    "testcontainers": "^11.0.0",
-    "ts-node": "10.9.2",
-    "typescript-eslint": "catalog:",
-    "vitest": "^3.0.0"
+    "nodemon": "catalog:",
+    "sequelize": "catalog:",
+    "sequelize-typescript": "catalog:",
+    "ts-node": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "dependencies": {
     "@citrineos/base": "workspace:*",
     "@citrineos/ocpp": "workspace:*",
     "@citrineos/dal": "workspace:*",
     "@citrineos/types": "workspace:*",
-    "@fastify/cors": "10.1.0",
-    "awilix": "^13.0.3",
-    "cross-env": "7.0.3",
-    "fastify": "catalog:",
-    "sqlite3": "5.1.7",
-    "tslog": "^4.9.2",
-    "ws": "8.21.3"
+    "cross-env": "catalog:",
+    "sqlite3": "catalog:",
+    "ws": "catalog:"
   },
   "optionalDependencies": {
-    "bufferutil": "4.0.8",
-    "utf-8-validate": "6.0.6"
+    "bufferutil": "catalog:",
+    "utf-8-validate": "catalog:"
   }
 }

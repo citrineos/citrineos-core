@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/dal",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "The data access layer: Sequelize and Drizzle models, repositories, and mappers.",
   "type": "module",
   "main": "dist/index.js",
@@ -25,25 +25,25 @@
     "@citrineos/types": "workspace:*",
     "drizzle-orm": "^0.45.0",
     "drizzle-zod": "^0.8.3",
-    "pg": "8.11.3",
+    "pg": "catalog:",
     "pg-hstore": "2.3.4",
-    "sequelize": "^6.37.0",
-    "sequelize-typescript": "2.1.6",
-    "tslog": "^4.9.2",
-    "uuid": "^11.0.0",
+    "sequelize": "catalog:",
+    "sequelize-typescript": "catalog:",
+    "tslog": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@faker-js/faker": "^8.0.0",
-    "awilix": "^13.0.3",
+    "@faker-js/faker": "catalog:",
+    "awilix": "catalog:",
     "drizzle-kit": "^0.31.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "testcontainers": "^11.0.0",
-    "typescript": "^6.0.0",
+    "testcontainers": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "^3.0.0"
+    "vitest": "catalog:"
   }
 }
