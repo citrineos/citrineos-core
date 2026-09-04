@@ -86,6 +86,18 @@ export {
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
 export {
+  DrizzleReservationRepository,
+  toReservationDto,
+} from '../../repositories/drizzle/reservation.js';
+export {
+  reservationTable,
+  tenantReservationTable,
+  ReservationEntitySchema,
+  ReservationEntityInsertSchema,
+  type ReservationEntity,
+  type ReservationEntityInsert,
+} from './schema/reservation.js';
+export {
   DrizzleSecurityEventRepository,
   toSecurityEventDto,
 } from '../../repositories/drizzle/security-event.js';

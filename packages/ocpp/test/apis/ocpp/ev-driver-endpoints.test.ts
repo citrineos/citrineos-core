@@ -25,16 +25,16 @@ describe('evDriver message endpoints', () => {
   });
 
   describe('CancelReservationEndpoint', () => {
-    let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+    let findByStationAndReservationId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      readOnlyOneByQuery = vi.fn().mockResolvedValue({ id: 7 });
+      findByStationAndReservationId = vi.fn().mockResolvedValue({ id: 7 });
     });
 
     const build = () =>
       getTestInstance(container, CancelReservationEndpoint, {
         ocppSender: { sendCall },
-        reservationRepository: { readOnlyOneByQuery },
+        reservationRepository: { findByStationAndReservationId },
       });
 
     const handle = (identifiers: string[]) =>
@@ -59,14 +59,12 @@ describe('evDriver message endpoints', () => {
     it('looks the reservation up per station and tenant', async () => {
       await handle([STATION]);
 
-      expect(readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        where: { id: 7, ocppConnectionName: STATION, tenantId: DEFAULT_TENANT_ID },
-      });
+      expect(findByStationAndReservationId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, 7);
     });
 
     it('sends to nobody when the reservation is missing on any station', async () => {
-      readOnlyOneByQuery.mockImplementation(async (_tenantId, query) =>
-        query.where.ocppConnectionName === STATION ? { id: 7 } : undefined,
+      findByStationAndReservationId.mockImplementation(async (_tenantId, ocppConnectionName) =>
+        ocppConnectionName === STATION ? { id: 7 } : undefined,
       );
 
       const confirmations = await handle([STATION, OTHER_STATION]);
@@ -78,7 +76,7 @@ describe('evDriver message endpoints', () => {
     });
 
     it('returns one failure per identifier when the lookup throws', async () => {
-      readOnlyOneByQuery.mockRejectedValue(new Error('db down'));
+      findByStationAndReservationId.mockRejectedValue(new Error('db down'));
 
       const confirmations = await handle([STATION, OTHER_STATION]);
 

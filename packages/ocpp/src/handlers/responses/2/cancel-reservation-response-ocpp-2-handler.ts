@@ -54,16 +54,12 @@ export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
       },
     });
     if (request) {
-      await this._reservationRepository.updateAllByQuery(
+      await this._reservationRepository.updateByStationAndReservationId(
         message.context.tenantId,
+        message.context.ocppConnectionName,
+        request.payload.reservationId,
         {
           isActive: message.payload.status === CancelReservationStatusEnum.Rejected,
-        },
-        {
-          where: {
-            ocppConnectionName: message.context.ocppConnectionName,
-            id: request.payload.reservationId,
-          },
         },
       );
     } else {
