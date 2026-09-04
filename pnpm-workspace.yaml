@@ -1,7 +1,8 @@
 packages:
   - "packages/types"
   - "packages/base"
-  - "packages/core"
+  - "packages/dal"
+  - "packages/ocpp"
   - "packages/ocpi-base"
   - "apps/ocpp-server"
   - "apps/ocpi-server"

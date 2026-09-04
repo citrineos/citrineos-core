@@ -187,7 +187,7 @@ The following OCPI modules are mounted:
 
 ## Working with workspace packages
 
-The OCPI Server depends on `@citrineos/base`, `@citrineos/core`, and `@citrineos/ocpi-base` via `workspace:*`
+The OCPI Server depends on `@citrineos/base`, `@citrineos/ocpp`, and `@citrineos/ocpi-base` via `workspace:*`
 dependencies, so pnpm resolves them from the local `packages/` directory automatically — no `npm link` step is
 required. Just build the workspace packages so the compiled output is available:
 

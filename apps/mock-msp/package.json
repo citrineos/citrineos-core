@@ -10,10 +10,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.json",
+    "build": "tsc -b tsconfig.src.json",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "typecheck": "tsc -b tsconfig.json --pretty",
+    "typecheck": "tsc -b tsconfig.src.json --pretty",
     "test": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

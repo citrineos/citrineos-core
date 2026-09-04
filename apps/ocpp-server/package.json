@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.json && tsc -p tsconfig.migrations.json && pnpm run copy-assets",
+    "build": "tsc -b tsconfig.src.json && tsc -p tsconfig.migrations.json && pnpm run copy-assets",
     "copy-assets": "ts-node ./copy-assets.ts ./src/assets ./dist/assets",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@citrineos/base": "workspace:*",
-    "@citrineos/core": "workspace:*",
+    "@citrineos/ocpp": "workspace:*",
+    "@citrineos/dal": "workspace:*",
     "@citrineos/types": "workspace:*",
     "cross-env": "catalog:",
     "sqlite3": "catalog:",

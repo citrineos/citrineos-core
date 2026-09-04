@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { ActiveTransactionsCard } from '@lib/client/pages/overview/active-transactions/active.transactions.card';
-import { ChargerActivityCard } from '@lib/client/pages/overview/charger-activity/charger.activity.card';
-import { LocationsCard } from '@lib/client/pages/overview/locations/locations.card';
-import { OnlineStatusCard } from '@lib/client/pages/overview/online-status/online.status.card';
-import { PluginSuccessRateCard } from '@lib/client/pages/overview/plugin-success-rate/plugin.success.rate.card';
+import { ActiveTransactionsCard } from '@lib/client/pages/overview/active-transactions/active-transactions-card';
+import { ChargerActivityCard } from '@lib/client/pages/overview/charger-activity/charger-activity-card';
+import { LocationsCard } from '@lib/client/pages/overview/locations/locations-card';
+import { OnlineStatusCard } from '@lib/client/pages/overview/online-status/online-status-card';
+import { PluginSuccessRateCard } from '@lib/client/pages/overview/plugin-success-rate/plugin-success-rate-card';
 
 export const Overview = () => {
   return (
