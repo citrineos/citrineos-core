@@ -54,7 +54,8 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let mockLocationRepository: Partial<IChargingStationRepository & IConnectorRepository>;
+  let mockChargingStationRepository: Partial<IChargingStationRepository>;
+  let mockLocationRepository: Partial<IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
@@ -62,7 +63,6 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   beforeEach(async () => {
     // Import the mocked models - these are what the handler actually calls directly.
-    const { Connector } = await import('@dal/models/location/connector.js');
     const { Transaction } = await import('@dal/models/transaction-event/transaction.js');
 
     mockTransactionFindAll = vi.mocked(Transaction.findAll);
@@ -75,11 +75,13 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
     // Default tariffs come from the location repository.
     mockReadConnectorsWithTariffs = vi.fn();
-    mockLocationRepository = {
-      readChargingStationByStationId: vi.fn().mockResolvedValue({
+    mockChargingStationRepository = {
+      readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue({
         id: 1,
         ocppConnectionName: 'station-001',
       }),
+    };
+    mockLocationRepository = {
       readConnectorsWithTariffsByStationId: mockReadConnectorsWithTariffs,
     };
 
@@ -90,8 +92,9 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
-      locationRepository: mockLocationRepository as unknown as IChargingStationRepository &
-        IConnectorRepository,
+      chargingStationRepository:
+        mockChargingStationRepository as unknown as IChargingStationRepository,
+      locationRepository: mockLocationRepository as unknown as IConnectorRepository,
     });
   });
 
@@ -145,7 +148,9 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     });
 
     it('should not read connectors at all when the station is unknown', async () => {
-      mockLocationRepository.readChargingStationByStationId = vi.fn().mockResolvedValue(undefined);
+      mockChargingStationRepository.readChargingStationByOcppConnectionName = vi
+        .fn()
+        .mockResolvedValue(undefined);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -468,7 +473,9 @@ describe('GetTariffsRequestOcpp21Handler', () => {
 
   describe('Error handling', () => {
     it('should return Rejected status when charging station not found', async () => {
-      (mockLocationRepository.readChargingStationByStationId as any).mockResolvedValue(null);
+      (
+        mockChargingStationRepository.readChargingStationByOcppConnectionName as any
+      ).mockResolvedValue(null);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 

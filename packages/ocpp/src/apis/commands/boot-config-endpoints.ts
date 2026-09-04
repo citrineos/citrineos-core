@@ -21,7 +21,7 @@ import type { FastifyRequest } from 'fastify';
 
 interface BootConfigEndpointDependencies extends AbstractEndpointDependencies {
   bootRepository: IBootRepository;
-  locationRepository: IChargingStationRepository;
+  chargingStationRepository: IChargingStationRepository;
 }
 
 type BootConfigReadRoute = { Querystring: ChargingStationKeyQuerystring };
@@ -42,12 +42,16 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
   };
 
   private readonly _bootRepository: IBootRepository;
-  private readonly _locationRepository: IChargingStationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
 
-  constructor({ logger, bootRepository, locationRepository }: BootConfigEndpointDependencies) {
+  constructor({
+    logger,
+    bootRepository,
+    chargingStationRepository,
+  }: BootConfigEndpointDependencies) {
     super(logger);
     this._bootRepository = bootRepository;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(request: FastifyRequest<BootConfigWriteRoute>): Promise<BootDto | undefined> {
@@ -55,10 +59,11 @@ export class PutBootConfigEndpoint extends AbstractEndpoint<BootConfigWriteRoute
 
     // A boot record takes its identity from a non-null FK to the charging
     // station, so the station must already exist within this tenant.
-    const stationExists = await this._locationRepository.doesChargingStationExistByStationId(
-      tenantId,
-      ocppConnectionName,
-    );
+    const stationExists =
+      await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+        tenantId,
+        ocppConnectionName,
+      );
     if (!stationExists) {
       throw new NotFoundError(
         `Charging station ${ocppConnectionName} does not exist for tenant ${tenantId}`,
