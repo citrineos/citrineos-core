@@ -3,15 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import {
-  integer,
-  pgSchema,
-  pgTable,
-  serial,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { integer, pgSchema, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -20,7 +12,6 @@ import { type z } from 'zod';
 function chargingStationNetworkProfileColumns() {
   return {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
-    id: serial('id').primaryKey(),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     configurationSlot: integer('configurationSlot'),
