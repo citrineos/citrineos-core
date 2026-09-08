@@ -4,23 +4,14 @@
 
 import { is } from 'drizzle-orm';
 import { getTableConfig, PgTable } from 'drizzle-orm/pg-core';
-import * as schemaModules from '../schema/index.js';
+import * as schemaModules from './schema/index.js';
 
-/** A drizzle-declared table the schema validator is responsible for. */
 export interface RegisteredTable {
   table: PgTable;
   /** Physical table name in PostgreSQL, e.g. `Authorizations`. */
   name: string;
 }
 
-/**
- * Narrowing guard for drizzle tables that is safe to call on any value.
- *
- * drizzle's `is()` reads `Object.getPrototypeOf(value).constructor`, which throws a
- * TypeError for objects with a null prototype — and an ESM module namespace object
- * has exactly that. Since this registry walks module namespaces, the prototype has
- * to be checked before delegating to `is()`.
- */
 function isPgTable(value: unknown): value is PgTable {
   return (
     typeof value === 'object' &&
@@ -31,9 +22,9 @@ function isPgTable(value: unknown): value is PgTable {
 }
 
 /**
- * Every `pgTable` exported from `schema/index.js` — the definition of what drizzle
- * owns. Adding a schema file to that barrel is what opts its table into startup
- * validation.
+ * Every `pgTable` exported from `schema/index.js` — the drizzle counterpart of
+ * `sequelize.models`, and the definition of what drizzle owns. Adding a schema file
+ * to that barrel is what opts its table into startup validation.
  *
  * The `tenantXTable(tenantId)` helpers are functions rather than table values, so
  * schema-per-tenant tables are excluded structurally rather than by name. The
@@ -48,8 +39,8 @@ export function registeredTables(
   const tables: RegisteredTable[] = [];
   const seen = new Set<string>();
 
-  // Depth 1 covers the namespaced barrel (`export * as x from ...`); depth 0 covers
-  // a flat one (`export * from ...`) and directly-passed table maps, so the registry
+  // Depth 1 covers the namespaced barrel (`export * as x from ...`); depth 0 covers a
+  // flat one (`export * from ...`) and directly-passed table maps, so the registry
   // keeps working if the barrel style ever changes.
   const collect = (container: Record<string, unknown>, depth: number): void => {
     for (const value of Object.values(container)) {
@@ -68,6 +59,7 @@ export function registeredTables(
 
   collect(modules, 1);
 
+  // Stable ordering so drift reports read the same way on every run.
   return tables.sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -77,13 +69,13 @@ export function registeredTableNames(modules?: Record<string, unknown>): string[
 }
 
 /**
- * The validated tables as a flat `{ tableName: table }` map.
+ * The registered tables as a flat `{ tableName: table }` map.
  *
  * Needed for drizzle-kit's programmatic API (`pushSchema`, `generateDrizzleJson`),
- * which only inspects the top level of the object it is given. Passing the
- * namespaced barrel to those functions finds no tables at all and — because they
- * report a diff rather than an error — silently reports an empty schema as being in
- * sync. Always pass this map instead.
+ * which only inspects the top level of the object it is given. Passing the namespaced
+ * barrel to those functions finds no tables at all and — because they report a diff
+ * rather than an error — silently reports an empty schema as being in sync. Always
+ * pass this map instead.
  */
 export function tableMap(modules?: Record<string, unknown>): Record<string, PgTable> {
   return Object.fromEntries(registeredTables(modules).map((t) => [t.name, t.table]));

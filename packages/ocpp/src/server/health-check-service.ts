@@ -20,6 +20,7 @@ export class HealthCheckService {
   private readonly _notReadyThresholdMs: number;
   private readonly _logger: Logger<ILogObj>;
   private _schemaReport: SchemaValidationReport | null = null;
+  private _drizzleSchemaReport: SchemaValidationReport | null = null;
 
   constructor(
     private readonly _networkConnection: WebsocketNetworkConnection | null | undefined,
@@ -41,6 +42,10 @@ export class HealthCheckService {
 
   setSchemaValidationReport(report: SchemaValidationReport | null) {
     this._schemaReport = report;
+  }
+
+  setDrizzleSchemaValidationReport(report: SchemaValidationReport | null) {
+    this._drizzleSchemaReport = report;
   }
 
   async checkReadiness(): Promise<HealthCheckResult> {
@@ -115,21 +120,30 @@ export class HealthCheckService {
     checks['database'] = await this._checkDatabase();
     if (checks['database'].status === 'fail') pass = false;
 
-    const schema = this._checkSchema();
+    const schema = this._checkSchemaReport(this._schemaReport);
     if (schema) checks['schema'] = schema;
+
+    // Reported separately rather than merged: the two gates cover different
+    // declarations, so a finding is only actionable once you know which.
+    const drizzleSchema = this._checkSchemaReport(this._drizzleSchemaReport);
+    if (drizzleSchema) checks['drizzleSchema'] = drizzleSchema;
 
     return { checks, pass };
   }
 
   /**
-   * Never fails readiness given that (Sequelize <-> database) schema drift is a startup gate,
+   * Never fails readiness given that (code <-> database) schema drift is a startup gate,
    * not a runtime condition. Errors either aborted startup already, or the operator set
    * `database.validateSchemaSeverity` to 'warn' so the service keeps serving.
+   *
+   * `null` means the gate did not run — validation disabled, sync/alter/force set,
+   * or, for Drizzle, the Drizzle data layer not being enabled at all — so no check
+   * is reported rather than a misleading pass.
    */
-  private _checkSchema(): CheckResult | null {
-    if (!this._schemaReport) return null;
+  private _checkSchemaReport(report: SchemaValidationReport | null): CheckResult | null {
+    if (!report) return null;
 
-    const { errors, warnings } = this._schemaReport;
+    const { errors, warnings } = report;
     if (errors.length > 0) {
       return {
         status: 'warn',

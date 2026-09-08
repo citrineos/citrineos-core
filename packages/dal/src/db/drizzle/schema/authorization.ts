@@ -17,7 +17,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { citext } from './columnTypes.js';
+import { citext } from './column-types.js';
 import { type z } from 'zod';
 
 // Column definitions are a function to ensure fresh objects per table instance,

@@ -6,6 +6,21 @@ import { DataTypes, QueryTypes } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
 import type { ILogObj, Logger } from 'tslog';
 import type { SystemConfig } from '@citrineos/types';
+import {
+  array,
+  buildReport,
+  character,
+  compareNullability,
+  compareTypes,
+  DEFAULT_SCHEMA,
+  decimal,
+  runSchemaValidationGate,
+  simple,
+  type CanonicalType,
+  type SchemaFinding,
+  type SchemaValidationOptions,
+  type SchemaValidationReport,
+} from './schema-validation.js';
 
 /**
  * Startup gate that verifies the live database schema still has the shape the
@@ -18,106 +33,25 @@ import type { SystemConfig } from '@citrineos/types';
  * database; this only reports where the two have diverged.
  *
  * Deliberately NOT covered: column defaults, indexes, foreign keys, unique
- * constraints. None of those are reachable from `getAttributes()`.
+ * constraints. None of those are reachable from `getAttributes()`. The Drizzle
+ * validator does cover indexes, because `getTableConfig()` exposes them.
+ *
+ * The finding vocabulary, capacity comparison and startup policy live in
+ * `schema-validation.ts`, shared with the Drizzle gate; they are re-exported
+ * here so existing importers keep working.
  */
 
-export const DEFAULT_SCHEMA = 'public';
-
-export type SchemaFindingSeverity = 'error' | 'warning';
-
-export type SchemaFindingKind =
-  | 'missing-table'
-  | 'missing-column'
-  | 'extra-column'
-  | 'type-mismatch'
-  | 'length-narrower'
-  | 'length-wider'
-  | 'nullability-code-stricter'
-  | 'nullability-db-stricter';
-
-export interface SchemaFinding {
-  kind: SchemaFindingKind;
-  severity: SchemaFindingSeverity;
-  table: string;
-  column?: string;
-  expected?: string;
-  actual?: string;
-  message: string;
-}
-
-export interface SchemaValidationReport {
-  findings: SchemaFinding[];
-  errors: SchemaFinding[];
-  warnings: SchemaFinding[];
-  tablesChecked: number;
-  columnsChecked: number;
-}
-
-export interface SchemaValidationOptions {
-  /** Postgres schema to introspect. Defaults to `public`. */
-  schema?: string;
-}
-
-/**
- * Held off-instance deliberately, because loggers serialize an Error's own
- * properties and a nested report survives that badly:
- *
- *   - `console.error(err)` / `util.inspect` walk enumerable own properties to a
- *     default depth of 2, printing `findings: [ [Object], [Object] ]`.
- *   - tslog walks `getOwnPropertyNames` regardless of enumerability, appending
- *     the entire report as one long JSON blob.
- *
- * Both duplicate detail the error message already lists line by line, and both
- * bury it. A WeakMap keeps `error.report` working for callers while staying
- * invisible to either. The per-finding logs emitted before the throw are the
- * structured, queryable representation.
- */
-const reportsByError = new WeakMap<SchemaValidationError, SchemaValidationReport>();
-
-export class SchemaValidationError extends Error {
-  constructor(message: string, report: SchemaValidationReport) {
-    super(message);
-    this.name = 'SchemaValidationError';
-    reportsByError.set(this, report);
-  }
-
-  get report(): SchemaValidationReport {
-    return reportsByError.get(this)!;
-  }
-}
-
-/**
- * A column type reduced to something comparable across the two sides.
- *
- * `family` groups types whose members differ only in capacity, so that
- * VARCHAR(50) vs VARCHAR(255) or SMALLINT vs BIGINT can be reported as a
- * capacity difference rather than an unhelpful type mismatch. Types outside a
- * family must match their `base` exactly.
- */
-type TypeFamily = 'character' | 'integer' | 'float' | 'decimal' | 'other';
-
-interface CanonicalType {
-  family: TypeFamily;
-  base: string;
-  /** Character types. `null` means unbounded (`text`). */
-  length?: number | null;
-  /** Decimal types. `null` means unconstrained. */
-  precision?: number | null;
-  scale?: number | null;
-  /** Set for array types; the element type. */
-  element?: CanonicalType;
-  /** Human-readable form used in findings. */
-  raw: string;
-}
-
-/** Capacity ordering within the integer and float families. */
-const NUMERIC_RANK: Record<string, number> = {
-  smallint: 1,
-  integer: 2,
-  bigint: 3,
-  real: 1,
-  double: 2,
-};
+export {
+  compareNullability,
+  compareTypes,
+  DEFAULT_SCHEMA,
+  SchemaValidationError,
+  type SchemaFinding,
+  type SchemaFindingKind,
+  type SchemaFindingSeverity,
+  type SchemaValidationOptions,
+  type SchemaValidationReport,
+} from './schema-validation.js';
 
 interface DbColumn {
   table_name: string;
@@ -139,8 +73,7 @@ function canonicalizeDbType(col: DbColumn): CanonicalType {
   const udt = col.udt_name.toLowerCase();
 
   if (udt.startsWith('_')) {
-    const element = canonicalizeDbType({ ...col, udt_name: udt.slice(1) });
-    return { family: 'other', base: 'array', element, raw: `${element.raw}[]` };
+    return array(canonicalizeDbType({ ...col, udt_name: udt.slice(1) }));
   }
 
   switch (udt) {
@@ -260,8 +193,7 @@ function canonicalizeCodeType(type: unknown): CanonicalType {
       return simple('bytea', 'BYTEA');
 
     case 'ARRAY': {
-      const element = canonicalizeCodeType(instance.type);
-      return { family: 'other', base: 'array', element, raw: `${element.raw}[]` };
+      return array(canonicalizeCodeType(instance.type));
     }
     case 'ENUM': {
       const values: string[] = Array.isArray(options.values) ? options.values : [];
@@ -271,128 +203,6 @@ function canonicalizeCodeType(type: unknown): CanonicalType {
     default:
       return simple(key.toLowerCase() || 'unknown', key || 'UNKNOWN');
   }
-}
-
-function character(base: string, length: number | null): CanonicalType {
-  return {
-    family: 'character',
-    base,
-    length,
-    raw: length === null ? base.toUpperCase() : `${base.toUpperCase()}(${length})`,
-  };
-}
-
-function decimal(precision: number | null, scale: number | null): CanonicalType {
-  return {
-    family: 'decimal',
-    base: 'decimal',
-    precision,
-    scale,
-    raw: precision === null ? 'NUMERIC' : `NUMERIC(${precision},${scale ?? 0})`,
-  };
-}
-
-function simple(base: string, raw: string): CanonicalType {
-  return { family: 'other', base, raw };
-}
-
-/** `null` length/precision means unbounded, which outranks every bounded value. */
-function capacity(value: number | null | undefined): number {
-  return value === null || value === undefined ? Number.POSITIVE_INFINITY : value;
-}
-
-type Comparison =
-  | { result: 'equal' }
-  | { result: 'narrower' }
-  | { result: 'wider' }
-  | { result: 'mismatch' };
-
-/**
- * Compares two canonical types. Within a family the answer is a capacity
- * verdict (`narrower` / `wider`); across families, or for unrelated base types,
- * it is a `mismatch`.
- */
-export function compareTypes(expected: CanonicalType, actual: CanonicalType): Comparison {
-  if (expected.base === 'array' || actual.base === 'array') {
-    if (expected.base !== actual.base || !expected.element || !actual.element) {
-      return { result: 'mismatch' };
-    }
-    const inner = compareTypes(expected.element, actual.element);
-    if (inner.result === 'mismatch') return inner;
-    // `information_schema.columns` reports character_maximum_length and
-    // numeric_precision as NULL for array columns — the element type's typmod
-    // is simply not exposed there. Capacity is therefore unknowable for those
-    // families and comparing it would flag every VARCHAR(n)[] column as
-    // "wider". Element base types stay comparable via udt_name (_int4 vs
-    // _int8), so those verdicts are kept.
-    if (expected.element.family === 'character' || expected.element.family === 'decimal') {
-      return { result: 'equal' };
-    }
-    return inner;
-  }
-
-  if (expected.family !== actual.family) return { result: 'mismatch' };
-
-  switch (expected.family) {
-    case 'character': {
-      // varchar/text/citext all hold character data; only capacity differs.
-      // char vs varchar is a real difference (blank padding).
-      const charLike = (t: CanonicalType) => t.base === 'char';
-      if (charLike(expected) !== charLike(actual)) return { result: 'mismatch' };
-      const want = capacity(expected.length);
-      const have = capacity(actual.length);
-      if (have === want) return { result: 'equal' };
-      return have < want ? { result: 'narrower' } : { result: 'wider' };
-    }
-    case 'integer':
-    case 'float': {
-      const want = NUMERIC_RANK[expected.base] ?? 0;
-      const have = NUMERIC_RANK[actual.base] ?? 0;
-      if (have === want) return { result: 'equal' };
-      return have < want ? { result: 'narrower' } : { result: 'wider' };
-    }
-    case 'decimal': {
-      const wantP = capacity(expected.precision);
-      const haveP = capacity(actual.precision);
-      const wantS = capacity(expected.scale);
-      const haveS = capacity(actual.scale);
-      if (haveP < wantP || haveS < wantS) return { result: 'narrower' };
-      if (haveP > wantP || haveS > wantS) return { result: 'wider' };
-      return { result: 'equal' };
-    }
-    default:
-      return expected.base === actual.base ? { result: 'equal' } : { result: 'mismatch' };
-  }
-}
-
-/**
- * Nullability is compared asymmetrically, and deliberately so.
- *
- * Only ~70 of ~495 `@Column` decorators in this codebase declare
- * `allowNull: false`, while the migrations declare NOT NULL on far more, so a
- * symmetric check would report well over a hundred failures against a
- * correctly-migrated database and could never be enabled. The two directions
- * also carry different risk:
- *
- *   - code NOT NULL over a nullable column is an error: Sequelize and
- *     TypeScript both treat the value as always present, so a NULL row crashes
- *     whichever query path first touches it.
- *   - code nullable over a NOT NULL column is a warning: reads are always
- *     safe, only inserts can fail.
- *
- * An omitted `allowNull` is Sequelize's implicit `true`, and is treated the
- * same as an explicit one. A primary key is implicitly NOT NULL — except when
- * the attribute also says `allowNull: true`, see below.
- */
-export function compareNullability(
-  codeAllowNull: boolean | undefined,
-  isPrimaryKey: boolean,
-  dbIsNullable: boolean,
-): 'ok' | 'code-stricter' | 'db-stricter' {
-  const codeRequiresValue = codeAllowNull === false || (isPrimaryKey && codeAllowNull !== true);
-  if (codeRequiresValue && dbIsNullable) return 'code-stricter';
-  if (!codeRequiresValue && !dbIsNullable) return 'db-stricter';
-  return 'ok';
 }
 
 function tableNameOf(model: { getTableName: () => string | { tableName: string } }): string {
@@ -478,7 +288,8 @@ export async function validateSequelizeSchema(
       columnsChecked++;
 
       const actual = canonicalizeDbType(dbColumn);
-      const comparison = compareTypes(expected, actual);
+      // information_schema does not expose array element typmods.
+      const comparison = compareTypes(expected, actual, { unknownElementCapacity: true });
 
       switch (comparison.result) {
         case 'mismatch':
@@ -560,13 +371,7 @@ export async function validateSequelizeSchema(
     }
   }
 
-  return {
-    findings,
-    errors: findings.filter((f) => f.severity === 'error'),
-    warnings: findings.filter((f) => f.severity === 'warning'),
-    tablesChecked,
-    columnsChecked,
-  };
+  return buildReport(findings, tablesChecked, columnsChecked);
 }
 
 /**
@@ -580,99 +385,25 @@ function normalizeType(sequelize: Sequelize, type: unknown): unknown {
   return typeof normalize === 'function' ? normalize.call(sequelize, type) : type;
 }
 
-/** Groups findings by table into indented, human-readable lines. */
-function formatFindings(findings: SchemaFinding[]): string {
-  const byTable = new Map<string, SchemaFinding[]>();
-  for (const finding of findings) {
-    const list = byTable.get(finding.table) ?? [];
-    list.push(finding);
-    byTable.set(finding.table, list);
-  }
-
-  const lines: string[] = [];
-  for (const [table, tableFindings] of byTable) {
-    lines.push(`  ${table}:`);
-    for (const finding of tableFindings) {
-      lines.push(`    [${finding.severity}] ${finding.message}`);
-    }
-  }
-  return lines.join('\n');
-}
-
-function formatReport(report: SchemaValidationReport): string {
-  return formatFindings([...report.errors, ...report.warnings]);
-}
-
-/** e.g. "2 type-mismatch, 1 missing-column" — keeps the thrown message useful alone. */
-function countByKind(findings: SchemaFinding[]): string {
-  const counts = new Map<SchemaFindingKind, number>();
-  for (const finding of findings) {
-    counts.set(finding.kind, (counts.get(finding.kind) ?? 0) + 1);
-  }
-  return [...counts.entries()].map(([kind, count]) => `${count} ${kind}`).join(', ');
-}
-
 /**
- * Startup gate. Introspects the schema, logs a summary plus one structured
- * entry per finding, and throws when errors are present.
+ * Startup gate for the Sequelize models. Introspects the schema, logs one
+ * consolidated block, and throws when errors are present.
  *
- * Skipped entirely when `sync`/`alter`/`force` is set: `sequelize.sync()` has
- * just reshaped the database to match the models, so validating afterwards can
- * only produce noise.
+ * The log/throw policy — including the `database.validateSchema` switch, the
+ * `validateSchemaSeverity` escape hatch and the sync/alter/force skip — is
+ * shared with the Drizzle gate; see `runSchemaValidationGate`.
  */
 export async function assertSequelizeSchemaMatches(
   sequelize: Sequelize,
   config: SystemConfig,
   logger: Logger<ILogObj>,
 ): Promise<SchemaValidationReport | null> {
-  const log = logger.getSubLogger({ name: 'SchemaValidator' });
-  const databaseConfig = config.database;
-
-  if (!databaseConfig.validateSchema) {
-    log.warn('Schema validation is disabled (database.validateSchema=false)');
-    return null;
-  }
-
-  if (databaseConfig.sync || databaseConfig.alter || databaseConfig.force) {
-    log.info(
-      'Skipping schema validation: database.sync/alter/force is enabled, so the schema was just synchronized from the models',
-    );
-    return null;
-  }
-
-  const report = await validateSequelizeSchema(sequelize, { schema: databaseConfig.schema });
-
-  const summary =
-    `schema validation: ${report.errors.length} errors, ${report.warnings.length} warnings ` +
-    `(${report.tablesChecked} tables, ${report.columnsChecked} columns checked)`;
-
-  if (report.findings.length === 0) {
-    log.info(summary);
-    return report;
-  }
-
-  const reportBlock = `${summary}\n${formatReport(report)}`;
-  if (report.errors.length > 0) {
-    log.error(reportBlock);
-  } else {
-    log.warn(reportBlock);
-  }
-
-  if (report.errors.length > 0) {
-    if (databaseConfig.validateSchemaSeverity === 'warn') {
-      log.warn(
-        `Schema validation found ${report.errors.length} error(s), but database.validateSchemaSeverity=warn, so startup will continue`,
-      );
-      return report;
-    }
-
-    throw new SchemaValidationError(
-      `Database schema does not match the models: ${report.errors.length} error(s) ` +
-        `(${countByKind(report.errors)}), ${report.warnings.length} warning(s). ` +
-        `The full report was logged at error level.`,
-      report,
-    );
-  }
-
-  return report;
+  return runSchemaValidationGate({
+    config,
+    logger,
+    loggerName: 'SchemaValidator',
+    summaryPrefix: 'schema validation',
+    declaredBy: 'the models',
+    validate: (schema) => validateSequelizeSchema(sequelize, { schema }),
+  });
 }

@@ -107,4 +107,10 @@ export {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  citext,
+  registeredTables,
+  registeredTableNames,
+  tableMap,
+  type RegisteredTable,
+  drizzleSchema,
 } from './src/db/drizzle/index.js';

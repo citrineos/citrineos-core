@@ -31,15 +31,24 @@ export {
 export { IdGenerator } from './id-generator.js';
 
 export {
-  assertSequelizeSchemaMatches,
   compareNullability,
   compareTypes,
   DEFAULT_SCHEMA,
   SchemaValidationError,
-  validateSequelizeSchema,
+  type CanonicalType,
   type SchemaFinding,
   type SchemaFindingKind,
   type SchemaFindingSeverity,
   type SchemaValidationOptions,
   type SchemaValidationReport,
+} from './schema-validation.js';
+export {
+  assertSequelizeSchemaMatches,
+  validateSequelizeSchema,
 } from './sequelize-schema-validator.js';
+export {
+  assertDrizzleSchemaMatches,
+  canonicalizeSqlTypeName,
+  validateDrizzleSchema,
+  type DrizzleSchemaValidationOptions,
+} from './drizzle-schema-validator.js';

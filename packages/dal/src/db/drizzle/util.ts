@@ -7,9 +7,6 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import pg from 'pg';
 import { type ILogObj, Logger } from 'tslog';
-import { formatDriftReport, resolveValidationMode } from './validation/report.js';
-import { registeredTables } from './validation/registry.js';
-import { SchemaDriftError, validateDrizzleSchema } from './validation/validateSchema.js';
 
 export class DefaultDrizzleInstance {
   private static readonly DEFAULT_RETRIES = 5;
@@ -47,16 +44,16 @@ export class DefaultDrizzleInstance {
   }
 
   /**
-   * Verifies the database is usable before the server starts serving traffic:
-   * connects (with retries), then checks the live schema against the drizzle
-   * table declarations.
+   * Verifies the connection is usable before the server starts serving traffic.
    *
    * Throws on failure so the caller can exit rather than starting a server whose
-   * queries are guaranteed to fail.
+   * queries are guaranteed to fail. Schema validation is a separate concern and
+   * lives with the Sequelize gate in `@citrineos/ocpp`
+   * (`assertDrizzleSchemaMatches`), so both are driven by the same
+   * `database.validateSchema` configuration and reported the same way.
    */
   public static async initialize(): Promise<void> {
     await this.waitForConnection();
-    await this.validateSchema();
   }
 
   /**
@@ -97,48 +94,5 @@ export class DefaultDrizzleInstance {
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
-  }
-
-  /**
-   * Compares the drizzle schema declarations against the live database and, in
-   * `strict` mode, refuses to continue when they disagree.
-   *
-   * Controlled by `CITRINEOS_SCHEMA_VALIDATION`:
-   *   strict (default) - log every difference and throw, so startup fails
-   *   warn             - log every difference and continue
-   *   off              - skip the check entirely
-   *
-   * Set `CITRINEOS_SCHEMA_VALIDATION_CHECK_DEFAULTS=true` to additionally compare
-   * whether columns have a database default. Off by default because most defaults
-   * in this schema are application-side.
-   */
-  private static async validateSchema(): Promise<void> {
-    const { mode, warning } = resolveValidationMode(process.env.CITRINEOS_SCHEMA_VALIDATION);
-    if (warning) this.logger.warn(warning);
-
-    if (mode === 'off') {
-      this.logger.warn('Drizzle schema validation skipped (CITRINEOS_SCHEMA_VALIDATION=off)');
-      return;
-    }
-
-    const checkDefaults = process.env.CITRINEOS_SCHEMA_VALIDATION_CHECK_DEFAULTS === 'true';
-    const startedAt = Date.now();
-    const findings = await validateDrizzleSchema(this.instance!, { checkDefaults });
-    const elapsedMs = Date.now() - startedAt;
-
-    if (findings.length === 0) {
-      this.logger.info(
-        `Drizzle schema validated against database: ${registeredTables().length} table(s) in sync (${elapsedMs}ms)`,
-      );
-      return;
-    }
-
-    const report = formatDriftReport(findings, mode);
-    if (mode === 'warn') {
-      this.logger.warn(report);
-      return;
-    }
-
-    throw new SchemaDriftError(findings, report);
   }
 }
