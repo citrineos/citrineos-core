@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { serializeError } from '@base-util/errors.js';
 import {
   type CallAction,
   type HandlerProperties,
@@ -297,7 +298,7 @@ export abstract class AbstractModule implements IModule {
 
       await handlerInstance.handle(message, props);
     } catch (error) {
-      this._logger.error('Failed handling message: ', error, message);
+      this._logger.error('Failed handling message: ', serializeError(error), message);
       if (message.state === MessageState.Request) {
         // CallErrors are only emitted for Calls
         this._logger.error('Sending CallError to ChargingStation...');
