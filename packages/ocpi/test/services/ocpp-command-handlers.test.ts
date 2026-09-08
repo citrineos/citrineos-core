@@ -14,7 +14,7 @@ import { ocpiConfigSchema } from '../../src/config/ocpi-types.js';
 // throws CannotInjectValueError. Their source is read instead.
 const HANDLER_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
-  '../../src/util/ocpp-command-handlers',
+  '../../src/services/ocpp-command-handlers',
 );
 
 function handlerSources(): string[] {

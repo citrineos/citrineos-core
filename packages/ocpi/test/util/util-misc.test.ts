@@ -16,7 +16,7 @@ import {
   invalidServerCredentialsRoles,
   plainToClass,
 } from '../../src/util/util.js';
-import { ResponseGenerator } from '../../src/services/response-generator.js';
+import { ResponseGenerator } from '../../src/apis/response-generator.js';
 import * as Consts from '../../src/util/consts.js';
 import { validateRole } from '../../src/apis/validators/credentials-validators.js';
 import { PaginatedParams } from '../../src/apis/controllers/param/paginated-params.js';

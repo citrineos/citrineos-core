@@ -8,7 +8,7 @@ import { NotFoundError } from 'routing-controllers';
 import { ChargingProfilesService } from '../../src/services/charging-profiles-service.js';
 import { ChargingProfileResultType } from '../../src/types/charging-profile-response.js';
 import type { SetChargingProfile } from '../../src/types/set-charging-profile.js';
-import { ResponseGenerator } from '../../src/services/response-generator.js';
+import { ResponseGenerator } from '../../src/apis/response-generator.js';
 
 const SESSION_ID = 'SESSION-1';
 const RESPONSE_URL = 'https://msp.example.com/charging_profiles/SESSION-1';

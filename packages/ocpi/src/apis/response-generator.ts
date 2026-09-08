@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { NotFoundException } from '../apis/exception/not-found-exception.js';
+import { NotFoundException } from './exception/not-found-exception.js';
 import { buildOcpiResponse, OcpiResponseStatusCode } from '../types/ocpi-response.js';
 
 export class ResponseGenerator {

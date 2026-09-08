@@ -13,7 +13,7 @@ import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from '../../util/consts.js';
-import type { CacheWrapper } from '../../services/cache-wrapper.js';
+import type { CacheWrapper } from '../../util/cache-wrapper.js';
 import type { OcpiClientApiDependencies } from '../../server/dependencies.js';
 
 export interface CommandsClientApiDependencies extends OcpiClientApiDependencies {

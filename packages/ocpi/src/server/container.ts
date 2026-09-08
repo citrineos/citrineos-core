@@ -12,7 +12,7 @@ import type { ICache } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 
 import type { OcpiConfig } from '../config/ocpi-types.js';
-import { CacheWrapper } from '../services/cache-wrapper.js';
+import { CacheWrapper } from '../util/cache-wrapper.js';
 import { OcpiGraphqlClient } from '../transport/graphql/ocpi-graphql-client.js';
 
 import { ConnectorMapper, EvseMapper, LocationMapper } from '../mappers/location-mapper.js';
@@ -53,10 +53,10 @@ import { OcpiHeaderMiddleware } from '../apis/middleware/ocpi-header-middleware.
 import { PaginatedMiddleware } from '../apis/middleware/paginated-middleware.js';
 import { UniqueMessageIdsMiddleware } from '../apis/middleware/unique-message-ids-middleware.js';
 
-import type { OCPPCommandHandler } from '../util/ocpp-command-handlers/base.js';
-import { OCPP1_6_CommandHandler } from '../util/ocpp-command-handlers/ocpp-16-command-handler.js';
-import { OCPP2_0_1_CommandHandler } from '../util/ocpp-command-handlers/ocpp-201-command-handler.js';
-import { OCPP2_1_CommandHandler } from '../util/ocpp-command-handlers/ocpp-21-command-handler.js';
+import type { OCPPCommandHandler } from '../services/ocpp-command-handlers/base.js';
+import { OCPP1_6_CommandHandler } from '../services/ocpp-command-handlers/ocpp-16-command-handler.js';
+import { OCPP2_0_1_CommandHandler } from '../services/ocpp-command-handlers/ocpp-201-command-handler.js';
+import { OCPP2_1_CommandHandler } from '../services/ocpp-command-handlers/ocpp-21-command-handler.js';
 
 import type { DtoEventReceiverFactory } from '../handlers/types.js';
 import { PgNotifyEventSubscriber } from '../transport/pg-notify/subscriber.js';

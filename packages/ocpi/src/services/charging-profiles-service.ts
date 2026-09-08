@@ -8,7 +8,7 @@ import { ChargingProfileResultType } from '../types/charging-profile-response.js
 import { NotFoundException } from '../apis/exception/not-found-exception.js';
 import type { SetChargingProfile } from '../types/set-charging-profile.js';
 import { NotFoundError } from 'routing-controllers';
-import { ResponseGenerator } from './response-generator.js';
+import { ResponseGenerator } from '../apis/response-generator.js';
 
 export class ChargingProfilesService {
   readonly TIMEOUT = 30;

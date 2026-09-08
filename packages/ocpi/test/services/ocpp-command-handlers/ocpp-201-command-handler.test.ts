@@ -15,7 +15,7 @@ vi.mock('../../../index.js', async () => {
   return { CommandResultType, CommandType, ModuleId };
 });
 
-import { OCPP2_0_1_CommandHandler } from '../../../src/util/ocpp-command-handlers/ocpp-201-command-handler.js';
+import { OCPP2_0_1_CommandHandler } from '../../../src/services/ocpp-command-handlers/ocpp-201-command-handler.js';
 import { CommandResultType } from '../../../src/types/command-result.js';
 import { uidDelimiter } from '../../../src/types/dto/evse-dto.js';
 
