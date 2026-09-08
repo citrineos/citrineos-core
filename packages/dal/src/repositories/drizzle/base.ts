@@ -83,31 +83,6 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
   // Subclasses map raw DB rows to clean DTO objects — no ORM leakage.
   protected abstract toDto(row: InferSelectModel<TTable>): TDto;
 
-  /**
-   * Runs `fn` inside a single database transaction, committing when it resolves and
-   * rolling back when it throws. Pass the supplied context to the shared write
-   * helpers so their statements join the transaction.
-   */
-  protected async withAtomicWrite<T>(fn: (ctx: DrizzleWriteContext) => Promise<T>): Promise<T> {
-    const events: DrizzleWriteContext['events'] = [];
-
-    const result = await this.db.transaction(async (tx) => fn({ db: tx, events }));
-
-    for (const event of events) {
-      this.emit(event.name, event.payload);
-    }
-    return result;
-  }
-
-  // Emits immediately outside a transaction; buffers for post-commit inside one.
-  private raise(ctx: DrizzleWriteContext | undefined, name: string, payload: unknown) {
-    if (ctx) {
-      ctx.events.push({ name, payload });
-    } else {
-      this.emit(name, payload);
-    }
-  }
-
   // Returns the tenant isolation predicate for WHERE clauses.
   // Undefined in schema-per-tenant mode because isolation lives at the schema level.
   // Protected, so subclasses can apply it to sibling tables they join against.
@@ -236,5 +211,30 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
     const dto = this.toDto(rows[0]);
     this.raise(ctx, 'deleted', [dto]);
     return dto;
+  }
+
+  /**
+   * Runs `fn` inside a single database transaction, committing when it resolves and
+   * rolling back when it throws. Pass the supplied context to the shared write
+   * helpers so their statements join the transaction.
+   */
+  protected async withAtomicWrite<T>(fn: (ctx: DrizzleWriteContext) => Promise<T>): Promise<T> {
+    const events: DrizzleWriteContext['events'] = [];
+
+    const result = await this.db.transaction(async (tx) => fn({ db: tx, events }));
+
+    for (const event of events) {
+      this.emit(event.name, event.payload);
+    }
+    return result;
+  }
+
+  // Emits immediately outside a transaction; buffers for post-commit inside one.
+  private raise(ctx: DrizzleWriteContext | undefined, name: string, payload: unknown) {
+    if (ctx) {
+      ctx.events.push({ name, payload });
+    } else {
+      this.emit(name, payload);
+    }
   }
 }
