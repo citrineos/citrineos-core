@@ -72,7 +72,7 @@ function makeCache() {
 
 function makeLocationRepository() {
   return {
-    doesChargingStationExistByStationId: vi.fn().mockResolvedValue(true),
+    doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
     createOrUpdateChargingStation: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -98,7 +98,7 @@ describe('BootNotification cache namespacing', () => {
         bootNotificationService: bootNotificationService as any,
         bootRepository: { updateByKey: vi.fn().mockResolvedValue({}) } as any,
         changeConfigurationRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-        locationRepository: makeLocationRepository() as any,
+        chargingStationRepository: makeLocationRepository() as any,
       });
 
       return { handler, cache, bootNotificationService };
@@ -164,7 +164,7 @@ describe('BootNotification cache namespacing', () => {
         bootNotificationService: bootNotificationService as any,
         configurationDeviceModelService: { updateDeviceModel: vi.fn() } as any,
         deviceModelRepository: {} as any,
-        locationRepository: makeLocationRepository() as any,
+        chargingStationRepository: makeLocationRepository() as any,
       });
 
       return { handler, cache, bootNotificationService };

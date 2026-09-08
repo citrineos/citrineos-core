@@ -407,18 +407,13 @@ export class TransactionService {
     reservationId: number,
     ocppConnectionName: string,
   ): Promise<void> {
-    await this._reservationRepository.updateAllByQuery(
+    await this._reservationRepository.updateByStationAndReservationId(
       tenantId,
+      ocppConnectionName,
+      reservationId,
       {
         terminatedByTransaction: transactionId,
         isActive: false,
-      },
-      {
-        where: {
-          tenantId,
-          id: reservationId,
-          ocppConnectionName: ocppConnectionName,
-        },
       },
     );
   }

@@ -35,6 +35,7 @@ export function toTransactionEventDto(entity: TransactionEventEntity): Transacti
     cableMaxCurrent: entity.cableMaxCurrent != null ? Number(entity.cableMaxCurrent) : null,
     reservationId: entity.reservationId ?? null,
     transactionDatabaseId: entity.transactionDatabaseId ?? undefined,
+    transactionCreatedAt: entity.transactionCreatedAt,
     transactionInfo: entity.transactionInfo ?? undefined,
     evseId: entity.evseId ?? null,
     // Relation not present as a scalar column.

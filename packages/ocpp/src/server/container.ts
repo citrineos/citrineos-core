@@ -26,10 +26,12 @@ import {
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
+  DrizzleChargingStationRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleMessageInfoRepository,
+  DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -76,7 +78,7 @@ import {
 } from '@modules/configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
 import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
-import { MessageRouterImpl, WebhookDispatcher } from '@modules/ocpp-router/index.js';
+import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
   InternalSmartCharging,
@@ -88,8 +90,8 @@ import { registerTransactionsServices, TransactionsModule } from '@modules/trans
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
   CertificateAuthorityService,
-  InstallCertificateHelperService,
   DeviceModelService,
+  InstallCertificateHelperService,
   NetworkProfileService,
   RealTimeAuthorizer,
 } from '@services/index.js';
@@ -107,6 +109,7 @@ import {
   WebsocketNetworkConnection,
 } from '@/transport/index.js';
 import { IdGenerator } from '@util/index.js';
+import { registerMessagesServices } from '@modules/messages/register.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -169,9 +172,11 @@ function registerModuleServices(container: AwilixContainer): void {
   registerConfigurationServices(container);
   registerEVDriverServices(container);
   registerMonitoringServices(container);
+  registerOcppRouterServices(container);
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);
+  registerMessagesServices(container);
 }
 
 // ============================================================
@@ -294,6 +299,10 @@ function registerRepositories(container: AwilixContainer): void {
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
     componentRepository: asClass(SequelizeComponentRepository).singleton(),
+    // use asFunction to return an already existing instance
+    chargingStationRepository: asFunction(
+      ({ locationRepository }) => locationRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -307,6 +316,7 @@ function registerRepositories(container: AwilixContainer): void {
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
+      chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
@@ -315,6 +325,7 @@ function registerRepositories(container: AwilixContainer): void {
       ).singleton(),
       installedCertificateRepository: asClass(DrizzleInstalledCertificateRepository).singleton(),
       messageInfoRepository: asClass(DrizzleMessageInfoRepository).singleton(),
+      reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
@@ -364,10 +375,13 @@ function registerNetwork(container: AwilixContainer): void {
   container.register({
     networkHook: asValue(async (_identifier: string, _message: string) => {}),
 
-    doesChargingStationExistByStationId: asFunction(
-      ({ locationRepository }) =>
+    doesChargingStationExistByOcppConnectionName: asFunction(
+      ({ chargingStationRepository }) =>
         (tenantId: number, ocppConnectionName: string): Promise<boolean> =>
-          locationRepository.doesChargingStationExistByStationId(tenantId, ocppConnectionName),
+          chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          ),
     ).singleton(),
     getMaxChargingStationsForTenant: asFunction(
       ({ tenantRepository }) =>
@@ -405,7 +419,6 @@ function registerNetwork(container: AwilixContainer): void {
     networkProfileFilter: asClass(NetworkProfileFilter).singleton(),
     basicAuthenticationFilter: asClass(BasicAuthenticationFilter).singleton(),
     authenticator: asClass(Authenticator).singleton(),
-    webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),
     adminApi: asClass(AdminApi).scoped(),

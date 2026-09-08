@@ -42,7 +42,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
   protected _deviceModelRepository: IDeviceModelRepository;
-  protected _locationRepository: IChargingStationRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -52,7 +52,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     bootNotificationService,
     configurationDeviceModelService,
     deviceModelRepository,
-    locationRepository,
+    chargingStationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
@@ -60,7 +60,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
     deviceModelRepository: IDeviceModelRepository;
-    locationRepository: IChargingStationRepository;
+    chargingStationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
@@ -69,7 +69,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     this._bootService = bootNotificationService;
     this._deviceModelService = configurationDeviceModelService;
     this._deviceModelRepository = deviceModelRepository;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -116,17 +116,18 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
         ? JSON.parse(connectionJson)
         : null;
       if (!connection?.allowUnknownChargingStations) {
-        const exists = await this._locationRepository.doesChargingStationExistByStationId(
-          tenantId,
-          ocppConnectionName,
-        );
+        const exists =
+          await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          );
         if (!exists) {
           throw new Error(
             `Charging station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
           );
         }
       }
-      await this._locationRepository.createOrUpdateChargingStation(
+      await this._chargingStationRepository.createOrUpdateChargingStation(
         tenantId,
         ChargingStation.build({
           tenantId,
