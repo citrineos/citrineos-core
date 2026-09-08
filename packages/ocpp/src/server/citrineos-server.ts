@@ -4,7 +4,6 @@
 
 import { apiAuthPluginFp, initSwagger } from '@/apis/index.js';
 import { GcpCloudStorage, LocalStorage, S3Storage } from '@/config/index.js';
-import { MemoryCache, RedisCache } from '@/services/index.js';
 import type {
   BrokerAwareMessageSender,
   RabbitMQChannelManager,
@@ -21,7 +20,9 @@ import {
   type IFileStorage,
   type IMessageRouter,
   type IModule,
+  MemoryCache,
   OCPPValidator,
+  RedisCache,
 } from '@citrineos/base';
 import {
   DefaultDrizzleInstance,

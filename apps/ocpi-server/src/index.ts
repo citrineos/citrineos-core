@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ICache, IModule } from '@citrineos/base';
+import { type ICache, type IModule, MemoryCache, RedisCache } from '@citrineos/base';
 import { EventGroup, eventGroupFromString } from '@citrineos/types';
-import { MemoryCache, RedisCache } from '@citrineos/ocpp';
 import type { AwilixContainer } from 'awilix';
 import {
   type OcpiConfig,
@@ -13,7 +12,7 @@ import {
   getDtoEventHandlerMetaData,
   getOcpiSystemConfig,
   OcpiServer,
-} from '@citrineos/ocpi-base';
+} from '@citrineos/ocpi';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { createDockerOcpiConfig } from './config/envs/docker.js';

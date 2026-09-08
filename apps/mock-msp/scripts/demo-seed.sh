@@ -55,7 +55,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCENARIO_FILE="$SCRIPT_DIR/../scenarios/preregistered.json"
 
 # Identities. These mirror src/config.ts defaults, which mirror the seeded EMSP
-# partner in apps/ocpi-server/seeders/20250806120002-default-tenant-partner.ts.
+# partner in apps/ocpi-server/db/seeders/20250806120002-default-tenant-partner.ts.
 #   US/S44 = the CPO (Citrine)  -- whose role this script plays
 #   US/TST = the eMSP (the mock) -- "TestMobilitySolutions"
 CPO_CC="${MOCK_MSP_CPO_COUNTRY_CODE:-US}"
@@ -268,7 +268,7 @@ pause
 # ============================================================================
 # STEP 4 -- the happy path: a fully schema-valid Session
 # ============================================================================
-# Every field below satisfies the ocpi-base SessionSchema (the same Zod object
+# Every field below satisfies the ocpi SessionSchema (the same Zod object
 # Citrine itself parses with). Expect check valid + green 1000 + zero findings, and
 # the object lands in /_mock/state/sessions.
 step 'happy path -- PUT a fully schema-valid Session'
@@ -310,8 +310,8 @@ pause
 # The real defect (found by a SOURCE-CODE AUDIT using this mock's Zod oracle --
 # NOT observed on the wire, because that run has not happened yet):
 # Citrine's LocationMapper emits coordinates by calling .toString() on a number.
-# A latitude of 1.0 stringifies to "1.0" -- one fractional digit. The ocpi-base
-# GeoLocationSchema (packages/ocpi-base/src/model/geo-location.ts) requires:
+# A latitude of 1.0 stringifies to "1.0" -- one fractional digit. The ocpi
+# GeoLocationSchema (packages/ocpi/src/types/geo-location.ts) requires:
 #     latitude:  /-?[0-9]{1,2}\.[0-9]{5,7}/    <- 5 to 7 fractional digits
 #     longitude: /-?[0-9]{1,3}\.[0-9]{5,7}/
 # so "1.0" fails the regex and the Location is rejected by the eMSP.

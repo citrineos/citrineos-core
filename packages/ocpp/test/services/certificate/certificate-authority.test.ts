@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type IFileStorage } from '@citrineos/base';
+import { type IFileStorage, MemoryCache } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { KJUR } from 'jsrsasign';
@@ -12,7 +12,7 @@ import {
   type IChargingStationCertificateAuthorityClient,
   type IV2GCertificateAuthorityClient,
 } from '@services/certificate/client/interface.js';
-import { CertificateAuthorityService, MemoryCache } from '@services/index.js';
+import { CertificateAuthorityService } from '@services/index.js';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,

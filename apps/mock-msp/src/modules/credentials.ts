@@ -19,7 +19,7 @@
 //   DELETE -> unregister: wipe the exchanged tokens + discovered CPO endpoints and
 //             return to 'unregistered'; reply is an EMPTY envelope.
 //
-// Token direction (load-bearing — verified against ocpi-base auth + the seed):
+// Token direction (load-bearing — verified against ocpi auth + the seed):
 //   registration.tokenWePresent  = token the CPO issued to us (body.token).
 //                                  We present Token base64(this) when calling the CPO.
 //   registration.tokenWeAccept   = token WE issue to the CPO (TOKEN_C). The CPO
@@ -28,7 +28,7 @@
 // Handlers are PURE: they read ctx.req.body, mutate ctx.store.domain.registration,
 // and return an OcpiReply via ctx.ok/ctx.empty/ctx.error. The dispatcher owns auth,
 // inbound body validation (route.requestSchema -> Finding on drift), envelope
-// building, header echo and recording. Every schema is a reused ocpi-base schema
+// building, header echo and recording. Every schema is a reused ocpi schema
 // imported from the barrel — zero schema drift.
 //
 // The mock-INITIATED handshake (register() driven by the actor) lives in the

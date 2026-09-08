@@ -23,7 +23,7 @@
 // (PUT {citrine}/2.2.1/tokens/{cc}/{party}/{uid}). The outbound wire mechanics
 // live in OcpiClient (owned by build:middleware); this is a thin, typed wrapper.
 //
-// Import rules honored: every ocpi-base schema/type comes ONLY from ../ocpi/barrel.js;
+// Import rules honored: every ocpi schema/type comes ONLY from ../ocpi/barrel.js;
 // shared types from ../core/types.js. WhitelistType is not re-exported by the barrel,
 // so we use its literal enum VALUE ('ALLOWED') which z.nativeEnum(WhitelistType)
 // accepts verbatim — we do NOT redefine any schema.
@@ -57,7 +57,7 @@ const WHITELIST_ALLOWED = 'ALLOWED';
 // API (POST /_mock/authorize) write the policy. We read it here via the exported
 // resolveAuthorize(uid) so the tokens/authorize reply always reflects the active
 // scenario / control state (default ALLOWED). toAllowed() maps the resolved raw
-// string onto the reused ocpi-base AuthorizationInfoAllowed enum (any unknown
+// string onto the reused ocpi AuthorizationInfoAllowed enum (any unknown
 // value defensively falls back to ALLOWED).
 function toAllowed(value: string): AuthorizationInfoAllowed {
   const match = (Object.values(AuthorizationInfoAllowed) as string[]).find((v) => v === value);

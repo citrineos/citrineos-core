@@ -199,9 +199,9 @@ export async function startStubCpo(
   return stub;
 }
 
-// ---- Schema-valid OCPI fixtures (reused ocpi-base shapes) -------------------
+// ---- Schema-valid OCPI fixtures (reused ocpi shapes) -------------------
 
-/** A full, schema-valid ocpi-base Session (passes SessionSchema.parse). */
+/** A full, schema-valid ocpi Session (passes SessionSchema.parse). */
 export function validSession(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     country_code: 'US',

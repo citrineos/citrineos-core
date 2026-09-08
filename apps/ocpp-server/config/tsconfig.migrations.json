@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.build.json",
+  "include": ["../db/migrations/**/*.ts"],
+  "exclude": ["../**/dist/**", "../**/node_modules/**"],
+  "compilerOptions": {
+    "outDir": "../dist/migrations",
+    "rootDir": "../db/migrations"
+  }
+}
