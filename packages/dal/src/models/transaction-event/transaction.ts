@@ -59,10 +59,7 @@ export class Transaction extends Model implements TransactionDto {
   location?: LocationDto;
 
   @ForeignKey(() => ChargingStation)
-  @Column({
-    type: DataType.INTEGER,
-    unique: 'stationId_transactionId',
-  })
+  @Column(DataType.INTEGER)
   declare stationId: number;
 
   @Column({
@@ -101,10 +98,7 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tariff, 'tariffId')
   tariff?: TariffDto;
 
-  @Column({
-    type: DataType.STRING,
-    unique: 'stationId_transactionId',
-  })
+  @Column(DataType.STRING)
   declare transactionId: string;
 
   @Column(DataType.BOOLEAN)
@@ -185,6 +179,20 @@ export class Transaction extends Model implements TransactionDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  static async resolveCreatedAt(transactionDatabaseId?: number | null): Promise<Date> {
+    if (transactionDatabaseId != null) {
+      const transaction = await Transaction.findOne({
+        where: { id: transactionDatabaseId },
+        attributes: ['createdAt'],
+      });
+      const createdAt = transaction?.get('createdAt') as Date | undefined;
+      if (createdAt) {
+        return createdAt;
+      }
+    }
+    return new Date();
+  }
 
   @BeforeCreate
   static async resolveStationId(instance: Transaction): Promise<void> {

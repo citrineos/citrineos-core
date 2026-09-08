@@ -10,6 +10,7 @@ export const MeterValueSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   transactionEventId: z.number().int().nullable().optional(),
   transactionDatabaseId: z.number().int().nullable().optional(),
+  transactionCreatedAt: z.date().optional(),
   sampledValue: z.tuple([SampledValueSchema]).rest(SampledValueSchema),
   timestamp: z.iso.datetime(),
   connectorId: z.number().int().optional(),

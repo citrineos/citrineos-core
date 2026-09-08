@@ -56,8 +56,7 @@ describe('reservation response handlers address the reservation by its OCPP id',
 
   beforeEach(() => {
     reservationRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
-      updateByKey: vi.fn().mockResolvedValue(undefined),
+      updateByStationAndReservationId: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IReservationRepository>;
   });
 
@@ -80,11 +79,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateByKey).not.toHaveBeenCalled();
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { reserveStatus: ReserveNowStatusEnum.Accepted, isActive: true },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 
@@ -101,11 +100,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateByKey).not.toHaveBeenCalled();
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { isActive: false },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 
@@ -122,10 +121,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { isActive: true },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 });

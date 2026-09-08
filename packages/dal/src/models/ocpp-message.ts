@@ -84,7 +84,6 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
-  @ForeignKey(() => OCPPMessage)
   @Index
   @Column(DataType.INTEGER)
   declare requestMessageId?: number;

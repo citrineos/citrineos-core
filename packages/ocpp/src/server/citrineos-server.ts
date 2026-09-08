@@ -44,6 +44,7 @@ import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 import { buildContainer } from './container.js';
 import { type HealthCheckResult, HealthCheckService } from './health-check-service.js';
+import { assertSequelizeSchemaMatches, type SchemaValidationReport } from '@/util/index.js';
 import { MessagesModule } from '@modules/messages/index.js';
 import {
   assertDrizzleSchemaMatches,
