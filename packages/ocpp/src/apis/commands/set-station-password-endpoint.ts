@@ -41,7 +41,7 @@ interface SetStationPasswordEndpointDependencies extends AbstractEndpointDepende
   cache: ICache;
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
-  locationRepository: IChargingStationRepository;
+  chargingStationRepository: IChargingStationRepository;
 }
 
 type SetStationPasswordEndpointRoute = {
@@ -61,7 +61,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
   private readonly _cache: ICache;
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
-  private readonly _locationRepository: IChargingStationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -69,14 +69,14 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     cache,
     ocppSender,
     deviceModelService,
-    locationRepository,
+    chargingStationRepository,
   }: SetStationPasswordEndpointDependencies) {
     super(logger);
     this._config = config;
     this._cache = cache;
     this._ocppSender = ocppSender;
     this._deviceModelService = deviceModelService;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -100,7 +100,11 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
 
     if (!request.body.setOnCharger) {
       const resolution = await resolveStationProtocol(
-        this._locationRepository.readChargingStationByStationId,
+        (tenantId: number, ocppConnectionName: string) =>
+          this._chargingStationRepository.readChargingStationByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          ),
         tenantId,
         ocppConnectionName,
         OCPP_2_VER_LIST,

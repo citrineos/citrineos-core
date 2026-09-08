@@ -14,7 +14,7 @@ import type { IChargingStationRepository } from '@citrineos/dal';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  locationRepository: IChargingStationRepository;
+  chargingStationRepository: IChargingStationRepository;
 }
 
 export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
@@ -26,12 +26,12 @@ export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _locationRepository: IChargingStationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
 
-  constructor({ logger, ocppSender, locationRepository }: Dependencies) {
+  constructor({ logger, ocppSender, chargingStationRepository }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -44,10 +44,11 @@ export class ChangeConfigurationEndpoint extends AbstractMessageEndpoint {
 
     return Promise.all(
       identifiers.map(async (ocppConnectionName) => {
-        const chargingStation = await this._locationRepository.readChargingStationByStationId(
-          tenantId,
-          ocppConnectionName,
-        );
+        const chargingStation =
+          await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          );
         if (!chargingStation) {
           return {
             success: false,

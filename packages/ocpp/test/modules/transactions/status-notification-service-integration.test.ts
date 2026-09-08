@@ -157,6 +157,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     const service = new StatusNotificationService({
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      chargingStationRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -212,6 +213,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     const service = new StatusNotificationService({
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      chargingStationRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -272,6 +274,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     const service = new StatusNotificationService({
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      chargingStationRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -308,6 +311,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     return new StatusNotificationService({
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      chargingStationRepository: locationRepository,
       locationRepository,
       cache,
     });
