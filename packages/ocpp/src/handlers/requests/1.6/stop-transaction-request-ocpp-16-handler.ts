@@ -23,28 +23,33 @@ import {
   Transaction,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
+import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
+  protected _costCalculator: CostCalculator;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
     transactionEventRepository,
+    costCalculator,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     transactionEventRepository: ITransactionEventRepository;
+    costCalculator: CostCalculator;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._transactionEventRepository = transactionEventRepository;
+    this._costCalculator = costCalculator;
   }
 
   async handle(
@@ -155,13 +160,31 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
     } else {
       this._logger.warn(
-        `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}. 
+        `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}.
         Cannot calculate totalKwh.`,
       );
     }
     transaction.isActive = false;
     transaction.stoppedReason = stoppedReason;
     transaction.endTime = request.timestamp;
+
+    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
+    // session is billed as charging time. Always set, so cost calculation never sees it unset.
+    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
+    const stopTime = Date.parse(request.timestamp);
+    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
+    transaction.timeSpentCharging = Number.isFinite(elapsedSeconds)
+      ? Math.max(0, elapsedSeconds)
+      : 0;
     await transaction.save();
+
+    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
+    if (totalCost != null) {
+      await this._transactionEventRepository.updateTransactionTotalCostById(
+        tenantId,
+        totalCost,
+        transaction.id,
+      );
+    }
   }
 }

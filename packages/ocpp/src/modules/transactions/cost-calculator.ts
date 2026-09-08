@@ -4,7 +4,6 @@
 import type { ITariffRepository } from '@citrineos/dal';
 import type { TariffDto } from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
-import { TransactionService } from './transaction-service.js';
 import { Transaction } from '@citrineos/dal';
 import { baseCalculateTotalCost, childLogger } from '@citrineos/base';
 
@@ -12,19 +11,15 @@ export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
 
   private readonly _tariffRepository: ITariffRepository;
-  private readonly _transactionService: TransactionService;
 
   constructor({
     tariffRepository,
-    transactionService,
     logger,
   }: {
     tariffRepository: ITariffRepository;
-    transactionService: TransactionService;
     logger: Logger<ILogObj>;
   }) {
     this._tariffRepository = tariffRepository;
-    this._transactionService = transactionService;
     this._logger = childLogger(logger, this.constructor.name);
   }
 
