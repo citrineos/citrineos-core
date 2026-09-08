@@ -228,8 +228,8 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetCompositeScheduleEndpoint, {
         ocppSender: { sendCall },
+        evseTypeRepository: { findEvseByIdAndConnectorId },
         deviceModelRepository: {
-          findEvseByIdAndConnectorId,
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
       });
