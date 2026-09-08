@@ -171,9 +171,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(
-          this._config.timeouts.realTimeAuthRequestTimeoutSeconds * 1000,
-        ),
+        signal: AbortSignal.timeout(this._config.timeouts.realTimeAuthRequestTimeoutSeconds * 1000),
       });
 
       const responseJson = await response.json();
