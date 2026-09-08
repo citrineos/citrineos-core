@@ -266,6 +266,7 @@ export const configSchema = z.object({
       staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
       shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
       realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
+      realTimeAuthRequestTimeoutSeconds: z.number().int().min(1).default(10),
       notReadyThresholdSeconds: z.number().int().min(1).default(60),
     })
     .refine((t) => t.maxCachingSeconds >= t.maxCallLengthSeconds, {

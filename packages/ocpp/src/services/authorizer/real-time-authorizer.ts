@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { OidcTokenProvider } from '@/apis/index.js';
 import { type IAuthorizer, type IMessageContext } from '@citrineos/base';
+import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
 import {
   type AuthorizationDto,
   AuthorizationStatusEnum,
@@ -12,10 +14,8 @@ import {
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { OidcTokenProvider } from '@/apis/index.js';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
@@ -171,6 +171,9 @@ export class RealTimeAuthorizer implements IAuthorizer {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(
+          this._config.timeouts.realTimeAuthRequestTimeoutSeconds * 1000,
+        ),
       });
 
       const responseJson = await response.json();
