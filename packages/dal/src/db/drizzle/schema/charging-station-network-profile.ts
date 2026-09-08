@@ -15,7 +15,7 @@ function chargingStationNetworkProfileColumns() {
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     configurationSlot: integer('configurationSlot'),
-    setNetworkProfileId: integer('setNetworkProfileId'),
+    setNetworkProfileId: integer('setNetworkProfileId').notNull(),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
