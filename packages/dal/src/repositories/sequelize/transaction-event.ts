@@ -637,6 +637,7 @@ export class SequelizeTransactionEventRepository
         meterValue.transactionCreatedAt = transaction.createdAt;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
+        meterValue.connectorId = transaction.connectorId ?? undefined;
         const createdMeterValue = await MeterValue.create(meterValue);
         this.meterValue.emit('created', [createdMeterValue]);
       }),
