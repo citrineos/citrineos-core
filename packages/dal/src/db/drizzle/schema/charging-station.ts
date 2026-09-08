@@ -10,7 +10,6 @@ import { TableName } from '@dal/models/table-name.js';
 import {
   boolean,
   geometry,
-  index,
   integer,
   jsonb,
   pgSchema,
@@ -28,7 +27,7 @@ import { type z } from 'zod';
 function chargingStationColumns() {
   return {
     id: serial('id').primaryKey(),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 36 }),
+    ocppConnectionName: varchar('ocppConnectionName', { length: 36 }).notNull(),
     isOnline: boolean('isOnline'),
     protocol: varchar('protocol', { length: 255 }),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
@@ -51,7 +50,7 @@ function chargingStationColumns() {
     parkingRestrictions:
       jsonb('parkingRestrictions').$type<ChargingStationParkingRestrictionEnumType[]>(),
     capabilities: jsonb('capabilities').$type<ChargingStationCapabilityEnumType[]>(),
-    use16StatusNotification0: boolean('use16StatusNotification0').default(true),
+    use16StatusNotification0: boolean('use16StatusNotification0').default(true).notNull(),
     locationId: integer('locationId'),
     connectedWebsocketServerConfigId: varchar('connectedWebsocketServerConfigId', {
       length: 255,
@@ -71,11 +70,7 @@ export const chargingStationTable = pgTable(
   TableName.ChargingStations,
   chargingStationColumns(),
   (t) => [
-    index('charging_stations_ocpp_connection_name').on(t.ocppConnectionName),
-    uniqueIndex('charging_stations_station_name_tenant_id_key').on(
-      t.ocppConnectionName,
-      t.tenantId,
-    ),
+    uniqueIndex('ChargingStations_stationName_tenantId_key').on(t.ocppConnectionName, t.tenantId),
   ],
 );
 
