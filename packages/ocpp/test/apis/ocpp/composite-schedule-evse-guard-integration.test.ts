@@ -5,8 +5,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -57,7 +57,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
@@ -109,7 +109,8 @@ describe('Asking a station for one of its EVSEs', () => {
     return getTestInstance(container, GetCompositeScheduleEndpoint, {
       ocppSender: { sendCall },
       deviceModelRepository,
-      locationRepository,
+      // SequelizeLocationRepository still satisfies IEvseRepository
+      evseRepository: locationRepository,
     }).handle(
       [ocppConnectionName],
       { duration: 60, evseId },
