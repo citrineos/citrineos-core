@@ -39,7 +39,7 @@ function chargingStationSequenceColumns() {
 export const chargingStationSequenceTable = pgTable(
   TableName.ChargingStationSequences,
   chargingStationSequenceColumns(),
-  (t) => [uniqueIndex('charging_station_sequences_station_id_type').on(t.stationId, t.type)],
+  (t) => [uniqueIndex('stationId_type').on(t.stationId, t.type)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
