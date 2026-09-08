@@ -4,7 +4,7 @@
 
 // ============================================================================
 // ConformanceChecker: validate what Citrine sends us against the reused
-// ocpi-base Zod schema and turn any drift into Findings. Because the mock reuses
+// ocpi Zod schema and turn any drift into Findings. Because the mock reuses
 // the SAME schema (same catalog zod instance) Citrine parses with, a validation
 // failure here is a real Citrine-side contract drift, not schema skew. Never
 // throws — always returns Finding[].
@@ -58,7 +58,7 @@ export function check(ctx: MockContext, schema?: ZodTypeAny): Finding[] {
     });
   }
 
-  // ---- body conformance against the reused ocpi-base schema ----
+  // ---- body conformance against the reused ocpi schema ----
   if (schema && BODY_BEARING.has(req.method.toUpperCase())) {
     if (req.body === undefined) {
       findings.push({
@@ -76,7 +76,7 @@ export function check(ctx: MockContext, schema?: ZodTypeAny): Finding[] {
           kind: 'body',
           module,
           seq,
-          detail: 'Inbound request body failed the ocpi-base schema (Citrine-side drift)',
+          detail: 'Inbound request body failed the ocpi schema (Citrine-side drift)',
           issues: v.issues,
         });
       }

@@ -49,12 +49,12 @@ alias_broken_files() {
     --include=*.js 2>/dev/null || true
 }
 
-# The documented recovery is `npx tsc-alias -p packages/{base,dal,ocpp,ocpi-base}/tsconfig.json`,
+# The documented recovery is `npx tsc-alias -p packages/{base,dal,ocpp,ocpi}/tsconfig.json`,
 # but tsc-alias -p accepts ONE project: brace expansion silently drops the rest.
 # Run it once per project instead.
 repair_aliases() {
   local p
-  for p in base dal ocpp ocpi-base; do
+  for p in base dal ocpp ocpi; do
     say "tsc-alias -p packages/$p/tsconfig.json"
     npx tsc-alias -p "packages/$p/tsconfig.json" ||
       die "tsc-alias failed for packages/$p"

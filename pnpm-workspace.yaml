@@ -3,7 +3,7 @@ packages:
   - "packages/base"
   - "packages/dal"
   - "packages/ocpp"
-  - "packages/ocpi-base"
+  - "packages/ocpi"
   - "apps/ocpp-server"
   - "apps/ocpi-server"
   - "apps/operator-ui"

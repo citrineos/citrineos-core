@@ -22,7 +22,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@citrineos/base": "workspace:*",
-    "@citrineos/ocpi-base": "workspace:*",
+    "@citrineos/ocpi": "workspace:*",
     "fastify": "catalog:",
     "zod": "catalog:"
   },

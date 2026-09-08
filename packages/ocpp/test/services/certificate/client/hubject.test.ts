@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { HttpStatus } from '@citrineos/base';
+import { HttpStatus, MemoryCache } from '@citrineos/base';
 import {
   HUBJECT_DEFAULT_BASEURL,
   HUBJECT_DEFAULT_CLIENTID,
@@ -12,7 +12,6 @@ import {
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Hubject } from '@services/certificate/client/hubject.js';
-import { MemoryCache } from '@services/index.js';
 import {
   aValidRootCertificates,
   aValidSignedContractData,

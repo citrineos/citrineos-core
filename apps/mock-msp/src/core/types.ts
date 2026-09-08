@@ -214,8 +214,8 @@ export interface OcpiRoute {
   operation: string; // stable id, e.g. 'locations.put.connector'
   auth: AuthMode;
   requireRoutingHeaders: boolean;
-  requestSchema?: ZodTypeAny; // reused ocpi-base schema -> inbound validation (records Finding)
-  responseSchema: ZodTypeAny; // reused ocpi-base schema -> baseline self-check + fault target
+  requestSchema?: ZodTypeAny; // reused ocpi schema -> inbound validation (records Finding)
+  responseSchema: ZodTypeAny; // reused ocpi schema -> baseline self-check + fault target
   handle(ctx: MockContext): OcpiReply | Promise<OcpiReply>;
 }
 export interface ModuleDef {

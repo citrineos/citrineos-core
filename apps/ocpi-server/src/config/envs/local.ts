@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { OcpiConfigInput } from '@citrineos/ocpi-base';
+import type { OcpiConfigInput } from '@citrineos/ocpi';
 
 export function createLocalOcpiConfig(): OcpiConfigInput {
   return {

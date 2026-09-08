@@ -12,7 +12,7 @@
       "path": "../../packages/base/tsconfig.src.json"
     },
     {
-      "path": "../../packages/ocpi-base/tsconfig.src.json"
+      "path": "../../packages/ocpi/tsconfig.src.json"
     }
   ]
 }

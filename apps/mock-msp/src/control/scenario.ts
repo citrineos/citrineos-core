@@ -7,7 +7,7 @@
 // Scenario = the single checked-in file that is simultaneously the adversary
 // config, the registration state, and the assertion oracle. This module owns:
 //   - the zod schema that validates a Scenario (+ FaultRule / ExchangeFilter /
-//     authorize-policy sub-schemas), reusing the ocpi-base AuthorizationInfoAllowed
+//     authorize-policy sub-schemas), reusing the ocpi AuthorizationInfoAllowed
 //     enum for the authorize values (zero drift);
 //   - loadScenario(path)   -> read + validate a Scenario JSON;
 //   - applyScenario(ctx,s) -> mutate registration state, set the authorize policy,
@@ -18,7 +18,7 @@
 //     active scenario) that the tokens module reads via getScenarioRuntime() /
 //     resolveAuthorize() so tokens/authorize answers ALLOWED|BLOCKED|... per policy.
 //
-// Imports: ocpi-base ONLY through ../ocpi/barrel.js; shared types from
+// Imports: ocpi ONLY through ../ocpi/barrel.js; shared types from
 // ../core/types.js; zod directly (the catalog 4.1.12 instance).
 // ============================================================================
 import { z } from 'zod';
@@ -29,12 +29,12 @@ import type { MockContext, Scenario, ExchangeFilter, Exchange } from '../core/ty
 // ---------------------------------------------------------------------------
 // zod schemas (Scenario + friends). FaultRule / ExchangeFilter / Scenario are
 // mock-local shapes (NOT ocpi objects), so we author their validators here; the
-// authorize VALUES reuse the ocpi-base enum so only genuine OCPI values pass.
+// authorize VALUES reuse the ocpi enum so only genuine OCPI values pass.
 // ---------------------------------------------------------------------------
 
 const allowedValues = Object.values(AuthorizationInfoAllowed) as [string, ...string[]];
 
-/** ALLOWED | BLOCKED | EXPIRED | NO_CREDIT | NOT_ALLOWED (reused from ocpi-base). */
+/** ALLOWED | BLOCKED | EXPIRED | NO_CREDIT | NOT_ALLOWED (reused from ocpi). */
 export const AllowedSchema = z.enum(allowedValues);
 
 /** POST /_mock/authorize body + Scenario.authorize. */

@@ -24,7 +24,7 @@
 //                                                 unexpected push is recorded
 //                                                 rather than 404'd.
 //
-// Validation reuses the ocpi-base SessionSchema verbatim (via the barrel) so any
+// Validation reuses the ocpi SessionSchema verbatim (via the barrel) so any
 // wire drift Citrine sends becomes a recorded Finding — zero schema drift.
 // Handlers are pure (ctx) => OcpiReply: they read ctx.req and mutate
 // ctx.store.domain.sessions only. The dispatcher owns auth, routing-header

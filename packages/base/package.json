@@ -55,6 +55,7 @@
     "big.js": "6.2.2",
     "class-transformer": "catalog:",
     "fastify": "catalog:",
+    "redis": "catalog:",
     "reflect-metadata": "catalog:",
     "tslog": "catalog:",
     "uuid": "catalog:",

@@ -279,7 +279,7 @@ async function emitCommand(
       .code(400)
       .send({ error: 'unknown_command_type', got: typeRaw, valid: Object.values(CommandType) });
   }
-  // Best-effort validation against the reused ocpi-base schema. response_url is
+  // Best-effort validation against the reused ocpi schema. response_url is
   // minted by the actor (OcpiClient.sendCommand), so we probe with a placeholder
   // and never block on its absence — the report just surfaces any real drift.
   const schema = commandSchemas[type];

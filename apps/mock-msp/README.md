@@ -9,7 +9,7 @@ A mock **eMSP** (e-Mobility Service Provider) that speaks **OCPI 2.2.1** and
 impersonates the seeded partner **`US/TST` "TestMobilitySolutions"**. Its job is
 to test CitrineOS's **CPO-side** OCPI implementation from the outside: it listens
 on **port 8083**, exposes exactly the endpoint paths the partner seed advertises,
-and **reuses `@citrineos/ocpi-base`'s Zod schemas verbatim** to validate every
+and **reuses `@citrineos/ocpi`'s Zod schemas verbatim** to validate every
 inbound request and self-check every reply.
 
 Because those schemas are the _same catalog `zod` instance_ (`4.1.12`) Citrine
@@ -46,16 +46,16 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
   live-charging flows also the EVerest simulator containers. The scripts under
   `scripts/` handle the git-bash quirks (`MSYS_NO_PATHCONV`, netstat pid
   resolution) themselves — run them from git bash on Windows as-is.
-- **Build `@citrineos/ocpi-base` first.** The mock deep-imports a handful of
-  schemas from `@citrineos/ocpi-base/dist/...` (see `src/ocpi/barrel.ts`), and
-  ocpi-base ships **only `dist/`** (no `src`, no `exports` map). ocpi-base's
+- **Build `@citrineos/ocpi` first.** The mock deep-imports a handful of
+  schemas from `@citrineos/ocpi/dist/...` (see `src/ocpi/barrel.ts`), and
+  ocpi ships **only `dist/`** (no `src`, no `exports` map). ocpi's
   `tsc -b` references `@citrineos/base` and `@citrineos/ocpp`, so build the
   closure in order:
 
   ```bash
   pnpm --filter @citrineos/base build
   pnpm --filter @citrineos/ocpp build
-  pnpm --filter @citrineos/ocpi-base build
+  pnpm --filter @citrineos/ocpi build
   ```
 
   or in one shot (builds the whole dependency closure topologically):
@@ -67,7 +67,7 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 > If the barrel fails to resolve at runtime with unrewritten path aliases
 > (`@interfaces/*`, `@ocpp/*`, …), the upstream package's `dist` was built with a
 > bare `tsc -b` that skipped its `tsc-alias` step. Re-run the package's full
-> `build` script (`tsc -b && tsc-alias`) for `base`/`core`/`ocpi-base`.
+> `build` script (`tsc -b && tsc-alias`) for `base`/`core`/`ocpi`.
 
 ---
 
@@ -75,7 +75,7 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 
 ```bash
 # from the repo root
-pnpm --filter "@citrineos/mock-msp..." build   # ensures ocpi-base/dist exists
+pnpm --filter "@citrineos/mock-msp..." build   # ensures ocpi/dist exists
 pnpm --filter @citrineos/mock-msp start        # node dist/index.js, listens on :8083
 ```
 
@@ -214,11 +214,11 @@ status, never build the envelope, never check auth.
 | `src/identity.ts`                           | `US/TST` EMSP identity + `buildEndpointCatalog()` (the 8 split `{identifier,role,url}` endpoints)                                     |
 | `src/context.ts`                            | `buildContext(cfg)` — assembles the singletons (WireLogger → Store → FaultEngine → OcpiClient)                                        |
 | `src/server.ts`                             | `buildServer(ctx)` — Fastify factory, raw-JSON parser, mounts modules + control API                                                   |
-| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi-base` (barrel exports + `dist` deep-imports)                                            |
+| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi` (barrel exports + `dist` deep-imports)                                            |
 | `src/ocpi/dispatcher.ts`                    | `dispatch(route, ctx, freq, freply)` — the uniform per-request pipeline                                                               |
 | `src/core/registry.ts`                      | `registerAllModules` — binds each `OcpiRoute` through the dispatcher                                                                  |
 | `src/core/types.ts`                         | All shared types/interfaces (`MockContext`, `Exchange`, `Store`, `FaultEngine`, `Scenario`, …)                                        |
-| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi-base envelope builders                                             |
+| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi envelope builders                                             |
 | `src/core/store.ts`                         | Exchange ring buffer (cap 10k) + `DomainState` + `waitForReceived` + findings + `reset`                                               |
 | `src/core/auth.ts`                          | base64 `Token` encode/decode; inbound verify; outbound `Authorization` builder                                                        |
 | `src/core/routing-headers.ts`                | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
@@ -259,7 +259,7 @@ Two bootstrap tokens (both **base64-encoded on the wire**, format
 | `serverCredentials.token` | the seed's `serverCredentials.token` (unsigned dev value) | The mock **presents** this calling Citrine.                             |
 
 The exact bootstrap values live in the seed
-(`apps/ocpi-server/seeders/20250806120002-default-tenant-partner.ts`) — the mock
+(`apps/ocpi-server/db/seeders/20250806120002-default-tenant-partner.ts`) — the mock
 reads them from there (or from the `MOCK_MSP_*` env vars) rather than repeating
 them here.
 
@@ -340,7 +340,7 @@ is that missing charger. With it connected, the mock's `START_SESSION` reaches a
 live station and completes the full round-trip: sync **ACCEPTED** → async
 **CommandResult** → a real **Session** push → (on stop) a real **CDR** push.
 
-**Why it just works: the seed already aligns.** `apps/ocpi-server/seeders/20250822120003-basic-objects.ts`
+**Why it just works: the seed already aligns.** `apps/ocpi-server/db/seeders/20250822120003-basic-objects.ts`
 seeds Location `1` / Station `cp001` / EVSE `cp001::1` / Connector `1` under the
 `US/TST` partner, plus an Accepted `ISO14443` authorization `DEADBEEF`. That is
 exactly the station EVerest registers as at `ws://host.docker.internal:8081/cp001`.

@@ -217,7 +217,7 @@ async function finalize(
     ...(reply.headers ?? {}),
   };
 
-  // ---- self-check our own baseline reply against the reused ocpi-base schema ----
+  // ---- self-check our own baseline reply against the reused ocpi schema ----
   if (!opts.skipSelfCheck && route.responseSchema) {
     const v = safeValidate(route.responseSchema, bodyToSend);
     if (!v.ok) {

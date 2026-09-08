@@ -10,7 +10,7 @@
 // ============================================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { ModuleId } from '@citrineos/ocpi-base';
+import { ModuleId } from '@citrineos/ocpi';
 import type { MockContext } from '../src/core/types.js';
 import { makeServer, functionalHeaders, validSession } from './harness.js';
 

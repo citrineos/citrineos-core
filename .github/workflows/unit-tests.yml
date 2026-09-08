@@ -45,6 +45,8 @@ jobs:
               - 'packages/base/**'
             server:
               - 'apps/ocpp-server/**'
+              - 'apps/ocpi-server/**'
+              - 'apps/mock-msp/**'
               - 'packages/**'
             operator-ui:
               - 'apps/operator-ui/**'

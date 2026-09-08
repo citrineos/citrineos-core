@@ -8,7 +8,7 @@
 // fresh X-Request-ID / X-Correlation-ID on every call, OCPI-* routing headers
 // only on functional calls (from=us US/TST, to=CPO US/S44). Every call opens an
 // outbound Exchange, consults the FaultEngine (so we can corrupt OUR requests),
-// validates Citrine's response with the reused ocpi-base schema (drift =>
+// validates Citrine's response with the reused ocpi schema (drift =>
 // Finding), records + logs, and returns the Exchange. Also drives the
 // credentials handshake, sends Commands (hosting the response_url await), and
 // pulls Citrine's CPO SENDER endpoints.
@@ -53,7 +53,7 @@ import { applyOutboundFault } from './faults.js';
 import { uuid } from './ids.js';
 
 // Citrine's SENDER list responses, keyed by module. On a pull, Citrine's response
-// body IS the payload under test, so it gets the same ocpi-base schemas an
+// body IS the payload under test, so it gets the same ocpi schemas an
 // inbound push is held to.
 const PULL_RESPONSE_SCHEMAS: Partial<Record<ModuleId, ZodTypeAny>> = {
   [ModuleId.Locations]: OcpiResponseSchema(z.array(LocationDTOSchema)),
@@ -200,7 +200,7 @@ class OcpiClientImpl implements OcpiClient {
             kind: 'body',
             module: spec.module,
             seq: ex.seq,
-            detail: `Citrine response to ${spec.operation} failed the ocpi-base schema`,
+            detail: `Citrine response to ${spec.operation} failed the ocpi schema`,
             issues: v.issues,
           });
         }
@@ -537,7 +537,7 @@ class OcpiClientImpl implements OcpiClient {
       operation: `pull.${module}`,
       functional: true,
       // Citrine is the SENDER here, so its response body is the payload under
-      // test: validate the returned list against ocpi-base's own schemas, the
+      // test: validate the returned list against ocpi's own schemas, the
       // same way an inbound push is validated. Without this the pull is a blind
       // fetch and any drift in what Citrine serves goes unnoticed.
       responseSchema: PULL_RESPONSE_SCHEMAS[module],

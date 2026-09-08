@@ -18,14 +18,14 @@ It is one workspace member of the `citrineos-core` pnpm monorepo. For repository
 `pnpm install`, building, the full-stack Docker Compose files, and the operator UI), see the
 [root README](../../README.md).
 
-The server class itself lives in `@citrineos/core` as
-[`CitrineOSServer`](../../packages/core/src/server/CitrineOSServer.ts); this app is only the
+The server class itself lives in `@citrineos/ocpp` as
+[`CitrineOSServer`](../../packages/ocpp/src/server/citrineos-server.ts); this app is only the
 entrypoint that loads config and runs it. Downstream distributions should subclass that class rather
-than copy it — see [Extending `CitrineOSServer`](../../packages/core/src/server/README.md).
+than copy it — see [Extending `CitrineOSServer`](../../packages/ocpp/src/server/README.md).
 
 How the server wires its dependencies — the Awilix container, module/service registration, and the
 bootstrap sequence — is documented in
-[`DEPENDENCY_INJECTION.md`](../../packages/core/src/server/DEPENDENCY_INJECTION.md), alongside the
+[`DEPENDENCY_INJECTION.md`](../../packages/ocpp/src/server/DEPENDENCY_INJECTION.md), alongside the
 server class it describes.
 
 ## Table of Contents
@@ -88,7 +88,7 @@ cd apps/ocpp-server
 pnpm run start
 ```
 
-This launches the server via `nodemon` (see `nodemon.json`), which builds the workspace, runs database migrations,
+This launches the server via `nodemon` (see `config/nodemon.json`), which builds the workspace, runs database migrations,
 and then starts the process with the Node.js inspector listening on port 9229.
 
 The schema defaults are the local-development values, so this needs no configuration to come up. To change how your
@@ -101,7 +101,7 @@ for the websocket endpoints themselves. Make sure local-only changes to that fil
 Whether you run the application with Docker or locally with pnpm, you can attach a debugger to port 9229 and set
 breakpoints in the TypeScript code directly from your IDE.
 
-To make the process **wait for the debugger to attach** before executing, modify the `nodemon.json` exec command from:
+To make the process **wait for the debugger to attach** before executing, modify the `config/nodemon.json` exec command from:
 
 ```shell
 pnpm run build --prefix ../../ && pnpm run db:migrate && node --inspect=0.0.0.0:9229 ./dist/index.js
@@ -130,7 +130,7 @@ file and the published ports in `docker-compose.yml` together.
 ## Database Migrations
 
 CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm run db:migrate` script — run
-automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
+automatically on start via `config/nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
 
 ## Configuration
@@ -354,11 +354,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-<<<<<<< HEAD
-The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
-=======
-The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
->>>>>>> next
+The OCPP message validator is created in `packages/ocpp/src/server/citrineos-server.ts`. Register a DataTransfer schema by
 compiling it onto that validator's AJV and passing it in:
 
 ```ts
@@ -397,7 +393,7 @@ evse as inactive, leading to an inconsistent state with the charging station.
 ## Hasura Metadata
 
 In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata
-already exported into the `apps/ocpp-server/hasura-metadata` folder.
+already exported into the `apps/ocpp-server/db/hasura-metadata` folder.
 Running the Docker container will automatically import this metadata and track all tables and relationships.
 
 Unfortunately, Hasura doesn't currently support importing metadata from a JSON (which is the format if you export your
@@ -441,7 +437,7 @@ hasura metadata export
 ```
 
 - Find the exported files in the `graphql-engine` container's files in the metadata filepath `<name of project i.e. citrine>/metadata` and pull that metadata backup onto your local machine
-- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/hasura-metadata` folder in this repository
+- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/db/hasura-metadata` folder in this repository
 
 ## Testing with EVerest
 
