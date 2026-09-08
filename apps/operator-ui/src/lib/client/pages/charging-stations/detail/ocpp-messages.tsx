@@ -393,8 +393,8 @@ export const OCPPMessages: React.FC<OCPPMessagesProps> = ({
               }}
             />,
             <Table.Column
-              id="createdAt"
-              key="createdAt"
+              id="timestamp"
+              key="timestamp"
               accessorKey="timestamp"
               header={translate('ChargingStations.ocppMessages.timestamp')}
               enableSorting
