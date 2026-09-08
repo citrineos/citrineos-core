@@ -36,6 +36,7 @@ server class it describes.
 - [Attaching a Debugger](#attaching-a-debugger)
 - [Server Ports](#server-ports)
 - [Database Migrations](#database-migrations)
+  - [Table Partitioning](#table-partitioning)
 - [Configuration](#configuration)
   - [Naming](#naming)
   - [Server and logging](#server-and-logging)
@@ -132,6 +133,33 @@ file and the published ports in `docker-compose.yml` together.
 CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm run db:migrate` script — run
 automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
+
+### Table Partitioning
+
+`OCPPMessages` is range partitioned on `createdAt`, one partition per ISO week, keeping a rolling retention window.
+Migration `20260813120000-partition-ocpp-messages` performs the conversion: it copies only the rows inside the
+retention window into the partitioned table. Everything older is left behind in
+`OCPPMessages_old` for you to archive and drop — that is how old data leaves the live table.
+
+Two things to know when working with the model:
+
+- The primary key is the composite `(id, "createdAt")`, since a unique constraint on a partitioned table must contain
+  the partition key. `id` alone is no longer database-enforced unique — only the shared sequence keeps it so, so never
+  supply `id` explicitly outside a migration.
+- `requestMessageId` has no foreign key: a foreign key must target a complete unique key, and `(id)` is no longer one.
+  The link is maintained solely by the correlation triggers.
+
+There is deliberately no `DEFAULT` partition, so an insert whose `createdAt` falls outside every provisioned week fails
+outright. `rotate_ocpp_messages_partitions(retain_weeks, future_weeks, dry_run)` provisions upcoming weeks and drops
+expired ones; `entrypoint.sh` calls it on every start to provision only, never to drop when running locally.
+
+All week boundaries are computed in UTC. Every component that creates partitions must agree on the timezone, or a new
+partition's lower bound will not meet the previous partition's upper bound.
+
+```shell
+# provision upcoming partitions by hand (never drops anything)
+pnpm run db:partitions
+```
 
 ## Configuration
 
