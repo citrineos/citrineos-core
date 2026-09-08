@@ -585,10 +585,12 @@ export class SequelizeTransactionEventRepository
       .readAllByQuery(tenantId, {
         where: {
           ocppConnectionName: ocppConnectionName,
-          connectorId: connectorId,
           isActive: true,
         },
-        include: [MeterValue],
+        include: [
+          MeterValue,
+          { model: Connector, where: { connectorId: connectorId }, required: true },
+        ],
       })
       .then((transactions) => {
         if (transactions.length > 1) {
