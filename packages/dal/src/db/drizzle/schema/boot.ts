@@ -6,7 +6,7 @@ import { TableName } from '@dal/models/table-name.js';
 import {
   boolean,
   integer,
-  jsonb,
+  json,
   pgSchema,
   pgTable,
   serial,
@@ -28,9 +28,9 @@ function bootColumns() {
     heartbeatInterval: integer('heartbeatInterval'),
     bootRetryInterval: integer('bootRetryInterval'),
     status: varchar('status', { length: 255 }),
-    statusInfo: jsonb('statusInfo').$type<object>(),
+    statusInfo: json('statusInfo').$type<object>(),
     getBaseReportOnPending: boolean('getBaseReportOnPending'),
-    variablesRejectedOnLastBoot: jsonb('variablesRejectedOnLastBoot').$type<object[]>(),
+    variablesRejectedOnLastBoot: json('variablesRejectedOnLastBoot').$type<object[]>(),
     bootWithRejectedVariables: boolean('bootWithRejectedVariables'),
     changeConfigurationsOnPending: boolean('changeConfigurationsOnPending'),
     getConfigurationsOnPending: boolean('getConfigurationsOnPending'),
@@ -46,7 +46,7 @@ function bootColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const bootTable = pgTable(TableName.Boots, bootColumns(), (t) => [
-  uniqueIndex('boots_station_id_key').on(t.stationId),
+  uniqueIndex('Boots_stationId_key').on(t.stationId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
