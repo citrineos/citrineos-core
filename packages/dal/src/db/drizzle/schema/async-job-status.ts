@@ -4,17 +4,9 @@
 
 import type { PaginatedParams } from '@citrineos/types';
 import { TableName } from '@dal/models/table-name.js';
-import {
-  boolean,
-  integer,
-  jsonb,
-  pgSchema,
-  pgTable,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { boolean, integer, json, pgSchema, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { type z } from 'zod';
+import { type z } from 'zod'; // Column definitions are a function to ensure fresh objects per table instance,
 
 // Column definitions are a function to ensure fresh objects per table instance,
 // which is required when the same schema is used across multiple pgSchema() calls.
@@ -23,13 +15,13 @@ function asyncJobStatusColumns() {
     // String (uuid) primary key. The DB column is "jobId"; exposed as `id` so the
     // shared DrizzleRepository base (which requires an `id` column) can operate on it.
     id: varchar('jobId', { length: 255 }).primaryKey(),
-    jobName: varchar('jobName', { length: 255 }),
-    tenantPartnerId: integer('tenantPartnerId'),
+    jobName: varchar('jobName', { length: 255 }).notNull(),
+    tenantPartnerId: integer('tenantPartnerId').notNull(),
     finishedAt: timestamp('finishedAt', { withTimezone: true, mode: 'date' }),
     stoppedAt: timestamp('stoppedAt', { withTimezone: true, mode: 'date' }),
-    stopScheduled: boolean('stopScheduled').default(false),
-    isFailed: boolean('isFailed').default(false),
-    paginationParams: jsonb('paginationParams').$type<PaginatedParams>(),
+    stopScheduled: boolean('stopScheduled').default(false).notNull(),
+    isFailed: boolean('isFailed').default(false).notNull(),
+    paginationParams: json('paginationParams').$type<PaginatedParams>().notNull(),
     totalObjects: integer('totalObjects'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
