@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Constructable } from '@lib/utils/Constructable';
-import { defaultMetadataStorage } from '@lib/utils/DefaultMetadataStorage';
+import type { Constructable } from '@lib/utils/constructable';
+import { defaultMetadataStorage } from '@lib/utils/default-metadata-storage';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import dayjs from 'dayjs';
 import 'reflect-metadata';

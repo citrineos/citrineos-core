@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { makeApiClient } from '../fixtures/api-client';
 import { purgeAllE2eRows } from '../fixtures/seeded-data';
-import { LoginPage } from '../pages/login.page';
+import { LoginPage } from '../pages/login-page';
 import { readEnv, assertRequiredEnv } from '../utils/env';
 import { ensureManagedServer } from '../utils/managed-server';
 import {

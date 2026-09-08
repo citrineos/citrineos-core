@@ -11,7 +11,7 @@ import {
   type TransactionDto,
   TransactionProps,
 } from '@citrineos/types';
-import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import GenericTag from '@lib/client/components/tag';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import { CircleCheck, CircleX, Eye } from 'lucide-react';
@@ -19,8 +19,8 @@ import { buttonIconSize } from '@lib/client/styles/icon';
 import type { BaseRecord, CrudFilters } from '@refinedev/core';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import type { CellContext } from '@tanstack/react-table';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
-import { TransactionClass } from '@lib/cls/transaction.dto';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
+import { TransactionClass } from '@lib/cls/transaction-dto';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 
 export const transactionStationIdField = 'ocppConnectionName';

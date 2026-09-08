@@ -89,8 +89,6 @@ export type OCPPVersionType = 'ocpp1.6' | 'ocpp2.0.1' | 'ocpp2.1';
  */
 
 export type CallAction = OCPP_CallAction;
-// NoAction is used when the action is not known, for example when a message is invalid json or otherwise violates the OCPP protocol to the extent that the action cannot be determined. This allows us to still store and process these messages, while marking them as having an unknown action.
-export const NO_ACTION = 'NoAction';
 
 export enum OCPP_CallAction {
   AdjustPeriodicEventStream = 'AdjustPeriodicEventStream',

@@ -4,9 +4,9 @@
 
 import 'reflect-metadata';
 import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import type { IDtoEventHandlerDefinition } from './AsDtoEventHandler.js';
-import { AS_DTO_EVENT_HANDLER_METADATA } from './AsDtoEventHandler.js';
+import type { Logger } from 'tslog';
+import type { IDtoEventHandlerDefinition } from './as-dto-event-handler.js';
+import { AS_DTO_EVENT_HANDLER_METADATA } from './as-dto-event-handler.js';
 import type { IDtoEvent, IDtoEventReceiver, IDtoModule, IDtoPayload } from './types.js';
 import { DtoEventObjectType, DtoEventType } from './types.js';
 import type { OcpiConfig } from '../index.js';
@@ -20,10 +20,8 @@ export abstract class AbstractDtoModule implements IDtoModule {
   protected _objectTypes: DtoEventObjectType[] = [];
   private startTime = Date.now();
 
-  constructor(config: OcpiConfig, receiver: IDtoEventReceiver, logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+  constructor(config: OcpiConfig, receiver: IDtoEventReceiver, logger: Logger<ILogObj>) {
+    this._logger = logger.getSubLogger({ name: this.constructor.name });
     this._logger.info('Initializing...');
     this._config = config;
     this._receiver = receiver;

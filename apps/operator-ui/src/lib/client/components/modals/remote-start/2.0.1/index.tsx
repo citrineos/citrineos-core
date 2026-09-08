@@ -7,6 +7,7 @@ import {
   type AuthorizationDto,
   type ChargingStationDto,
   type ChargingStationSequenceDto,
+  type EvseDto,
   AuthorizationProps,
   BaseProps,
   ChargingStationSequenceTypeEnum,
@@ -14,15 +15,16 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField, FormField } from '@lib/client/components/form/field';
-import { EvseSelector } from '@lib/client/components/modals/shared/evse-selector/evse.selector';
+import { buildEvseOptionValue } from '@lib/client/components/modals/shared/evse-selector/evse-option-value';
+import { EvseSelector } from '@lib/client/components/modals/shared/evse-selector/evse-selector';
 import { Input } from '@lib/client/components/ui/input';
-import { ChargingStationSequenceClass } from '@lib/cls/charging.station.sequence.dto';
+import { ChargingStationSequenceClass } from '@lib/cls/charging-station-sequence-dto';
 import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
-import { CHARGING_STATION_SEQUENCES_GET_QUERY } from '@lib/queries/charging.station.sequences';
-import { ResourceType } from '@lib/utils/access.types';
-import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
-import { closeModal } from '@lib/utils/store/modal.slice';
+import { CHARGING_STATION_SEQUENCES_GET_QUERY } from '@lib/queries/charging-station-sequences';
+import { ResourceType } from '@lib/utils/access-types';
+import type { MessageConfirmation } from '@lib/utils/message-confirmation';
+import { triggerMessageAndHandleResponse } from '@lib/utils/messages-utils';
+import { closeModal } from '@lib/utils/store/modal-slice';
 import { useCustom, useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { plainToInstance } from 'class-transformer';
@@ -31,11 +33,12 @@ import { useDispatch } from 'react-redux';
 import z from 'zod';
 import { Controller } from 'react-hook-form';
 import { isEmpty } from '@lib/utils/assertion';
-import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
-import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { FormButtonVariants } from '@lib/client/components/buttons/form-button';
+import { useTenantId } from '@lib/client/hooks/use-tenant-id';
 
 export interface OCPP2_0_1_RemoteStartProps {
   station: ChargingStationDto;
+  evse?: EvseDto;
 }
 
 export type RemoteStartFormData = {
@@ -44,10 +47,15 @@ export type RemoteStartFormData = {
   evse?: string;
 };
 
-export const OCPP2_0_1_RemoteStart = ({ station }: OCPP2_0_1_RemoteStartProps) => {
+export const OCPP2_0_1_RemoteStart = ({ station, evse }: OCPP2_0_1_RemoteStartProps) => {
   const dispatch = useDispatch();
   const translate = useTranslate();
   const [loading, setLoading] = useState<boolean>(false);
+
+  const preselectedEvse = useMemo(
+    () => (evse?.id !== undefined ? buildEvseOptionValue(evse) : ''),
+    [evse],
+  );
 
   const tenantId = useTenantId();
 
@@ -70,7 +78,7 @@ export const OCPP2_0_1_RemoteStart = ({ station }: OCPP2_0_1_RemoteStartProps) =
     defaultValues: {
       remoteStartId: 0,
       authorization: '',
-      evse: '',
+      evse: preselectedEvse,
     },
   });
 

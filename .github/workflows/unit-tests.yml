@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       base: ${{ steps.filter.outputs.base }}
-      core: ${{ steps.filter.outputs.core }}
+      dal: ${{ steps.filter.outputs.dal }}
+      ocpp: ${{ steps.filter.outputs.ocpp }}
       server: ${{ steps.filter.outputs.server }}
       operator-ui: ${{ steps.filter.outputs.operator-ui }}
       shared: ${{ steps.filter.outputs.shared }}
@@ -35,8 +36,12 @@ jobs:
               - '.github/workflows/**'
             base:
               - 'packages/base/**'
-            core:
-              - 'packages/core/**'
+            dal:
+              - 'packages/dal/**'
+              - 'packages/base/**'
+            ocpp:
+              - 'packages/ocpp/**'
+              - 'packages/dal/**'
               - 'packages/base/**'
             server:
               - 'apps/ocpp-server/**'
@@ -47,7 +52,7 @@ jobs:
 
   tests:
     needs: changes
-    if: ${{ needs.changes.outputs.base == 'true' || needs.changes.outputs.core == 'true' || needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.base == 'true' || needs.changes.outputs.dal == 'true' || needs.changes.outputs.ocpp == 'true' || needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

@@ -1,4 +1,4 @@
-import { Button } from '@/lib/client/components/ui/button';
+import { Button } from '@lib/client/components/ui/button';
 import { cn } from '@lib/utils/cn';
 import { useTranslate } from '@refinedev/core';
 import React from 'react';

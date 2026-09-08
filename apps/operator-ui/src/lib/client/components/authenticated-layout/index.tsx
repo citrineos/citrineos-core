@@ -4,8 +4,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { MainMenu, MenuSection } from '@lib/client/components/main-menu/main.menu';
-import { ConnectionModal } from '@lib/client/components/modals/shared/connection-modal/connection.modal';
+import { MainMenu, MenuSection } from '@lib/client/components/main-menu/main-menu';
+import { ConnectionModal } from '@lib/client/components/modals/shared/connection-modal/connection-modal';
 import AppModal from '@lib/client/components/modals';
 import { useIsAuthenticated, useTranslate, useGetIdentity } from '@refinedev/core';
 import { usePathname, useRouter } from 'next/navigation';
