@@ -60,7 +60,6 @@ export class MeterValuesRequestOcpp16Handler extends AbstractHandler {
           if (meterValue.sampledValue && meterValue.sampledValue.length > 0) {
             const meterValueEntity = OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(meterValue);
             meterValueEntity.tenantId = tenantId;
-            meterValueEntity.connectorId = connectorId;
             meterValueEntities.push(meterValueEntity);
           }
         }

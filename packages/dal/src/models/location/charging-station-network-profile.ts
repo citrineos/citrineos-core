@@ -59,7 +59,10 @@ export class ChargingStationNetworkProfile
   declare configurationSlot: number;
 
   @ForeignKey(() => SetNetworkProfile)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare setNetworkProfileId: number;
 
   @BelongsTo(() => SetNetworkProfile, 'setNetworkProfileId')
