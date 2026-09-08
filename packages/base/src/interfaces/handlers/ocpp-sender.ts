@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { serializeError } from '@base-util/errors.js';
 import { createIdentifier } from '@base-util/identifiers.js';
 import { RequestBuilder } from '@base-util/request.js';
 import {
@@ -114,7 +115,7 @@ export class OcppSender implements IOcppSender {
             this._logger.warn(`Failed to set cache for correlationId: ${_correlationId}`);
           }
         })
-        .catch((error) => this._logger.error('Error setting cache: ', error));
+        .catch((error) => this._logger.error('Error setting cache: ', serializeError(error)));
     }
     // TODO: Future - Compound key with tenantId
     return this._cache.get<string>(identifier, CacheNamespace.Connections).then((connection) => {
