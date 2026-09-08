@@ -7,6 +7,7 @@ import { TableName } from '@dal/models/table-name.js';
 import {
   boolean,
   integer,
+  json,
   jsonb,
   numeric,
   pgSchema,
@@ -29,20 +30,16 @@ function authorizationColumns() {
     // Sequelize ARRAY(STRING) → varchar(255)[]
     allowedConnectorTypes: varchar('allowedConnectorTypes', { length: 255 }).array(),
     disallowedEvseIdPrefixes: varchar('disallowedEvseIdPrefixes', { length: 255 }).array(),
-    // citext (case-insensitive text). OCPP requires case-insensitive idToken
-    // matching; the database column was converted to citext in migration
-    // 20260113000000-normalize-id-token-case. Declared with the citext custom type
-    // rather than varchar so the schema matches the database exactly.
-    idToken: citext('idToken'),
+    idToken: citext('idToken').notNull(),
     idTokenType: varchar('idTokenType', { length: 255 }),
     additionalInfo: jsonb('additionalInfo').$type<[AdditionalInfo, ...AdditionalInfo[]]>(),
-    status: varchar('status', { length: 255 }),
+    status: varchar('status', { length: 255 }).notNull(),
     // DataType.DATE → timestamptz; mapped to ISO string in the repository layer
     cacheExpiryDateTime: timestamp('cacheExpiryDateTime', { withTimezone: true, mode: 'date' }),
     chargingPriority: integer('chargingPriority'),
     language1: varchar('language1', { length: 255 }),
     language2: varchar('language2', { length: 255 }),
-    personalMessage: jsonb('personalMessage'),
+    personalMessage: json('personalMessage'),
     realTimeAuth: varchar('realTimeAuth', { length: 255 }),
     realTimeAuthLastAttempt: jsonb('realTimeAuthLastAttempt').$type<RealTimeAuthLastAttempt>(),
     realTimeAuthTimeout: integer('realTimeAuthTimeout'),
@@ -51,7 +48,7 @@ function authorizationColumns() {
     groupAuthorizationId: integer('groupAuthorizationId'),
     tariffId: integer('tariffId'),
     concurrentTransaction: boolean('concurrentTransaction').default(false),
-    isPrepaid: boolean('isPrepaid').default(false),
+    isPrepaid: boolean('isPrepaid').default(false).notNull(),
     // Sequelize DECIMAL → numeric (returned as string, converted in the repository layer)
     prepaidBalance: numeric('prepaidBalance'),
     tenantPartnerId: integer('tenantPartnerId'),
@@ -68,7 +65,7 @@ function authorizationColumns() {
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const authorizationTable = pgTable(TableName.Authorizations, authorizationColumns(), (t) => [
   // Sequelize unique: 'idToken_type' spans idToken, idTokenType and tenantId.
-  uniqueIndex('authorizations_id_token_type').on(t.idToken, t.idTokenType, t.tenantId),
+  uniqueIndex('idToken_type').on(t.idToken, t.idTokenType, t.tenantId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
