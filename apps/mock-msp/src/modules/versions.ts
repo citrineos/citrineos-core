@@ -10,7 +10,7 @@
 //   GET /ocpi/versions/2.2.1  -> version details    { version, endpoints[] }
 //
 // Both replies are enveloped by the dispatcher via ctx.ok(); responseSchema is
-// the reused @citrineos/ocpi-base schema Citrine parses with, so any drift in
+// the reused @citrineos/ocpi schema Citrine parses with, so any drift in
 // our output would surface as a self-check Finding. The endpoint set is
 // data-driven from config.publicBaseUrl via buildEndpointCatalog() — SPLIT
 // {identifier, role} form (never the DB's combined `locations_RECEIVER`) and it
