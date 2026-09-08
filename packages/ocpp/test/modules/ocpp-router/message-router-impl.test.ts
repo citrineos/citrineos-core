@@ -2,41 +2,41 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
-  type ICache,
-  type IMessageHandler,
-  type IMessageSender,
   CacheNamespace,
   Call,
   CallError,
   CallResult,
   createIdentifier,
+  type ICache,
+  type IMessageHandler,
+  type IMessageSender,
   OcppError,
   RequestBuilder,
 } from '@citrineos/base';
 import type { IChargingStationRepository } from '@citrineos/dal';
 import {
-  type OcppRequest,
-  type OcppResponse,
-  type RawCall,
-  type RawCallError,
-  type RawCallResult,
-  type SystemConfig,
   ErrorCode,
   EventGroup,
   MessageOrigin,
   MessageState,
   MessageTypeId,
-  OCPP2_0_1,
   NO_ACTION,
+  OCPP2_0_1,
   OCPP_CallAction,
+  type OcppRequest,
+  type OcppResponse,
   OCPPVersion,
+  type RawCall,
+  type RawCallError,
+  type RawCallResult,
   RetryMessageError,
+  type SystemConfig,
 } from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/ocpp-router/router.js';
 import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
 import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { type Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -252,17 +252,12 @@ describe('MessageRouterImpl', () => {
           state: 'closed',
         }),
       ]);
-      expect(chargingStationRepository.readChargingStationByOcppConnectionName).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-      );
-      expect(chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        PROTOCOL,
-        null,
-      );
+      expect(
+        chargingStationRepository.readChargingStationByOcppConnectionName,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID);
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, PROTOCOL, null);
       expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
       expect(result).toBe(true);
     });
@@ -549,7 +544,19 @@ describe('MessageRouterImpl', () => {
 
       await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      expect(dispatcher.dispatchMessageReceived).toHaveBeenCalled();
+      expect(frames(sink, 'inbound')).toEqual([
+        expect.objectContaining({
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          origin: MessageOrigin.ChargingStation,
+          raw: callMessage,
+          timestamp: timestamp.toISOString(),
+          protocol: PROTOCOL,
+          action: 'NotAnAction',
+          type: MessageTypeId.Call,
+          parsed: true,
+        }),
+      ]);
     });
 
     it('should send CallError when validation fails', async () => {

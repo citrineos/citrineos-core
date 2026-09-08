@@ -19,6 +19,7 @@ export * from '@modules/reporting/index.js';
 export * from '@modules/smart-charging/index.js';
 export * from '@modules/tenant/index.js';
 export * from '@modules/transactions/index.js';
+export * from '@modules/messages/index.js';
 
 // Handler exports
 export * from '@handlers/index.js';

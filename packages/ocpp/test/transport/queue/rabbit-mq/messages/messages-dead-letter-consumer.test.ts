@@ -49,8 +49,8 @@ function aDeadLetter(
       exchange: MESSAGES_DLX,
       routingKey: override?.routingKey ?? 'frame.inbound.Heartbeat',
       consumerTag: 'test-consumer',
-    } as amqplib.GetMessageFields,
-  } as amqplib.ConsumeMessage;
+    },
+  };
 }
 
 describe('MessagesDeadLetterConsumer', () => {

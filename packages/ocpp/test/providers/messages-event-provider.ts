@@ -97,6 +97,6 @@ export function aMessagesDelivery(
       exchange: 'messages',
       routingKey: override?.routingKey ?? 'frame.inbound.Heartbeat',
       consumerTag: 'test-consumer',
-    } as amqplib.GetMessageFields,
-  } as amqplib.ConsumeMessage;
+    },
+  };
 }
