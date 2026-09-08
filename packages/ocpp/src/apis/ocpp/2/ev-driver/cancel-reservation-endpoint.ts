@@ -50,13 +50,11 @@ export class CancelReservationEndpoint extends AbstractMessageEndpoint {
     try {
       const reservations = await Promise.all(
         identifiers.map((ocppConnectionName) =>
-          this._reservationRepository.readOnlyOneByQuery(tenantId, {
-            where: {
-              id: request.reservationId,
-              ocppConnectionName,
-              tenantId,
-            },
-          }),
+          this._reservationRepository.findByStationAndReservationId(
+            tenantId,
+            ocppConnectionName,
+            request.reservationId,
+          ),
         ),
       );
 

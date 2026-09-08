@@ -53,6 +53,27 @@ export {
   type ChangeConfigurationEntityInsert,
 } from './schema/change-configuration.js';
 export {
+  DrizzleChargingStationRepository,
+  toChargingStationDto,
+} from '../../repositories/drizzle/charging-station.js';
+export {
+  chargingStationTable,
+  tenantChargingStationTable,
+  ChargingStationEntitySchema,
+  ChargingStationEntityInsertSchema,
+  type ChargingStationEntity,
+  type ChargingStationEntityInsert,
+} from './schema/charging-station.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  locationTable,
+  tenantLocationTable,
+  LocationEntitySchema,
+  LocationEntityInsertSchema,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
+export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
 } from '../../repositories/drizzle/delete-certificate-attempt.js';
@@ -88,6 +109,18 @@ export {
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
+export {
+  DrizzleReservationRepository,
+  toReservationDto,
+} from '../../repositories/drizzle/reservation.js';
+export {
+  reservationTable,
+  tenantReservationTable,
+  ReservationEntitySchema,
+  ReservationEntityInsertSchema,
+  type ReservationEntity,
+  type ReservationEntityInsert,
+} from './schema/reservation.js';
 export {
   DrizzleSecurityEventRepository,
   toSecurityEventDto,

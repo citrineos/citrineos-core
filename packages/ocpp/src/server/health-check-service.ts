@@ -4,12 +4,14 @@
 
 import type { ICache } from '@citrineos/base';
 import type { Sequelize } from '@citrineos/dal';
+import type { SchemaValidationReport } from '@/util/index.js';
 import { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@/transport/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
 // https://datatracker.ietf.org/doc/html/draft-inadarei-api-health-check
-type CheckResult = { status: 'pass' | 'fail'; error?: string };
+// 'warn' reports a degraded but serviceable condition; it does not fail readiness.
+type CheckResult = { status: 'pass' | 'fail' | 'warn'; error?: string };
 export type HealthCheckResult = { status: 'pass' | 'fail'; checks: Record<string, CheckResult> };
 
 export class HealthCheckService {
@@ -17,6 +19,7 @@ export class HealthCheckService {
   private _notReadyAt: number | null = null;
   private readonly _notReadyThresholdMs: number;
   private readonly _logger: Logger<ILogObj>;
+  private _schemaReport: SchemaValidationReport | null = null;
 
   constructor(
     private readonly _networkConnection: WebsocketNetworkConnection | null | undefined,
@@ -34,6 +37,10 @@ export class HealthCheckService {
 
   shutdown() {
     this._isShuttingDown = true;
+  }
+
+  setSchemaValidationReport(report: SchemaValidationReport | null) {
+    this._schemaReport = report;
   }
 
   async checkReadiness(): Promise<HealthCheckResult> {
@@ -108,7 +115,36 @@ export class HealthCheckService {
     checks['database'] = await this._checkDatabase();
     if (checks['database'].status === 'fail') pass = false;
 
+    const schema = this._checkSchema();
+    if (schema) checks['schema'] = schema;
+
     return { checks, pass };
+  }
+
+  /**
+   * Never fails readiness given that (Sequelize <-> database) schema drift is a startup gate,
+   * not a runtime condition. Errors either aborted startup already, or the operator set
+   * `database.validateSchemaSeverity` to 'warn' so the service keeps serving.
+   */
+  private _checkSchema(): CheckResult | null {
+    if (!this._schemaReport) return null;
+
+    const { errors, warnings } = this._schemaReport;
+    if (errors.length > 0) {
+      return {
+        status: 'warn',
+        error:
+          `${errors.length} schema validation error(s) suppressed by validateSchemaSeverity=warn: ` +
+          errors
+            .slice(0, 5)
+            .map((f) => f.message)
+            .join('; '),
+      };
+    }
+    if (warnings.length > 0) {
+      return { status: 'warn', error: `${warnings.length} schema validation warning(s)` };
+    }
+    return { status: 'pass' };
   }
 
   private async _checkCache(): Promise<CheckResult> {

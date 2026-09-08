@@ -64,9 +64,11 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
   @BelongsTo(() => Evse, 'evseId')
   declare evse: EvseDto;
 
-  @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
   declare transactionDatabaseId: number;
+
+  @Column(DataType.DATE)
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
@@ -84,6 +86,15 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: ChargingNeeds): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate

@@ -10,12 +10,12 @@ import {
   DEFAULT_TENANT_ID,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import type { IChangeConfigurationRepository, ILocationRepository } from '@citrineos/dal';
+import type { IChangeConfigurationRepository, IChargingStationRepository } from '@citrineos/dal';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  locationRepository: ILocationRepository;
+  chargingStationRepository: IChargingStationRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
 }
 
@@ -28,18 +28,18 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _chargingStationRepository: IChargingStationRepository;
   private readonly _changeConfigurationRepository: IChangeConfigurationRepository;
 
   constructor({
     logger,
     ocppSender,
-    locationRepository,
+    chargingStationRepository,
     changeConfigurationRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
   }
 
@@ -55,10 +55,11 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
 
     await Promise.all(
       identifiers.map(async (ocppConnectionName) => {
-        const chargingStation = await this._locationRepository.readChargingStationByStationId(
-          tenantId,
-          ocppConnectionName,
-        );
+        const chargingStation =
+          await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          );
         if (!chargingStation) {
           confirmations.push({
             success: false,
