@@ -32,7 +32,7 @@ vi.mock('typedi', () => {
   };
 });
 
-import { OCPP1_6_CommandHandler } from '../../../src/util/ocpp-command-handlers/ocpp-16-command-handler.js';
+import { OCPP1_6_CommandHandler } from '../../../src/services/ocpp-command-handlers/ocpp-16-command-handler.js';
 
 /**
  * OCPI addresses a connector by its database id; OCPP 1.6 addresses it by the per-station serial

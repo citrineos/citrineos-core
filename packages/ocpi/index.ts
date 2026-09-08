@@ -33,8 +33,8 @@ export {
   OCPP1_6_CommandHandler,
   OCPP2_0_1_CommandHandler,
   OCPP2_1_CommandHandler,
-} from './src/util/ocpp-command-handlers/index.js';
-export type { OcppCommandHandlerDependencies } from './src/util/ocpp-command-handlers/index.js';
+} from './src/services/ocpp-command-handlers/index.js';
+export type { OcppCommandHandlerDependencies } from './src/services/ocpp-command-handlers/index.js';
 export type { ChargingPreferencesResponse } from './src/types/charging-preferences-response.js';
 export {
   ChargingPreferencesResponseSchema,
@@ -197,8 +197,8 @@ export { ChargingProfilesService } from './src/services/charging-profiles-servic
 // export { AsyncResponder } from './src/services/async-responder.js';
 export { AsAdminEndpoint } from './src/apis/decorators/as-admin-endpoint.js';
 
-export { CacheWrapper } from './src/services/cache-wrapper.js';
-export { ResponseGenerator } from './src/services/response-generator.js';
+export { CacheWrapper } from './src/util/cache-wrapper.js';
+export { ResponseGenerator } from './src/apis/response-generator.js';
 export { versionIdParam } from './src/apis/decorators/version-number-param.js';
 export type { PutChargingProfileParams } from './src/transport/trigger/param/charging-profiles/put-charging-profile-params.js';
 export { buildPutChargingProfileParams } from './src/transport/trigger/param/charging-profiles/put-charging-profile-params.js';

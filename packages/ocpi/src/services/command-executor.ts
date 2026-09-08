@@ -25,7 +25,7 @@ import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from '../util/consts.js';
-import type { OCPPCommandHandler } from '../util/ocpp-command-handlers/base.js';
+import type { OCPPCommandHandler } from './ocpp-command-handlers/base.js';
 
 export interface CommandExecutorDependencies extends OcpiConfiguredDependencies {
   ocpiGraphqlClient: IOcpiGraphqlClient;

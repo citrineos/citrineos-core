@@ -11,7 +11,7 @@ import { CommandType } from '../types/command-type.js';
 import type { OcpiCommandResponse } from '../types/command-response.js';
 import { CommandResponseType } from '../types/command-response.js';
 // import { CommandExecutor } from './command-executor.js';
-import { ResponseGenerator } from './response-generator.js';
+import { ResponseGenerator } from '../apis/response-generator.js';
 import type { CommandExecutor } from './command-executor.js';
 import type {
   GetActiveTransactionForStopSessionQueryResult,
