@@ -40,7 +40,7 @@ export const changeConfigurationTable = pgTable(
   TableName.ChangeConfigurations,
   changeConfigurationColumns(),
   (t) => [
-    uniqueIndex('change_configurations_station_name_tenant_id_key').on(
+    uniqueIndex('ChangeConfigurations_stationId_tenantId_key').on(
       t.ocppConnectionName,
       t.key,
       t.tenantId,
