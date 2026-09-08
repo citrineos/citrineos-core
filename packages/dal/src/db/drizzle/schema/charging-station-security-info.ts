@@ -38,7 +38,7 @@ export const chargingStationSecurityInfoTable = pgTable(
   TableName.ChargingStationSecurityInfos,
   chargingStationSecurityInfoColumns(),
   (t) => [
-    uniqueIndex('charging_station_security_infos_station_name_tenant_id').on(
+    uniqueIndex('ChargingStationSecurityInfos_stationName_tenantId').on(
       t.ocppConnectionName,
       t.tenantId,
     ),
