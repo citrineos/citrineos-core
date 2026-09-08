@@ -576,6 +576,28 @@ export class SequelizeTransactionEventRepository
       });
   }
 
+  async getActiveTransactionByStationIdAndConnectorId(
+    tenantId: number,
+    ocppConnectionName: string,
+    connectorId: number,
+  ): Promise<Transaction | undefined> {
+    return await this.transaction
+      .readAllByQuery(tenantId, {
+        where: {
+          ocppConnectionName: ocppConnectionName,
+          connectorId: connectorId,
+          isActive: true,
+        },
+        include: [MeterValue],
+      })
+      .then((transactions) => {
+        if (transactions.length > 1) {
+          transactions.sort((t1, t2) => t2.updatedAt.getTime() - t1.updatedAt.getTime());
+        }
+        return transactions[0];
+      });
+  }
+
   async createMeterValue(
     tenantId: number,
     meterValue: OCPP2_0_1.MeterValueType,

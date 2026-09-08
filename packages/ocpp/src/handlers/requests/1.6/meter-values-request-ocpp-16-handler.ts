@@ -53,7 +53,7 @@ export class MeterValuesRequestOcpp16Handler extends AbstractHandler {
     const transactionId = message.payload.transactionId;
     const meterValues = message.payload.meterValue;
 
-    if (connectorId !== 0 && transactionId && meterValues.length > 0) {
+    if (connectorId !== 0 && meterValues.length > 0) {
       try {
         const meterValueEntities: MeterValueDto[] = [];
         for (const meterValue of meterValues) {
@@ -64,13 +64,29 @@ export class MeterValuesRequestOcpp16Handler extends AbstractHandler {
             meterValueEntities.push(meterValueEntity);
           }
         }
+
         if (meterValueEntities.length > 0) {
-          await this._transactionEventRepository.updateTransactionByMeterValues(
-            tenantId,
-            meterValueEntities,
-            ocppConnectionName,
-            transactionId,
-          );
+          let effectiveTransactionId = transactionId;
+          if (!effectiveTransactionId) {
+            const activeTransaction =
+              await this._transactionEventRepository.getActiveTransactionByStationIdAndConnectorId(
+                tenantId,
+                ocppConnectionName,
+                connectorId,
+              );
+            if (activeTransaction) {
+              effectiveTransactionId = Number(activeTransaction.transactionId);
+            }
+          }
+
+          if (effectiveTransactionId) {
+            await this._transactionEventRepository.updateTransactionByMeterValues(
+              tenantId,
+              meterValueEntities,
+              ocppConnectionName,
+              effectiveTransactionId,
+            );
+          }
         }
       } catch (e) {
         this._logger.error(`Failed to process MeterValues.`, e);

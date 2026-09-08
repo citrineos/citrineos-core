@@ -401,6 +401,11 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     ocppConnectionName: string,
     evseId: number,
   ): Promise<Transaction | undefined>;
+  getActiveTransactionByStationIdAndConnectorId(
+    tenantId: number,
+    ocppConnectionName: string,
+    connectorId: number,
+  ): Promise<Transaction | undefined>;
   updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
   createStopTransaction(
     tenantId: number,
