@@ -136,10 +136,12 @@ migrations.
 
 ### Table Partitioning
 
+#### OCPPMessages
+
 `OCPPMessages` is range partitioned on `createdAt`, one partition per ISO week, keeping a rolling retention window.
 Migration `20260813120000-partition-ocpp-messages` performs the conversion: it copies only the rows inside the
 retention window into the partitioned table. Everything older is left behind in
-`OCPPMessages_old` for you to archive and drop — that is how old data leaves the live table.
+`OCPPMessages_old` for you to archive and drop. That is how old data leaves the live table.
 
 Two things to know when working with the model:
 
@@ -160,6 +162,38 @@ partition's lower bound will not meet the previous partition's upper bound.
 # provision upcoming partitions by hand (never drops anything)
 pnpm run db:partitions
 ```
+
+#### The `Transactions` cluster
+
+`Transactions` is range partitioned on `createdAt`, one partition per month. Its children —
+`TransactionEvents`, `StartTransactions`, `StopTransactions`, `ChargingNeeds`, `MeterValues` — are partitioned on a
+new `transactionCreatedAt` column so their partitions line up with the parent's. Migration
+`20260818120000-partition-transactions` performs the conversion and, as above, leaves rows outside the retention
+window behind in the matching `*_old` tables. `transactions.retain_months` (default 12) sets that window.
+
+- `transactionCreatedAt` **must be supplied on insert**: tuple routing to a partition happens before any `BEFORE INSERT`
+  trigger fires, so the database cannot fill it in. The repositories pass the parent's `createdAt`; the models'
+  `@BeforeCreate` hook resolves it as a fallback, and an unlinked row gets its own timestamp.
+- Every child foreign key is now composite — `(transactionDatabaseId, transactionCreatedAt)` referencing
+  `Transactions(id, "createdAt")` — which is what rejects a wrong partition key.
+- `ChargingProfiles` is deliberately left unpartitioned and its `transactionDatabaseId` foreign key dropped, so a
+  station-level profile (`transactionDatabaseId IS NULL`) survives transaction retention.
+- The old `UNIQUE (stationId, transactionId)` cannot exist on a partitioned table, and no single column can reference
+  `Transactions(id, "createdAt")`, so `TransactionKeys.transactionDatabaseId` has no foreign key. That unpartitioned
+  registry enforces the pair globally instead — `AFTER INSERT` claims, `AFTER DELETE` releases, rotation prunes keys
+  whose transaction is gone (a partition drop is DDL, so no row trigger fires). Callers still see a unique violation.
+
+`rotate_transactions_partitions(retain_months, future_months, dry_run)` provisions upcoming months and drops expired
+ones, and the same `pnpm run db:partitions` provisions both clusters. Unlike the weekly rotation it must
+`DETACH PARTITION` before `DROP TABLE`, children before `Transactions`: a plain drop is refused while an inbound
+composite foreign key depends on the partition, and `DROP ... CASCADE` would delete the child constraints themselves.
+
+Neither cluster is ever pruned locally. `entrypoint.sh` and `pnpm run db:partitions` call both procedures with a
+`retain` of 9999, which puts the drop cutoff centuries in the past so nothing can qualify and the call can only create;
+dropping is destructive.
+
+The oldest partition the migration creates is `MINVALUE`-bounded, so it accepts anything older than itself. That
+catch-all is gone once it rotates away, after which a row predating the oldest partition has no partition to land in.
 
 ## Configuration
 
