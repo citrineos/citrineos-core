@@ -6,21 +6,22 @@
 import React from 'react';
 import { ChargingStationProps, LocationProps } from '@citrineos/types';
 import { CanAccess, type CrudFilter } from '@refinedev/core';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import type { CellContext } from '@tanstack/react-table';
 import {
   type ChargingStationDetailsDto,
   ChargingStationDetailsProps,
-} from '@lib/cls/charging.station.dto';
+} from '@lib/cls/charging-station-dto';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
-import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import ProtocolTag from '@lib/client/components/protocol-tag';
-import { ACTIONS_COLUMN } from '@lib/client/hooks/useColumnPreferences';
-import { ActionType, ResourceType } from '@lib/utils/access.types';
-import { StartTransactionButton } from '@lib/client/pages/charging-stations/start.transaction.button';
-import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop.transaction.button';
-import { ResetButton } from '@lib/client/pages/charging-stations/reset.button';
-import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands.unavailable.text';
+import { ACTIONS_COLUMN } from '@lib/client/hooks/use-column-preferences';
+import { ActionType, ResourceType } from '@lib/utils/access-types';
+import { StartTransactionButton } from '@lib/client/pages/charging-stations/start-transaction-button';
+import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop-transaction-button';
+import { getTransactionCommandAvailability } from '@lib/client/pages/charging-stations/transaction-command-availability';
+import { ResetButton } from '@lib/client/pages/charging-stations/reset-button';
+import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands-unavailable-text';
 import { isEmpty } from '@lib/utils/assertion';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 import { badgeListStyle } from '@lib/client/styles/page';
@@ -195,7 +196,7 @@ export const getChargingStationsColumns = (
       header: t('Common.actions', 'Actions'),
       visible: true,
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => {
-        const hasActiveTransactions = !isEmpty(row.original.transactions);
+        const { canStart, canStop } = getTransactionCommandAvailability(row.original);
 
         return row.original.isOnline ? (
           <CanAccess
@@ -206,8 +207,8 @@ export const getChargingStationsColumns = (
             }}
           >
             <div className="flex gap-4 w-fit" onClick={(e) => e.stopPropagation()}>
-              {!hasActiveTransactions && <StartTransactionButton station={row.original} />}
-              {hasActiveTransactions && <StopTransactionButton station={row.original} />}
+              {canStart && <StartTransactionButton station={row.original} />}
+              {canStop && <StopTransactionButton station={row.original} />}
               <ResetButton station={row.original} />
             </div>
           </CanAccess>

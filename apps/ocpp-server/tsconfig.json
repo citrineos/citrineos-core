@@ -1,21 +1,16 @@
 {
   "extends": "../../tsconfig.build.json",
-  "include": ["src/**/*.ts", "src/**/*.json"],
-  "exclude": ["**/dist/**", "**/node_modules/**"],
   "compilerOptions": {
-    "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "noEmit": true,
+    "composite": false
   },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/dist/**", "**/node_modules/**"],
   "references": [
-    {
-      "path": "../../packages/types"
-    },
-    {
-      "path": "../../packages/base"
-    },
-    {
-      "path": "../../packages/core"
-    }
+    { "path": "../../packages/types/tsconfig.src.json" },
+    { "path": "../../packages/base/tsconfig.src.json" },
+    { "path": "../../packages/dal/tsconfig.src.json" },
+    { "path": "../../packages/ocpp/tsconfig.src.json" }
   ]
 }

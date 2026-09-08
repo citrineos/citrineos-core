@@ -4,11 +4,11 @@
 'use client';
 
 import React from 'react';
-import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { type AuthorizationDto, AuthorizationProps } from '@citrineos/types';
 import { Badge } from '@lib/client/components/ui/badge';
 import type { CrudFilter } from '@refinedev/core';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import type { CellContext } from '@tanstack/react-table';
 import { isEmpty } from '@lib/utils/assertion';

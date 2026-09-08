@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
-import { COMPONENT_FIELDS } from '@lib/queries/fields/component.fields';
+import { COMPONENT_FIELDS } from '@lib/queries/fields/component-fields';
 
 export const COMPONENT_LIST_QUERY = gql`
   query ComponentList(

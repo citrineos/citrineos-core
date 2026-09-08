@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type AuthProviderType, AuthProviderTypeEnum } from '../providers/auth-provider/types';
+import { type AuthProviderType, AuthProviderTypeEnum } from '@lib/providers/auth-provider/types';
 
 const getConfig: () => {
   appName: string;

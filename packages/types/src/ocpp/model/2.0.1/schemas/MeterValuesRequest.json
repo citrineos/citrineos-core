@@ -248,7 +248,7 @@
     "evseId": {
       "description": "Request_ Body. EVSEID. Numeric_ Identifier\r\nurn:x-enexis:ecdm:uid:1:571101\r\nThis contains a number (&gt;0) designating an EVSE of the Charging Station. ‘0’ (zero) is used to designate the main power meter.\r\n",
       "type": "integer",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 2147483647
     },
     "meterValue": {

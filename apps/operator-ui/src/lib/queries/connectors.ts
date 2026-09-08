@@ -7,7 +7,7 @@ import {
   CONNECTOR_FULL_FIELDS,
   CONNECTOR_SPEC_FIELDS,
   CONNECTOR_STATUS_FIELDS,
-} from '@lib/queries/fields/connector.fields';
+} from '@lib/queries/fields/connector-fields';
 
 export const CONNECTOR_LIST_FOR_STATION_QUERY = gql`
   query GetPaginatedConnectorListForStation(

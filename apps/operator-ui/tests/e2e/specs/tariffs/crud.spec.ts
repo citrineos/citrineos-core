@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { TariffsListPage } from '../../pages/tariffs/list.page';
-import { TariffFormPage } from '../../pages/tariffs/form.page';
+import { TariffsListPage } from '../../pages/tariffs/list-page';
+import { TariffFormPage } from '../../pages/tariffs/form-page';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Constructable } from '@lib/utils/Constructable';
+import type { Constructable } from '@lib/utils/constructable';
 import { plainToInstance } from 'class-transformer';
 
 export function generateSearchFilters(values: any, searchableKeys: Set<string>): [] {

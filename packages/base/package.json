@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/base",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "The base module for OCPP v2.0.1 including all interfaces. This module is not intended to be used directly, but rather as a dependency for other modules.",
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "tsc -b tsconfig.src.json && tsc-alias -p tsconfig.src.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run"
@@ -22,23 +22,23 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@faker-js/faker": "8.4.1",
-    "@fastify/auth": "5.0.4",
-    "@fastify/type-provider-json-schema-to-ts": "4.0.1",
-    "@types/uuid": "9.0.8",
-    "@types/validator": "13.15.10",
-    "@vitest/coverage-v8": "3.2.7",
+    "@faker-js/faker": "catalog:",
+    "@fastify/auth": "catalog:",
+    "@fastify/type-provider-json-schema-to-ts": "catalog:",
+    "@types/uuid": "catalog:",
+    "@types/validator": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "concurrently": "8.2.2",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "fastify": "catalog:",
-    "json-schema-to-typescript": "12.0.0",
-    "json-schema-to-zod": "1.2.0",
+    "json-schema-to-typescript": "catalog:",
+    "json-schema-to-zod": "catalog:",
     "prettier": "catalog:",
-    "typescript": "^6.0.0",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "3.2.7"
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@fastify/auth": ">=5.0.0",
@@ -46,18 +46,18 @@
     "fastify": ">=5.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1101.0",
+    "@aws-sdk/client-s3": "catalog:",
     "@citrineos/types": "workspace:*",
-    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api": "catalog:",
     "@types/big.js": "6.2.2",
-    "ajv": "^8.18.0",
-    "ajv-formats": "^3.0.1",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:",
     "big.js": "6.2.2",
-    "class-transformer": "0.5.1",
+    "class-transformer": "catalog:",
     "fastify": "catalog:",
-    "reflect-metadata": "0.1.13",
-    "tslog": "4.9.2",
-    "uuid": "11.1.1",
+    "reflect-metadata": "catalog:",
+    "tslog": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   }
 }

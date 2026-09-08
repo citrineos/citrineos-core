@@ -19,11 +19,13 @@
 //      POST /ocpi/2.2.1/emsp/commands/:command/:uid, correlate it back to the
 //      PendingCommand, and reply with an empty OCPI envelope.
 //
-// Candidate Citrine bug: Citrine sends this async callback with the
-// OCPI-from / OCPI-to routing headers REVERSED (from=eMSP US/TST, to=CPO). Therefore
-// this route uses auth:'callback' with requireRoutingHeaders:false so the dispatcher
-// does NOT strict-validate routing headers — otherwise a valid Citrine callback would
-// be rejected. Token auth still applies (callback mode requires tokenWeAccept).
+// Routing headers: a CommandResult is a CPO->eMSP message, so it must carry
+// from=CPO (US/S44), to=eMSP (US/TST) — the same direction as any functional push.
+// This route uses auth:'callback' with requireRoutingHeaders:true so the dispatcher
+// strict-validates that direction (callback shares functional's token semantics, so
+// tokenWeAccept still applies). Citrine historically REVERSED these headers on the
+// async command callback; that is now fixed upstream, and this strict check guards
+// against a regression.
 //
 // Validation: the inbound body is validated against ocpi-base CommandResultSchema
 // (drift => Finding, recorded by the dispatcher). The sync CommandResponse Citrine
@@ -123,8 +125,8 @@ const commandResultRoute: OcpiRoute = {
   method: 'POST',
   path: '/:command/:uid',
   operation: 'commands.result',
-  auth: 'callback', // token required; routing headers NOT strict-validated (Citrine reverses from/to)
-  requireRoutingHeaders: false,
+  auth: 'callback', // token required; routing headers strict-validated as from=CPO, to=eMSP
+  requireRoutingHeaders: true,
   requestSchema: CommandResultSchema, // ocpi-base — validates Citrine's async CommandResult body
   responseSchema: OcpiEmptyResponseSchema, // ocpi-base — our empty-envelope reply self-check + fault target
   handle: handleCommandResult,

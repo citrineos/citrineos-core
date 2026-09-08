@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AuthorizationDetail } from '@lib/client/pages/authorizations/detail/authorization.detail';
+import { AuthorizationDetail } from '@lib/client/pages/authorizations/detail/authorization-detail';
 
 type PageProps = {
   params: Promise<{ id: string }>;

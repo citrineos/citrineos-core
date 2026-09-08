@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AuthorizationsList } from '@lib/client/pages/authorizations/list/authorizations.list';
+import { AuthorizationsList } from '@lib/client/pages/authorizations/list/authorizations-list';
 
 export default function ListAuthorizationPage() {
   return <AuthorizationsList />;

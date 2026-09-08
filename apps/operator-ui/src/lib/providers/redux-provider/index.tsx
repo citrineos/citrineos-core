@@ -4,7 +4,7 @@
 'use client';
 
 import React from 'react';
-import store from '@/lib/utils/store/store';
+import store from '@lib/utils/store/store';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistStore } from 'redux-persist';

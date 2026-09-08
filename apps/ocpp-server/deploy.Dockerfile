@@ -25,6 +25,4 @@ WORKDIR /usr/local/apps/citrineos
 
 RUN chmod +x /usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh
 
-EXPOSE ${PORT}
-
 ENTRYPOINT ["/usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh"]
