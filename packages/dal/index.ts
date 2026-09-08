@@ -108,4 +108,5 @@ export {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  DrizzleVariableCharacteristicsRepository,
 } from './src/db/drizzle/index.js';

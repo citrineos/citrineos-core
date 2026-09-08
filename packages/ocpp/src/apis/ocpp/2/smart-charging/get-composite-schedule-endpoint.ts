@@ -15,14 +15,14 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IEvseTypeRepository } from '@citrineos/dal';
+import type { IEvseTypeRepository, IVariableCharacteristicsRepository } from '@citrineos/dal';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 import { readChargingRateUnitMemberList } from './charging-rate-units.js';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  deviceModelRepository: IDeviceModelRepository;
   evseTypeRepository: IEvseTypeRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 }
 
 export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
@@ -34,14 +34,19 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
   private readonly _evseTypeRepository: IEvseTypeRepository;
+  private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 
-  constructor({ logger, ocppSender, deviceModelRepository, evseTypeRepository }: Dependencies) {
+  constructor({
+    logger,
+    ocppSender,
+    evseTypeRepository,
+    variableCharacteristicsRepository,
+  }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._deviceModelRepository = deviceModelRepository;
     this._evseTypeRepository = evseTypeRepository;
+    this._variableCharacteristicsRepository = variableCharacteristicsRepository;
   }
 
   async handle(
@@ -72,7 +77,7 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
 
         if (request.chargingRateUnit) {
           const rateUnitMemberList = await readChargingRateUnitMemberList(
-            this._deviceModelRepository,
+            this._variableCharacteristicsRepository,
             tenantId,
             this._logger,
           );

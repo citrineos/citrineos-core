@@ -172,3 +172,15 @@ export {
   type VariableAttributeEntity,
   type VariableAttributeEntityInsert,
 } from './schema/variable-attribute.js';
+export {
+  DrizzleVariableCharacteristicsRepository,
+  toVariableCharacteristicsDto,
+} from '../../repositories/drizzle/variable-characteristics.js';
+export {
+  variableCharacteristicsTable,
+  tenantVariableCharacteristicsTable,
+  VariableCharacteristicsEntitySchema,
+  VariableCharacteristicsEntityInsertSchema,
+  type VariableCharacteristicsEntity,
+  type VariableCharacteristicsEntityInsert,
+} from './schema/variable-characteristics.js';

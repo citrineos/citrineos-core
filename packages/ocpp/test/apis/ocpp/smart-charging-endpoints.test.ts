@@ -123,7 +123,7 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetChargingProfilesEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: {
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
       });
@@ -229,7 +229,7 @@ describe('smartCharging message endpoints', () => {
       getTestInstance(container, GetCompositeScheduleEndpoint, {
         ocppSender: { sendCall },
         evseTypeRepository: { findEvseByIdAndConnectorId },
-        deviceModelRepository: {
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
       });
@@ -321,8 +321,8 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, SetChargingProfileEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: {
-          readAllByQuerystring,
+        deviceModelRepository: { readAllByQuerystring },
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: vi
             .fn()
             .mockResolvedValue(undefined),
