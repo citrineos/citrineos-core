@@ -1,0 +1,340 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import type { ErrorObject } from 'ajv';
+
+import {
+  ErrorCode,
+  MessageOrigin,
+  MessageState,
+  OCPPVersion,
+  type CallAction,
+  type OcppRequest,
+  type OcppResponse,
+  type OCPPVersionType,
+  type SystemConfig,
+} from '@citrineos/types';
+import type { ICache } from '@interfaces/cache/cache.js';
+import type { IMessage } from '@interfaces/messages/message.js';
+import type { IMessageConfirmation } from '@interfaces/messages/message-confirmation.js';
+import type { IMessageHandler } from '@interfaces/messages/message-handler.js';
+import type { IMessageSender } from '@interfaces/messages/message-sender.js';
+import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
+import type { IMessageRouter } from '@interfaces/router/router.js';
+import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+
+export abstract class AbstractMessageRouter implements IMessageRouter {
+  /**
+   * Fields
+   */
+
+  protected _ocppValidator: OCPPValidator;
+  protected _cache: ICache;
+  protected _config: SystemConfig;
+  protected _logger: Logger<ILogObj>;
+  protected readonly _handler: IMessageHandler;
+  protected readonly _sender: IMessageSender;
+  protected _networkHook: (identifier: string, message: string) => Promise<void>;
+
+  /**
+   * Constructor of abstract ocpp router.
+   *
+   * @param {OCPPValidator} ocppValidator - The OCPPValidator instance to use for message validation.
+   */
+  constructor(
+    config: SystemConfig,
+    cache: ICache,
+    handler: IMessageHandler,
+    sender: IMessageSender,
+    networkHook: (identifier: string, message: string) => Promise<void>,
+    logger?: Logger<ILogObj>,
+    ocppValidator?: OCPPValidator,
+  ) {
+    this._config = config;
+    this._cache = cache;
+    this._handler = handler;
+    this._sender = sender;
+    this._networkHook = networkHook;
+    this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
+
+    // Set module for proper message flow.
+    this._handler.module = this;
+  }
+
+  /**
+   * Getters & Setters
+   */
+
+  get ocppValidator(): OCPPValidator {
+    return this._ocppValidator;
+  }
+
+  get cache(): ICache {
+    return this._cache;
+  }
+
+  get sender(): IMessageSender {
+    return this._sender;
+  }
+
+  get handler(): IMessageHandler {
+    return this._handler;
+  }
+
+  get config(): SystemConfig {
+    return this._config;
+  }
+
+  set networkHook(value: (identifier: string, message: string) => Promise<void>) {
+    this._networkHook = value;
+  }
+
+  /**
+   * Sets the system configuration for the module.
+   *
+   * @param {SystemConfig} config - The new configuration to set.
+   */
+  set config(config: SystemConfig) {
+    this._config = config;
+    // Update all necessary settings for hot reload
+    this._logger.info('Updating system configuration for ocpp router...');
+    this._logger.settings.minLevel = this._config.logLevel;
+  }
+
+  /**
+   * Public Methods
+   */
+
+  async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>): Promise<void> {
+    message.payload = this._ocppValidator.sanitizeOCPPPayload(message.payload);
+    switch (message.state) {
+      case MessageState.Request: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPRequest(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
+
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+
+        // Optionally drop Calls that have aged past `staleCallMaxAgeSeconds` while queued. A
+        // Call can sit in the broker (e.g. requeued during websocket churn while the station
+        // has no live or valid connection) and then be delivered to a later, different
+        // connection — acting on a runtime state the caller never saw (a stale Reset killing a
+        // fresh session, a stale RemoteStop closing someone else's transaction, etc.). This
+        // guard is opt-in: it only drops when `staleCallMaxAgeSeconds` is configured, since some
+        // deployments prefer late delivery over none, and fine-grained per-action staleness
+        // handling is left as future work.
+        const staleCallMaxAgeSeconds = this._config.timeouts.staleCallMaxAgeSeconds;
+        if (staleCallMaxAgeSeconds !== undefined) {
+          const callAgeMs = Date.now() - new Date(message.context.timestamp).getTime();
+          const maxCallAgeMs = staleCallMaxAgeSeconds * 1000;
+          if (callAgeMs > maxCallAgeMs) {
+            this._logger.error(
+              `Dropping stale ${message.action} Call for ${message.context.ocppConnectionName}: ` +
+                `queued ${callAgeMs} ms ago, exceeds staleCallMaxAgeSeconds (${maxCallAgeMs} ms). ` +
+                `correlationId=${message.context.correlationId}`,
+            );
+            break;
+          }
+        }
+
+        await this.sendCall(
+          message.context.ocppConnectionName,
+          message.context.tenantId,
+          message.protocol,
+          message.action,
+          message.payload,
+          message.context.correlationId,
+          message.origin,
+        );
+
+        break;
+      }
+      case MessageState.Response: {
+        const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
+          message.action,
+          message.payload,
+          message.protocol as OCPPVersion,
+        );
+
+        if (!isValid || errors) {
+          throw new OcppError(
+            message.context.correlationId,
+            ErrorCode.FormatViolation,
+            'Invalid message format',
+            {
+              errors: errors,
+            },
+          );
+        }
+
+        if (message.payload && (message.payload as any)._errorCode) {
+          // Create OcppError from payload properties for sendCallError method
+          const errorPayload = message.payload as any;
+          const ocppError = new OcppError(
+            errorPayload._messageId,
+            errorPayload._errorCode,
+            errorPayload.message || '',
+            errorPayload._errorDetails || {},
+          );
+
+          await this.sendCallError(
+            message.context.correlationId,
+            message.context.ocppConnectionName,
+            message.context.tenantId,
+            message.protocol,
+            message.action,
+            ocppError,
+            message.origin,
+          );
+        } else {
+          await this.sendCallResult(
+            message.context.correlationId,
+            message.context.ocppConnectionName,
+            message.context.tenantId,
+            message.protocol,
+            message.action,
+            message.payload,
+            message.origin,
+          );
+        }
+
+        break;
+      }
+      default:
+        this._logger.error('Unknown message state', message);
+        throw new Error('Unknown message state: ' + message.state);
+    }
+  }
+
+  /**
+   * Protected Methods
+   */
+
+  /**
+   * Validates a Call object against its schema.
+   *
+   * @param {string} identifier - The identifier of the EVSE.
+   * @param {Call} message - The Call object to validate.
+   * @param {string} protocol - The subprotocol of the Websocket, i.e. "ocpp1.6" or "ocpp2.0.1".
+   * @return {boolean} - Returns true if the Call object is valid, false otherwise.
+   */
+  protected _validateCall(
+    identifier: string,
+    message: Call,
+    protocol: string,
+  ): { isValid: boolean; errors?: ErrorObject[] | null } {
+    let protocolEnum: OCPPVersion | undefined;
+    switch (protocol) {
+      case OCPPVersion.OCPP1_6:
+        protocolEnum = OCPPVersion.OCPP1_6;
+        break;
+      case OCPPVersion.OCPP2_0_1:
+        protocolEnum = OCPPVersion.OCPP2_0_1;
+        break;
+      case OCPPVersion.OCPP2_1:
+        protocolEnum = OCPPVersion.OCPP2_1;
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', protocol);
+        return { isValid: false };
+    }
+
+    return this._ocppValidator.validateOCPPRequest(message.action, message.payload, protocolEnum);
+  }
+
+  /**
+   * Validates a CallResult object against its schema.
+   *
+   * @param {string} identifier - The identifier of the EVSE.
+   * @param {CallAction} action - The original CallAction.
+   * @param {CallResult} message - The CallResult object to validate.
+   * @param {string} protocol - The protocol of the Websocket.
+   * @return {boolean} - Returns true if the CallResult object is valid, false otherwise.
+   */
+  protected _validateCallResult(
+    identifier: string,
+    action: CallAction,
+    message: CallResult,
+    protocol: string,
+  ): { isValid: boolean; errors?: ErrorObject[] | null } {
+    let protocolEnum: OCPPVersion | undefined;
+    switch (protocol) {
+      case OCPPVersion.OCPP1_6:
+        protocolEnum = OCPPVersion.OCPP1_6;
+        break;
+      case OCPPVersion.OCPP2_0_1:
+        protocolEnum = OCPPVersion.OCPP2_0_1;
+        break;
+      case OCPPVersion.OCPP2_1:
+        protocolEnum = OCPPVersion.OCPP2_1;
+        break;
+      default:
+        this._logger.error('Unknown subprotocol', protocol);
+        return { isValid: false };
+    }
+
+    return this._ocppValidator.validateOCPPResponse(action, message.payload, protocolEnum);
+  }
+
+  abstract onMessage(
+    identifier: string,
+    message: string,
+    timestamp: Date,
+    protocol: string,
+  ): Promise<boolean>;
+
+  abstract registerConnection(
+    tenantId: number,
+    ocppConnectionName: string,
+    protocol: string,
+    connectedWebsocketServerConfigId?: string,
+  ): Promise<boolean>;
+  abstract deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean>;
+
+  abstract sendCall(
+    ocppConnectionName: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    payload: OcppRequest,
+    correlationId?: string,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  abstract sendCallResult(
+    correlationId: string,
+    ocppConnectionName: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    payload: OcppResponse,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+  abstract sendCallError(
+    correlationId: string,
+    ocppConnectionName: string,
+    tenantId: number,
+    protocol: OCPPVersionType,
+    action: CallAction,
+    error: OcppError,
+    origin?: MessageOrigin,
+  ): Promise<IMessageConfirmation>;
+
+  abstract shutdown(): Promise<void>;
+}

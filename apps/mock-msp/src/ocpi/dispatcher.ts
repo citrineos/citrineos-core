@@ -24,7 +24,7 @@ import type {
 import { buildBody, empty, error, ok } from '../core/envelope.js';
 import { OcpiResponseStatusCode, buildOcpiResponse } from './barrel.js';
 import { verifyInbound } from '../core/auth.js';
-import { echoHeaders, parseRouting, requireStrict } from '../core/routingHeaders.js';
+import { echoHeaders, parseRouting, requireStrict } from '../core/routing-headers.js';
 import { check as conformanceCheck, safeValidate } from '../core/conformance.js';
 import { dropHeaderCI, mutateJson, oversizeTokenBody } from '../core/faults.js';
 import { isStrictInbound } from '../control/scenario.js';

@@ -10,9 +10,9 @@
 // ============================================================================
 import type { MockConfig, MockContext } from './core/types.js';
 import { buildIdentity } from './identity.js';
-import { createStore } from './core/Store.js';
+import { createStore } from './core/store.js';
 import { createFaultEngine } from './core/faults.js';
-import { createWireLogger } from './core/wireLog.js';
+import { createWireLogger } from './core/wire-log.js';
 import { createOcpiClient } from './core/client.js';
 import { ok, empty, error } from './core/envelope.js';
 

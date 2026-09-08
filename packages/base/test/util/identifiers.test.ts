@@ -4,10 +4,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   createIdentifier,
+  DEFAULT_TENANT_ID,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
 } from '../../src/util/identifiers.js';
-import { DEFAULT_TENANT_ID } from '../../src/config/defineConfig.js';
 
 /**
  * The station name is the last segment of the websocket URL, so its content is chosen by whoever

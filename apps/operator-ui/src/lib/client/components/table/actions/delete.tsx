@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { useDeleteHelper } from '@lib/client/hooks/useDeleteHelper';
-import { DeleteContext } from '@lib/providers/table/deleteProvider';
+import { useDeleteHelper } from '@lib/client/hooks/use-delete-helper';
+import { DeleteContext } from '@lib/providers/table/delete-provider';
 import { useContext } from 'react';
 import type { RowActionProps } from '.';
 import { RowAction } from '.';

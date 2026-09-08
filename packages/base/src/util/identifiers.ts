@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '@config/defineConfig.js';
+/**
+ * Tenant assumed when a value carries no tenant of its own.
+ *
+ */
+export const DEFAULT_TENANT_ID = 1;
 
 /*
  * Helper methods to create a unique identifier used in the cache and queues.

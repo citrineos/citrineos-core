@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { LocationsDetail } from '@lib/client/pages/locations/detail/locations.detail';
-import { StationPreviewLayout } from '@lib/client/pages/charging-stations/station.preview.layout';
+import { LocationsDetail } from '@lib/client/pages/locations/detail/locations-detail';
+import { StationPreviewLayout } from '@lib/client/pages/charging-stations/station-preview-layout';
 
 type PageProps = {
   params: Promise<{ id: string }>;

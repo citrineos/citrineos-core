@@ -8,9 +8,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/lib/client/components/ui/alert-dialog';
-import type { buttonVariants } from '@/lib/client/components/ui/button';
-import { LoadingIcon } from '@/lib/client/components/ui/loading';
+} from '@lib/client/components/ui/alert-dialog';
+import type { buttonVariants } from '@lib/client/components/ui/button';
+import { LoadingIcon } from '@lib/client/components/ui/loading';
 import { type AlertDialogProps } from '@radix-ui/react-alert-dialog';
 import { useTranslation } from '@refinedev/core';
 import { type VariantProps } from 'class-variance-authority';

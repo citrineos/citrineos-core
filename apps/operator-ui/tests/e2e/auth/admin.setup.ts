@@ -4,8 +4,8 @@
 
 import { test as setup, expect } from '@playwright/test';
 import { resolve } from 'node:path';
-import { LoginPage } from '../pages/login.page';
-import { OverviewPage } from '../pages/overview.page';
+import { LoginPage } from '../pages/login-page';
+import { OverviewPage } from '../pages/overview-page';
 import { readEnv } from '../utils/env';
 
 const ADMIN_STORAGE_STATE = resolve(

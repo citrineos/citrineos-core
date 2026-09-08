@@ -1,0 +1,17 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import { OCPP2_0_1 } from '@citrineos/types';
+import { faker } from '@faker-js/faker';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
+
+export function anIdToken(
+  updateFunction?: UpdateFunction<OCPP2_0_1.IdTokenType>,
+): OCPP2_0_1.IdTokenType {
+  const item = {
+    idToken: faker.string.uuid(),
+    type: OCPP2_0_1.IdTokenEnumType.Central,
+  };
+
+  return applyUpdateFunction(item, updateFunction);
+}

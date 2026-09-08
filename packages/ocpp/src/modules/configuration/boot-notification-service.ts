@@ -1,0 +1,407 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+import {
+  CacheNamespace,
+  type ICache,
+  type IMessageConfirmation,
+  createIdentifier,
+  OCPP1_6_CALL_SCHEMA_RECORD,
+  OCPP2_0_1_CALL_SCHEMA_RECORD,
+  OCPP2_1_CALL_SCHEMA_RECORD,
+} from '@citrineos/base';
+import {
+  type BootCreate,
+  type BootDto,
+  OCPP1_6,
+  OCPP2_0_1,
+  type OCPP2_response_types,
+  OCPP_CallAction,
+  RegistrationStatusEnum,
+  type RegistrationStatusEnumType,
+  type SystemConfig,
+} from '@citrineos/types';
+import type { IBootRepository } from '@citrineos/dal';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/dal';
+import type { ILogObj } from 'tslog';
+import { Logger } from 'tslog';
+
+type Configuration = SystemConfig['ocpp'];
+
+export class BootNotificationService {
+  protected _bootRepository: IBootRepository;
+  protected _cache: ICache;
+  protected _logger: Logger<ILogObj>;
+  protected _config: Configuration;
+
+  constructor({
+    bootRepository,
+    cache,
+    config,
+    logger,
+  }: {
+    bootRepository: IBootRepository;
+    cache: ICache;
+    config: Configuration;
+    logger: Logger<ILogObj>;
+  }) {
+    this._bootRepository = bootRepository;
+    this._cache = cache;
+    this._config = config;
+    this._logger = logger
+      ? logger.getSubLogger({ name: this.constructor.name })
+      : new Logger<ILogObj>({ name: this.constructor.name });
+  }
+
+  determineBootStatus(bootConfig: BootDto | undefined): RegistrationStatusEnumType {
+    let bootStatus = bootConfig
+      ? OCPP2_0_1_Mapper.BootMapper.toRegistrationStatusEnumType(bootConfig.status)
+      : this._config.unknownChargerStatus;
+
+    if (bootStatus === RegistrationStatusEnum.Pending) {
+      let needToGetBaseReport = this._config.getBaseReportOnPending;
+      let needToSetVariables = false;
+      if (bootConfig) {
+        if (
+          bootConfig.getBaseReportOnPending !== undefined &&
+          bootConfig.getBaseReportOnPending !== null
+        ) {
+          needToGetBaseReport = bootConfig.getBaseReportOnPending;
+        }
+        if (bootConfig.pendingBootSetVariables && bootConfig.pendingBootSetVariables.length > 0) {
+          needToSetVariables = true;
+        }
+      }
+      if (!needToGetBaseReport && !needToSetVariables && this._config.autoAccept) {
+        bootStatus = RegistrationStatusEnum.Accepted;
+      }
+    }
+
+    return bootStatus;
+  }
+
+  async createBootNotificationResponse(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<OCPP2_response_types.BootNotificationResponse> {
+    // Unknown chargers, chargers without a BootConfig, will use SystemConfig.unknownChargerStatus for status.
+    const bootConfig = await this._bootRepository.readByKey(tenantId, ocppConnectionName);
+    const bootStatus = this.determineBootStatus(bootConfig);
+
+    // When any BootConfig field is not set, the corresponding field on the SystemConfig will be used.
+    return {
+      currentTime: new Date().toISOString(),
+      status: bootStatus,
+      statusInfo: OCPP2_0_1_Mapper.BootMapper.toStatusInfo(bootConfig?.statusInfo),
+      interval:
+        bootStatus === RegistrationStatusEnum.Accepted
+          ? bootConfig?.heartbeatInterval || this._config.heartbeatInterval
+          : bootConfig?.bootRetryInterval || this._config.bootRetryInterval,
+    } as OCPP2_response_types.BootNotificationResponse;
+  }
+
+  async updateBootConfig(
+    bootNotificationResponse: OCPP2_0_1.BootNotificationResponse,
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<BootDto> {
+    let bootConfigDbEntity: BootDto | undefined = await this._bootRepository.readByKey(
+      tenantId,
+      ocppConnectionName,
+    );
+    if (!bootConfigDbEntity) {
+      const unknownChargerBootConfig: BootCreate = {
+        status: bootNotificationResponse.status,
+        statusInfo: bootNotificationResponse.statusInfo,
+      };
+      bootConfigDbEntity = await this._bootRepository.createOrUpdateByKey(
+        tenantId,
+        unknownChargerBootConfig,
+        ocppConnectionName,
+      );
+    }
+
+    if (!bootConfigDbEntity) {
+      throw new Error('Unable to create/update BootConfig...');
+    } else {
+      bootConfigDbEntity = await this._bootRepository.updateByKey(
+        tenantId,
+        { lastBootTime: bootNotificationResponse.currentTime },
+        ocppConnectionName,
+      );
+    }
+
+    return bootConfigDbEntity!;
+  }
+
+  /**
+   * Every action a station on OCPP 2.x can send. B01.FR.10, B02.FR.09 and B03.FR.07 answer anything
+   * other than BootNotification with SecurityError while the boot is Rejected or Pending, and this
+   * blacklist is what enforces that, so it has to cover 2.1's own actions as well as 2.0.1's - the
+   * same handler serves both versions. Blacklisting an action a 2.0.1 station will never send costs
+   * nothing.
+   */
+  private static readonly OCPP2_CHARGER_ACTIONS: readonly string[] = Array.from(
+    new Set([
+      ...Object.keys(OCPP2_0_1_CALL_SCHEMA_RECORD),
+      ...Object.keys(OCPP2_1_CALL_SCHEMA_RECORD),
+    ]),
+  );
+
+  /**
+   * Determines whether to blacklist or whitelist charger actions based on its boot status.
+   *
+   * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
+   * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
+   *
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
+   * @param cachedBootStatus
+   * @param bootNotificationResponseStatus
+   */
+  async cacheChargerActionsPermissions(
+    identifier: string,
+    cachedBootStatus: RegistrationStatusEnumType | null,
+    bootNotificationResponseStatus: OCPP2_0_1.RegistrationStatusEnumType,
+  ): Promise<void> {
+    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
+    if (bootNotificationResponseStatus === OCPP2_0_1.RegistrationStatusEnumType.Accepted) {
+      if (cachedBootStatus) {
+        // Undo blacklisting of charger-originated actions
+        const promises = BootNotificationService.OCPP2_CHARGER_ACTIONS.map(async (action) => {
+          if (action !== OCPP_CallAction.BootNotification) {
+            return this._cache.remove(action, identifier);
+          }
+        });
+        await Promise.all(promises);
+        // Remove cached boot status
+        await this._cache.remove(CacheNamespace.BootStatus, identifier);
+        this._logger.debug('Cached boot status removed: ', cachedBootStatus);
+      }
+    } else if (!cachedBootStatus) {
+      // Status is not Accepted; i.e. Status is Rejected or Pending.
+      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
+      // Blacklist all charger-originated actions except BootNotification
+      // GetReport messages will need to un-blacklist NotifyReport
+      // TriggerMessage will need to un-blacklist the message it triggers
+      const promises = BootNotificationService.OCPP2_CHARGER_ACTIONS.map(async (action) => {
+        if (action !== OCPP_CallAction.BootNotification) {
+          return this._cache.set(action, 'blacklisted', identifier);
+        }
+      });
+      await Promise.all(promises);
+    }
+  }
+
+  async createGetBaseReportRequest(
+    tenantId: number,
+    ocppConnectionName: string,
+    maxCachingSeconds: number,
+  ): Promise<OCPP2_0_1.GetBaseReportRequest> {
+    // OCTT tool does not meet B07.FR.04; instead always sends requestId === 0
+    // Commenting out this line, using requestId === 0 until fixed (10/26/2023)
+    // const requestId = Math.floor(Math.random() * ConfigurationModule.GET_BASE_REPORT_REQUEST_ID_MAX);
+    const requestId = 0;
+    await this._cache.set(
+      requestId.toString(),
+      'ongoing',
+      createIdentifier(tenantId, ocppConnectionName),
+      maxCachingSeconds,
+    );
+
+    return {
+      requestId: requestId,
+      reportBase: OCPP2_0_1.ReportBaseEnumType.FullInventory,
+    } as OCPP2_0_1.GetBaseReportRequest;
+  }
+
+  /**
+   * Based on the GetBaseReportMessageConfirmation, checks the cache to ensure GetBaseReport truly succeeded.
+   * If GetBaseReport did not succeed, this method will throw. Otherwise, it will finish without throwing.
+   *
+   * @param tenantId - The tenant the charging station belongs to
+   * @param ocppConnectionName - The connection name of the charging station
+   * @param requestId
+   * @param getBaseReportMessageConfirmation
+   * @param maxCachingSeconds
+   */
+  async confirmGetBaseReportSuccess(
+    tenantId: number,
+    ocppConnectionName: string,
+    requestId: string,
+    getBaseReportMessageConfirmation: IMessageConfirmation,
+    maxCachingSeconds: number,
+  ): Promise<void> {
+    const identifier = createIdentifier(tenantId, ocppConnectionName);
+    if (getBaseReportMessageConfirmation.success) {
+      this._logger.debug(
+        `GetBaseReport successfully sent to charger: ${getBaseReportMessageConfirmation}`,
+      );
+
+      // Wait for GetBaseReport to complete
+      let getBaseReportCacheValue = await this._cache.onChange(
+        requestId,
+        maxCachingSeconds,
+        identifier,
+      );
+
+      while (getBaseReportCacheValue === 'ongoing') {
+        getBaseReportCacheValue = await this._cache.onChange(
+          requestId,
+          maxCachingSeconds,
+          identifier,
+        );
+      }
+
+      if (getBaseReportCacheValue === 'complete') {
+        this._logger.debug('GetBaseReport process successful.'); // All NotifyReports have been processed
+      } else {
+        throw new Error('GetBaseReport process failed--message timed out without a response.');
+      }
+    } else {
+      throw new Error(`GetBaseReport failed: ${JSON.stringify(getBaseReportMessageConfirmation)}`);
+    }
+  }
+
+  /**
+   * Methods for OCPP 1.6
+   */
+
+  determineOcpp16BootStatus(
+    bootConfig: BootDto | undefined,
+  ): OCPP1_6.BootNotificationResponseStatus {
+    let bootStatus = OCPP1_6_Mapper.BootMapper.toRegistrationStatusEnumType(
+      bootConfig ? bootConfig.status : this._config.unknownChargerStatus,
+    );
+    if (bootStatus === OCPP1_6.BootNotificationResponseStatus.Pending) {
+      let needToGetConfigurations = true;
+      let needToChangeConfigurations = true;
+      if (bootConfig) {
+        if (
+          bootConfig.getConfigurationsOnPending !== undefined &&
+          bootConfig.getConfigurationsOnPending !== null
+        ) {
+          needToGetConfigurations = bootConfig.getConfigurationsOnPending;
+        }
+        if (
+          bootConfig.changeConfigurationsOnPending !== undefined &&
+          bootConfig.changeConfigurationsOnPending !== null
+        ) {
+          needToChangeConfigurations = bootConfig.changeConfigurationsOnPending;
+        }
+      }
+      if (!needToGetConfigurations && !needToChangeConfigurations) {
+        bootStatus = OCPP1_6.BootNotificationResponseStatus.Accepted;
+      }
+    }
+
+    return bootStatus;
+  }
+
+  async createOcpp16BootNotificationResponse(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<OCPP1_6.BootNotificationResponse> {
+    const boot = await this._bootRepository.readByKey(tenantId, ocppConnectionName);
+    const status = this.determineOcpp16BootStatus(boot);
+
+    return {
+      currentTime: new Date().toISOString(),
+      status,
+      interval:
+        status === OCPP1_6.BootNotificationResponseStatus.Accepted
+          ? boot?.heartbeatInterval || this._config.heartbeatInterval
+          : boot?.bootRetryInterval || this._config.bootRetryInterval,
+    };
+  }
+
+  /**
+   * Determines whether to blacklist or whitelist charger actions based on its boot status.
+   *
+   * If the new boot is accepted and the charger actions were previously blacklisted, then whitelist the charger actions.
+   * If the new boot is not accepted and charger actions were previously whitelisted, then blacklist the charger actions.
+   *
+   * @param identifier - The tenant-scoped connection identifier, i.e. `tenantId:ocppConnectionName`
+   * @param cachedBootStatus
+   * @param bootNotificationResponseStatus
+   */
+  async cacheOcpp16ChargerActionsPermissions(
+    identifier: string,
+    cachedBootStatus: OCPP1_6.BootNotificationResponseStatus | null,
+    bootNotificationResponseStatus: OCPP1_6.BootNotificationResponseStatus,
+  ): Promise<void> {
+    // New boot status is Accepted and cachedBootStatus exists (meaning there was a previous Rejected or Pending boot)
+    if (bootNotificationResponseStatus === OCPP1_6.BootNotificationResponseStatus.Accepted) {
+      if (cachedBootStatus) {
+        // Undo blacklisting of charger-originated actions
+        const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(async (action) => {
+          if (action !== OCPP_CallAction.BootNotification) {
+            return this._cache.remove(action, identifier);
+          }
+        });
+        await Promise.all(promises);
+        // Remove cached boot status
+        await this._cache.remove(CacheNamespace.BootStatus, identifier);
+        this._logger.debug(
+          `Cached boot status ${cachedBootStatus} removed for station ${identifier}.`,
+        );
+      }
+    } else if (!cachedBootStatus) {
+      // Status is not Accepted; i.e. Status is Rejected or Pending.
+      // Cached boot status for charger did not exist; i.e. this is the first BootNotificationResponse to be Rejected or Pending.
+      // Blacklist all charger-originated actions except BootNotification
+      // ChangeConfiguration, GetConfiguration and TriggerMessage will need to un-blacklist the message it triggers
+      const promises = Array.from(Object.keys(OCPP1_6_CALL_SCHEMA_RECORD)).map(async (action) => {
+        if (action !== OCPP_CallAction.BootNotification) {
+          return this._cache.set(action, 'blacklisted', identifier);
+        }
+      });
+      await Promise.all(promises);
+    }
+  }
+
+  async updateOcpp16BootConfig(
+    response: OCPP1_6.BootNotificationResponse,
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<BootDto> {
+    const heartbeatInterval =
+      response.status === OCPP1_6.BootNotificationResponseStatus.Accepted
+        ? response.interval
+        : undefined;
+    const bootRetryInterval =
+      response.status !== OCPP1_6.BootNotificationResponseStatus.Accepted
+        ? response.interval
+        : undefined;
+
+    const unknownChargerBootConfig: BootCreate = {
+      status: response.status,
+      heartbeatInterval,
+      bootRetryInterval,
+    };
+    let bootConfigDbEntity: BootDto | undefined = await this._bootRepository.createOrUpdateByKey(
+      tenantId,
+      unknownChargerBootConfig,
+      ocppConnectionName,
+    );
+    if (bootConfigDbEntity) {
+      bootConfigDbEntity = await this._bootRepository.updateByKey(
+        tenantId,
+        { lastBootTime: response.currentTime },
+        ocppConnectionName,
+      );
+    }
+
+    if (!bootConfigDbEntity) {
+      throw new Error('Unable to create/update BootConfig...');
+    }
+    return bootConfigDbEntity;
+  }
+
+  async updateBoot(
+    tenantId: number,
+    value: object,
+    ocppConnectionName: string,
+  ): Promise<BootDto | undefined> {
+    return this._bootRepository.updateByKey(tenantId, value, ocppConnectionName);
+  }
+}

@@ -11,7 +11,7 @@
 // ============================================================================
 import type { ZodTypeAny } from 'zod';
 import type { Finding, MockContext, RouteModule } from './types.js';
-import { HDR } from './routingHeaders.js';
+import { HDR } from './routing-headers.js';
 
 export interface ValidationResult {
   ok: boolean;
