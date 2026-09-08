@@ -31,12 +31,7 @@ function chargingStationNetworkProfileColumns() {
 export const chargingStationNetworkProfileTable = pgTable(
   TableName.ChargingStationNetworkProfiles,
   chargingStationNetworkProfileColumns(),
-  (t) => [
-    uniqueIndex('charging_station_network_profiles_station_id_configuration_slot').on(
-      t.stationId,
-      t.configurationSlot,
-    ),
-  ],
+  (t) => [uniqueIndex('stationId_configurationSlot').on(t.stationId, t.configurationSlot)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
