@@ -77,7 +77,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _sender: IMessageSender;
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
-  protected _locationRepository: IChargingStationRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
 
   /**
    * Constructor for the class.
@@ -88,8 +88,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * @param {IMessageHandler} [routerHandler] - the message handler
    * @param {MessagesExchangeSink} [messagesExchangeSink] - where frame and connection events are published
    * @param {CallbackUrlNotifier} [callbackUrlNotifier] - completes API commands that supplied a callback URL   * @param {Function} networkHook - the network hook needed to send messages to chargers
-   * @param {IChargingStationRepository} locationRepository - repository for charging station reads
-   * @param {Logger<ILogObj>} [logger] - the logger object (optional)
+   * @param {IChargingStationRepository} chargingStationRepository - repository for charging station reads   * @param {Logger<ILogObj>} [logger] - the logger object (optional)
    * @param {OCPPValidator} [ocppValidator] - the OCPPValidator instance, for message validation (optional)
    */
   constructor({
@@ -102,7 +101,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     networkHook,
     logger,
     ocppValidator,
-    locationRepository,
+    chargingStationRepository,
   }: {
     config: SystemConfig;
     cache: ICache;
@@ -113,7 +112,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     networkHook: (identifier: string, message: string) => Promise<void>;
     logger: Logger<ILogObj>;
     ocppValidator: OCPPValidator;
-    locationRepository: IChargingStationRepository;
+    chargingStationRepository: IChargingStationRepository;
   }) {
     super(config, cache, routerHandler, routerSender, networkHook, logger, ocppValidator);
 
@@ -123,14 +122,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._messagesExchangeSink = messagesExchangeSink;
     this._callbackUrlNotifier = callbackUrlNotifier;
     this._networkHook = networkHook;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
-  async doesChargingStationExistByStationId(
+  async doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean> {
-    return await this._locationRepository.doesChargingStationExistByStationId(
+    return await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
       tenantId,
       ocppConnectionName,
     );
@@ -168,7 +167,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       origin: MessageOrigin.ChargingStationManagementSystem.toString(),
     });
 
-    const onlineCharger = this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
+    const onlineCharger = this._chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion(
       tenantId,
       ocppConnectionName,
       true,
@@ -200,10 +199,11 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     let protocol: OCPPVersion | null = null;
     try {
-      const chargingStation = await this._locationRepository.readChargingStationByStationId(
-        tenantId,
-        ocppConnectionName,
-      );
+      const chargingStation =
+        await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+          tenantId,
+          ocppConnectionName,
+        );
       if (chargingStation?.protocol) {
         protocol = chargingStation.protocol as OCPPVersion;
       }
@@ -213,7 +213,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       );
     }
 
-    await this._locationRepository.setChargingStationIsOnlineAndOCPPVersion(
+    await this._chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion(
       tenantId,
       ocppConnectionName,
       false,
@@ -383,7 +383,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     recordOcppMessageReceived(messageTypeId, protocol);
 
     // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
-    this._locationRepository
+    this._chargingStationRepository
       .updateChargingStationTimestamp(tenantId, ocppConnectionName, timestamp.toISOString())
       .catch((error: any) => {
         this._logger.error(`Failed to update latestOcppMessageTimestamp for ${identifier}:`, error);

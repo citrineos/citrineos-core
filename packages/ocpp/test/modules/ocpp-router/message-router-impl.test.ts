@@ -115,7 +115,7 @@ function frames(sink: Mocked<MessagesExchangeSink>, direction: 'inbound' | 'outb
 function buildMockLocationRepository(): Mocked<IChargingStationRepository> {
   return {
     setChargingStationIsOnlineAndOCPPVersion: vi.fn().mockResolvedValue(undefined),
-    readChargingStationByStationId: vi.fn().mockResolvedValue(undefined),
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(undefined),
     updateChargingStationTimestamp: vi.fn().mockResolvedValue(undefined),
   } as unknown as Mocked<IChargingStationRepository>;
 }
@@ -131,7 +131,7 @@ describe('MessageRouterImpl', () => {
   let sink: Mocked<MessagesExchangeSink>;
   let notifier: Mocked<CallbackUrlNotifier>;
   let networkHook: ReturnType<typeof vi.fn>;
-  let locationRepository: Mocked<IChargingStationRepository>;
+  let chargingStationRepository: Mocked<IChargingStationRepository>;
   let router: MessageRouterImpl;
 
   beforeEach(() => {
@@ -142,7 +142,7 @@ describe('MessageRouterImpl', () => {
     sink = buildMockSink();
     notifier = buildMockNotifier();
     networkHook = vi.fn().mockResolvedValue(undefined);
-    locationRepository = buildMockLocationRepository();
+    chargingStationRepository = buildMockLocationRepository();
 
     router = getTestInstance(container, MessageRouterImpl, {
       config,
@@ -153,7 +153,7 @@ describe('MessageRouterImpl', () => {
       callbackUrlNotifier: notifier,
       networkHook,
       ocppValidator: undefined,
-      locationRepository,
+      chargingStationRepository,
     });
   });
 
@@ -164,9 +164,9 @@ describe('MessageRouterImpl', () => {
   // ─── Constructor ───────────────────────────────────────────────────────────
 
   describe('constructor', () => {
-    it('should use provided locationRepository', () => {
+    it('should use provided chargingStationRepository', () => {
       // Verify it doesn't try to create a default one by checking our mock is used
-      expect(router['_locationRepository']).toBe(locationRepository);
+      expect(router['_chargingStationRepository']).toBe(chargingStationRepository);
     });
   });
 
@@ -201,13 +201,9 @@ describe('MessageRouterImpl', () => {
         origin: MessageOrigin.ChargingStationManagementSystem.toString(),
       });
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        true,
-        PROTOCOL,
-        undefined,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, true, PROTOCOL, undefined);
 
       expect(result).toBe(true);
     });
@@ -243,7 +239,7 @@ describe('MessageRouterImpl', () => {
 
   describe('deregisterConnection', () => {
     it('should publish a close event, set charger offline, and unsubscribe handler', async () => {
-      locationRepository.readChargingStationByStationId.mockResolvedValue({
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockResolvedValue({
         protocol: PROTOCOL,
       } as any);
 
@@ -256,11 +252,11 @@ describe('MessageRouterImpl', () => {
           state: 'closed',
         }),
       ]);
-      expect(locationRepository.readChargingStationByStationId).toHaveBeenCalledWith(
+      expect(chargingStationRepository.readChargingStationByOcppConnectionName).toHaveBeenCalledWith(
         TENANT_ID,
         STATION_ID,
       );
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
+      expect(chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
         TENANT_ID,
         STATION_ID,
         false,
@@ -272,31 +268,27 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should set protocol to null when charging station is not found', async () => {
-      locationRepository.readChargingStationByStationId.mockResolvedValue(undefined);
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
+        undefined,
+      );
 
       await router.deregisterConnection(TENANT_ID, STATION_ID);
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        null,
-        null,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, null, null);
     });
 
     it('should set protocol to null when readChargingStation throws', async () => {
-      locationRepository.readChargingStationByStationId.mockRejectedValue(new Error('db error'));
+      chargingStationRepository.readChargingStationByOcppConnectionName.mockRejectedValue(
+        new Error('db error'),
+      );
 
       await router.deregisterConnection(TENANT_ID, STATION_ID);
 
-      expect(locationRepository.setChargingStationIsOnlineAndOCPPVersion).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        false,
-        null,
-        null,
-      );
+      expect(
+        chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion,
+      ).toHaveBeenCalledWith(TENANT_ID, STATION_ID, false, null, null);
     });
 
     it('should not throw when publishing the close event fails', async () => {
@@ -334,7 +326,7 @@ describe('MessageRouterImpl', () => {
 
         expect(result).toBe(true);
         expect(recorded(sink, 'frame')).toHaveLength(1);
-        expect(locationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
+        expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
           TENANT_ID,
           STATION_ID,
           timestamp.toISOString(),
@@ -479,7 +471,7 @@ describe('MessageRouterImpl', () => {
 
       await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      expect(locationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
+      expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
         TENANT_ID,
         STATION_ID,
         timestamp.toISOString(),
@@ -487,7 +479,9 @@ describe('MessageRouterImpl', () => {
     });
 
     it('should not throw when updateChargingStationTimestamp fails', async () => {
-      locationRepository.updateChargingStationTimestamp.mockRejectedValue(new Error('db error'));
+      chargingStationRepository.updateChargingStationTimestamp.mockRejectedValue(
+        new Error('db error'),
+      );
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
       cache.exists.mockResolvedValue(false);
 
@@ -1057,7 +1051,7 @@ describe('MessageRouterImpl', () => {
         callbackUrlNotifier: notifier,
         networkHook,
         ocppValidator: undefined,
-        locationRepository,
+        chargingStationRepository,
       });
     }
 

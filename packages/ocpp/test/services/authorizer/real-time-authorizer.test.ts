@@ -17,7 +17,7 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
-    readChargingStationByStationId: vi.fn().mockResolvedValue(chargingStation),
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(chargingStation),
   } as unknown as Mocked<IChargingStationRepository>;
 }
 
@@ -65,7 +65,7 @@ describe('RealTimeAuthorizer', () => {
     const chargingStation = { locationId: null, evses: [] };
     const repo = buildMockLocationRepository(chargingStation);
     const authorizer = getTestInstance(container, RealTimeAuthorizer, {
-      locationRepository: repo,
+      chargingStationRepository: repo,
       config: {} as SystemConfig,
     });
 

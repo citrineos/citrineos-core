@@ -27,7 +27,7 @@ describe('InstallRootCertificateEndpoint', () => {
   let getFile: ReturnType<typeof vi.fn>;
   let getRootCACertificateFromExternalCA: ReturnType<typeof vi.fn>;
   let sendCall: ReturnType<typeof vi.fn>;
-  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
+  let readChargingStationByOcppConnectionName: ReturnType<typeof vi.fn>;
   let mounted: MountedEndpoint;
 
   beforeEach(async () => {
@@ -35,13 +35,15 @@ describe('InstallRootCertificateEndpoint', () => {
     getFile = vi.fn().mockResolvedValue(Buffer.from(A_PEM));
     getRootCACertificateFromExternalCA = vi.fn().mockResolvedValue(CA_PEM);
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
-    readChargingStationByStationId = vi.fn().mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
+    readChargingStationByOcppConnectionName = vi
+      .fn()
+      .mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
 
     const endpoint = getTestInstance(container, InstallRootCertificateEndpoint, {
       fileStorage: { getFile },
       ocppSender: { sendCall },
       certificateAuthorityService: { getRootCACertificateFromExternalCA },
-      locationRepository: { readChargingStationByStationId },
+      chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
     mounted = await mountEndpoint(endpoint, InstallRootCertificateEndpoint.route);
   });
@@ -85,7 +87,9 @@ describe('InstallRootCertificateEndpoint', () => {
   });
 
   it('sends using the protocol the station is recorded as speaking', async () => {
-    readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
+    readChargingStationByOcppConnectionName.mockResolvedValue({
+      protocol: OCPPVersion.OCPP2_1,
+    });
 
     await post(aBody());
 
@@ -93,7 +97,9 @@ describe('InstallRootCertificateEndpoint', () => {
   });
 
   it('refuses a station whose protocol cannot serve the request', async () => {
-    readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP1_6 });
+    readChargingStationByOcppConnectionName.mockResolvedValue({
+      protocol: OCPPVersion.OCPP1_6,
+    });
 
     const response = await post(aBody());
 
@@ -103,7 +109,7 @@ describe('InstallRootCertificateEndpoint', () => {
   });
 
   it('refuses a station that has never connected', async () => {
-    readChargingStationByStationId.mockResolvedValue(undefined);
+    readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
     const response = await post(aBody());
 

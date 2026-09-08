@@ -72,7 +72,7 @@ export class SequelizeLocationRepository
     });
   }
 
-  async readChargingStationByStationId(
+  async readChargingStationByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStation | undefined> {
@@ -122,7 +122,7 @@ export class SequelizeLocationRepository
     return station;
   }
 
-  async doesChargingStationExistByStationId(
+  async doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean> {
