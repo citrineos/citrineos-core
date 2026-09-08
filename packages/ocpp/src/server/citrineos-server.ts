@@ -44,6 +44,7 @@ import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 import { buildContainer } from './container.js';
 import { type HealthCheckResult, HealthCheckService } from './health-check-service.js';
+import { MessagesModule } from '@modules/messages/index.js';
 
 /** The container token needed to initialize a module in its own scope. */
 export interface ModuleInitSpec {
@@ -111,6 +112,7 @@ export class CitrineOSServer {
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
+  protected _messagesModule?: MessagesModule;
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
@@ -222,6 +224,7 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
+    await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
     await this.onInitialized();
@@ -488,6 +491,9 @@ export class CitrineOSServer {
     } else if (this.apiSpecs[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
       this.initApiInScope(this.apiSpecs[this.eventGroup]!.apiTokens);
+    } else if (this.eventGroup === EventGroup.Messages) {
+      // Log only because MessagesModule will be initialized by initMessagesModule()
+      this._logger.info('Initializing in MESSAGES mode: general frame processing only');
     } else {
       await this.initModule();
     }
@@ -505,6 +511,18 @@ export class CitrineOSServer {
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(this.networkApiTokens);
+  }
+
+  /**
+   * Starts the messages module, which consumes the `messages` exchange.
+   */
+  protected async initMessagesModule(): Promise<void> {
+    const shouldRun = this.eventGroup === EventGroup.Messages || this.eventGroup === EventGroup.All;
+    if (!shouldRun) return;
+
+    this._logger.info('Initializing messages module (general message processing)');
+    this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
+    await this._messagesModule.start();
   }
 
   protected async initAllModules() {

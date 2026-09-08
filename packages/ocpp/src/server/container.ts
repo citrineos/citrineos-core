@@ -76,7 +76,7 @@ import {
 } from '@modules/configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
 import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
-import { MessageRouterImpl, WebhookDispatcher } from '@modules/ocpp-router/index.js';
+import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
   InternalSmartCharging,
@@ -88,8 +88,8 @@ import { registerTransactionsServices, TransactionsModule } from '@modules/trans
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
   CertificateAuthorityService,
-  InstallCertificateHelperService,
   DeviceModelService,
+  InstallCertificateHelperService,
   NetworkProfileService,
   RealTimeAuthorizer,
 } from '@services/index.js';
@@ -107,6 +107,7 @@ import {
   WebsocketNetworkConnection,
 } from '@/transport/index.js';
 import { IdGenerator } from '@util/index.js';
+import { registerMessagesServices } from '@modules/messages/register.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -169,9 +170,11 @@ function registerModuleServices(container: AwilixContainer): void {
   registerConfigurationServices(container);
   registerEVDriverServices(container);
   registerMonitoringServices(container);
+  registerOcppRouterServices(container);
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);
+  registerMessagesServices(container);
 }
 
 // ============================================================
@@ -412,7 +415,6 @@ function registerNetwork(container: AwilixContainer): void {
     networkProfileFilter: asClass(NetworkProfileFilter).singleton(),
     basicAuthenticationFilter: asClass(BasicAuthenticationFilter).singleton(),
     authenticator: asClass(Authenticator).singleton(),
-    webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),
     adminApi: asClass(AdminApi).scoped(),
