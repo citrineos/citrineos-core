@@ -52,11 +52,13 @@ function eventDataColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const eventDataTable = pgTable(TableName.EventData, eventDataColumns(), (t) => [
-  index('event_data_ocpp_connection_name').on(t.ocppConnectionName),
+  index('event_data_station_id').on(t.ocppConnectionName),
   // Composite unique 'stationName_tenantId_eventId' (ocppConnectionName, tenantId).
-  uniqueIndex('event_data_station_name_tenant_id_event_id').on(t.ocppConnectionName, t.tenantId),
-  // Single-column unique 'stationName_eventId' (eventId) as declared on the model.
-  uniqueIndex('event_data_station_name_event_id').on(t.eventId),
+  uniqueIndex('event_data_stationName_tenantId_eventId').on(
+    t.ocppConnectionName,
+    t.tenantId,
+    t.eventId,
+  ),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
