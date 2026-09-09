@@ -12,7 +12,13 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import { Op, type WhereOptions } from 'sequelize';
-import { type ILocationDomainRepository } from '../repositories.js';
+import {
+  type IChargingStationRepository,
+  type IConnectorRepository,
+  type IEvseRepository,
+  type ILocationRepository,
+  type IStatusNotificationRepository,
+} from '../repositories.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
@@ -25,7 +31,12 @@ import { resolveStationId } from './resolve-station-id.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
-  implements ILocationDomainRepository
+  implements
+    ILocationRepository,
+    IChargingStationRepository,
+    IStatusNotificationRepository,
+    IConnectorRepository,
+    IEvseRepository
 {
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
