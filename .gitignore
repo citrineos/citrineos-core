@@ -59,3 +59,5 @@ out/
 
 # Generated certificate backup files
 **/certificates/*.pem.backup
+
+coverage/
