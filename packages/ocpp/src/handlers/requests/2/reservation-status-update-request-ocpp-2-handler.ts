@@ -49,27 +49,23 @@ export class ReservationStatusUpdateRequestOcpp2Handler extends AbstractHandler 
 
     try {
       const status = message.payload.reservationUpdateStatus as ReservationUpdateStatusEnumType;
-      const reservation = await this._reservationRepository.readOnlyOneByQuery(
+      const reservation = await this._reservationRepository.findByStationAndReservationId(
         message.context.tenantId,
-        {
-          where: {
-            tenantId: message.context.tenantId,
-            ocppConnectionName: message.context.ocppConnectionName,
-            id: message.payload.reservationId,
-          },
-        },
+        message.context.ocppConnectionName,
+        message.payload.reservationId,
       );
       if (reservation) {
         if (
           status === ReservationUpdateStatusEnum.Expired ||
           status === ReservationUpdateStatusEnum.Removed
         ) {
-          await this._reservationRepository.updateByKey(
+          await this._reservationRepository.updateByStationAndReservationId(
             message.context.tenantId,
+            message.context.ocppConnectionName,
+            message.payload.reservationId,
             {
               isActive: false,
             },
-            reservation.databaseId.toString(),
           );
         }
       } else {

@@ -31,12 +31,17 @@ export class StopTransaction extends Model implements StopTransactionDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @ForeignKey(() => Transaction)
   @Column({
     type: DataType.INTEGER,
-    unique: true,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
   })
   declare transactionDatabaseId: number;
+
+  @Column({
+    type: DataType.DATE,
+    unique: 'transactionDatabaseId_transactionCreatedAt',
+  })
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
@@ -76,6 +81,15 @@ export class StopTransaction extends Model implements StopTransactionDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolveTransactionCreatedAt(instance: StopTransaction): Promise<void> {
+    if (instance.transactionCreatedAt == null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+    }
+  }
 
   @BeforeUpdate
   @BeforeCreate
