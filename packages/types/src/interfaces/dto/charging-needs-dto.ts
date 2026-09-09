@@ -19,6 +19,7 @@ export const ChargingNeedsSchema = BaseSchema.extend({
   maxScheduleTuples: z.number().int().nullable().optional(),
   evseId: z.number().int(),
   transactionDatabaseId: z.number().int(),
+  transactionCreatedAt: z.date().optional(),
 });
 
 export const ChargingNeedsProps = ChargingNeedsSchema.keyof().enum;

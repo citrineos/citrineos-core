@@ -123,8 +123,8 @@ export function aConsumeMessage(override?: {
       exchange: 'test-exchange',
       routingKey: '',
       consumerTag: 'test-consumer',
-    } as unknown as amqplib.GetMessageFields,
-  } as unknown as amqplib.ConsumeMessage;
+    },
+  };
 }
 
 /**
@@ -164,6 +164,6 @@ export function aConsumeMessageWithPrefixedFields(override?: {
       exchange: 'test-exchange',
       routingKey: '',
       consumerTag: 'test-consumer',
-    } as unknown as amqplib.GetMessageFields,
-  } as unknown as amqplib.ConsumeMessage;
+    },
+  };
 }

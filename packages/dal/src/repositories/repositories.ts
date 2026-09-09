@@ -21,22 +21,23 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
-  StatusNotificationDto,
-  LocationDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  LocationDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
+  ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
+  StatusNotificationDto,
   SubscriptionDto,
   TariffDto,
   TenantDto,
@@ -68,7 +69,6 @@ import type { ChargingStationNetworkProfile } from '../models/location/charging-
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
-import type { Reservation } from '../models/reservation.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -87,6 +87,11 @@ export interface IAuthorizationRepository {
     query: AuthorizationQuerystring,
   ) => Promise<AuthorizationDto | undefined>;
   findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
+  updateByKey: (
+    tenantId: number,
+    value: object,
+    key: string,
+  ) => Promise<AuthorizationDto | undefined>;
 }
 
 /**
@@ -630,13 +635,25 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<number>;
 }
 
-export interface IReservationRepository extends CrudRepository<Reservation> {
+export interface IReservationRepository {
   createOrUpdateReservation(
     tenantId: number,
     reserveNowRequest: OCPP2_request_types.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
-  ): Promise<Reservation | undefined>;
+  ): Promise<ReservationDto | undefined>;
+  findByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+  ): Promise<ReservationDto | undefined>;
+  updateByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+    values: Partial<Pick<ReservationDto, 'isActive' | 'reserveStatus' | 'terminatedByTransaction'>>,
+  ): Promise<ReservationDto[]>;
+  getNextReservationId(tenantId: number, ocppConnectionName: string): Promise<number>;
 }
 
 export interface IOCPPMessageRepository {

@@ -74,14 +74,14 @@ export class DrizzleEvseRepository
     tenantId: number,
     ocppConnectionName: string | undefined,
     stationId: number | undefined,
-    ctx: DrizzleWriteContext,
+    ctx?: DrizzleWriteContext,
   ): Promise<number | undefined> {
     if (stationId != null || !ocppConnectionName) {
       return stationId;
     }
 
     const stations = this.getChargingStationTable(tenantId);
-    const rows = await ctx.db
+    const rows = await (ctx?.db ?? this.db)
       .select({ id: stations.id })
       .from(stations)
       .where(
@@ -178,12 +178,10 @@ export class DrizzleEvseRepository
   ): Promise<{ evseId: number }> {
     // OCPP 1.6 has no native EVSE concept. Conservative default: each connector maps
     // to its own Evse.
-    return await this.withAtomicWrite(async (ctx) => {
-      const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined, ctx);
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined);
 
-      const created = await this.insert(tenantId, { ocppConnectionName, stationId }, ctx);
+    const created = await this.insert(tenantId, { ocppConnectionName, stationId });
 
-      return { evseId: created.id! };
-    });
+    return { evseId: created.id! };
   }
 }
