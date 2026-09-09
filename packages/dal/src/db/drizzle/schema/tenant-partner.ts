@@ -13,8 +13,8 @@ import { type z } from 'zod';
 function tenantPartnerColumns() {
   return {
     id: serial('id').primaryKey(),
-    partyId: varchar('partyId', { length: 255 }),
-    countryCode: varchar('countryCode', { length: 255 }),
+    partyId: varchar('partyId', { length: 255 }).notNull(),
+    countryCode: varchar('countryCode', { length: 255 }).notNull(),
     partnerProfileOCPI: jsonb('partnerProfileOCPI').$type<PartnerProfile>(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
