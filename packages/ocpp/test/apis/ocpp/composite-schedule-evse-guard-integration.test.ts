@@ -109,7 +109,8 @@ describe('Asking a station for one of its EVSEs', () => {
     return getTestInstance(container, GetCompositeScheduleEndpoint, {
       ocppSender: { sendCall },
       deviceModelRepository,
-      locationRepository,
+      // SequelizeLocationRepository still satisfies IEvseRepository
+      evseRepository: locationRepository,
     }).handle(
       [ocppConnectionName],
       { duration: 60, evseId },
