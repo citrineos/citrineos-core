@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
-import { ChargingStationNetworkProfile, ServerNetworkProfile } from '@citrineos/dal';
+import type { IDeviceModelRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
+import { ChargingStationNetworkProfile } from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -16,16 +16,20 @@ import { UpgradeAuthenticationError } from './errors/authentication-error.js';
  */
 export class NetworkProfileFilter extends AuthenticatorFilter {
   private _deviceModelRepository: IDeviceModelRepository;
+  private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   constructor({
     deviceModelRepository,
+    serverNetworkProfileRepository,
     logger,
   }: {
     deviceModelRepository: IDeviceModelRepository;
+    serverNetworkProfileRepository: IServerNetworkProfileRepository;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
     this._deviceModelRepository = deviceModelRepository;
+    this._serverNetworkProfileRepository = serverNetworkProfileRepository;
   }
 
   protected shouldFilter(_options: AuthenticationOptions): boolean {
@@ -96,12 +100,13 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
               },
             });
             if (chargingStationNetworkProfile) {
-              const serverNetworkProfile = await ServerNetworkProfile.findOne({
-                where: {
-                  id: chargingStationNetworkProfile.websocketServerConfigId,
-                  tenantId,
-                },
-              });
+              const websocketServerConfigId = chargingStationNetworkProfile.websocketServerConfigId;
+              const serverNetworkProfile = websocketServerConfigId
+                ? await this._serverNetworkProfileRepository.findByProfileId(
+                    tenantId,
+                    websocketServerConfigId,
+                  )
+                : undefined;
               if (serverNetworkProfile && securityProfile >= serverNetworkProfile.securityProfile) {
                 this._logger.debug('Security profile allowed');
                 securityProfileAllowed = true;

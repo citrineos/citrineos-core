@@ -18,6 +18,8 @@ import {
   ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
+  SequelizeLocationRepository,
+  SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
   Tenant,
@@ -40,6 +42,7 @@ const PROFILE_ID = 'websocket-server-0';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -52,7 +55,7 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance({
+  config = {
     database: {
       host: pgContainer.getHost(),
       port: pgContainer.getMappedPort(5432),
@@ -66,7 +69,8 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as SystemConfig);
+  } as unknown as SystemConfig;
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
 }, 90_000);
@@ -150,7 +154,18 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
   });
 
   it('links the station to the request that was sent to it', async () => {
-    const handler = getTestInstance(container, SetNetworkProfileResponseOcpp2Handler, {});
+    const handler = getTestInstance(container, SetNetworkProfileResponseOcpp2Handler, {
+      serverNetworkProfileRepository: new SequelizeServerNetworkProfileRepository({
+        config,
+        logger: undefined,
+        sequelizeInstance,
+      } as never),
+      chargingStationRepository: new SequelizeLocationRepository({
+        config,
+        logger: undefined,
+        sequelizeInstance,
+      } as never),
+    });
 
     await handler.handle(aResponse(STATION_B));
 

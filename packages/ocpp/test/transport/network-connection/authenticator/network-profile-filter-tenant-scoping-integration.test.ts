@@ -9,6 +9,7 @@ import {
   ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
+  SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
   Tenant,
@@ -35,6 +36,7 @@ const CONFIGURATION_SLOT = 1;
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -47,7 +49,7 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  const dbConfig = {
+  config = {
     database: {
       host: pgContainer.getHost(),
       port: pgContainer.getMappedPort(5432),
@@ -63,7 +65,7 @@ beforeAll(async () => {
     },
   } as unknown as SystemConfig;
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
 }, 90_000);
@@ -90,8 +92,15 @@ function aFilter(): TestNetworkProfileFilter {
     readAllByQuerystring: vi.fn().mockResolvedValue([{ value: String(CONFIGURATION_SLOT) }]),
   } as unknown as IDeviceModelRepository;
 
+  const serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+
   return new TestNetworkProfileFilter({
     deviceModelRepository,
+    serverNetworkProfileRepository,
     logger: new Logger({ type: 'hidden' }),
   });
 }
