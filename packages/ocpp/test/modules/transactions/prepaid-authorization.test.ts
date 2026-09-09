@@ -62,6 +62,7 @@ describe('C17 - Prepaid Card Authorization', () => {
     transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
       authorizationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       reservationRepository,
       ocppMessageRepository,

@@ -9,7 +9,7 @@ import {
   type IMessageEndpointMetadata,
   type IOcppSender,
 } from '@citrineos/base';
-import type { IDeviceModelRepository, ILocationDomainRepository } from '@citrineos/dal';
+import type { IDeviceModelRepository, IEvseRepository } from '@citrineos/dal';
 import {
   EventGroup,
   OCPP_CallAction,
@@ -22,7 +22,7 @@ import { readChargingRateUnitMemberList } from './charging-rate-units.js';
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelRepository: IDeviceModelRepository;
-  locationRepository: ILocationDomainRepository;
+  evseRepository: IEvseRepository;
 }
 
 export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
@@ -35,13 +35,13 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelRepository: IDeviceModelRepository;
-  private readonly _locationRepository: ILocationDomainRepository;
+  private readonly _evseRepository: IEvseRepository;
 
-  constructor({ logger, ocppSender, deviceModelRepository, locationRepository }: Dependencies) {
+  constructor({ logger, ocppSender, deviceModelRepository, evseRepository }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._deviceModelRepository = deviceModelRepository;
-    this._locationRepository = locationRepository;
+    this._evseRepository = evseRepository;
   }
 
   async handle(
@@ -54,7 +54,7 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
     return Promise.all(
       identifiers.map(async (ocppConnectionName) => {
         if (request.evseId !== 0) {
-          const evse = await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          const evse = await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             ocppConnectionName,
             request.evseId,

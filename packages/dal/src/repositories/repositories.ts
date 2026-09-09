@@ -11,6 +11,8 @@ import type {
   CertificateCreate,
   CertificateDto,
   CertificateUseEnumType,
+  ChangeConfigurationCreate,
+  ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
@@ -52,7 +54,6 @@ import type {
 } from '../mappers/2.0.1/charging-profile-mapper.js';
 import type { LocalListVersion } from '../models/authorization/local-list-version.js';
 import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type { ChangeConfiguration } from '../models/change-configuration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
@@ -67,7 +68,6 @@ import type { VariableCharacteristics } from '../models/device-model/variable-ch
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Connector } from '../models/location/connector.js';
-import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
@@ -314,7 +314,7 @@ export interface IEvseRepository {
     tenantId: number,
     ocppConnectionName: string,
     ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
+  ) => Promise<EvseDto | undefined>;
   createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
   autoCommissionEvseForOcpp16Connector(
     tenantId: number,
@@ -709,11 +709,17 @@ export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkP
   createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
 }
 
-export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+export interface IChangeConfigurationRepository {
+  findByStationAndKey(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<ChangeConfigurationDto | undefined>;
+  listByStation(tenantId: number, ocppConnectionName: string): Promise<ChangeConfigurationDto[]>;
   createOrUpdateChangeConfiguration(
     tenantId: number,
-    configuration: ChangeConfiguration,
-  ): Promise<ChangeConfiguration | undefined>;
+    input: ChangeConfigurationCreate,
+  ): Promise<ChangeConfigurationDto | undefined>;
 }
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;

@@ -34,7 +34,8 @@ import { Logger } from 'tslog';
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizationRepository: IAuthorizationRepository;
-  private _locationRepository: IConnectorRepository & IEvseRepository;
+  private _evseRepository: IEvseRepository;
+  private _locationRepository: IConnectorRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -43,6 +44,7 @@ export class TransactionService {
   constructor({
     transactionEventRepository,
     authorizationRepository,
+    evseRepository,
     locationRepository,
     reservationRepository,
     ocppMessageRepository,
@@ -52,7 +54,8 @@ export class TransactionService {
   }: {
     transactionEventRepository: ITransactionEventRepository;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: IConnectorRepository & IEvseRepository;
+    evseRepository: IEvseRepository;
+    locationRepository: IConnectorRepository;
     reservationRepository: IReservationRepository;
     ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
@@ -61,6 +64,7 @@ export class TransactionService {
   }) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizationRepository = authorizationRepository;
+    this._evseRepository = evseRepository;
     this._locationRepository = locationRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
@@ -165,7 +169,7 @@ export class TransactionService {
         }
         evse =
           connector?.evse ??
-          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          (await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse.id,
@@ -247,7 +251,7 @@ export class TransactionService {
         }
         evse =
           connector?.evse ??
-          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          (await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse.id,
