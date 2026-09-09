@@ -7,7 +7,8 @@ import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
 } from '@citrineos/dal';
-import { ChangeConfiguration, LocalListVersion, SendLocalList } from '@citrineos/dal';
+import { LocalListVersion, SendLocalList } from '@citrineos/dal';
+import type { ChangeConfigurationDto } from '@citrineos/types';
 import { LocalAuthListService } from '@modules/ev-driver/local-auth-list-service.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP1_6 } from '@citrineos/types';
@@ -45,10 +46,12 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
     } as unknown as Mocked<IDeviceModelRepository>;
 
     changeConfigurationRepository = {
-      readOnlyOneByQuery: vi.fn(async (_tenantId: number, query: { where: { key: string } }) => {
-        const value = configuration[query.where.key];
-        return value === undefined ? undefined : ({ value } as ChangeConfiguration);
-      }),
+      findByStationAndKey: vi.fn(
+        async (_tenantId: number, _ocppConnectionName: string, key: string) => {
+          const value = configuration[key];
+          return value === undefined ? undefined : ({ value } as ChangeConfigurationDto);
+        },
+      ),
     } as unknown as Mocked<IChangeConfigurationRepository>;
 
     service = getTestInstance(container, LocalAuthListService, {
