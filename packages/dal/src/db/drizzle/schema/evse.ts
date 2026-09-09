@@ -42,7 +42,7 @@ function evseColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const evseTable = pgTable(TableName.Evses, evseColumns(), (t) => [
-  uniqueIndex('evses_station_id_evse_type_id').on(t.stationId, t.evseTypeId),
+  uniqueIndex('stationId_evseTypeId').on(t.stationId, t.evseTypeId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
