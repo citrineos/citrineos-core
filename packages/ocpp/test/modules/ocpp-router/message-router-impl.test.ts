@@ -1014,6 +1014,39 @@ describe('MessageRouterImpl', () => {
       expect(recorded(sink, 'frame').some((e: any) => e.direction === 'outbound')).toBe(true);
     });
 
+    it.each([
+      ['ocpp2.0.1', 8.1, 22.5],
+      ['ocpp2.1', 8.123456, 22.55],
+    ])('truncates a charging rate to what a %s station accepts', async (protocol, rate, limit) => {
+      cache.get.mockResolvedValue(null);
+      const setChargingProfile = {
+        evseId: 1,
+        chargingProfile: {
+          chargingSchedule: [
+            {
+              id: 1,
+              minChargingRate: 8.1234567,
+              chargingSchedulePeriod: [{ startPeriod: 0, limit: 22.55 }],
+            },
+          ],
+        },
+      } as unknown as OcppRequest;
+
+      await router.sendCall(
+        STATION_ID,
+        TENANT_ID,
+        protocol as typeof PROTOCOL,
+        OCPP_CallAction.SetChargingProfile,
+        setChargingProfile,
+        CORRELATION_ID,
+      );
+
+      const schedule = JSON.parse(networkHook.mock.calls[0][1])[3].chargingProfile
+        .chargingSchedule[0];
+      expect(schedule.minChargingRate).toBe(rate);
+      expect(schedule.chargingSchedulePeriod[0].limit).toBe(limit);
+    });
+
     it('should set cache entry with correlationId key and action@timestamp value', async () => {
       cache.get.mockResolvedValue(null);
 
