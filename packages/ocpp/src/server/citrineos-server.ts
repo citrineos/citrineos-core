@@ -262,6 +262,11 @@ export class CitrineOSServer {
     this._logger.info('Closing PostgreSQL connections...');
     await this._sequelizeInstance.connectionManager.close();
 
+    if (this._messagesModule) {
+      this._logger.info('Closing Messages module...');
+      await this._messagesModule.shutdown();
+    }
+
     await this.onShutdown();
 
     this._logger.info('Shutdown complete');

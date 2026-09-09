@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  AbstractMessageSender,
   type IMessage,
   type IMessageConfirmation,
   type IMessageSender,
-  AbstractMessageSender,
   OcppError,
 } from '@citrineos/base';
-import { type OcppRequest, type OcppResponse, MessageState } from '@citrineos/types';
+import { MessageState, type OcppRequest, type OcppResponse } from '@citrineos/types';
 import { instanceToPlain } from 'class-transformer';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -119,24 +119,29 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
 
     this._logger.debug(`Publishing to ${this.exchange}:`, message);
 
-    const success = channel.publish(
-      this.exchange || '',
-      '',
-      Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'),
-      {
-        contentEncoding: 'utf-8',
-        contentType: 'application/json',
-        headers: {
-          origin: message.origin.toString(),
-          eventGroup: message.eventGroup.toString(),
-          action: message.action.toString(),
-          state: message.state.toString(),
-          ...message.context,
-          tenantId: message.context.tenantId.toString(),
+    try {
+      const success = channel.publish(
+        this.exchange || '',
+        '',
+        Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'),
+        {
+          contentEncoding: 'utf-8',
+          contentType: 'application/json',
+          headers: {
+            origin: message.origin.toString(),
+            eventGroup: message.eventGroup.toString(),
+            action: message.action.toString(),
+            state: message.state.toString(),
+            ...message.context,
+            tenantId: message.context.tenantId.toString(),
+          },
         },
-      },
-    );
-    return { success };
+      );
+      return { success };
+    } catch (error) {
+      this._logger.error('Failed to publish message:', error);
+      return { success: false, payload: (error as Error).message };
+    }
   }
 
   /**
