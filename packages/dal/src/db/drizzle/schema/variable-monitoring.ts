@@ -51,12 +51,12 @@ export const variableMonitoringTable = pgTable(
   TableName.VariableMonitorings,
   variableMonitoringColumns(),
   (t) => [
-    index('variable_monitorings_ocpp_connection_name').on(t.ocppConnectionName),
+    index('variable_monitorings_station_id').on(t.ocppConnectionName),
     // Composite unique 'stationName_tenantId_Id' (ocppConnectionName, id, tenantId).
-    uniqueIndex('variable_monitorings_station_name_tenant_id_id').on(
+    uniqueIndex('VariableMonitorings_stationName_tenantId_id').on(
       t.ocppConnectionName,
-      t.id,
       t.tenantId,
+      t.id,
     ),
   ],
 );
