@@ -98,7 +98,16 @@ export class DrizzleMessageInfoRepository
     };
 
     if (existing[0]) {
-      return (await this.updateById(tenantId, existing[0].databaseId, values))!;
+      // Update by the real primary key. base.updateById filters on `table.id`, but this
+      // table's PK is `databaseId` (`id` is the OCPP message id), so it cannot be used here.
+      const [row] = (await this.db
+        .update(table)
+        .set(values)
+        .where(eq(table.databaseId, existing[0].databaseId))
+        .returning()) as MessageInfoEntity[];
+      const dto = this.toDto(row);
+      this.emit('updated', [dto]);
+      return dto;
     }
     return this.insert(tenantId, values);
   }
