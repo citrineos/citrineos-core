@@ -704,7 +704,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
    * @return {void} This function does not return anything.
    */
   private _onMessage(identifier: string, message: string, protocol: OCPPVersionType): void {
-    this._router.onMessage(identifier, message, new Date(), protocol);
+    this._router.onMessage(identifier, message, new Date(), protocol).catch((err) => {
+      this._connLogger(identifier).error(`Unhandled error routing message for ${identifier}:`, err);
+    });
   }
 
   private async _handleWebsocketClose(

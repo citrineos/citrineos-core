@@ -31,6 +31,13 @@ import { buildTestEnv, setup } from '../utils/containers/setup.js';
 import { connectOcpp, sendCall } from '../utils/containers/ocpp-websocket-provider.js';
 import { killServer, spawnServer } from '../utils/containers/server.js';
 
+process.on('uncaughtException', (err) => {
+  console.error('!!! uncaughtException !!!', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('!!! unhandledRejection !!!', reason);
+});
+
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
 let containers: StartedTestContainer[];
@@ -44,7 +51,7 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  await Promise.allSettled(containers.map((c) => c.stop()));
+  await Promise.allSettled((containers ?? []).map((c) => c.stop()));
 });
 
 // ─── Test scenarios ───────────────────────────────────────────────────────────

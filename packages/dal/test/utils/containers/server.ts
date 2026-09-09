@@ -3,7 +3,7 @@ import { type ChildProcess, spawn } from 'child_process';
 import { HTTP_PORT } from './ports.js';
 
 const SERVER_DIST = fileURLToPath(
-  new URL('../../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
+  new URL('../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
 );
 
 export async function spawnServer(

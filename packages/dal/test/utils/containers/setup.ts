@@ -19,7 +19,7 @@ import { WS_PORT } from './ports.js';
 export const TEMP_DIR = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
 
 export const SERVER_ROOT = fileURLToPath(
-  new URL('../../../../../../apps/ocpp-server/', import.meta.url),
+  new URL('../../../../../apps/ocpp-server/', import.meta.url),
 );
 
 export const SERVER_ASSETS_DIR = join(SERVER_ROOT, 'src', 'assets');
@@ -114,7 +114,7 @@ export const setup = async () => {
 
   writeWebsocketServersConfig();
 
-  execSync('pnpm run db:migrate', {
+  execSync('pnpm db:migrate', {
     cwd: SERVER_ROOT,
     env: buildTestEnv(pgPort),
     stdio: 'inherit',
