@@ -695,6 +695,7 @@ export interface IServerNetworkProfileRepository {
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
   ): Promise<ServerNetworkProfileDto>;
+  findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
 export interface IChargingStationNetworkProfileRepository

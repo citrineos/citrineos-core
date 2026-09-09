@@ -43,6 +43,13 @@ export class SequelizeServerNetworkProfileRepository
     await serverNetworkProfile.save();
     return serverNetworkProfile;
   }
+
+  /**
+   * Reads a single ServerNetworkProfile by its id, scoped to the tenant.
+   */
+  async findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfile | undefined> {
+    return (await ServerNetworkProfile.findOne({ where: { id, tenantId } })) ?? undefined;
+  }
 }
 
 export default SequelizeServerNetworkProfileRepository;
