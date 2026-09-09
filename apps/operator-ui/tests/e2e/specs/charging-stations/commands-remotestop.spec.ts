@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
-// Source contract (charging.station.detail.card.tsx:471-482):
+// Source contract (charging-station-detail-card.tsx:471-482):
 // StopTransactionButton only renders when hasActiveTransactions === true.
 // Specs that exercise the modal therefore seed a transaction first via the
 // seededTransaction fixture; specs that only verify the gating behaviour

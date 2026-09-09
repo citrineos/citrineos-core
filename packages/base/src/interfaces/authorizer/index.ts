@@ -8,7 +8,7 @@ import type {
   ConnectorDto,
   EvseDto,
 } from '@citrineos/types';
-import type { IMessageContext } from '@interfaces/messages/MessageContext.js';
+import type { IMessageContext } from '@interfaces/messages/message-context.js';
 
 export interface IAuthorizer {
   /**

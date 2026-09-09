@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { PartnersListPage } from '../../pages/partners/list.page';
-import { PartnerFormPage } from '../../pages/partners/form.page';
+import { PartnersListPage } from '../../pages/partners/list-page';
+import { PartnerFormPage } from '../../pages/partners/form-page';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -19,16 +19,23 @@ test.describe('partners › register', () => {
     page,
     apiClient,
   }) => {
+    // ZZ is the ISO user-assigned country code, so these rows can never be
+    // confused with real partners, and purgeAllE2eRows sweeps ZZ leftovers.
+    // The party id is random per attempt: a fixed pair used to collide with
+    // the row a failed first attempt left behind, turning every CI retry red.
+    const partyId = Array.from({ length: 3 }, () =>
+      String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+    ).join('');
     const form = new PartnerFormPage(page);
     await form.gotoNew();
     await form.fill({
-      countryCode: 'US',
-      partyId: 'XYZ',
+      countryCode: 'ZZ',
+      partyId,
       versionsUrl: 'https://example.invalid/ocpi/2.2/versions',
       clientToken: 'e2e-client-token',
     });
     await form.submit();
-    // KNOWN-DRIFT: src/lib/client/pages/partners/upsert/partners.upsert.tsx
+    // KNOWN-DRIFT: src/lib/client/pages/partners/upsert/partners-upsert.tsx
     // post-create redirects to /authorizations/:id (apparent copy-paste
     // bug). Spec asserts the success toast only — redirect target
     // verification deferred until src is fixed.
@@ -36,11 +43,12 @@ test.describe('partners › register', () => {
     // Cleanup: delete the partner row directly.
     await apiClient
       .gql(
-        `mutation Cleanup {
-           delete_TenantPartners(where: { partyId: { _eq: "XYZ" }, countryCode: { _eq: "US" } }) {
+        `mutation Cleanup($partyId: String!) {
+           delete_TenantPartners(where: { partyId: { _eq: $partyId }, countryCode: { _eq: "ZZ" } }) {
              affected_rows
            }
          }`,
+        { partyId },
       )
       .catch(() => undefined);
   });

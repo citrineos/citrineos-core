@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -55,9 +55,8 @@ test.describe('charging-stations › RemoteStart command', () => {
     const modal = new ModalHarness(page, /(remote start|start transaction)/i);
     await modal.expectOpen();
 
-    await modal.submitButton.click();
     // The id token textbox is required; client-side validation rejects the
     // empty submit before the command reaches the OCPP backend.
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.expectBlockedSubmit();
   });
 });

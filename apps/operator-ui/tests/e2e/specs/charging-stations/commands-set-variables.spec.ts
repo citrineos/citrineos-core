@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -39,9 +39,8 @@ test.describe('charging-stations › SetVariables command', () => {
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const modal = new ModalHarness(page, /set variables/i);
     await modal.expectOpen();
-    await modal.submitButton.click();
     // Component + Variable + AttributeValue in the field-array row are
     // required; the form blocks dispatch and keeps the modal mounted.
-    await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+    await modal.expectBlockedSubmit();
   });
 });

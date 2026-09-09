@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import { resolve } from 'node:path';
 
-dotenv.config({ path: resolve(__dirname, '.env.test'), override: true });
+dotenv.config({ path: resolve(__dirname, '.env.test') });
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const isCI = !!process.env.CI;
@@ -22,15 +22,20 @@ export default defineConfig({
   testDir: './tests/e2e/specs',
   outputDir: './test-results',
 
-  fullyParallel: true,
+  // File-level parallelism: tests within a file stay sequential, so
+  // same-file tests can never race each other's rows.
+  fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  // workers=1 because the Next.js dev server serves all routes through a
-  // single compiler instance; under workers > 1 the parametric harness
-  // intermittently leaves Refine `useOne(ChargingStations_by_pk)` queries
-  // hanging while the dev server is stuck in a re-compile loop. Sequential
-  // route compilation eliminates the flake at the cost of wall-clock time.
-  workers: 1,
+  // A retry-rescued test still fails the job on CI. Green-with-a-flaky-
+  // annotation is how E2E-071 stayed invisible for weeks — the retry remains
+  // as diagnostics (trace/video of both attempts), not as absolution.
+  failOnFlakyTests: isCI,
+  // CI runs a production `next start` (managed-server), so the old dev-mode
+  // recompile-loop hazard doesn't apply there — 3 workers share the 4-vCPU
+  // runner with the docker stack. Local default stays 1: `next dev` compiles
+  // routes on demand and does not take concurrency well.
+  workers: process.env.E2E_WORKERS ? Number(process.env.E2E_WORKERS) : isCI ? 3 : 1,
 
   // 150s default test timeout: expectLoaded budgets up to 90s for cold-route
   // Next.js compilation + the useOne(ChargingStation) query under heavy
@@ -43,7 +48,11 @@ export default defineConfig({
   globalTeardown: './tests/e2e/auth/global-teardown.ts',
 
   expect: {
-    timeout: 10_000,
+    // Default for every assertion that doesn't pass its own timeout. Most of
+    // the suite asserts on query-bound UI (Refine + Hasura round trips), and
+    // under CI load 10s was regularly too tight — genuinely slow spots get an
+    // explicit 60s at the call site instead.
+    timeout: 30_000,
   },
 
   use: {
@@ -52,7 +61,9 @@ export default defineConfig({
     navigationTimeout: 30_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // retain-on-failure records every test and discards on pass — several
+    // concurrent encoders don't fit the runner alongside the stack.
+    video: 'on-first-retry',
     locale: 'en-US',
     timezoneId: 'UTC',
     viewport: { width: 1440, height: 900 },

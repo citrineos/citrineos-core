@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 import {
   deleteLocation,
   deleteStation,
@@ -50,9 +50,8 @@ test.describe('charging-stations › Change Availability + Configuration', () =>
       await detail.commandBar.openViaOtherCommands(/change configuration/i);
       const modal = new ModalHarness(page, /change configuration/i);
       await modal.expectOpen();
-      await modal.submitButton.click();
       // Required Key field is empty — validation keeps the modal mounted.
-      await expect(modal.dialog).toBeVisible({ timeout: 5_000 });
+      await modal.expectBlockedSubmit();
     } finally {
       await deleteStation(apiClient, station.id).catch(() => undefined);
       await deleteLocation(apiClient, location.id).catch(() => undefined);

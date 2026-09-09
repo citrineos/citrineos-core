@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { AuthorizationsListPage } from '../../pages/authorizations/list.page';
-import { AuthorizationFormPage } from '../../pages/authorizations/form.page';
+import { AuthorizationsListPage } from '../../pages/authorizations/list-page';
+import { AuthorizationFormPage } from '../../pages/authorizations/form-page';
 import { deleteAuthorization } from '../../fixtures/seeded-data';
 import { shortId } from '../../utils/random';
 
@@ -34,6 +34,9 @@ test.describe('authorizations › CRUD', () => {
 
     const list = new AuthorizationsListPage(page);
     await list.goto();
+    // The list sorts idToken ascending with 10 rows per page — search first
+    // so other rows can't paginate ours away.
+    await list.searchInput.fill(idToken);
     await expect(list.rowByIdToken(idToken)).toBeVisible({ timeout: 30_000 });
 
     // Cleanup.

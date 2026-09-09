@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 // Core-profile OCPP 2.0.1 commands that the EVerest manager answers with a
 // real CALLRESULT. These move from open-and-cancel smoke (parametric harness)
@@ -15,7 +15,7 @@ import { ModalHarness } from '../../pages/components/modal.po';
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
 test.describe('charging-stations › deep command ACKs @everest', () => {
-  test('E2E-093: ClearCache submits and is acknowledged @everest', async ({
+  test('E2E-153: ClearCache submits and is acknowledged @everest', async ({
     page,
     everestStation,
   }) => {
@@ -27,7 +27,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     await modal.submitAndWaitForToast();
   });
 
-  test('E2E-094: GetBaseReport submits and is acknowledged @everest', async ({
+  test('E2E-154: GetBaseReport submits and is acknowledged @everest', async ({
     page,
     everestStation,
   }) => {
@@ -40,7 +40,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     await modal.submitAndWaitForToast();
   });
 
-  test('E2E-095: GetTransactionStatus submits and is acknowledged @everest', async ({
+  test('E2E-155: GetTransactionStatus submits and is acknowledged @everest', async ({
     page,
     everestStation,
   }) => {

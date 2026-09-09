@@ -85,6 +85,17 @@ export function createLocalOcpiConfig(): OcpiConfigInput {
           process.env.COMMANDS_OCPP2_0_1_UNLOCK_CONNECTOR_REQUEST_URL ||
           'http://localhost:8080/ocpp/2.0.1/evdriver/unlockConnector',
       },
+      ocpp2_1: {
+        requestStartTransactionRequestUrl:
+          process.env.COMMANDS_OCPP2_1_REQUEST_START_TRANSACTION_REQUEST_URL ||
+          'http://localhost:8080/ocpp/2.1/evdriver/requestStartTransaction',
+        requestStopTransactionRequestUrl:
+          process.env.COMMANDS_OCPP2_1_REQUEST_STOP_TRANSACTION_REQUEST_URL ||
+          'http://localhost:8080/ocpp/2.1/evdriver/requestStopTransaction',
+        unlockConnectorRequestUrl:
+          process.env.COMMANDS_OCPP2_1_UNLOCK_CONNECTOR_REQUEST_URL ||
+          'http://localhost:8080/ocpp/2.1/evdriver/unlockConnector',
+      },
     },
 
     messageBroker: {

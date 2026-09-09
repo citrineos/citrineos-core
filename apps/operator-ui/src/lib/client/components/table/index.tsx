@@ -12,7 +12,7 @@ import {
   TableRow,
   Table as TableUi,
 } from '@lib/client/components/ui/table';
-import { DeleteProvider } from '@lib/providers/table/deleteProvider';
+import { DeleteProvider } from '@lib/providers/table/delete-provider';
 import { type PopoverContentProps } from '@radix-ui/react-popover';
 import { type BaseOption, type BaseRecord, type HttpError, useTranslate } from '@refinedev/core';
 import { type UseTableProps, type UseTableReturnType, useTable } from '@refinedev/react-table';
@@ -58,7 +58,7 @@ import { parseAsJson, useQueryState } from 'nuqs';
 import { TableQueryStateSchema } from '@lib/client/components/table/fields/table-query-state';
 import { isNullOrUndefined } from '@lib/utils/assertion';
 import { useSelector } from 'react-redux';
-import { getPageSizePreference } from '@lib/utils/store/table.preferences.slice';
+import { getPageSizePreference } from '@lib/utils/store/table-preferences-slice';
 import { DEFAULT_TABLE_STATE } from '@lib/utils/consts';
 
 export type TableListFilterOption = BaseOption & {
@@ -114,6 +114,7 @@ export type TableProps<
     expandedRowClassName?: string | ((record: TData) => string);
   };
   rowClassName?: string | ((record: TData, index: number) => string);
+  onRowClick?: (record: TData) => void;
   showToolbar?: boolean;
   // specific key to track query state with nuqs
   tableStateKey?: string;
@@ -129,6 +130,7 @@ export function Table<
   columns = [],
   expandable,
   rowClassName,
+  onRowClick,
   useClientData = false,
   showToolbar = false,
   tableStateKey = DEFAULT_TABLE_STATE,
@@ -315,8 +317,11 @@ export function Table<
                 <React.Fragment key={row.id}>
                   <TableRow
                     data-state={row.getIsSelected() && 'selected'}
-                    className={getRowClassNames(row.original, index)}
+                    className={`${getRowClassNames(row.original, index)} ${
+                      onRowClick ? 'cursor-pointer' : ''
+                    }`}
                     id={`table-row-${index}`}
+                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   >
                     {row.getVisibleCells().map((cell: any) => (
                       <TableCell key={cell.id} className="text-nowrap">

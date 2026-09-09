@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { TransactionsListPage } from '../../pages/transactions/list.page';
+import { TransactionsListPage } from '../../pages/transactions/list-page';
 import {
   deleteTransaction,
   deleteStation,
@@ -30,7 +30,7 @@ test.describe('transactions › list', () => {
   }) => {
     // Decoy on a different station so the filter has something to exclude.
     const decoyStation = await seedStation(apiClient, seededLocation.id, {
-      ocppConnectionName: `e2e-${shortId()}-decoy-cp`,
+      ocppConnectionName: `${shortId()}-decoy-cp`,
     });
     const decoyTxn = await seedTransaction(apiClient, decoyStation.ocppConnectionName);
 

@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { MeterValueUtils } from './MeterValueUtils.js';
+export { MeterValueUtils } from './meter-value-utils.js';
 export { RequestBuilder } from './request.js';
 export { assert, notNull } from './assertion.js';
+export { serializeError } from './errors.js';
 export {
-  PATH_DELIMITER,
   IDENTIFIER_DELIMITER,
   createIdentifier,
-  getCacheTenantPathMappingKey,
   getTenantIdFromIdentifier,
   getStationIdFromIdentifier,
 } from './identifiers.js';

@@ -4,15 +4,15 @@
 'use client';
 
 import type { LocationDto } from '@citrineos/types';
-import { MapMarkerComponent } from '@lib/client/components/map/map.marker';
-import { ClusterIcon } from '@lib/client/components/map/marker.icons';
+import { MapMarkerComponent } from '@lib/client/components/map/map-marker';
+import { ClusterIcon } from '@lib/client/components/map/marker-icons';
 import type {
   ClusterInfo,
   LocationGroup,
   MapMarkerData,
   MapProps,
 } from '@lib/client/components/map/types';
-import { ActionType, ResourceType } from '@lib/utils/access.types';
+import { ActionType, ResourceType } from '@lib/utils/access-types';
 import config from '@lib/utils/config';
 import { CanAccess } from '@refinedev/core';
 import {
@@ -25,8 +25,8 @@ import {
 } from '@vis.gl/react-google-maps';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getGoogleMapsApiKey, setGoogleMapsApiKey } from '@lib/utils/store/maps.slice';
-import { getGoogleMapsApiKeyAction } from '@lib/server/actions/map/getGoogleMapsApiKeyAction';
+import { getGoogleMapsApiKey, setGoogleMapsApiKey } from '@lib/utils/store/maps-slice';
+import { getGoogleMapsApiKeyAction } from '@lib/server/actions/map/get-google-maps-api-key-action';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
 
 // https://visgl.github.io/react-google-maps/docs/api-reference/components/map#camera-control

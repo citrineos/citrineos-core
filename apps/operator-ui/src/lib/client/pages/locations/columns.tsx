@@ -5,13 +5,13 @@
 
 import React from 'react';
 import { LocationProps, type LocationDto, ChargingStationProps } from '@citrineos/types';
-import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { getFullAddress } from '@lib/utils/geocoding';
 import { ChevronDownIcon } from 'lucide-react';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import type { CellContext } from '@tanstack/react-table';
-import { ACTIONS_COLUMN } from '@lib/client/hooks/useColumnPreferences';
+import { ACTIONS_COLUMN } from '@lib/client/hooks/use-column-preferences';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 import { badgeListStyle } from '@lib/client/styles/page';
 import { isEmpty } from '@lib/utils/assertion';
@@ -203,7 +203,7 @@ export const getLocationFilters = (
       },
       {
         ChargingStations: {
-          [ChargingStationProps.id]: {
+          [ChargingStationProps.ocppConnectionName]: {
             _ilike: filterValue,
           },
         },
@@ -215,7 +215,7 @@ export const getLocationFilters = (
   const chargingStationsFilter = {
     _or: [
       {
-        [ChargingStationProps.id]: {
+        [ChargingStationProps.ocppConnectionName]: {
           _ilike: filterValue,
         },
       },

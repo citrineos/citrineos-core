@@ -1,0 +1,16 @@
+{
+  "name": "preregistered",
+  "registration": "preregistered",
+  "authorize": {
+    "default": "ALLOWED"
+  },
+  "faults": [],
+  "strictInbound": false,
+  "expect": [
+    {
+      "on": "versions.details",
+      "assert": "validation.ok == true",
+      "detail": "Citrine's version-details fetch (during any re-handshake) parses cleanly against VersionDetailsDTOSchema."
+    }
+  ]
+}

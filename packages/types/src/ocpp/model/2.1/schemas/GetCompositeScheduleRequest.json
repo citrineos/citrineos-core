@@ -38,7 +38,7 @@
     "evseId": {
       "description": "The ID of the EVSE for which the schedule is requested. When evseid=0, the Charging Station will calculate the expected consumption for the grid connection.\r\n",
       "type": "integer",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 2147483647
     },
     "customData": {

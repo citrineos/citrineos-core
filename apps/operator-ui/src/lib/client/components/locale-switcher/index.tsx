@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from '@lib/client/components/ui/tooltip';
 import { sidebarIconSize } from '@lib/client/styles/icon';
-import { setUserLocale } from '@lib/server/hooks/getUserLocale';
+import { setUserLocale } from '@lib/server/hooks/get-user-locale';
 import { LOCALES } from '@lib/utils/consts';
 import { Languages } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';

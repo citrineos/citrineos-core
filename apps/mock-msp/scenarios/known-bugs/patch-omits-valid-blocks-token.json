@@ -1,0 +1,15 @@
+{
+  "name": "patch-omits-valid-blocks-token",
+  "registration": "preregistered",
+  "authorize": {
+    "default": "ALLOWED"
+  },
+  "strictInbound": false,
+  "expect": [
+    {
+      "on": "tokens.patch",
+      "assert": "response.httpStatus == 200",
+      "detail": "Known Citrine bug: a legal partial tokens PATCH that omits `valid` (e.g. only updating language) is ACCEPTED (1000) — but TokensMapper maps the absent `valid` to status Invalid and TokensService applies it unconditionally, silently blocking the token. Repro: POST /_mock/emit/token (push), then POST /_mock/emit/token-patch {\"patch\":{\"language\":\"en\"}}, then POST /_mock/verify/token — the readback serves valid:false although we never sent valid, and the drift report flags field `valid` with isKnownCitrineBug. Side effect is REAL: that token is now blocked in Citrine's DB — re-push the same uid to restore it."
+    }
+  ]
+}

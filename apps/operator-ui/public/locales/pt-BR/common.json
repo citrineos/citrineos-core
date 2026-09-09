@@ -311,11 +311,5 @@
       "light": "Claro",
       "mode": "Modo"
     }
-  },
-  "telemetryConsentModal": {
-    "title": "Consentimento de Métricas Anônimas",
-    "description": "O CitrineOS coleta métricas de uso anônimas para nos ajudar a melhorar o produto. Você gostaria de enviar essas métricas?",
-    "reject": "Recusar",
-    "accept": "Aceitar"
   }
 }

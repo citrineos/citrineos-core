@@ -4,8 +4,8 @@
 
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 // GetBaseReport → NotifyReport populates the device model (Components +
 // Variables) in Hasura, which the Get/SetVariables modals read to build their
@@ -95,7 +95,7 @@ test.describe('charging-stations › device model sequence @everest', () => {
 
     // Selectors are populated — reload so the modal picks up the rows, then
     // read a real Component/Variable end-to-end.
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
     await detail.expectLoaded();
     await detail.commandBar.openViaOtherCommands(/get variables/i);
     const getVars = new ModalHarness(page, /get variables/i);

@@ -1,0 +1,152 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { type Locator, type Page, expect } from '@playwright/test';
+
+// ModalHarness — generic Radix Dialog wrapper used by both bespoke OCPP
+// command specs and the parametric harness. Every form field is reached
+// via getByLabel or getByRole; never by nth-child / placeholder fallbacks.
+// Command submission waits for a server-side toast as the async-completion
+// signal before asserting modal closure.
+
+export interface FillFormFields {
+  readonly [labelPattern: string]: string;
+}
+
+export class ModalHarness {
+  readonly dialog: Locator;
+  readonly title: Locator;
+  readonly closeButton: Locator;
+  readonly cancelButton: Locator;
+  readonly submitButton: Locator;
+
+  constructor(
+    private readonly page: Page,
+    titlePattern: RegExp | string,
+  ) {
+    this.dialog = page.getByRole('dialog');
+    this.title = this.dialog.getByRole('heading').filter({
+      hasText: titlePattern instanceof RegExp ? titlePattern : new RegExp(titlePattern, 'i'),
+    });
+    this.closeButton = this.dialog.getByRole('button', { name: /^close$/i });
+    this.cancelButton = this.dialog.getByRole('button', { name: /^cancel$/i });
+    this.submitButton = this.dialog.getByRole('button', {
+      name: /^(submit|send|save|confirm|start|stop|reset|trigger|update|set|get|unlock|delete|install|sign|clear)/i,
+    });
+  }
+
+  async expectOpen(): Promise<void> {
+    await expect(this.dialog).toBeVisible({ timeout: 15_000 });
+    await expect(this.title).toBeVisible({ timeout: 15_000 });
+  }
+
+  async expectClosed(): Promise<void> {
+    await expect(this.dialog).toBeHidden({ timeout: 15_000 });
+  }
+
+  async fill(label: RegExp | string, value: string): Promise<void> {
+    const target = this.dialog.getByLabel(label instanceof RegExp ? label : new RegExp(label, 'i'));
+    await target.fill(value);
+  }
+
+  async select(label: RegExp | string, optionName: RegExp | string): Promise<void> {
+    const labelPattern = label instanceof RegExp ? label : new RegExp(label, 'i');
+    // shadcn FormField wraps each control in a [role="group"] containing
+    // both the visible label text and the combobox. The combobox itself
+    // takes its accessible name from the current value, not the label, so
+    // we anchor on the group's label text and pick its first combobox.
+    const trigger = this.dialog
+      .getByRole('group')
+      .filter({ hasText: labelPattern })
+      .getByRole('combobox')
+      .first();
+    await trigger.click();
+    // The option list is a portal fed by a useSelect query — wait for it
+    // instead of clicking into a still-empty popover.
+    const option = this.page
+      .getByRole('option', {
+        name: optionName instanceof RegExp ? optionName : new RegExp(optionName, 'i'),
+      })
+      .first();
+    await option.waitFor({ state: 'visible', timeout: 30_000 });
+    await option.click();
+  }
+
+  async cancel(): Promise<void> {
+    if (await this.cancelButton.isVisible().catch(() => false)) {
+      await this.cancelButton.click();
+    } else {
+      await this.closeButton.click();
+    }
+    await this.expectClosed();
+  }
+
+  // Submits the modal's form and waits for the Sonner toast region to surface
+  // a message. This is the async-ack signal for OCPP commands; the
+  // modal-close-race never fires because we wait for the server's
+  // confirmation first.
+  async submitAndWaitForToast(
+    toastPattern: RegExp = /success|accepted|sent|started|stopped|reset|completed|received/i,
+    timeout = 30_000,
+  ): Promise<void> {
+    await this.submitAndWaitForNewToast(toastPattern, timeout);
+  }
+
+  async submitExpectingError(
+    errorPattern: RegExp = /failed|error|invalid|denied/i,
+    timeout = 30_000,
+  ): Promise<void> {
+    // The destructive toast is the contract; whether the modal stays open or
+    // auto-closes depends on the per-modal handler. Both are acceptable
+    // observable behaviours per the OCPP command pipeline.
+    await this.submitAndWaitForNewToast(errorPattern, timeout);
+  }
+
+  // Tags the toasts already on screen so a leftover toast from an earlier
+  // action in the same test can't satisfy a later wait.
+  async markToastsStale(): Promise<void> {
+    await this.page
+      .getByRole('region', { name: /notifications/i })
+      .locator('[data-sonner-toast]')
+      .evaluateAll((els) => els.forEach((el) => el.setAttribute('data-e2e-stale', '1')))
+      .catch(() => undefined);
+  }
+
+  // Waits for a toast that appeared after the last markToastsStale() call.
+  async newToastVisible(pattern: RegExp, timeout: number): Promise<void> {
+    await expect(
+      this.page
+        .getByRole('region', { name: /notifications/i })
+        .locator('[data-sonner-toast]:not([data-e2e-stale])')
+        .filter({ hasText: pattern })
+        .first(),
+    ).toBeVisible({ timeout });
+  }
+
+  private async submitAndWaitForNewToast(pattern: RegExp, timeout: number): Promise<void> {
+    await this.markToastsStale();
+    await this.submitButton.click();
+    await this.newToastVisible(pattern, timeout);
+  }
+
+  // Submits and asserts the form REJECTED it: a validation message appears
+  // and the dialog stays mounted. A bare dialog-still-visible check passes on
+  // the first poll even if the submit was about to dispatch — this waits for
+  // the positive signal instead.
+  async expectBlockedSubmit(): Promise<void> {
+    await this.submitButton.click();
+    await expect(
+      this.dialog.locator('[role="alert"], [data-slot="form-message"]').first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(this.dialog).toBeVisible();
+  }
+
+  validationError(fieldLabel: RegExp | string): Locator {
+    return this.dialog
+      .locator('[role="alert"], [aria-live="polite"], [data-slot="form-message"]')
+      .filter({
+        hasText: fieldLabel instanceof RegExp ? fieldLabel : new RegExp(fieldLabel, 'i'),
+      });
+  }
+}
