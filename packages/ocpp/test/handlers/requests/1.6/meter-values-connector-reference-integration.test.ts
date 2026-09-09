@@ -2,18 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
-import {
-  EventGroup,
-  MessageOrigin,
-  MessageState,
-  OCPP_CallAction,
-  type OcppRequest,
-  OCPPVersion,
-} from '@citrineos/types';
+import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
   ChargingStation,
   Connector,
@@ -25,8 +14,20 @@ import {
   Tenant,
   Transaction,
 } from '@citrineos/dal';
+import {
+  EventGroup,
+  MessageOrigin,
+  MessageState,
+  OCPP_CallAction,
+  type OcppRequest,
+  OCPPVersion,
+  type SystemConfig,
+} from '@citrineos/types';
 import { MeterValuesRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance, makeMockOcppSender } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * MeterValue.connectorId is a foreign key to Connector.id, but an OCPP 1.6 MeterValues message
@@ -43,7 +44,7 @@ const TRANSACTION_ID = 4711;
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -70,7 +71,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/types';
+import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-composite-schedule-endpoint.js';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   ChargingStation,
   DefaultSequelizeInstance,
@@ -16,8 +13,11 @@ import {
   SequelizeLocationRepository,
   Tenant,
 } from '@citrineos/dal';
-import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-composite-schedule-endpoint.js';
+import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * A depot runs a mixed estate: a six-EVSE charger next to single-EVSE units. Asking a single-EVSE
@@ -57,7 +57,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
