@@ -23,6 +23,7 @@ import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
+  IVariableCharacteristicsRepository,
 } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import {
@@ -38,6 +39,7 @@ type ChargingProfile = SetChargingProfileRequest['chargingProfile'];
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelRepository: IDeviceModelRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   chargingProfileRepository: IChargingProfileRepository;
   transactionEventRepository: ITransactionEventRepository;
 }
@@ -52,6 +54,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
   private readonly _transactionEventRepository: ITransactionEventRepository;
 
@@ -59,12 +62,14 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     logger,
     ocppSender,
     deviceModelRepository,
+    variableCharacteristicsRepository,
     chargingProfileRepository,
     transactionEventRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._deviceModelRepository = deviceModelRepository;
+    this._variableCharacteristicsRepository = variableCharacteristicsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
@@ -308,7 +313,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       )}`,
     );
     const rateUnitMemberList = await readChargingRateUnitMemberList(
-      this._deviceModelRepository,
+      this._variableCharacteristicsRepository,
       tenantId,
       this._logger,
     );

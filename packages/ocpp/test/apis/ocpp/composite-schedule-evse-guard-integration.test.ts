@@ -108,7 +108,7 @@ describe('Asking a station for one of its EVSEs', () => {
   function handle(ocppConnectionName: string, evseId: number) {
     return getTestInstance(container, GetCompositeScheduleEndpoint, {
       ocppSender: { sendCall },
-      deviceModelRepository,
+      variableCharacteristicsRepository: deviceModelRepository,
       locationRepository,
     }).handle(
       [ocppConnectionName],
