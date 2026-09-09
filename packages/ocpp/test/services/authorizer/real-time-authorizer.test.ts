@@ -2,6 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type IMessageContext } from '@citrineos/base';
+import type {
+  Authorization,
+  IAuthorizationRepository,
+  IChargingStationRepository,
+} from '@citrineos/dal';
 import {
   AuthorizationStatusEnum,
   AuthorizationWhitelistEnum,
@@ -9,14 +14,9 @@ import {
   type EvseDto,
   type SystemConfig,
 } from '@citrineos/types';
-import type {
-  Authorization,
-  IAuthorizationRepository,
-  IChargingStationRepository,
-} from '@citrineos/dal';
-import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { RealTimeAuthorizer } from '@services/authorizer/real-time-authorizer.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 
 function buildMockLocationRepository(chargingStation: unknown): Mocked<IChargingStationRepository> {
   return {
@@ -56,6 +56,13 @@ function buildContext(): IMessageContext {
 const evse = { id: 10 } as EvseDto;
 const connector = { id: 100 } as ConnectorDto;
 
+const REAL_TIME_AUTH_REQUEST_TIMEOUT_SECONDS = 5;
+const testConfig = {
+  timeouts: {
+    realTimeAuthRequestTimeoutSeconds: REAL_TIME_AUTH_REQUEST_TIMEOUT_SECONDS,
+  },
+} as SystemConfig;
+
 describe('RealTimeAuthorizer', () => {
   const { container, logger } = createTestContainer();
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -70,7 +77,7 @@ describe('RealTimeAuthorizer', () => {
     return getTestInstance(container, RealTimeAuthorizer, {
       chargingStationRepository,
       authorizationRepository,
-      config: {} as SystemConfig,
+      config: testConfig,
     });
   }
 
@@ -91,7 +98,7 @@ describe('RealTimeAuthorizer', () => {
     const authorizer = getTestInstance(container, RealTimeAuthorizer, {
       chargingStationRepository: repo,
       authorizationRepository,
-      config: {} as SystemConfig,
+      config: testConfig,
     });
 
     const result = await authorizer.authorize(
@@ -162,6 +169,16 @@ describe('RealTimeAuthorizer', () => {
         `Failed to save realTimeAuthLastAttempt for authorization ${authorization.id}`,
       ),
     );
+  });
+
+  it('aborts the real-time auth request after the configured request timeout', async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+    const authorizer = buildAuthorizer();
+
+    await authorizer.authorize(buildAuthorization(), buildContext(), evse, connector);
+
+    expect(timeoutSpy).toHaveBeenCalledWith(REAL_TIME_AUTH_REQUEST_TIMEOUT_SECONDS * 1000);
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
   });
 
   it('does not persist anything when real-time auth is skipped', async () => {
