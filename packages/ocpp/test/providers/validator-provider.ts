@@ -110,7 +110,6 @@ export function aCost(override?: Partial<OCPP2_0_1.CostType>): OCPP2_0_1.CostTyp
 // Repository mock builders
 export function createMockDeviceModelRepository(): Mocked<IDeviceModelRepository> {
   return {
-    findEvseByIdAndConnectorId: vi.fn(),
     readAllByQuerystring: vi.fn(),
   } as any;
 }

@@ -527,20 +527,6 @@ export class SequelizeDeviceModelRepository
     return [component, variable];
   }
 
-  async findEvseByIdAndConnectorId(
-    tenantId: number,
-    id: number,
-    connectorId: number | null,
-  ): Promise<EvseType | undefined> {
-    const storedEvses = await this.evse.readAllByQuery(tenantId, {
-      where: {
-        id: id,
-        connectorId: connectorId,
-      },
-    });
-    return storedEvses.length > 0 ? storedEvses[0] : undefined;
-  }
-
   async findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
     variableName: string,

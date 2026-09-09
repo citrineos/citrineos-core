@@ -60,7 +60,6 @@ import type {
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
-import type { EvseType } from '../models/device-model/evse-type.js';
 import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
@@ -166,11 +165,6 @@ export interface IDeviceModelRepository
     componentType: OCPP2_common_types.ComponentType,
     ocppConnectionName: string,
   ): Promise<Component>;
-  findEvseByIdAndConnectorId(
-    tenantId: number,
-    id: number,
-    connectorId: number | null,
-  ): Promise<EvseType | undefined>;
   findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
     variableName: string,
