@@ -2,20 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractMessageEndpoint,
+  DEFAULT_TENANT_ID,
   type AbstractMessageEndpointDependencies,
   type IMessageConfirmation,
   type IMessageEndpointMetadata,
   type IOcppSender,
-  AbstractMessageEndpoint,
-  DEFAULT_TENANT_ID,
 } from '@citrineos/base';
+import type { IDeviceModelRepository, IEvseRepository } from '@citrineos/dal';
 import {
   EventGroup,
   OCPP_CallAction,
-  type OCPPVersion,
   type OCPP2_request_types,
+  type OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IEvseRepository } from '@citrineos/dal';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 import { readChargingRateUnitMemberList } from './charging-rate-units.js';
 
