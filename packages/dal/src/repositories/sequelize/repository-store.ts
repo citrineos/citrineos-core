@@ -153,12 +153,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    // Defaults to the Location aggregate; the Drizzle branch below swaps in a
-    // station-only implementation, matching the container registration.
-    this.chargingStationRepository = this.locationRepository;
-    this.evseRepository = this.locationRepository;
-    this.connectorRepository = this.locationRepository;
-    this.statusNotificationRepository = this.locationRepository;
     this.messageInfoRepository = new SequelizeMessageInfoRepository({
       config,
       logger,
@@ -254,6 +248,12 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.tariffRepository = new SequelizeTariffRepository({ config, logger, sequelizeInstance });
+      // These four are served by the Location aggregate, which already implements
+      // their interfaces; the Drizzle branch registers dedicated implementations.
+      this.chargingStationRepository = this.locationRepository;
+      this.evseRepository = this.locationRepository;
+      this.connectorRepository = this.locationRepository;
+      this.statusNotificationRepository = this.locationRepository;
     }
 
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
