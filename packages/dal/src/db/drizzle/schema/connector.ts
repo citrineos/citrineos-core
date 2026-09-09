@@ -23,7 +23,7 @@ function connectorColumns() {
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
-    evseId: integer('evseId'),
+    evseId: integer('evseId').notNull(),
     // Serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per station.
     connectorId: integer('connectorId'),
     // Serial int starting at 1 used in OCPP 2.0.1 to refer to the connector, unique per EVSE.
@@ -55,7 +55,8 @@ function connectorColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const connectorTable = pgTable(TableName.Connectors, connectorColumns(), (t) => [
-  uniqueIndex('stationId_connectorId').on(t.stationId, t.connectorId),
+  uniqueIndex('connectors_station_id_connector_id').on(t.stationId, t.connectorId),
+  uniqueIndex('connectors_evse_id_evse_type_connector_id').on(t.evseId, t.evseTypeConnectorId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
