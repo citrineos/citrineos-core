@@ -4,7 +4,7 @@
 
 import type { StatusInfo } from '@citrineos/types';
 import { TableName } from '@dal/models/table-name.js';
-import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, json, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -16,7 +16,7 @@ function variableStatusColumns() {
     id: serial('id').primaryKey(),
     value: varchar('value', { length: 4000 }),
     status: varchar('status', { length: 255 }),
-    statusInfo: jsonb('statusInfo').$type<StatusInfo>(),
+    statusInfo: json('statusInfo').$type<StatusInfo>(),
     variableAttributeId: integer('variableAttributeId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
