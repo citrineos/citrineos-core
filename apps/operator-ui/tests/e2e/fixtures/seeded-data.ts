@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ApiClient } from './api-client';
 import { shortId } from '../utils/random';
+import type { ApiClient } from './api-client';
 
 // Schema reference for seeds + lookups:
 //   ChargingStations.id                 — int auto-inc PK
@@ -39,6 +39,7 @@ export interface SeededTransaction {
   readonly id: number;
   readonly stationId: number;
   readonly ocppConnectionName: string;
+  readonly createdAt: string;
 }
 
 // Minimal authorization for OCPP RemoteStart command flows.
@@ -170,10 +171,11 @@ export async function seedTransaction(
       id: number;
       stationId: number;
       transactionId: string;
+      createdAt: string;
     };
   }>(
     `mutation SeedTransaction($obj: Transactions_insert_input!) {
-       insert_Transactions_one(object: $obj) { id stationId transactionId }
+       insert_Transactions_one(object: $obj) { id stationId transactionId createdAt }
      }`,
     {
       obj: {
@@ -191,6 +193,7 @@ export async function seedTransaction(
     id: data.insert_Transactions_one.id,
     stationId: data.insert_Transactions_one.stationId,
     ocppConnectionName,
+    createdAt: data.insert_Transactions_one.createdAt,
   };
 }
 
@@ -202,7 +205,7 @@ export async function seedTransaction(
 // Transaction.End for a row to be plotted.
 export async function seedMeterValues(
   api: ApiClient,
-  transactionDatabaseId: number,
+  transaction: SeededTransaction,
   count = 6,
 ): Promise<void> {
   const baseTime = Date.now();
@@ -213,7 +216,8 @@ export async function seedMeterValues(
     const context =
       i === 0 ? 'Transaction.Begin' : i === count - 1 ? 'Transaction.End' : 'Sample.Periodic';
     return {
-      transactionDatabaseId,
+      transactionDatabaseId: transaction.id,
+      transactionCreatedAt: transaction.createdAt,
       timestamp: ts,
       sampledValue: [
         {
