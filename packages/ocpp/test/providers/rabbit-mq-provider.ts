@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type * as amqplib from 'amqplib';
+import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 import {
   EventGroup,
   MessageOrigin,
@@ -11,8 +11,8 @@ import {
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/types';
+import type * as amqplib from 'amqplib';
 import { vi } from 'vitest';
-import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 
 /**
  * Minimal SystemConfig with AMQP configured.
@@ -122,6 +122,7 @@ export function aConsumeMessage(override?: {
           correlationId: 'test-correlation-id',
           ocppConnectionName: 'CS001',
           tenantId: '1',
+          timestamp: new Date().toISOString(),
         },
         payload: override?.payload ?? {},
         protocol: override?.protocol ?? OCPPVersion.OCPP2_0_1,

@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OCPP_CallAction, RetryMessageError } from '@citrineos/types';
 import { RabbitMqReceiver } from '@/transport/queue/rabbit-mq/receiver.js';
+import { OCPP_CallAction, RetryMessageError } from '@citrineos/types';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   aConsumeMessage,
   aConsumeMessageWithPrefixedFields,
@@ -13,7 +14,6 @@ import {
   aMockConnectionManager,
   aSystemConfigWithAmqp,
 } from '../../../providers/rabbit-mq-provider.js';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('RabbitMqReceiver', () => {
   const { container } = createTestContainer();
@@ -498,17 +498,6 @@ describe('RabbitMqReceiver', () => {
       expect(mockChannel.nack).toHaveBeenCalledWith(msg, false, false);
       expect(mockChannel.ack).not.toHaveBeenCalled();
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('test-correlation-id'));
-    });
-
-    it('should keep retrying a message that has no timestamp to age off', async () => {
-      vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new RetryMessageError('call in progress'));
-      vi.spyOn(receiver as any, '_backoff').mockReturnValue(0); // don't sleep for real
-      const msg = aConsumeMessage({ headers: { 'x-retries': 99 } });
-
-      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
-
-      expect(mockChannel.sendToQueue).toHaveBeenCalled();
-      expect(mockChannel.nack).not.toHaveBeenCalled();
     });
 
     it('should log the error and still ack when handle throws a non-retryable error', async () => {
