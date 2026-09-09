@@ -231,7 +231,7 @@ describe('smartCharging message endpoints', () => {
         variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
-        locationRepository: { readEvseByStationIdAndOcpp201EvseId },
+        evseRepository: { readEvseByStationIdAndOcpp201EvseId },
       });
 
     const handle = (request: OCPP2_0_1.GetCompositeScheduleRequest) =>

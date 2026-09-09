@@ -26,8 +26,9 @@ import {
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
+  DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
-  DrizzleVariableCharacteristicsRepository,
+  DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
@@ -38,6 +39,7 @@ import {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  DrizzleVariableCharacteristicsRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -306,6 +308,7 @@ function registerRepositories(container: AwilixContainer): void {
     variableCharacteristicsRepository: asFunction(
       ({ deviceModelRepository }) => deviceModelRepository,
     ).singleton(),
+    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -319,10 +322,9 @@ function registerRepositories(container: AwilixContainer): void {
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
+      changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
-      variableCharacteristicsRepository: asClass(
-        DrizzleVariableCharacteristicsRepository,
-      ).singleton(),
+      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
@@ -337,6 +339,9 @@ function registerRepositories(container: AwilixContainer): void {
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
+      variableCharacteristicsRepository: asClass(
+        DrizzleVariableCharacteristicsRepository,
+      ).singleton(),
     });
   }
 }

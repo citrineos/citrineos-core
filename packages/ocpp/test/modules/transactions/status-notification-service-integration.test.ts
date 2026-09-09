@@ -72,7 +72,7 @@ beforeEach(async () => {
 describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160 integration)', () => {
   it('creates an Evse whose id satisfies the Connector FK constraints', async () => {
     const ocppConnectionName = 'CS-1.6-clean-db';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -88,6 +88,7 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     const evse = await Evse.findOne({ where: { id: evseId } });
     expect(evse).not.toBeNull();
     expect(evse?.ocppConnectionName).toBe(ocppConnectionName);
+    expect(evse?.stationId).toBe(station.id);
 
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
     // by actually inserting a Connector row. A 1.6 connector carries no
@@ -158,6 +159,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -214,6 +216,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -275,6 +278,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -312,6 +316,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });

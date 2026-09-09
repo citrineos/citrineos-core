@@ -109,7 +109,7 @@ describe('Asking a station for one of its EVSEs', () => {
     return getTestInstance(container, GetCompositeScheduleEndpoint, {
       ocppSender: { sendCall },
       variableCharacteristicsRepository: deviceModelRepository,
-      locationRepository,
+      evseRepository: locationRepository,
     }).handle(
       [ocppConnectionName],
       { duration: 60, evseId },

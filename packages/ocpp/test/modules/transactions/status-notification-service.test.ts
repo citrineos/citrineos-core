@@ -122,6 +122,7 @@ describe('StatusNotificationService', () => {
       componentRepository,
       deviceModelRepository,
       chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
       locationRepository,
       cache,
     });
