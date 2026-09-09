@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { IMessageInfoRepository } from '@dal/repositories/repositories.js';
-import { OCPP2_0_1, type MessageInfoDto } from '@citrineos/types';
+import { OCPP2_common_types, type MessageInfoDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
 import {
   type MessageInfoEntity,
@@ -65,7 +65,7 @@ export class DrizzleMessageInfoRepository
 
   async createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
-    message: OCPP2_0_1.MessageInfoType,
+    message: OCPP2_common_types.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
   ): Promise<MessageInfoDto> {
@@ -93,7 +93,7 @@ export class DrizzleMessageInfoRepository
       startDateTime: message.startDateTime ? new Date(message.startDateTime) : null,
       endDateTime: message.endDateTime ? new Date(message.endDateTime) : null,
       transactionId: message.transactionId ?? null,
-      message: message.message,
+      message: message.message as MessageInfoEntity['message'],
       active: true,
     };
 

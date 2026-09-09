@@ -5,7 +5,7 @@
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { MessageInfo } from '../../models/message-info/message-info.js';
 import type { IMessageInfoRepository } from '../repositories.js';
-import { OCPP2_0_1, type MessageInfoDto } from '@citrineos/types';
+import { OCPP2_common_types, type MessageInfoDto } from '@citrineos/types';
 
 export class SequelizeMessageInfoRepository
   extends SequelizeRepository<MessageInfo>
@@ -33,7 +33,7 @@ export class SequelizeMessageInfoRepository
 
   async createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
-    message: OCPP2_0_1.MessageInfoType,
+    message: OCPP2_common_types.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
   ): Promise<MessageInfoDto> {
@@ -51,12 +51,12 @@ export class SequelizeMessageInfoRepository
         ocppConnectionName: ocppConnectionName,
         displayComponentId: componentId ?? null,
         id: message.id,
-        priority: message.priority,
-        state: message.state ?? null,
+        priority: message.priority as MessageInfo['priority'],
+        state: (message.state ?? null) as MessageInfo['state'],
         startDateTime: message.startDateTime ?? null,
         endDateTime: message.endDateTime ?? null,
         transactionId: message.transactionId ?? null,
-        message: message.message,
+        message: message.message as MessageInfo['message'],
         active: true,
       };
       if (savedMessageInfo) {
