@@ -1,16 +1,22 @@
-import { OCPPVersion } from '@citrineos/base';
-import WebSocket from 'ws';
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 
-const WS_PORT = 8081; // OCPP WebSocket (allowUnknownChargingStations: true)
+import { OCPPVersion } from '@citrineos/types';
+import { WS_PORT } from './ports.js';
 
 export function connectOcpp(
   stationId: string,
-  protocol = OCPPVersion.OCPP2_0_1,
+  protocol: string = OCPPVersion.OCPP2_0_1,
 ): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://localhost:${WS_PORT}/${stationId}`, [protocol]);
-    ws.once('open', () => resolve(ws));
-    ws.once('error', reject);
+    ws.addEventListener('open', () => resolve(ws), { once: true });
+    ws.addEventListener(
+      'error',
+      () => reject(new Error(`Could not open an OCPP connection for ${stationId}`)),
+      { once: true },
+    );
   });
 }
 
@@ -19,20 +25,30 @@ export function sendCall(
   msgId: string,
   action: string,
   payload: object,
-): Promise<any[]> {
+): Promise<unknown[]> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(
       () => reject(new Error(`No OCPP response for ${action} within 10 s`)),
       10_000,
     );
-    ws.once('message', (data) => {
-      clearTimeout(timeout);
-      try {
-        resolve(JSON.parse(data.toString()) as any[]);
-      } catch (e) {
-        reject(e);
-      }
-    });
+
+    ws.addEventListener(
+      'message',
+      (event: MessageEvent) => {
+        clearTimeout(timeout);
+        try {
+          const data =
+            typeof event.data === 'string'
+              ? event.data
+              : new TextDecoder().decode(event.data as ArrayBuffer);
+          resolve(JSON.parse(data) as unknown[]);
+        } catch (e) {
+          reject(e as Error);
+        }
+      },
+      { once: true },
+    );
+
     ws.send(JSON.stringify([2, msgId, action, payload]));
   });
 }

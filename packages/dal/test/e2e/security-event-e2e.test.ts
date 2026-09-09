@@ -25,11 +25,11 @@ import { type ChildProcess } from 'child_process';
 import { Client } from 'pg';
 import { type StartedTestContainer } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { aSecurityEventNotificationRequest } from '../providers/SecurityEvent.js';
-import { DEFAULT_PG_PORT, getDefaultPgClientConfig } from '../utils/containers/pgContainer';
-import { buildTestEnv, setup } from '../utils/containers/setup';
-import { connectOcpp, sendCall } from '../utils/containers/ocppWebsocket';
-import { killServer, spawnServer } from '../utils/containers/server';
+import { aSecurityEventNotificationRequest } from '../providers/security-event.js';
+import { DEFAULT_PG_PORT, getDefaultPgClientConfig } from '../utils/containers/pg-container.js';
+import { buildTestEnv, setup } from '../utils/containers/setup.js';
+import { connectOcpp, sendCall } from '../utils/containers/ocpp-websocket-provider.js';
+import { killServer, spawnServer } from '../utils/containers/server.js';
 
 // ─── Shared state across all scenarios ────────────────────────────────────────
 

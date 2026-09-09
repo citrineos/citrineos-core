@@ -5,10 +5,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
-import { QueryTypes, type QueryInterface } from 'sequelize';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { type QueryInterface, QueryTypes } from 'sequelize';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { Authorization, DefaultSequelizeInstance, Tenant } from '@citrineos/dal';
 import migration from '../../migrations/20260821120000-authorization-unique-constraint-nulls-not-distinct.js';
+import { SystemConfig } from '@citrineos/types';
 
 const TOKEN = 'DEPOT-TOKEN-1';
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
@@ -42,7 +43,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig);
+  } as unknown as SystemConfig);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
   queryInterface = sequelizeInstance.getQueryInterface();

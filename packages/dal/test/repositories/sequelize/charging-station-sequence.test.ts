@@ -8,7 +8,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { ChargingStationSequence } from '@dal/models/charging-station-sequence/charging-station-sequence.js';
 import { SequelizeChargingStationSequenceRepository } from '@dal/repositories/sequelize/charging-station-sequence.js';
-import { createTestContainer, getTestInstance } from '../../test-container.js';
+import { getAwilixContainer, getTestInstance } from '../../utils/containers/awilix-container.js';
 
 // Mock the util module to avoid circular dependency issues during test loading
 vi.mock('@dal/db/sequelize/util', () => ({
@@ -18,7 +18,7 @@ vi.mock('@dal/db/sequelize/util', () => ({
 }));
 
 describe('SequelizeChargingStationSequenceRepository', () => {
-  const { container } = createTestContainer();
+  const { container } = getAwilixContainer();
   let repository: SequelizeChargingStationSequenceRepository;
   let mockSequelize: Mocked<Sequelize>;
   let mockTransaction: Mock;

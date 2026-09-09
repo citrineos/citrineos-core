@@ -1,11 +1,10 @@
 import { fileURLToPath } from 'url';
 import { type ChildProcess, spawn } from 'child_process';
+import { HTTP_PORT } from './ports.js';
 
 const SERVER_DIST = fileURLToPath(
   new URL('../../../../../../apps/ocpp-server/dist/index.js', import.meta.url),
 );
-
-const HTTP_PORT = 8080; // Fastify API + /health endpoint
 
 export async function spawnServer(
   env: NodeJS.ProcessEnv,

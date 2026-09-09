@@ -6,7 +6,7 @@ import { Connector } from '@dal/models/location/connector.js';
 import { Evse } from '@dal/models/location/evse.js';
 import { Tariff } from '@dal/models/tariff/tariffs.js';
 import { SequelizeLocationRepository } from '@dal/repositories/sequelize/location.js';
-import { createTestContainer, getTestInstance } from '../../test-container.js';
+import { getAwilixContainer, getTestInstance } from '../../utils/containers/awilix-container.js';
 import { Op } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
 import type { ILogObj, Logger } from 'tslog';
@@ -23,7 +23,7 @@ const TENANT_ID = 1;
 const OCPP_CONNECTION_NAME = 'CP_TEST_001';
 
 describe('SequelizeLocationRepository', () => {
-  const { container } = createTestContainer();
+  const { container } = getAwilixContainer();
   let repository: SequelizeLocationRepository;
   let mockTransaction: unknown;
 
