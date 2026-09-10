@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { AuthorizationCreate, AuthorizationDto } from '@citrineos/types';
 import { type IAuthorizationRepository } from '../repositories.js';
 import { type AuthorizationQuerystring } from '../../interfaces/queries/authorization.js';
 import { Authorization } from '../../models/authorization/authorization.js';
@@ -53,6 +54,16 @@ export class SequelizeAuthorizationRepository
     key: string,
   ): Promise<Authorization | undefined> {
     return await this._updateByKey(tenantId, value, key);
+  }
+
+  async createAuthorization(
+    tenantId: number,
+    input: AuthorizationCreate,
+  ): Promise<AuthorizationDto> {
+    const authorization = Authorization.build({ ...input, tenantId });
+    const saved = await authorization.save();
+    this.emit('created', [saved]);
+    return saved;
   }
 
   /**

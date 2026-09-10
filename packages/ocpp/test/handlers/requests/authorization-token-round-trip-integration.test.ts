@@ -4,13 +4,12 @@
 
 import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
-  Authorization,
-  ChargingStation,
   DefaultSequelizeInstance,
+  type ITenantRepository,
   SequelizeAuthorizationRepository,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
-  Tenant,
-  Transaction,
 } from '@citrineos/dal';
 import {
   AuthorizationStatusEnum,
@@ -50,6 +49,9 @@ const STATION = 'CP-DEPOT-1';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let authorizationRepository: SequelizeAuthorizationRepository;
+let tenantRepository: ITenantRepository;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -81,6 +83,11 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  const deps = { config, logger: undefined, sequelizeInstance } as never;
+  authorizationRepository = new SequelizeAuthorizationRepository(deps);
+  tenantRepository = new SequelizeTenantRepository(deps);
+  locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
 
 afterAll(async () => {
@@ -90,12 +97,11 @@ afterAll(async () => {
 
 /** Enrols a token exactly as the Hasura insert mutation would. */
 async function enrol(idToken: string, idTokenType: IdTokenEnumType) {
-  return Authorization.create({
+  return authorizationRepository.createAuthorization(DEFAULT_TENANT_ID, {
     idToken,
     idTokenType,
     status: AuthorizationStatusEnum.Accepted,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 function anOcpp201Authorize(
@@ -138,21 +144,13 @@ function anOcpp16Authorize(idTag: string): IMessage<OcppRequest> {
 describe('A depot vehicle token, enrolled once and presented by a charger', () => {
   const { container } = createTestContainer();
 
-  function anAuthorizationRepository() {
-    return new SequelizeAuthorizationRepository({
-      config,
-      logger: undefined,
-      sequelizeInstance,
-    } as never);
-  }
-
   /** Runs the real handler and hands back the AuthorizeResponse it put on the wire. */
   async function authorizeOver201(idToken: string, type: OCPP2_0_1.IdTokenEnumType) {
     const ocppSender = makeMockOcppSender();
     const handler = getTestInstance(container, AuthorizeRequestOcpp201Handler, {
       ocppSender,
       authorizers: [],
-      authorizationRepository: anAuthorizationRepository(),
+      authorizationRepository,
       // Neither is reachable for a token carrying no certificate and no EVSE restrictions.
       certificateAuthorityService: {} as never,
       deviceModelRepository: { readAllByQuerystring: async () => [] } as never,
@@ -168,7 +166,7 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
     const handler = getTestInstance(container, AuthorizeRequestOcpp16Handler, {
       ocppSender,
       authorizers: [],
-      authorizationRepository: anAuthorizationRepository(),
+      authorizationRepository,
     });
 
     await handler.handle(anOcpp16Authorize(idTag) as never);
@@ -177,17 +175,17 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
   }
 
   beforeEach(async () => {
-    await Transaction.destroy({ where: {}, truncate: true, cascade: true });
-    await Authorization.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'Depot' } as never);
-    await ChargingStation.create({
+    await tenantRepository.createTenant({
+      id: DEFAULT_TENANT_ID,
+      name: 'Depot',
+      isUserTenant: false,
+    });
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName: STATION,
       isOnline: true,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    });
   });
 
   it('authorises over 2.0.1 when the charger presents the MAC it was enrolled under', async () => {
@@ -286,6 +284,6 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
       STATION,
     );
 
-    expect(transaction.authorizationId).toBe((enrolled as unknown as { id: number }).id);
+    expect(transaction.authorizationId).toBe(enrolled.id);
   });
 });
