@@ -36,7 +36,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 
 function makeHandler(
   overrides: {
-    locationRepository?: Partial<IConnectorRepository>;
+    connectorRepository?: Partial<IConnectorRepository>;
     transactionEventRepository?: Partial<ITransactionEventRepository>;
     transactionService?: Record<string, unknown>;
   } = {},
@@ -44,12 +44,12 @@ function makeHandler(
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
-  const locationRepository = {
+  const connectorRepository = {
     readConnectorByStationIdAndOcpp16ConnectorId: vi.fn().mockResolvedValue({
       id: 1,
       evse: { evseTypeId: 42 },
     }),
-    ...overrides.locationRepository,
+    ...overrides.connectorRepository,
   };
 
   const transactionEventRepository = {
@@ -69,7 +69,7 @@ function makeHandler(
   const handler = new StartTransactionRequestOcpp16Handler({
     logger,
     ocppSender,
-    locationRepository: locationRepository as unknown as IConnectorRepository,
+    connectorRepository: connectorRepository as unknown as IConnectorRepository,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
     transactionService: transactionService as any,
@@ -78,7 +78,7 @@ function makeHandler(
   return {
     handler,
     ocppSender,
-    locationRepository,
+    connectorRepository,
     transactionEventRepository,
     transactionService,
   };
@@ -152,9 +152,9 @@ describe('StartTransactionRequestOcpp16Handler', () => {
     });
 
     it('throws and does NOT call deactivateOtherActiveTransactionsAtEvse when connector is not found', async () => {
-      const { handler, locationRepository, transactionService } = makeHandler();
+      const { handler, connectorRepository, transactionService } = makeHandler();
       (
-        locationRepository.readConnectorByStationIdAndOcpp16ConnectorId as ReturnType<typeof vi.fn>
+        connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId as ReturnType<typeof vi.fn>
       ).mockResolvedValue(null);
 
       const payload: OCPP1_6.StartTransactionRequest = {
