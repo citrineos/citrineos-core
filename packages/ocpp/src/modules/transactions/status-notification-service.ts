@@ -43,7 +43,7 @@ export class StatusNotificationService {
     chargingStationRepository,
     evseRepository,
     connectorRepository,
-    locationRepository,
+    statusNotificationRepository,
     cache,
     logger,
   }: {
@@ -52,7 +52,7 @@ export class StatusNotificationService {
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
-    locationRepository: IStatusNotificationRepository;
+    statusNotificationRepository: IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
@@ -61,7 +61,7 @@ export class StatusNotificationService {
     this._chargingStationRepository = chargingStationRepository;
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
-    this._statusNotificationRepository = locationRepository;
+    this._statusNotificationRepository = statusNotificationRepository;
     this._cache = cache;
     this._logger = childLogger(logger, this.constructor.name);
   }

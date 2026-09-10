@@ -29,6 +29,8 @@ import {
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
   DrizzleConnectorRepository,
+  DrizzleLocationRepository,
+  DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
@@ -307,6 +309,9 @@ function registerRepositories(container: AwilixContainer): void {
     ).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    statusNotificationRepository: asFunction(
+      ({ locationRepository }) => locationRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -322,17 +327,19 @@ function registerRepositories(container: AwilixContainer): void {
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
-      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
+      locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
+      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       installCertificateAttemptRepository: asClass(
         DrizzleInstallCertificateAttemptRepository,
       ).singleton(),
       installedCertificateRepository: asClass(DrizzleInstalledCertificateRepository).singleton(),
       reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),

@@ -55,7 +55,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   let handler: GetTariffsRequestOcpp21Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
   let mockChargingStationRepository: Partial<IChargingStationRepository>;
-  let mockLocationRepository: Partial<IConnectorRepository>;
+  let mockConnectorRepository: Partial<IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
@@ -81,7 +81,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
         ocppConnectionName: 'station-001',
       }),
     };
-    mockLocationRepository = {
+    mockConnectorRepository = {
       readConnectorsWithTariffsByStationId: mockReadConnectorsWithTariffs,
     };
 
@@ -94,7 +94,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       authorizationRepository: mockAuthorizationRepository as unknown as IAuthorizationRepository,
       chargingStationRepository:
         mockChargingStationRepository as unknown as IChargingStationRepository,
-      locationRepository: mockLocationRepository as unknown as IConnectorRepository,
+      connectorRepository: mockConnectorRepository as unknown as IConnectorRepository,
     });
   });
 

@@ -15,8 +15,8 @@ function latestStatusNotificationColumns() {
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
-    // FK to StatusNotification; the sequelize model declares this as a string.
-    statusNotificationId: varchar('statusNotificationId', { length: 255 }),
+    // FK to StatusNotification;
+    statusNotificationId: integer('statusNotificationId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
