@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   CacheNamespace,
+  childLogger,
   createIdentifier,
   CrudRepository,
   type ICache,
@@ -24,8 +25,7 @@ import {
   Variable,
 } from '@citrineos/dal';
 import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
@@ -63,9 +63,7 @@ export class StatusNotificationService {
     this._connectorRepository = connectorRepository;
     this._statusNotificationRepository = locationRepository;
     this._cache = cache;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

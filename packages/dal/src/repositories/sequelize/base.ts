@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CrudRepository } from '@citrineos/base';
+import { childLogger, CrudRepository } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import type {
   AggregateOptions,
@@ -14,7 +14,7 @@ import type {
 } from 'sequelize';
 import { QueryTypes } from 'sequelize';
 import { type Model, type Sequelize } from 'sequelize-typescript';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { DefaultSequelizeInstance } from '../../db/sequelize/util.js';
 
 export interface SequelizeRepositoryDependencies {
@@ -37,9 +37,7 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     super();
     this.s = sequelizeInstance ?? DefaultSequelizeInstance.getInstance(config, logger);
     this.namespace = namespace;
-    this.logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = childLogger(logger, this.constructor.name);
   }
 
   async readByKey(

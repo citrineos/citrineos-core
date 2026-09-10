@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ICache, IModule } from '@citrineos/base';
+import { type ICache, type IModule, loggerDefaults } from '@citrineos/base';
 import { EventGroup, eventGroupFromString } from '@citrineos/types';
 import { MemoryCache, RedisCache } from '@citrineos/ocpp';
 import type { AwilixContainer } from 'awilix';
@@ -117,11 +117,11 @@ export class CitrineOSServer {
 
   private initLogger() {
     this._logger = new Logger<ILogObj>({
+      ...loggerDefaults(this.ocpiConfig!.env),
       name: 'CitrineOS Logger',
       minLevel: this.ocpiConfig!.logLevel,
-      hideLogPositionForProduction: this.ocpiConfig!.env === 'production',
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
-      stylePrettyLogs: process.env.DEPLOYMENT_TARGET !== 'cloud',
+      pretty: { style: process.env.DEPLOYMENT_TARGET !== 'cloud' },
     });
   }
 

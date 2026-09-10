@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import amqp from 'amqplib';
-import { type ILogObj, Logger } from 'tslog';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQConnectionManager } from './connection-manager.js';
 
 export class RabbitMQChannelManager {
@@ -20,9 +21,7 @@ export class RabbitMQChannelManager {
     connectionManager: RabbitMQConnectionManager;
     logger?: Logger<ILogObj>;
   }) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this.connectionManager = connectionManager;
 
