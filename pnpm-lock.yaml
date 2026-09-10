@@ -157,8 +157,8 @@ catalogs:
       specifier: 10.9.2
       version: 10.9.2
     tslog:
-      specifier: 4.11.0
-      version: 4.11.0
+      specifier: 5.1.0
+      version: 5.1.0
     tsx:
       specifier: 4.23.13
       version: 4.23.13
@@ -375,7 +375,7 @@ importers:
         version: 5.1.7
       tslog:
         specifier: 'catalog:'
-        version: 4.11.0
+        version: 5.1.0
       uuid:
         specifier: 'catalog:'
         version: 11.1.1
@@ -824,7 +824,7 @@ importers:
         version: 0.2.2
       tslog:
         specifier: 'catalog:'
-        version: 4.11.0
+        version: 5.1.0
       uuid:
         specifier: 'catalog:'
         version: 11.1.1
@@ -912,7 +912,7 @@ importers:
         version: 2.1.6(@types/node@25.9.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
       tslog:
         specifier: 'catalog:'
-        version: 4.11.0
+        version: 5.1.0
       uuid:
         specifier: 'catalog:'
         version: 11.1.1
@@ -1045,7 +1045,7 @@ importers:
         version: 0.10.4(class-transformer@0.5.1)(class-validator@0.14.2)
       tslog:
         specifier: 'catalog:'
-        version: 4.11.0
+        version: 5.1.0
       typed-rest-client:
         specifier: 2.1.0
         version: 2.1.0
@@ -1226,7 +1226,7 @@ importers:
         version: 10.0.3
       tslog:
         specifier: 'catalog:'
-        version: 4.11.0
+        version: 5.1.0
       uuid:
         specifier: 'catalog:'
         version: 11.1.1
@@ -2668,8 +2668,8 @@ packages:
     cpu: [x64]
     os: [linux]
 
-  '@napi-rs/wasm-runtime@1.2.3':
-    resolution: {integrity: sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q==}
+  '@napi-rs/wasm-runtime@1.2.4':
+    resolution: {integrity: sha512-AJxoUD2/15ESHbvpcyjU274nsAPLuOtPHCk0vKJM5pj//Fg/B1FXNWjPnXTT9PymCYYiHo4zPj0ZomXBKhoy7g==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=23.5.0}
     peerDependencies:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
@@ -5653,8 +5653,8 @@ packages:
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
-  cookies@0.9.1:
-    resolution: {integrity: sha512-TG2hpqe4ELx54QER/S3HQ9SRVnQnGBtKUz5bLQWtYAQ+o6GpgMs6sYUvaiJjVxb+UXwhRhAEP3m7LbsIZ77Hmw==}
+  cookies@0.9.2:
+    resolution: {integrity: sha512-8BIbcC6tPZMv2/PD4PrB3CtKks7LmAWhA7FRZK/6/b/WJ2RUz00KCga7gq50S4/RhZ22kxefRFGgsuts0v3eoA==}
     engines: {node: '>= 0.8'}
 
   copy-to-clipboard@3.3.3:
@@ -6157,8 +6157,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.5.425:
-    resolution: {integrity: sha512-QvPtl41EUOnuT1HBvMKgxXRIaHNcagBPs50u7VULzhZXaGfqTbZyE16LQsctZ/RQHlGu+FOWeDTR4mY6YbeF1g==}
+  electron-to-chromium@1.5.426:
+    resolution: {integrity: sha512-2Gcq6inCQs/AqfHP3f5ftCzk+pqeW2VlA1LgmPqEj2hfBO8HiZRspNYkD4HzFBe4u6lGqca4BspFr6Ix4Q400g==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -7145,8 +7145,8 @@ packages:
     resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
     engines: {node: '>=0.10.0'}
 
-  icu-minify@4.14.2:
-    resolution: {integrity: sha512-2eJ9ooR8xXWbe0IivG58TFL96AUp5ts8FJ4qSMzn8YRJXpLmtPNWcUkIZ8t3iz0+eaVzG+mN+rdNIigHDvYa2Q==}
+  icu-minify@4.14.3:
+    resolution: {integrity: sha512-xaZca1l+2G8x/nktE0gymGF0ym6onbopJA1onU7LaoZB+HDiP2cB+H7o+ricsEWE0fUcwABhEmGTff1xpTWYmA==}
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
@@ -7752,8 +7752,8 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  libphonenumber-js@1.13.12:
-    resolution: {integrity: sha512-uLVeV1c9OTk6qkdqnj+mpMD+ZdnZ0szVyWu58HwMmpwkHA1gCEkyjd3veZQXDnuw9KEwSRjcc9B1pS9XKIN1fA==}
+  libphonenumber-js@1.13.13:
+    resolution: {integrity: sha512-hV6SmWnyQ8U1QXhhqbqYBHIStNnscG7A5XbGodgdHhf/8N5PwhYpJA5U/yHDjYwPYTd8uNGXqq416XctuvK2PA==}
 
   light-my-request@6.6.0:
     resolution: {integrity: sha512-CHYbu8RtboSIoVsHZ6Ye4cj4Aw/yg2oAFimlF7mNvfDV192LR7nDiKtSIfCuLT7KokPSTn/9kfVLm5OGN0A28A==}
@@ -8302,8 +8302,8 @@ packages:
       nodemailer:
         optional: true
 
-  next-intl-swc-plugin-extractor@4.14.2:
-    resolution: {integrity: sha512-R+i9Xw6XKyn1QVx+I5IDZQNGQBwT79ugGwzbuJudgejob/IYnXXrRKMlLhmMxLdKH8jUWh92nqwNnp+5rtSVJA==}
+  next-intl-swc-plugin-extractor@4.14.3:
+    resolution: {integrity: sha512-aRbTpgeTF8nkTvKWWvh/IXwcQ1BJbLUpYmuk7T4CMXdfPpskiNGTJQ0snwF+yFkrHXcH9hyBz0eRKbV+4fGNIA==}
 
   next-intl@4.9.2:
     resolution: {integrity: sha512-AZoMRsVGLZczB2hisq1OTWmNAYAKwk/jaWH4+9pfl5TCG8kbILZZptZHux9zw7DyN1yzh6X7jmaQvoykHs9Y7Q==}
@@ -10143,9 +10143,10 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  tslog@4.11.0:
-    resolution: {integrity: sha512-gBe0FTKkRpOv3DenGipjQWQe073jNd1cOLj3nYfVM0/NP29sQzAIx6kfyfTTsQOiWMC+B+tSr289lNXtu7HCmQ==}
-    engines: {node: '>=16'}
+  tslog@5.1.0:
+    resolution: {integrity: sha512-g77ALovust2HNBX/63ePEJwetIeX0Vi/dlzqBO+ZAg+aERB54KMmaz/khNPxhFpaxKQ6RQj65sK6vIhj1SJgjQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   tsscmp@1.0.6:
     resolution: {integrity: sha512-LxhtAkPDTkVCMQjt2h6eBVY28KCjikZqZfMcC15YBeNjkgUpdCfBu5HoiOTDu86v6smE8yOjyEktJ8hlbANHQA==}
@@ -10329,8 +10330,8 @@ packages:
       '@types/react':
         optional: true
 
-  use-intl@4.14.2:
-    resolution: {integrity: sha512-XffvbD4q4uZjRbuO8CgK6Ei8hvYn7aegoSad2YPho1ZRjYEs+k4erhYq0vfm5ttF4lnja3riXCeJrtUdNdQG3g==}
+  use-intl@4.14.3:
+    resolution: {integrity: sha512-wmhzO9o5RaBTLCzGTyN+BlxSTM4xhPGvb57/8JShW59V2eYzScswDb0pmz/PalDSb5a9Wn3Ne2exnKN/QZkfdA==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || >=19.0.0-rc <19.0.0 || ^19.0.0
 
@@ -12002,7 +12003,7 @@ snapshots:
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
 
-  '@napi-rs/wasm-runtime@1.2.3(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
+  '@napi-rs/wasm-runtime@1.2.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
@@ -14172,7 +14173,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
-      '@napi-rs/wasm-runtime': 1.2.3(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
+      '@napi-rs/wasm-runtime': 1.2.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     optional: true
 
   '@unrs/resolver-binding-win32-arm64-msvc@1.12.2':
@@ -14768,7 +14769,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.21
       caniuse-lite: 1.0.30001810
-      electron-to-chromium: 1.5.425
+      electron-to-chromium: 1.5.426
       node-releases: 2.0.55
       update-browserslist-db: 1.3.2(browserslist@4.28.9)
 
@@ -14944,7 +14945,7 @@ snapshots:
   class-validator@0.14.2:
     dependencies:
       '@types/validator': 13.15.10
-      libphonenumber-js: 1.13.12
+      libphonenumber-js: 1.13.13
       validator: 13.15.35
 
   class-variance-authority@0.7.1:
@@ -15161,7 +15162,7 @@ snapshots:
 
   cookiejar@2.1.4: {}
 
-  cookies@0.9.1:
+  cookies@0.9.2:
     dependencies:
       depd: 2.0.0
       keygrip: 1.1.0
@@ -15587,7 +15588,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.425: {}
+  electron-to-chromium@1.5.426: {}
 
   emoji-regex@8.0.0: {}
 
@@ -16954,7 +16955,7 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  icu-minify@4.14.2:
+  icu-minify@4.14.3:
     dependencies:
       '@formatjs/icu-messageformat-parser': 3.5.17
 
@@ -17571,7 +17572,7 @@ snapshots:
       cache-content-type: 1.0.1
       content-disposition: 0.5.4
       content-type: 1.0.5
-      cookies: 0.9.1
+      cookies: 0.9.2
       debug: 4.4.3(supports-color@5.5.0)
       delegates: 1.0.0
       depd: 2.0.0
@@ -17612,7 +17613,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libphonenumber-js@1.13.12: {}
+  libphonenumber-js@1.13.13: {}
 
   light-my-request@6.6.0:
     dependencies:
@@ -18133,20 +18134,20 @@ snapshots:
       react-dom: 19.1.4(react@19.1.4)
       uuid: 11.1.1
 
-  next-intl-swc-plugin-extractor@4.14.2: {}
+  next-intl-swc-plugin-extractor@4.14.3: {}
 
   next-intl@4.9.2(next@15.5.24(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.9.5)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.93.2))(react@19.1.4)(typescript@6.0.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.8.13
       '@parcel/watcher': 2.6.0
       '@swc/core': 1.16.2
-      icu-minify: 4.14.2
+      icu-minify: 4.14.3
       negotiator: 1.1.0
       next: 15.5.24(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.9.5)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.93.2)
-      next-intl-swc-plugin-extractor: 4.14.2
+      next-intl-swc-plugin-extractor: 4.14.3
       po-parser: 2.2.0
       react: 19.1.4
-      use-intl: 4.14.2(react@19.1.4)
+      use-intl: 4.14.3(react@19.1.4)
     optionalDependencies:
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -20252,7 +20253,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tslog@4.11.0: {}
+  tslog@5.1.0: {}
 
   tsscmp@1.0.6: {}
 
@@ -20460,11 +20461,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.18
 
-  use-intl@4.14.2(react@19.1.4):
+  use-intl@4.14.3(react@19.1.4):
     dependencies:
       '@formatjs/fast-memoize': 3.1.7
       '@schummar/icu-type-parser': 1.21.5
-      icu-minify: 4.14.2
+      icu-minify: 4.14.3
       intl-messageformat: 11.2.14
       react: 19.1.4
 

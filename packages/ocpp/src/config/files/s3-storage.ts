@@ -11,11 +11,10 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import type { IFileStorage } from '@citrineos/base';
+import { childLogger, type IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { Readable } from 'stream';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class S3Storage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
@@ -41,9 +40,7 @@ export class S3Storage implements IFileStorage {
         : {}),
     });
     this.defaultBucketName = config!.defaultBucketName!;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

@@ -10,8 +10,8 @@ import {
   type MessagesEvent,
   type MessagesEventContext,
 } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 
 export class MessagesEventPipeline {
   private readonly _frameProcessors: IFrameEventProcessor[];
@@ -29,9 +29,7 @@ export class MessagesEventPipeline {
   }) {
     this._frameProcessors = frameEventProcessors;
     this._connectionProcessors = connectionEventProcessors;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /** For startup logging: which processors serve which kind. */

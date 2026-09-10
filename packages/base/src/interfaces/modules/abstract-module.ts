@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { serializeError } from '@base-util/errors.js';
+import { childLogger, loggerDefaults } from '@base-util/logging.js';
 import {
   type CallAction,
   type HandlerProperties,
@@ -30,8 +31,7 @@ import type {
 import type { IModule } from '@interfaces/modules/module.js';
 import { OcppError } from '@ocpp/rpc/message.js';
 import 'reflect-metadata';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { OCPPValidator } from './ocpp-validator.js';
 
 /** Two handler classes claiming one action and direction within the same module. */
@@ -470,13 +470,10 @@ export abstract class AbstractModule implements IModule {
    * @return {Logger<ILogObj>} The initialized logger.
    */
   protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
-    return baseLogger
-      ? baseLogger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({
-          name: this.constructor.name,
-          minLevel: this._config.logLevel,
-          hideLogPositionForProduction: this._config.env === 'production',
-        });
+    return childLogger(baseLogger, this.constructor.name, {
+      ...loggerDefaults(this._config.env),
+      minLevel: this._config.logLevel,
+    });
   }
 
   /**
