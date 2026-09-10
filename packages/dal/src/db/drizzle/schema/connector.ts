@@ -55,8 +55,8 @@ function connectorColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const connectorTable = pgTable(TableName.Connectors, connectorColumns(), (t) => [
-  uniqueIndex('connectors_station_id_connector_id').on(t.stationId, t.connectorId),
-  uniqueIndex('connectors_evse_id_evse_type_connector_id').on(t.evseId, t.evseTypeConnectorId),
+  uniqueIndex('stationId_connectorId').on(t.stationId, t.connectorId),
+  uniqueIndex('evseId_evseTypeConnectorId').on(t.evseId, t.evseTypeConnectorId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

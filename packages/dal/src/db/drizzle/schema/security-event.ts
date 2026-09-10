@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import { index, integer, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -28,9 +28,7 @@ function securityEventColumns() {
 }
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
-export const securityEventTable = pgTable(TableName.SecurityEvents, securityEventColumns(), (t) => [
-  index('security_events_ocpp_connection_name').on(t.ocppConnectionName),
-]);
+export const securityEventTable = pgTable(TableName.SecurityEvents, securityEventColumns());
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed
 const tenantTableCache = new Map<number, typeof securityEventTable>();
