@@ -15,7 +15,6 @@ export {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
-  ChargingStation,
   Component,
   Connector,
   DefaultSequelizeInstance,

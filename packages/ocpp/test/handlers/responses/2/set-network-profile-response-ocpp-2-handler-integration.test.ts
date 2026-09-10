@@ -15,7 +15,6 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   SequelizeLocationRepository,
@@ -43,6 +42,7 @@ const PROFILE_ID = 'websocket-server-0';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -73,6 +73,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -119,11 +125,7 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
   const { container } = createTestContainer();
 
   beforeEach(async () => {
-    await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await SetNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await ServerNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
     await ServerNetworkProfile.create({
@@ -140,11 +142,10 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
     } as never);
 
     for (const name of [STATION_A, STATION_B]) {
-      await ChargingStation.create({
+      await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
         ocppConnectionName: name,
         isOnline: false,
-        tenantId: DEFAULT_TENANT_ID,
-      } as never);
+      });
     }
 
     // One row per station under the one correlation id, exactly as prepareSetNetworkProfile

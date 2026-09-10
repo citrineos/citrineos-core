@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
-import {
-  ChargingStation,
-  Connector,
+import {  Connector,
   DefaultSequelizeInstance,
   Evse,
   SequelizeLocationRepository,
@@ -72,9 +70,9 @@ beforeEach(async () => {
 describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160 integration)', () => {
   it('creates an Evse whose id satisfies the Connector FK constraints', async () => {
     const ocppConnectionName = 'CS-1.6-clean-db';
-    const station = await ChargingStation.create({
+    const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
 
     const { evseId } = await locationRepository.autoCommissionEvseForOcpp16Connector(
@@ -110,9 +108,9 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Mirror image of the above: a 2.0.1 connector is identified per-EVSE and has no
     // station-wide 1.6 number, so connectorId has to be nullable in the live schema too.
     const ocppConnectionName = 'CS-2.0.1-no-connector-id';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
     const evse = await Evse.create({
       ocppConnectionName,
@@ -138,9 +136,9 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
 describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (#160 integration)', () => {
   it('processes a 1.6 StatusNotification against a clean DB without crashing (auto-commission path)', async () => {
     const ocppConnectionName = 'CS-1.6-e2e-clean';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
 
     const websocketConnection: IWebsocketConnection = {
@@ -197,9 +195,9 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     // auto-commissionEvseForOcpp16Connector creates unconditionally, so the guard against
     // an Evse per StatusNotification is the matching-evse lookup ahead of it.
     const ocppConnectionName = 'CS-1.6-e2e-repeat';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
 
     const websocketConnection: IWebsocketConnection = {
@@ -244,9 +242,9 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
 
   it('processes a 1.6 StatusNotification for a commissioned station (matching evse path)', async () => {
     const ocppConnectionName = 'CS-1.6-e2e-commissioned';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
     // Use the commission helper for a clean pre-existing setup, then upsert
     // a Connector tied to it so the matching-evse branch fires in the handler.
@@ -327,9 +325,9 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // upsert on (evseId, evseTypeConnectorId) — Sequelize rejects an undefined where
     // value outright, so keying on connectorId would throw here.
     const ocppConnectionName = 'CS-2.0.1-e2e-clean';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
 
     await expect(
@@ -353,9 +351,9 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // distinct in Postgres, so a lookup keyed on a null connectorId would insert a fresh
     // row on every StatusNotification instead of updating the existing one.
     const ocppConnectionName = 'CS-2.0.1-e2e-repeat';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
     const service = aService(true);
 
@@ -382,9 +380,9 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // Both are synthesized with connectorId unset, so only (evseId, evseTypeConnectorId)
     // tells them apart.
     const ocppConnectionName = 'CS-2.0.1-e2e-multi-evse';
-    await ChargingStation.create({
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
+      isOnline: true,
     });
     const service = aService(true);
 

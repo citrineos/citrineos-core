@@ -5,12 +5,12 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_common_types, type SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
   Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
   SequelizeTransactionEventRepository,
   Tenant,
   Transaction,
@@ -34,6 +34,7 @@ const TRANSACTION_ID = 'T-NEEDS-1';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -65,6 +66,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -75,11 +82,10 @@ afterAll(async () => {
 let nextEvseTypeNumber = 1;
 
 async function aStation(ocppConnectionName: string) {
-  await ChargingStation.create({
+  await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 /** Adds one commissioned EVSE to a station and returns its database id. */

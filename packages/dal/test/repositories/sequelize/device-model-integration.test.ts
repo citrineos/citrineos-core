@@ -4,9 +4,7 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
-import {
-  ChargingStation,
-  Component,
+import {  Component,
   DefaultSequelizeInstance,
   SequelizeDeviceModelRepository,
   Tenant,
@@ -14,6 +12,7 @@ import {
   VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { aGetVariableResult } from '../../providers/monitoring.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';

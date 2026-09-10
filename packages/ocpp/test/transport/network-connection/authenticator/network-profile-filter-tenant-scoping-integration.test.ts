@@ -6,9 +6,9 @@ import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@citrineos/dal';
 import {
-  ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
+  SequelizeLocationRepository,
   SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
   SetNetworkProfile,
@@ -37,6 +37,7 @@ const CONFIGURATION_SLOT = 1;
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -68,6 +69,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -107,10 +114,7 @@ function aFilter(): TestNetworkProfileFilter {
 
 describe('NetworkProfileFilter tenant scoping', () => {
   beforeEach(async () => {
-    await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await ServerNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
     await Tenant.create({ id: TENANT_A, name: 'A' } as never);
     await Tenant.create({ id: TENANT_B, name: 'B' } as never);
@@ -129,11 +133,10 @@ describe('NetworkProfileFilter tenant scoping', () => {
       tenantId: TENANT_B,
     } as never);
 
-    const station = await ChargingStation.create({
+    const station = await locationRepository.createOrUpdateChargingStation(TENANT_A, {
       ocppConnectionName: STATION,
       isOnline: false,
-      tenantId: TENANT_A,
-    } as never);
+    });
 
     await SetNetworkProfile.create({
       id: SET_NETWORK_PROFILE_ID,
