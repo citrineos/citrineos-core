@@ -14,6 +14,8 @@ export * as drizzleSchema from './schema/index.js';
 export {
   DrizzleRepository,
   type DrizzleRepositoryDependencies,
+  type DrizzleExecutor,
+  type DrizzleWriteContext,
 } from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,
@@ -49,6 +51,18 @@ export {
   type CertificateEntityInsert,
 } from './schema/certificate.js';
 export {
+  DrizzleChangeConfigurationRepository,
+  toChangeConfigurationDto,
+} from '../../repositories/drizzle/change-configuration.js';
+export {
+  changeConfigurationTable,
+  tenantChangeConfigurationTable,
+  ChangeConfigurationEntitySchema,
+  ChangeConfigurationEntityInsertSchema,
+  type ChangeConfigurationEntity,
+  type ChangeConfigurationEntityInsert,
+} from './schema/change-configuration.js';
+export {
   DrizzleChargingStationRepository,
   toChargingStationDto,
 } from '../../repositories/drizzle/charging-station.js';
@@ -60,6 +74,15 @@ export {
   type ChargingStationEntity,
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
+export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
+export {
+  evseTable,
+  tenantEvseTable,
+  EvseEntitySchema,
+  EvseEntityInsertSchema,
+  type EvseEntity,
+  type EvseEntityInsert,
+} from './schema/evse.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   locationTable,

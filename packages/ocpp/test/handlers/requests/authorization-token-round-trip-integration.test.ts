@@ -2,10 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import type { Sequelize } from 'sequelize-typescript';
-import { type BootstrapConfig, DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
+import {
+  Authorization,
+  ChargingStation,
+  DefaultSequelizeInstance,
+  SequelizeAuthorizationRepository,
+  SequelizeTransactionEventRepository,
+  Tenant,
+  Transaction,
+} from '@citrineos/dal';
 import {
   AuthorizationStatusEnum,
   EventGroup,
@@ -18,18 +24,13 @@ import {
   OCPP_CallAction,
   type OcppRequest,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/types';
-import {
-  Authorization,
-  ChargingStation,
-  DefaultSequelizeInstance,
-  SequelizeAuthorizationRepository,
-  SequelizeTransactionEventRepository,
-  Tenant,
-  Transaction,
-} from '@citrineos/dal';
 import { AuthorizeRequestOcpp16Handler, AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance, makeMockOcppSender } from '@test/test-container.js';
+import type { Sequelize } from 'sequelize-typescript';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 /**
  * The round trip a depot vehicle makes: enrolled once as an Authorization row keyed on its MAC,
@@ -48,7 +49,7 @@ const STATION = 'CP-DEPOT-1';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
-let config: BootstrapConfig;
+let config: SystemConfig;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -75,7 +76,7 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as BootstrapConfig;
+  } as unknown as SystemConfig;
 
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');

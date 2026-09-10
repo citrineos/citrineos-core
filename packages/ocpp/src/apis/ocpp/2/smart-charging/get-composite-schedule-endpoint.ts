@@ -2,27 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractMessageEndpoint,
+  DEFAULT_TENANT_ID,
   type AbstractMessageEndpointDependencies,
   type IMessageConfirmation,
   type IMessageEndpointMetadata,
   type IOcppSender,
-  AbstractMessageEndpoint,
-  DEFAULT_TENANT_ID,
 } from '@citrineos/base';
+import type { IDeviceModelRepository, IEvseRepository } from '@citrineos/dal';
 import {
   EventGroup,
   OCPP_CallAction,
-  type OCPPVersion,
   type OCPP2_request_types,
+  type OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ILocationRepository } from '@citrineos/dal';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 import { readChargingRateUnitMemberList } from './charging-rate-units.js';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelRepository: IDeviceModelRepository;
-  locationRepository: ILocationRepository;
+  evseRepository: IEvseRepository;
 }
 
 export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
@@ -35,13 +35,13 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelRepository: IDeviceModelRepository;
-  private readonly _locationRepository: ILocationRepository;
+  private readonly _evseRepository: IEvseRepository;
 
-  constructor({ logger, ocppSender, deviceModelRepository, locationRepository }: Dependencies) {
+  constructor({ logger, ocppSender, deviceModelRepository, evseRepository }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._deviceModelRepository = deviceModelRepository;
-    this._locationRepository = locationRepository;
+    this._evseRepository = evseRepository;
   }
 
   async handle(
@@ -54,7 +54,7 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
     return Promise.all(
       identifiers.map(async (ocppConnectionName) => {
         if (request.evseId !== 0) {
-          const evse = await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          const evse = await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             ocppConnectionName,
             request.evseId,
