@@ -158,6 +158,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -215,6 +216,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -277,6 +279,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -315,6 +318,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });
