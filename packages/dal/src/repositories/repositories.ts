@@ -40,6 +40,7 @@ import type {
   ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
+  StatusNotificationDto,
   SubscriptionDto,
   TariffDto,
   TenantDto,
@@ -67,9 +68,9 @@ import type { VariableAttribute } from '../models/device-model/variable-attribut
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
+import type { MessageInfo } from '../models/message-info/message-info.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -273,7 +274,7 @@ export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void>;
 }
 
@@ -320,14 +321,6 @@ export interface IEvseRepository {
     ocppConnectionName: string,
   ): Promise<{ evseId: number }>;
 }
-
-export interface ILocationDomainRepository
-  extends CrudRepository<Location>,
-    ILocationRepository,
-    IChargingStationRepository,
-    IStatusNotificationRepository,
-    IConnectorRepository,
-    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (

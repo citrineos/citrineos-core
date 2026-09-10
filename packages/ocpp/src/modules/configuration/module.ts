@@ -8,7 +8,7 @@ import type {
   IBootRepository,
   IChangeConfigurationRepository,
   IDeviceModelRepository,
-  ILocationDomainRepository,
+  ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   ITenantRepository,
@@ -22,7 +22,7 @@ export interface ConfigurationModuleDependencies extends OcppModuleDependencies 
   bootRepository: IBootRepository;
   deviceModelRepository: IDeviceModelRepository;
   messageInfoRepository: IMessageInfoRepository;
-  locationRepository: ILocationDomainRepository;
+  locationRepository: ILocationRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
   ocppMessageRepository: IOCPPMessageRepository;
   idGenerator: IdGenerator;
@@ -110,9 +110,9 @@ export class ConfigurationModule extends AbstractModule {
     return this._messageInfoRepository;
   }
 
-  protected _locationRepository: ILocationDomainRepository;
+  protected _locationRepository: ILocationRepository;
 
-  get locationRepository(): ILocationDomainRepository {
+  get locationRepository(): ILocationRepository {
     return this._locationRepository;
   }
 
