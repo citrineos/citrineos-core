@@ -15,6 +15,7 @@ import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
+  BeforeValidate,
   BelongsTo,
   Column,
   DataType,
@@ -49,7 +50,10 @@ export class MeterValue extends Model implements MeterValueDto {
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
 
-  @Column(DataType.DATE)
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
   declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => StopTransaction, 'stopTransactionDatabaseId')
@@ -73,6 +77,7 @@ export class MeterValue extends Model implements MeterValueDto {
   @BelongsTo(() => Connector, 'connectorId')
   declare connector?: ConnectorDto;
 
+  @Column(DataType.JSONB)
   declare customData?: any | null;
 
   @ForeignKey(() => Tariff)
@@ -97,7 +102,7 @@ export class MeterValue extends Model implements MeterValueDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  @BeforeCreate
+  @BeforeValidate
   static async resolvePartitionKey(instance: MeterValue): Promise<void> {
     if (instance.transactionCreatedAt != null) {
       return;

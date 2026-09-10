@@ -11,6 +11,7 @@ import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
+  BeforeValidate,
   BelongsTo,
   Column,
   DataType,
@@ -51,12 +52,16 @@ export class StartTransaction extends Model implements StartTransactionDto {
 
   @Column({
     type: DataType.DATE,
+    allowNull: false,
     unique: 'transactionDatabaseId_transactionCreatedAt',
   })
   declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
+
+  @Column(DataType.INTEGER)
+  declare idTokenDatabaseId?: number | null;
 
   @ForeignKey(() => Connector)
   declare connectorDatabaseId: number;
@@ -76,7 +81,7 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  @BeforeCreate
+  @BeforeValidate
   static async resolveTransactionCreatedAt(instance: StartTransaction): Promise<void> {
     if (instance.transactionCreatedAt == null) {
       instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
