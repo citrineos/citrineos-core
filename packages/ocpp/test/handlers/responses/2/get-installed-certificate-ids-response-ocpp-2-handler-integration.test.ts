@@ -17,13 +17,12 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
-  InstalledCertificate,
-  OCPPMessage,
+  type ITenantRepository,
   SequelizeInstalledCertificateRepository,
+  SequelizeLocationRepository,
   SequelizeOCPPMessageRepository,
-  Tenant,
+  SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { GetInstalledCertificateIdsResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -58,6 +57,10 @@ const ROOT_TWO = {
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let installedCertificateRepository: SequelizeInstalledCertificateRepository;
+let ocppMessageRepository: SequelizeOCPPMessageRepository;
+let tenantRepository: ITenantRepository;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -89,6 +92,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  const deps = { config, logger: undefined, sequelizeInstance } as never;
+  installedCertificateRepository = new SequelizeInstalledCertificateRepository(deps);
+  ocppMessageRepository = new SequelizeOCPPMessageRepository(deps);
+  tenantRepository = new SequelizeTenantRepository(deps);
+  locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
 
 afterAll(async () => {
@@ -122,28 +131,26 @@ function aResponseReporting(...certificates: CertificateHashData[]): IMessage<Oc
 }
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
-  return InstalledCertificate.create({
+  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 async function aManufacturerCertificate() {
-  return InstalledCertificate.create({
+  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     hashAlgorithm: ROOT_ONE.hashAlgorithm,
     issuerNameHash: 'issuer-mf',
     issuerKeyHash: 'key-mf',
     serialNumber: 'serial-mf',
     certificateType: CertificateUseEnum.ManufacturerRootCertificate,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
-  return OCPPMessage.create({
+  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     correlationId: 'corr-1',
     origin: MessageOrigin.ChargingStationManagementSystem,
@@ -151,39 +158,34 @@ async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
     protocol: OCPPVersion.OCPP2_0_1,
     payload: { certificateType },
     raw: JSON.stringify([2, 'corr-1', 'GetInstalledCertificateIds', { certificateType }]),
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+    timestamp: new Date().toISOString(),
+  });
 }
 
 function recordedSerialNumbers() {
-  return InstalledCertificate.findAll({ where: { ocppConnectionName: STATION } }).then((rows) =>
-    rows.map((row) => row.serialNumber).sort(),
-  );
+  return installedCertificateRepository
+    .findAllByStation(DEFAULT_TENANT_ID, STATION)
+    .then((rows) => rows.map((row) => row.serialNumber).sort());
 }
 
 describe('GetInstalledCertificateIdsResponseOcpp2Handler with several certificates of one type', () => {
   const { container } = createTestContainer();
 
   function aHandler() {
-    const deps = { config, logger: undefined, sequelizeInstance } as never;
     return getTestInstance(container, GetInstalledCertificateIdsResponseOcpp2Handler, {
-      installedCertificateRepository: new SequelizeInstalledCertificateRepository(deps),
-      ocppMessageRepository: new SequelizeOCPPMessageRepository(deps),
+      installedCertificateRepository,
+      ocppMessageRepository,
     });
   }
 
   beforeEach(async () => {
-    await OCPPMessage.destroy({ where: {}, truncate: true, cascade: true });
-    await InstalledCertificate.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    await tenantRepository.createTenant({ id: DEFAULT_TENANT_ID, name: 'A', isUserTenant: false });
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName: STATION,
       isOnline: true,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    });
   });
 
   it('records every certificate the station reports, not only the last of each type', async () => {
