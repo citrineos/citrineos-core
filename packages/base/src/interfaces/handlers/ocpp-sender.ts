@@ -226,6 +226,7 @@ export class OcppSender implements IOcppSender {
     }
 
     message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
   }
 
@@ -271,6 +272,7 @@ export class OcppSender implements IOcppSender {
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
     message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
   }
 
