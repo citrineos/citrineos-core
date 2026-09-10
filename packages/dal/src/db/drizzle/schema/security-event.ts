@@ -12,7 +12,7 @@ import { type z } from 'zod';
 function securityEventColumns() {
   return {
     id: serial('id').primaryKey(),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     type: varchar('type', { length: 255 }),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
