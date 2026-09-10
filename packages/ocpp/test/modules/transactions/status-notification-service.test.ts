@@ -98,7 +98,7 @@ describe('StatusNotificationService', () => {
       createOrUpdateOcpp2Connector: vi.fn(),
       createOrUpdateEvse: vi.fn(),
       autoCommissionEvseForOcpp16Connector: vi.fn(),
-      updateAllConnectorsByQuery: vi.fn(),
+      updateAllConnectorsByStationId: vi.fn(),
     } as unknown as Mocked<
       IChargingStationRepository &
         IConnectorRepository &
@@ -123,6 +123,7 @@ describe('StatusNotificationService', () => {
       deviceModelRepository,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       locationRepository,
       cache,
     });
@@ -742,10 +743,10 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(locationRepository.updateAllConnectorsByQuery).toHaveBeenCalledWith(
+      expect(locationRepository.updateAllConnectorsByStationId).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
         expect.objectContaining({ connectorId: undefined }),
-        { where: { stationId: MOCK_STATION_ID, tenantId: DEFAULT_TENANT_ID } },
       );
       expect(locationRepository.createOrUpdateOcpp16Connector).not.toHaveBeenCalled();
     });
