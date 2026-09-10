@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { IVariableMonitoringRepository } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
 
 export class MonitoringService {
@@ -18,9 +18,7 @@ export class MonitoringService {
     logger: Logger<ILogObj>;
   }) {
     this._variableMonitoringRepository = variableMonitoringRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async processClearMonitoringResult(

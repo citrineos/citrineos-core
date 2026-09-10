@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type SystemConfig } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { AsyncJobStatus } from '../../models/async-job/async-job-status.js';
 import { Authorization } from '../../models/authorization/authorization.js';
 import { LocalListAuthorization } from '../../models/authorization/local-list-authorization.js';
@@ -74,9 +75,7 @@ export class DefaultSequelizeInstance {
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger
-        ? logger.getSubLogger({ name: this.name })
-        : new Logger<ILogObj>({ name: this.name });
+      DefaultSequelizeInstance.logger = childLogger(logger, this.name);
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }

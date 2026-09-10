@@ -28,6 +28,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleConnectorRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
@@ -306,6 +307,7 @@ function registerRepositories(container: AwilixContainer): void {
       ({ locationRepository }) => locationRepository,
     ).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -322,6 +324,7 @@ function registerRepositories(container: AwilixContainer): void {
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
       evseRepository: asClass(DrizzleEvseRepository).singleton(),
+      connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),

@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import { and, count, eq, type Column, type InferSelectModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable, PgTransaction } from 'drizzle-orm/pg-core';
 import EventEmitter from 'events';
-import { Logger, type ILogObj } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { DefaultDrizzleInstance } from '../../db/drizzle/util.js';
 
 // Every CitrineOS table shares these two columns — used to implement common
@@ -69,9 +70,7 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
   }: DrizzleRepositoryDependencies) {
     super();
     this.db = drizzleInstance ?? DefaultDrizzleInstance.getInstance(config, logger);
-    this.logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = childLogger(logger, this.constructor.name);
     this.useTenantSchema = useTenantSchema;
   }
 

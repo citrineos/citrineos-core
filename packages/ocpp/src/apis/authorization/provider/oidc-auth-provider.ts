@@ -3,17 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import type { JwtPayload } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import JwksRsa from 'jwks-rsa';
 import {
-  type IApiAuthProvider,
-  type UserInfo,
   ApiAuthenticationResult,
   ApiAuthorizationResult,
+  childLogger,
+  type IApiAuthProvider,
+  type UserInfo,
 } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
 import { RbacRulesLoader } from '../rbac/rbac-rules-loader.js';
@@ -58,9 +58,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       ...config,
     };
 
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._logger.info('OIDC auth provider config', this._config);
     // Create the JWKS client

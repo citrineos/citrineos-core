@@ -3,10 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import fp from 'fastify-plugin';
-import { type IApiAuthProvider, type UserInfo, HttpStatus } from '@citrineos/base';
+import { childLogger, HttpStatus, type IApiAuthProvider, type UserInfo } from '@citrineos/base';
 
 /**
  * Options for the authentication plugin
@@ -77,9 +76,7 @@ const apiAuthPlugin: FastifyPluginAsync<{
   logger?: Logger<ILogObj>;
 }> = async (fastify, { provider, options = {}, logger }) => {
   //TODO add logger instance ?
-  const _logger = logger
-    ? logger.getSubLogger({ name: 'AuthPlugin' })
-    : new Logger<ILogObj>({ name: 'AuthPlugin' });
+  const _logger = childLogger(logger, 'AuthPlugin');
   // Register the auth provider
   fastify.decorate('authProvider', provider);
 

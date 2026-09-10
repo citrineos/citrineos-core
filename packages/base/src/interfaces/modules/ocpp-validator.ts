@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { Ajv, type ErrorObject } from 'ajv';
+import { childLogger } from '@base-util/logging.js';
 import addFormats from 'ajv-formats';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,
   OCPP1_6_CALL_SCHEMA_RECORD,
@@ -28,9 +28,7 @@ export class OCPPValidator {
 
   constructor(logger?: Logger<ILogObj>, ajv?: Ajv) {
     this._ajv = ajv || OCPPValidator.createValidatorAjvInstance();
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

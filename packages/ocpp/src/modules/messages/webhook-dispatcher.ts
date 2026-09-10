@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  childLogger,
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
@@ -15,8 +16,7 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository, ISubscriptionRepository } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class WebhookDispatcher {
   protected static readonly SUBSCRIPTION_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
@@ -44,9 +44,7 @@ export class WebhookDispatcher {
     config?: SystemConfig;
   }) {
     this._subscriptionRepository = subscriptionRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._refreshTimer = setInterval(async () => {
       await this._refreshSubscriptions();
