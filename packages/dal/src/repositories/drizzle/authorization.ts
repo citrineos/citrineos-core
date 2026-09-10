@@ -186,4 +186,11 @@ export class DrizzleAuthorizationRepository
   ): Promise<AuthorizationDto> {
     return await this.insert(tenantId, { ...input });
   }
+
+  async createAuthorization(
+    tenantId: number,
+    input: AuthorizationCreate,
+  ): Promise<AuthorizationDto> {
+    return await this.insert(tenantId, { ...input });
+  }
 }
