@@ -4,8 +4,8 @@
 import type {
   ConnectorDto,
   StartTransactionDto,
-  TransactionDto,
   TenantDto,
+  TransactionDto,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP1_6_Namespace } from '@citrineos/base';
 import {
@@ -29,14 +29,18 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare meterStart: number; // in Wh
 
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('timestamp')?.toISOString();
+      return this.getDataValue('timestamp').toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 
