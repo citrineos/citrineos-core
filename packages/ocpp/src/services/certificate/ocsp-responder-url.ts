@@ -7,9 +7,6 @@ import { lookup } from 'node:dns/promises';
 import { request as httpRequest } from 'node:http';
 import { type RequestOptions, request as httpsRequest } from 'node:https';
 
-// The request is sent to the address that was checked, with the name in Host and SNI, so a second
-// DNS answer cannot send it somewhere the check would have refused.
-
 const ALLOWED_PROTOCOLS = ['http:', 'https:'];
 
 function isPrivateIPv4(address: string): boolean {
@@ -17,17 +14,17 @@ function isPrivateIPv4(address: string): boolean {
   if (a === 10 || a === 127 || a === 0) return true;
   if (a === 172 && b >= 16 && b <= 31) return true;
   if (a === 192 && b === 168) return true;
-  if (a === 169 && b === 254) return true; // link-local, and the cloud metadata address
-  if (a === 100 && b >= 64 && b <= 127) return true; // carrier-grade NAT
-  if (a >= 224) return true; // multicast and reserved
+  if (a === 169 && b === 254) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a >= 224) return true;
   return false;
 }
 
 function isPrivateIPv6(address: string): boolean {
   const normalised = address.toLowerCase().split('%')[0];
   if (normalised === '::1' || normalised === '::') return true;
-  if (normalised.startsWith('fe80')) return true; // link-local
-  if (/^f[cd]/.test(normalised)) return true; // unique local
+  if (normalised.startsWith('fe80')) return true;
+  if (/^f[cd]/.test(normalised)) return true;
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(normalised);
   return mapped ? isPrivateIPv4(mapped[1]) : false;
 }
