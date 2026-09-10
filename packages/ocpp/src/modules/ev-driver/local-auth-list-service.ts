@@ -333,9 +333,11 @@ export class LocalAuthListService {
     ocppConnectionName: string,
     key: string,
   ): Promise<number | null> {
-    const configuration = await this._changeConfigurationRepository.readOnlyOneByQuery(tenantId, {
-      where: { tenantId, ocppConnectionName, key },
-    });
+    const configuration = await this._changeConfigurationRepository.findByStationAndKey(
+      tenantId,
+      ocppConnectionName,
+      key,
+    );
     if (configuration?.value == null) {
       return null;
     }

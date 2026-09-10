@@ -97,6 +97,7 @@ export {
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
+  DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
   DrizzleConnectorRepository,
   DrizzleEvseRepository,

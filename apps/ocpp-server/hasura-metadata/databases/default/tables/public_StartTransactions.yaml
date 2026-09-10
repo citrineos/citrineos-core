@@ -13,39 +13,45 @@ object_relationships:
       foreign_key_constraint_on: tenantId
   - name: Transaction
     using:
-      foreign_key_constraint_on: transactionDatabaseId
+      manual_configuration:
+        remote_table:
+          name: Transactions
+          schema: public
+        column_mapping:
+          transactionDatabaseId: id
+          transactionCreatedAt: createdAt
 insert_permissions:
   - role: user
     permission:
       check:
         tenantId:
           _eq: x-hasura-tenant-id
-      columns: '*'
-    comment: ''
+      columns: "*"
+    comment: ""
 select_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""
 update_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       check:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ''
+    comment: ""
 delete_permissions:
   - role: user
     permission:
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
-    comment: ''
+    comment: ""
