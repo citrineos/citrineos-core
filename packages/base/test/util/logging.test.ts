@@ -4,7 +4,7 @@
 
 import { childLogger, loggerDefaults, MASKED_LOG_KEYS } from '@base-util/logging.js';
 import { type ILogObj, type ILogObjMeta, Logger } from 'tslog';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const SECRET = 'hunter2';
 
@@ -116,12 +116,23 @@ describe('childLogger', () => {
     expect(JSON.stringify(written)).not.toContain(SECRET);
   });
 
+  it('does not touch fallbackSettings when a parent was given', () => {
+    // Regression: constructors here build their logger before assigning their fields, so
+    // `() => ({ ...loggerDefaults(this._config.env) })` throws if it is called on the parent path.
+    const { logger: parent } = aLogger();
+    const fallback = vi.fn(() => ({ minLevel: 6 }));
+
+    childLogger(parent, 'OcppSender', fallback);
+
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
   it('applies fallbackSettings only when it builds the logger itself', () => {
-    const orphan = childLogger(undefined, 'Module', { minLevel: 6 });
+    const orphan = childLogger(undefined, 'Module', () => ({ minLevel: 6 }));
     expect(orphan.settings.minLevel).toBe(6);
 
     const { logger: parent } = aLogger();
     // The parent already carries the settings a child should inherit, so they are not overridden.
-    expect(childLogger(parent, 'Module', { minLevel: 6 }).settings.minLevel).toBe(0);
+    expect(childLogger(parent, 'Module', () => ({ minLevel: 6 })).settings.minLevel).toBe(0);
   });
 });

@@ -100,10 +100,10 @@ export abstract class AbstractModule implements IModule {
     handlers: AbstractHandler[] = [],
     excludedActions?: { requests?: CallAction[]; responses?: CallAction[] },
   ) {
+    this._config = config;
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
     this._logger.info('Initializing...');
-    this._config = config;
     this._handler = handler;
     this._sender = sender;
     this._eventGroup = eventGroup;
@@ -470,10 +470,10 @@ export abstract class AbstractModule implements IModule {
    * @return {Logger<ILogObj>} The initialized logger.
    */
   protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
-    return childLogger(baseLogger, this.constructor.name, {
+    return childLogger(baseLogger, this.constructor.name, () => ({
       ...loggerDefaults(this._config.env),
       minLevel: this._config.logLevel,
-    });
+    }));
   }
 
   /**

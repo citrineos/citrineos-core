@@ -49,15 +49,17 @@ export function loggerDefaults(env: string): ISettingsParam<ILogObj> {
  * @param parent - the injected logger, if there is one. Its settings, including the mask, are
  *   inherited by the child.
  * @param name - the child's name, conventionally `this.constructor.name`.
- * @param fallbackSettings - extra settings for the parentless case only, for the few callers that
- *   have the config needed to set `minLevel` or {@link loggerDefaults}.
+ * @param fallbackSettings - extra settings for the parentless case, for the few callers that have
+ *   the config needed to set `minLevel` or {@link loggerDefaults}. Called only when there is no
+ *   parent, so a caller whose config is not yet assigned can still pass one: constructors here
+ *   commonly build their logger before their fields are set.
  */
 export function childLogger(
   parent: Logger<ILogObj> | undefined,
   name: string,
-  fallbackSettings?: ISettingsParam<ILogObj>,
+  fallbackSettings?: () => ISettingsParam<ILogObj>,
 ): Logger<ILogObj> {
   return parent
     ? parent.getSubLogger({ name })
-    : new Logger<ILogObj>({ mask: maskSettings(), ...fallbackSettings, name });
+    : new Logger<ILogObj>({ mask: maskSettings(), ...fallbackSettings?.(), name });
 }

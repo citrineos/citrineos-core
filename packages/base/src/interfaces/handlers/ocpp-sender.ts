@@ -57,10 +57,10 @@ export class OcppSender implements IOcppSender {
     logger?: Logger<ILogObj>;
     ocppValidator?: OCPPValidator;
   }) {
+    this._config = config;
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
     this._logger.info('Initializing OcppSender...');
-    this._config = config;
     this._sender = sender;
     this._cache = cache;
   }
@@ -283,9 +283,9 @@ export class OcppSender implements IOcppSender {
    * @return {Logger<ILogObj>} The initialized logger.
    */
   protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
-    return childLogger(baseLogger, this.constructor.name, {
+    return childLogger(baseLogger, this.constructor.name, () => ({
       ...loggerDefaults(this._config.env),
       minLevel: this._config.logLevel,
-    });
+    }));
   }
 }
