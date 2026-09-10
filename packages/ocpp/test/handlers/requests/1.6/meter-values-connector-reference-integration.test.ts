@@ -4,12 +4,12 @@
 
 import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
-  ChargingStation,
   Connector,
   DefaultSequelizeInstance,
   Evse,
   EvseType,
   MeterValue,
+  SequelizeLocationRepository,
   SequelizeTransactionEventRepository,
   Tenant,
   Transaction,
@@ -45,6 +45,7 @@ const TRANSACTION_ID = 4711;
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -76,6 +77,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -112,11 +119,10 @@ async function aConnectorOn(ocppConnectionName: string, connectorNumber: number)
 }
 
 async function aStation(ocppConnectionName: string) {
-  await ChargingStation.create({
+  await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 function aMeterValuesMessage(connectorId: number): IMessage<OcppRequest> {

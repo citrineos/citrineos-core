@@ -11,11 +11,11 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   Component,
   DefaultSequelizeInstance,
   OCPPMessage,
   SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
   SequelizeOCPPMessageRepository,
   Tenant,
   Variable,
@@ -49,6 +49,7 @@ const CORRELATION_ID = 'corr-abc-123';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let handler: SetVariablesResponseOcpp2Handler;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -88,6 +89,12 @@ beforeAll(async () => {
   VariableAttribute.hasMany(VariableStatus, { foreignKey: 'variableAttributeId' });
   VariableStatus.belongsTo(VariableAttribute, { foreignKey: 'variableAttributeId' });
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 
   // The handler is stateless across tests (each test truncates + seeds the DB and
   // asserts on return values / DB state, not on mocks), so build it once.
@@ -134,10 +141,9 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 
 async function seedBase(): Promise<void> {
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
+  await locationRepository.createOrUpdateChargingStation(TENANT_ID, {
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
-    tenantId: TENANT_ID,
   });
 }
 

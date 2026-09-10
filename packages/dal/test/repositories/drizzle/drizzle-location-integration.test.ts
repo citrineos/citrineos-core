@@ -7,13 +7,12 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
-import {
-  ChargingStation,
-  DefaultSequelizeInstance,
+import {  DefaultSequelizeInstance,
   DrizzleLocationRepository,
   Location,
   Tenant,
 } from '../../../index.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
