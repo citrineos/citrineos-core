@@ -7,6 +7,7 @@ export { RequestBuilder } from './request.js';
 export { assert, notNull } from './assertion.js';
 export { serializeError } from './errors.js';
 export { childLogger, MASKED_LOG_KEYS, loggerDefaults } from './logging.js';
+export { redactionMiddleware, type RedactionRule } from './log-redaction.js';
 export {
   IDENTIFIER_DELIMITER,
   createIdentifier,

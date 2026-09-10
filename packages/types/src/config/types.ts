@@ -83,6 +83,68 @@ export const websocketServersConfigSchema = z
     message: 'Websocket server ids must be unique',
   });
 
+/**
+ * What to strip from logs, for the redaction the logger applies to every message it writes.
+ *
+ * `keys`, `paths` and `patterns` are handed to tslog's masking engine, which walks each logged
+ * value and censors what matches. They are additive: a value is censored if any of them matches it.
+ * Configuring these needs no code change — that is the point of putting them here.
+ */
+export const logRedactionSchema = z
+  .object({
+    /**
+     * Property names whose values are censored wherever they appear, at any depth. Matched
+     * case-insensitively, so `password` also covers `Password`.
+     */
+    keys: z.array(z.string()).default(['password']),
+
+    /**
+     * Dotted paths whose value is censored, where `*` matches exactly one segment — e.g.
+     * `certificate.privateKey` or `*.token`. A path must name the full depth of the value it
+     * targets; use `keys` for a name that can appear anywhere.
+     */
+    paths: z.array(z.string()).default([]),
+
+    /**
+     * Regular expressions matched against every logged string, censoring the parts that match. Use
+     * these for values recognizable by shape rather than by where they sit — a bearer token, say.
+     * Each is applied globally, so every occurrence in a string is censored, not just the first.
+     */
+    patterns: z
+      .array(
+        z.string().refine(
+          (source) => {
+            try {
+              new RegExp(source);
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          { message: 'must be a valid regular expression' },
+        ),
+      )
+      .default([]),
+
+    /** What a censored value is replaced with. */
+    placeholder: z.string().default('[***]'),
+
+    /**
+     * Whether to redact OCPP `KeyCode` idTokens — the PIN a driver typed at the Charging Station.
+     * OCPP 2.x C04.FR.04 requires that these never appear in logging, so this defaults on; it is
+     * configurable because only a deployment can decide it is running somewhere the rule is moot.
+     *
+     * Unlike the settings above, this one cannot be expressed as a key, path or pattern: whether an
+     * `idToken` is a key code depends on its sibling `type` field, so it is applied by a rule that
+     * inspects the surrounding object. See `keyCodeRedactionRule` in `@citrineos/ocpp`.
+     */
+    redactKeyCodes: z.boolean().default(true),
+  })
+  .prefault({});
+
+/** What to strip from logs. See {@link logRedactionSchema}. */
+export type LogRedactionConfig = z.infer<typeof logRedactionSchema>;
+
 // ─── Main static config ───
 
 export const configSchema = z.object({
@@ -265,6 +327,8 @@ export const configSchema = z.object({
   // ─── Tunables ───
 
   logLevel: z.number().int().min(0).max(6).default(2),
+
+  logRedaction: logRedactionSchema,
 
   timeouts: z
     .object({

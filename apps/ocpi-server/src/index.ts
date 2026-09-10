@@ -117,7 +117,7 @@ export class CitrineOSServer {
 
   private initLogger() {
     this._logger = new Logger<ILogObj>({
-      ...loggerDefaults(this.ocpiConfig!.env),
+      ...loggerDefaults(this.ocpiConfig!.env, this.ocpiConfig!.logRedaction),
       name: 'CitrineOS Logger',
       minLevel: this.ocpiConfig!.logLevel,
       // Disable colors for cloud deployment as some cloud logging environments such as cloudwatch can not interpret colors
