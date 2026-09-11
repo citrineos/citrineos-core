@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import pg from 'pg';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class DefaultDrizzleInstance {
   private static readonly DEFAULT_RETRIES = 5;
@@ -21,9 +22,7 @@ export class DefaultDrizzleInstance {
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): NodePgDatabase {
     if (!DefaultDrizzleInstance.instance) {
       DefaultDrizzleInstance.config = config;
-      DefaultDrizzleInstance.logger = logger
-        ? logger.getSubLogger({ name: this.name })
-        : new Logger<ILogObj>({ name: this.name });
+      DefaultDrizzleInstance.logger = childLogger(logger, this.name);
 
       DefaultDrizzleInstance.pool = new pg.Pool({
         host: config.database.host,

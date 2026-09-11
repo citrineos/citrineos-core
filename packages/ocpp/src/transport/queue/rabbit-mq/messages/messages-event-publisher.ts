@@ -10,8 +10,8 @@ import {
   type MessagesEvent,
   messagesEventRoutingKey,
 } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
 
 /**
@@ -36,9 +36,7 @@ export class MessagesEventPublisher {
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._channelManager.getConnectionManager().on('connected', () => {
       this._topologyReady = undefined;

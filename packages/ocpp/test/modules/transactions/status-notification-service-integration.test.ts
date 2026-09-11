@@ -164,7 +164,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
 
@@ -222,7 +222,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
 
@@ -285,7 +285,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
 
@@ -324,7 +324,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
-      locationRepository,
+      statusNotificationRepository: locationRepository,
       cache,
     });
   };

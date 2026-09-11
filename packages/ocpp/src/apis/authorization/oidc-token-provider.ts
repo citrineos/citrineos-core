@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
+import { childLogger } from '@citrineos/base';
 export interface OidcTokenProviderConfig {
   tokenUrl: string;
   clientId: string;
@@ -25,9 +25,7 @@ export class OidcTokenProvider {
     private config: OidcTokenProviderConfig,
     logger?: Logger<ILogObj>,
   ) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   public async getToken(): Promise<string> {

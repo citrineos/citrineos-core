@@ -1,18 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { AuthenticationOptions } from '@citrineos/base';
+import { type AuthenticationOptions, childLogger } from '@citrineos/base';
 import { IncomingMessage } from 'http';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export abstract class AuthenticatorFilter {
   protected _logger: Logger<ILogObj>;
 
   protected constructor(logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   protected abstract shouldFilter(options: AuthenticationOptions): boolean;

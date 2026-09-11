@@ -21,6 +21,7 @@ import {
   type IFileStorage,
   type IMessageRouter,
   type IModule,
+  loggerDefaults,
   OCPPValidator,
 } from '@citrineos/base';
 import {
@@ -310,9 +311,9 @@ export class CitrineOSServer {
   /** Split out so a subclass swapping the Logger implementation can reuse the settings. */
   protected loggerSettings(isCloud = process.env.DEPLOYMENT_TARGET === 'cloud') {
     return {
+      ...loggerDefaults(this._config.env),
       name: 'CitrineOS Logger',
       minLevel: this._config.logLevel,
-      hideLogPositionForProduction: this._config.env === 'production',
       type: isCloud ? ('json' as const) : ('pretty' as const),
     };
   }

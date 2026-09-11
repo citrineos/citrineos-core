@@ -87,6 +87,27 @@ export {
   type EvseEntity,
   type EvseEntityInsert,
 } from './schema/evse.js';
+export {
+  DrizzleStatusNotificationRepository,
+  toStatusNotificationDto,
+} from '../../repositories/drizzle/status-notification.js';
+export {
+  statusNotificationTable,
+  tenantStatusNotificationTable,
+  StatusNotificationEntitySchema,
+  StatusNotificationEntityInsertSchema,
+  type StatusNotificationEntity,
+  type StatusNotificationEntityInsert,
+} from './schema/status-notification.js';
+export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
+export {
+  latestStatusNotificationTable,
+  tenantLatestStatusNotificationTable,
+  LatestStatusNotificationEntitySchema,
+  LatestStatusNotificationEntityInsertSchema,
+  type LatestStatusNotificationEntity,
+  type LatestStatusNotificationEntityInsert,
+} from './schema/latest-status-notification.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   locationTable,
@@ -132,6 +153,18 @@ export {
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
+export {
+  DrizzleMessageInfoRepository,
+  toMessageInfoDto,
+} from '../../repositories/drizzle/message-info.js';
+export {
+  messageInfoTable,
+  tenantMessageInfoTable,
+  MessageInfoEntitySchema,
+  MessageInfoEntityInsertSchema,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
 export {
   DrizzleReservationRepository,
   toReservationDto,

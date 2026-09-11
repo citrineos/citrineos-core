@@ -31,6 +31,7 @@ import type {
   InstalledCertificateCreate,
   InstalledCertificateDto,
   LocationDto,
+  MessageInfoDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
@@ -40,6 +41,7 @@ import type {
   ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
+  StatusNotificationDto,
   SubscriptionDto,
   TariffDto,
   TenantDto,
@@ -67,7 +69,6 @@ import type { VariableAttribute } from '../models/device-model/variable-attribut
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
@@ -278,7 +279,7 @@ export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void>;
 }
 
@@ -325,14 +326,6 @@ export interface IEvseRepository {
     ocppConnectionName: string,
   ): Promise<{ evseId: number }>;
 }
-
-export interface ILocationDomainRepository
-  extends CrudRepository<Location>,
-    ILocationRepository,
-    IChargingStationRepository,
-    IStatusNotificationRepository,
-    IConnectorRepository,
-    IEvseRepository {}
 
 export interface ISecurityEventRepository {
   createByStationId: (
@@ -475,14 +468,14 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
+export interface IMessageInfoRepository {
   deactivateAllByStationId(tenantId: number, ocppConnectionName: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
-  ): Promise<MessageInfo>;
+  ): Promise<MessageInfoDto>;
 }
 
 export interface ITariffRepository {
