@@ -41,8 +41,9 @@ export class StopTransaction extends Model implements StopTransactionDto {
   @Column({
     type: DataType.DATE,
     unique: 'transactionDatabaseId_transactionCreatedAt',
+    allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;

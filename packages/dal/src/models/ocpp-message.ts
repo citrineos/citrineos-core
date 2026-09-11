@@ -96,6 +96,7 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
     get() {
       return this.getDataValue('timestamp')?.toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 

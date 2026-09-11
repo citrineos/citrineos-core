@@ -50,14 +50,16 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @Column({
     type: DataType.INTEGER,
     unique: 'transactionDatabaseId_transactionCreatedAt',
+    allowNull: false,
   })
   declare transactionDatabaseId: number;
 
   @Column({
     type: DataType.DATE,
     unique: 'transactionDatabaseId_transactionCreatedAt',
+    allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;

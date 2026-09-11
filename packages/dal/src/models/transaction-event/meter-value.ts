@@ -49,13 +49,19 @@ export class MeterValue extends Model implements MeterValueDto {
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
 
-  @Column(DataType.DATE)
-  declare transactionCreatedAt?: Date;
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => StopTransaction, 'stopTransactionDatabaseId')
   declare stopTransaction?: StopTransactionDto;
 
-  @Column(DataType.JSONB)
+  @Column({
+    type: DataType.JSONB,
+    allowNull: false,
+  })
   declare sampledValue: [SampledValue, ...SampledValue[]];
 
   @Column({
@@ -63,6 +69,7 @@ export class MeterValue extends Model implements MeterValueDto {
     get() {
       return this.getDataValue('timestamp').toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 
