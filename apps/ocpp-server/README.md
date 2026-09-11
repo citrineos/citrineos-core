@@ -452,10 +452,7 @@ all OCPP versions.
 <<<<<<< HEAD
 The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
 =======
-The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
-
-> > > > > > > next
-> > > > > > > compiling it onto that validator's AJV and passing it in:
+The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by compiling it onto that validator's AJV and passing it in:
 
 ```ts
 const ocppAjv = OCPPValidator.createValidatorAjvInstance();
