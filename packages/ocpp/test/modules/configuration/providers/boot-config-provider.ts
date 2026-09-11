@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Boot } from '@citrineos/dal';
+import type { BootDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
@@ -32,8 +32,8 @@ export const aValidSetVariableResult = (
   return applyUpdateFunction(item, updateFunction);
 };
 
-export const aValidBootConfig = (updateFunction?: UpdateFunction<Boot>): Boot => {
-  const item: Boot = {
+export const aValidBootConfig = (updateFunction?: UpdateFunction<BootDto>): BootDto => {
+  const item: BootDto = {
     id: faker.number.int({ min: 1, max: 1000 }),
     stationId: faker.number.int({ min: 1, max: 1000 }),
     lastBootTime: faker.date.recent().toISOString(),
@@ -43,7 +43,7 @@ export const aValidBootConfig = (updateFunction?: UpdateFunction<Boot>): Boot =>
     getBaseReportOnPending: false,
     variablesRejectedOnLastBoot: [aValidSetVariableResult()],
     bootWithRejectedVariables: faker.datatype.boolean(),
-  } as Boot;
+  } as BootDto;
 
   return applyUpdateFunction(item, updateFunction);
 };
