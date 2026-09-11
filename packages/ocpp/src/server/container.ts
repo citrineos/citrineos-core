@@ -44,6 +44,7 @@ import {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  DrizzleVariableCharacteristicsRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -309,6 +310,9 @@ function registerRepositories(container: AwilixContainer): void {
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
+    variableCharacteristicsRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
+    ).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
@@ -349,6 +353,9 @@ function registerRepositories(container: AwilixContainer): void {
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
+      variableCharacteristicsRepository: asClass(
+        DrizzleVariableCharacteristicsRepository,
+      ).singleton(),
     });
   }
 }

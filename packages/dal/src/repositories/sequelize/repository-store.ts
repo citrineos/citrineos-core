@@ -32,6 +32,7 @@ import type {
   ITariffRepository,
   ITenantRepository,
   ITransactionEventRepository,
+  IVariableCharacteristicsRepository,
   IVariableMonitoringRepository,
 } from '../repositories.js';
 import {
@@ -54,6 +55,7 @@ import {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  DrizzleVariableCharacteristicsRepository,
 } from '../../db/drizzle/index.js';
 import type { Component } from '../../models/device-model/component.js';
 import { SequelizeAuthorizationRepository } from './authorization.js';
@@ -110,6 +112,7 @@ export class RepositoryStore {
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 
   constructor({
     config,
@@ -141,6 +144,7 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
+    this.variableCharacteristicsRepository = this.deviceModelRepository;
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
@@ -198,6 +202,10 @@ export class RepositoryStore {
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
       this.tariffRepository = new DrizzleTariffRepository({ config, logger });
+      this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
+        config,
+        logger,
+      });
     } else {
       this.authorizationRepository = new SequelizeAuthorizationRepository({
         config,
