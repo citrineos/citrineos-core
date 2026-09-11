@@ -13,11 +13,11 @@ import {
 import {
   Component,
   DefaultSequelizeInstance,
-  OCPPMessage,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
   type ITenantRepository,
+  type IOCPPMessageRepository,
   SequelizeOCPPMessageRepository,  Variable,
   VariableAttribute,
   VariableStatus,
@@ -51,6 +51,7 @@ let sequelizeInstance: Sequelize;
 let handler: SetVariablesResponseOcpp2Handler;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
+let ocppMessageRepository: IOCPPMessageRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -97,6 +98,11 @@ beforeAll(async () => {
     sequelizeInstance,
   } as never);
   tenantRepository = new SequelizeTenantRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  ocppMessageRepository = new SequelizeOCPPMessageRepository({
     config: dbConfig,
     logger: undefined,
     sequelizeInstance,
@@ -194,9 +200,9 @@ async function seedVariableStatus(
 async function seedSetVariablesRequest(
   setVariableData: OCPP2_0_1.SetVariableDataType[],
   correlationId: string = CORRELATION_ID,
-): Promise<OCPPMessage> {
+) {
   const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
-  return OCPPMessage.create({
+  return ocppMessageRepository.createOCPPMessage(TENANT_ID, {
     ocppConnectionName: OCPP_CONNECTION_NAME,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
@@ -206,7 +212,6 @@ async function seedSetVariablesRequest(
     payload,
     raw: JSON.stringify([MessageTypeId.Call, correlationId, 'SetVariables', payload]),
     timestamp: new Date().toISOString(),
-    tenantId: TENANT_ID,
   });
 }
 
