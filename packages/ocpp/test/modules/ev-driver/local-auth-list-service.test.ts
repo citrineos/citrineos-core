@@ -9,7 +9,8 @@ import {
   type ILocalAuthListRepository,
   LocalListVersion,
   SendLocalList,
-  VariableAttribute,} from '@citrineos/dal';
+  VariableAttribute,
+} from '@citrineos/dal';
 import { LocalAuthListService } from '@modules/ev-driver/local-auth-list-service.js';
 import { OCPP2_0_1, type VariableCharacteristicsDto } from '@citrineos/types';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';

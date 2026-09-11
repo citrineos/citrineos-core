@@ -11,7 +11,8 @@ import {
   SequelizeLocationRepository,
   SequelizeTenantRepository,
   type ITenantRepository,
-  SequelizeTransactionEventRepository,  Transaction,
+  SequelizeTransactionEventRepository,
+  Transaction,
 } from '@citrineos/dal';
 import {
   EventGroup,

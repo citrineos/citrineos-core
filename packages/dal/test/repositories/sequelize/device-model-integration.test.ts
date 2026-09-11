@@ -4,9 +4,11 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
-import {  Component,
+import {
+  Component,
   DefaultSequelizeInstance,
-  SequelizeDeviceModelRepository,  Variable,
+  SequelizeDeviceModelRepository,
+  Variable,
   VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';

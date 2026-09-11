@@ -7,7 +7,8 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
-import {  DefaultSequelizeInstance,
+import {
+  DefaultSequelizeInstance,
   Evse,
   DrizzleChargingStationRepository,
   SequelizeLocationRepository,

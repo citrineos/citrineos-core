@@ -4,13 +4,15 @@
 
 import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-composite-schedule-endpoint.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import {  DefaultSequelizeInstance,
+import {
+  DefaultSequelizeInstance,
   Evse,
   EvseType,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
-  type ITenantRepository,} from '@citrineos/dal';
+  type ITenantRepository,
+} from '@citrineos/dal';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';

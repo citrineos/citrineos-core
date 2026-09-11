@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
-import {  DefaultSequelizeInstance,
+import {
+  DefaultSequelizeInstance,
   Evse,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
-  type ITenantRepository,} from '@citrineos/dal';
+  type ITenantRepository,
+} from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import type { Sequelize } from 'sequelize-typescript';
@@ -238,7 +240,8 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       1,
     );
     expect(
-      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)).length,
+      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName))
+        .length,
     ).toBe(1);
     const connector = await locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
       DEFAULT_TENANT_ID,
@@ -378,7 +381,8 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     }
 
     expect(
-      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)).length,
+      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName))
+        .length,
     ).toBe(1);
     const connector = (
       await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)

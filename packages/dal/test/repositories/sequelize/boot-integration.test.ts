@@ -3,9 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootDto, SystemConfig } from '@citrineos/types';
-import {
-  DefaultSequelizeInstance,
-  SequelizeBootRepository,} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeBootRepository } from '../../../index.js';
 import { Boot } from '../../../src/models/boot.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';

@@ -11,7 +11,8 @@ import {
 import {
   Authorization,
   DefaultSequelizeInstance,
-  SequelizeLocalAuthListRepository,} from '../../../index.js';
+  SequelizeLocalAuthListRepository,
+} from '../../../index.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
