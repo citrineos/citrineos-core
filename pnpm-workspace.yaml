@@ -67,7 +67,7 @@ catalog:
   pvutils: 1.2.0
 
   # -- Runtime & infrastructure --
-  awilix: 13.0.3
+  awilix: 13.0.5
   reflect-metadata: 0.2.2
   tslog: 5.1.0
   uuid: 11.1.1
