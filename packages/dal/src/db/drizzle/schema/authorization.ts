@@ -52,6 +52,7 @@ function authorizationColumns() {
     // Sequelize DECIMAL → numeric (returned as string, converted in the repository layer)
     prepaidBalance: numeric('prepaidBalance'),
     tenantPartnerId: integer('tenantPartnerId'),
+    customData: jsonb('customData'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

@@ -62,7 +62,10 @@ export class Transaction extends Model implements TransactionDto {
   @Column(DataType.INTEGER)
   declare stationId: number;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   ocppConnectionName!: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')

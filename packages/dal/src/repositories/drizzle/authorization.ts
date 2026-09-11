@@ -44,7 +44,7 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     language2: entity.language2,
     personalMessage: entity.personalMessage,
     // customData is not persisted as a column.
-    customData: undefined,
+    customData: entity.customData,
     concurrentTransaction: entity.concurrentTransaction ?? undefined,
     isPrepaid: entity.isPrepaid ?? undefined,
     prepaidBalance: entity.prepaidBalance != null ? Number(entity.prepaidBalance) : null,

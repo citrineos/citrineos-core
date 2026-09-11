@@ -80,6 +80,7 @@ export class MeterValue extends Model implements MeterValueDto {
   @BelongsTo(() => Connector, 'connectorId')
   declare connector?: ConnectorDto;
 
+  @Column(DataType.JSONB)
   declare customData?: any | null;
 
   @ForeignKey(() => Tariff)
