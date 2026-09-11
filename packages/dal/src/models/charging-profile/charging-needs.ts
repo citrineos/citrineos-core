@@ -72,7 +72,7 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
     type: DataType.DATE,
     allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;

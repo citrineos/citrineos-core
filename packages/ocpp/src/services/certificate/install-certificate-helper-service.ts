@@ -32,6 +32,7 @@ import {
   extractCertificateDetails,
   generateCertificate,
   generateCSR,
+  getCertificateHashData,
   isSignedBy,
   parseCertificateChainPem,
 } from './certificate-util.js';
@@ -274,13 +275,11 @@ export class InstallCertificateHelperService {
               );
               return;
             }
-            const certificateString = certificateBuffer.toString();
-            const cert = new jsrsasign.X509();
-            cert.readCertPEM(certificateString);
             await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
               ocppConnectionName,
               certificateType: existingPendingInstallCertificateAttempt.certificateType,
               certificateId: existingPendingInstallCertificateAttempt.certificateId,
+              ...getCertificateHashData(certificateBuffer.toString()),
             });
           }
         }
@@ -391,6 +390,7 @@ export class InstallCertificateHelperService {
           )) ?? existingInstalledCertificate;
       }
     } else {
+      const certificateHashData = getCertificateHashData(certificate);
       // check if certificate record exists
       let existingCertificate = await this.certificateRepository.findByFileHash(
         tenantId,
@@ -415,6 +415,7 @@ export class InstallCertificateHelperService {
           ocppConnectionName: identifier,
           certificateType: uploadExistingCertificate.certificateType,
           certificateId: existingCertificate.id!,
+          ...certificateHashData,
         });
     }
     return existingInstalledCertificate!;

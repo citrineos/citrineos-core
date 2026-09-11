@@ -52,19 +52,19 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
     type: DataType.STRING,
     allowNull: false,
   })
-  declare issuerNameHash?: string | null;
+  declare issuerNameHash: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  declare issuerKeyHash?: string | null;
+  declare issuerKeyHash: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  declare serialNumber?: string | null;
+  declare serialNumber: string;
 
   @Column({
     type: DataType.STRING,

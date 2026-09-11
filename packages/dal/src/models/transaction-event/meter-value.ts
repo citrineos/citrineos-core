@@ -54,7 +54,7 @@ export class MeterValue extends Model implements MeterValueDto {
     type: DataType.DATE,
     allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => StopTransaction, 'stopTransactionDatabaseId')
   declare stopTransaction?: StopTransactionDto;

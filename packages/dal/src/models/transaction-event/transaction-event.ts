@@ -75,7 +75,7 @@ export class TransactionEvent extends Model implements TransactionEventDto {
     type: DataType.DATE,
     allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;

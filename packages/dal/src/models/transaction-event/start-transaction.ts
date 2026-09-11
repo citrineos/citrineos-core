@@ -55,7 +55,7 @@ export class StartTransaction extends Model implements StartTransactionDto {
     allowNull: false,
     unique: 'transactionDatabaseId_transactionCreatedAt',
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
