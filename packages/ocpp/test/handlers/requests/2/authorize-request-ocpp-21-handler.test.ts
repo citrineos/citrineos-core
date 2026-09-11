@@ -49,6 +49,32 @@ function anAuthorizeRequest(): OCPP2_1.AuthorizeRequest {
 }
 
 describe('AuthorizeRequestOcpp21Handler', () => {
+  describe('token format', () => {
+    it('answers Invalid for a key code that fails the format check', async () => {
+      const { logger } = createTestContainer();
+      const ocppSender = makeMockOcppSender();
+      const handler = new AuthorizeRequestOcpp21Handler({
+        logger,
+        ocppSender,
+        certificateAuthorityService: {} as unknown as CertificateAuthorityService,
+        authorizers: [],
+        authorizationRepository: {} as unknown as IAuthorizationRepository,
+        deviceModelRepository: {} as unknown as IDeviceModelRepository,
+        tariffRepository: {} as unknown as ITariffRepository,
+      });
+
+      await handler.handle(
+        makeMessage({
+          idToken: { idToken: '12 34', type: OCPP2_1.IdTokenEnumType.KeyCode },
+        } as OCPP2_1.AuthorizeRequest),
+      );
+
+      const response = ocppSender.sendCallResultWithMessage.mock
+        .calls[0]?.[1] as OCPP2_1.AuthorizeResponse;
+      expect(response?.idTokenInfo?.status).toBe(AuthorizationStatusEnum.Invalid);
+    });
+  });
+
   /**
    * I08.FR.01 lets the CSMS answer with a driver-specific tariff, but a station that does not do
    * local cost calculation cannot use one - TariffCostCtrlr.Enabled[Tariff] is what says whether it

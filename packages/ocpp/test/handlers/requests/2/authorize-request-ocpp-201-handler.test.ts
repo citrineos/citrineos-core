@@ -213,3 +213,15 @@ describe('AuthorizeRequestOcpp201Handler EVSE restrictions', () => {
     expect(response.idTokenInfo.evseId).toBeUndefined();
   });
 });
+
+describe('AuthorizeRequestOcpp201Handler token format', () => {
+  it('answers Invalid for a key code that fails the format check', async () => {
+    const { handler, ocppSender } = makeHandler({ authorization: acceptedAuthorization });
+
+    await handler.handle(
+      makeMessage({ idToken: { idToken: '12 34', type: OCPP2_0_1.IdTokenEnumType.KeyCode } }),
+    );
+
+    expect(sentResponse(ocppSender).idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
+  });
+});

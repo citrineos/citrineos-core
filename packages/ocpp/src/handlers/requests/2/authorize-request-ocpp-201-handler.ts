@@ -9,7 +9,6 @@ import {
   type IMessage,
   type IMessageConfirmation,
   type IOcppSender,
-  OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
 import {
@@ -17,7 +16,6 @@ import {
   AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
   AuthorizeCertificateStatusEnum,
-  ErrorCode,
   type HandlerProperties,
   IdTokenEnum,
   OCPP2_0_1,
@@ -91,12 +89,6 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
         token: request.idToken.idToken,
         error: tokenValidation.errorMessage,
       });
-      const messageId = message.context.correlationId;
-      const error = new OcppError(
-        messageId,
-        ErrorCode.PropertyConstraintViolation,
-        tokenValidation.errorMessage || 'Invalid token value for specified type',
-      );
       response = {
         ...response,
         idTokenInfo: {
@@ -105,7 +97,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       } as OCPP2_response_types.AuthorizeResponse;
 
       this._logger.error('Token validation failed:', tokenValidation.errorMessage);
-      await this._ocppSender.sendCallErrorWithMessage(message, error);
+      await this._sendAuthorizeResult(message, response);
       return;
     }
 
