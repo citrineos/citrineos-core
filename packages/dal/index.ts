@@ -27,7 +27,6 @@ export {
   VariableAttribute,
   VariableStatus,
   CountryNameEnumType,
-  LatestStatusNotification,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
