@@ -8,7 +8,6 @@ import { SetNetworkProfileSchema } from './set-network-profile-dto.js';
 import { BaseSchema } from './types/base-dto.js';
 
 export const ChargingStationNetworkProfileSchema = BaseSchema.extend({
-  id: z.number().int().optional(),
   ocppConnectionName: z.string(),
   configurationSlot: z.number().int(),
   setNetworkProfileId: z.number().int(),
@@ -22,7 +21,6 @@ export const ChargingStationNetworkProfileProps = ChargingStationNetworkProfileS
 export type ChargingStationNetworkProfileDto = z.infer<typeof ChargingStationNetworkProfileSchema>;
 
 export const ChargingStationNetworkProfileCreateSchema = ChargingStationNetworkProfileSchema.omit({
-  id: true,
   tenant: true,
   setNetworkProfile: true,
   websocketServerConfig: true,

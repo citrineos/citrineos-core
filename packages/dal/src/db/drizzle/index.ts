@@ -13,9 +13,12 @@ export {
 export * as drizzleSchema from './schema/index.js';
 export {
   DrizzleRepository,
-  type DrizzleRepositoryDependencies,
+  DrizzleTenantScopedRepository,
+  type CitrineTable,
   type DrizzleExecutor,
+  type DrizzleRepositoryDependencies,
   type DrizzleWriteContext,
+  type TenantScopedTable,
 } from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,

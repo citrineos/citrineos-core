@@ -8,7 +8,7 @@ import {
   chargingStationNetworkProfileTable,
   tenantChargingStationNetworkProfileTable,
 } from '../../db/drizzle/schema/charging-station-network-profile.js';
-import { DrizzleRepository } from './base.js';
+import { DrizzleTenantScopedRepository } from './base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external ChargingStationNetworkProfileDto contract.
@@ -18,7 +18,6 @@ export function toChargingStationNetworkProfileDto(
   entity: ChargingStationNetworkProfileEntity,
 ): ChargingStationNetworkProfileDto {
   return {
-    id: entity.id,
     ocppConnectionName: entity.ocppConnectionName ?? '',
     configurationSlot: entity.configurationSlot ?? 0,
     setNetworkProfileId: entity.setNetworkProfileId ?? 0,
@@ -31,7 +30,7 @@ export function toChargingStationNetworkProfileDto(
   } as ChargingStationNetworkProfileDto;
 }
 
-export class DrizzleChargingStationNetworkProfileRepository extends DrizzleRepository<
+export class DrizzleChargingStationNetworkProfileRepository extends DrizzleTenantScopedRepository<
   typeof chargingStationNetworkProfileTable,
   ChargingStationNetworkProfileDto
 > {

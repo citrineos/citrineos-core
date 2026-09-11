@@ -11,7 +11,6 @@ import type {
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  AutoIncrement,
   BeforeCreate,
   BeforeUpdate,
   BelongsTo,
@@ -19,7 +18,6 @@ import {
   DataType,
   ForeignKey,
   Model,
-  PrimaryKey,
   Table,
 } from 'sequelize-typescript';
 import { ChargingStation } from './charging-station.js';
@@ -34,11 +32,6 @@ export class ChargingStationNetworkProfile
 {
   // Namespace enum not used as this is not a model required by CitrineOS
   static readonly MODEL_NAME: string = 'ChargingStationNetworkProfile';
-
-  @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  declare id: number;
 
   @ForeignKey(() => ChargingStation)
   @Column({
