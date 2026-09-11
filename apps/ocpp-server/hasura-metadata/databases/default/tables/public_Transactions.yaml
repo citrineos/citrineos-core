@@ -22,18 +22,22 @@ object_relationships:
       foreign_key_constraint_on: locationId
   - name: StartTransaction
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: StartTransactions
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
   - name: StopTransaction
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: StopTransactions
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
   - name: Tariff
     using:
       foreign_key_constraint_on: tariffId
@@ -43,38 +47,45 @@ object_relationships:
 array_relationships:
   - name: ChargingNeeds
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: ChargingNeeds
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
   - name: ChargingProfiles
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: ChargingProfiles
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
   - name: MeterValues
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: MeterValues
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
   - name: TransactionEvents
     using:
-      foreign_key_constraint_on:
-        column: transactionDatabaseId
-        table:
+      manual_configuration:
+        remote_table:
           name: TransactionEvents
           schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
 select_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

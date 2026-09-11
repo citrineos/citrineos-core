@@ -71,7 +71,8 @@ describe('TransactionService', () => {
     transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
       authorizationRepository,
-      locationRepository,
+      evseRepository: locationRepository,
+      connectorRepository: locationRepository,
       reservationRepository,
       ocppMessageRepository,
       realTimeAuthorizer,
@@ -448,7 +449,8 @@ describe('TransactionService', () => {
       transactionService = getTestInstance(container, TransactionService, {
         transactionEventRepository,
         authorizationRepository: {} as unknown as IAuthorizationRepository,
-        locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
         reservationRepository: {} as unknown as IReservationRepository,
         ocppMessageRepository: {} as unknown as IOCPPMessageRepository,
         realTimeAuthorizer,

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { EventEmitter } from 'events';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { childLogger } from '@base-util/logging.js';
+import type { ILogObj, Logger } from 'tslog';
 import type { IConnectionManager } from './i-connection-manager.js';
 
 /**
@@ -30,9 +30,7 @@ export abstract class AbstractConnectionManager<TConnection = unknown>
 
   constructor(logger?: Logger<ILogObj>) {
     super();
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

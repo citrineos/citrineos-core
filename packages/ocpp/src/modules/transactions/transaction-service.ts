@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type IAuthorizer, type IMessageContext, MeterValueUtils } from '@citrineos/base';
+import {
+  childLogger,
+  type IAuthorizer,
+  type IMessageContext,
+  MeterValueUtils,
+} from '@citrineos/base';
 import {
   type AuthorizationDto,
   AuthorizationStatusEnum,
@@ -28,13 +33,13 @@ import type {
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import { MeterValue, Transaction } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
   private _authorizationRepository: IAuthorizationRepository;
-  private _locationRepository: IConnectorRepository & IEvseRepository;
+  private _evseRepository: IEvseRepository;
+  private _connectorRepository: IConnectorRepository;
   private _reservationRepository: IReservationRepository;
   private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
@@ -43,7 +48,8 @@ export class TransactionService {
   constructor({
     transactionEventRepository,
     authorizationRepository,
-    locationRepository,
+    evseRepository,
+    connectorRepository,
     reservationRepository,
     ocppMessageRepository,
     realTimeAuthorizer,
@@ -52,7 +58,8 @@ export class TransactionService {
   }: {
     transactionEventRepository: ITransactionEventRepository;
     authorizationRepository: IAuthorizationRepository;
-    locationRepository: IConnectorRepository & IEvseRepository;
+    evseRepository: IEvseRepository;
+    connectorRepository: IConnectorRepository;
     reservationRepository: IReservationRepository;
     ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
@@ -61,12 +68,11 @@ export class TransactionService {
   }) {
     this._transactionEventRepository = transactionEventRepository;
     this._authorizationRepository = authorizationRepository;
-    this._locationRepository = locationRepository;
+    this._evseRepository = evseRepository;
+    this._connectorRepository = connectorRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 
@@ -157,7 +163,7 @@ export class TransactionService {
       let connector: ConnectorDto | undefined = undefined;
       if (transactionEvent.evse) {
         if (transactionEvent.evse.connectorId) {
-          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+          connector = await this._connectorRepository.readConnectorByStationIdAndOcpp201EvseType(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse,
@@ -165,7 +171,7 @@ export class TransactionService {
         }
         evse =
           connector?.evse ??
-          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          (await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse.id,
@@ -239,7 +245,7 @@ export class TransactionService {
       let connector: ConnectorDto | undefined = undefined;
       if (transactionEvent.evse) {
         if (transactionEvent.evse.connectorId) {
-          connector = await this._locationRepository.readConnectorByStationIdAndOcpp201EvseType(
+          connector = await this._connectorRepository.readConnectorByStationIdAndOcpp201EvseType(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse,
@@ -247,7 +253,7 @@ export class TransactionService {
         }
         evse =
           connector?.evse ??
-          (await this._locationRepository.readEvseByStationIdAndOcpp201EvseId(
+          (await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
             tenantId,
             messageContext.ocppConnectionName,
             transactionEvent.evse.id,
@@ -368,11 +374,12 @@ export class TransactionService {
       }
 
       // Check authorizers
-      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
-        tenantId,
-        context.ocppConnectionName,
-        connectorId,
-      );
+      const connector =
+        await this._connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+          tenantId,
+          context.ocppConnectionName,
+          connectorId,
+        );
       response.idTagInfo.status =
         OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
           await this._applyAuthorizers(authorization, context, connector?.evse, connector),
@@ -407,18 +414,13 @@ export class TransactionService {
     reservationId: number,
     ocppConnectionName: string,
   ): Promise<void> {
-    await this._reservationRepository.updateAllByQuery(
+    await this._reservationRepository.updateByStationAndReservationId(
       tenantId,
+      ocppConnectionName,
+      reservationId,
       {
         terminatedByTransaction: transactionId,
         isActive: false,
-      },
-      {
-        where: {
-          tenantId,
-          id: reservationId,
-          ocppConnectionName: ocppConnectionName,
-        },
       },
     );
   }
@@ -432,11 +434,12 @@ export class TransactionService {
     let evseTypeId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
-      const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
-        tenantId,
-        ocppConnectionName,
-        evseIdentifier,
-      );
+      const connector =
+        await this._connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+          tenantId,
+          ocppConnectionName,
+          evseIdentifier,
+        );
       evseTypeId = connector?.evse?.evseTypeId;
     } else {
       evseTypeId = evseIdentifier.id;

@@ -182,6 +182,7 @@ export class SequelizeChargingProfileRepository
   ): Promise<ChargingNeeds> {
     const activeTransaction = await Transaction.findOne({
       where: {
+        tenantId,
         ocppConnectionName: ocppConnectionName,
         isActive: true,
       },
@@ -200,6 +201,7 @@ export class SequelizeChargingProfileRepository
         ...chargingNeedsReq.chargingNeeds,
         evseId: activeTransaction.evseId,
         transactionDatabaseId: activeTransaction.id,
+        transactionCreatedAt: activeTransaction.createdAt,
         maxScheduleTuples: chargingNeedsReq.maxScheduleTuples,
       }),
     );

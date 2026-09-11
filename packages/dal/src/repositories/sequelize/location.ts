@@ -7,11 +7,18 @@ import {
   type ChargingStationDto,
   type ConnectorDto,
   type EvseDto,
+  type StatusNotificationDto,
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
 import { Op, type WhereOptions } from 'sequelize';
-import { type ILocationDomainRepository } from '../repositories.js';
+import {
+  type IChargingStationRepository,
+  type IConnectorRepository,
+  type IEvseRepository,
+  type ILocationRepository,
+  type IStatusNotificationRepository,
+} from '../repositories.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
@@ -20,10 +27,16 @@ import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
-  implements ILocationDomainRepository
+  implements
+    ILocationRepository,
+    IChargingStationRepository,
+    IStatusNotificationRepository,
+    IConnectorRepository,
+    IEvseRepository
 {
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
@@ -136,16 +149,18 @@ export class SequelizeLocationRepository
   async addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      statusNotification,
+      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
     );
     try {
       await this.updateLatestStatusNotification(
         tenantId,
         ocppConnectionName,
+        stationId,
         savedStatusNotification,
       );
     } catch (e: any) {
@@ -156,6 +171,7 @@ export class SequelizeLocationRepository
   async updateLatestStatusNotification(
     tenantId: number,
     ocppConnectionName: string,
+    stationId: number | undefined,
     statusNotification: StatusNotification,
   ): Promise<void> {
     const evseId = statusNotification.evseId;
@@ -194,6 +210,7 @@ export class SequelizeLocationRepository
         tenantId,
         ocppConnectionName: ocppConnectionName,
         statusNotificationId,
+        stationId,
       }),
     );
   }
@@ -325,6 +342,9 @@ export class SequelizeLocationRepository
         },
         defaults: {
           ...evse,
+          stationId:
+            evse.stationId ??
+            (await resolveStationId(tenantId, evse.ocppConnectionName, sequelizeTransaction)),
         },
         transaction: sequelizeTransaction,
       });
@@ -346,7 +366,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       ocppConnectionName: connector.ocppConnectionName,
@@ -357,7 +377,7 @@ export class SequelizeLocationRepository
   async createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
-  ): Promise<Connector | undefined> {
+  ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
       evseId: connector.evseId,
@@ -378,6 +398,13 @@ export class SequelizeLocationRepository
           where,
           defaults: {
             ...connector,
+            stationId:
+              connector.stationId ??
+              (await resolveStationId(
+                tenantId,
+                connector.ocppConnectionName,
+                sequelizeTransaction,
+              )),
           },
           transaction: sequelizeTransaction,
         },
@@ -397,12 +424,14 @@ export class SequelizeLocationRepository
     return result;
   }
 
-  async updateAllConnectorsByQuery(
+  async updateAllConnectorsByStationId(
     tenantId: number,
+    stationId: number,
     value: Partial<ConnectorDto>,
-    query: object,
   ): Promise<Connector[]> {
-    return await this.connector.updateAllByQuery(tenantId, value, query);
+    return await this.connector.updateAllByQuery(tenantId, value, {
+      where: { stationId, tenantId },
+    });
   }
 
   async autoCommissionEvseForOcpp16Connector(
@@ -414,6 +443,7 @@ export class SequelizeLocationRepository
     const evse = await Evse.create({
       tenantId,
       ocppConnectionName,
+      stationId: await resolveStationId(tenantId, ocppConnectionName),
     });
     return { evseId: evse.id };
   }
@@ -485,7 +515,7 @@ export class SequelizeLocationRepository
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
-  ): Promise<Connector[]> {
+  ): Promise<ConnectorDto[]> {
     return await this.connector.readAllByQuery(tenantId, {
       where: {
         tenantId,

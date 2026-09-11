@@ -106,9 +106,13 @@ export {
   createIdentifier,
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
+  childLogger,
+  loggerDefaults,
+  MASKED_LOG_KEYS,
   MeterValueUtils,
   notNull,
   RequestBuilder,
+  serializeError,
 } from './src/util/index.js';
 
 export {

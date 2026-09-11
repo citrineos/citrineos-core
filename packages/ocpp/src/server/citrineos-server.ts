@@ -21,6 +21,7 @@ import {
   type IFileStorage,
   type IMessageRouter,
   type IModule,
+  loggerDefaults,
   OCPPValidator,
 } from '@citrineos/base';
 import {
@@ -44,6 +45,8 @@ import type { RedisClientOptions } from 'redis';
 import { type ILogObj, Logger } from 'tslog';
 import { buildContainer } from './container.js';
 import { type HealthCheckResult, HealthCheckService } from './health-check-service.js';
+import { assertSequelizeSchemaMatches, type SchemaValidationReport } from '@/util/index.js';
+import { MessagesModule } from '@modules/messages/index.js';
 
 /** The container token needed to initialize a module in its own scope. */
 export interface ModuleInitSpec {
@@ -111,10 +114,12 @@ export class CitrineOSServer {
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
+  protected _messagesModule?: MessagesModule;
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
   protected _isShuttingDown = false;
+  protected _schemaValidationReport: SchemaValidationReport | null = null;
 
   // Single source of truth mapping each module's EventGroup to the container token
   // needed to initialize it. initAllModules() and initModule() both read from this
@@ -222,6 +227,7 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
+    await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
     await this.onInitialized();
@@ -305,9 +311,9 @@ export class CitrineOSServer {
   /** Split out so a subclass swapping the Logger implementation can reuse the settings. */
   protected loggerSettings(isCloud = process.env.DEPLOYMENT_TARGET === 'cloud') {
     return {
+      ...loggerDefaults(this._config.env),
       name: 'CitrineOS Logger',
       minLevel: this._config.logLevel,
-      hideLogPositionForProduction: this._config.env === 'production',
       type: isCloud ? ('json' as const) : ('pretty' as const),
     };
   }
@@ -488,6 +494,9 @@ export class CitrineOSServer {
     } else if (this.apiSpecs[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
       this.initApiInScope(this.apiSpecs[this.eventGroup]!.apiTokens);
+    } else if (this.eventGroup === EventGroup.Messages) {
+      // Log only because MessagesModule will be initialized by initMessagesModule()
+      this._logger.info('Initializing in MESSAGES mode: general frame processing only');
     } else {
       await this.initModule();
     }
@@ -505,6 +514,18 @@ export class CitrineOSServer {
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(this.networkApiTokens);
+  }
+
+  /**
+   * Starts the messages module, which consumes the `messages` exchange.
+   */
+  protected async initMessagesModule(): Promise<void> {
+    const shouldRun = this.eventGroup === EventGroup.Messages || this.eventGroup === EventGroup.All;
+    if (!shouldRun) return;
+
+    this._logger.info('Initializing messages module (general message processing)');
+    this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
+    await this._messagesModule.start();
   }
 
   protected async initAllModules() {
@@ -557,6 +578,13 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
+
+    this._schemaValidationReport = await assertSequelizeSchemaMatches(
+      this._sequelizeInstance,
+      this._config,
+      this._logger,
+    );
+
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
@@ -574,6 +602,7 @@ export class CitrineOSServer {
       this._config.timeouts.notReadyThresholdSeconds,
       this._logger,
     );
+    this._healthCheckService.setSchemaValidationReport(this._schemaValidationReport);
   }
 
   protected registerShutdownHandlers(): void {

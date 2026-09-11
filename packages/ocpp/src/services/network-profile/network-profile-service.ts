@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { OCPP2_request_types } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import type { ISetNetworkProfileRepository } from '@citrineos/dal';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface PersistSetNetworkProfileOptions {
@@ -22,9 +23,7 @@ export class NetworkProfileService {
     logger: Logger<ILogObj>;
   }) {
     this._setNetworkProfileRepository = setNetworkProfileRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async prepareSetNetworkProfile(

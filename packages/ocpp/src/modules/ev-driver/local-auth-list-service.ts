@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { AttributeEnum, OCPP1_6, UpdateEnum, OCPP2_request_types } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   IChangeConfigurationRepository,
@@ -38,9 +38,7 @@ export class LocalAuthListService {
     this._localAuthListRepository = localAuthListRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async prepareSendLocalList(
@@ -333,9 +331,11 @@ export class LocalAuthListService {
     ocppConnectionName: string,
     key: string,
   ): Promise<number | null> {
-    const configuration = await this._changeConfigurationRepository.readOnlyOneByQuery(tenantId, {
-      where: { tenantId, ocppConnectionName, key },
-    });
+    const configuration = await this._changeConfigurationRepository.findByStationAndKey(
+      tenantId,
+      ocppConnectionName,
+      key,
+    );
     if (configuration?.value == null) {
       return null;
     }

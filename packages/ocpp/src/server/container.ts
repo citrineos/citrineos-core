@@ -26,12 +26,20 @@ import {
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
+  DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleConnectorRepository,
+  DrizzleLocationRepository,
+  DrizzleStatusNotificationRepository,
+  DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleMessageInfoRepository,
+  DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
+  DrizzleSetNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
@@ -76,7 +84,7 @@ import {
 } from '@modules/configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
 import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
-import { MessageRouterImpl, WebhookDispatcher } from '@modules/ocpp-router/index.js';
+import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
   InternalSmartCharging,
@@ -88,8 +96,8 @@ import { registerTransactionsServices, TransactionsModule } from '@modules/trans
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
   CertificateAuthorityService,
-  InstallCertificateHelperService,
   DeviceModelService,
+  InstallCertificateHelperService,
   NetworkProfileService,
   RealTimeAuthorizer,
 } from '@services/index.js';
@@ -107,6 +115,7 @@ import {
   WebsocketNetworkConnection,
 } from '@/transport/index.js';
 import { IdGenerator } from '@util/index.js';
+import { registerMessagesServices } from '@modules/messages/register.js';
 
 export type Prebuilt = {
   logger: Logger<ILogObj>;
@@ -169,9 +178,11 @@ function registerModuleServices(container: AwilixContainer): void {
   registerConfigurationServices(container);
   registerEVDriverServices(container);
   registerMonitoringServices(container);
+  registerOcppRouterServices(container);
   registerReportingServices(container);
   registerSmartChargingServices(container);
   registerTransactionsServices(container);
+  registerMessagesServices(container);
 }
 
 // ============================================================
@@ -298,6 +309,11 @@ function registerRepositories(container: AwilixContainer): void {
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
+    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    statusNotificationRepository: asFunction(
+      ({ locationRepository }) => locationRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -311,15 +327,23 @@ function registerRepositories(container: AwilixContainer): void {
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
+      changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
+      connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
+      locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
         DrizzleDeleteCertificateAttemptRepository,
       ).singleton(),
+      evseRepository: asClass(DrizzleEvseRepository).singleton(),
       installCertificateAttemptRepository: asClass(
         DrizzleInstallCertificateAttemptRepository,
       ).singleton(),
       installedCertificateRepository: asClass(DrizzleInstalledCertificateRepository).singleton(),
+      messageInfoRepository: asClass(DrizzleMessageInfoRepository).singleton(),
+      reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      setNetworkProfileRepository: asClass(DrizzleSetNetworkProfileRepository).singleton(),
+      statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
@@ -412,7 +436,6 @@ function registerNetwork(container: AwilixContainer): void {
     networkProfileFilter: asClass(NetworkProfileFilter).singleton(),
     basicAuthenticationFilter: asClass(BasicAuthenticationFilter).singleton(),
     authenticator: asClass(Authenticator).singleton(),
-    webhookDispatcher: asClass(WebhookDispatcher).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),
     adminApi: asClass(AdminApi).scoped(),

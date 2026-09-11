@@ -1,21 +1,21 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { OidcTokenProvider } from '@/apis/index.js';
 import { type IAuthorizer, type IMessageContext } from '@citrineos/base';
+import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
-  AuthorizationWhitelistEnum,
   type AuthorizationStatusEnumType,
+  AuthorizationWhitelistEnum,
   type ConnectorDto,
   type EvseDto,
   type IdTokenEnumType,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IChargingStationRepository } from '@citrineos/dal';
-import type { Authorization } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { OidcTokenProvider } from '../../apis/authorization/index.js';
 
 export interface RealTimeAuthorizationRequestBody {
   tenantPartnerId: number;
@@ -37,20 +37,24 @@ export interface RealTimeAuthorizationResponse {
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _chargingStationRepository: IChargingStationRepository;
+  private _authorizationRepository: IAuthorizationRepository;
   private _config: SystemConfig;
   private readonly _logger: Logger<ILogObj>;
   private readonly _oidcTokenProvider?: OidcTokenProvider;
 
   constructor({
     chargingStationRepository,
+    authorizationRepository,
     config,
     logger,
   }: {
     chargingStationRepository: IChargingStationRepository;
+    authorizationRepository: IAuthorizationRepository;
     config: SystemConfig;
     logger: Logger<ILogObj>;
   }) {
     this._chargingStationRepository = chargingStationRepository;
+    this._authorizationRepository = authorizationRepository;
     this._config = config;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     if (config.oidcClient) {
@@ -59,7 +63,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
   }
 
   async authorize(
-    authorization: Authorization,
+    authorization: AuthorizationDto,
     context: IMessageContext,
     evse?: EvseDto,
     connector?: ConnectorDto,
@@ -167,6 +171,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(this._config.timeouts.realTimeAuthRequestTimeoutSeconds * 1000),
       });
 
       const responseJson = await response.json();
@@ -211,11 +216,18 @@ export class RealTimeAuthorizer implements IAuthorizer {
       evseId: evseId,
       connectorId: connectorId!,
     };
-    authorization.save().catch((error) => {
+
+    try {
+      await this._authorizationRepository.updateByKey(
+        context.tenantId,
+        authorization,
+        String(authorization.id!),
+      );
+    } catch (error) {
       this._logger.error(
         `Failed to save realTimeAuthLastAttempt for authorization ${authorization.id}: ${error}`,
       );
-    });
+    }
 
     return result;
   }

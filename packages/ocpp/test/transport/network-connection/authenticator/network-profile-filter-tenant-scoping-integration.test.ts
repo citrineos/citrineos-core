@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { AuthenticationOptions } from '@citrineos/base';
-import { OCPPVersion, type SystemConfig } from '@citrineos/types';
+import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
+import type { IDeviceModelRepository } from '@citrineos/dal';
 import {
   ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   ServerNetworkProfile,
+  SetNetworkProfile,
   Tenant,
 } from '@citrineos/dal';
-import type { IDeviceModelRepository } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
 import type { Sequelize } from 'sequelize-typescript';
@@ -29,6 +30,7 @@ const TENANT_A = 1;
 const TENANT_B = 2;
 const STATION = 'CP001';
 const SHARED_PROFILE_ID = 'websocket-server-0';
+const SET_NETWORK_PROFILE_ID = 123;
 const CONFIGURATION_SLOT = 1;
 
 let pgContainer: StartedTestContainer;
@@ -124,6 +126,20 @@ describe('NetworkProfileFilter tenant scoping', () => {
       tenantId: TENANT_A,
     } as never);
 
+    await SetNetworkProfile.create({
+      id: SET_NETWORK_PROFILE_ID,
+      ocppConnectionName: STATION,
+      correlationId: 'any-correlation-id',
+      configurationSlot: 1,
+      ocppVersion: OCPP2_0_1.OCPPVersionEnumType.OCPP20,
+      ocppTransport: OCPP2_0_1.OCPPTransportEnumType.JSON,
+      ocppCsmsUrl: 'url',
+      messageTimeout: 30,
+      securityProfile: 0,
+      ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired1,
+      tenantId: TENANT_A,
+    });
+
     // Tenant A's station names it anyway. Nothing validates the reference on the way in.
     await ChargingStationNetworkProfile.create({
       stationId: (station as unknown as { id: number }).id,
@@ -131,6 +147,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
       tenantId: TENANT_A,
+      setNetworkProfileId: SET_NETWORK_PROFILE_ID,
     } as never);
   });
 
