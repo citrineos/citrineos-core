@@ -9,11 +9,11 @@ import {
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
-  SetNetworkProfile,
-  Tenant,
-} from '@citrineos/dal';
+  SetNetworkProfile,} from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
 import type { Sequelize } from 'sequelize-typescript';
@@ -38,6 +38,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -71,6 +72,11 @@ beforeAll(async () => {
   await sequelizeInstance.sync({ force: true });
 
   locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
     config,
     logger: undefined,
     sequelizeInstance,
@@ -116,8 +122,8 @@ describe('NetworkProfileFilter tenant scoping', () => {
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: TENANT_A, name: 'A' } as never);
-    await Tenant.create({ id: TENANT_B, name: 'B' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
+    await tenantRepository.createTenant({ name: 'B', isUserTenant: false });
 
     // Only tenant B owns this profile, and it permits security profile 1.
     await ServerNetworkProfile.create({

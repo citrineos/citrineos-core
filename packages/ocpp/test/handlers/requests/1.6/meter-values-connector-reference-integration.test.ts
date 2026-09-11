@@ -10,9 +10,9 @@ import {
   EvseType,
   MeterValue,
   SequelizeLocationRepository,
-  SequelizeTransactionEventRepository,
-  Tenant,
-  Transaction,
+  SequelizeTenantRepository,
+  type ITenantRepository,
+  SequelizeTransactionEventRepository,  Transaction,
 } from '@citrineos/dal';
 import {
   EventGroup,
@@ -46,6 +46,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -79,6 +80,11 @@ beforeAll(async () => {
   await sequelizeInstance.sync({ force: true });
 
   locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
     config,
     logger: undefined,
     sequelizeInstance,
@@ -160,7 +166,7 @@ describe('OCPP 1.6 MeterValues on a station whose connector number is not a data
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
 
     nextEvseNumber = 1;
 

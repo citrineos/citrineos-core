@@ -9,9 +9,8 @@ import type { SystemConfig } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
   SequelizeTariffRepository,
-  Tariff,
-  Tenant,
-} from '@citrineos/dal';
+  Tariff,} from '@citrineos/dal';
+import { Tenant } from '../../../src/models/tenant.js';
 import type { TariffQueryString } from '@dal/interfaces/queries/tariff.js';
 
 // ---------------------------------------------------------------------------

@@ -18,8 +18,8 @@ import {
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeLocationRepository,
-  Tenant,
-} from '@citrineos/dal';
+  SequelizeTenantRepository,
+  type ITenantRepository,} from '@citrineos/dal';
 import { CompositeSchedule } from '@dal/db/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -36,6 +36,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -69,6 +70,11 @@ beforeAll(async () => {
   await sequelizeInstance.sync({ force: true });
 
   locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
     config,
     logger: undefined,
     sequelizeInstance,
@@ -136,7 +142,7 @@ describe('A composite schedule reported for a station EVSE number', () => {
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
     nextEvseNumber = 1;
 
     await aStation(OTHER_STATION);

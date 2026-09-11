@@ -45,7 +45,6 @@ export {
   SetNetworkProfile,
   StatusNotification,
   ChargingStationNetworkProfile,
-  Tenant,
   AsyncJobStatusDTO,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,

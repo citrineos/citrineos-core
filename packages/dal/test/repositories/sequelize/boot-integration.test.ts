@@ -5,9 +5,8 @@
 import type { BootDto, SystemConfig } from '@citrineos/types';
 import {
   Boot,  DefaultSequelizeInstance,
-  SequelizeBootRepository,
-  Tenant,
-} from '../../../index.js';
+  SequelizeBootRepository,} from '../../../index.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';

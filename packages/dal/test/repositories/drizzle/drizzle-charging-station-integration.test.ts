@@ -12,9 +12,8 @@ import {  Connector,
   Evse,
   DrizzleChargingStationRepository,
   SequelizeLocationRepository,
-  ServerNetworkProfile,
-  Tenant,
-} from '../../../index.js';
+  ServerNetworkProfile,} from '../../../index.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
