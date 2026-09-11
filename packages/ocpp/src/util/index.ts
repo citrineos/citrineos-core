@@ -28,6 +28,11 @@ export {
   type ChargingProfileTransactionContext,
   type ChargingProfileValidation,
 } from './validator.js';
+export {
+  maxChargingRateFractionDigits,
+  truncateChargingRates,
+  truncateFractionDigits,
+} from './charging-rate-precision.js';
 export { IdGenerator } from './id-generator.js';
 
 export {

@@ -21,7 +21,6 @@ import { VariableAttribute } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
-import { getNumberOfFractionDigit } from './parser.js';
 
 /**
  * Validate a language tag is an RFC-5646 tag, see: {@link https://tools.ietf.org/html/rfc5646},
@@ -133,14 +132,6 @@ export async function validateChargingProfileType(
     periodsPerSchedule = Number(periodsPerSchedules[0].value);
   }
   for (const chargingSchedule of chargingProfileType.chargingSchedule) {
-    if (
-      chargingSchedule.minChargingRate &&
-      getNumberOfFractionDigit(chargingSchedule.minChargingRate) > 1
-    ) {
-      throw new Error(
-        `chargingSchedule ${chargingSchedule.id}: minChargingRate accepts at most one digit fraction (e.g. 8.1).`,
-      );
-    }
     if (periodsPerSchedule && chargingSchedule.chargingSchedulePeriod.length > periodsPerSchedule) {
       throw new Error(
         `ChargingSchedule ${chargingSchedule.id}: The number of chargingSchedulePeriod SHALL not exceed ${periodsPerSchedule}.`,
@@ -148,12 +139,6 @@ export async function validateChargingProfileType(
     }
 
     for (const chargingSchedulePeriod of chargingSchedule.chargingSchedulePeriod) {
-      if (getNumberOfFractionDigit(chargingSchedulePeriod.limit ?? 0) > 1) {
-        throw new Error(
-          `ChargingSchedule ${chargingSchedule.id}: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).`,
-        );
-      }
-
       if (receivedChargingNeeds) {
         if (receivedChargingNeeds.acChargingParameters) {
           // EV AC charging

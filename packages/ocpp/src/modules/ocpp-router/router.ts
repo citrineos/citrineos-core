@@ -62,6 +62,7 @@ import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
 import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
+import { truncateChargingRates } from '@util/index.js';
 
 /**
  * Implementation of the ocpp router
@@ -416,7 +417,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const identifier = createIdentifier(tenantId, ocppConnectionName);
     const transactionNamespace = CacheNamespace.Transactions + identifier;
 
-    const message = new Call(correlationId, action, payload);
+    const message = new Call(correlationId, action, truncateChargingRates(payload, protocol));
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (!(await this._cache.existsAnyInNamespace(transactionNamespace))) {
         const cacheTimestamp = new Date();

@@ -509,68 +509,15 @@ describe('validateChargingProfileType', () => {
   });
 
   describe('fraction digit validation', () => {
-    it('should throw error for minChargingRate with more than 1 fraction digit', async () => {
+    it('accepts a charging rate with more fraction digits than the station takes', async () => {
       const chargingProfile = aChargingProfileType({
         chargingSchedule: [
           aChargingSchedule({
             id: 1,
-            minChargingRate: 8.123, // More than 1 fraction digit
-          }),
-        ],
-      });
-
-      await expect(
-        validateChargingProfileType(
-          chargingProfile,
-          testTenantId,
-          testStationId,
-          mockDeviceModelRepo,
-          mockChargingProfileRepo,
-          mockTransactionEventRepo,
-          mockLogger,
-        ),
-      ).rejects.toThrow(
-        'chargingSchedule 1: minChargingRate accepts at most one digit fraction (e.g. 8.1).',
-      );
-    });
-
-    it('should throw error for chargingSchedulePeriod limit with more than 1 fraction digit', async () => {
-      const chargingProfile = aChargingProfileType({
-        chargingSchedule: [
-          aChargingSchedule({
-            id: 1,
+            minChargingRate: 8.123,
             chargingSchedulePeriod: [
               aChargingSchedulePeriod({
-                limit: 8.123, // More than 1 fraction digit
-              }),
-            ],
-          }),
-        ],
-      });
-
-      await expect(
-        validateChargingProfileType(
-          chargingProfile,
-          testTenantId,
-          testStationId,
-          mockDeviceModelRepo,
-          mockChargingProfileRepo,
-          mockTransactionEventRepo,
-          mockLogger,
-        ),
-      ).rejects.toThrow(
-        'ChargingSchedule 1: chargingSchedulePeriod limit accepts at most one digit fraction (e.g. 8.1).',
-      );
-    });
-
-    it('should not throw error for valid fraction digits', async () => {
-      const chargingProfile = aChargingProfileType({
-        chargingSchedule: [
-          aChargingSchedule({
-            minChargingRate: 8.1, // Valid: 1 fraction digit
-            chargingSchedulePeriod: [
-              aChargingSchedulePeriod({
-                limit: 22.5, // Valid: 1 fraction digit
+                limit: 8.123,
               }),
             ],
           }),
