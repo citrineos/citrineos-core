@@ -5,12 +5,12 @@
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   type ChargingStationDto,
+  MessageOrigin,
   type MessageState,
   type MessageTypeId,
   type OCPPMessageDto,
-  type TenantDto,
-  MessageOrigin,
   OCPPVersion,
+  type TenantDto,
 } from '@citrineos/types';
 import {
   BeforeCreate,
@@ -36,7 +36,10 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   declare stationId?: number;
 
   @Index
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare ocppConnectionName: string;
 
   @Index
