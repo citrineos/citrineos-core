@@ -62,9 +62,7 @@ export class Transaction extends Model implements TransactionDto {
   @Column(DataType.INTEGER)
   declare stationId: number;
 
-  @Column({
-    type: DataType.STRING,
-  })
+  @Column(DataType.STRING)
   ocppConnectionName!: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')
@@ -98,10 +96,16 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tariff, 'tariffId')
   tariff?: TariffDto;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare transactionId: string;
 
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare isActive: boolean;
 
   @HasMany(() => TransactionEvent, 'transactionDatabaseId')

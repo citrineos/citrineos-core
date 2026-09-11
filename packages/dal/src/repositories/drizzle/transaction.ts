@@ -4,9 +4,9 @@
 
 import type { TransactionDto } from '@citrineos/types';
 import {
+  tenantTransactionTable,
   type TransactionEntity,
   transactionTable,
-  tenantTransactionTable,
 } from '../../db/drizzle/schema/transaction.js';
 import { DrizzleRepository } from './base.js';
 
@@ -23,7 +23,7 @@ export function toTransactionDto(entity: TransactionEntity): TransactionDto {
     id: entity.id,
     transactionId: entity.transactionId,
     ocppConnectionName: entity.ocppConnectionName,
-    stationId: entity.stationId,
+    stationId: entity.stationId!,
     isActive: entity.isActive,
     locationId: entity.locationId ?? undefined,
     evseId: entity.evseId ?? undefined,
