@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
-import { Component, Connector, Evse, EvseType, Variable } from '@citrineos/dal';
-import type { ChargingStationDto } from '@citrineos/types';
+import { Component, Evse, EvseType, Variable } from '@citrineos/dal';
+import type { ChargingStationDto, ConnectorDto } from '@citrineos/types';
 
 export const MOCK_STATION_ID = 'Station01';
 export const MOCK_EVSE_ID = 1;
@@ -29,15 +29,15 @@ export function anEvse(updateFunction?: UpdateFunction<EvseType>): EvseType {
   return applyUpdateFunction(evse, updateFunction);
 }
 
-export function aConnector(updateFunction?: UpdateFunction<Connector>): Connector {
-  const connector: Connector = {
+export function aConnector(updateFunction?: UpdateFunction<ConnectorDto>): ConnectorDto {
+  const connector: ConnectorDto = {
     id: MOCK_CONNECTOR_ID,
     ocppConnectionName: MOCK_STATION_ID,
     evseId: MOCK_EVSE_ID,
     connectorId: MOCK_CONNECTOR_ID,
     evseTypeConnectorId: MOCK_CONNECTOR_ID,
     status: 'Available',
-  } as unknown as Connector;
+  } as unknown as ConnectorDto;
 
   return applyUpdateFunction(connector, updateFunction);
 }

@@ -511,6 +511,16 @@ export class SequelizeLocationRepository
     );
   }
 
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    return await this.connector.readAllByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName },
+      include: [{ model: Evse, as: 'evse' }],
+    });
+  }
+
   async readConnectorsWithTariffsByStationId(
     tenantId: number,
     ocppConnectionName: string,

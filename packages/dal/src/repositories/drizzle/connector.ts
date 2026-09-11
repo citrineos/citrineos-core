@@ -315,6 +315,27 @@ export class DrizzleConnectorRepository
     }));
   }
 
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    const table = this.getTable(tenantId);
+    const evses = this.getEvseTable(tenantId);
+
+    const rows = await this.db
+      .select({ connector: table, evse: evses })
+      .from(table)
+      .leftJoin(evses, and(eq(table.evseId, evses.id), this.tenantFilter(evses, tenantId)))
+      .where(
+        and(eq(table.ocppConnectionName, ocppConnectionName), this.tenantFilter(table, tenantId)),
+      );
+
+    return rows.map((row) => ({
+      ...this.toDto(row.connector as ConnectorEntity),
+      evse: row.evse ? toEvseDto(row.evse as EvseEntity) : undefined,
+    }));
+  }
+
   async updateAllConnectorsByStationId(
     tenantId: number,
     stationId: number,
