@@ -16,9 +16,9 @@ import {
   OCPPMessage,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
-  SequelizeOCPPMessageRepository,
-  Tenant,
-  Variable,
+  SequelizeTenantRepository,
+  type ITenantRepository,
+  SequelizeOCPPMessageRepository,  Variable,
   VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
@@ -50,6 +50,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let handler: SetVariablesResponseOcpp2Handler;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -91,6 +92,11 @@ beforeAll(async () => {
   await sequelizeInstance.sync({ force: true });
 
   locationRepository = new SequelizeLocationRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
     config: dbConfig,
     logger: undefined,
     sequelizeInstance,
@@ -140,7 +146,7 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 // ---------------------------------------------------------------------------
 
 async function seedBase(): Promise<void> {
-  await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
+  await tenantRepository.createTenant({ name: String(TENANT_ID), isUserTenant: false });
   await locationRepository.createOrUpdateChargingStation(TENANT_ID, {
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,

@@ -11,10 +11,9 @@ import {  DefaultSequelizeInstance,
   Evse,
   EvseType,
   SequelizeChargingProfileRepository,
-  SequelizeTransactionEventRepository,
-  Tenant,
-  Transaction,
+  SequelizeTransactionEventRepository,  Transaction,
 } from '../../../index.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;

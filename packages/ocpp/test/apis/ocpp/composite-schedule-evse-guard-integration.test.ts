@@ -9,8 +9,8 @@ import {  DefaultSequelizeInstance,
   EvseType,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
-  Tenant,
-} from '@citrineos/dal';
+  SequelizeTenantRepository,
+  type ITenantRepository,} from '@citrineos/dal';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
@@ -28,6 +28,7 @@ const SINGLE_EVSE_STATION = 'CS-GUARD-ONE';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 let deviceModelRepository: SequelizeDeviceModelRepository;
 
 beforeAll(async () => {
@@ -63,6 +64,7 @@ beforeAll(async () => {
 
   const dependencies = { config, logger: undefined, sequelizeInstance } as never;
   locationRepository = new SequelizeLocationRepository(dependencies);
+  tenantRepository = new SequelizeTenantRepository(dependencies);
   deviceModelRepository = new SequelizeDeviceModelRepository(dependencies);
 }, 90_000);
 
@@ -95,7 +97,7 @@ describe('Asking a station for one of its EVSEs', () => {
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
 
     await aStationWithEvses(SIX_EVSE_STATION, [1, 2, 3, 4, 5, 6]);

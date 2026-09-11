@@ -7,8 +7,8 @@ import {  Connector,
   DefaultSequelizeInstance,
   Evse,
   SequelizeLocationRepository,
-  Tenant,
-} from '@citrineos/dal';
+  SequelizeTenantRepository,
+  type ITenantRepository,} from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import type { Sequelize } from 'sequelize-typescript';
@@ -18,6 +18,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 let cache: ICache;
 
 beforeAll(async () => {
@@ -55,6 +56,10 @@ beforeAll(async () => {
     config: {} as SystemConfig,
     sequelizeInstance,
   });
+  tenantRepository = new SequelizeTenantRepository({
+    config: {} as SystemConfig,
+    sequelizeInstance,
+  });
 }, 90_000);
 
 afterAll(async () => {
@@ -64,7 +69,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'default' } as never);
+  await tenantRepository.createTenant({ name: 'default', isUserTenant: false });
 });
 
 describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160 integration)', () => {
