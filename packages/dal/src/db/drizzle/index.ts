@@ -154,6 +154,18 @@ export {
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
 export {
+  DrizzleMessageInfoRepository,
+  toMessageInfoDto,
+} from '../../repositories/drizzle/message-info.js';
+export {
+  messageInfoTable,
+  tenantMessageInfoTable,
+  MessageInfoEntitySchema,
+  MessageInfoEntityInsertSchema,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
+export {
   DrizzleReservationRepository,
   toReservationDto,
 } from '../../repositories/drizzle/reservation.js';

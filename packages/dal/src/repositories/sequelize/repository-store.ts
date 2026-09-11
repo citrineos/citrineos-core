@@ -46,6 +46,7 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
@@ -182,6 +183,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.messageInfoRepository = new DrizzleMessageInfoRepository({ config, logger });
       this.locationRepository = new DrizzleLocationRepository({ config, logger });
       this.reservationRepository = new DrizzleReservationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
@@ -224,6 +226,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.messageInfoRepository = new SequelizeMessageInfoRepository({
         config,
         logger,
         sequelizeInstance,
