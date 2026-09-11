@@ -449,9 +449,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-<<<<<<< HEAD
-The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
-=======
+
 The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by compiling it onto that validator's AJV and passing it in:
 
 ```ts
