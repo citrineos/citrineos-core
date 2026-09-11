@@ -41,7 +41,7 @@ export class VatNumberValidationRequestOcpp21Handler extends AbstractHandler {
 
     const request = message.payload;
 
-    const company = this._vatProvider ? await this._vatProvider.getVat(request.vatNumber) : null;
+    const company = (await this._vatProvider?.getVat(request.vatNumber)) ?? undefined;
 
     const response: OCPP2_1.VatNumberValidationResponse = {
       vatNumber: request.vatNumber,
