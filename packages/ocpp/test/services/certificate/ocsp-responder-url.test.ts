@@ -17,8 +17,9 @@ vi.mock('node:http', async (importOriginal) => ({
 
 const OCSP_REQUEST = Uint8Array.from([0x30, 0x00]);
 
-const { isPrivateAddress, resolvePublicOcspResponder, sendToPublicOcspResponder } =
-  await import('@/services/certificate/ocsp-responder-url.js');
+const { isPrivateAddress, resolvePublicOcspResponder, sendToPublicOcspResponder } = await import(
+  '@/services/certificate/ocsp-responder-url.js'
+);
 
 describe('isPrivateAddress', () => {
   it.each([
