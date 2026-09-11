@@ -107,6 +107,7 @@ export {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
   childLogger,
+  redactionMiddleware,
   loggerDefaults,
   MASKED_LOG_KEYS,
   MeterValueUtils,
@@ -114,6 +115,7 @@ export {
   RequestBuilder,
   serializeError,
 } from './src/util/index.js';
+export type { RedactionRule } from './src/util/index.js';
 
 export {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,

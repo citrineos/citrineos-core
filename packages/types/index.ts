@@ -62,12 +62,14 @@ export {
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
+  logRedactionSchema,
   OCPP_VERSION_LIST,
   RbacRulesSchema,
   signedMeterValuesSigningMethods,
   websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
+  LogRedactionConfig,
   RbacRules,
   SystemConfig,
   SystemConfigInput,

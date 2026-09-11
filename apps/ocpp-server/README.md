@@ -244,6 +244,39 @@ after changing configuration.
 | `CITRINEOS_SWAGGER_PATH`     | `/docs`               | Where the docs are mounted                            |
 | `CITRINEOS_SWAGGER_LOGOPATH` | `src/assets/logo.png` | Resolved from the working directory, not `fileAccess` |
 
+#### Keeping secrets out of the logs
+
+The logger redacts what `logRedaction` names, everywhere it appears in anything logged — no call site has to
+remember to strip it, and adding to the list needs no code change.
+
+| Variable                                | Default        | Notes                                                             |
+| --------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| `CITRINEOS_LOGREDACTION_KEYS`           | `["password"]` | Property names to censor at any depth, matched case-insensitively |
+| `CITRINEOS_LOGREDACTION_PATHS`          | `[]`           | Dotted paths to censor, where `*` matches one segment             |
+| `CITRINEOS_LOGREDACTION_PATTERNS`       | `[]`           | Regexes matched against logged strings; each is applied globally  |
+| `CITRINEOS_LOGREDACTION_PLACEHOLDER`    | `[***]`        | What a censored value is replaced with                            |
+| `CITRINEOS_LOGREDACTION_REDACTKEYCODES` | `true`         | Redact OCPP `KeyCode` idTokens — see below                        |
+
+Values are JSON, so a list is set as one:
+
+```bash
+CITRINEOS_LOGREDACTION_KEYS='["password","clientSecret","authorization"]'
+CITRINEOS_LOGREDACTION_PATHS='["credentials.token","*.privateKey"]'
+CITRINEOS_LOGREDACTION_PATTERNS='["sk-[A-Za-z0-9]{20,}"]'
+```
+
+Pick the narrowest one that fits: `keys` for a name that means the same thing wherever it appears, `paths` when
+only one location is sensitive, `patterns` for a value recognizable by shape rather than by position.
+
+`redactKeyCodes` is separate because it cannot be expressed as any of the three. An OCPP `idToken` is a public
+tag id or a driver's typed PIN depending on its sibling `type` field, and OCPP 2.x C04.FR.04 requires that a
+`KeyCode` one never appear in logging. It is applied by a rule that inspects the whole object, so it holds
+wherever a key code could reach a log rather than only where someone remembered. Leave it on unless the
+deployment is somewhere the rule is moot.
+
+To redact something else that depends on an object's shape, write a `RedactionRule` and return it from
+`CitrineOSServer.redactionRules()`.
+
 ### Database
 
 | Variable                        | Default     |
@@ -416,12 +449,8 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-<<<<<<< HEAD
-The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
-=======
-The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
->>>>>>> next
-compiling it onto that validator's AJV and passing it in:
+
+The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by compiling it onto that validator's AJV and passing it in:
 
 ```ts
 const ocppAjv = OCPPValidator.createValidatorAjvInstance();
