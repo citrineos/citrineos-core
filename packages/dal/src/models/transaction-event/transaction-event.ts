@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type MeterValueDto,
+  OCPP2_0_1,
   type TenantDto,
   type TransactionDto,
   type TransactionEventDto,
   type TransactionEventEnumType,
   type TransactionType,
   type TriggerReasonEnumType,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -70,8 +70,11 @@ export class TransactionEvent extends Model implements TransactionEventDto {
 
   declare transactionDatabaseId?: number;
 
-  @Column(DataType.DATE)
-  declare transactionCreatedAt?: Date;
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;
