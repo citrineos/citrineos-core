@@ -87,6 +87,7 @@ export {
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
+  DrizzleSetNetworkProfileRepository,
   DrizzleStatusNotificationRepository,
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
