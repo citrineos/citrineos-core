@@ -26,11 +26,11 @@ function startTransactionColumns() {
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
     reservationId: integer('reservationId'),
-    transactionDatabaseId: integer('transactionDatabaseId'),
+    transactionDatabaseId: integer('transactionDatabaseId').notNull(),
     transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
       .notNull()
       .$defaultFn(() => new Date()),
-    connectorDatabaseId: integer('connectorDatabaseId'),
+    connectorDatabaseId: integer('connectorDatabaseId').notNull(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

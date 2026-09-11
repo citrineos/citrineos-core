@@ -5,9 +5,9 @@
 import { TableName } from '@dal/models/table-name.js';
 import {
   integer,
-  primaryKey,
   pgSchema,
   pgTable,
+  primaryKey,
   serial,
   timestamp,
   uniqueIndex,
@@ -21,7 +21,7 @@ import { type z } from 'zod';
 function stopTransactionColumns() {
   return {
     id: serial('id'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     transactionDatabaseId: integer('transactionDatabaseId').notNull(),
     transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
       .notNull()
@@ -48,7 +48,7 @@ export const stopTransactionTable = pgTable(
   stopTransactionColumns(),
   (t) => [
     primaryKey({ columns: [t.id, t.transactionCreatedAt] }),
-    uniqueIndex('stop_transactions_transaction_database_id').on(
+    uniqueIndex('StopTransactions_transactionDatabaseId_key').on(
       t.transactionDatabaseId,
       t.transactionCreatedAt,
     ),
