@@ -33,10 +33,16 @@ import { Transaction } from './transaction.js';
 export class TransactionEvent extends Model implements TransactionEventDto {
   static readonly MODEL_NAME: string = OCPP2_Namespace.TransactionEventRequest;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare ocppConnectionName: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare eventType: TransactionEventEnumType;
 
   @HasMany(() => MeterValue, 'transactionEventId')
@@ -47,13 +53,20 @@ export class TransactionEvent extends Model implements TransactionEventDto {
     get() {
       return this.getDataValue('timestamp')?.toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare triggerReason: TriggerReasonEnumType;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare seqNo: number;
 
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
