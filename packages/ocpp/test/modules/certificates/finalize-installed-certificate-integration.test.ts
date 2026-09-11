@@ -25,6 +25,7 @@ import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { Logger } from 'tslog';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { readFile } from '../../utils/file-util.js';
 
 /**
  * A station can have more than one certificate install in flight: the endpoint prepares an attempt
@@ -79,7 +80,9 @@ afterAll(async () => {
   await pgContainer?.stop();
 });
 
-function aService() {
+function aService(
+  fileStorage: { getFile: () => Promise<Buffer | undefined> } = { getFile: async () => undefined },
+) {
   const deps = { config, logger: undefined, sequelizeInstance } as never;
   return new InstallCertificateHelperService({
     certificateRepository: new SequelizeCertificateRepository(deps),
@@ -89,7 +92,7 @@ function aService() {
     // Unreachable for a finalize that settles an attempt row.
     deviceModelRepository: {} as never,
     certificateAuthorityService: {} as never,
-    fileStorage: { getFile: async () => undefined } as never,
+    fileStorage: fileStorage as never,
     logger: new Logger({ type: 'hidden' }),
   });
 }
@@ -180,5 +183,46 @@ describe('finalizeInstalledCertificate with more than one certificate in flight'
     );
 
     expect(await statusOf(root)).toBeNull();
+  });
+
+  it('records the accepted certificate with its hash data', async () => {
+    const certificate = await Certificate.create({
+      serialNumber: nextSerialNumber++,
+      issuerName: 'issuer',
+      organizationName: 'org',
+      commonName: 'root',
+      certificateFileHash: 'root-hash',
+      certificateFileId: 'root-file',
+      tenantId: DEFAULT_TENANT_ID,
+    } as never);
+    await InstallCertificateAttempt.create({
+      ocppConnectionName: STATION,
+      certificateType: CertificateUseEnum.V2GRootCertificate,
+      certificateId: (certificate as unknown as { id: number }).id,
+      status: null,
+      tenantId: DEFAULT_TENANT_ID,
+    } as never);
+    const rootCertificatePem = readFile('RootCertificateSample.pem');
+
+    await aService({
+      getFile: async () => Buffer.from(rootCertificatePem),
+    }).finalizeInstalledCertificate(
+      DEFAULT_TENANT_ID,
+      STATION,
+      InstallCertificateStatusEnum.Accepted,
+      undefined,
+      CertificateUseEnum.V2GRootCertificate,
+    );
+
+    const installed = await InstalledCertificate.findOne({
+      where: { ocppConnectionName: STATION },
+    });
+    expect(installed?.get({ plain: true })).toMatchObject({
+      certificateType: CertificateUseEnum.V2GRootCertificate,
+      hashAlgorithm: 'SHA256',
+      issuerNameHash: '9111b7039ad923e5f68a6aaa3bac279ef1241d7a7d408c5aed836bb7763a61cb',
+      issuerKeyHash: 'b0a67b950d1104ad0ab0d8bfdd466c971bcc557faad2eacec3d6744259a3b407',
+      serialNumber: '1916c392c93',
+    });
   });
 });

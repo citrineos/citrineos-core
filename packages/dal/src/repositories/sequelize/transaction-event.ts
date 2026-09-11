@@ -305,7 +305,7 @@ export class SequelizeTransactionEventRepository
 
       const transactionDatabaseId = finalTransaction.id;
       // Passed transactionCreatedAt explicitly because the
-      // models' @BeforeCreate fallback reads outside this sequelize transaction and so
+      // models' @BeforeValidate fallback reads outside this sequelize transaction and so
       // cannot see a Transaction created moments ago in it.
       const transactionCreatedAt = finalTransaction.createdAt;
 

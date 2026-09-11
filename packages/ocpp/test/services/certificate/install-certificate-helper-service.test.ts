@@ -34,6 +34,7 @@ const mockExtractCertificateDetails = vi.hoisted(() => vi.fn());
 const mockGenerateCertificate = vi.hoisted(() => vi.fn());
 const mockParseCertificateChainPem = vi.hoisted(() => vi.fn());
 const mockIsSignedBy = vi.hoisted(() => vi.fn());
+const mockGetCertificateHashData = vi.hoisted(() => vi.fn());
 
 let createdCertificateInstances: any[] = [];
 let createdInstallCertificateAttemptInstances: any[] = [];
@@ -63,6 +64,7 @@ vi.mock('@services/certificate/certificate-util.js', async (importOriginal) => {
     generateCertificate: mockGenerateCertificate,
     parseCertificateChainPem: mockParseCertificateChainPem,
     isSignedBy: mockIsSignedBy,
+    getCertificateHashData: mockGetCertificateHashData,
   };
 });
 
@@ -170,6 +172,12 @@ describe('InstallCertificateHelperService', () => {
   let mockCertificateAuthorityService: CertificateAuthorityService;
 
   const mockHash = 'abc123hash';
+  const mockCertificateHashData = {
+    hashAlgorithm: 'SHA256',
+    issuerNameHash: 'issuer-name-hash',
+    issuerKeyHash: 'issuer-key-hash',
+    serialNumber: '1916c392dce',
+  };
   const tenantId = 1;
   const ocppConnectionName = 'cp001';
 
@@ -200,6 +208,7 @@ describe('InstallCertificateHelperService', () => {
     createdInstallCertificateAttemptInstances = [];
     createdInstalledCertificateInstances = [];
     createdDeleteCertificateAttemptInstances = [];
+    mockGetCertificateHashData.mockReturnValue(mockCertificateHashData);
 
     mockCertificateRepository = {
       findByFileHash: mockCertificateFindByFileHash,
@@ -624,10 +633,12 @@ describe('InstallCertificateHelperService', () => {
       );
       expect(mockFileStorageGetFile).toHaveBeenCalledWith('file123');
 
+      expect(mockGetCertificateHashData).toHaveBeenCalledWith(MOCK_CERTIFICATE);
       expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
         ocppConnectionName,
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
+        ...mockCertificateHashData,
       });
     });
 
@@ -870,10 +881,12 @@ describe('InstallCertificateHelperService', () => {
         mockUploadRequest,
       );
 
+      expect(mockGetCertificateHashData).toHaveBeenCalledWith(MOCK_CERTIFICATE);
       expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
         ocppConnectionName,
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 99,
+        ...mockCertificateHashData,
       });
       expect(result).toBe(mockCreatedInstalled);
     });
@@ -906,7 +919,22 @@ describe('InstallCertificateHelperService', () => {
         ocppConnectionName,
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
+        ...mockCertificateHashData,
       });
+    });
+
+    it('should not create a certificate record when hash data cannot be derived', async () => {
+      mockInstalledFindByStationAndType.mockResolvedValue(undefined);
+      mockGetCertificateHashData.mockImplementation(() => {
+        throw new Error('Cannot derive certificate hash data');
+      });
+      vi.spyOn(service, 'createNewCertificate');
+
+      await expect(
+        service.handleUploadExistingCertificate(tenantId, ocppConnectionName, mockUploadRequest),
+      ).rejects.toThrow('Cannot derive certificate hash data');
+
+      expect(service.createNewCertificate).not.toHaveBeenCalled();
     });
   });
 

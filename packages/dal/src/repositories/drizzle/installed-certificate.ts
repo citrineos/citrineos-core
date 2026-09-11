@@ -26,8 +26,7 @@ type InstalledCertificateHashData = Pick<
   InstalledCertificateDto,
   'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
 >;
-type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
-  hashAlgorithm?: HashAlgorithmEnumType;
+type InstalledCertificateCreateInput = InstalledCertificateCreate & {
   certificateId?: number | null;
 };
 
@@ -41,9 +40,9 @@ export function toInstalledCertificateDto(
     id: entity.id,
     ocppConnectionName: entity.ocppConnectionName,
     hashAlgorithm: entity.hashAlgorithm as HashAlgorithmEnumType,
-    issuerNameHash: entity.issuerNameHash ?? null,
-    issuerKeyHash: entity.issuerKeyHash ?? null,
-    serialNumber: entity.serialNumber ?? null,
+    issuerNameHash: entity.issuerNameHash,
+    issuerKeyHash: entity.issuerKeyHash,
+    serialNumber: entity.serialNumber,
     certificateType: entity.certificateType as CertificateUseEnumType,
     tenantId: entity.tenantId,
     tenant: undefined,
@@ -220,9 +219,9 @@ export class DrizzleInstalledCertificateRepository
         eq(installedCertificateTable.tenantId, tenantId),
         eq(installedCertificateTable.ocppConnectionName, ocppConnectionName),
         eq(installedCertificateTable.hashAlgorithm, hashData.hashAlgorithm),
-        eq(installedCertificateTable.issuerNameHash, hashData.issuerNameHash ?? ''),
-        eq(installedCertificateTable.issuerKeyHash, hashData.issuerKeyHash ?? ''),
-        eq(installedCertificateTable.serialNumber, hashData.serialNumber ?? ''),
+        eq(installedCertificateTable.issuerNameHash, hashData.issuerNameHash),
+        eq(installedCertificateTable.issuerKeyHash, hashData.issuerKeyHash),
+        eq(installedCertificateTable.serialNumber, hashData.serialNumber),
       ),
     );
   }

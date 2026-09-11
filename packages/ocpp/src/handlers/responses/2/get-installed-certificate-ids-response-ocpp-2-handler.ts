@@ -167,10 +167,10 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
 function installedCertificateKey(
   certificateType: CertificateUseEnumType,
   hashData: {
-    hashAlgorithm?: string | null;
-    issuerNameHash?: string | null;
-    issuerKeyHash?: string | null;
-    serialNumber?: string | null;
+    hashAlgorithm: string;
+    issuerNameHash: string;
+    issuerKeyHash: string;
+    serialNumber: string;
   },
 ): string {
   return [

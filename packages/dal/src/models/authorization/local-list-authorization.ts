@@ -101,6 +101,7 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   @BelongsToMany(() => LocalListVersion, () => LocalListVersionAuthorization)
   declare localListVersions?: LocalListVersionDto[];
 
+  @Column(DataType.JSONB)
   declare customData?: any | null;
 
   @ForeignKey(() => Tenant)
