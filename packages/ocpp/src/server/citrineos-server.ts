@@ -149,6 +149,9 @@ export class CitrineOSServer {
     [EventGroup.Tenant]: {
       moduleToken: 'tenantModule',
     },
+    [EventGroup.CaliforniaPricing]: {
+      moduleToken: 'californiaPricingModule',
+    },
   };
 
   protected static readonly DEFAULT_API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
@@ -163,7 +166,12 @@ export class CitrineOSServer {
    * `{ ...super.moduleSpecs, [EventGroup.Foo]: { moduleToken: 'fooModule' } }`.
    */
   protected get moduleSpecs(): Partial<Record<EventGroup, ModuleInitSpec>> {
-    return CitrineOSServer.DEFAULT_MODULE_SPECS;
+    if (this._config.californiaPricing.enabled) {
+      return CitrineOSServer.DEFAULT_MODULE_SPECS;
+    }
+    const { [EventGroup.CaliforniaPricing]: _californiaPricing, ...enabled } =
+      CitrineOSServer.DEFAULT_MODULE_SPECS;
+    return enabled;
   }
 
   /** API groups this server can start, keyed by the EventGroup that selects them. */
