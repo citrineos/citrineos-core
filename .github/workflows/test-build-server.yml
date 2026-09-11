@@ -31,6 +31,7 @@ jobs:
             server:
               - 'apps/ocpp-server/**'
               - 'packages/**'
+              - 'docker-compose*.yml'
 
   build:
     needs: changes
