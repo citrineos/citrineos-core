@@ -61,7 +61,7 @@ export class MeterValue extends Model implements MeterValueDto {
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('timestamp').toISOString();
+      return this.getDataValue('timestamp')?.toISOString();
     },
   })
   declare timestamp: string;
