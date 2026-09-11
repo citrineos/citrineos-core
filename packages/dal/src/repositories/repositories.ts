@@ -4,6 +4,7 @@
 
 import type { CrudRepository } from '@citrineos/base';
 import type {
+  AuthorizationCreate,
   AuthorizationDto,
   BootCreate,
   BootDto,
@@ -98,6 +99,7 @@ export interface IAuthorizationRepository {
     value: object,
     key: string,
   ) => Promise<AuthorizationDto | undefined>;
+  createAuthorization: (tenantId: number, input: AuthorizationCreate) => Promise<AuthorizationDto>;
 }
 
 /**
@@ -283,6 +285,10 @@ export interface IStatusNotificationRepository {
 }
 
 export interface IConnectorRepository {
+  readConnectorsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+  ) => Promise<ConnectorDto[]>;
   readConnectorByStationIdAndOcpp16ConnectorId: (
     tenantId: number,
     ocppConnectionName: string,
@@ -688,6 +694,7 @@ export interface IServerNetworkProfileRepository {
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
   ): Promise<ServerNetworkProfileDto>;
+  findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
 export interface IChargingStationNetworkProfileRepository

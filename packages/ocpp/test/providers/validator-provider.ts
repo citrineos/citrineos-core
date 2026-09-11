@@ -8,12 +8,11 @@ import {
   type IChargingProfileRepository,
   type IDeviceModelRepository,
   type ITransactionEventRepository,
-  TransactionEvent,
   VariableAttribute,
 } from '@citrineos/dal';
 import { type ILogObj, Logger } from 'tslog';
 import { vi, type Mocked } from 'vitest';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type TransactionEventDto } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 
 // Mock logger that can be used in tests
@@ -144,7 +143,7 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
   } as VariableAttribute;
 }
 
-export function aTransactionEvent(override?: Partial<TransactionEvent>): TransactionEvent {
+export function aTransactionEvent(override?: Partial<TransactionEventDto>): TransactionEventDto {
   return {
     id: faker.number.int({ min: 1, max: 999999 }),
     tenantId: faker.number.int({ min: 1, max: 100 }),
@@ -157,7 +156,7 @@ export function aTransactionEvent(override?: Partial<TransactionEvent>): Transac
       transactionId: faker.string.uuid(),
     } as OCPP2_0_1.TransactionType,
     ...override,
-  } as TransactionEvent;
+  } as TransactionEventDto;
 }
 
 export function anEvse(override?: Partial<Evse>): Evse {

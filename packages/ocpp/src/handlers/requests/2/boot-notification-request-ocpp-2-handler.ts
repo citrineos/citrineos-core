@@ -15,6 +15,7 @@ import {
 } from '@citrineos/base';
 import {
   type BootDto,
+  type ChargingStationDto,
   EventGroup,
   type HandlerProperties,
   OCPP2_common_types,
@@ -29,7 +30,6 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import type { IDeviceModelRepository, IChargingStationRepository } from '@citrineos/dal';
-import { ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import type { DeviceModelService } from '@modules/configuration/device-model-service.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -127,19 +127,16 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
           );
         }
       }
-      await this._chargingStationRepository.createOrUpdateChargingStation(
+      await this._chargingStationRepository.createOrUpdateChargingStation(tenantId, {
         tenantId,
-        ChargingStation.build({
-          tenantId,
-          ocppConnectionName,
-          chargePointVendor: chargingStation.vendorName,
-          chargePointModel: chargingStation.model,
-          chargePointSerialNumber: chargingStation.serialNumber,
-          firmwareVersion: chargingStation.firmwareVersion,
-          iccid: chargingStation.modem?.iccid,
-          imsi: chargingStation.modem?.imsi,
-        }),
-      );
+        ocppConnectionName,
+        chargePointVendor: chargingStation.vendorName,
+        chargePointModel: chargingStation.model,
+        chargePointSerialNumber: chargingStation.serialNumber,
+        firmwareVersion: chargingStation.firmwareVersion,
+        iccid: chargingStation.modem?.iccid,
+        imsi: chargingStation.modem?.imsi,
+      } as ChargingStationDto);
       await this._deviceModelService.updateDeviceModel(
         chargingStation,
         tenantId,

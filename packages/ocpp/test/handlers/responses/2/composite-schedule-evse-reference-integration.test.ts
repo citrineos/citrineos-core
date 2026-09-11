@@ -13,12 +13,13 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
   Evse,
   EvseType,
   SequelizeChargingProfileRepository,
-  Tenant,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
 } from '@citrineos/dal';
 import { CompositeSchedule } from '@dal/db/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
@@ -35,6 +36,8 @@ const UNCOMMISSIONED_EVSE = 6;
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -66,6 +69,17 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -76,11 +90,10 @@ afterAll(async () => {
 let nextEvseNumber = 1;
 
 async function aStation(ocppConnectionName: string) {
-  await ChargingStation.create({
+  await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 /** Adds one commissioned EVSE to a station and returns its database id. */
@@ -130,7 +143,7 @@ describe('A composite schedule reported for a station EVSE number', () => {
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
     nextEvseNumber = 1;
 
     await aStation(OTHER_STATION);
