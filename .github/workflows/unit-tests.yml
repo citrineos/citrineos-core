@@ -79,7 +79,18 @@ jobs:
       - name: Run tests
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
-        run: pnpm test
+        run: pnpm run test:coverage
+
+      - name: Upload test and coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: |
+            coverage/
+            reports/
+          retention-days: 14
+          if-no-files-found: warn
 
   operator-ui-e2e:
     needs: changes
