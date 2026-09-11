@@ -327,6 +327,12 @@ export const configSchema = z.object({
       enableGetChargingProfilesOnStartTransaction: z.boolean().default(false),
     })
     .prefault({}),
+
+  californiaPricing: z
+    .object({
+      enabled: z.boolean().default(false),
+    })
+    .prefault({}),
 });
 
 /** Post-parse config: every defaulted field is present. What `configSchema.parse()` returns. */
