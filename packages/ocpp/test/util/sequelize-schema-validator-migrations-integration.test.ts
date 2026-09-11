@@ -20,10 +20,6 @@ interface Migration {
   up: (queryInterface: QueryInterface) => Promise<void>;
 }
 
-/**
- * Applies every migration in file-name order, as sequelize-cli does. Migrations export
- * either a default `{ up, down }` object or named `up` and `down` functions.
- */
 async function runMigrations(queryInterface: QueryInterface): Promise<string[]> {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith('.ts'))
