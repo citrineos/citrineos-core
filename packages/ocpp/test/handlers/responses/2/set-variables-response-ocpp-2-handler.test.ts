@@ -18,7 +18,8 @@ import {
   SequelizeTenantRepository,
   type ITenantRepository,
   type IOCPPMessageRepository,
-  SequelizeOCPPMessageRepository,  Variable,
+  SequelizeOCPPMessageRepository,
+  Variable,
   VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';

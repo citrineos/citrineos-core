@@ -99,10 +99,7 @@ export interface IAuthorizationRepository {
     value: object,
     key: string,
   ) => Promise<AuthorizationDto | undefined>;
-  createAuthorization: (
-    tenantId: number,
-    input: AuthorizationCreate,
-  ) => Promise<AuthorizationDto>;
+  createAuthorization: (tenantId: number, input: AuthorizationCreate) => Promise<AuthorizationDto>;
 }
 
 /**

@@ -4,7 +4,13 @@
 import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, type ICache } from '@citrineos/base';
 import type { IBootRepository } from '@citrineos/dal';
 import { MemoryCache } from '@services/index.js';
-import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, type BootDto, type SystemConfig } from '@citrineos/types';
+import {
+  OCPP1_6,
+  OCPP2_0_1,
+  OCPP_CallAction,
+  type BootDto,
+  type SystemConfig,
+} from '@citrineos/types';
 import { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';

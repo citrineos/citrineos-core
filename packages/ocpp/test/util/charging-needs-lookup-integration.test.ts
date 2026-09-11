@@ -13,7 +13,8 @@ import {
   SequelizeLocationRepository,
   SequelizeTenantRepository,
   type ITenantRepository,
-  SequelizeTransactionEventRepository,  Transaction,
+  SequelizeTransactionEventRepository,
+  Transaction,
 } from '@citrineos/dal';
 import { validateChargingProfileType } from '@util/index.js';
 import type { Sequelize } from 'sequelize-typescript';

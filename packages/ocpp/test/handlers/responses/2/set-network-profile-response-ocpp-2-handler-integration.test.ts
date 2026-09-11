@@ -22,7 +22,8 @@ import {
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
-  SetNetworkProfile,} from '@citrineos/dal';
+  SetNetworkProfile,
+} from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';

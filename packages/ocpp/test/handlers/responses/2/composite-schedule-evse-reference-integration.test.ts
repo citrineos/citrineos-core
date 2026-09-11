@@ -19,7 +19,8 @@ import {
   SequelizeChargingProfileRepository,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
-  type ITenantRepository,} from '@citrineos/dal';
+  type ITenantRepository,
+} from '@citrineos/dal';
 import { CompositeSchedule } from '@dal/db/sequelize/index.js';
 import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';

@@ -7,7 +7,8 @@ import {
   Evse,
   type IChargingProfileRepository,
   type IDeviceModelRepository,
-  type ITransactionEventRepository,  VariableAttribute,
+  type ITransactionEventRepository,
+  VariableAttribute,
 } from '@citrineos/dal';
 import { type ILogObj, Logger } from 'tslog';
 import { vi, type Mocked } from 'vitest';

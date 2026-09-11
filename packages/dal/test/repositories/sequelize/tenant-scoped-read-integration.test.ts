@@ -8,7 +8,8 @@ import {
   SequelizeBootRepository,
   SequelizeTariffRepository,
   SequelizeTenantRepository,
-  Tariff,} from '../../../index.js';
+  Tariff,
+} from '../../../index.js';
 import { Boot } from '../../../src/models/boot.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';

@@ -7,9 +7,7 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
-import {  DefaultSequelizeInstance,
-  DrizzleLocationRepository,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, DrizzleLocationRepository } from '../../../index.js';
 import { Location } from '../../../src/models/location/location.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';

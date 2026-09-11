@@ -6,10 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import type { SystemConfig } from '@citrineos/types';
-import {
-  DefaultSequelizeInstance,
-  SequelizeTariffRepository,
-  Tariff,} from '@citrineos/dal';
+import { DefaultSequelizeInstance, SequelizeTariffRepository, Tariff } from '@citrineos/dal';
 import { Tenant } from '../../../src/models/tenant.js';
 import type { TariffQueryString } from '@dal/interfaces/queries/tariff.js';
 

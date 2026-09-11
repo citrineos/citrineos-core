@@ -13,7 +13,8 @@ import {
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
   ServerNetworkProfile,
-  SetNetworkProfile,} from '@citrineos/dal';
+  SetNetworkProfile,
+} from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
 import type { Sequelize } from 'sequelize-typescript';
