@@ -291,6 +291,10 @@ export interface IStatusNotificationRepository {
 }
 
 export interface IConnectorRepository {
+  readConnectorsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+  ) => Promise<ConnectorDto[]>;
   readConnectorByStationIdAndOcpp16ConnectorId: (
     tenantId: number,
     ocppConnectionName: string,

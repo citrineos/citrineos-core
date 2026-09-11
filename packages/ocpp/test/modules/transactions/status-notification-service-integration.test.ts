@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
-import {  Connector,
-  DefaultSequelizeInstance,
+import {  DefaultSequelizeInstance,
   Evse,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
@@ -96,17 +95,16 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
     // by actually inserting a Connector row. A 1.6 connector carries no
     // evseTypeConnectorId, so the column has to be genuinely nullable.
-    const dbConnector = await Connector.create({
-      tenantId: DEFAULT_TENANT_ID,
+    const dbConnector = await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
       ocppConnectionName,
       connectorId: 1,
       evseId,
       status: 'Available',
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       errorCode: 'NoError',
     });
-    expect(dbConnector.id).toBeGreaterThan(0);
-    expect(dbConnector.evseTypeConnectorId).toBeNull();
+    expect(dbConnector!.id).toBeGreaterThan(0);
+    expect(dbConnector!.evseTypeConnectorId).toBeNull();
   });
 
   it('accepts a 2.0.1 connector that carries no OCPP 1.6 connectorId', async () => {
@@ -123,18 +121,17 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
       evseTypeId: 1,
     });
 
-    const dbConnector = await Connector.create({
-      tenantId: DEFAULT_TENANT_ID,
+    const dbConnector = await locationRepository.createOrUpdateOcpp2Connector(DEFAULT_TENANT_ID, {
       ocppConnectionName,
       evseId: evse.id,
       evseTypeConnectorId: 1,
       status: 'Available',
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       errorCode: 'NoError',
     });
 
-    expect(dbConnector.id).toBeGreaterThan(0);
-    expect(dbConnector.connectorId).toBeNull();
+    expect(dbConnector!.id).toBeGreaterThan(0);
+    expect(dbConnector!.connectorId).toBeNull();
   });
 });
 
@@ -178,9 +175,11 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     ).resolves.not.toThrow();
 
     // Connector should now exist in the DB.
-    const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
-    });
+    const connector = await locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+      DEFAULT_TENANT_ID,
+      ocppConnectionName,
+      1,
+    );
     expect(connector).not.toBeNull();
     expect(connector?.evseId).toBeDefined();
     // The 1.6 request never reports a 2.0.1 per-EVSE connector number.
@@ -239,11 +238,13 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       1,
     );
     expect(
-      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } }),
+      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)).length,
     ).toBe(1);
-    const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
-    });
+    const connector = await locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+      DEFAULT_TENANT_ID,
+      ocppConnectionName,
+      1,
+    );
     expect(connector?.status).toBe('Charging');
   });
 
@@ -259,13 +260,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       DEFAULT_TENANT_ID,
       ocppConnectionName,
     );
-    await Connector.create({
-      tenantId: DEFAULT_TENANT_ID,
+    await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
       ocppConnectionName,
       connectorId: 1,
       evseId,
       status: 'Available',
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       errorCode: 'NoError',
     });
 
@@ -298,9 +298,11 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       } as any),
     ).resolves.not.toThrow();
 
-    const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
-    });
+    const connector = await locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+      DEFAULT_TENANT_ID,
+      ocppConnectionName,
+      1,
+    );
     expect(connector?.status).toBe('Charging');
     expect(connector?.evseId).toBe(evseId);
   });
@@ -348,9 +350,9 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       } as any),
     ).resolves.not.toThrow();
 
-    const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, evseTypeConnectorId: 1 },
-    });
+    const connector = (
+      await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)
+    ).find((c) => c.evseTypeConnectorId === 1);
     expect(connector).not.toBeNull();
     expect(connector?.connectorId).toBeNull();
   });
@@ -376,11 +378,11 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     }
 
     expect(
-      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } }),
+      (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)).length,
     ).toBe(1);
-    const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
-    });
+    const connector = (
+      await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName)
+    )[0];
     expect(connector?.status).toBe('Occupied');
   });
 
@@ -404,10 +406,10 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       } as any);
     }
 
-    const connectors = await Connector.findAll({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
-      include: [Evse],
-    });
+    const connectors = await locationRepository.readConnectorsByStationId(
+      DEFAULT_TENANT_ID,
+      ocppConnectionName,
+    );
     expect(connectors).toHaveLength(2);
     expect(connectors.map((c) => c.evse?.evseTypeId).sort()).toEqual([1, 2]);
   });
