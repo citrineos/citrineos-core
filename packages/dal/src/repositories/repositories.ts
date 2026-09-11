@@ -40,6 +40,7 @@ import type {
   ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
+  SetNetworkProfileDto,
   StatusNotificationDto,
   SubscriptionDto,
   TariffDto,
@@ -68,6 +69,9 @@ import type { VariableAttribute } from '../models/device-model/variable-attribut
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
+import type { Connector } from '../models/location/connector.js';
+import type { Evse } from '../models/location/evse.js';
+import type { Location } from '../models/location/location.js';
 import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
@@ -695,10 +699,25 @@ export interface IChargingStationNetworkProfileRepository
   ): Promise<ChargingStationNetworkProfile[]>;
 }
 
-export type SetNetworkProfileCreationAttributes = Parameters<typeof SetNetworkProfile.build>[0];
+export interface SetNetworkProfileCreateInput {
+  stationId?: number | null;
+  ocppConnectionName?: string | null;
+  correlationId?: string | null;
+  websocketServerConfigId?: string | null;
+  configurationSlot?: number | null;
+  ocppVersion?: string | null;
+  ocppTransport?: string | null;
+  ocppCsmsUrl?: string | null;
+  messageTimeout?: number | null;
+  securityProfile?: number | null;
+  ocppInterface?: string | null;
+  apn?: string | null;
+  vpn?: string | null;
+  tenantId?: number | null;
+}
 
-export interface ISetNetworkProfileRepository extends CrudRepository<SetNetworkProfile> {
-  createPending(values: SetNetworkProfileCreationAttributes): Promise<SetNetworkProfile>;
+export interface ISetNetworkProfileRepository {
+  createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto>;
 }
 
 export interface IChangeConfigurationRepository {
