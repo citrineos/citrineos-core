@@ -11,7 +11,7 @@ import {
 import { HttpMethod, type OCPP2_common_types } from '@citrineos/types';
 import type { CreateOrUpdateVariableAttributeQuerystring } from '@citrineos/dal';
 import { CreateOrUpdateVariableAttributeQuerySchema } from '@citrineos/dal';
-import type { DeviceModelService } from '@/services/device-model/device-model-service.js';
+import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 import type { FastifyRequest } from 'fastify';
 
 interface ProvisionStationVariablesEndpointDependencies extends AbstractEndpointDependencies {

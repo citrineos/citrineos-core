@@ -14,6 +14,7 @@ import {
   type IWebsocketConnection,
 } from '@citrineos/base';
 import {
+  type ChangeConfigurationDto,
   EventGroup,
   type HandlerProperties,
   OCPP1_6,
@@ -24,9 +25,9 @@ import {
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
-  ILocationRepository,
+  IChargingStationRepository,
 } from '@citrineos/dal';
-import { ChangeConfiguration, ChargingStation } from '@citrineos/dal';
+import { ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -38,7 +39,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
   protected _bootService: BootNotificationService;
   protected _bootRepository: IBootRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _locationRepository: ILocationRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
@@ -48,7 +49,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     bootNotificationService,
     bootRepository,
     changeConfigurationRepository,
-    locationRepository,
+    chargingStationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
@@ -56,7 +57,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     bootNotificationService: BootNotificationService;
     bootRepository: IBootRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
-    locationRepository: ILocationRepository;
+    chargingStationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
@@ -65,7 +66,7 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     this._bootService = bootNotificationService;
     this._bootRepository = bootRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -108,17 +109,18 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
         ? JSON.parse(connectionJson)
         : null;
       if (!connection?.allowUnknownChargingStations) {
-        const exists = await this._locationRepository.doesChargingStationExistByStationId(
-          tenantId,
-          ocppConnectionName,
-        );
+        const exists =
+          await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+            tenantId,
+            ocppConnectionName,
+          );
         if (!exists) {
           throw new Error(
             `Charging station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
           );
         }
       }
-      await this._locationRepository.createOrUpdateChargingStation(
+      await this._chargingStationRepository.createOrUpdateChargingStation(
         tenantId,
         ChargingStation.build({
           tenantId,
@@ -174,12 +176,8 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     let changeConfigurationsOnPending: boolean = false;
     let getConfigurationsOnPending: boolean = true;
     // Change Configurations on charging station
-    const configurations: ChangeConfiguration[] =
-      await this._changeConfigurationRepository.readAllByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-        },
-      });
+    const configurations: ChangeConfigurationDto[] =
+      await this._changeConfigurationRepository.listByStation(tenantId, ocppConnectionName);
     // Remove ChangeConfiguration call action from blacklist
     await this._cache.remove(OCPP_CallAction.ChangeConfiguration, identifier);
     // Set each configuration on Charging Station

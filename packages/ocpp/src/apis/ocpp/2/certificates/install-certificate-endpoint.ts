@@ -15,7 +15,7 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {

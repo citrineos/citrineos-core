@@ -11,11 +11,11 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('UnknownStationFilter', () => {
   const { container } = createTestContainer();
-  const locationRepository = { doesChargingStationExistByStationId: vi.fn() };
-  const filter = getTestInstance(container, UnknownStationFilter, { locationRepository });
+  const chargingStationRepository = { doesChargingStationExistByOcppConnectionName: vi.fn() };
+  const filter = getTestInstance(container, UnknownStationFilter, { chargingStationRepository });
 
   afterEach(() => {
-    locationRepository.doesChargingStationExistByStationId.mockReset();
+    chargingStationRepository.doesChargingStationExistByOcppConnectionName.mockReset();
   });
 
   it.each([true, false])(
@@ -46,10 +46,9 @@ describe('UnknownStationFilter', () => {
       ),
     ).rejects.toThrow(`Unknown identifier ${ocppConnectionName}`);
 
-    expect(locationRepository.doesChargingStationExistByStationId).toHaveBeenCalledWith(
-      DEFAULT_TENANT_ID,
-      ocppConnectionName,
-    );
+    expect(
+      chargingStationRepository.doesChargingStationExistByOcppConnectionName,
+    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, ocppConnectionName);
   });
 
   it('should not reject unknown station when unknown stations are allowed', async () => {
@@ -63,16 +62,16 @@ describe('UnknownStationFilter', () => {
       anAuthenticationOptions({ allowUnknownChargingStations: true }),
     );
 
-    expect(locationRepository.doesChargingStationExistByStationId).not.toHaveBeenCalledWith(
-      ocppConnectionName,
-    );
+    expect(
+      chargingStationRepository.doesChargingStationExistByOcppConnectionName,
+    ).not.toHaveBeenCalledWith(ocppConnectionName);
   });
 
   function givenStationExists() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(true);
+    chargingStationRepository.doesChargingStationExistByOcppConnectionName.mockResolvedValue(true);
   }
 
   function givenStationDoesNotExist() {
-    locationRepository.doesChargingStationExistByStationId.mockResolvedValue(false);
+    chargingStationRepository.doesChargingStationExistByOcppConnectionName.mockResolvedValue(false);
   }
 });

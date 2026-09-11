@@ -17,14 +17,14 @@ describe('configuration message endpoints', () => {
   const { container } = createTestContainer();
 
   let sendCall: ReturnType<typeof vi.fn>;
-  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
-  let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+  let readChargingStationByOcppConnectionName: ReturnType<typeof vi.fn>;
+  let findByStationAndKey: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
-    readChargingStationByStationId = vi.fn().mockResolvedValue({ id: 1 });
-    readOnlyOneByQuery = vi.fn().mockResolvedValue(undefined);
+    readChargingStationByOcppConnectionName = vi.fn().mockResolvedValue({ id: 1 });
+    findByStationAndKey = vi.fn().mockResolvedValue(undefined);
   });
 
   describe('ChangeConfigurationEndpoint', () => {
@@ -33,7 +33,7 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, ChangeConfigurationEndpoint, {
         ocppSender: { sendCall },
-        locationRepository: { readChargingStationByStationId },
+        chargingStationRepository: { readChargingStationByOcppConnectionName },
       });
 
     it('is declared for OCPP 1.6 only', () => {
@@ -42,13 +42,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('sends the request to a known station', async () => {
-      const confirmations = await build().handle(
-        [STATION],
-        request,
-        undefined,
-        DEFAULT_TENANT_ID,
-        OCPPVersion.OCPP1_6,
-      );
+      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([{ success: true, payload: 'queued' }]);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
@@ -61,15 +55,9 @@ describe('configuration message endpoints', () => {
     });
 
     it('refuses an unknown station without sending', async () => {
-      readChargingStationByStationId.mockResolvedValue(undefined);
+      readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
-      const confirmations = await build().handle(
-        [STATION],
-        request,
-        undefined,
-        DEFAULT_TENANT_ID,
-        OCPPVersion.OCPP1_6,
-      );
+      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([
         { success: false, payload: `Charging station ${STATION} not found` },
@@ -78,7 +66,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('reports per-station results when only one station is unknown', async () => {
-      readChargingStationByStationId.mockImplementation(async (_tenantId, name) =>
+      readChargingStationByOcppConnectionName.mockImplementation(async (_tenantId, name) =>
         name === STATION ? { id: 1 } : undefined,
       );
 
@@ -87,7 +75,6 @@ describe('configuration message endpoints', () => {
         request,
         undefined,
         DEFAULT_TENANT_ID,
-        OCPPVersion.OCPP1_6,
       );
 
       expect(confirmations).toEqual([
@@ -98,7 +85,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('forwards the callback url', async () => {
-      await build().handle([STATION], request, 'http://cb', DEFAULT_TENANT_ID, OCPPVersion.OCPP1_6);
+      await build().handle([STATION], request, 'http://cb', DEFAULT_TENANT_ID);
 
       expect(sendCall.mock.calls[0][0].callbackUrl).toBe('http://cb');
     });
@@ -108,12 +95,12 @@ describe('configuration message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetConfigurationEndpoint, {
         ocppSender: { sendCall },
-        locationRepository: { readChargingStationByStationId },
-        changeConfigurationRepository: { readOnlyOneByQuery },
+        chargingStationRepository: { readChargingStationByOcppConnectionName },
+        changeConfigurationRepository: { findByStationAndKey },
       });
 
     const handle = (request: OCPP1_6.GetConfigurationRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP1_6);
+      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
     it('sends a single call when no keys are requested', async () => {
       const confirmations = await handle({});
@@ -124,7 +111,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('sends one call when the key count is within the station limit', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '5' });
+      findByStationAndKey.mockResolvedValue({ value: '5' });
 
       await handle({ key: ['a', 'b', 'c'] });
 
@@ -133,7 +120,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('splits keys into batches of GetConfigurationMaxKeys', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '2' });
+      findByStationAndKey.mockResolvedValue({ value: '2' });
 
       await handle({ key: ['a', 'b', 'c', 'd', 'e'] });
 
@@ -146,7 +133,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('labels each confirmation with its batch range and station', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '2' });
+      findByStationAndKey.mockResolvedValue({ value: '2' });
 
       const confirmations = await handle({ key: ['a', 'b', 'c'] });
 
@@ -157,7 +144,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('gives every batch its own correlation id', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '1' });
+      findByStationAndKey.mockResolvedValue({ value: '1' });
 
       await handle({ key: ['a', 'b'] });
 
@@ -166,7 +153,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('treats an absent max-keys configuration as unlimited', async () => {
-      readOnlyOneByQuery.mockResolvedValue(undefined);
+      findByStationAndKey.mockResolvedValue(undefined);
 
       await handle({ key: ['a', 'b', 'c', 'd'] });
 
@@ -174,7 +161,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('captures a send failure as an unsuccessful batch instead of throwing', async () => {
-      readOnlyOneByQuery.mockResolvedValue({ value: '1' });
+      findByStationAndKey.mockResolvedValue({ value: '1' });
       sendCall.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({
         success: true,
         payload: 'queued',
@@ -187,7 +174,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('refuses an unknown station without sending', async () => {
-      readChargingStationByStationId.mockResolvedValue(undefined);
+      readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
       const confirmations = await handle({ key: ['a'] });
 
@@ -306,7 +293,7 @@ describe('configuration message endpoints', () => {
       getTestInstance(container, TriggerMessage16Endpoint, { ocppSender: { sendCall } });
 
     const handle = (request: OCPP1_6.TriggerMessageRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP1_6);
+      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
     it('sends when connectorId is omitted', async () => {
       const confirmations = await handle({

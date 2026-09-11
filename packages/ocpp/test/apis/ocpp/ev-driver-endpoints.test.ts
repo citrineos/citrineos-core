@@ -25,16 +25,16 @@ describe('evDriver message endpoints', () => {
   });
 
   describe('CancelReservationEndpoint', () => {
-    let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+    let findByStationAndReservationId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      readOnlyOneByQuery = vi.fn().mockResolvedValue({ id: 7 });
+      findByStationAndReservationId = vi.fn().mockResolvedValue({ id: 7 });
     });
 
     const build = () =>
       getTestInstance(container, CancelReservationEndpoint, {
         ocppSender: { sendCall },
-        reservationRepository: { readOnlyOneByQuery },
+        reservationRepository: { findByStationAndReservationId },
       });
 
     const handle = (identifiers: string[]) =>
@@ -59,14 +59,12 @@ describe('evDriver message endpoints', () => {
     it('looks the reservation up per station and tenant', async () => {
       await handle([STATION]);
 
-      expect(readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        where: { id: 7, ocppConnectionName: STATION, tenantId: DEFAULT_TENANT_ID },
-      });
+      expect(findByStationAndReservationId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, 7);
     });
 
     it('sends to nobody when the reservation is missing on any station', async () => {
-      readOnlyOneByQuery.mockImplementation(async (_tenantId, query) =>
-        query.where.ocppConnectionName === STATION ? { id: 7 } : undefined,
+      findByStationAndReservationId.mockImplementation(async (_tenantId, ocppConnectionName) =>
+        ocppConnectionName === STATION ? { id: 7 } : undefined,
       );
 
       const confirmations = await handle([STATION, OTHER_STATION]);
@@ -78,7 +76,7 @@ describe('evDriver message endpoints', () => {
     });
 
     it('returns one failure per identifier when the lookup throws', async () => {
-      readOnlyOneByQuery.mockRejectedValue(new Error('db down'));
+      findByStationAndReservationId.mockRejectedValue(new Error('db down'));
 
       const confirmations = await handle([STATION, OTHER_STATION]);
 
@@ -178,7 +176,7 @@ describe('evDriver message endpoints', () => {
     });
 
     it('threads the correlation id the service returned into the send', async () => {
-      await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP1_6);
+      await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
       expect(prepareSendLocalList16).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, request);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
@@ -190,13 +188,7 @@ describe('evDriver message endpoints', () => {
     it('captures a preparation failure per station', async () => {
       prepareSendLocalList16.mockRejectedValue(new Error('bad list'));
 
-      const confirmations = await build().handle(
-        [STATION],
-        request,
-        undefined,
-        DEFAULT_TENANT_ID,
-        OCPPVersion.OCPP1_6,
-      );
+      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([{ success: false, payload: 'bad list' }]);
       expect(sendCall).not.toHaveBeenCalled();
@@ -304,7 +296,13 @@ describe('evDriver message endpoints', () => {
             stackLevel: 0,
             chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxDefaultProfile,
             chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
-            chargingSchedule: [],
+            chargingSchedule: [
+              {
+                id: 1,
+                chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.W,
+                chargingSchedulePeriod: [{ startPeriod: 0, limit: 10 }],
+              },
+            ],
           },
         }),
       );

@@ -20,7 +20,7 @@ import type {
   ITariffRepository,
 } from '@citrineos/dal';
 import { AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
-import type { CertificateAuthorityService } from '@/services/index.js';
+import type { CertificateAuthorityService } from '@services/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
 const TARIFF_ID = 7;
@@ -82,7 +82,7 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       };
 
       const tariffRepository = {
-        readByKey: vi.fn().mockResolvedValue({
+        findById: vi.fn().mockResolvedValue({
           id: TARIFF_ID,
           tariffId: 'DriverTariff01',
           currency: 'EUR',

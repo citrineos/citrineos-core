@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type * as amqplib from 'amqplib';
+import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 import {
   EventGroup,
   MessageOrigin,
@@ -11,8 +11,8 @@ import {
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/types';
+import type * as amqplib from 'amqplib';
 import { vi } from 'vitest';
-import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 
 /**
  * Minimal SystemConfig with AMQP configured.
@@ -22,11 +22,20 @@ export function aSystemConfigWithAmqp(override?: {
   exchange?: string;
   instanceIdentifier?: string;
   noAmqp?: boolean;
+  maxCallLengthSeconds?: number;
+  staleCallMaxAgeSeconds?: number;
 }): SystemConfig {
+  const timeouts = {
+    maxCallLengthSeconds: override?.maxCallLengthSeconds ?? 20,
+    ...(override?.staleCallMaxAgeSeconds !== undefined && {
+      staleCallMaxAgeSeconds: override.staleCallMaxAgeSeconds,
+    }),
+  };
   if (override?.noAmqp) {
-    return { messageBroker: { amqp: undefined } } as unknown as SystemConfig;
+    return { timeouts, messageBroker: { amqp: undefined } } as unknown as SystemConfig;
   }
   return {
+    timeouts,
     messageBroker: {
       amqp: {
         url: 'amqp://localhost',
@@ -59,6 +68,7 @@ export function aMockAmqpChannel(): amqplib.Channel {
     cancel: vi.fn().mockResolvedValue({}),
     ack: vi.fn(),
     nack: vi.fn(),
+    sendToQueue: vi.fn().mockReturnValue(true),
   } as unknown as amqplib.Channel;
 }
 
@@ -99,6 +109,7 @@ export function aConsumeMessage(override?: {
   context?: Record<string, unknown>;
   payload?: Record<string, unknown>;
   protocol?: string;
+  headers?: Record<string, unknown>;
 }): amqplib.ConsumeMessage {
   return {
     content: Buffer.from(
@@ -111,20 +122,21 @@ export function aConsumeMessage(override?: {
           correlationId: 'test-correlation-id',
           ocppConnectionName: 'CS001',
           tenantId: '1',
+          timestamp: new Date().toISOString(),
         },
         payload: override?.payload ?? {},
         protocol: override?.protocol ?? OCPPVersion.OCPP2_0_1,
       }),
     ),
-    properties: {} as amqplib.MessageProperties,
+    properties: { headers: override?.headers ?? {} } as unknown as amqplib.MessageProperties,
     fields: {
       deliveryTag: 1,
       redelivered: false,
       exchange: 'test-exchange',
       routingKey: '',
       consumerTag: 'test-consumer',
-    } as amqplib.GetMessageFields,
-  } as amqplib.ConsumeMessage;
+    },
+  };
 }
 
 /**
@@ -164,6 +176,6 @@ export function aConsumeMessageWithPrefixedFields(override?: {
       exchange: 'test-exchange',
       routingKey: '',
       consumerTag: 'test-consumer',
-    } as amqplib.GetMessageFields,
-  } as amqplib.ConsumeMessage;
+    },
+  };
 }

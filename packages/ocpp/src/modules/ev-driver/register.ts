@@ -30,7 +30,7 @@ import {
   UnlockConnectorResponseOcpp2Handler,
   VatNumberValidationRequestOcpp21Handler,
 } from '@handlers/index.js';
-import { ViesVatProvider } from '@/services/index.js';
+import { ViesVatProvider } from '@services/index.js';
 import { LocalAuthListService } from './local-auth-list-service.js';
 
 /**

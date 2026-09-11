@@ -26,9 +26,9 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@citrineos/dal';
-import { CertificateAuthorityService, parseCSRForVerification } from '@/services/index.js';
+import { CertificateAuthorityService, parseCSRForVerification } from '@services/index.js';
 import { validatePEMEncodedCSR } from '@util/index.js';
-import type { InstallCertificateHelperService } from '@/services/certificate/install-certificate-helper-service.js';
+import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import { Crypto } from '@peculiar/webcrypto';
 import * as pkijs from 'pkijs';
 import { CertificationRequest } from 'pkijs';

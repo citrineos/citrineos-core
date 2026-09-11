@@ -18,7 +18,7 @@ export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   stationId: z.number().int().optional(),
   ocppConnectionName: z.string(),
   evseId: z.number().int(),
-  connectorId: z.number().int(),
+  connectorId: z.number().int().optional(),
   evseTypeConnectorId: z.number().int().optional(),
   status: ConnectorStatusEnumSchema.default('Unknown').optional(),
   type: ConnectorTypeEnumSchema.nullable().optional(),

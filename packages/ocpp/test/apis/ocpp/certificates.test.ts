@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_TENANT_ID, IMessageConfirmation } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IMessageConfirmation } from '@citrineos/base';
 import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import { DeleteCertificateEndpoint } from '@/apis/ocpp/2/certificates/delete-certificate-endpoint.js';
 import { InstallCertificateEndpoint } from '@/apis/ocpp/2/certificates/install-certificate-endpoint.js';

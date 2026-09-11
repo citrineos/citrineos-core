@@ -5,7 +5,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NetworkProfileService } from '@/services/network-profile/network-profile-service.js';
+import { NetworkProfileService } from '@services/network-profile/network-profile-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('NetworkProfileService', () => {

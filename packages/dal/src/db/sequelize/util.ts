@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type SystemConfig } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import { type Dialect } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { AsyncJobStatus } from '../../models/async-job/async-job-status.js';
 import { Authorization } from '../../models/authorization/authorization.js';
 import { LocalListAuthorization } from '../../models/authorization/local-list-authorization.js';
@@ -74,42 +75,50 @@ export class DefaultSequelizeInstance {
   public static getInstance(config: SystemConfig, logger?: Logger<ILogObj>): Sequelize {
     if (!DefaultSequelizeInstance.instance) {
       DefaultSequelizeInstance.config = config;
-      DefaultSequelizeInstance.logger = logger
-        ? logger.getSubLogger({ name: this.name })
-        : new Logger<ILogObj>({ name: this.name });
+      DefaultSequelizeInstance.logger = childLogger(logger, this.name);
 
       DefaultSequelizeInstance.instance = this.createSequelizeInstance();
     }
     return DefaultSequelizeInstance.instance;
   }
 
+  /**
+   * Attempts to establish a database connection, retrying up to `database.maxRetries`. If retries
+   * are exhausted, throws an error to prevent running the process with no usable database connection.
+   */
   public static async initializeSequelize(_sync: boolean = false): Promise<void> {
-    let retryCount = 0;
     const maxRetries = this.config.database.maxRetries ?? this.DEFAULT_RETRIES;
     const retryDelay = this.config.database.retryDelay ?? this.DEFAULT_RETRY_DELAY;
-    while (retryCount < maxRetries) {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         await this.instance!.authenticate();
         this.logger.info('Database connection has been established successfully');
 
         await this.syncDb();
 
-        break;
+        this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
+        return;
       } catch (error) {
-        retryCount++;
+        lastError = error;
         this.logger.error(
-          `Failed to connect to the database (attempt ${retryCount}/${maxRetries}):`,
+          `Failed to connect to the database (attempt ${attempt}/${maxRetries}):`,
           error,
         );
-        if (retryCount < maxRetries) {
+        if (attempt < maxRetries) {
           this.logger.info(`Retrying in ${retryDelay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        } else {
-          this.logger.error('Max retries reached. Unable to establish database connection.');
         }
       }
     }
-    this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
+
+    this.logger.error('Max retries reached. Unable to establish database connection.');
+    throw new Error(
+      `Unable to initialize the database connection after ${maxRetries} attempt(s): ` +
+        `${lastError instanceof Error ? lastError.message : String(lastError)}`,
+      { cause: lastError },
+    );
   }
 
   private static async syncDb(): Promise<void> {

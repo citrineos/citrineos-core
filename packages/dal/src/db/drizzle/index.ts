@@ -6,6 +6,8 @@ export { DefaultDrizzleInstance } from './util.js';
 export {
   DrizzleRepository,
   type DrizzleRepositoryDependencies,
+  type DrizzleExecutor,
+  type DrizzleWriteContext,
 } from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,
@@ -40,6 +42,81 @@ export {
   type CertificateEntity,
   type CertificateEntityInsert,
 } from './schema/certificate.js';
+export {
+  DrizzleChangeConfigurationRepository,
+  toChangeConfigurationDto,
+} from '../../repositories/drizzle/change-configuration.js';
+export {
+  changeConfigurationTable,
+  tenantChangeConfigurationTable,
+  ChangeConfigurationEntitySchema,
+  ChangeConfigurationEntityInsertSchema,
+  type ChangeConfigurationEntity,
+  type ChangeConfigurationEntityInsert,
+} from './schema/change-configuration.js';
+export {
+  DrizzleChargingStationRepository,
+  toChargingStationDto,
+} from '../../repositories/drizzle/charging-station.js';
+export {
+  chargingStationTable,
+  tenantChargingStationTable,
+  ChargingStationEntitySchema,
+  ChargingStationEntityInsertSchema,
+  type ChargingStationEntity,
+  type ChargingStationEntityInsert,
+} from './schema/charging-station.js';
+export {
+  DrizzleConnectorRepository,
+  toConnectorDto,
+} from '../../repositories/drizzle/connector.js';
+export {
+  connectorTable,
+  tenantConnectorTable,
+  ConnectorEntitySchema,
+  ConnectorEntityInsertSchema,
+  type ConnectorEntity,
+  type ConnectorEntityInsert,
+} from './schema/connector.js';
+export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
+export {
+  evseTable,
+  tenantEvseTable,
+  EvseEntitySchema,
+  EvseEntityInsertSchema,
+  type EvseEntity,
+  type EvseEntityInsert,
+} from './schema/evse.js';
+export {
+  DrizzleStatusNotificationRepository,
+  toStatusNotificationDto,
+} from '../../repositories/drizzle/status-notification.js';
+export {
+  statusNotificationTable,
+  tenantStatusNotificationTable,
+  StatusNotificationEntitySchema,
+  StatusNotificationEntityInsertSchema,
+  type StatusNotificationEntity,
+  type StatusNotificationEntityInsert,
+} from './schema/status-notification.js';
+export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
+export {
+  latestStatusNotificationTable,
+  tenantLatestStatusNotificationTable,
+  LatestStatusNotificationEntitySchema,
+  LatestStatusNotificationEntityInsertSchema,
+  type LatestStatusNotificationEntity,
+  type LatestStatusNotificationEntityInsert,
+} from './schema/latest-status-notification.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  locationTable,
+  tenantLocationTable,
+  LocationEntitySchema,
+  LocationEntityInsertSchema,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
 export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
@@ -76,6 +153,30 @@ export {
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
+export {
+  DrizzleMessageInfoRepository,
+  toMessageInfoDto,
+} from '../../repositories/drizzle/message-info.js';
+export {
+  messageInfoTable,
+  tenantMessageInfoTable,
+  MessageInfoEntitySchema,
+  MessageInfoEntityInsertSchema,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
+export {
+  DrizzleReservationRepository,
+  toReservationDto,
+} from '../../repositories/drizzle/reservation.js';
+export {
+  reservationTable,
+  tenantReservationTable,
+  ReservationEntitySchema,
+  ReservationEntityInsertSchema,
+  type ReservationEntity,
+  type ReservationEntityInsert,
+} from './schema/reservation.js';
 export {
   DrizzleSecurityEventRepository,
   toSecurityEventDto,
@@ -124,6 +225,15 @@ export {
   type ServerNetworkProfileEntity,
   type ServerNetworkProfileEntityInsert,
 } from './schema/server-network-profile.js';
+export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
+export {
+  tariffTable,
+  tenantTariffTable,
+  TariffEntitySchema,
+  TariffEntityInsertSchema,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
   tenantTable,

@@ -17,7 +17,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { createOcspRequest, sendOCSPRequest } from '@/services/index.js';
+import { createOcspRequest, sendOCSPRequest } from '@services/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
@@ -46,11 +46,13 @@ export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
 
     const reqData = message.payload.ocspRequestData;
     try {
-      const ocspRequest = createOcspRequest(reqData);
-      const ocspResult = await sendOCSPRequest(ocspRequest, reqData.responderURL);
+      const ocspResponseHex = await sendOCSPRequest(
+        createOcspRequest(reqData),
+        reqData.responderURL,
+      );
       const response: OCPP2_response_types.GetCertificateStatusResponse = {
         status: OCPP2_1.GetCertificateStatusEnumType.Accepted,
-        ocspResult,
+        ocspResult: Buffer.from(ocspResponseHex, 'hex').toString('base64'),
       };
       await this._ocppSender.sendCallResultWithMessage(message, response);
     } catch (error) {

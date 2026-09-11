@@ -11,31 +11,31 @@ import {
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
-import type { ILocationRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _locationRepository: ILocationRepository;
+  protected _connectorRepository: IConnectorRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionService: TransactionService;
 
   constructor({
     logger,
     ocppSender,
-    locationRepository,
+    connectorRepository,
     transactionEventRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    locationRepository: ILocationRepository;
+    connectorRepository: IConnectorRepository;
     transactionEventRepository: ITransactionEventRepository;
     transactionService: TransactionService;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
-    this._locationRepository = locationRepository;
+    this._connectorRepository = connectorRepository;
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
   }
@@ -126,7 +126,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     ocppConnectionName: string,
     request: OCPP1_6.StartTransactionRequest,
   ) {
-    const connector = await this._locationRepository.readConnectorByStationIdAndOcpp16ConnectorId(
+    const connector = await this._connectorRepository.readConnectorByStationIdAndOcpp16ConnectorId(
       tenantId,
       ocppConnectionName,
       request.connectorId,

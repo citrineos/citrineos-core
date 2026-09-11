@@ -2,16 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConfigLoader, type IFileStorage } from '@citrineos/base';
+import { childLogger, ConfigLoader, type IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import {
   createSignedCertificateFromCSR,
   parseCertificateChainPem,
-} from '@/services/certificate/certificate-util.js';
+} from '@services/certificate/certificate-util.js';
 import * as acme from 'acme-client';
 import { Client } from 'acme-client';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import type { IChargingStationCertificateAuthorityClient } from './interface.js';
 
 export class Acme implements IChargingStationCertificateAuthorityClient {
@@ -38,9 +37,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     this._fileStorage = fileStorage;
     this._securityCertChainKeyMap = securityCertChainKeyMap;
     this._client = client;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
     this._config = config;
     this._email = config.integrations.chargingStationCA?.acme?.email;
   }
@@ -51,9 +48,7 @@ export class Acme implements IChargingStationCertificateAuthorityClient {
     logger?: Logger<ILogObj>,
     client?: Client,
   ): Promise<Acme> {
-    const log = logger
-      ? logger.getSubLogger({ name: 'Acme' })
-      : new Logger<ILogObj>({ name: 'Acme' });
+    const log = childLogger(logger, 'Acme');
 
     const websocketServersConfig = await ConfigLoader.loadWebsocketServersConfig(
       fileStorage,

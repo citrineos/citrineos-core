@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ITariffRepository } from '@citrineos/dal';
-import { Tariff } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { TariffDto } from '@citrineos/types';
+import type { ILogObj, Logger } from 'tslog';
 import { TransactionService } from './transaction-service.js';
 import { Transaction } from '@citrineos/dal';
-import { baseCalculateTotalCost } from '@citrineos/base';
+import { baseCalculateTotalCost, childLogger } from '@citrineos/base';
 
 export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
@@ -26,9 +25,7 @@ export class CostCalculator {
   }) {
     this._tariffRepository = tariffRepository;
     this._transactionService = transactionService;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**
@@ -55,7 +52,7 @@ export class CostCalculator {
       return 0;
     }
     this._logger.debug(`Calculating total cost for connector ${transaction.connectorId}`);
-    const tariff: Tariff | undefined = await this._tariffRepository.findByConnectorId(
+    const tariff: TariffDto | undefined = await this._tariffRepository.findByConnectorId(
       tenantId,
       transaction.connectorId,
     );

@@ -1,25 +1,26 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { IFileStorage } from '@citrineos/base';
-import { OCPP2_0_1, SystemConfig } from '@citrineos/types';
+import { type IFileStorage } from '@citrineos/base';
+import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { KJUR } from 'jsrsasign';
-import { beforeAll, describe, expect, it, Mock, Mocked, vi } from 'vitest';
+import { beforeAll, describe, expect, it, type Mock, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import * as CertificateUtil from '@/services/certificate/certificate-util.js';
+import * as CertificateUtil from '@services/certificate/certificate-util.js';
 import {
-  IChargingStationCertificateAuthorityClient,
-  IV2GCertificateAuthorityClient,
-} from '@/services/certificate/client/interface.js';
-import { CertificateAuthorityService, MemoryCache } from '@/services/index.js';
+  type IChargingStationCertificateAuthorityClient,
+  type IV2GCertificateAuthorityClient,
+} from '@services/certificate/client/interface.js';
+import { CertificateAuthorityService, MemoryCache } from '@services/index.js';
 import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
 } from '../../providers/certificate-authority.js';
 import { readFile } from '../../utils/file-util.js';
+import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
 
-vi.mock('@/services/certificate/certificate-util.js');
+vi.mock('@services/certificate/certificate-util.js');
 vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {
   // Provide a mock implementation
   return {
@@ -61,7 +62,6 @@ describe('CertificateAuthorityService', () => {
     } as unknown as Mocked<IChargingStationCertificateAuthorityClient>;
 
     mockCertUtil = CertificateUtil as Mocked<typeof CertificateUtil>;
-
     type WithFactoryHooks = typeof CertificateAuthorityService & {
       _instantiateV2GClient: (...args: unknown[]) => IV2GCertificateAuthorityClient;
       _instantiateChargingStationClient: (
@@ -277,7 +277,7 @@ describe('CertificateAuthorityService', () => {
   describe('validateCertificateHashData', () => {
     it('successes', async () => {
       const { createOcspRequest } = await vi.importActual<typeof CertificateUtil>(
-        '@/services/certificate/certificate-util.js',
+        '@services/certificate/certificate-util.js',
       );
       mockCertUtil.createOcspRequest.mockImplementation(createOcspRequest);
 
@@ -298,7 +298,7 @@ describe('CertificateAuthorityService', () => {
       ]);
 
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
-        expect.any(KJUR.asn1.ocsp.Request),
+        expect.any(KJUR.asn1.ocsp.OCSPRequest),
         givenResponderURL,
       );
       const capturedRequest = mockCertUtil.sendOCSPRequest.mock.calls.find(
@@ -308,6 +308,29 @@ describe('CertificateAuthorityService', () => {
       expect(capturedRequest.getEncodedHex()).toMatch(/^[0-9a-f]+$/i);
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
       expect(actualResult).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted);
+    });
+
+    it('sends hash data the responder can parse back', async () => {
+      mockCertUtil.sendOCSPRequest.mockReturnValue(Promise.resolve(faker.lorem.word()));
+
+      const givenOCSPRequest = {
+        hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType.SHA256,
+        issuerNameHash: 'aa'.repeat(32),
+        issuerKeyHash: 'bb'.repeat(32),
+        serialNumber: '0102030405',
+        responderURL: faker.internet.url(),
+      } as OCPP2_0_1.OCSPRequestDataType;
+      await certificateAuthorityService.validateCertificateHashData([givenOCSPRequest]);
+
+      const [sentRequest] = mockCertUtil.sendOCSPRequest.mock.lastCall!;
+      expect(parseOcspRequestHex(sentRequest.getEncodedHex())).toEqual([
+        {
+          alg: 'sha256',
+          issname: givenOCSPRequest.issuerNameHash,
+          isskey: givenOCSPRequest.issuerKeyHash,
+          sbjsn: givenOCSPRequest.serialNumber,
+        },
+      ]);
     });
   });
 });

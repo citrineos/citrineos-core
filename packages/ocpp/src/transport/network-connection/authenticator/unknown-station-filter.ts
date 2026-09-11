@@ -9,7 +9,7 @@ import type { AuthenticationOptions } from '@citrineos/base';
 import { UpgradeUnknownError } from './errors/unknown-error.js';
 
 interface IStationExistenceChecker {
-  doesChargingStationExistByStationId(
+  doesChargingStationExistByOcppConnectionName(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<boolean>;
@@ -20,17 +20,17 @@ interface IStationExistenceChecker {
  * It only applies when unknown charging stations are not allowed.
  */
 export class UnknownStationFilter extends AuthenticatorFilter {
-  private _locationRepository: IStationExistenceChecker;
+  private _chargingStationRepository: IStationExistenceChecker;
 
   constructor({
-    locationRepository,
+    chargingStationRepository,
     logger,
   }: {
-    locationRepository: IStationExistenceChecker;
+    chargingStationRepository: IStationExistenceChecker;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
-    this._locationRepository = locationRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   protected shouldFilter(options: AuthenticationOptions) {
@@ -42,10 +42,11 @@ export class UnknownStationFilter extends AuthenticatorFilter {
     identifier: string,
     _request: IncomingMessage,
   ): Promise<void> {
-    const isStationKnown = await this._locationRepository.doesChargingStationExistByStationId(
-      tenantId,
-      identifier,
-    );
+    const isStationKnown =
+      await this._chargingStationRepository.doesChargingStationExistByOcppConnectionName(
+        tenantId,
+        identifier,
+      );
     if (!isStationKnown) {
       throw new UpgradeUnknownError(`Unknown identifier ${identifier}`);
     }

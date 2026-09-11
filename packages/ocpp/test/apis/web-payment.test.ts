@@ -6,7 +6,7 @@ import { CacheNamespace, DEFAULT_TENANT_ID } from '@citrineos/base';
 import { AttributeEnum, EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TotpUtil } from '@/services/index.js';
+import { TotpUtil } from '@services/index.js';
 import { InitiateWebPaymentEndpoint } from '@/apis/web-payment/initiate-web-payment-endpoint.js';
 import { WebPaymentApi } from '@/apis/web-payment-api.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -24,20 +24,22 @@ describe(`POST ${URL}`, () => {
   let readAllByQuerystring: ReturnType<typeof vi.fn>;
   let cacheSet: ReturnType<typeof vi.fn>;
   let sendCall: ReturnType<typeof vi.fn>;
-  let readChargingStationByStationId: ReturnType<typeof vi.fn>;
+  let readChargingStationByOcppConnectionName: ReturnType<typeof vi.fn>;
   let server: FastifyInstance;
 
   beforeEach(async () => {
     readAllByQuerystring = vi.fn();
     cacheSet = vi.fn().mockResolvedValue(undefined);
     sendCall = vi.fn().mockResolvedValue(undefined);
-    readChargingStationByStationId = vi.fn().mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
+    readChargingStationByOcppConnectionName = vi
+      .fn()
+      .mockResolvedValue({ protocol: OCPPVersion.OCPP2_1 });
 
     const endpoint = getTestInstance(container, InitiateWebPaymentEndpoint, {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
       deviceModelRepository: { readAllByQuerystring },
-      locationRepository: { readChargingStationByStationId },
+      chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
 
     server = Fastify({ logger: false });
@@ -288,7 +290,9 @@ describe(`POST ${URL}`, () => {
     });
 
     it('refuses a station whose protocol cannot receive the notification', async () => {
-      readChargingStationByStationId.mockResolvedValue({ protocol: OCPPVersion.OCPP2_0_1 });
+      readChargingStationByOcppConnectionName.mockResolvedValue({
+        protocol: OCPPVersion.OCPP2_0_1,
+      });
 
       const res = await server.inject({
         method: 'POST',
@@ -302,7 +306,7 @@ describe(`POST ${URL}`, () => {
     });
 
     it('refuses a station that has never connected', async () => {
-      readChargingStationByStationId.mockResolvedValue(undefined);
+      readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
       const res = await server.inject({
         method: 'POST',

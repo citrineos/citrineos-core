@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
+import { childLogger } from '@base-util/logging.js';
 export abstract class AbstractMessageSender {
   /**
    * Fields
@@ -18,8 +18,6 @@ export abstract class AbstractMessageSender {
    * @param logger [Optional] The logger to use.
    */
   constructor(logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 }

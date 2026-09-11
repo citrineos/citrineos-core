@@ -36,6 +36,7 @@ describe('GcpCloudStorage', () => {
 
   const mockConfig = {
     projectId: 'test-project',
+    defaultBucketName: 'test-bucket',
   };
 
   beforeEach(() => {

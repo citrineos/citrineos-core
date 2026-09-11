@@ -10,6 +10,7 @@
 // ============================================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { ModuleId } from '@citrineos/ocpi-base';
 import type { MockContext } from '../src/core/types.js';
 import { makeServer, functionalHeaders, validSession } from './harness.js';
 
@@ -61,7 +62,7 @@ describe('/_mock control API', () => {
   it('waitForReceived resolves on emitted inbound traffic (direct store primitive)', async () => {
     // Register the waiter FIRST (executor runs synchronously), then emit.
     const waitPromise = ctx.store.waitForReceived(
-      { direction: 'inbound', module: 'sessions', method: 'PUT' },
+      { direction: 'inbound', module: ModuleId.Sessions, method: 'PUT' },
       3000,
     );
     await putSession('WAIT-1');
@@ -77,7 +78,7 @@ describe('/_mock control API', () => {
       method: 'POST',
       url: '/_mock/exchanges/wait',
       payload: {
-        filter: { direction: 'inbound', module: 'sessions', method: 'PUT' },
+        filter: { direction: 'inbound', module: ModuleId.Sessions, method: 'PUT' },
         timeoutMs: 3000,
       },
     });

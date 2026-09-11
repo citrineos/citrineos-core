@@ -2,20 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  AbstractEndpointApi,
   type AbstractEndpoint,
   type BuiltEndpoint,
   type ICommandEndpointMetadata,
-  AbstractEndpointApi,
 } from '@citrineos/base';
 import fastify, { type FastifyInstance } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
+
+export type EndpointClass = (new (...args: any[]) => AbstractEndpoint) & {
+  route: ICommandEndpointMetadata;
+};
 
 class HarnessApi extends AbstractEndpointApi {}
 
 export function aCapturingLogger(): { logger: Logger<ILogObj>; errors: ILogObj[] } {
   const errors: ILogObj[] = [];
   const logger = new Logger<ILogObj>({ type: 'hidden', minLevel: 5 });
-  logger.attachTransport((logObj) => errors.push(logObj));
+  logger.attachTransport((logObj) => {
+    errors.push(logObj);
+  });
   return { logger, errors };
 }
 

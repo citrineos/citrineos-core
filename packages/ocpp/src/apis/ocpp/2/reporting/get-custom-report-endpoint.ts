@@ -17,7 +17,7 @@ import {
   type OCPP2_request_types,
 } from '@citrineos/types';
 import { getBatches, getSizeOfRequest } from '@util/index.js';
-import type { DeviceModelService } from '@/services/device-model/device-model-service.js';
+import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { COMPONENT_DEVICE_DATA_CTRLR } from '../components.js';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 

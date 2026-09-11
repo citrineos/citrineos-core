@@ -29,3 +29,17 @@ export {
   type ChargingProfileValidation,
 } from './validator.js';
 export { IdGenerator } from './id-generator.js';
+
+export {
+  assertSequelizeSchemaMatches,
+  compareNullability,
+  compareTypes,
+  DEFAULT_SCHEMA,
+  SchemaValidationError,
+  validateSequelizeSchema,
+  type SchemaFinding,
+  type SchemaFindingKind,
+  type SchemaFindingSeverity,
+  type SchemaValidationOptions,
+  type SchemaValidationReport,
+} from './sequelize-schema-validator.js';

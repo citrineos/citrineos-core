@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { ProvisionStationVariablesEndpoint } from '@/apis/commands/provision-station-variables-endpoint.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProvisionStationVariablesEndpoint } from '@/apis/commands/provision-station-variables-endpoint.js';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { mountEndpoint, type MountedEndpoint } from '@test/providers/endpoint-harness.js';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const URL = '/commands/provisionStationVariables';
 const STATION = 'cs001';
@@ -35,7 +35,7 @@ describe('ProvisionStationVariablesEndpoint', () => {
     mounted = await mountEndpoint(endpoint, ProvisionStationVariablesEndpoint.route);
   });
 
-  const post = (query: string, body: unknown) =>
+  const post = (query: string, body: object) =>
     mounted.server.inject({ method: 'PUT', url: `${URL}?${query}`, payload: body });
 
   it('provisions without recording acceptance when the flag is absent', async () => {

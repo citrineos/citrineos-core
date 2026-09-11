@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { applyUpdateFunction, UpdateFunction } from '../utils/update-util.js';
-import { IMessageConfirmation } from '@citrineos/base';
+import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
+import { type IMessageConfirmation } from '@citrineos/base';
 
 const MOCK_PAYLOAD = 'Payload';
 export const MOCK_REQUEST_ID = 1;

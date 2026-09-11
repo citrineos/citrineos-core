@@ -2,23 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi } from 'vitest';
 import { type IAuthorizer, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   AuthorizationStatusEnum,
   EventGroup,
-  IdTokenEnum,
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
+import type { CertificateAuthorityService } from '@services/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-import type { CertificateAuthorityService } from '@/services/index.js';
+import { describe, expect, it, vi } from 'vitest';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
@@ -72,7 +71,7 @@ function sentResponse(
 // Not eMAID: validateIdToken enforces the eMAID check digit before the certificate block is
 // reached, and the token type is irrelevant to what these tests exercise.
 const request: OCPP2_0_1.AuthorizeRequest = {
-  idToken: { idToken: 'TAG001', type: IdTokenEnum.Central },
+  idToken: { idToken: 'TAG001', type: OCPP2_0_1.IdTokenEnumType.Central },
 };
 
 const A_CONTRACT_CERTIFICATE_CHAIN = '-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----';

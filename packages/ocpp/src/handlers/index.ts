@@ -31,6 +31,7 @@ export { NotifyEventRequestOcpp2Handler } from './requests/2/notify-event-reques
 export { NotifyMonitoringReportRequestOcpp2Handler } from './requests/2/notify-monitoring-report-request-ocpp-2-handler.js';
 export { NotifyReportRequestOcpp2Handler } from './requests/2/notify-report-request-ocpp-2-handler.js';
 export { NotifySettlementRequestOcpp21Handler } from './requests/2/notify-settlement-request-ocpp-21-handler.js';
+export { PublishFirmwareStatusNotificationRequestOcpp2Handler } from './requests/2/publish-firmware-status-notification-request-ocpp-2-handler.js';
 export { ReportChargingProfilesRequestOcpp2Handler } from './requests/2/report-charging-profiles-request-ocpp-2-handler.js';
 export { ReservationStatusUpdateRequestOcpp2Handler } from './requests/2/reservation-status-update-request-ocpp-2-handler.js';
 export { SecurityEventNotificationRequestOcpp2Handler } from './requests/2/security-event-notification-request-ocpp-2-handler.js';

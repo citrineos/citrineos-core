@@ -23,6 +23,7 @@ import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { MeterValue } from '../../models/transaction-event/meter-value.js';
+import { resolveStationId } from './resolve-station-id.js';
 import { StartTransaction } from '../../models/transaction-event/start-transaction.js';
 import { StopTransaction } from '../../models/transaction-event/stop-transaction.js';
 import { Transaction } from '../../models/transaction-event/transaction.js';
@@ -131,6 +132,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
           });
           evseId = evse.id;
         }
@@ -143,6 +147,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
           });
           const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
             where: {
@@ -150,6 +157,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
+            },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
             },
             include: [Tariff],
           });
@@ -221,6 +231,9 @@ export class SequelizeTransactionEventRepository
               ocppConnectionName: ocppConnectionName,
               evseTypeId: value.evse.id,
             },
+            defaults: {
+              stationId: await resolveStationId(tenantId, ocppConnectionName),
+            },
           });
           newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
@@ -231,7 +244,10 @@ export class SequelizeTransactionEventRepository
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
-              defaults: { connectorId: value.evse.connectorId },
+              defaults: {
+                connectorId: value.evse.connectorId,
+                stationId: await resolveStationId(tenantId, ocppConnectionName),
+              },
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
@@ -288,11 +304,16 @@ export class SequelizeTransactionEventRepository
       }
 
       const transactionDatabaseId = finalTransaction.id;
+      // Passed transactionCreatedAt explicitly because the
+      // models' @BeforeCreate fallback reads outside this sequelize transaction and so
+      // cannot see a Transaction created moments ago in it.
+      const transactionCreatedAt = finalTransaction.createdAt;
 
       let event = TransactionEvent.build({
         tenantId,
         ocppConnectionName: ocppConnectionName,
         transactionDatabaseId,
+        transactionCreatedAt,
         ...value,
       });
 
@@ -328,6 +349,7 @@ export class SequelizeTransactionEventRepository
                 tenantId,
                 transactionEventId: event.id,
                 transactionDatabaseId: transactionDatabaseId,
+                transactionCreatedAt,
                 transactionId: finalTransaction.transactionId,
                 tariffId: finalTransaction.tariffId,
                 ...meterValueType,
@@ -505,7 +527,7 @@ export class SequelizeTransactionEventRepository
 
   async getTransactionsCount(tenantId: number, dateFrom?: Date, dateTo?: Date): Promise<number> {
     const queryOptions: WhereOptions<any> = {
-      where: {},
+      where: { tenantId },
     };
 
     if (dateFrom) {
@@ -582,11 +604,13 @@ export class SequelizeTransactionEventRepository
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
+    transactionCreatedAt?: Date,
   ): Promise<MeterValue> {
     const meterValueType = MeterValueMapper.fromMeterValueType(meterValue);
     const savedMeterValue = await MeterValue.create({
       tenantId,
       transactionDatabaseId: transactionDatabaseId,
+      transactionCreatedAt,
       transactionId,
       tariffId,
       ...meterValueType,
@@ -626,8 +650,10 @@ export class SequelizeTransactionEventRepository
     await Promise.all(
       meterValues.map(async (meterValue) => {
         meterValue.transactionDatabaseId = transaction.id;
+        meterValue.transactionCreatedAt = transaction.createdAt;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
+        meterValue.connectorId = transaction.connectorId ?? undefined;
         const createdMeterValue = await MeterValue.create(meterValue);
         this.meterValue.emit('created', [createdMeterValue]);
       }),
@@ -731,6 +757,7 @@ export class SequelizeTransactionEventRepository
 
       // Store StartTransaction in db
       event.transactionDatabaseId = newTransaction.id;
+      event.transactionCreatedAt = newTransaction.createdAt;
       event = await event.save({ transaction: sequelizeTransaction });
       this.startTransaction.emit('created', [event]);
 
@@ -767,6 +794,7 @@ export class SequelizeTransactionEventRepository
       tenantId,
       ocppConnectionName: ocppConnectionName,
       transactionDatabaseId,
+      transactionCreatedAt: transaction.createdAt,
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
@@ -783,6 +811,7 @@ export class SequelizeTransactionEventRepository
         meterValues.map(async (meterValue) => {
           meterValue.tenantId = tenantId;
           meterValue.transactionDatabaseId = transactionDatabaseId;
+          meterValue.transactionCreatedAt = transaction.createdAt;
           const createdMeterValue = MeterValue.build(meterValue);
           createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
           await createdMeterValue.save();

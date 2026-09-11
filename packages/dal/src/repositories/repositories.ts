@@ -11,41 +11,51 @@ import type {
   CertificateCreate,
   CertificateDto,
   CertificateUseEnumType,
+  ChangeConfigurationCreate,
+  ChangeConfigurationDto,
+  ChargingLimitSourceEnumType,
+  ChargingProfilePurposeEnumType,
+  ChargingStateEnumType,
+  ChargingStationDto,
+  ChargingStationSequenceTypeEnumType,
+  ConnectorDto,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
+  EvseDto,
+  HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
-  HashAlgorithmEnumType,
-  ChargingLimitSourceEnumType,
-  ChargingProfilePurposeEnumType,
-  ChargingStateEnumType,
-  ChargingStationSequenceTypeEnumType,
-  ConnectorDto,
-  EvseDto,
+  LocationDto,
+  MessageInfoDto,
   MeterValueDto,
   OCPP1_6,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPPMessageDto,
   OCPPVersion,
+  ReservationDto,
   SecurityEventDto,
   ServerNetworkProfileDto,
   SetNetworkProfileDto,
+  StatusNotificationDto,
   SubscriptionDto,
+  TariffDto,
   TenantDto,
   UpdateEnumType,
 } from '@citrineos/types';
+import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
+import type { TariffQueryString } from '../interfaces/queries/tariff.js';
+import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
 import type { LocalListVersion } from '../models/authorization/local-list-version.js';
 import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type { ChangeConfiguration } from '../models/change-configuration.js';
 import type {
   ChargingNeeds,
   ChargingProfile,
@@ -55,18 +65,16 @@ import type { ChargingStationSecurityInfo } from '../models/charging-station-sec
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
 import type { EvseType } from '../models/device-model/evse-type.js';
-import type { Variable } from '../models/device-model/variable.js';
 import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
 import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
-import type { ChargingStation } from '../models/location/charging-station.js';
+import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Connector } from '../models/location/connector.js';
 import type { Evse } from '../models/location/evse.js';
 import type { Location } from '../models/location/location.js';
+import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
 import type { StatusNotification } from '../models/location/status-notification.js';
 import type { MessageInfo } from '../models/message-info/message-info.js';
-import type { Reservation } from '../models/reservation.js';
-import type { Tariff } from '../models/tariff/tariffs.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -74,9 +82,6 @@ import type {
 } from '../models/transaction-event/index.js';
 import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
-import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
-import type { TariffQueryString } from '../interfaces/queries/tariff.js';
-import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
@@ -88,6 +93,11 @@ export interface IAuthorizationRepository {
     query: AuthorizationQuerystring,
   ) => Promise<AuthorizationDto | undefined>;
   findAllAuthorizationsWithTariffs: (tenantId: number) => Promise<AuthorizationDto[]>;
+  updateByKey: (
+    tenantId: number,
+    value: object,
+    key: string,
+  ) => Promise<AuthorizationDto | undefined>;
 }
 
 /**
@@ -233,74 +243,87 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
   ): Promise<LocalListVersion>;
 }
 
-export interface ILocationRepository extends CrudRepository<Location> {
-  readLocationById: (tenantId: number, id: number) => Promise<Location | undefined>;
-  readChargingStationByStationId: (
+export interface ILocationRepository {
+  readLocationById: (tenantId: number, id: number) => Promise<LocationDto | undefined>;
+}
+
+export interface IChargingStationRepository {
+  readChargingStationByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
-  ) => Promise<ChargingStation | undefined>;
-  readConnectorByStationIdAndOcpp16ConnectorId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp16ConnectorId: number,
-  ) => Promise<Connector | undefined>;
-  readEvseByStationIdAndOcpp201EvseId: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseId: number,
-  ) => Promise<Evse | undefined>;
-  readConnectorByStationIdAndOcpp201EvseType: (
-    tenantId: number,
-    ocppConnectionName: string,
-    ocpp201EvseType: OCPP2_common_types.EVSEType,
-  ) => Promise<Connector | undefined>;
+  ) => Promise<ChargingStationDto | undefined>;
   setChargingStationIsOnlineAndOCPPVersion: (
     tenantId: number,
     ocppConnectionName: string,
     isOnline: boolean,
     ocppVersion: OCPPVersion | null,
     connectedWebsocketServerConfigId?: string | null,
-  ) => Promise<ChargingStation | undefined>;
-  doesChargingStationExistByStationId: (
+  ) => Promise<ChargingStationDto | undefined>;
+  doesChargingStationExistByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
   ) => Promise<boolean>;
-  addStatusNotificationToChargingStation(
-    tenantId: number,
-    ocppConnectionName: string,
-    statusNotification: StatusNotification,
-  ): Promise<void>;
   createOrUpdateChargingStation(
     tenantId: number,
-    chargingStation: ChargingStation,
-  ): Promise<ChargingStation>;
-  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
-  createOrUpdateConnector(
-    tenantId: number,
-    connector: ConnectorDto,
-  ): Promise<Connector | undefined>;
-  /**
-   * Commissions a default evse + evseTypeConnector record for an OCPP 1.6 connector.
-   * Used in ad-hoc/`allowUnknownChargingStations` flows where the charge point arrives
-   * uncommissioned (OCPP 1.6 has no native EVSE concept). Conservative default:
-   * one connector → one evse. Returns the FK ids the caller should stamp on the
-   * Connector record being upserted.
-   */
-  commissionEvseForOcpp16Connector(
-    tenantId: number,
-    ocppConnectionName: string,
-    connectorId: number,
-  ): Promise<{ evseId: number; evseTypeConnectorId: number }>;
-  updateAllConnectorsByQuery(
-    tenantId: number,
-    value: Partial<Connector>,
-    query: object,
-  ): Promise<Connector[]>;
+    chargingStation: ChargingStationDto,
+  ): Promise<ChargingStationDto>;
   updateChargingStationTimestamp(
     tenantId: number,
     ocppConnectionName: string,
     timestamp: string,
   ): Promise<void>;
+}
+
+export interface IStatusNotificationRepository {
+  addStatusNotificationToChargingStation(
+    tenantId: number,
+    ocppConnectionName: string,
+    statusNotification: StatusNotificationDto,
+  ): Promise<void>;
+}
+
+export interface IConnectorRepository {
+  readConnectorByStationIdAndOcpp16ConnectorId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp16ConnectorId: number,
+  ) => Promise<ConnectorDto | undefined>;
+  readConnectorByStationIdAndOcpp201EvseType: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseType: OCPP2_common_types.EVSEType,
+  ) => Promise<ConnectorDto | undefined>;
+  updateAllConnectorsByStationId(
+    tenantId: number,
+    stationId: number,
+    value: Partial<ConnectorDto>,
+  ): Promise<ConnectorDto[]>;
+  createOrUpdateOcpp16Connector(
+    tenantId: number,
+    connector: ConnectorDto & { connectorId: number },
+  ): Promise<ConnectorDto | undefined>;
+  readConnectorsWithTariffsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ) => Promise<ConnectorDto[]>;
+  createOrUpdateOcpp2Connector(
+    tenantId: number,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+  ): Promise<ConnectorDto | undefined>;
+}
+
+export interface IEvseRepository {
+  readEvseByStationIdAndOcpp201EvseId: (
+    tenantId: number,
+    ocppConnectionName: string,
+    ocpp201EvseId: number,
+  ) => Promise<EvseDto | undefined>;
+  createOrUpdateEvse(tenantId: number, evse: EvseDto): Promise<EvseDto>;
+  autoCommissionEvseForOcpp16Connector(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<{ evseId: number }>;
 }
 
 export interface ISecurityEventRepository {
@@ -444,22 +467,23 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
   ): Promise<EventData>;
 }
 
-export interface IMessageInfoRepository extends CrudRepository<MessageInfo> {
+export interface IMessageInfoRepository {
   deactivateAllByStationId(tenantId: number, ocppConnectionName: string): Promise<void>;
   createOrUpdateByMessageInfoTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MessageInfoType,
     ocppConnectionName: string,
     componentId?: number,
-  ): Promise<MessageInfo>;
+  ): Promise<MessageInfoDto>;
 }
 
-export interface ITariffRepository extends CrudRepository<Tariff> {
-  findByConnectorId(tenantId: number, connectorId: number): Promise<Tariff | undefined>;
-  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<Tariff[]>;
-  upsertTariff(tenantId: number, tariff: Tariff): Promise<Tariff>;
-  upsertTariffByTariffId(tenantId: number, tariff: Tariff): Promise<Tariff>;
+export interface ITariffRepository {
+  findById(tenantId: number, id: number): Promise<TariffDto | undefined>;
+  findByConnectorId(tenantId: number, connectorId: number): Promise<TariffDto | undefined>;
+  readAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  deleteAllByQuerystring(tenantId: number, query: TariffQueryString): Promise<TariffDto[]>;
+  upsertTariff(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
+  upsertTariffByTariffId(tenantId: number, tariff: TariffDto): Promise<TariffDto>;
 }
 
 export interface ICertificateRepository {
@@ -609,13 +633,25 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<number>;
 }
 
-export interface IReservationRepository extends CrudRepository<Reservation> {
+export interface IReservationRepository {
   createOrUpdateReservation(
     tenantId: number,
     reserveNowRequest: OCPP2_request_types.ReserveNowRequest,
     ocppConnectionName: string,
     isActive?: boolean,
-  ): Promise<Reservation | undefined>;
+  ): Promise<ReservationDto | undefined>;
+  findByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+  ): Promise<ReservationDto | undefined>;
+  updateByStationAndReservationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    reservationId: number,
+    values: Partial<Pick<ReservationDto, 'isActive' | 'reserveStatus' | 'terminatedByTransaction'>>,
+  ): Promise<ReservationDto[]>;
+  getNextReservationId(tenantId: number, ocppConnectionName: string): Promise<number>;
 }
 
 export interface IOCPPMessageRepository {
@@ -684,11 +720,17 @@ export interface ISetNetworkProfileRepository {
   createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto>;
 }
 
-export interface IChangeConfigurationRepository extends CrudRepository<ChangeConfiguration> {
+export interface IChangeConfigurationRepository {
+  findByStationAndKey(
+    tenantId: number,
+    ocppConnectionName: string,
+    key: string,
+  ): Promise<ChangeConfigurationDto | undefined>;
+  listByStation(tenantId: number, ocppConnectionName: string): Promise<ChangeConfigurationDto[]>;
   createOrUpdateChangeConfiguration(
     tenantId: number,
-    configuration: ChangeConfiguration,
-  ): Promise<ChangeConfiguration | undefined>;
+    input: ChangeConfigurationCreate,
+  ): Promise<ChangeConfigurationDto | undefined>;
 }
 export interface ITenantRepository {
   createTenant(tenant: TenantDto): Promise<TenantDto>;

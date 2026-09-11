@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { childLogger } from '@base-util/logging.js';
 import { registerRouteSchema } from '@base-util/endpoints/route-schemas.js';
 import {
   type CallAction,
@@ -30,7 +31,7 @@ import type {
   RawServerDefault,
   RouteOptions,
 } from 'fastify';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 interface MessageRoute {
   Body: OcppRequest;
@@ -66,9 +67,7 @@ export abstract class AbstractMessageEndpointApi {
   ) {
     this._server = server;
     this._config = config;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     for (const { route, endpoint } of endpoints) {
       for (const version of route.protocols) {

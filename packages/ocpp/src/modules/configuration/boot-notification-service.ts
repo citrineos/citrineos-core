@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   CacheNamespace,
+  childLogger,
+  createIdentifier,
   type ICache,
   type IMessageConfirmation,
-  createIdentifier,
   OCPP1_6_CALL_SCHEMA_RECORD,
   OCPP2_0_1_CALL_SCHEMA_RECORD,
   OCPP2_1_CALL_SCHEMA_RECORD,
@@ -23,8 +24,7 @@ import {
 } from '@citrineos/types';
 import type { IBootRepository } from '@citrineos/dal';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 type Configuration = SystemConfig['ocpp'];
 
@@ -48,9 +48,7 @@ export class BootNotificationService {
     this._bootRepository = bootRepository;
     this._cache = cache;
     this._config = config;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   determineBootStatus(bootConfig: BootDto | undefined): RegistrationStatusEnumType {

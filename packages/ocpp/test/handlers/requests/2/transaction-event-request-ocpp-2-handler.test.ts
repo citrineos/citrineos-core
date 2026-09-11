@@ -925,7 +925,7 @@ describe('TransactionEventRequestOcpp2Handler', () => {
         const payload: OCPP2_0_1.TransactionEventRequest = {
           eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
           timestamp: new Date().toISOString(),
-          triggerReason: OCPP2_0_1.TriggerReasonEnumType.EVDisconnected,
+          triggerReason: OCPP2_0_1.TriggerReasonEnumType.EVCommunicationLost,
           seqNo: 5,
           transactionInfo: { transactionId: 'txn-001' },
         };

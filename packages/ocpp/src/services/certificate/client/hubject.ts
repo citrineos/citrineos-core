@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { HttpStatus, type ICache } from '@citrineos/base';
+import { childLogger, HttpStatus, type ICache } from '@citrineos/base';
 import {
   HttpMethod,
   HUBJECT_DEFAULT_BASEURL,
@@ -11,9 +11,8 @@ import {
   HUBJECT_DEFAULT_TOKENURL,
   type SystemConfig,
 } from '@citrineos/types';
-import { createPemBlock } from '@/services/certificate/certificate-util.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { createPemBlock } from '@services/certificate/certificate-util.js';
+import type { ILogObj, Logger } from 'tslog';
 import type { IV2GCertificateAuthorityClient } from './interface.js';
 
 export class Hubject implements IV2GCertificateAuthorityClient {
@@ -44,9 +43,7 @@ export class Hubject implements IV2GCertificateAuthorityClient {
     this._clientId = hubjectConfig.clientId;
     this._clientSecret = hubjectConfig.clientSecret;
     this._cache = cache;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**
