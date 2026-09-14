@@ -61,6 +61,14 @@ export const KNOWN_FINDINGS: KnownFinding[] = [
     note: 'non-numeric location_id returns 500 (README #12)',
     match: (f) => f.detail.startsWith('Spec probe [string-location-id]'),
   },
+  {
+    id: 'evse-without-connectors',
+    note: 'EVSE served with an empty connectors array (README #13)',
+    match: (f) =>
+      f.module === 'locations' &&
+      f.kind === 'body' &&
+      issuePaths(f).some((p) => /^data\.\d+\.evses\.\d+\.connectors$/.test(p)),
+  },
 ];
 
 export function classify(f: Finding): KnownFinding | undefined {

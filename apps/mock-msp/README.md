@@ -798,6 +798,13 @@ observing Citrine's CPO-side behavior:
     500s** — the three semantic gaps the spec probes check for; see §Spec
     probes for the mechanics and consequences of each.
 
+13. **EVSE served with an empty `connectors` array.** OCPI 2.2.1 requires at
+    least one connector per EVSE, but `EvseMapper.fromGraphql` drops connectors
+    that fail its own validation and then returns the EVSE anyway — its
+    `return;` for the no-valid-connectors case is commented out with a
+    `// TODO: solve this case`. The pulled Locations payload then fails the
+    ocpi-base schema at `data[].evses[].connectors`.
+
 ---
 
 ## Environment variables
