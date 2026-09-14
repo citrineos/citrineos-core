@@ -201,7 +201,7 @@ export class CertificateAuthorityService {
       }
       if (!rootCertPem) {
         this._logger.error(`Cannot find root certificate for certificate ${lastCertInChain}`);
-        return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
       } else {
         certificatePems.push(rootCertPem);
       }
@@ -236,7 +236,7 @@ export class CertificateAuthorityService {
           if (certStatus === 'revoked') {
             return OCPP2_1.AuthorizeCertificateStatusEnumType.CertificateRevoked;
           } else if (certStatus !== 'good') {
-            return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+            return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
           }
         } else {
           this._logger.error(`Certificate ${certificatePems[i]} has no OCSP URL.`);
@@ -245,7 +245,7 @@ export class CertificateAuthorityService {
       }
     } catch (error) {
       this._logger.error(`Failed to validate certificate chain: ${error}`);
-      return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
     }
 
     return OCPP2_1.AuthorizeCertificateStatusEnumType.Accepted;
@@ -268,11 +268,11 @@ export class CertificateAuthorityService {
         if (certStatus === 'revoked') {
           return OCPP2_1.AuthorizeCertificateStatusEnumType.CertificateRevoked;
         } else if (certStatus !== 'good') {
-          return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+          return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
         }
       } catch (error) {
         this._logger.error(`Failed to fetch OCSP response: ${error}`);
-        return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+        return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
       }
     }
 
