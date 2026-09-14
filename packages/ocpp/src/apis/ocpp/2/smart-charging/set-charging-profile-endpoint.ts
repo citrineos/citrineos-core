@@ -265,7 +265,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       };
     }
 
-    const numExisted = await this._chargingProfileRepository.existByQuery(tenantId, {
+    const existedChargingProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
       where: {
         stackLevel: chargingProfile.stackLevel,
         transactionDatabaseId: transaction.id,
@@ -274,6 +274,9 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
         tenantId,
       },
     });
+    const numExisted = existedChargingProfiles.filter(
+      (existedProfile) => existedProfile.id !== chargingProfile.id,
+    ).length;
     if (numExisted > 0) {
       return {
         success: false,
