@@ -196,4 +196,40 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     expect(transactionEventRepository.createStopTransaction).toHaveBeenCalledOnce();
     expect(transaction.save).toHaveBeenCalledOnce();
   });
+
+  it('answers Expired for an accepted authorization whose cache expiry has passed', async () => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { handler, ocppSender } = makeHandler(aTransaction(true), [
+      anAuthorization({ cacheExpiryDateTime: yesterday }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        idTagInfo: expect.objectContaining({
+          status: OCPP1_6.StopTransactionResponseStatus.Expired,
+        }),
+      }),
+    );
+  });
+
+  it('answers Accepted while the cache expiry is still ahead', async () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { handler, ocppSender } = makeHandler(aTransaction(true), [
+      anAuthorization({ cacheExpiryDateTime: tomorrow }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        idTagInfo: expect.objectContaining({
+          status: OCPP1_6.StopTransactionResponseStatus.Accepted,
+        }),
+      }),
+    );
+  });
 });
