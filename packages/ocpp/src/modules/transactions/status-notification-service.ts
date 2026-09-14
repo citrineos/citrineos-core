@@ -24,7 +24,12 @@ import {
   StatusNotification,
   Variable,
 } from '@citrineos/dal';
-import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
+import {
+  OCPP1_6,
+  OCPP2_0_1,
+  type ConnectorDto,
+  type StatusNotificationDto,
+} from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
@@ -89,14 +94,14 @@ export class StatusNotificationService {
       return;
     }
 
-    const statusNotification = StatusNotification.build({
+    const statusNotification = {
       tenantId,
       stationId: chargingStation.id!,
       ...statusNotificationRequest,
       connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
       ),
-    });
+    } as unknown as StatusNotificationDto;
 
     let matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
@@ -286,11 +291,10 @@ export class StatusNotificationService {
       if (matchingEvse) {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
       }
-      const statusNotification = StatusNotification.build(statusNotificationInput);
       await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
-        statusNotification,
+        statusNotificationInput as unknown as StatusNotificationDto,
       );
     } else {
       this._logger.warn(

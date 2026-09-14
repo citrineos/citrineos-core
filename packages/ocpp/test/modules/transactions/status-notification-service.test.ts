@@ -666,12 +666,6 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      const mockStatusNotification = aStatusNotification();
-      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
-        expect(input.evseId).toBe(MOCK_EVSE_ID);
-        return mockStatusNotification;
-      });
-
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
@@ -680,8 +674,12 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(buildSpy).toHaveBeenCalled();
-      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      // Asserted on what reaches the repository, which is what gets persisted.
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        expect.objectContaining({ evseId: MOCK_EVSE_ID }),
+      );
     });
 
     it('should not set evseId on StatusNotification record when no matching evse is found, then auto-commission for the Connector record', async () => {
@@ -696,11 +694,6 @@ describe('StatusNotificationService', () => {
         evseId: 50,
       });
 
-      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
-        expect(input.evseId).toBeUndefined();
-        return aStatusNotification();
-      });
-
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
@@ -709,8 +702,9 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(buildSpy).toHaveBeenCalled();
-      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      const [, , persisted] =
+        locationRepository.addStatusNotificationToChargingStation.mock.calls[0];
+      expect(persisted.evseId).toBeUndefined();
       expect(locationRepository.autoCommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
