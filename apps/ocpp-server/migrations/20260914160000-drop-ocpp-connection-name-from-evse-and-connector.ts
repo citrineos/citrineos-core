@@ -5,8 +5,8 @@
 import { QueryInterface, QueryTypes } from 'sequelize';
 
 /**
- * Drops the "ocppConnectionName" column from Evses and Connectors. Both FKs cascade,
- * so "stationId" becomes NOT NULL and unattributable rows are DELETED.
+ * Drops the "ocppConnectionName" column from Evses and Connectors. Both FKs cascade, so
+ * "stationId" becomes NOT NULL; aborts if any row cannot be attributed to a station.
  */
 
 const TABLES = ['Connectors', 'Evses'] as const;
@@ -16,6 +16,8 @@ export default {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const q = (sql: string) =>
         queryInterface.sequelize.query(sql, { transaction, type: QueryTypes.RAW });
+
+      const unattributed: string[] = [];
 
       for (const table of TABLES) {
         // Backfill the FK from the name, scoped by tenant — connection names are
@@ -35,23 +37,23 @@ export default {
         );
         const orphanCount = Number(orphans?.count ?? 0);
         if (orphanCount > 0) {
-          console.warn(
-            `[20260914160000] ${table}: deleting ${orphanCount} row(s) whose ` +
-              `"ocppConnectionName" matches no charging station in the same tenant.`,
-          );
-          // Connectors hang off Evses; clear the dependants of any EVSE that is
-          // about to go, so the FK holds through the delete below.
-          if (table === 'Evses') {
-            await q(`
-              DELETE FROM "Connectors" AS c
-               USING "Evses" AS e
-               WHERE c."evseId" = e."id"
-                 AND e."stationId" IS NULL
-            `);
-          }
-          await q(`DELETE FROM "${table}" WHERE "stationId" IS NULL`);
+          unattributed.push(`${table}: ${orphanCount}`);
         }
+      }
 
+      // Counted across both tables before changing anything, so one run reports the
+      // full picture instead of failing on whichever table comes first.
+      if (unattributed.length > 0) {
+        throw new Error(
+          `[20260914160000] Cannot make "stationId" NOT NULL — these rows have an ` +
+            `"ocppConnectionName" matching no charging station in their tenant:\n` +
+            unattributed.map((line) => `  ${line}`).join('\n') +
+            `\nRepoint them at a station or delete them, then re-run this migration. ` +
+            `Connectors hang off Evses, so clear them together.`,
+        );
+      }
+
+      for (const table of TABLES) {
         // The FK is now the only link to the station.
         await q(`ALTER TABLE "${table}" ALTER COLUMN "stationId" SET NOT NULL`);
         await q(`ALTER TABLE "${table}" DROP COLUMN IF EXISTS "ocppConnectionName"`);

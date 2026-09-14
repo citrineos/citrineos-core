@@ -5,8 +5,9 @@
 import { QueryInterface, QueryTypes } from 'sequelize';
 
 /**
- * Drops the "ocppConnectionName" column from VariableAttributes (NOT NULL, orphans
- * deleted) and VariableMonitorings (nullable; index and uniqueness move to the FK).
+ * Drops the "ocppConnectionName" column from VariableAttributes (NOT NULL; aborts on
+ * unattributable rows) and VariableMonitorings (nullable; index and uniqueness move to
+ * the FK).
  */
 
 const TABLES = ['VariableAttributes', 'VariableMonitorings'] as const;
@@ -31,6 +32,8 @@ export default {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const q = (sql: string) =>
         queryInterface.sequelize.query(sql, { transaction, type: QueryTypes.RAW });
+
+      const unattributed: string[] = [];
 
       for (const table of TABLES) {
         // Backfill the FK from the name, scoped by tenant — connection names are
@@ -57,20 +60,21 @@ export default {
                 `their station attribution when "ocppConnectionName" is dropped.`,
             );
           } else {
-            console.warn(
-              `[20260914170000] ${table}: deleting ${orphanCount} row(s) whose ` +
-                `"ocppConnectionName" matches no charging station in the same tenant.`,
-            );
-            // VariableStatuses hang off VariableAttributes.
-            await q(`
-              DELETE FROM "VariableStatuses" AS s
-               USING "VariableAttributes" AS a
-               WHERE s."variableAttributeId" = a."id"
-                 AND a."stationId" IS NULL
-            `);
-            await q(`DELETE FROM "${table}" WHERE "stationId" IS NULL`);
+            unattributed.push(`${table}: ${orphanCount}`);
           }
         }
+      }
+
+      // Only the NOT NULL table can't carry these forward; abort rather than deciding
+      // for the operator what happens to them.
+      if (unattributed.length > 0) {
+        throw new Error(
+          `[20260914170000] Cannot make "stationId" NOT NULL — these rows have an ` +
+            `"ocppConnectionName" matching no charging station in their tenant:\n` +
+            unattributed.map((line) => `  ${line}`).join('\n') +
+            `\nRepoint them at a station or delete them (with the VariableStatuses that ` +
+            `hang off them), then re-run this migration.`,
+        );
       }
 
       // Move the name-keyed indexes and uniqueness onto the FK before the column goes.

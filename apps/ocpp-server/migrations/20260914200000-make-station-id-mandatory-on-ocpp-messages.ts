@@ -7,7 +7,7 @@ import { QueryInterface, QueryTypes } from 'sequelize';
 /**
  * Makes OCPPMessages."stationId" NOT NULL and its key ON DELETE RESTRICT, so deleting
  * a station with messages is refused rather than silently discarding its whole log.
- * Rows with a null "stationId" are DELETED — they predate the mandatory link.
+ * Aborts if any row still has a null "stationId".
  */
 
 const TABLE = 'OCPPMessages';
@@ -24,12 +24,12 @@ export default {
       );
       const count = Number(unattributed?.count ?? 0);
       if (count > 0) {
-        console.warn(
-          `[20260914200000] ${TABLE}: deleting ${count} row(s) with a NULL "stationId". ` +
-            `Their station was deleted before "stationId" became mandatory and the name ` +
-            `that identified it has already been dropped, so they cannot be attributed.`,
+        throw new Error(
+          `[20260914200000] Cannot make "stationId" NOT NULL — ${TABLE} has ${count} row(s) ` +
+            `with a NULL "stationId". Their station was deleted while the key was ON DELETE ` +
+            `SET NULL, and 20260914180000 dropped the name that identified it, so they cannot ` +
+            `be attributed. Delete them, then re-run this migration.`,
         );
-        await q(`DELETE FROM "${TABLE}" WHERE "stationId" IS NULL`);
       }
 
       // Resolve the constraint by what it does rather than by name: the partition

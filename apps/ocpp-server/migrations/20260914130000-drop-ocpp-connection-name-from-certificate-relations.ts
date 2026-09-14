@@ -7,7 +7,8 @@ import { QueryInterface, QueryTypes } from 'sequelize';
 /**
  * Drops the "ocppConnectionName" column from the certificate relations, and makes
  * "stationId" NOT NULL on all three — as the name column always was. The two attempt
- * logs move from ON DELETE SET NULL to CASCADE, which NOT NULL requires.
+ * logs move from ON DELETE SET NULL to CASCADE, which NOT NULL requires. Aborts if any
+ * row cannot be attributed to a station.
  */
 
 const TABLES = [
@@ -53,6 +54,8 @@ export default {
         return rows[0]?.conname;
       };
 
+      const unattributed: string[] = [];
+
       for (const table of TABLES) {
         // Backfill the FK from the name, scoped by tenant — connection names are
         // only unique within a tenant.
@@ -73,13 +76,22 @@ export default {
         );
         const orphanCount = Number(orphans?.count ?? 0);
         if (orphanCount > 0) {
-          console.warn(
-            `[20260914130000] ${table}: deleting ${orphanCount} row(s) whose ` +
-              `"ocppConnectionName" matches no charging station in the same tenant.`,
-          );
-          await q(`DELETE FROM "${table}" WHERE "stationId" IS NULL`);
+          unattributed.push(`${table}: ${orphanCount}`);
         }
+      }
 
+      // Counted across every table before changing anything, so one run reports the
+      // full picture instead of failing on whichever table comes first.
+      if (unattributed.length > 0) {
+        throw new Error(
+          `[20260914130000] Cannot make "stationId" NOT NULL — these rows have an ` +
+            `"ocppConnectionName" matching no charging station in their tenant:\n` +
+            unattributed.map((line) => `  ${line}`).join('\n') +
+            `\nRepoint them at a station or delete them, then re-run this migration.`,
+        );
+      }
+
+      for (const table of TABLES) {
         // SET NULL cannot coexist with NOT NULL — it would write a null the column
         // rejects, failing every station delete. CASCADE takes the rows instead.
         if (TO_CASCADE.has(table)) {

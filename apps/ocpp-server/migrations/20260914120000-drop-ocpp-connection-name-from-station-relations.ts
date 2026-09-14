@@ -52,6 +52,8 @@ export default {
         return rows[0]?.conname;
       };
 
+      const unattributed: string[] = [];
+
       for (const table of TABLES) {
         // 1. Backfill the FK from the name, scoped by tenant — connection names
         //    are only unique within a tenant.
@@ -64,19 +66,25 @@ export default {
              AND t."tenantId" = cs."tenantId"
         `);
 
-        // 2. Deal with what could not be attributed to a station.
+        // 2. Record what could not be attributed; the migration aborts below if any
+        //    remain, rather than deciding for the operator what to do with them.
         const [orphans] = await queryInterface.sequelize.query<{ count: string }>(
           `SELECT COUNT(*) AS count FROM "${table}" WHERE "stationId" IS NULL`,
           { transaction, type: QueryTypes.SELECT },
         );
         const orphanCount = Number(orphans?.count ?? 0);
         if (orphanCount > 0) {
-          console.warn(
-            `[20260914120000] ${table}: deleting ${orphanCount} row(s) whose ` +
-              `"ocppConnectionName" matches no charging station in the same tenant.`,
-          );
-          await q(`DELETE FROM "${table}" WHERE "stationId" IS NULL`);
+          unattributed.push(`${table}: ${orphanCount}`);
         }
+      }
+
+      if (unattributed.length > 0) {
+        throw new Error(
+          `[20260914120000] Cannot make "stationId" NOT NULL — these rows have an ` +
+            `"ocppConnectionName" matching no charging station in their tenant:\n` +
+            unattributed.map((line) => `  ${line}`).join('\n') +
+            `\nRepoint them at a station or delete them, then re-run this migration.`,
+        );
       }
 
       // 3. Move the ChargingStationSecurityInfos unique constraint onto the FK.
