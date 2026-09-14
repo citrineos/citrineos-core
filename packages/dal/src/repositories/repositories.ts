@@ -295,10 +295,6 @@ export interface IConnectorRepository {
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
   ) => Promise<ConnectorDto | undefined>;
-  readConnectorsByStationId: (
-    tenantId: number,
-    ocppConnectionName: string,
-  ) => Promise<ConnectorDto[]>;
   readConnectorByStationIdAndOcpp201EvseType: (
     tenantId: number,
     ocppConnectionName: string,
