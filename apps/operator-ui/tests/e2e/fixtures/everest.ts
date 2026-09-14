@@ -446,7 +446,6 @@ async function ensureEverestEvseAndConnector(api: ApiClient, stationId: number):
       {
         obj: {
           stationId,
-          ocppConnectionName: EVEREST_OCPP_CONNECTION_NAME,
           evseTypeId: 1,
           removed: false,
           createdAt: now,
@@ -481,7 +480,6 @@ async function ensureEverestEvseAndConnector(api: ApiClient, stationId: number):
           evseId: evse.id,
           connectorId: 1,
           evseTypeConnectorId: 1,
-          ocppConnectionName: EVEREST_OCPP_CONNECTION_NAME,
           stationId,
           createdAt: now,
           updatedAt: now,

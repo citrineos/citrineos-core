@@ -9,12 +9,9 @@ import type { ApiClient } from './api-client';
 //   ChargingStations.id                 — int auto-inc PK
 //   ChargingStations.ocppConnectionName — string identifier (the OCPP name
 //                                         the charger uses when it connects)
-//   Child tables link to the station by `stationId` (int FK to
-//   ChargingStations.id). Some still carry a redundant `ocppConnectionName`
-//   copy alongside it, populated by the BEFORE INSERT/UPDATE trigger
-//   `populate_station_id` when the row is written with `stationId` null — so
-//   seeds for those may set `ocppConnectionName` alone and let the trigger
-//   fill in the FK.
+//   Child tables (Transactions, Connectors, Evses, StatusNotifications,
+//   LatestStatusNotifications, OCPPMessages, …):
+//     stationId          — int FK to ChargingStations.id
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -161,8 +158,20 @@ export async function seedTransaction(
 ): Promise<SeededTransaction> {
   const transactionId = overrides.transactionId ?? `${shortId()}-tx`;
   const now = nowIso();
-  // The Transactions table's int `stationId` FK is populated by the
-  // populate_station_id trigger from `ocppConnectionName` + tenant.
+  // Transactions store only the station FK; resolve the caller's connection
+  // name to it
+  const { ChargingStations } = await api.gql<{ ChargingStations: { id: number }[] }>(
+    `query LookupStationForTransaction($name: String!) {
+       ChargingStations(where: { ocppConnectionName: { _eq: $name } }, limit: 1) { id }
+     }`,
+    { name: ocppConnectionName },
+  );
+  const station = ChargingStations[0];
+  if (!station) {
+    throw new Error(
+      `Cannot seed a transaction: no charging station named '${ocppConnectionName}'.`,
+    );
+  }
   const data = await api.gql<{
     insert_Transactions_one: {
       id: number;
@@ -177,7 +186,7 @@ export async function seedTransaction(
     {
       obj: {
         transactionId,
-        ocppConnectionName,
+        stationId: station.id,
         isActive: overrides.isActive ?? true,
         totalKwh: overrides.totalKwh ?? 0,
         createdAt: now,

@@ -63,9 +63,9 @@ describe('NetworkProfileService', () => {
     expect(mockCreatePending).toHaveBeenCalledTimes(2);
     for (const ocppConnectionName of [stationA, stationB]) {
       expect(mockCreatePending).toHaveBeenCalledWith(
-        tenantId,
-        ocppConnectionName,
         expect.objectContaining({
+          ocppConnectionName,
+          tenantId,
           correlationId,
           configurationSlot: request.configurationSlot,
           websocketServerConfigId,
@@ -98,8 +98,6 @@ describe('NetworkProfileService', () => {
 
     expect(mockCreatePending).toHaveBeenCalledTimes(1);
     expect(mockCreatePending).toHaveBeenCalledWith(
-      tenantId,
-      stationA,
       expect.objectContaining({ websocketServerConfigId: undefined }),
     );
   });
@@ -108,8 +106,6 @@ describe('NetworkProfileService', () => {
     await service.prepareSetNetworkProfile(tenantId, [stationA], request, {});
 
     expect(mockCreatePending).toHaveBeenCalledWith(
-      tenantId,
-      stationA,
       expect.objectContaining({
         ocppCsmsUrl: request.connectionData.ocppCsmsUrl,
         messageTimeout: request.connectionData.messageTimeout,
@@ -122,8 +118,6 @@ describe('NetworkProfileService', () => {
     await service.prepareSetNetworkProfile(tenantId, [stationA], request, {});
 
     expect(mockCreatePending).toHaveBeenCalledWith(
-      tenantId,
-      stationA,
       expect.objectContaining({
         apn: JSON.stringify(apn),
         vpn: JSON.stringify(vpn),
@@ -134,7 +128,7 @@ describe('NetworkProfileService', () => {
   it('does not leak the raw apn and vpn objects onto the row', async () => {
     await service.prepareSetNetworkProfile(tenantId, [stationA], request, {});
 
-    const persisted = mockCreatePending.mock.calls[0][2];
+    const persisted = mockCreatePending.mock.calls[0][0];
     expect(typeof persisted.apn).toBe('string');
     expect(typeof persisted.vpn).toBe('string');
   });
@@ -147,7 +141,7 @@ describe('NetworkProfileService', () => {
 
     await service.prepareSetNetworkProfile(tenantId, [stationA], withoutTunnels, {});
 
-    const persisted = mockCreatePending.mock.calls[0][2];
+    const persisted = mockCreatePending.mock.calls[0][0];
     expect(persisted.apn).toBeUndefined();
     expect(persisted.vpn).toBeUndefined();
   });
