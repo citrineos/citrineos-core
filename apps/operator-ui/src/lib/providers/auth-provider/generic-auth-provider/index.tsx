@@ -14,9 +14,9 @@ import {
 } from '@lib/client/components/ui/card';
 import { Input } from '@lib/client/components/ui/input';
 import { Label } from '@lib/client/components/ui/label';
-import { type AuthenticationContextProvider, type User } from '@lib/utils/access.types';
+import { type AuthenticationContextProvider, type User } from '@lib/utils/access-types';
 import config from '@lib/utils/config';
-import { HasuraHeader, HasuraRole } from '@lib/utils/hasura.types';
+import { HasuraHeader, HasuraRole } from '@lib/utils/hasura-types';
 import { useLogin, useTranslate, type AuthProvider } from '@refinedev/core';
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';

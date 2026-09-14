@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { TariffProps } from '@citrineos/types';
-import { MenuSection } from '@lib/client/components/main-menu/main.menu';
+import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
-import type { TariffClass } from '@lib/cls/tariff.dto';
+import type { TariffClass } from '@lib/cls/tariff-dto';
 import type { CrudFilters } from '@refinedev/core';
 import type { CellContext } from '@tanstack/react-table';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 
 type TranslateFn = (key: string, options?: any) => string;

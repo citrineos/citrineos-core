@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.19.0",
@@ -12,7 +12,8 @@
     "prettier": "prettier --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "clean": "find . -not -path '*/node_modules/*' \\( -type d \\( -name dist -o -name .next \\) -o -name tsconfig.tsbuildinfo \\) -exec rm -rf {} +",
+    "typecheck:test": "tsc -p packages/base/tsconfig.json && tsc -p packages/dal/tsconfig.json && tsc -p packages/ocpp/tsconfig.json && tsc -p packages/ocpi-base/tsconfig.json && tsc -p apps/mock-msp/tsconfig.json && tsc -p apps/operator-ui/tsconfig.json",
+    "clean": "find . -not -path '*/node_modules/*' \\( -type d \\( -name dist -o -name .next \\) -o -name '*.tsbuildinfo' \\) -exec rm -rf {} + && rm -rf node_modules/.vite node_modules/.vite-temp node_modules/.cache && { find node_modules -name tsconfig.tmp.tsbuildinfo -delete 2>/dev/null || true; }",
     "fresh": "pnpm run clean && find . -name node_modules -type d -prune -exec rm -rf {} + && rm -f pnpm-lock.yaml && pnpm store prune",
     "fresh:install": "pnpm run fresh && pnpm install",
     "start:everest": "cd ./apps/ocpp-server && pnpm start:everest",
@@ -33,7 +34,8 @@
     "overrides": {
       "@tanstack/react-query": "5.101.4",
       "zod": "catalog:",
-      "graphql": "15.6.1"
+      "graphql": "15.6.1",
+      "reflect-metadata": "catalog:"
     }
   },
   "engines": {
@@ -46,35 +48,35 @@
     "typescript-eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "vitest": "3.2.7",
-    "@vitest/coverage-v8": "3.2.7",
+    "vitest": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@types/jsrsasign": "^10.5.15",
-    "@types/node": "^25.3.3",
+    "@types/node": "catalog:",
     "madge": "^8.0.0",
-    "openapi-types": "^12.1.3",
-    "@types/pg": "8.20.4",
+    "openapi-types": "catalog:",
+    "@types/pg": "catalog:",
     "tsc-alias": "^1.8.16",
-    "testcontainers": "11.14.0",
-    "typescript": "^6.0.0"
+    "testcontainers": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "@fastify/swagger": "^9.7.0",
-    "@fastify/swagger-ui": "^5.2.5",
-    "@google-cloud/storage": "^7.19.0",
-    "@peculiar/webcrypto": "^1.5.0",
-    "acme-client": "^5.4.0",
-    "ajv": "^8.18.0",
-    "ajv-formats": "^3.0.1",
-    "asn1js": "^3.0.7",
-    "bufferutil": "^4.1.0",
-    "jsrsasign": "^11.1.1",
-    "jwks-rsa": "^4.0.1",
-    "pkijs": "^3.3.3",
-    "pvutils": "^1.1.5",
-    "redis": "^4.7.1",
+    "@fastify/swagger": "catalog:",
+    "@fastify/swagger-ui": "catalog:",
+    "@google-cloud/storage": "catalog:",
+    "@peculiar/webcrypto": "catalog:",
+    "acme-client": "catalog:",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:",
+    "asn1js": "catalog:",
+    "bufferutil": "catalog:",
+    "jsrsasign": "catalog:",
+    "jwks-rsa": "catalog:",
+    "pkijs": "catalog:",
+    "pvutils": "catalog:",
+    "redis": "catalog:",
     "sequelize-cli": "^6.6.2",
-    "sequelize-typescript": "^2.1.6",
+    "sequelize-typescript": "catalog:",
     "tsconfig-paths": "^4.2.0",
-    "utf-8-validate": "^6.0.6"
+    "utf-8-validate": "catalog:"
   }
 }

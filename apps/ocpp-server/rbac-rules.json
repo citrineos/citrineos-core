@@ -180,10 +180,6 @@
       "POST": ["user", "admin"],
       "DELETE": ["user", "admin"]
     },
-    "/ocpprouter/systemConfig": {
-      "GET": ["user", "admin"],
-      "PUT": ["user", "admin"]
-    },
     "/commands/provisionStationVariables": {
       "PUT": ["user", "admin"]
     },

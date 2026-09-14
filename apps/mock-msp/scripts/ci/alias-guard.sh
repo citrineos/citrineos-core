@@ -10,7 +10,7 @@ set -euo pipefail
 
 ALIAS_RE="['\"]@(interfaces|ocpp|config|base-util|dal|modules|util)/|['\"]@/"
 
-broken="$(grep -rlE "$ALIAS_RE" packages/base/dist packages/core/dist --include=*.js 2>/dev/null || true)"
+broken="$(grep -rlE "$ALIAS_RE" packages/base/dist packages/ocpp/dist packages/dal/dist --include=*.js 2>/dev/null || true)"
 if [ -n "$broken" ]; then
   echo "bare path aliases left in emitted js (tsc-alias did not run):" >&2
   echo "$broken" | head -20 >&2

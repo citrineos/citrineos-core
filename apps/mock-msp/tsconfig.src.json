@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true
+  },
+  "references": [
+    {
+      "path": "../../packages/base/tsconfig.src.json"
+    },
+    {
+      "path": "../../packages/ocpi-base/tsconfig.src.json"
+    }
+  ]
+}

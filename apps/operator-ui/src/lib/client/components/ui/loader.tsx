@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@lib/utils/cn';
 import React, { forwardRef } from 'react';
 
 export const Loader = forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>(

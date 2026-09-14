@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
 
 // Proves the OCPP → CitrineOS-core → Hasura → UI ingestion pipeline for the
 // live EVerest station. Every other transaction/status/meter test in the suite

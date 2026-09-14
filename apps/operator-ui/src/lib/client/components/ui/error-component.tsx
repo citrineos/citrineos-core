@@ -1,10 +1,10 @@
-import { Button } from '@/lib/client/components/ui/button';
+import { Button } from '@lib/client/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/lib/client/components/ui/tooltip';
+} from '@lib/client/components/ui/tooltip';
 import { cn } from '@lib/utils/cn';
 import { useGo, useResourceParams, useTranslate } from '@refinedev/core';
 import { ChevronLeft, InfoIcon } from 'lucide-react';

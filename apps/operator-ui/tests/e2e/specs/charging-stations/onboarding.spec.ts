@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { ChargingStationsListPage } from '../../pages/charging-stations/list.page';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { TransactionsListPage } from '../../pages/transactions/list.page';
+import { ChargingStationsListPage } from '../../pages/charging-stations/list-page';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { TransactionsListPage } from '../../pages/transactions/list-page';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -87,7 +87,7 @@ test.describe('charging-stations › cp001 navigation surface @everest', () => {
     });
 
     await test.step('7. Operator confirms RemoteStop is gated when no active transaction', async () => {
-      // Source contract (charging.station.detail.card.tsx:471-482): when
+      // Source contract (charging-station-detail-card.tsx:471-482): when
       // hasActiveTransactions=false, only StartTransactionButton renders;
       // StopTransactionButton is not in the DOM. cp001 starts each test
       // run with no transactions, so the gate is the deterministic

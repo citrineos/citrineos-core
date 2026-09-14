@@ -13,21 +13,21 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField, FormField } from '@lib/client/components/form/field';
-import { ConnectorSelector } from '@lib/client/components/modals/shared/connector-selector/connector.selector';
+import { ConnectorSelector } from '@lib/client/components/modals/shared/connector-selector/connector-selector';
 import { Input } from '@lib/client/components/ui/input';
 import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
-import { ResourceType } from '@lib/utils/access.types';
-import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
-import { closeModal } from '@lib/utils/store/modal.slice';
+import { ResourceType } from '@lib/utils/access-types';
+import type { MessageConfirmation } from '@lib/utils/message-confirmation';
+import { triggerMessageAndHandleResponse } from '@lib/utils/messages-utils';
+import { closeModal } from '@lib/utils/store/modal-slice';
 import { useSelect, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import z from 'zod';
 import { Controller } from 'react-hook-form';
-import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
-import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { FormButtonVariants } from '@lib/client/components/buttons/form-button';
+import { useTenantId } from '@lib/client/hooks/use-tenant-id';
 
 export interface OCPP1_6_RemoteStartProps {
   station: ChargingStationDto;

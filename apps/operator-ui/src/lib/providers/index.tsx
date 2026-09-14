@@ -11,7 +11,7 @@ import dataProvider from '@lib/providers/data-provider';
 import liveProvider from '@lib/providers/live-provider';
 import { createNotificationProvider } from '@lib/providers/notification-provider';
 import ReduxProvider from '@lib/providers/redux-provider';
-import { setUserLocale } from '@lib/server/hooks/getUserLocale';
+import { setUserLocale } from '@lib/server/hooks/get-user-locale';
 import { resources } from '@lib/utils/resources';
 import type { I18nProvider } from '@refinedev/core';
 import { Refine } from '@refinedev/core';

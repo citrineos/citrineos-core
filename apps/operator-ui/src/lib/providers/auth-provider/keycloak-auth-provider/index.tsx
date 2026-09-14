@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type AuthenticationContextProvider, type User } from '@/lib/utils/access.types';
-import config from '@/lib/utils/config';
+import { type AuthenticationContextProvider, type User } from '@lib/utils/access-types';
+import config from '@lib/utils/config';
 import { getSession, signIn, signOut } from 'next-auth/react';
 import { type AuthProvider, useTranslate } from '@refinedev/core';
-import { HasuraHeader, HasuraRole } from '@lib/utils/hasura.types';
+import { HasuraHeader, HasuraRole } from '@lib/utils/hasura-types';
 import React, { useEffect } from 'react';
 import { parseJwt, getTokenClaim } from '@lib/utils/jwt';
 

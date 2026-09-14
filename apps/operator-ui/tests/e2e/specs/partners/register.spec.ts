@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { PartnersListPage } from '../../pages/partners/list.page';
-import { PartnerFormPage } from '../../pages/partners/form.page';
+import { PartnersListPage } from '../../pages/partners/list-page';
+import { PartnerFormPage } from '../../pages/partners/form-page';
 
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -35,7 +35,7 @@ test.describe('partners › register', () => {
       clientToken: 'e2e-client-token',
     });
     await form.submit();
-    // KNOWN-DRIFT: src/lib/client/pages/partners/upsert/partners.upsert.tsx
+    // KNOWN-DRIFT: src/lib/client/pages/partners/upsert/partners-upsert.tsx
     // post-create redirects to /authorizations/:id (apparent copy-paste
     // bug). Spec asserts the success toast only — redirect target
     // verification deferred until src is fixed.

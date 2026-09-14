@@ -111,6 +111,10 @@ export type PublishFirmwareResponse =
   | OCPP2_1.PublishFirmwareResponse
   | OCPP2_0_1.PublishFirmwareResponse;
 
+export type PublishFirmwareStatusNotificationResponse =
+  | OCPP2_1.PublishFirmwareStatusNotificationResponse
+  | OCPP2_0_1.PublishFirmwareStatusNotificationResponse;
+
 export type UnpublishFirmwareResponse =
   | OCPP2_1.UnpublishFirmwareResponse
   | OCPP2_0_1.UnpublishFirmwareResponse;

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AuthorizationUpsert } from '@lib/client/pages/authorizations/upsert/authorization.upsert';
+import { AuthorizationUpsert } from '@lib/client/pages/authorizations/upsert/authorization-upsert';
 
 type PageProps = {
   params: Promise<{ id: string }>;

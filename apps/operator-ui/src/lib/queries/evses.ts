@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
-import { EVSE_CORE_FIELDS, EVSE_DETAIL_FIELDS } from '@lib/queries/fields/evse.fields';
-import { CONNECTOR_SPEC_FIELDS } from '@lib/queries/fields/connector.fields';
+import { EVSE_CORE_FIELDS, EVSE_DETAIL_FIELDS } from '@lib/queries/fields/evse-fields';
+import { CONNECTOR_SPEC_FIELDS } from '@lib/queries/fields/connector-fields';
 
 export const EVSE_LIST_QUERY = gql`
   query EvseList(

@@ -10,11 +10,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.json",
+    "build": "tsc -b tsconfig.src.json",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "typecheck": "tsc -b tsconfig.json --pretty",
-    "typecheck:all": "tsc -p tsconfig.typecheck.json --pretty",
+    "typecheck": "tsc -b tsconfig.src.json --pretty",
+    "typecheck:all": "tsc -p tsconfig.json --noEmit --pretty",
     "test": "vitest run",
     "test:live": "vitest run -c vitest.live.config.ts --dir test-live/pr",
     "test:everest": "vitest run -c vitest.live.config.ts --dir test-live/everest",
@@ -35,12 +35,12 @@
   "devDependencies": {
     "@eslint/js": "catalog:",
     "@playwright/test": "^1.49.0",
-    "@types/node": "^25.3.3",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "engines": {

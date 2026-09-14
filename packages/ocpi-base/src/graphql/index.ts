@@ -3,5 +3,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export * from './queries/index.js';
-export * from './OcpiGraphqlClient.js';
+export * from './ocpi-graphql-client.js';
 export * from './operations.js';

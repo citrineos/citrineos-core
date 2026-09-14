@@ -7,18 +7,18 @@ import { type ChargingStationDto, OCPP2_0_1 } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { SelectFormField } from '@lib/client/components/form/field';
-import { EvseSelector } from '@lib/client/components/modals/shared/evse-selector/evse.selector';
-import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
-import { closeModal } from '@lib/utils/store/modal.slice';
+import { EvseSelector } from '@lib/client/components/modals/shared/evse-selector/evse-selector';
+import type { MessageConfirmation } from '@lib/utils/message-confirmation';
+import { triggerMessageAndHandleResponse } from '@lib/utils/messages-utils';
+import { closeModal } from '@lib/utils/store/modal-slice';
 import { useForm } from '@refinedev/react-hook-form';
 import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslate } from '@refinedev/core';
 import z from 'zod';
 import { Controller } from 'react-hook-form';
-import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
-import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { FormButtonVariants } from '@lib/client/components/buttons/form-button';
+import { useTenantId } from '@lib/client/hooks/use-tenant-id';
 
 export interface OCPP2_0_1_ResetProps {
   station: ChargingStationDto;

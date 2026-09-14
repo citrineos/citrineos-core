@@ -320,7 +320,7 @@ export async function verifyTokenAtCpo(
       detail:
         `Token readback drift on '${d.field}': pushed=${JSON.stringify(d.expected)} served=${JSON.stringify(d.served)}` +
         (d.isKnownCitrineBug
-          ? ' — known Citrine bug: TokensMapper maps an absent `valid` in a PATCH to status Invalid (TokensMapper.ts:149)'
+          ? ' — known Citrine bug: TokensMapper maps an absent `valid` in a PATCH to status Invalid (tokens-mapper.ts:149)'
           : ''),
       ...(d.isKnownCitrineBug ? { isKnownCitrineBug: true } : {}),
     });

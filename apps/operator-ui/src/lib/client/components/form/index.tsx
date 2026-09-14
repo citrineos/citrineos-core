@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { FormButton, type FormButtonProps } from '@lib/client/components/buttons/form.button';
+import { FormButton, type FormButtonProps } from '@lib/client/components/buttons/form-button';
 import { Button } from '@lib/client/components/ui/button';
 import {
   useBack,

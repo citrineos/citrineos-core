@@ -1,0 +1,14 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { IncomingMessage } from 'http';
+import type { AuthenticationOptions } from './authentication-options.js';
+
+export interface IAuthenticator {
+  authenticate(
+    request: IncomingMessage,
+    tenantId: number,
+    options: AuthenticationOptions,
+  ): Promise<{ identifier: string }>;
+}

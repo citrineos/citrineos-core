@@ -492,7 +492,7 @@ The intuition is backwards here, so read it twice:
 - **`reset -d '{}'`** → rebuilds registration **from config** → **RESTORES `registered`** + both tokens. **This is your panic button.**
 - **`reset -d '{"keepRegistration":true}'`** → **PRESERVES whatever you currently have**, including a broken unregistered state. **This one cannot rescue you.**
 
-Source: `apps/mock-msp/src/core/Store.ts:252` (`reset()` calls `seedDomain(this.cfg)`, then only re-pins the old registration _if_ `keepRegistration`), and `Store.ts:111` (`seedRegistration()` returns `status:'registered'` with both bootstrap tokens).
+Source: `apps/mock-msp/src/core/store.ts:252` (`reset()` calls `seedDomain(this.cfg)`, then only re-pins the old registration _if_ `keepRegistration`), and `store.ts:111` (`seedRegistration()` returns `status:'registered'` with both bootstrap tokens).
 
 ### Accident scenarios
 
@@ -602,4 +602,4 @@ you want to show a full charging lifecycle rather than the empty-stack ceiling.
 
 **On `problems only`:** it requires _error_ severity. `pull.cdrs` shows; `pull.tokens` (warn) silently hides. That asymmetry is the honest answer if Mason asks whether the filter is trustworthy.
 
-**Files:** `apps/mock-msp/public/dashboard.html` · `src/control/controlApi.ts` (`/_mock/provoke/:what`, `/_mock/coverage`, command defaults) · `src/config.ts` (`CITRINE_HASURA_URL`) · `src/core/Store.ts` · `src/core/client.ts` · `src/ocpi/barrel.ts` · `scenarios/` · fallback CDR payload `c:\tmp\cdr-demo.json`, headers `c:\tmp\h.sh`
+**Files:** `apps/mock-msp/public/dashboard.html` · `src/control/control-api.ts` (`/_mock/provoke/:what`, `/_mock/coverage`, command defaults) · `src/config.ts` (`CITRINE_HASURA_URL`) · `src/core/store.ts` · `src/core/client.ts` · `src/ocpi/barrel.ts` · `scenarios/` · fallback CDR payload `c:\tmp\cdr-demo.json`, headers `c:\tmp\h.sh`

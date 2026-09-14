@@ -7,17 +7,17 @@ import { type TransactionDto, OCPPVersion } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { ComboboxFormField } from '@lib/client/components/form/field';
-import type { ChargingStationWithTransactionsDto } from '@lib/client/components/modals/remote-stop/remote.stop.modal';
-import type { MessageConfirmation } from '@lib/utils/MessageConfirmation';
-import { triggerMessageAndHandleResponse } from '@lib/utils/messages.utils';
-import { closeModal } from '@lib/utils/store/modal.slice';
+import type { ChargingStationWithTransactionsDto } from '@lib/client/components/modals/remote-stop/remote-stop-modal';
+import type { MessageConfirmation } from '@lib/utils/message-confirmation';
+import { triggerMessageAndHandleResponse } from '@lib/utils/messages-utils';
+import { closeModal } from '@lib/utils/store/modal-slice';
 import { useForm } from '@refinedev/react-hook-form';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslate } from '@refinedev/core';
 import z from 'zod';
-import { FormButtonVariants } from '@lib/client/components/buttons/form.button';
-import { useTenantId } from '@lib/client/hooks/useTenantId';
+import { FormButtonVariants } from '@lib/client/components/buttons/form-button';
+import { useTenantId } from '@lib/client/hooks/use-tenant-id';
 
 export interface OCPP1_6_RemoteStopProps {
   station: ChargingStationWithTransactionsDto;

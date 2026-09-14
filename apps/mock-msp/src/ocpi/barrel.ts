@@ -48,18 +48,18 @@ export type {
 
 // Bare inner object schemas NOT re-exported by the barrel — deep-import from dist
 // (no exports gate blocks this; verified paths/names exist in ocpi-base/src).
-export { EndpointSchema } from '@citrineos/ocpi-base/dist/model/Endpoint.js';
-export { VersionDetailsDTOSchema } from '@citrineos/ocpi-base/dist/model/DTO/VersionDetailsDTO.js';
-export { LocationDTOSchema } from '@citrineos/ocpi-base/dist/model/DTO/LocationDTO.js';
-export { EvseDTOSchema } from '@citrineos/ocpi-base/dist/model/DTO/EvseDTO.js';
-export { ConnectorDTOSchema } from '@citrineos/ocpi-base/dist/model/DTO/ConnectorDTO.js';
-export { SessionSchema } from '@citrineos/ocpi-base/dist/model/Session.js';
-export { CdrSchema } from '@citrineos/ocpi-base/dist/model/Cdr.js';
-export { TariffDTOSchema } from '@citrineos/ocpi-base/dist/model/DTO/tariffs/TariffDTO.js';
+export { EndpointSchema } from '@citrineos/ocpi-base/dist/model/endpoint.js';
+export { VersionDetailsDTOSchema } from '@citrineos/ocpi-base/dist/model/dto/version-details-dto.js';
+export { LocationDTOSchema } from '@citrineos/ocpi-base/dist/model/dto/location-dto.js';
+export { EvseDTOSchema } from '@citrineos/ocpi-base/dist/model/dto/evse-dto.js';
+export { ConnectorDTOSchema } from '@citrineos/ocpi-base/dist/model/dto/connector-dto.js';
+export { SessionSchema } from '@citrineos/ocpi-base/dist/model/session.js';
+export { CdrSchema } from '@citrineos/ocpi-base/dist/model/cdr.js';
+export { TariffDTOSchema } from '@citrineos/ocpi-base/dist/model/dto/tariffs/tariff-dto.js';
 export {
   AuthorizationInfoSchema,
   AuthorizationInfoResponseSchema,
-} from '@citrineos/ocpi-base/dist/model/AuthorizationInfo.js';
-export { LocationReferencesSchema } from '@citrineos/ocpi-base/dist/model/LocationReferences.js';
-export { CommandResultSchema } from '@citrineos/ocpi-base/dist/model/CommandResult.js';
-export { ActiveChargingProfileSchema } from '@citrineos/ocpi-base/dist/model/ActiveChargingProfile.js';
+} from '@citrineos/ocpi-base/dist/model/authorization-info.js';
+export { LocationReferencesSchema } from '@citrineos/ocpi-base/dist/model/location-references.js';
+export { CommandResultSchema } from '@citrineos/ocpi-base/dist/model/command-result.js';
+export { ActiveChargingProfileSchema } from '@citrineos/ocpi-base/dist/model/active-charging-profile.js';

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChargingStationUpsert } from '@lib/client/pages/charging-stations/upsert/charging.stations.upsert';
+import { ChargingStationUpsert } from '@lib/client/pages/charging-stations/upsert/charging-stations-upsert';
 import config from '@lib/utils/config';
 
 type PageProps = {

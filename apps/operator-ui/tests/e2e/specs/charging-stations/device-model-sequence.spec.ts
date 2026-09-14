@@ -4,8 +4,8 @@
 
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 // GetBaseReport → NotifyReport populates the device model (Components +
 // Variables) in Hasura, which the Get/SetVariables modals read to build their

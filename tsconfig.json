@@ -13,20 +13,11 @@
     "./apps/operator-ui/**"
   ],
   "references": [
-    {
-      "path": "./packages/types"
-    },
-    {
-      "path": "./packages/base"
-    },
-    {
-      "path": "./packages/core"
-    },
-    {
-      "path": "./packages/ocpi-base"
-    },
-    {
-      "path": "./apps/ocpp-server"
-    }
+    { "path": "./packages/types/tsconfig.src.json" },
+    { "path": "./packages/base/tsconfig.src.json" },
+    { "path": "./packages/dal/tsconfig.src.json" },
+    { "path": "./packages/ocpp/tsconfig.src.json" },
+    { "path": "./packages/ocpi-base/tsconfig.src.json" },
+    { "path": "./apps/ocpp-server/tsconfig.src.json" }
   ]
 }

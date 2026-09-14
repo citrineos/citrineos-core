@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { LocationsUpsert } from '@lib/client/pages/locations/upsert/locations.upsert';
+import { LocationsUpsert } from '@lib/client/pages/locations/upsert/locations-upsert';
 import config from '@lib/utils/config';
 
 export default function NewLocationPage() {

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { gql } from 'graphql-tag';
-import { VARIABLE_FIELDS } from '@lib/queries/fields/variable.fields';
+import { VARIABLE_FIELDS } from '@lib/queries/fields/variable-fields';
 
 export const VARIABLE_LIST_QUERY = gql`
   query VariableList(

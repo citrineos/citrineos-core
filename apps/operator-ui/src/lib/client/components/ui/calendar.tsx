@@ -13,7 +13,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from '@/lib/client/components/ui/input-group';
+} from '@lib/client/components/ui/input-group';
 import { type ChangeEventHandler, useEffect, useState } from 'react';
 
 import { format, setHours, setMinutes, setSeconds } from 'date-fns';

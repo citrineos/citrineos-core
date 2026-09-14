@@ -27,7 +27,7 @@ test.describe('transactions › detail charts', () => {
   }) => {
     // Charts render an empty-state when measurand-filtered data is empty.
     // The `tab=meterValues` query param selects the chart tab directly.
-    await seedMeterValues(apiClient, seededTransaction.id, 6);
+    await seedMeterValues(apiClient, seededTransaction, 6);
     try {
       await page.goto(`/transactions/${seededTransaction.id}?tab=meterValues`, {
         waitUntil: 'domcontentloaded',
@@ -49,7 +49,7 @@ test.describe('transactions › detail charts', () => {
     seededTransaction,
     apiClient,
   }) => {
-    await seedMeterValues(apiClient, seededTransaction.id, 6);
+    await seedMeterValues(apiClient, seededTransaction, 6);
     try {
       await page.goto(`/transactions/${seededTransaction.id}?tab=meterValues`, {
         waitUntil: 'domcontentloaded',

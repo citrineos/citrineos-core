@@ -1,21 +1,6 @@
 {
-  "extends": "../../tsconfig.build.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "./dist",
-    "composite": true,
-    "paths": {
-      "@ocpp/*": ["./src/ocpp/*"],
-      "@config/*": ["./src/config/*"],
-      "@interfaces/*": ["./src/interfaces/*"],
-      "@base-util/*": ["./src/util/*"]
-    }
-  },
-  "include": ["**/*", "**/*.json"],
-  "exclude": ["**/dist/**", "**/node_modules/**", "**/vitest.config.ts", "**/test/**"],
-  "references": [
-    {
-      "path": "../types"
-    }
-  ]
+  "extends": ["../../tsconfig.build.json", "../../tsconfig.test.base.json"],
+  "include": ["**/*.ts"],
+  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "references": [{ "path": "../types/tsconfig.src.json" }]
 }

@@ -10,24 +10,30 @@ object_relationships:
       foreign_key_constraint_on: stationId
   - name: OCPPMessage
     using:
-      foreign_key_constraint_on: requestMessageId
+      manual_configuration:
+        remote_table:
+          name: OCPPMessages
+          schema: public
+        column_mapping:
+          requestMessageId: id
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
 array_relationships:
   - name: OCPPMessages
     using:
-      foreign_key_constraint_on:
-        column: requestMessageId
-        table:
+      manual_configuration:
+        remote_table:
           name: OCPPMessages
           schema: public
+        column_mapping:
+          id: requestMessageId
 select_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

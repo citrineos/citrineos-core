@@ -17,7 +17,7 @@ import type {
   FaultRule,
   FaultTarget,
 } from './types.js';
-import { matchesFilter } from './Store.js';
+import { matchesFilter } from './store.js';
 import { base64Encode } from './auth.js';
 
 // ---------------------------------------------------------------------------

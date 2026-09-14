@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { test, expect } from '../../fixtures';
-import { TransactionDetailPage } from '../../pages/transactions/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { TransactionDetailPage } from '../../pages/transactions/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 
 // ToggleTransactionActiveModal smoke coverage. Its ONLY trigger lives on the
 // transactions detail page (an icon Button titled "Toggle Active Status" in
-// src/lib/client/pages/transactions/detail/transaction.detail.card.tsx), so it
+// src/lib/client/pages/transactions/detail/transaction-detail-card.tsx), so it
 // is unreachable from the charging-station parametric harness — this spec is
 // where that modal is exercised. Mirrors the open/assert-title/close-and-unmount
-// smoke style of charging-stations/commands.parametric.spec.ts.
+// smoke style of charging-stations/commands-parametric.spec.ts.
 //
 // Determinism: every interaction is anchored on awaited visibility — the trigger
 // is awaited before the click, the dialog heading is asserted via ModalHarness,

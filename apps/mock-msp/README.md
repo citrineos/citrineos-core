@@ -49,12 +49,12 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 - **Build `@citrineos/ocpi-base` first.** The mock deep-imports a handful of
   schemas from `@citrineos/ocpi-base/dist/...` (see `src/ocpi/barrel.ts`), and
   ocpi-base ships **only `dist/`** (no `src`, no `exports` map). ocpi-base's
-  `tsc -b` references `@citrineos/base` and `@citrineos/core`, so build the
+  `tsc -b` references `@citrineos/base` and `@citrineos/ocpp`, so build the
   closure in order:
 
   ```bash
   pnpm --filter @citrineos/base build
-  pnpm --filter @citrineos/core build
+  pnpm --filter @citrineos/ocpp build
   pnpm --filter @citrineos/ocpi-base build
   ```
 
@@ -219,17 +219,17 @@ status, never build the envelope, never check auth.
 | `src/core/registry.ts`                      | `registerAllModules` — binds each `OcpiRoute` through the dispatcher                                                                  |
 | `src/core/types.ts`                         | All shared types/interfaces (`MockContext`, `Exchange`, `Store`, `FaultEngine`, `Scenario`, …)                                        |
 | `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi-base envelope builders                                             |
-| `src/core/Store.ts`                         | Exchange ring buffer (cap 10k) + `DomainState` + `waitForReceived` + findings + `reset`                                               |
+| `src/core/store.ts`                         | Exchange ring buffer (cap 10k) + `DomainState` + `waitForReceived` + findings + `reset`                                               |
 | `src/core/auth.ts`                          | base64 `Token` encode/decode; inbound verify; outbound `Authorization` builder                                                        |
-| `src/core/routingHeaders.ts`                | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
+| `src/core/routing-headers.ts`                | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
 | `src/core/conformance.ts`                   | `check(ctx, schema) → Finding[]` — header + `safeParse` body checks, never throws                                                     |
 | `src/core/faults.ts`                        | `FaultEngine` (matcher) + injectors (`mutateJson`, `dropHeaderCI`, `oversizeTokenBody`)                                               |
 | `src/core/client.ts`                        | `OcpiClient` (Actor): fetch wrapper + handshake + `sendCommand` + `pull`                                                              |
-| `src/core/wireLog.ts`                       | `WireLogger` — NDJSON + pretty console, token redaction                                                                               |
+| `src/core/wire-log.ts`                       | `WireLogger` — NDJSON + pretty console, token redaction                                                                               |
 | `src/modules/*.ts`                          | One `ModuleDef` each: `versions`, `credentials`, `locations`, `tariffs`, `sessions`, `cdrs`, `chargingprofiles`, `tokens`, `commands` |
-| `src/control/controlApi.ts`                 | `registerControlApi(app, ctx)` — all `/_mock/*` routes                                                                                |
+| `src/control/control-api.ts`                 | `registerControlApi(app, ctx)` — all `/_mock/*` routes                                                                                |
 | `src/control/scenario.ts`                   | `Scenario` zod schema + `loadScenario` / `applyScenario` / `evaluateExpectations` + authorize-policy runtime                          |
-| `src/control/statusCache.ts`                | TTL probe cache behind `/_mock/status` (serve-stale-trigger-refresh; no timers)                                                       |
+| `src/control/status-cache.ts`                | TTL probe cache behind `/_mock/status` (serve-stale-trigger-refresh; no timers)                                                       |
 | `src/control/dashboard.ts`                  | serves `public/dashboard.html` at `/` + `/_mock/ui` (and `dashboard.next.html` at `/_mock/ui2` while the redesign is in progress)     |
 | `scripts/register.ts`                       | One-command handshake helper (drives `/_mock/register`)                                                                               |
 | `scripts/demo-up.sh` / `demo-down.sh`       | bring the native mock up (alias repair, build, free port, health-gate) / stop it — both idempotent                                    |

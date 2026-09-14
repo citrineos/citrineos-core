@@ -8,7 +8,7 @@ import { ListFilter, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@lib/client/components/ui/popover';
 import { Input } from '@lib/client/components/ui/input';
-import type { ColumnConfiguration } from '@lib/utils/column.configuration';
+import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import type { FilterItem } from '@lib/client/components/table/fields/table-query-state';
 import { buttonIconSize } from '@lib/client/styles/icon';
 import { cn } from '@lib/utils/cn';

@@ -13,13 +13,19 @@ object_relationships:
       foreign_key_constraint_on: tenantId
   - name: Transaction
     using:
-      foreign_key_constraint_on: transactionDatabaseId
+      manual_configuration:
+        remote_table:
+          name: Transactions
+          schema: public
+        column_mapping:
+          transactionDatabaseId: id
+          transactionCreatedAt: createdAt
 select_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

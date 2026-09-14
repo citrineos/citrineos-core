@@ -947,7 +947,7 @@
     "evseId": {
       "description": "For TxDefaultProfile an evseId=0 applies the profile to each individual evse. For ChargingStationMaxProfile and ChargingStationExternalConstraints an evseId=0 contains an overal limit for the whole Charging Station.\r\n",
       "type": "integer",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 2147483647
     },
     "chargingProfile": {

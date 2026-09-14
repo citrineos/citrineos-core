@@ -70,7 +70,8 @@ jobs:
             deps:
               - 'packages/types/**'
               - 'packages/base/**'
-              - 'packages/core/**'
+              - 'packages/ocpp/**'
+              - 'packages/dal/**'
             ocpi-server:
               - 'apps/ocpi-server/**'
             stack:

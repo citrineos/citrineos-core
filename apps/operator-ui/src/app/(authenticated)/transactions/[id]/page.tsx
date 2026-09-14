@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { TransactionDetail } from '@lib/client/pages/transactions/detail/transaction.detail';
+import { TransactionDetail } from '@lib/client/pages/transactions/detail/transaction-detail';
 
 type PageProps = {
   params: Promise<{ id: string }>;

@@ -127,6 +127,10 @@ export type GetDisplayMessagesRequest =
 export type PublishFirmwareRequest =
   | OCPP2_1.PublishFirmwareRequest
   | OCPP2_0_1.PublishFirmwareRequest;
+
+export type PublishFirmwareStatusNotificationRequest =
+  | OCPP2_1.PublishFirmwareStatusNotificationRequest
+  | OCPP2_0_1.PublishFirmwareStatusNotificationRequest;
 export type SetDisplayMessageRequest =
   | OCPP2_1.SetDisplayMessageRequest
   | OCPP2_0_1.SetDisplayMessageRequest;

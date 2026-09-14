@@ -13,6 +13,7 @@ apps/ocpp-server/entrypoint.sh
 logo_black.png
 logo_white.png
 renovate.json
+tsconfig.test.base.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
@@ -28,19 +29,33 @@ apps/ocpp-server/src/assets/logo.png
 # Package files
 packages/types/package.json
 packages/base/package.json
-packages/core/package.json
+packages/dal/package.json
+packages/ocpp/package.json
 apps/ocpp-server/package.json
 package-lock.json
 
 # TypeScript config files
 packages/types/tsconfig.eslint.json
+packages/types/tsconfig.src.json
 packages/types/tsconfig.json
 packages/base/tsconfig.eslint.json
+packages/base/tsconfig.src.json
 packages/base/tsconfig.json
-packages/core/tsconfig.eslint.json
-packages/core/tsconfig.json
+packages/dal/tsconfig.eslint.json
+packages/dal/tsconfig.src.json
+packages/dal/tsconfig.json
+packages/ocpp/tsconfig.eslint.json
+packages/ocpp/tsconfig.src.json
+packages/ocpp/tsconfig.json
+packages/ocpi-base/tsconfig.eslint.json
+packages/ocpi-base/tsconfig.src.json
+packages/ocpi-base/tsconfig.json
 apps/ocpp-server/tsconfig.eslint.json
 apps/ocpp-server/tsconfig.json
+apps/ocpp-server/tsconfig.src.json
+apps/mock-msp/tsconfig.eslint.json
+apps/mock-msp/tsconfig.json
+apps/mock-msp/tsconfig.src.json
 tsconfig.build.json
 tsconfig.eslint.json
 tsconfig.json
@@ -63,30 +78,31 @@ packages/base/src/ocpp/persistence/schemas/SetVariableResultTypeSchema.json
 packages/base/src/ocpp/persistence/schemas/UpdateChargingStationPasswordRequestSchema.json
 
 # Other schemas
-packages/core/src/dal/interfaces/projections/schemas/AuthorizationRestrictionsSchema.json
-packages/core/src/dal/interfaces/projections/schemas/TariffSchema.json
+packages/dal/src/interfaces/projections/schemas/AuthorizationRestrictionsSchema.json
+packages/dal/src/interfaces/projections/schemas/TariffSchema.json
 
 # Certificate files
-packages/core/test/util/resources/ChargingStationCSRSample.pem
-packages/core/test/util/resources/LeafCertificateSample.pem
-packages/core/test/util/resources/LeafKeySample.pem
-packages/core/test/util/resources/RootCertificateSample.pem
-packages/core/test/util/resources/RootKeySample.pem
-packages/core/test/util/resources/SubCACertificateSample.pem
-packages/core/test/util/resources/SubCAKeySample.pem
-packages/core/test/util/resources/V2GCACertChainSample.pem
-packages/core/test/util/resources/V2GLeafCertificateSample.pem
+packages/ocpp/test/resources/ChargingStationCSRSample.pem
+packages/ocpp/test/resources/LeafCertificateSample.pem
+packages/ocpp/test/resources/LeafKeySample.pem
+packages/ocpp/test/resources/RootCertificateSample.pem
+packages/ocpp/test/resources/RootKeySample.pem
+packages/ocpp/test/resources/SubCACertificateSample.pem
+packages/ocpp/test/resources/SubCAKeySample.pem
+packages/ocpp/test/resources/V2GCACertChainSample.pem
+packages/ocpp/test/resources/V2GLeafCertificateSample.pem
 apps/ocpp-server/src/assets/certificates/acme_account_key.pem
 apps/ocpp-server/src/assets/certificates/certChain.pem
 apps/ocpp-server/src/assets/certificates/leafKey.pem
 apps/ocpp-server/src/assets/certificates/rootCertificate.pem
 apps/ocpp-server/src/assets/certificates/rootKey.pem
 apps/ocpp-server/src/assets/certificates/subCAKey.pem
+apps/ocpp-server/src/assets/websocket-servers.json
 
 # Documentation
-packages/core/test/util/resources/README.md
+packages/ocpp/test/resources/README.md
 apps/ocpp-server/everest/README.md
-packages/core/src/handlers/HANDLERS.md
+packages/ocpp/src/handlers/HANDLERS.md
 
 # Configuration files
 apps/ocpp-server/nodemon.json
@@ -186,6 +202,7 @@ apps/ocpi-server/src/assets/certificates/leafKey.pem
 apps/ocpi-server/src/assets/certificates/rootCertificate.pem
 apps/ocpi-server/src/assets/certificates/subCAKey.pem
 apps/ocpi-server/tsconfig.eslint.json
+apps/ocpi-server/tsconfig.src.json
 apps/ocpi-server/tsconfig.json
 apps/ocpi-server/tsconfig.migrations.json
 packages/ocpi-base/tsconfig.eslint.json

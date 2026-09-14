@@ -5,7 +5,7 @@
 
 import { authProvider } from '@lib/providers/auth-provider';
 import config from '@lib/utils/config';
-import { HasuraHeader } from '@lib/utils/hasura.types';
+import { HasuraHeader } from '@lib/utils/hasura-types';
 import {
   graphqlWS,
   type HasuraLiveProviderOptions,

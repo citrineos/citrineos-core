@@ -5,8 +5,8 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { test, expect } from '../../fixtures';
 import type { ApiClient } from '../../fixtures/api-client';
-import { ChargingStationDetailPage } from '../../pages/charging-stations/detail.page';
-import { ModalHarness } from '../../pages/components/modal.po';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
+import { ModalHarness } from '../../pages/components/modal-po';
 import { simulatePlugIn, simulateUnplug } from '../../fixtures/everest';
 
 // The suite's flagship live journey: a real charging session driven end-to-end

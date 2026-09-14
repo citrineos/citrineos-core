@@ -10,6 +10,7 @@
 // ============================================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { ModuleId } from '@citrineos/ocpi-base';
 import type { MockContext, FaultRule } from '../src/core/types.js';
 import { ModuleId } from '../src/ocpi/barrel.js';
 import {
