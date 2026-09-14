@@ -12,8 +12,8 @@ import {
   Evse,
   DrizzleChargingStationRepository,
   SequelizeLocationRepository,
-  ServerNetworkProfile,
 } from '../../../index.js';
+import { ServerNetworkProfile } from '../../../src/models/location/server-network-profile.js';
 import { Connector } from '../../../src/models/location/connector.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';

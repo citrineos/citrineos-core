@@ -21,7 +21,6 @@ import {
   SequelizeTenantRepository,
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
-  ServerNetworkProfile,
   SetNetworkProfile,
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
@@ -45,6 +44,7 @@ let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
+let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -82,6 +82,11 @@ beforeAll(async () => {
     sequelizeInstance,
   } as never);
   tenantRepository = new SequelizeTenantRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
     config,
     logger: undefined,
     sequelizeInstance,
@@ -135,18 +140,19 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
     await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
-    await ServerNetworkProfile.create({
-      id: PROFILE_ID,
-      host: 'localhost',
-      port: 8080,
-      pingInterval: 60,
-      protocols: [OCPPVersion.OCPP2_0_1],
-      messageTimeout: 30,
-      securityProfile: 1,
-      allowUnknownChargingStations: false,
-      dynamicTenantResolution: false,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    await serverNetworkProfileRepository.upsertServerNetworkProfile(
+      {
+        id: PROFILE_ID,
+        host: 'localhost',
+        port: 8080,
+        pingInterval: 60,
+        protocols: [OCPPVersion.OCPP2_0_1],
+        securityProfile: 1,
+        allowUnknownChargingStations: false,
+        tenantId: DEFAULT_TENANT_ID,
+      },
+      30,
+    );
 
     for (const name of [STATION_A, STATION_B]) {
       await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
