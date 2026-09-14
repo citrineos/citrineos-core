@@ -31,7 +31,6 @@ export {
   SendLocalList,
   ServerNetworkProfile,
   SetNetworkProfile,
-  StatusNotification,
   ChargingStationNetworkProfile,
   AsyncJobStatusDTO,
   SignatureAlgorithmEnumType,
