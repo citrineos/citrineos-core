@@ -8,6 +8,7 @@ import { BaseMiddleware } from './base-middleware.js';
 import type { PaginatedResponse } from '../../model/paginated-response.js';
 import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../../model/paginated-response.js';
 import { OcpiHttpHeader } from '../ocpi-http-header.js';
+import type { OcpiConfiguredDependencies } from '../../dependencies.js';
 
 /**
  * PaginatedMiddleware will handle pulling limit, offset and total out of the {@link PaginatedResponse} and ensuring
@@ -15,7 +16,22 @@ import { OcpiHttpHeader } from '../ocpi-http-header.js';
  * response body.
  */
 export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddlewareInterface {
+  private readonly defaultPageLimit: number;
+  private readonly maxPageLimit: number;
+
+  constructor({ config }: OcpiConfiguredDependencies) {
+    super();
+    this.defaultPageLimit = config.defaultPageLimit;
+    this.maxPageLimit = config.maxPageLimit;
+  }
+
   async use(context: Context, next: (err?: any) => Promise<any>): Promise<any> {
+    const { limit } = context.request.query;
+    if (limit === undefined) {
+      context.request.query = { ...context.request.query, limit: String(this.defaultPageLimit) };
+    } else if (Number(limit) > this.maxPageLimit) {
+      context.request.query = { ...context.request.query, limit: String(this.maxPageLimit) };
+    }
     await next();
     const paginatedResponse = context.response.body as PaginatedResponse<any> | undefined;
     if (!paginatedResponse || paginatedResponse.total === undefined) {
