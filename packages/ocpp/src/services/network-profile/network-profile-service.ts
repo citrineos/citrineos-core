@@ -38,10 +38,8 @@ export class NetworkProfileService {
     if (persistFor) {
       await Promise.all(
         ocppConnectionNames.map((ocppConnectionName) =>
-          this._setNetworkProfileRepository.createPending({
+          this._setNetworkProfileRepository.createPending(tenantId, ocppConnectionName, {
             ...request.connectionData,
-            ocppConnectionName,
-            tenantId,
             correlationId,
             configurationSlot: request.configurationSlot,
             websocketServerConfigId: persistFor.websocketServerConfigId,

@@ -17,8 +17,6 @@ import { makeApiClient, type ApiClient } from './api-client';
 //   ChargingStations.ocppConnectionName   — string identifier ('cp001')
 //   Child tables (Evses / Connectors / StatusNotifications / OCPPMessages):
 //     stationId (int)          — FK to ChargingStations.id
-//     ocppConnectionName       — string identifier (trigger-populated from
-//                                ocppConnectionName + tenantId)
 
 const EVEREST_OCPP_CONNECTION_NAME = 'cp001';
 // The EVerest SIL stack runs an internal MQTT broker (everest_net, not host-
@@ -88,16 +86,18 @@ async function awaitStationOnline(
       const data = await api.gql<{
         ChargingStations: { id: number; ocppConnectionName: string }[];
         StatusNotifications: {
-          ocppConnectionName: string;
           timestamp: string;
         }[];
       }>(
         `query EverestProbe($name: String!, $since: timestamptz!) {
            ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { id ocppConnectionName }
            StatusNotifications(
-             where: { ocppConnectionName: { _eq: $name }, timestamp: { _gte: $since } }
+             where: {
+               ChargingStation: { ocppConnectionName: { _eq: $name } }
+               timestamp: { _gte: $since }
+             }
              limit: 1
-           ) { ocppConnectionName timestamp }
+           ) { timestamp }
          }`,
         { name: ocppConnectionName, since: fixtureStart },
       );

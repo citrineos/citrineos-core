@@ -85,7 +85,6 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
       .request<UpsertSequenceMutationResult, UpsertSequenceMutationVariables>(UPSERT_SEQUENCE, {
         tenantId: tenantPartner.tenant!.id!,
         stationId: chargingStation.id!,
-        ocppConnectionName: chargingStation.ocppConnectionName,
         type: ChargingStationSequenceTypeEnum.remoteStartId,
         value: remoteStartId,
         createdAt: new Date().toISOString(),

@@ -93,7 +93,7 @@ export class StatusNotificationService {
 
     const statusNotification = StatusNotification.build({
       tenantId,
-      ocppConnectionName: ocppConnectionName,
+      stationId: chargingStation.id!,
       ...statusNotificationRequest,
       connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
@@ -121,7 +121,7 @@ export class StatusNotificationService {
     } else if (!matchingEvse) {
       matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
         evseTypeId: statusNotificationRequest.evseId,
-        ocppConnectionName,
+        stationId: chargingStation.id!,
       });
 
       if (matchingEvse.evseTypeId! > 1) {
@@ -133,10 +133,9 @@ export class StatusNotificationService {
 
     const connector = {
       tenantId,
-      stationId: chargingStation.id,
+      stationId: chargingStation.id!,
       evseId: matchingEvse.id!,
       evseTypeConnectorId: statusNotificationRequest.connectorId,
-      ocppConnectionName: ocppConnectionName,
       status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
       ),
@@ -221,9 +220,8 @@ export class StatusNotificationService {
       // StatusNotifications.connectorId has an FK to Connectors.connectorId.
       const connector = {
         tenantId,
-        stationId: chargingStation.id,
+        stationId: chargingStation.id!,
         connectorId: statusNotificationRequest.connectorId,
-        ocppConnectionName: ocppConnectionName,
         status: OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
           statusNotificationRequest.status,
         ),
@@ -281,7 +279,7 @@ export class StatusNotificationService {
       const statusNotificationInput: Partial<StatusNotification> = {
         tenantId,
         ...statusNotificationRequest,
-        ocppConnectionName: ocppConnectionName,
+        stationId: chargingStation.id!,
         connectorStatus:
           OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
             statusNotificationRequest.status,

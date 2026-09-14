@@ -48,6 +48,8 @@ export {
   ServerNetworkProfile,
   SetNetworkProfile,
   StatusNotification,
+  LatestStatusNotification,
+  EventData,
   ChargingStationSecurityInfo,
   ChargingStationNetworkProfile,
   Tenant,
@@ -91,6 +93,10 @@ export {
 export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profile-mapper.js';
 export type { TariffData } from './src/models/tariff/tariffs.js';
 export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
+export {
+  resolveStationId,
+  resolveStationIdOrThrow,
+} from './src/repositories/sequelize/resolve-station-id.js';
 export {
   DefaultDrizzleInstance,
   DrizzleAuthorizationRepository,

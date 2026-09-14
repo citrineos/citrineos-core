@@ -10,6 +10,7 @@ import {
 } from '@citrineos/types';
 import { CrudRepository } from '@citrineos/base';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 import type { IChargingProfileRepository } from '../repositories.js';
 import type {
   ChargingProfileInput,
@@ -96,7 +97,7 @@ export class SequelizeChargingProfileRepository
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await resolveStationId(tenantId, ocppConnectionName),
           transactionId: chargingProfile.transactionId,
         },
       });
@@ -183,7 +184,7 @@ export class SequelizeChargingProfileRepository
     const activeTransaction = await Transaction.findOne({
       where: {
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId: await resolveStationId(tenantId, ocppConnectionName),
         isActive: true,
       },
       include: [{ model: Evse, where: { evseTypeId: chargingNeedsReq.evseId }, required: true }],
@@ -255,7 +256,11 @@ export class SequelizeChargingProfileRepository
     }
 
     const [evse] = await this.stationEvse.readAllByQuery(tenantId, {
-      where: { tenantId, ocppConnectionName, evseTypeId: reportedEvseId },
+      where: {
+        tenantId,
+        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        evseTypeId: reportedEvseId,
+      },
       limit: 1,
     });
 

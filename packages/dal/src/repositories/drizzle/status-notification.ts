@@ -16,7 +16,7 @@ import { DrizzleRepository } from './base.js';
 export function toStatusNotificationDto(entity: StatusNotificationEntity): StatusNotificationDto {
   const dto: Explicit<StatusNotificationDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp ? entity.timestamp.toISOString() : null,
     // Enum stored as string in the DB — cast back to the DTO's enum union.

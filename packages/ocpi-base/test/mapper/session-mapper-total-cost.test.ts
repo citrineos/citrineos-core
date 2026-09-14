@@ -46,7 +46,8 @@ function aCompletedTransaction(): TransactionDto {
     totalKwh: 50,
     connectorId: 1,
     evseId: 1,
-    ocppConnectionName: 'cs-001',
+    stationId: 1,
+    station: { ocppConnectionName: 'cs-001' },
     updatedAt: new Date('2026-08-20T11:00:00Z'),
     meterValues: [],
   } as unknown as TransactionDto;

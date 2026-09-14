@@ -132,13 +132,16 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 // Seed helpers
 // ---------------------------------------------------------------------------
 
+let stationId: number;
+
 async function seedBase(): Promise<void> {
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
     tenantId: TENANT_ID,
   });
+  stationId = station.id;
 }
 
 async function seedComponent(name: string, instance: string | null = null): Promise<Component> {
@@ -156,7 +159,7 @@ async function seedVariableAttribute(
   type: OCPP2_0_1.AttributeEnumType = OCPP2_0_1.AttributeEnumType.Actual,
 ): Promise<VariableAttribute> {
   return VariableAttribute.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+    stationId,
     componentId,
     variableId,
     type,
@@ -185,7 +188,7 @@ async function seedSetVariablesRequest(
 ): Promise<OCPPMessage> {
   const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
   return OCPPMessage.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+    stationId,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
@@ -312,7 +315,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result.id).toBe(seeded.id);
       // Only the one we seeded exists
       const allAttrs = await VariableAttribute.findAll({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(allAttrs).toHaveLength(1);
     });
@@ -335,7 +338,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result).toBeDefined();
       const inDb = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [
@@ -694,7 +697,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
 
       const created = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [

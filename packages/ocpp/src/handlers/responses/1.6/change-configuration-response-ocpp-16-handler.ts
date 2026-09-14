@@ -15,6 +15,7 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IChangeConfigurationRepository, IOCPPMessageRepository } from '@citrineos/dal';
+import { resolveStationId } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.ChangeConfiguration)
 export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
@@ -50,7 +51,7 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
 
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName: ocppConnectionName,
+        stationId: await resolveStationId(tenantId, ocppConnectionName),
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

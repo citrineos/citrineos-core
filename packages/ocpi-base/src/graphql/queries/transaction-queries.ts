@@ -9,7 +9,6 @@ export const GET_TRANSACTIONS_QUERY = gql`
     Transactions(offset: $offset, limit: $limit, order_by: { createdAt: asc }, where: $where) {
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState
@@ -75,7 +74,6 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
       }
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState
@@ -161,7 +159,6 @@ export const GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY = gql`
       }
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState

@@ -16,7 +16,7 @@ import { DrizzleRepository } from './base.js';
 export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetworkProfileDto {
   const dto: Explicit<SetNetworkProfileDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     correlationId: entity.correlationId ?? '',
     websocketServerConfigId: entity.websocketServerConfigId ?? undefined,
     // Relation is not present on a flat DB row.

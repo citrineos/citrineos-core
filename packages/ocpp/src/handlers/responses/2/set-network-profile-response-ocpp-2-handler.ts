@@ -41,11 +41,21 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
+    const chargingStation = await ChargingStation.findOne({
+      where: {
+        ocppConnectionName: message.context.ocppConnectionName,
+        tenantId: message.context.tenantId,
+      },
+    });
+    if (!chargingStation) {
+      return;
+    }
+
     const setNetworkProfile = await SetNetworkProfile.findOne({
       where: {
         tenantId: message.context.tenantId,
         correlationId: message.context.correlationId,
-        ocppConnectionName: message.context.ocppConnectionName,
+        stationId: chargingStation.id,
       },
     });
     if (!setNetworkProfile) {
@@ -62,20 +72,10 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const chargingStation = await ChargingStation.findOne({
-      where: {
-        ocppConnectionName: message.context.ocppConnectionName,
-        tenantId: message.context.tenantId,
-      },
-    });
-    if (!chargingStation) {
-      return;
-    }
-
     const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({
       where: {
         tenantId: message.context.tenantId,
-        ocppConnectionName: chargingStation.ocppConnectionName,
+        stationId: chargingStation.id,
         configurationSlot: setNetworkProfile.configurationSlot!,
       },
     });

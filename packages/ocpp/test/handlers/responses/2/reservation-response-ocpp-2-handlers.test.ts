@@ -23,6 +23,12 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION = 'station-001';
 
 /**

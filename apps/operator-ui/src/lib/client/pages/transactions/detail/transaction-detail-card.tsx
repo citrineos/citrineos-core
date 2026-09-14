@@ -109,9 +109,9 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
               <Link
                 to={`/${MenuSection.CHARGING_STATIONS}/${transaction.stationId}`}
                 className={clickableLinkStyle}
-                title={transaction.ocppConnectionName}
+                title={transaction.station?.ocppConnectionName}
               >
-                {transaction.ocppConnectionName}
+                {transaction.station?.ocppConnectionName}
               </Link>
             )}
           />

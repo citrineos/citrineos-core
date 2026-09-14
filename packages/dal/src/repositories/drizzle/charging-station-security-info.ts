@@ -18,7 +18,7 @@ export function toChargingStationSecurityInfoDto(
 ): ChargingStationSecurityInfoDto {
   const dto: Explicit<ChargingStationSecurityInfoDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     publicKeyFileId: entity.publicKeyFileId ?? '',
     tenantId: entity.tenantId,
     tenant: undefined,

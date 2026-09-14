@@ -25,3 +25,19 @@ export async function resolveStationId(
 
   return station?.id ?? undefined;
 }
+
+export async function resolveStationIdOrThrow(
+  tenantId: number,
+  ocppConnectionName: string | undefined | null,
+  purpose: string,
+  transaction?: Transaction,
+): Promise<number> {
+  const stationId = await resolveStationId(tenantId, ocppConnectionName, transaction);
+  if (stationId === undefined) {
+    throw new Error(
+      `Cannot ${purpose}: no charging station named ` +
+        `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+    );
+  }
+  return stationId;
+}

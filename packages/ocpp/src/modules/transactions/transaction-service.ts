@@ -30,6 +30,7 @@ import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import { MeterValue, Transaction } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import { resolveStationId } from '@citrineos/dal';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -474,7 +475,7 @@ export class TransactionService {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId: await resolveStationId(tenantId, ocppConnectionName),
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

@@ -14,7 +14,6 @@ function latestStatusNotificationColumns() {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     // FK to StatusNotification; the sequelize model declares this as a string.
     statusNotificationId: varchar('statusNotificationId', { length: 255 }),
     tenantId: integer('tenantId').notNull(),

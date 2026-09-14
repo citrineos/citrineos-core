@@ -10,7 +10,7 @@ import { EventNotificationEnumSchema, EventTriggerEnumSchema } from './types/enu
 
 export const EventDataSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  ocppConnectionName: z.string(),
+  stationId: z.number().int().nullable().optional(),
   eventId: z.number().int(),
   trigger: EventTriggerEnumSchema,
   cause: z.number().int().nullable().optional(),

@@ -360,7 +360,7 @@ describe('StatusNotificationService', () => {
 
       expect(locationRepository.createOrUpdateEvse).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
         evseTypeId: 1,
-        ocppConnectionName: MOCK_STATION_ID,
+        stationId: MOCK_STATION_ID,
       });
       expect(locationRepository.createOrUpdateOcpp2Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
@@ -369,7 +369,6 @@ describe('StatusNotificationService', () => {
           stationId: MOCK_STATION_ID,
           evseId: 99,
           evseTypeConnectorId: 1,
-          ocppConnectionName: MOCK_STATION_ID,
         }),
       );
     });

@@ -6,7 +6,7 @@ import type { ChargingStationDto, ConnectorDto, EvseDto } from '@citrineos/types
 
 export class EvseClass implements Partial<EvseDto> {
   id?: number;
-  ocppConnectionName!: string;
+  stationId!: number;
   evseTypeId?: number;
   evseId?: string | null;
   physicalReference?: string | null;

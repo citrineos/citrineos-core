@@ -18,7 +18,7 @@ export function toLatestStatusNotificationDto(
 ): LatestStatusNotificationDto {
   const dto: Explicit<LatestStatusNotificationDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     statusNotificationId: entity.statusNotificationId ?? '',
     // Relations are not present on a flat DB row.
     chargingStation: undefined,

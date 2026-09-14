@@ -8,8 +8,7 @@ import { DeleteCertificateStatusEnumSchema, HashAlgorithmEnumSchema } from './ty
 
 export const DeleteCertificateAttemptSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  stationId: z.number().int().nullable().optional(),
-  ocppConnectionName: z.string().max(36),
+  stationId: z.number().int(),
   hashAlgorithm: HashAlgorithmEnumSchema,
   issuerNameHash: z.string().nullable().optional(),
   issuerKeyHash: z.string().nullable().optional(),

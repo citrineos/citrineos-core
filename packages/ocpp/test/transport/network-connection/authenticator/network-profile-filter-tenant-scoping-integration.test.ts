@@ -97,6 +97,8 @@ function aFilter(): TestNetworkProfileFilter {
 }
 
 describe('NetworkProfileFilter tenant scoping', () => {
+  let stationId: number;
+
   beforeEach(async () => {
     await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
     await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
@@ -125,10 +127,11 @@ describe('NetworkProfileFilter tenant scoping', () => {
       isOnline: false,
       tenantId: TENANT_A,
     } as never);
+    stationId = (station as unknown as { id: number }).id;
 
     await SetNetworkProfile.create({
       id: SET_NETWORK_PROFILE_ID,
-      ocppConnectionName: STATION,
+      stationId,
       correlationId: 'any-correlation-id',
       configurationSlot: 1,
       ocppVersion: OCPP2_0_1.OCPPVersionEnumType.OCPP20,
@@ -142,8 +145,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
 
     // Tenant A's station names it anyway. Nothing validates the reference on the way in.
     await ChargingStationNetworkProfile.create({
-      stationId: (station as unknown as { id: number }).id,
-      ocppConnectionName: STATION,
+      stationId,
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
       tenantId: TENANT_A,
@@ -170,7 +172,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
     } as never);
     await ChargingStationNetworkProfile.update(
       { websocketServerConfigId: 'websocket-server-a' },
-      { where: { tenantId: TENANT_A, ocppConnectionName: STATION } },
+      { where: { tenantId: TENANT_A, stationId } },
     );
 
     await expect(aFilter().check(TENANT_A, STATION, 1)).resolves.toBeUndefined();

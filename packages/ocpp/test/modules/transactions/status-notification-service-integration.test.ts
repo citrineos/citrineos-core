@@ -87,7 +87,6 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Confirm the Evse row exists and is linked to the right station
     const evse = await Evse.findOne({ where: { id: evseId } });
     expect(evse).not.toBeNull();
-    expect(evse?.ocppConnectionName).toBe(ocppConnectionName);
     expect(evse?.stationId).toBe(station.id);
 
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
@@ -95,7 +94,7 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // evseTypeConnectorId, so the column has to be genuinely nullable.
     const dbConnector = await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+      stationId: station.id,
       connectorId: 1,
       evseId,
       status: 'Available',
@@ -110,19 +109,19 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Mirror image of the above: a 2.0.1 connector is identified per-EVSE and has no
     // station-wide 1.6 number, so connectorId has to be nullable in the live schema too.
     const ocppConnectionName = 'CS-2.0.1-no-connector-id';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
     const evse = await Evse.create({
-      ocppConnectionName,
+      stationId: station.id,
       tenantId: DEFAULT_TENANT_ID,
       evseTypeId: 1,
     });
 
     const dbConnector = await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+      stationId: station.id,
       evseId: evse.id,
       evseTypeConnectorId: 1,
       status: 'Available',
@@ -138,7 +137,7 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
 describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (#160 integration)', () => {
   it('processes a 1.6 StatusNotification against a clean DB without crashing (auto-commission path)', async () => {
     const ocppConnectionName = 'CS-1.6-e2e-clean';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -176,7 +175,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
 
     // Connector should now exist in the DB.
     const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id, connectorId: 1 },
     });
     expect(connector).not.toBeNull();
     expect(connector?.evseId).toBeDefined();
@@ -198,7 +197,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     // auto-commissionEvseForOcpp16Connector creates unconditionally, so the guard against
     // an Evse per StatusNotification is the matching-evse lookup ahead of it.
     const ocppConnectionName = 'CS-1.6-e2e-repeat';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -232,21 +231,21 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       } as any);
     }
 
-    expect(await Evse.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } })).toBe(
-      1,
-    );
     expect(
-      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } }),
+      await Evse.count({ where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id } }),
+    ).toBe(1);
+    expect(
+      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id } }),
     ).toBe(1);
     const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id, connectorId: 1 },
     });
     expect(connector?.status).toBe('Charging');
   });
 
   it('processes a 1.6 StatusNotification for a commissioned station (matching evse path)', async () => {
     const ocppConnectionName = 'CS-1.6-e2e-commissioned';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -258,7 +257,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     );
     await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+      stationId: station.id,
       connectorId: 1,
       evseId,
       status: 'Available',
@@ -296,7 +295,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     ).resolves.not.toThrow();
 
     const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, connectorId: 1 },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id, connectorId: 1 },
     });
     expect(connector?.status).toBe('Charging');
     expect(connector?.evseId).toBe(evseId);
@@ -331,7 +330,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // upsert on (evseId, evseTypeConnectorId) — Sequelize rejects an undefined where
     // value outright, so keying on connectorId would throw here.
     const ocppConnectionName = 'CS-2.0.1-e2e-clean';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -346,7 +345,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     ).resolves.not.toThrow();
 
     const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName, evseTypeConnectorId: 1 },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id, evseTypeConnectorId: 1 },
     });
     expect(connector).not.toBeNull();
     expect(connector?.connectorId).toBeNull();
@@ -357,7 +356,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // distinct in Postgres, so a lookup keyed on a null connectorId would insert a fresh
     // row on every StatusNotification instead of updating the existing one.
     const ocppConnectionName = 'CS-2.0.1-e2e-repeat';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -373,10 +372,10 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     }
 
     expect(
-      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } }),
+      await Connector.count({ where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id } }),
     ).toBe(1);
     const connector = await Connector.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id },
     });
     expect(connector?.status).toBe('Occupied');
   });
@@ -386,7 +385,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     // Both are synthesized with connectorId unset, so only (evseId, evseTypeConnectorId)
     // tells them apart.
     const ocppConnectionName = 'CS-2.0.1-e2e-multi-evse';
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName,
       tenantId: DEFAULT_TENANT_ID,
     });
@@ -402,7 +401,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     }
 
     const connectors = await Connector.findAll({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: station.id },
       include: [Evse],
     });
     expect(connectors).toHaveLength(2);

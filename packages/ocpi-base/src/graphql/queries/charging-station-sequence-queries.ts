@@ -18,7 +18,6 @@ export const UPSERT_SEQUENCE = gql`
   mutation UpsertSequence(
     $tenantId: Int!
     $stationId: Int!
-    $ocppConnectionName: String!
     $type: String!
     $value: bigint!
     $createdAt: timestamptz!
@@ -27,7 +26,6 @@ export const UPSERT_SEQUENCE = gql`
       object: {
         tenantId: $tenantId
         stationId: $stationId
-        ocppConnectionName: $ocppConnectionName
         type: $type
         value: $value
         createdAt: $createdAt

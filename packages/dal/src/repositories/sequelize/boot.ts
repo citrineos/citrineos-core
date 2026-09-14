@@ -6,8 +6,8 @@ import type { BootCreate } from '@citrineos/types';
 import type { IBootRepository } from '../repositories.js';
 import { Boot } from '../../models/boot.js';
 import { VariableAttribute } from '../../models/device-model/variable-attribute.js';
-import { ChargingStation } from '../../models/location/index.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
@@ -28,12 +28,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     key: string,
   ): Promise<Boot | undefined> {
     // A boot record cannot exist without its station: stationId is a non-null FK.
-    const stationId = await this.findStationId(tenantId, key);
-    if (stationId === undefined) {
-      throw new Error(
-        `Cannot store boot configuration: no charging station ${key} exists for tenant ${tenantId}`,
-      );
-    }
+    const stationId = await resolveStationIdOrThrow(tenantId, key, 'store boot configuration');
 
     let savedBootConfig: Boot | undefined;
     let created;
@@ -82,7 +77,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   // record is keyed by `stationId`. These replace the inherited primary-key (and
   // tenant-blind) lookups, resolving the station within the tenant first.
   async readByKey(tenantId: number, key: string): Promise<Boot | undefined> {
-    const stationId = await this.findStationId(tenantId, key);
+    const stationId = await resolveStationId(tenantId, key);
     if (stationId === undefined) return undefined;
     return await this.readOnlyOneByQuery(tenantId, { where: { stationId } });
   }
@@ -96,7 +91,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
     value: Partial<Boot>,
     key: string,
   ): Promise<Boot | undefined> {
-    const stationId = await this.findStationId(tenantId, key);
+    const stationId = await resolveStationId(tenantId, key);
     if (stationId === undefined) return undefined;
 
     // Never let a caller move a boot record between tenants or stations.
@@ -106,7 +101,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   }
 
   protected async _deleteByKey(tenantId: number, key: string): Promise<Boot | undefined> {
-    const stationId = await this.findStationId(tenantId, key);
+    const stationId = await resolveStationId(tenantId, key);
     if (stationId === undefined) return undefined;
     const [deleted] = await this._deleteAllByQuery(tenantId, { where: { stationId } });
     return deleted;
@@ -115,18 +110,6 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   /**
    * Private Methods
    */
-
-  // Resolves a tenant-scoped `ocppConnectionName` to a ChargingStation id.
-  private async findStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const station = await ChargingStation.findOne({
-      where: { ocppConnectionName, tenantId },
-      attributes: ['id'],
-    });
-    return station?.id;
-  }
 
   private async manageSetVariables(
     tenantId: number,
@@ -141,7 +124,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
       { bootConfigId: null },
       {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await resolveStationId(tenantId, ocppConnectionName),
         },
       },
     );

@@ -83,6 +83,13 @@ async function aStation(ocppConnectionName: string) {
   } as never);
 }
 
+async function stationIdOf(ocppConnectionName: string): Promise<number> {
+  const station = await ChargingStation.findOne({
+    where: { ocppConnectionName, tenantId: DEFAULT_TENANT_ID },
+  });
+  return (station as unknown as { id: number }).id;
+}
+
 /** Adds one commissioned EVSE to a station and returns its database id. */
 async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Promise<number> {
   const evseTypeNumber = nextEvseNumber++;
@@ -93,7 +100,7 @@ async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Pro
   } as never);
   const evse = await Evse.create({
     tenantId: DEFAULT_TENANT_ID,
-    ocppConnectionName,
+    stationId: await stationIdOf(ocppConnectionName),
     evseTypeId: ocppEvseNumber,
   } as never);
   return (evse as unknown as { id: number }).id;
@@ -161,7 +168,7 @@ describe('A composite schedule reported for a station EVSE number', () => {
 
   it('associates the schedule with the EVSE the station named', async () => {
     const ownEvse = await Evse.findOne({
-      where: { ocppConnectionName: STATION, evseTypeId: 1 },
+      where: { stationId: await stationIdOf(STATION), evseTypeId: 1 },
     });
 
     await aHandler().handle(aCompositeScheduleResponse(1) as never);
@@ -173,10 +180,10 @@ describe('A composite schedule reported for a station EVSE number', () => {
 
   it('does not associate the schedule with another station EVSE carrying that number', async () => {
     const ownEvse = await Evse.findOne({
-      where: { ocppConnectionName: STATION, evseTypeId: 1 },
+      where: { stationId: await stationIdOf(STATION), evseTypeId: 1 },
     });
     const neighbour = await Evse.findOne({
-      where: { ocppConnectionName: OTHER_STATION, evseTypeId: 1 },
+      where: { stationId: await stationIdOf(OTHER_STATION), evseTypeId: 1 },
     });
 
     await aHandler().handle(aCompositeScheduleResponse(1) as never);

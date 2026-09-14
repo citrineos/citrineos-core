@@ -103,6 +103,8 @@ afterAll(async () => {
 
 type CertificateHashData = typeof CERT_A;
 
+let stationId: number;
+
 /** The request the endpoint sent, which is what says which certificate a response answers for. */
 async function aDeleteCertificateRequest(
   correlationId: string,
@@ -110,7 +112,7 @@ async function aDeleteCertificateRequest(
 ) {
   const payload = { certificateHashData };
   return OCPPMessage.create({
-    ocppConnectionName: STATION,
+    stationId,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
@@ -126,7 +128,7 @@ async function aDeleteCertificateRequest(
 /** A pending attempt, as prepareToDeleteCertificate leaves one before the request goes out. */
 async function aPendingDeleteAttempt(certificateHashData: CertificateHashData) {
   return DeleteCertificateAttempt.create({
-    ocppConnectionName: STATION,
+    stationId,
     ...certificateHashData,
     status: null,
     tenantId: DEFAULT_TENANT_ID,
@@ -135,7 +137,7 @@ async function aPendingDeleteAttempt(certificateHashData: CertificateHashData) {
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
   return InstalledCertificate.create({
-    ocppConnectionName: STATION,
+    stationId,
     ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
     tenantId: DEFAULT_TENANT_ID,
@@ -189,11 +191,12 @@ describe('DeleteCertificateResponseOcpp2Handler with more than one delete in fli
     await Tenant.destroy({ where: {}, truncate: true, cascade: true });
 
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: DEFAULT_TENANT_ID,
     } as never);
+    stationId = (station as unknown as { id: number }).id;
   });
 
   it('settles the attempt for the certificate that was answered', async () => {

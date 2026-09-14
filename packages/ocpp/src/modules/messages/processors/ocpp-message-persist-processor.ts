@@ -37,22 +37,25 @@ export class OcppMessagePersistProcessor implements IFrameEventProcessor {
   }
 
   async process(event: FrameEvent, context: MessagesEventContext): Promise<void> {
-    const record = await this._ocppMessageRepository.createOCPPMessage(event.tenantId, {
-      tenantId: event.tenantId,
-      ocppConnectionName: event.ocppConnectionName,
-      correlationId: event.correlationId,
-      origin: event.origin,
-      type: event.type,
-      action: event.action,
-      protocol: event.protocol,
-      raw: event.raw,
-      // An unparsed frame never produced an RPC frame, so `payload` and the deprecated `message`
-      // mirror stay undefined — `raw` is the only faithful record of what arrived.
-      payload: event.payload,
-      message: event.frame,
-      timestamp: event.timestamp,
-      state: OcppMessagePersistProcessor.messageStateFromType(event.type),
-    });
+    const record = await this._ocppMessageRepository.createOCPPMessage(
+      event.tenantId,
+      event.ocppConnectionName,
+      {
+        tenantId: event.tenantId,
+        correlationId: event.correlationId,
+        origin: event.origin,
+        type: event.type,
+        action: event.action,
+        protocol: event.protocol,
+        raw: event.raw,
+        // An unparsed frame never produced an RPC frame, so `payload` and the deprecated `message`
+        // mirror stay undefined — `raw` is the only faithful record of what arrived.
+        payload: event.payload,
+        message: event.frame,
+        timestamp: event.timestamp,
+        state: OcppMessagePersistProcessor.messageStateFromType(event.type),
+      },
+    );
 
     // The action a CALLRESULT/CALLERROR belongs to is resolved by the DB trigger during insert.
     // Handing it back is how the webhook `info` map keeps carrying a real action.

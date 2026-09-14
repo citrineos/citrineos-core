@@ -28,11 +28,10 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   static readonly MODEL_NAME: string = Namespace.StatusNotificationRequest;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+  })
   declare stationId?: number;
-
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation: ChargingStationDto;
@@ -83,19 +82,6 @@ export class StatusNotification extends Model implements StatusNotificationDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: StatusNotification): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

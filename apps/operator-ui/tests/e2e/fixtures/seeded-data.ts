@@ -9,15 +9,12 @@ import type { ApiClient } from './api-client';
 //   ChargingStations.id                 — int auto-inc PK
 //   ChargingStations.ocppConnectionName — string identifier (the OCPP name
 //                                         the charger uses when it connects)
-//   Child tables (Transactions, Connectors, Evses, StatusNotifications,
-//   LatestStatusNotifications, OCPPMessages, …):
-//     stationId          — int FK to ChargingStations.id
-//     ocppConnectionName — string identifier (populated by a BEFORE INSERT/
-//                          UPDATE trigger `populate_station_id` when the row
-//                          is written with `stationId` null, so seeds may
-//                          set `ocppConnectionName` alone and the trigger
-//                          fills in the int FK from tenant + connection
-//                          name).
+//   Child tables link to the station by `stationId` (int FK to
+//   ChargingStations.id). Some still carry a redundant `ocppConnectionName`
+//   copy alongside it, populated by the BEFORE INSERT/UPDATE trigger
+//   `populate_station_id` when the row is written with `stationId` null — so
+//   seeds for those may set `ocppConnectionName` alone and let the trigger
+//   fill in the FK.
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -326,13 +323,13 @@ export async function purgeAllE2eRows(api: ApiClient): Promise<void> {
   // Postgres trigger on child tables that fails the delete unless
   // StatusNotifications referencing the station are cleared first.
   //
-  // The `e2e-` prefix marker is on `ocppConnectionName` (a string column).
-  // `stationId` is the int FK and is not _like-matchable, so all the cleanup
-  // filters target `ocppConnectionName` instead.
+  // The `e2e-` prefix marker is on `ChargingStations.ocppConnectionName`. These
+  // child tables link to the station by the int `stationId` FK, which is not
+  // _like-matchable, so the filters reach the name through the relation.
   await api
     .gql(
       `mutation PurgeStatusNotifications {
-         delete_StatusNotifications(where: { ocppConnectionName: { _like: "e2e-%" } }) { affected_rows }
+         delete_StatusNotifications(where: { ChargingStation: { ocppConnectionName: { _like: "e2e-%" } } }) { affected_rows }
        }`,
     )
     .catch(() => undefined);
@@ -340,7 +337,7 @@ export async function purgeAllE2eRows(api: ApiClient): Promise<void> {
   await api
     .gql(
       `mutation PurgeLatestStatusNotifications {
-         delete_LatestStatusNotifications(where: { ocppConnectionName: { _like: "e2e-%" } }) { affected_rows }
+         delete_LatestStatusNotifications(where: { ChargingStation: { ocppConnectionName: { _like: "e2e-%" } } }) { affected_rows }
        }`,
     )
     .catch(() => undefined);
