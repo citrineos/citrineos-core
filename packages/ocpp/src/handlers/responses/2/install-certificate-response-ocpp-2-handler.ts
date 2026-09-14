@@ -67,6 +67,7 @@ export class InstallCertificateResponseOcpp2Handler extends AbstractHandler {
       message.payload.status,
       undefined,
       requestPayload?.certificateType,
+      requestPayload?.certificate,
     );
   }
 }
