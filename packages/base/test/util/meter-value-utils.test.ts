@@ -73,6 +73,36 @@ describe('MeterValueUtils', () => {
         ];
         expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(100);
       });
+
+      it('ignores a 0 Transaction.Begin placeholder when deriving the total without meterStart', () => {
+        // Reproduces the offline-reboot-with-cable-plugged case: without the guard
+        // this returns 910.031 - 0 (the whole odometer) instead of the delivered
+        // 0.083 kWh.
+        const meterValues = [
+          makeMeterValue(
+            '2025-05-29T12:00:00Z',
+            'Energy.Active.Import.Register',
+            0,
+            'Wh',
+            'Transaction.Begin',
+          ),
+          makeMeterValue(
+            '2025-05-29T12:05:00Z',
+            'Energy.Active.Import.Register',
+            909948,
+            'Wh',
+            'Sample.Periodic',
+          ),
+          makeMeterValue(
+            '2025-05-29T12:06:29Z',
+            'Energy.Active.Import.Register',
+            910031,
+            'Wh',
+            'Transaction.End',
+          ),
+        ];
+        expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBeCloseTo(0.083, 5); // 910031 - 909948 Wh
+      });
     });
 
     describe('Interval values', () => {
@@ -306,6 +336,66 @@ describe('MeterValueUtils', () => {
         makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 10000, 'Wh'),
       ];
       expect(MeterValueUtils.getMeterStart(meterValues)).toBe(5); // 5000 Wh = 5 kWh
+    });
+
+    it('skips a 0 Transaction.Begin placeholder from an offline transaction start', () => {
+      // A charger that opens a transaction while offline emits Transaction.Begin=0
+      // because it cannot read the cumulative register yet. The baseline must come
+      // from the first real reading, not the placeholder.
+      const meterValues = [
+        makeMeterValue(
+          '2025-05-29T12:00:00Z',
+          'Energy.Active.Import.Register',
+          0,
+          'Wh',
+          'Transaction.Begin',
+        ),
+        makeMeterValue(
+          '2025-05-29T12:05:00Z',
+          'Energy.Active.Import.Register',
+          909948,
+          'Wh',
+          'Sample.Periodic',
+        ),
+      ];
+      expect(MeterValueUtils.getMeterStart(meterValues)).toBe(909.948);
+    });
+
+    it('returns null when the only register reading is a 0 Transaction.Begin placeholder', () => {
+      // The first offline event carries only the placeholder; meterStart must stay
+      // unset so the caller waits for a real register rather than locking in 0.
+      const meterValues = [
+        makeMeterValue(
+          '2025-05-29T12:00:00Z',
+          'Energy.Active.Import.Register',
+          0,
+          'Wh',
+          'Transaction.Begin',
+        ),
+      ];
+      expect(MeterValueUtils.getMeterStart(meterValues)).toBe(null);
+    });
+
+    it('keeps a genuine 0 register reading that is not a Transaction.Begin', () => {
+      // Only the offline-begin placeholder is special-cased; a 0 at another context
+      // is a real reading and still counts.
+      const meterValues = [
+        makeMeterValue(
+          '2025-05-29T12:00:00Z',
+          'Energy.Active.Import.Register',
+          0,
+          'Wh',
+          'Sample.Periodic',
+        ),
+        makeMeterValue(
+          '2025-05-29T12:05:00Z',
+          'Energy.Active.Import.Register',
+          5000,
+          'Wh',
+          'Sample.Periodic',
+        ),
+      ];
+      expect(MeterValueUtils.getMeterStart(meterValues)).toBe(0);
     });
   });
 
