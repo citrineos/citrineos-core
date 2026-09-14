@@ -54,7 +54,14 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Ch
 
       this.connection.on('error', (err) => {
         this._logger.error('RabbitMQ connection error:', err);
-        this.emit('error', err);
+        // amqplib always follows a connection 'error' with 'close', and the
+        // 'close' handler below schedules the reconnect. Emitting 'error' on an
+        // EventEmitter with no listener throws, which would kill the process
+        // before that reconnect ever runs -- so only forward it when someone
+        // is listening.
+        if (this.listenerCount('error') > 0) {
+          this.emit('error', err);
+        }
       });
 
       this.connection.on('close', () => {
