@@ -73,6 +73,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = 'Invalid';
     }
+    if (
+      idTokenInfoStatus === AuthorizationStatusEnum.Accepted &&
+      authorization?.cacheExpiryDateTime &&
+      new Date() > new Date(authorization.cacheExpiryDateTime)
+    ) {
+      idTokenInfoStatus = AuthorizationStatusEnum.Expired;
+    }
     switch (idTokenInfoStatus) {
       case AuthorizationStatusEnum.Accepted:
       case AuthorizationStatusEnum.Blocked:
