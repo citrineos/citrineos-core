@@ -10,15 +10,12 @@ export * from './src/interfaces/index.js';
 export * from 'sequelize-typescript';
 export type { PaginatedParams } from './src/db/sequelize/index.js';
 export {
-  Authorization,
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   Component,
   DefaultSequelizeInstance,
-  Evse,
   MeterValue,
-  Tariff,
   StartTransaction,
   Transaction,
   EvseType,

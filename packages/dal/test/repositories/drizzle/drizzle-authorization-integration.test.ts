@@ -4,12 +4,9 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { IdTokenEnum, type SystemConfig } from '@citrineos/types';
-import {
-  Authorization,
-  DefaultSequelizeInstance,
-  DrizzleAuthorizationRepository,
-  Tariff,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, DrizzleAuthorizationRepository } from '../../../index.js';
+import { Authorization } from '../../../src/models/authorization/authorization.js';
+import { Tariff } from '../../../src/models/tariff/tariffs.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
