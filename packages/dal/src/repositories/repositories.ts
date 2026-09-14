@@ -46,6 +46,7 @@ import type {
   SubscriptionDto,
   TariffDto,
   TenantDto,
+  TransactionDto,
   UpdateEnumType,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
@@ -399,6 +400,11 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     authorizationId: number,
   ): Promise<Transaction[]>;
+  readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]>;
   readAllMeterValuesByTransactionDataBaseId(
     tenantId: number,
     transactionDataBaseId: number,

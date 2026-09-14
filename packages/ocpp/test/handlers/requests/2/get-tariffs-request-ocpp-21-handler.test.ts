@@ -16,6 +16,7 @@ import type {
   IAuthorizationRepository,
   IChargingStationRepository,
   IConnectorRepository,
+  ITransactionEventRepository,
 } from '@citrineos/dal';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
@@ -24,12 +25,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mock sequelize models
 vi.mock('@dal/models/location/connector.js', () => ({
   Connector: {
-    findAll: vi.fn(),
-  },
-}));
-
-vi.mock('@dal/models/transaction-event/transaction.js', () => ({
-  Transaction: {
     findAll: vi.fn(),
   },
 }));
@@ -57,15 +52,17 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   let mockChargingStationRepository: Partial<IChargingStationRepository>;
   let mockConnectorRepository: Partial<IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
+  let mockTransactionEventRepository: Partial<ITransactionEventRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
-  let mockTransactionFindAll: any;
+  let mockReadActiveTransactions: any;
 
   beforeEach(async () => {
-    // Import the mocked models - these are what the handler actually calls directly.
-    const { Transaction } = await import('@dal/models/transaction-event/transaction.js');
-
-    mockTransactionFindAll = vi.mocked(Transaction.findAll);
+    // Active transactions (I09.FR.06) come from the transaction-event repository.
+    mockReadActiveTransactions = vi.fn();
+    mockTransactionEventRepository = {
+      readActiveTransactionsWithTariffAndEvseByStationId: mockReadActiveTransactions,
+    };
 
     // Driver tariffs come from the authorization repository, not the model directly.
     mockAuthorizationFindAll = vi.fn();
@@ -95,6 +92,8 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       chargingStationRepository:
         mockChargingStationRepository as unknown as IChargingStationRepository,
       connectorRepository: mockConnectorRepository as unknown as IConnectorRepository,
+      transactionEventRepository:
+        mockTransactionEventRepository as unknown as ITransactionEventRepository,
     });
   });
 
@@ -109,7 +108,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     it('should return NoTariff status when no tariffs exist', async () => {
       mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -122,7 +121,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
     beforeEach(() => {
       mockReadConnectorsWithTariffs.mockResolvedValue([]);
       mockAuthorizationFindAll.mockResolvedValue([]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
     });
 
     it('should ask for every EVSE when evseId=0 (I09.FR.01)', async () => {
@@ -184,7 +183,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
         },
       ]);
       mockAuthorizationFindAll.mockResolvedValue([]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -214,7 +213,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
         },
       ]);
       mockAuthorizationFindAll.mockResolvedValue([]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 1 });
 
@@ -249,7 +248,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
           },
         },
       ]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -287,7 +286,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
           },
         },
       ]);
-      mockTransactionFindAll.mockResolvedValue([
+      mockReadActiveTransactions.mockResolvedValue([
         {
           id: 1,
           transactionId: 'txn-001',
@@ -335,7 +334,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
         },
       ]);
       mockAuthorizationFindAll.mockResolvedValue([]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -357,7 +356,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
           },
         },
       ]);
-      mockTransactionFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
 
       const response = await handleAndGetResponse({ evseId: 0 });
 
@@ -418,7 +417,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       ]);
 
       // Active transaction for Driver 1 on EVSE 1
-      mockTransactionFindAll.mockResolvedValue([
+      mockReadActiveTransactions.mockResolvedValue([
         {
           id: 1,
           transactionId: 'txn-001',
