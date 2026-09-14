@@ -179,21 +179,6 @@ export class DrizzleConnectorRepository
     return rows[0] ? await this.withEvse(tenantId, rows[0]) : undefined;
   }
 
-  async readConnectorsByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<ConnectorDto[]> {
-    const table = this.getTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(table)
-      .where(
-        and(eq(table.ocppConnectionName, ocppConnectionName), this.tenantFilter(table, tenantId)),
-      )) as ConnectorEntity[];
-
-    return rows.map((row) => this.toDto(row));
-  }
-
   async readConnectorByStationIdAndOcpp201EvseType(
     tenantId: number,
     ocppConnectionName: string,

@@ -477,15 +477,6 @@ export class SequelizeLocationRepository
     );
   }
 
-  async readConnectorsByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<ConnectorDto[]> {
-    return await Connector.findAll({
-      where: { tenantId, ocppConnectionName },
-    });
-  }
-
   async readEvseByStationIdAndOcpp201EvseId(
     tenantId: number,
     ocppConnectionName: string,
