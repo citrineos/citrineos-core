@@ -37,7 +37,7 @@ export class LatestStatusNotification extends Model implements LatestStatusNotif
   declare chargingStation: ChargingStationDto;
 
   @ForeignKey(() => StatusNotification)
-  declare statusNotificationId: string;
+  declare statusNotificationId: number;
 
   @BelongsTo(() => StatusNotification, 'statusNotificationId')
   declare statusNotification: StatusNotificationDto;

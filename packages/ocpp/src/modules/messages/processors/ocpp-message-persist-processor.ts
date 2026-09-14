@@ -9,9 +9,9 @@ import {
   MessageState,
   MessageTypeId,
 } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 /**
  * OcppMessagePersistProcessor is responsible for persisting OCPPMessages into the database.
@@ -31,9 +31,7 @@ export class OcppMessagePersistProcessor implements IFrameEventProcessor {
     logger?: Logger<ILogObj>;
   }) {
     this._ocppMessageRepository = ocppMessageRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async process(event: FrameEvent, context: MessagesEventContext): Promise<void> {

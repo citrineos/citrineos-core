@@ -32,6 +32,7 @@ export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   vendorId: z.string().nullable().optional(),
   vendorErrorCode: z.string().nullable().optional(),
   termsAndConditionsUrl: z.string().nullable().optional(),
+  tariffId: z.number().int().nullable().optional(),
   tariff: TariffSchema.nullable().optional(),
 });
 

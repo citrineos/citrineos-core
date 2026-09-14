@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ErrorObject } from 'ajv';
+import { childLogger } from '@base-util/logging.js';
 
 import {
   ErrorCode,
@@ -23,8 +24,7 @@ import type { IMessageSender } from '@interfaces/messages/message-sender.js';
 import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
 import type { IMessageRouter } from '@interfaces/router/router.js';
 import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
@@ -59,9 +59,7 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
     this._sender = sender;
     this._networkHook = networkHook;
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     // Set module for proper message flow.
     this._handler.module = this;

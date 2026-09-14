@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AbstractModule, type ICache } from '@citrineos/base';
+import { AbstractModule, childLogger, type ICache } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { OidcTokenProvider } from '@/apis/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 /**
  * Completes an API command: when a caller supplied a callback URL with a request, this POSTs the
@@ -27,9 +26,7 @@ export class CallbackUrlNotifier {
     logger?: Logger<ILogObj>;
   }) {
     this._cache = cache;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     if (config?.oidcClient) {
       this._oidcTokenProvider = new OidcTokenProvider(config.oidcClient, this._logger);

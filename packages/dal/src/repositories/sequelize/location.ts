@@ -7,11 +7,18 @@ import {
   type ChargingStationDto,
   type ConnectorDto,
   type EvseDto,
+  type StatusNotificationDto,
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
 import { Op, type WhereOptions } from 'sequelize';
-import { type ILocationDomainRepository } from '../repositories.js';
+import {
+  type IChargingStationRepository,
+  type IConnectorRepository,
+  type IEvseRepository,
+  type ILocationRepository,
+  type IStatusNotificationRepository,
+} from '../repositories.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
@@ -24,7 +31,12 @@ import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
-  implements ILocationDomainRepository
+  implements
+    ILocationRepository,
+    IChargingStationRepository,
+    IStatusNotificationRepository,
+    IConnectorRepository,
+    IEvseRepository
 {
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
@@ -137,11 +149,12 @@ export class SequelizeLocationRepository
   async addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
-    statusNotification: StatusNotification,
+    statusNotification: StatusNotificationDto,
   ): Promise<void> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      statusNotification,
+      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
     );
     try {
       await this.updateLatestStatusNotification(tenantId, savedStatusNotification);
@@ -442,6 +455,15 @@ export class SequelizeLocationRepository
         include: [Evse],
       })) ?? undefined
     );
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    return await Connector.findAll({
+      where: { tenantId, ocppConnectionName },
+    });
   }
 
   async readEvseByStationIdAndOcpp201EvseId(
