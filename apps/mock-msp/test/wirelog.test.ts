@@ -7,8 +7,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Exchange, Store } from '../src/core/types.js';
-import { createWireLogger } from '../src/core/wireLog.js';
-import { createStore } from '../src/core/Store.js';
+import { createWireLogger } from '../src/core/wire-log.js';
+import { createStore } from '../src/core/store.js';
 import { ModuleId } from '../src/ocpi/barrel.js';
 import { buildContext } from '../src/context.js';
 import { buildServer } from '../src/server.js';

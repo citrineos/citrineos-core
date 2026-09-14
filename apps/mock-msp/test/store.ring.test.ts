@@ -6,7 +6,7 @@
 // through query(), waitForReceived timing, and reset().
 import { describe, expect, it } from 'vitest';
 import type { Exchange, ExchangeFilter, Store } from '../src/core/types.js';
-import { createStore } from '../src/core/Store.js';
+import { createStore } from '../src/core/store.js';
 import { ModuleId } from '../src/ocpi/barrel.js';
 import { makeConfig } from './harness.js';
 
