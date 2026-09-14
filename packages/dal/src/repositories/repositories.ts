@@ -19,6 +19,7 @@ import type {
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationDto,
+  ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
@@ -720,11 +721,10 @@ export interface IChargingStationNetworkProfileRepository
     ocppConnectionName: string,
     configurationSlot: number[],
   ): Promise<ChargingStationNetworkProfile[]>;
-
-  readAllByOcppConnectionName(
+  readAllByStationIdWithProfiles(
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<ChargingStationNetworkProfile[]>;
+  ): Promise<ChargingStationNetworkProfileDto[]>;
 }
 
 export interface SetNetworkProfileCreateInput {
