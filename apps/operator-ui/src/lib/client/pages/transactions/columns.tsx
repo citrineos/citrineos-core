@@ -24,7 +24,7 @@ import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { TransactionClass } from '@lib/cls/transaction-dto';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 
-export const transactionStationIdField = 'ocppConnectionName';
+export const transactionStationIdField = 'ChargingStation.ocppConnectionName';
 export const transactionChargingStationLocationNameField = 'ChargingStation.Location.name';
 export const transactionAuthorizationIdTokenField = 'authorization.idToken';
 
