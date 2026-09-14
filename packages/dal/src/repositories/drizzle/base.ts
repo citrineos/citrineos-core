@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
-import { and, type Column, count, eq, type InferSelectModel } from 'drizzle-orm';
+import { childLogger } from '@citrineos/base';
+import { and, count, eq, type Column, type InferSelectModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable, PgTransaction } from 'drizzle-orm/pg-core';
 import EventEmitter from 'events';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { DefaultDrizzleInstance } from '../../db/drizzle/util.js';
 
 // Every CitrineOS table is tenant-scoped. This is the floor: join tables carry a
@@ -82,9 +83,7 @@ export abstract class DrizzleTenantScopedRepository<
   }: DrizzleRepositoryDependencies) {
     super();
     this.db = drizzleInstance ?? DefaultDrizzleInstance.getInstance(config, logger);
-    this.logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this.logger = childLogger(logger, this.constructor.name);
     this.useTenantSchema = useTenantSchema;
   }
 

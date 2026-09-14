@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '@citrineos/base';
+import { childLogger, type ICache } from '@citrineos/base';
 import type { ClassConstructor } from 'class-transformer';
 import { plainToInstance } from 'class-transformer';
 import type {
@@ -13,8 +13,7 @@ import type {
   RedisScripts,
 } from 'redis';
 import { createClient } from 'redis';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 /**
  * Implementation of cache interface with redis storage
@@ -24,9 +23,7 @@ export class RedisCache implements ICache {
   private _logger: Logger<ILogObj>;
 
   constructor(clientOptions?: RedisClientOptions, logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
     this._client = clientOptions ? createClient(clientOptions) : createClient();
     this._client.on('connect', () => this._logger.info('Redis client connected'));
     this._client.on('ready', () => this._logger.info('Redis client ready to use'));

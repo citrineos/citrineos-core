@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MESSAGES_DLX, MESSAGES_QUEUES, type MessagesQueueSpec } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
 
 /**
@@ -67,9 +67,7 @@ export class MessagesDeadLetterConsumer {
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._channelManager.getConnectionManager().on('connected', () => {
       if (!this._started) return;

@@ -2,12 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { childLogger } from '@base-util/logging.js';
 import { removeUnknownSchemaKeys } from '@base-util/endpoints/route-schemas.js';
 import { serializeError } from '@base-util/errors.js';
 import type { BuiltEndpoint } from '@interfaces/api/endpoints/build-endpoints.js';
 import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/endpoint-metadata.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export abstract class AbstractEndpointApi {
   protected readonly _server: FastifyInstance;
@@ -22,9 +23,7 @@ export abstract class AbstractEndpointApi {
   ) {
     this._server = server;
     this._prefix = prefix;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     for (const { route, endpoint } of endpoints) {
       this._addRoute(route, endpoint);

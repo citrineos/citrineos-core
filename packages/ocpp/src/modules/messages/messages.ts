@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import {
   MessagesDeadLetterConsumer,
   MessagesEventConsumer,
   MessagesEventPipeline,
 } from '@/transport/index.js';
 import type WebhookDispatcher from './webhook-dispatcher.js';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export interface MessagesModuleDependencies {
   config: SystemConfig;
@@ -38,9 +39,7 @@ export class MessagesModule {
     this._deadLetterConsumer = messagesDeadLetterConsumer;
     this._pipeline = messagesEventPipeline;
     this._webhookDispatcher = webhookDispatcher;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async start(): Promise<void> {

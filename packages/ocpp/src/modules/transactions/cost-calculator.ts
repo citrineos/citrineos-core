@@ -3,32 +3,24 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ITariffRepository } from '@citrineos/dal';
 import type { TariffDto } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { TransactionService } from './transaction-service.js';
+import type { ILogObj, Logger } from 'tslog';
 import { Transaction } from '@citrineos/dal';
-import { baseCalculateTotalCost } from '@citrineos/base';
+import { baseCalculateTotalCost, childLogger } from '@citrineos/base';
 
 export class CostCalculator {
   private readonly _logger: Logger<ILogObj>;
 
   private readonly _tariffRepository: ITariffRepository;
-  private readonly _transactionService: TransactionService;
 
   constructor({
     tariffRepository,
-    transactionService,
     logger,
   }: {
     tariffRepository: ITariffRepository;
-    transactionService: TransactionService;
     logger: Logger<ILogObj>;
   }) {
     this._tariffRepository = tariffRepository;
-    this._transactionService = transactionService;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

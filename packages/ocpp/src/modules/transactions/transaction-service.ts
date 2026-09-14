@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type IAuthorizer, type IMessageContext, MeterValueUtils } from '@citrineos/base';
+import {
+  childLogger,
+  type IAuthorizer,
+  type IMessageContext,
+  MeterValueUtils,
+} from '@citrineos/base';
 import {
   type AuthorizationDto,
   AuthorizationStatusEnum,
@@ -28,8 +33,7 @@ import type {
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import { MeterValue, Transaction } from '@citrineos/dal';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -68,9 +72,7 @@ export class TransactionService {
     this._connectorRepository = connectorRepository;
     this._reservationRepository = reservationRepository;
     this._ocppMessageRepository = ocppMessageRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 

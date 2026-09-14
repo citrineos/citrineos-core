@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type {
-  CreateDirectoryOptions,
-  DeleteFileOptions,
-  IFileStorage,
-  TrustOptions,
+import {
+  childLogger,
+  type CreateDirectoryOptions,
+  type DeleteFileOptions,
+  type IFileStorage,
+  type TrustOptions,
 } from '@citrineos/base';
 import fs from 'fs';
 import path from 'path';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class LocalStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
@@ -18,9 +18,7 @@ export class LocalStorage implements IFileStorage {
 
   constructor(defaultRoot: string, logger?: Logger<ILogObj>) {
     this.defaultRoot = defaultRoot;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**
