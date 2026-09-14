@@ -6,7 +6,6 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_common_types, type SystemConfig } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeDeviceModelRepository,
@@ -110,12 +109,11 @@ async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Pro
     id: nextEvseTypeNumber++,
     connectorId: null,
   } as never);
-  const evse = await Evse.create({
-    tenantId: DEFAULT_TENANT_ID,
-    stationId: await stationIdOf(ocppConnectionName),
+  const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
+    ocppConnectionName,
     evseTypeId: ocppEvseNumber,
-  } as never);
-  return (evse as unknown as { id: number }).id;
+  });
+  return evse.id!;
 }
 
 function aTxProfile() {

@@ -14,7 +14,6 @@ import {
 } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeLocationRepository,
@@ -112,12 +111,11 @@ async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Pro
     id: evseTypeNumber,
     connectorId: null,
   } as never);
-  const evse = await Evse.create({
-    tenantId: DEFAULT_TENANT_ID,
-    stationId: await stationIdOf(ocppConnectionName),
+  const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
+    ocppConnectionName,
     evseTypeId: ocppEvseNumber,
-  } as never);
-  return (evse as unknown as { id: number }).id;
+  });
+  return evse.id!;
 }
 
 function aCompositeScheduleResponse(evseId: number): IMessage<OcppResponse> {
@@ -181,9 +179,11 @@ describe('A composite schedule reported for a station EVSE number', () => {
   });
 
   it('associates the schedule with the EVSE the station named', async () => {
-    const ownEvse = await Evse.findOne({
-      where: { stationId: await stationIdOf(STATION), evseTypeId: 1 },
-    });
+    const ownEvse = await locationRepository.readEvseByStationIdAndOcpp201EvseId(
+      DEFAULT_TENANT_ID,
+      STATION,
+      1,
+    );
 
     await aHandler().handle(aCompositeScheduleResponse(1) as never);
 
@@ -193,12 +193,16 @@ describe('A composite schedule reported for a station EVSE number', () => {
   });
 
   it('does not associate the schedule with another station EVSE carrying that number', async () => {
-    const ownEvse = await Evse.findOne({
-      where: { stationId: await stationIdOf(STATION), evseTypeId: 1 },
-    });
-    const neighbour = await Evse.findOne({
-      where: { stationId: await stationIdOf(OTHER_STATION), evseTypeId: 1 },
-    });
+    const ownEvse = await locationRepository.readEvseByStationIdAndOcpp201EvseId(
+      DEFAULT_TENANT_ID,
+      STATION,
+      1,
+    );
+    const neighbour = await locationRepository.readEvseByStationIdAndOcpp201EvseId(
+      DEFAULT_TENANT_ID,
+      OTHER_STATION,
+      1,
+    );
 
     await aHandler().handle(aCompositeScheduleResponse(1) as never);
 
