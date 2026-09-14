@@ -8,7 +8,9 @@ import {
   Connector,
   DefaultSequelizeInstance,
   Evse,
+  LatestStatusNotification,
   SequelizeLocationRepository,
+  StatusNotification,
   Tenant,
 } from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
@@ -301,6 +303,52 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     expect(connector?.status).toBe('Charging');
     expect(connector?.evseId).toBe(evseId);
   });
+
+  it('stores the reported status, connector and timestamp on the StatusNotification row', async () => {
+    const ocppConnectionName = 'CS-1.6-e2e-status-row';
+    const timestamp = '2026-09-14T10:00:00.000Z';
+    await ChargingStation.create({
+      ocppConnectionName,
+      tenantId: DEFAULT_TENANT_ID,
+    });
+
+    const websocketConnection: IWebsocketConnection = {
+      id: 'test-server',
+      timeConnected: new Date().toISOString(),
+      protocol: 'ocpp1.6',
+      allowUnknownChargingStations: true,
+    };
+    cache = {
+      get: vi.fn().mockResolvedValue(JSON.stringify(websocketConnection)),
+    } as unknown as ICache;
+
+    const service = new StatusNotificationService({
+      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      chargingStationRepository: locationRepository,
+      evseRepository: locationRepository,
+      connectorRepository: locationRepository,
+      statusNotificationRepository: locationRepository,
+      cache,
+    });
+
+    await service.processOcpp16StatusNotification(DEFAULT_TENANT_ID, ocppConnectionName, {
+      connectorId: 1,
+      status: 'Charging',
+      errorCode: 'NoError',
+      timestamp,
+    } as any);
+
+    const rows = await StatusNotification.findAll({ where: { tenantId: DEFAULT_TENANT_ID } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].get({ plain: true })).toMatchObject({
+      ocppConnectionName,
+      connectorId: 1,
+      connectorStatus: 'Charging',
+      errorCode: 'NoError',
+      timestamp,
+    });
+  });
 });
 
 describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 integration)', () => {
@@ -407,5 +455,55 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     });
     expect(connectors).toHaveLength(2);
     expect(connectors.map((c) => c.evse?.evseTypeId).sort()).toEqual([1, 2]);
+  });
+
+  it('stores the reported status, EVSE, connector and timestamp on the StatusNotification row', async () => {
+    const ocppConnectionName = 'CS-2.0.1-e2e-status-row';
+    const timestamp = '2026-09-14T10:00:00.000Z';
+    await ChargingStation.create({
+      ocppConnectionName,
+      tenantId: DEFAULT_TENANT_ID,
+    });
+
+    await aService(true).processStatusNotification(DEFAULT_TENANT_ID, ocppConnectionName, {
+      evseId: 1,
+      connectorId: 1,
+      connectorStatus: 'Occupied',
+      timestamp,
+    } as any);
+
+    const rows = await StatusNotification.findAll({ where: { tenantId: DEFAULT_TENANT_ID } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].get({ plain: true })).toMatchObject({
+      ocppConnectionName,
+      evseId: 1,
+      connectorId: 1,
+      connectorStatus: 'Occupied',
+      timestamp,
+    });
+  });
+
+  it('keeps a LatestStatusNotification for each connector that has reported', async () => {
+    const ocppConnectionName = 'CS-2.0.1-e2e-latest-per-connector';
+    await ChargingStation.create({
+      ocppConnectionName,
+      tenantId: DEFAULT_TENANT_ID,
+    });
+    const service = aService(true);
+
+    for (const connectorId of [1, 2]) {
+      await service.processStatusNotification(DEFAULT_TENANT_ID, ocppConnectionName, {
+        evseId: 1,
+        connectorId,
+        connectorStatus: 'Occupied',
+        timestamp: new Date().toISOString(),
+      } as any);
+    }
+
+    const latest = await LatestStatusNotification.findAll({
+      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
+      include: [StatusNotification],
+    });
+    expect(latest.map((l) => l.statusNotification.connectorId).sort()).toEqual([1, 2]);
   });
 });
