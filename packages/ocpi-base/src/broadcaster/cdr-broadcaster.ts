@@ -31,6 +31,13 @@ export class CdrBroadcaster extends BaseBroadcaster {
   }
 
   async broadcastPostCdr(transactionDto: TransactionDto): Promise<void> {
+    const tenantPartnerId = transactionDto.authorization?.tenantPartner?.id;
+    if (tenantPartnerId === undefined) {
+      this.logger.debug(
+        `No eMSP owns the token of Transaction ${transactionDto.transactionId}, CDR not pushed`,
+      );
+      return;
+    }
     const cdrs: Cdr[] = await this.cdrMapper.mapTransactionsToCdrs([transactionDto]);
     if (cdrs.length === 0) {
       this.logger.warn(`No CDRs generated for Transaction: ${transactionDto.transactionId}`);
@@ -47,6 +54,7 @@ export class CdrBroadcaster extends BaseBroadcaster {
         httpMethod: HttpMethod.Post,
         schema: OcpiEmptyResponseSchema,
         body: cdrDto,
+        tenantPartnerId,
       });
     } catch (e) {
       this.logger.error(`broadcastPostCdr failed for CDR ${cdrDto.id}`, e);

@@ -916,6 +916,20 @@ export type GetTransactionByIdQueryResult = {
   } | null;
 };
 
+export type GetTransactionTenantPartnerQueryVariables = Exact<{
+  id: Scalars['Int']['input'];
+}>;
+
+export type GetTransactionTenantPartnerQueryResult = {
+  Transactions: Array<{
+    authorization?: {
+      tenantPartner?: {
+        id: number;
+      } | null;
+    } | null;
+  }>;
+};
+
 export type GetActiveTransactionForStopSessionQueryVariables = Exact<{
   transactionId: Scalars['String']['input'];
   countryCode: Scalars['String']['input'];
