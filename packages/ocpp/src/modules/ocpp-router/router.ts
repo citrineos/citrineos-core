@@ -651,9 +651,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const { isValid, errors } = this._validateCall(identifier, message, protocol);
 
     if (!isValid || errors) {
-      throw new OcppError(messageId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
+      throw new OcppError(
+        messageId,
+        protocol === OCPPVersion.OCPP1_6 ? ErrorCode.FormationViolation : ErrorCode.FormatViolation,
+        'Invalid message format',
+        {
+          errors: errors,
+        },
+      );
     }
 
     this._cache

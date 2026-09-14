@@ -7,14 +7,12 @@ import type { TariffDto } from '@citrineos/types';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { CostCalculator } from '@modules/transactions/cost-calculator.js';
-import { TransactionService } from '@modules/transactions/transaction-service.js';
 import { aTariff } from './providers/tariff.js';
 import { aTransaction } from './providers/transaction-provider.js';
 
 describe('CostCalculator', () => {
   const { container } = createTestContainer();
   let tariffRepository: Mocked<ITariffRepository>;
-  let transactionService: Mocked<TransactionService>;
   let costCalculator: CostCalculator;
 
   beforeEach(() => {
@@ -22,19 +20,13 @@ describe('CostCalculator', () => {
       findByConnectorId: vi.fn(),
     } as unknown as Mocked<ITariffRepository>;
 
-    transactionService = {
-      recalculateTotalKwh: vi.fn(),
-    } as unknown as Mocked<TransactionService>;
-
     costCalculator = getTestInstance(container, CostCalculator, {
       tariffRepository,
-      transactionService,
     });
   });
 
   afterEach(() => {
     tariffRepository.findByConnectorId.mockReset();
-    transactionService.recalculateTotalKwh.mockReset();
   });
 
   describe('calculateTotalCost', () => {
