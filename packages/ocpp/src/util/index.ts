@@ -29,6 +29,7 @@ export {
   type ChargingProfileValidation,
 } from './validator.js';
 export { IdGenerator } from './id-generator.js';
+export { generateChargingProfileId } from './charging-profile-id.js';
 
 export {
   assertSequelizeSchemaMatches,
