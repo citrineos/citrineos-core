@@ -30,7 +30,7 @@ export const CLIENT_TOKEN = process.env.MOCK_MSP_CLIENT_TOKEN ?? SEED_CLIENT_TOK
 
 // The two parties, read from the same env the mock reads (src/config.ts) so the
 // traffic we replay matches what the mock is configured to accept. Defaults are
-// the seeded tenant (apps/ocpi-server/seeders/20250806120001-default-tenant.ts)
+// the seeded tenant (apps/ocpi-server/db/seeders/20250806120001-default-tenant.ts)
 // and partner.
 export const CPO = {
   countryCode: process.env.MOCK_MSP_CPO_COUNTRY_CODE ?? 'US',

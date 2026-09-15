@@ -99,7 +99,7 @@ export default defineConfig({
         'packages/base/src/**',
         'packages/dal/src/**',
         'packages/ocpp/src/**',
-        'packages/ocpi-base/src/**',
+        'packages/ocpi/src/**',
         'apps/mock-msp/src/**',
       ],
       thresholds: {

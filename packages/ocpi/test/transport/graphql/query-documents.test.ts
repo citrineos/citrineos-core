@@ -67,7 +67,7 @@ import {
 const PARTY_SCOPE = 'Tenant: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }';
 
 describe('operation names', () => {
-  // One row per live export in src/graphql/queries. A rename here breaks
+  // One row per live export in src/transport/graphql/queries. A rename here breaks
   // Hasura persisted-operation logs, so the names are pinned.
   it.each([
     [

@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       mock-msp: ${{ steps.filter.outputs.mock-msp }}
-      ocpi-base: ${{ steps.filter.outputs.ocpi-base }}
+      ocpi: ${{ steps.filter.outputs.ocpi }}
       deps: ${{ steps.filter.outputs.deps }}
       ocpi-server: ${{ steps.filter.outputs.ocpi-server }}
       stack: ${{ steps.filter.outputs.stack }}
@@ -65,8 +65,8 @@ jobs:
           filters: |
             mock-msp:
               - 'apps/mock-msp/**'
-            ocpi-base:
-              - 'packages/ocpi-base/**'
+            ocpi:
+              - 'packages/ocpi/**'
             deps:
               - 'packages/types/**'
               - 'packages/base/**'
@@ -99,7 +99,7 @@ jobs:
 
   unit:
     needs: changes
-    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -160,7 +160,7 @@ jobs:
 
   docker-image:
     needs: changes
-    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' || needs.changes.outputs.stack == 'true' }}
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' || needs.changes.outputs.stack == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -187,7 +187,7 @@ jobs:
           curl -fs http://127.0.0.1:8083/_mock/health | tee /dev/stderr \
             | jq -e '.scenario == "preregistered" and .registration.status == "registered"'
           curl -fs http://127.0.0.1:8083/ | grep -q 'id="covGrid"'
-          $COMPOSE exec -T mock-msp node -e "import('@citrineos/ocpi-base').then(() => process.exit(0))"
+          $COMPOSE exec -T mock-msp node -e "import('@citrineos/ocpi').then(() => process.exit(0))"
       - name: Container logs
         if: failure()
         run: $COMPOSE logs mock-msp || true
@@ -196,7 +196,7 @@ jobs:
 
   dashboard:
     needs: changes
-    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
+    if: ${{ needs.changes.outputs.all == 'true' || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi == 'true' || needs.changes.outputs.deps == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.workflow == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -249,7 +249,7 @@ jobs:
 
   live:
     needs: changes
-    if: ${{ (needs.changes.outputs.all == 'true' && !(github.event_name == 'workflow_dispatch' && !inputs.run_live)) || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi-base == 'true' || needs.changes.outputs.ocpi-server == 'true' || needs.changes.outputs.stack == 'true' || needs.changes.outputs.workflow == 'true' }}
+    if: ${{ (needs.changes.outputs.all == 'true' && !(github.event_name == 'workflow_dispatch' && !inputs.run_live)) || needs.changes.outputs.mock-msp == 'true' || needs.changes.outputs.ocpi == 'true' || needs.changes.outputs.ocpi-server == 'true' || needs.changes.outputs.stack == 'true' || needs.changes.outputs.workflow == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

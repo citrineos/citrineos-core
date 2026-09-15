@@ -803,7 +803,7 @@ observing Citrine's CPO-side behavior:
     that fail its own validation and then returns the EVSE anyway — its
     `return;` for the no-valid-connectors case is commented out with a
     `// TODO: solve this case`. The pulled Locations payload then fails the
-    ocpi-base schema at `data[].evses[].connectors`.
+    @citrineos/ocpi schema at `data[].evses[].connectors`.
 
 ---
 
@@ -894,10 +894,10 @@ requests, on every push to `next`, nightly and on `workflow_dispatch`. Lanes:
 
 | job | what | when (PR) |
 |---|---|---|
-| `unit` | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,core,ocpi-base}/**`, shared config |
+| `unit` | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,ocpp,ocpi}/**`, shared config |
 | `docker-image` | builds the compose `mock-msp` service from `deploy.Dockerfile`, boots it alone, checks `/_mock/health` + the dashboard | same + compose files |
 | `dashboard` | Playwright against the dashboard (`e2e/*.e2e.ts`, project `dashboard`); the mock is started by Playwright's `webServer`, no Citrine behind it | `apps/mock-msp/**`, shared config |
-| `live` | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts` | `apps/mock-msp/**`, `packages/ocpi-base/**`, `apps/ocpi-server/**`, compose files |
+| `live` | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts` | `apps/mock-msp/**`, `packages/ocpi/**`, `apps/ocpi-server/**`, compose files |
 | `everest` | `live` plus EVerest as `cp001`: `test-live/everest/*.live.ts` (plug → START_SESSION → Session → STOP_SESSION → CDR) and the `@live`/`@everest` dashboard specs | push to `next`, nightly, dispatch, or the PR label `ci:mock-msp-everest` |
 | `mock-msp-ci` | aggregate status — the one check to require on `next` | always |
 
