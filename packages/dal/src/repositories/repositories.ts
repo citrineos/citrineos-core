@@ -523,7 +523,8 @@ export interface IInstalledCertificateRepository {
   ): Promise<CertificateDto | undefined>;
   createInstalledCertificate(
     tenantId: number,
-    input: InstalledCertificateCreateInput,
+    ocppConnectionName: string,
+    input: Omit<InstalledCertificateCreateInput, 'stationId'>,
   ): Promise<InstalledCertificateDto>;
   setCertificateId(
     tenantId: number,
@@ -568,7 +569,8 @@ export interface IInstallCertificateAttemptRepository {
   ): Promise<InstallCertificateAttemptDto | undefined>;
   createAttempt(
     tenantId: number,
-    input: InstallCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<InstallCertificateAttemptCreate, 'stationId'>,
   ): Promise<InstallCertificateAttemptDto>;
   updateStatus(
     tenantId: number,
@@ -594,7 +596,8 @@ export interface IDeleteCertificateAttemptRepository {
   ): Promise<DeleteCertificateAttemptDto | undefined>;
   createAttempt(
     tenantId: number,
-    input: DeleteCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<DeleteCertificateAttemptCreate, 'stationId'>,
   ): Promise<DeleteCertificateAttemptDto>;
   updateStatus(
     tenantId: number,
@@ -659,7 +662,11 @@ export interface IReservationRepository {
 }
 
 export interface IOCPPMessageRepository {
-  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessageDto>;
+  createOCPPMessage(
+    tenantId: number,
+    ocppConnectionName: string,
+    message: Omit<OCPPMessageDto, 'stationId'>,
+  ): Promise<OCPPMessageDto>;
   getRequestByCorrelationId(
     tenantId: number,
     correlationId: string,
@@ -700,6 +707,11 @@ export interface IChargingStationNetworkProfileRepository
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
+  ): Promise<ChargingStationNetworkProfile[]>;
+
+  readAllByOcppConnectionName(
+    tenantId: number,
+    ocppConnectionName: string,
   ): Promise<ChargingStationNetworkProfile[]>;
 }
 

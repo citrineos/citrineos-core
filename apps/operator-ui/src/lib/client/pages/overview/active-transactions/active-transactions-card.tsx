@@ -142,7 +142,7 @@ export const ActiveTransactionsCard = () => {
 
                       <div>
                         {translate('Overview.stationLabel', {
-                          value: transaction.ocppConnectionName,
+                          value: transaction.station?.ocppConnectionName,
                         })}
                       </div>
                       <div>

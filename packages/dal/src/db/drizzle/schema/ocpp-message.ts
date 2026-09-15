@@ -23,8 +23,7 @@ import { type z } from 'zod';
 function ocppMessageColumns() {
   return {
     id: serial('id'),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    stationId: integer('stationId').notNull(),
     correlationId: varchar('correlationId', { length: 255 }),
     origin: varchar('origin', { length: 255 }),
     // OCPP RPC messageTypeId (2 = Call, 3 = CallResult, 4 = CallError). Absent for messages
@@ -58,11 +57,11 @@ function ocppMessageColumns() {
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const ocppMessageTable = pgTable(TableName.OCPPMessages, ocppMessageColumns(), (t) => [
   primaryKey({ columns: [t.id, t.createdAt] }),
-  index('ocpp_messages_ocpp_connection_name').on(t.ocppConnectionName),
+  index('ocpp_messages_station_id').on(t.stationId),
   index('ocpp_messages_correlation_id').on(t.correlationId),
   index('ocpp_messages_request_message_id').on(t.requestMessageId),
   // Serves the request/response lookups in the correlation insert triggers.
-  index('ocpp_messages_correlation_lookup').on(t.tenantId, t.ocppConnectionName, t.correlationId),
+  index('ocpp_messages_correlation_lookup').on(t.tenantId, t.stationId, t.correlationId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

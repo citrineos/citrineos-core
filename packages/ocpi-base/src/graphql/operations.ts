@@ -113,7 +113,7 @@ export type GetChargingStationByIdQueryResult = {
     evses: Array<{
       id: number;
       tenantId: number;
-      ocppConnectionName: string;
+      stationId: number;
       evseTypeId?: number | null;
       evseId: string;
       physicalReference?: string | null;
@@ -124,7 +124,7 @@ export type GetChargingStationByIdQueryResult = {
     connectors: Array<{
       id: number;
       tenantId: number;
-      ocppConnectionName: string;
+      stationId: number;
       evseId: number;
       connectorId: number;
       evseTypeConnectorId?: number | null;
@@ -161,7 +161,6 @@ export type GetSequenceQueryResult = {
 export type UpsertSequenceMutationVariables = Exact<{
   tenantId: Scalars['Int']['input'];
   stationId: Scalars['Int']['input'];
-  ocppConnectionName: Scalars['String']['input'];
   type: Scalars['String']['input'];
   value: Scalars['bigint']['input'];
   createdAt: Scalars['timestamptz']['input'];
@@ -225,7 +224,7 @@ export type GetLocationsQueryResult = {
       updatedAt: any;
       evses: Array<{
         id: number;
-        ocppConnectionName: string;
+        stationId: number;
         evseTypeId?: number | null;
         evseId: string;
         physicalReference?: string | null;
@@ -234,7 +233,7 @@ export type GetLocationsQueryResult = {
         updatedAt: any;
         connectors: Array<{
           id: number;
-          ocppConnectionName: string;
+          stationId: number;
           evseId: number;
           connectorId: number;
           evseTypeConnectorId?: number | null;
@@ -312,7 +311,7 @@ export type GetLocationByIdQueryResult = {
       updatedAt: any;
       evses: Array<{
         id: number;
-        ocppConnectionName: string;
+        stationId: number;
         evseTypeId?: number | null;
         evseId: string;
         physicalReference?: string | null;
@@ -321,7 +320,7 @@ export type GetLocationByIdQueryResult = {
         updatedAt: any;
         connectors: Array<{
           id: number;
-          ocppConnectionName: string;
+          stationId: number;
           evseId: number;
           connectorId: number;
           evseTypeConnectorId?: number | null;
@@ -379,7 +378,7 @@ export type GetEvseByIdQueryResult = {
       updatedAt: any;
       evses: Array<{
         id: number;
-        ocppConnectionName: string;
+        stationId: number;
         evseTypeId?: number | null;
         evseId: string;
         physicalReference?: string | null;
@@ -406,7 +405,7 @@ export type GetConnectorByIdQueryResult = {
       evses: Array<{
         connectors: Array<{
           id: number;
-          ocppConnectionName: string;
+          stationId: number;
           evseId: number;
           connectorId: number;
           evseTypeConnectorId?: number | null;
@@ -795,7 +794,6 @@ export type GetTransactionsQueryResult = {
   Transactions: Array<{
     id: number;
     stationId: number;
-    ocppConnectionName: string;
     transactionId: string;
     isActive: boolean;
     station: {
@@ -853,7 +851,6 @@ export type GetTransactionByIdQueryResult = {
   Transactions_by_pk?: {
     id: number;
     stationId: number;
-    ocppConnectionName: string;
     transactionId: string;
     isActive: boolean;
     chargingState?: string | null;
@@ -926,7 +923,6 @@ export type GetActiveTransactionForStopSessionQueryResult = {
   Transactions: Array<{
     id: number;
     stationId: number;
-    ocppConnectionName: string;
     transactionId: string;
     isActive: boolean;
     chargingState?: string | null;

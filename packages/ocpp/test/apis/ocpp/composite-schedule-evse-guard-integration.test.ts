@@ -74,11 +74,12 @@ afterAll(async () => {
 });
 
 async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number[]) {
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName,
     isOnline: true,
     tenantId: DEFAULT_TENANT_ID,
   } as never);
+  const stationId = (station as unknown as { id: number }).id;
   for (const evseNumber of evseNumbers) {
     await EvseType.findOrCreate({
       where: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null },
@@ -86,7 +87,7 @@ async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number
     });
     await Evse.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+      stationId,
       evseTypeId: evseNumber,
     } as never);
   }

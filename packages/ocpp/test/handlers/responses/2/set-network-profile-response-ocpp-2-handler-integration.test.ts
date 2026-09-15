@@ -95,9 +95,9 @@ function aResponse(
   } as unknown as IMessage<OCPP2_response_types.SetNetworkProfileResponse>;
 }
 
-async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {
+async function aSetNetworkProfileRow(stationId: number, configurationSlot: number) {
   return SetNetworkProfile.build({
-    ocppConnectionName,
+    stationId,
     correlationId: CORRELATION_ID,
     configurationSlot,
     websocketServerConfigId: PROFILE_ID,
@@ -113,6 +113,8 @@ async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSl
 
 describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', () => {
   const { container } = createTestContainer();
+
+  let stationBId: number;
 
   beforeEach(async () => {
     await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
@@ -135,18 +137,21 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
       tenantId: DEFAULT_TENANT_ID,
     } as never);
 
+    const stationIds: Record<string, number> = {};
     for (const name of [STATION_A, STATION_B]) {
-      await ChargingStation.create({
+      const station = await ChargingStation.create({
         ocppConnectionName: name,
         isOnline: false,
         tenantId: DEFAULT_TENANT_ID,
       } as never);
+      stationIds[name] = (station as unknown as { id: number }).id;
     }
+    stationBId = stationIds[STATION_B];
 
     // One row per station under the one correlation id, exactly as prepareSetNetworkProfile
     // writes them: same slot and same profile, differing only by station.
-    await aSetNetworkProfileRow(STATION_A, 1);
-    await aSetNetworkProfileRow(STATION_B, 1);
+    await aSetNetworkProfileRow(stationIds[STATION_A], 1);
+    await aSetNetworkProfileRow(stationIds[STATION_B], 1);
   });
 
   it('links the station to the request that was sent to it', async () => {
@@ -155,10 +160,10 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
     await handler.handle(aResponse(STATION_B));
 
     const stored = await ChargingStationNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
     });
     const ownRow = await SetNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
     });
 
     expect(stored).not.toBeNull();

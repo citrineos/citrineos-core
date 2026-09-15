@@ -95,6 +95,7 @@ function aService() {
 }
 
 let nextSerialNumber = 1;
+let stationId: number;
 
 /** A pending attempt, as either prepare path leaves one before the request goes out. */
 async function aPendingAttempt(certificateType: string) {
@@ -108,7 +109,7 @@ async function aPendingAttempt(certificateType: string) {
   } as never);
 
   return InstallCertificateAttempt.create({
-    ocppConnectionName: STATION,
+    stationId,
     certificateType,
     certificateId: (certificate as unknown as { id: number }).id,
     status: null,
@@ -131,11 +132,12 @@ describe('finalizeInstalledCertificate with more than one certificate in flight'
     await Tenant.destroy({ where: {}, truncate: true, cascade: true });
 
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: DEFAULT_TENANT_ID,
     } as never);
+    stationId = (station as unknown as { id: number }).id;
   });
 
   it('settles the attempt for the certificate that was answered', async () => {

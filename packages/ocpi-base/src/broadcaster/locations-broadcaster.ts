@@ -105,7 +105,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!locationId) throw new Error('Location ID missing in EVSE data');
     const evse = this.evseMapper.fromGraphql(chargingStationDto!, evseDto);
     if (!evse) throw new Error('Failed to map EVSE data');
-    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(evseDto.ocppConnectionName, evseDto.id!)}`;
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(chargingStationDto.ocppConnectionName, evseDto.id!)}`;
     await this.broadcastEvse(tenant, evse, HttpMethod.Put, path);
   }
 
@@ -118,7 +118,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!locationId) throw new Error('Location ID missing in EVSE data');
     const evse = this.evseMapper.fromPartialGraphql(chargingStationDto!, evseDto);
     if (!evse) throw new Error('Failed to map EVSE data');
-    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(evseDto.ocppConnectionName!, evseDto.id!)}`;
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(chargingStationDto.ocppConnectionName!, evseDto.id!)}`;
     await this.broadcastEvse(tenant, evse, HttpMethod.Patch, path);
   }
 
@@ -149,7 +149,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!locationId) throw new Error('Location ID missing in Connector data');
     const connector = this.connectorMapper.fromGraphql(connectorDto);
     if (!connector) throw new Error('Failed to map Connector data');
-    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName, connectorDto.evseId)}/${connectorDto.id}`;
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.chargingStation!.ocppConnectionName, connectorDto.evseId)}/${connectorDto.id}`;
     await this.broadcastConnector(tenant, connector, HttpMethod.Put, path);
   }
 
@@ -161,7 +161,7 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!locationId) throw new Error('Location ID missing in Connector data');
     const connector = this.connectorMapper.fromPartialGraphql(connectorDto);
     if (!connector) throw new Error('Failed to map Connector data');
-    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.ocppConnectionName!, connectorDto.evseId!)}/${connectorDto.id}`;
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(connectorDto.chargingStation!.ocppConnectionName, connectorDto.evseId!)}/${connectorDto.id}`;
     await this.broadcastConnector(tenant, connector, HttpMethod.Patch, path);
   }
 

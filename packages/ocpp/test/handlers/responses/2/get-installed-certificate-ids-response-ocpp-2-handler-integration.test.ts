@@ -98,6 +98,8 @@ afterAll(async () => {
 
 type CertificateHashData = typeof ROOT_ONE;
 
+let stationId: number;
+
 function aResponseReporting(...certificates: CertificateHashData[]): IMessage<OcppRequest> {
   return {
     context: {
@@ -123,7 +125,7 @@ function aResponseReporting(...certificates: CertificateHashData[]): IMessage<Oc
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
   return InstalledCertificate.create({
-    ocppConnectionName: STATION,
+    stationId,
     ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
     tenantId: DEFAULT_TENANT_ID,
@@ -132,7 +134,7 @@ async function anInstalledCertificate(certificateHashData: CertificateHashData) 
 
 async function aManufacturerCertificate() {
   return InstalledCertificate.create({
-    ocppConnectionName: STATION,
+    stationId,
     hashAlgorithm: ROOT_ONE.hashAlgorithm,
     issuerNameHash: 'issuer-mf',
     issuerKeyHash: 'key-mf',
@@ -144,7 +146,7 @@ async function aManufacturerCertificate() {
 
 async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
   return OCPPMessage.create({
-    ocppConnectionName: STATION,
+    stationId,
     correlationId: 'corr-1',
     origin: MessageOrigin.ChargingStationManagementSystem,
     action: OCPP_CallAction.GetInstalledCertificateIds,
@@ -156,7 +158,7 @@ async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
 }
 
 function recordedSerialNumbers() {
-  return InstalledCertificate.findAll({ where: { ocppConnectionName: STATION } }).then((rows) =>
+  return InstalledCertificate.findAll({ where: { stationId } }).then((rows) =>
     rows.map((row) => row.serialNumber).sort(),
   );
 }
@@ -179,11 +181,12 @@ describe('GetInstalledCertificateIdsResponseOcpp2Handler with several certificat
     await Tenant.destroy({ where: {}, truncate: true, cascade: true });
 
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: DEFAULT_TENANT_ID,
     } as never);
+    stationId = (station as unknown as { id: number }).id;
   });
 
   it('records every certificate the station reports, not only the last of each type', async () => {

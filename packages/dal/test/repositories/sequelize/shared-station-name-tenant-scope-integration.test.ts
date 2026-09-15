@@ -66,7 +66,7 @@ afterAll(async () => {
 let nextEvseTypeNumber = 1;
 
 async function aStationWithOneEvse(tenantId: number): Promise<number> {
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName: SHARED_STATION_NAME,
     isOnline: true,
     tenantId,
@@ -74,7 +74,7 @@ async function aStationWithOneEvse(tenantId: number): Promise<number> {
   await EvseType.create({ tenantId, id: nextEvseTypeNumber++, connectorId: null } as never);
   const evse = await Evse.create({
     tenantId,
-    ocppConnectionName: SHARED_STATION_NAME,
+    stationId: (station as unknown as { id: number }).id,
     evseTypeId: OCPP_EVSE_NUMBER,
   } as never);
   return (evse as unknown as { id: number }).id;
@@ -85,9 +85,14 @@ async function anActiveTransaction(
   evseDatabaseId: number,
   transactionId: string,
 ) {
+  // Both tenants use the same connection name, so the station must be resolved
+  // within the caller's own tenant — that is exactly what this suite guards.
+  const station = await ChargingStation.findOne({
+    where: { ocppConnectionName: SHARED_STATION_NAME, tenantId },
+  });
   const transaction = await Transaction.create({
     tenantId,
-    ocppConnectionName: SHARED_STATION_NAME,
+    stationId: (station as unknown as { id: number }).id,
     transactionId,
     isActive: true,
     evseId: evseDatabaseId,

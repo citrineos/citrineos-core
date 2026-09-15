@@ -46,10 +46,16 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     }>(
       `query RegistrationIngestionProbe($name: String!) {
          boot: OCPPMessages_aggregate(
-           where: { ocppConnectionName: { _eq: $name }, action: { _eq: "BootNotification" } }
+           where: {
+             ChargingStation: { ocppConnectionName: { _eq: $name } }
+             action: { _eq: "BootNotification" }
+           }
          ) { aggregate { count } }
          status: OCPPMessages_aggregate(
-           where: { ocppConnectionName: { _eq: $name }, action: { _eq: "StatusNotification" } }
+           where: {
+             ChargingStation: { ocppConnectionName: { _eq: $name } }
+             action: { _eq: "StatusNotification" }
+           }
          ) { aggregate { count } }
        }`,
       { name: everestStation.ocppConnectionName },

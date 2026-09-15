@@ -92,7 +92,7 @@ describe('An OCPP 1.6 StopTransaction on a tenant other than the default', () =>
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
     await Tenant.create({ id: OTHER_TENANT_ID, name: 'B' } as never);
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: OTHER_TENANT_ID,
@@ -100,7 +100,7 @@ describe('An OCPP 1.6 StopTransaction on a tenant other than the default', () =>
 
     const transaction = await Transaction.create({
       tenantId: OTHER_TENANT_ID,
-      ocppConnectionName: STATION,
+      stationId: (station as unknown as { id: number }).id,
       transactionId: TRANSACTION_ID,
       isActive: true,
     } as never);

@@ -15,6 +15,12 @@ import { NotifyDisplayMessagesRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION_ID = 'station-001';
 const REQUEST_ID = 42;
 
@@ -85,7 +91,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
     expect(ocppMessageRepository.readAllByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
       where: {
         tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: STATION_ID,
+        stationId: STATION_DB_ID,
         action: OCPP_CallAction.GetDisplayMessages,
         payload: { requestId: REQUEST_ID },
       },

@@ -21,6 +21,14 @@ import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+// The handler resolves the connection name to a station id before querying
+// Transactions; the models here are vi.mock stubs with no Sequelize instance.
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 // Mock sequelize models
 vi.mock('@dal/models/location/connector.js', () => ({
   Connector: {

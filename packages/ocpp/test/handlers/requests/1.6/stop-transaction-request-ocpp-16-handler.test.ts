@@ -19,6 +19,12 @@ import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
     context: {

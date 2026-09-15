@@ -4,7 +4,11 @@
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@citrineos/dal';
-import { ChargingStationNetworkProfile, ServerNetworkProfile } from '@citrineos/dal';
+import {
+  ChargingStationNetworkProfile,
+  ServerNetworkProfile,
+  resolveStationId,
+} from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -87,14 +91,18 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
           return true;
         } else {
           let securityProfileAllowed = false;
+          const stationId = await resolveStationId(tenantId, identifier);
           for (const configurationSlot of configurationSlotsArray) {
-            const chargingStationNetworkProfile = await ChargingStationNetworkProfile.findOne({
-              where: {
-                tenantId,
-                ocppConnectionName: identifier,
-                configurationSlot: configurationSlot,
-              },
-            });
+            const chargingStationNetworkProfile =
+              stationId === undefined
+                ? null
+                : await ChargingStationNetworkProfile.findOne({
+                    where: {
+                      tenantId,
+                      stationId,
+                      configurationSlot: configurationSlot,
+                    },
+                  });
             if (chargingStationNetworkProfile) {
               const serverNetworkProfile = await ServerNetworkProfile.findOne({
                 where: {

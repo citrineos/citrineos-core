@@ -18,7 +18,7 @@ export function toChargingStationSequenceDto(
 ): ChargingStationSequenceDto {
   const dto: Explicit<ChargingStationSequenceDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     type: entity.type as ChargingStationSequenceDto['type'],
     value: entity.value,
     station: undefined,

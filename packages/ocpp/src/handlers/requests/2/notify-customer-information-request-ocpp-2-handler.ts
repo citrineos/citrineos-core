@@ -18,6 +18,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
+import { resolveStationId } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
 export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandler {
@@ -55,7 +56,10 @@ export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandle
       {
         where: {
           tenantId: message.context.tenantId,
-          ocppConnectionName: message.context.ocppConnectionName,
+          stationId: await resolveStationId(
+            message.context.tenantId,
+            message.context.ocppConnectionName,
+          ),
           action: OCPP_CallAction.CustomerInformation,
           payload: {
             requestId: requestId,
