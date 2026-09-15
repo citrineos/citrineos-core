@@ -50,6 +50,7 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
     vendorId: entity.vendorId,
     vendorErrorCode: entity.vendorErrorCode,
     termsAndConditionsUrl: entity.termsAndConditionsUrl,
+    tariffId: entity.tariffId,
     // Relations are not present on a flat DB row.
     tariff: undefined,
     evse: undefined,

@@ -77,6 +77,10 @@ import { CommandsApi } from '@/apis/commands-api.js';
 import { OcppMessageApi } from '@/apis/ocpp-message-api.js';
 import { WebPaymentApi } from '@/apis/web-payment-api.js';
 import { registerApiServices } from '@/apis/register.js';
+import {
+  CaliforniaPricingModule,
+  registerCaliforniaPricingServices,
+} from '@modules/california-pricing/index.js';
 import { CertificatesModule, registerCertificatesServices } from '@modules/certificates/index.js';
 import {
   ConfigurationModule,
@@ -174,6 +178,7 @@ export function buildContainer(config: SystemConfig, prebuilt: Prebuilt) {
 // ============================================================
 function registerModuleServices(container: AwilixContainer): void {
   registerApiServices(container);
+  registerCaliforniaPricingServices(container);
   registerCertificatesServices(container);
   registerConfigurationServices(container);
   registerEVDriverServices(container);
@@ -447,6 +452,7 @@ function registerNetwork(container: AwilixContainer): void {
 // ============================================================
 function registerModules(container: AwilixContainer): void {
   container.register({
+    californiaPricingModule: asClass(CaliforniaPricingModule).scoped(),
     certificatesModule: asClass(CertificatesModule).scoped(),
     configurationModule: asClass(ConfigurationModule).scoped(),
     evDriverModule: asClass(EVDriverModule).scoped(),
