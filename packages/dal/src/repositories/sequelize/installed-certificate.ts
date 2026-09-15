@@ -5,7 +5,6 @@
 import type {
   CertificateDto,
   CertificateUseEnumType,
-  HashAlgorithmEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
 } from '@citrineos/types';
@@ -18,8 +17,7 @@ type InstalledCertificateHashData = Pick<
   InstalledCertificateDto,
   'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
 >;
-type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
-  hashAlgorithm?: HashAlgorithmEnumType;
+type InstalledCertificateCreateInput = InstalledCertificateCreate & {
   certificateId?: number | null;
 };
 

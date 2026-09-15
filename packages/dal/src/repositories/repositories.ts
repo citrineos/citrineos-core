@@ -23,7 +23,6 @@ import type {
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
   EvseDto,
-  HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
   InstallCertificateAttemptDto,
   InstallCertificateStatusEnumType,
@@ -501,8 +500,7 @@ type InstalledCertificateHashData = Pick<
   InstalledCertificateDto,
   'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
 >;
-type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
-  hashAlgorithm?: HashAlgorithmEnumType;
+type InstalledCertificateCreateInput = InstalledCertificateCreate & {
   certificateId?: number | null;
 };
 

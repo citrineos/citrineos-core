@@ -57,7 +57,11 @@ export class ServerNetworkProfile
   @Column(DataType.BOOLEAN)
   declare allowUnknownChargingStations: boolean;
 
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
   declare dynamicTenantResolution: boolean;
 
   @Column(DataType.STRING)

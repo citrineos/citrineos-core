@@ -109,6 +109,7 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
 
   @Column({
     type: DataType.BOOLEAN,
+    allowNull: false,
     defaultValue: false,
   })
   declare isUserTenant: boolean;

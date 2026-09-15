@@ -10,9 +10,9 @@ export const InstalledCertificateSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   ocppConnectionName: z.string().max(36),
   hashAlgorithm: HashAlgorithmEnumSchema,
-  issuerNameHash: z.string().nullable().optional(),
-  issuerKeyHash: z.string().nullable().optional(),
-  serialNumber: z.string().nullable().optional(),
+  issuerNameHash: z.string(),
+  issuerKeyHash: z.string(),
+  serialNumber: z.string(),
   certificateType: CertificateUseEnumSchema,
 });
 

@@ -15,10 +15,10 @@ function installedCertificateColumns() {
     // FK to ChargingStation (resolved from ocppConnectionName in the domain layer).
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 36 }).notNull(),
-    hashAlgorithm: varchar('hashAlgorithm', { length: 255 }),
-    issuerNameHash: varchar('issuerNameHash', { length: 255 }),
-    issuerKeyHash: varchar('issuerKeyHash', { length: 255 }),
-    serialNumber: varchar('serialNumber', { length: 255 }),
+    hashAlgorithm: varchar('hashAlgorithm', { length: 255 }).notNull(),
+    issuerNameHash: varchar('issuerNameHash', { length: 255 }).notNull(),
+    issuerKeyHash: varchar('issuerKeyHash', { length: 255 }).notNull(),
+    serialNumber: varchar('serialNumber', { length: 255 }).notNull(),
     certificateType: varchar('certificateType', { length: 255 }).notNull(),
     // FK to Certificate.
     certificateId: integer('certificateId'),

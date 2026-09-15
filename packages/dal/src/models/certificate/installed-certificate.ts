@@ -44,27 +44,27 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
 
   @Column({
     type: DataType.STRING,
-    allowNull: true,
+    allowNull: false,
   })
   declare hashAlgorithm: HashAlgorithmEnumType;
 
   @Column({
     type: DataType.STRING,
-    allowNull: true,
+    allowNull: false,
   })
-  declare issuerNameHash?: string | null;
+  declare issuerNameHash: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: true,
+    allowNull: false,
   })
-  declare issuerKeyHash?: string | null;
+  declare issuerKeyHash: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: true,
+    allowNull: false,
   })
-  declare serialNumber?: string | null;
+  declare serialNumber: string;
 
   @Column({
     type: DataType.STRING,

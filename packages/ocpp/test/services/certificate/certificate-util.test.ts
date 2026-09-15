@@ -9,6 +9,7 @@ import {
   extractCertificateArrayFromEncodedString,
   extractCertificateDetails,
   extractEncodedContentFromCSR,
+  getCertificateHashData,
   parseCertificateChainPem,
   sendOCSPRequest,
 } from '@services/index.js';
@@ -110,6 +111,42 @@ describe('CertificateUtil', () => {
       const hex = createOcspRequest({ ...givenOcspRequestData, hashAlgorithm }).getEncodedHex();
 
       expect(parseOcspRequestHex(hex)[0].alg).toBe(hashAlgorithm.toLowerCase());
+    });
+  });
+
+  describe('getCertificateHashData', () => {
+    it('hashes a self-signed certificate against its own key', () => {
+      const givenRootCertPem = readFile('RootCertificateSample.pem');
+
+      const actualResult = getCertificateHashData(givenRootCertPem);
+
+      expect(actualResult).toEqual({
+        hashAlgorithm: 'SHA256',
+        issuerNameHash: '9111b7039ad923e5f68a6aaa3bac279ef1241d7a7d408c5aed836bb7763a61cb',
+        issuerKeyHash: 'b0a67b950d1104ad0ab0d8bfdd466c971bcc557faad2eacec3d6744259a3b407',
+        serialNumber: '1916c392c93',
+      });
+    });
+
+    it('hashes the first certificate of a chain against the key of the next', () => {
+      const givenCertChainPem = `${readFile('LeafCertificateSample.pem')}${readFile('SubCACertificateSample.pem')}`;
+
+      const actualResult = getCertificateHashData(givenCertChainPem);
+
+      expect(actualResult).toEqual({
+        hashAlgorithm: 'SHA256',
+        issuerNameHash: 'ee55de5909f09f71087d95dd9d616cc5f9dbf70803127b4beb055709ef854e16',
+        issuerKeyHash: '311dccc09d26b33d17b8ecd27063dd12a5436bc9012652c8344b1c8cded7bd0a',
+        serialNumber: '1916c392dce',
+      });
+    });
+
+    it('throws for a certificate that is neither self-signed nor followed by its issuer', () => {
+      const givenLeafCertPem = readFile('LeafCertificateSample.pem');
+
+      expect(() => getCertificateHashData(givenLeafCertPem)).toThrow(
+        'Cannot derive certificate hash data',
+      );
     });
   });
 

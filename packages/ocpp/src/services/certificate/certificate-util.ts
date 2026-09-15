@@ -7,7 +7,13 @@ import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@citrineos/dal';
-import type { CertificateCreate, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
+import {
+  HashAlgorithmEnum,
+  type CertificateCreate,
+  type InstalledCertificateCreate,
+  type OCPP2_0_1,
+  type OCPP2_1,
+} from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
@@ -17,6 +23,7 @@ import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
+import ASN1HEX = jsrsasign.ASN1HEX;
 
 export const dateTimeFormat = 'YYMMDDHHmmssZ';
 
@@ -84,6 +91,31 @@ export function isSignedBy(certPem: string, issuerCertPem: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function getCertificateHashData(
+  certificateChainPem: string,
+): Pick<
+  InstalledCertificateCreate,
+  'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
+> {
+  const [subjectPem, issuerPem = subjectPem] = parseCertificateChainPem(certificateChainPem);
+  const issuerPublicKey =
+    subjectPem && isSignedBy(subjectPem, issuerPem)
+      ? ASN1HEX.getVbyList(new X509(issuerPem).getPublicKeyHex(), 0, [1], '03', true)
+      : null;
+  if (issuerPublicKey === null) {
+    throw new Error(
+      'Cannot derive certificate hash data: the certificate must be self-signed or followed by its issuer',
+    );
+  }
+  const subject = new X509(subjectPem);
+  return {
+    hashAlgorithm: HashAlgorithmEnum.SHA256,
+    issuerNameHash: KJUR.crypto.Util.hashHex(subject.getIssuerHex(), 'sha256'),
+    issuerKeyHash: KJUR.crypto.Util.hashHex(issuerPublicKey, 'sha256'),
+    serialNumber: subject.getSerialNumberHex().replace(/^0+(?=.)/, ''),
+  };
 }
 
 /**
