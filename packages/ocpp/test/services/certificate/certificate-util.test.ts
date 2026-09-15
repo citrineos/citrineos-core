@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { faker } from '@faker-js/faker';
 import {
   createOcspRequest,
   createPemBlock,
@@ -16,9 +15,12 @@ import { OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { readFile } from '../../utils/file-util.js';
 import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
-import { describe, expect, it, type Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
+
+const sendToPublicOcspResponder = vi.hoisted(() => vi.fn());
+vi.mock('@/services/certificate/ocsp-responder-url.js', () => ({ sendToPublicOcspResponder }));
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
@@ -114,8 +116,6 @@ describe('CertificateUtil', () => {
   });
 
   describe('sendOCSPRequest', () => {
-    global.fetch = vi.fn();
-
     const issuerCertPem = readFile('SubCACertificateSample.pem');
     const subjectCertPem = readFile('LeafCertificateSample.pem');
     const givenRequest = new OCSPRequest({
@@ -126,42 +126,44 @@ describe('CertificateUtil', () => {
         },
       ],
     });
-    const givenResponderURL = faker.internet.url();
+    const givenResponderURL = 'https://ocsp.example.com/ocsp';
+
+    beforeEach(() => {
+      sendToPublicOcspResponder.mockReset();
+    });
 
     it('success', async () => {
-      const responderDer = Uint8Array.from([0x30, 0x03, 0x0a, 0x01, 0x00, 0x80, 0x81]);
-      (fetch as Mock).mockReturnValueOnce(
-        Promise.resolve({
-          ok: true,
-          arrayBuffer: () => Promise.resolve(responderDer.buffer),
-        }),
-      );
+      const responderDer = Buffer.from([0x30, 0x03, 0x0a, 0x01, 0x00, 0x80, 0x81]);
+      sendToPublicOcspResponder.mockResolvedValueOnce({ status: 200, body: responderDer });
 
       const actualResult = await sendOCSPRequest(givenRequest, givenResponderURL);
 
-      expect(actualResult).toBe(Buffer.from(responderDer).toString('hex'));
-      const expectedInit: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/ocsp-request',
-          Accept: 'application/ocsp-response',
-        },
-        body: Uint8Array.from(Buffer.from(givenRequest.getEncodedHex(), 'hex')),
-      };
-      expect(fetch).toHaveBeenCalledWith(givenResponderURL, expectedInit);
+      expect(actualResult).toBe(responderDer.toString('hex'));
+      expect(sendToPublicOcspResponder).toHaveBeenCalledWith(
+        givenResponderURL,
+        Buffer.from(givenRequest.getEncodedHex(), 'hex'),
+        expect.any(Number),
+      );
     });
 
     it('fails due to internal server error', async () => {
-      (fetch as Mock).mockReturnValueOnce(
-        Promise.resolve({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve('Internal Server Error'),
-        }),
-      );
+      sendToPublicOcspResponder.mockResolvedValueOnce({
+        status: 500,
+        body: Buffer.from('Internal Server Error'),
+      });
 
       await expect(() => sendOCSPRequest(givenRequest, givenResponderURL)).rejects.toThrow(
         `Failed to fetch OCSP response from ${givenResponderURL}: 500 with error: Internal Server Error`,
+      );
+    });
+
+    it('propagates a refusal from the responder check', async () => {
+      sendToPublicOcspResponder.mockRejectedValueOnce(
+        new Error('Refusing OCSP responder URL on a private address: http://169.254.169.254/'),
+      );
+
+      await expect(() => sendOCSPRequest(givenRequest, 'http://169.254.169.254/')).rejects.toThrow(
+        /private address/,
       );
     });
   });
