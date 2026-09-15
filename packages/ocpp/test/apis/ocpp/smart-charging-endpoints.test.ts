@@ -315,11 +315,17 @@ describe('smartCharging message endpoints', () => {
     let readAllByQuerystring: ReturnType<typeof vi.fn>;
     let createOrUpdateChargingProfile: ReturnType<typeof vi.fn>;
     let readAllByQuery: ReturnType<typeof vi.fn>;
+    let existByQuery: ReturnType<typeof vi.fn>;
+    let readTransactionByStationIdAndTransactionId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       readAllByQuerystring = vi.fn().mockResolvedValue([]);
       createOrUpdateChargingProfile = vi.fn().mockResolvedValue({ id: 1 });
       readAllByQuery = vi.fn().mockResolvedValue([]);
+      existByQuery = vi.fn().mockResolvedValue(0);
+      readTransactionByStationIdAndTransactionId = vi
+        .fn()
+        .mockResolvedValue({ id: 42, transactionId: 'tx-001', evseId: null });
     });
 
     const build = () =>
@@ -331,8 +337,8 @@ describe('smartCharging message endpoints', () => {
             .fn()
             .mockResolvedValue(undefined),
         },
-        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery },
-        transactionEventRepository: {},
+        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery, existByQuery },
+        transactionEventRepository: { readTransactionByStationIdAndTransactionId },
       });
 
     const aProfile = (
@@ -527,6 +533,41 @@ describe('smartCharging message endpoints', () => {
 
       expect(confirmations[0].success).toBe(true);
       expect(sendCall).toHaveBeenCalled();
+    });
+
+    describe('for a TxProfile', () => {
+      const aTxProfile = (id: number): OCPP2_0_1.SetChargingProfileRequest => ({
+        ...aProfile({
+          id,
+          chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+          transactionId: 'tx-001',
+        }),
+        evseId: 1,
+      });
+
+      const withStoredTxProfiles = (profiles: { id: number }[]) => {
+        existByQuery.mockResolvedValue(profiles.length);
+        readAllByQuery.mockResolvedValue(profiles);
+      };
+
+      it('sends an update to the TxProfile already stored under the same id', async () => {
+        withStoredTxProfiles([{ id: 10 }]);
+
+        const confirmations = await handle(aTxProfile(10));
+
+        expect(confirmations[0].success).toBe(true);
+        expect(sendCall).toHaveBeenCalled();
+      });
+
+      it('refuses a second TxProfile at the same stack level for the transaction', async () => {
+        withStoredTxProfiles([{ id: 10 }]);
+
+        const confirmations = await handle(aTxProfile(11));
+
+        expect(confirmations[0].success).toBe(false);
+        expect(String(confirmations[0].payload)).toContain('already exists');
+        expect(sendCall).not.toHaveBeenCalled();
+      });
     });
   });
 });
