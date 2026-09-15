@@ -96,6 +96,7 @@ export class SequelizeChargingProfileRepository
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
         where: {
+          tenantId,
           ocppConnectionName: ocppConnectionName,
           transactionId: chargingProfile.transactionId,
         },
