@@ -179,4 +179,28 @@ describe('OIDCAuthProvider.authorizeUser', () => {
 
     expect(result.isAuthorized).toBe(true);
   });
+
+  it('compares a numeric tenant_id claim with the requested tenant as strings', async () => {
+    const provider = aProvider();
+    givenRequiredRoles(provider, { '2': ['user'] });
+    const token = aTokenSignedBy({
+      sub: 'user-1',
+      iss: ISSUER,
+      aud: AUDIENCE,
+      roles: ['user'],
+      tenant_id: 2,
+    });
+    const authentication = await provider.authenticateToken(token);
+    expect(authentication.user?.tenantId).toBe('2');
+
+    const result = await provider.authorizeUser(
+      authentication.user as UserInfo,
+      aRequest({
+        url: `${resetUrl}?identifier=CS-1&tenantId=2`,
+        query: { identifier: 'CS-1', tenantId: '2' },
+      }),
+    );
+
+    expect(result.isAuthorized).toBe(true);
+  });
 });
