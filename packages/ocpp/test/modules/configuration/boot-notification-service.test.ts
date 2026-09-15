@@ -1,9 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CacheNamespace, createIdentifier, DEFAULT_TENANT_ID, type ICache } from '@citrineos/base';
+import {
+  CacheNamespace,
+  createIdentifier,
+  DEFAULT_TENANT_ID,
+  type ICache,
+  MemoryCache,
+} from '@citrineos/base';
 import { Boot, type IBootRepository } from '@citrineos/dal';
-import { MemoryCache } from '@services/index.js';
 import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, type SystemConfig } from '@citrineos/types';
 import { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
