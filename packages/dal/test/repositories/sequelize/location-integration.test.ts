@@ -110,9 +110,6 @@ async function aCommissionedStation() {
   return { station, evse, connector1, connector2 };
 }
 
-// addStatusNotificationToChargingStation takes a plain DTO, not a built model:
-// it spreads the argument into StatusNotification.build(), which drops every
-// attribute of a model instance passed in its place.
 function aStatusNotification(
   connectorId: number,
   overrides: Partial<StatusNotificationDto> = {},
