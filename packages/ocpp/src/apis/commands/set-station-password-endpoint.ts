@@ -25,11 +25,11 @@ import {
   type OCPP2_response_types,
   type SystemConfig,
   type UpdateChargingStationPasswordRequest,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import type { UpdateChargingStationPasswordQueryString } from '@citrineos/dal';
 import { UpdateChargingStationPasswordQuerySchema } from '@citrineos/dal';
 import type { IChargingStationRepository } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
 import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { generatePassword, isValidPassword } from '@services/index.js';
 import { resolveStationProtocol } from '@util/index.js';
@@ -201,7 +201,7 @@ export class SetStationPasswordEndpoint extends AbstractEndpoint<SetStationPassw
     password: string,
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<VariableAttribute[]> {
+  ): Promise<VariableAttributeDto[]> {
     return this._deviceModelService.provisionVariableAttributes(
       tenantId,
       ocppConnectionName,

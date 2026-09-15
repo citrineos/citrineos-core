@@ -20,9 +20,9 @@ import {
   type IOCPPMessageRepository,
   SequelizeOCPPMessageRepository,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
+import { VariableAttribute } from '@dal/models/device-model/variable-attribute.js';
 import { SetVariablesResponseOcpp2Handler } from '@handlers/index.js';
 import {
   aSetVariableData,

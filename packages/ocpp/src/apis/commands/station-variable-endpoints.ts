@@ -7,11 +7,10 @@ import {
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type VariableAttributeDto } from '@citrineos/types';
 import type { VariableAttributeQuerystring } from '@citrineos/dal';
 import { VariableAttributeQuerySchema } from '@citrineos/dal';
 import type { IDeviceModelRepository } from '@citrineos/dal';
-import type { VariableAttribute } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface StationVariableEndpointDependencies extends AbstractEndpointDependencies {
@@ -36,7 +35,7 @@ export class GetStationVariablesEndpoint extends AbstractEndpoint<StationVariabl
     this._deviceModelRepository = deviceModelRepository;
   }
 
-  async handle(request: FastifyRequest<StationVariableRoute>): Promise<VariableAttribute[]> {
+  async handle(request: FastifyRequest<StationVariableRoute>): Promise<VariableAttributeDto[]> {
     return this._deviceModelRepository.readAllByQuerystring(request.query.tenantId, request.query);
   }
 }

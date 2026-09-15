@@ -47,6 +47,7 @@ import type {
   TariffDto,
   TenantDto,
   UpdateEnumType,
+  VariableAttributeDto,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/tariff.js';
@@ -124,26 +125,26 @@ export interface IDeviceModelRepository
     value: OCPP2_common_types.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateByGetVariablesResultAndStationId(
     tenantId: number,
     getVariablesResult: OCPP2_common_types.GetVariableResultType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateBySetVariablesDataAndStationId(
     tenantId: number,
     setVariablesData: OCPP2_common_types.SetVariableDataType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   updateResultByStationId(
     tenantId: number,
     result: OCPP2_common_types.SetVariableResultType,
     ocppConnectionName: string,
     isoTimestamp: string,
-    existingVariableAttribute?: VariableAttribute,
-  ): Promise<VariableAttribute | undefined>;
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined>;
   readAllSetVariableByStationId(
     tenantId: number,
     ocppConnectionName: string,
@@ -151,12 +152,12 @@ export interface IDeviceModelRepository
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number>;
   deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   findComponentAndVariable(
     tenantId: number,
     componentType: OCPP2_common_types.ComponentType,
