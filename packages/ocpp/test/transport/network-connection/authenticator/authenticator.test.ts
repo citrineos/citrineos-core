@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { describe, expect, it, vi } from 'vitest';
-import { Authenticator } from '@/transport/index.js';
+import { Authenticator, ClientCertificateFilter } from '@/transport/index.js';
 import { UpgradeAuthenticationError } from '@/transport/network-connection/authenticator/errors/authentication-error.js';
 import { aRequest, aTlsSocket } from '../../../providers/incoming-message-provider.js';
 import { anAuthenticationOptions } from '../../../providers/authentication-options-provider.js';
@@ -15,11 +15,18 @@ describe('Authenticator', () => {
   const connectedStationFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
   const networkProfileFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
   const basicAuthenticationFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
+  const chargingStationRepository = {
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(undefined),
+  };
+  const clientCertificateFilter = getTestInstance(container, ClientCertificateFilter, {
+    chargingStationRepository,
+  });
   const authenticator = getTestInstance(container, Authenticator, {
     unknownStationFilter,
     connectedStationFilter,
     networkProfileFilter,
     basicAuthenticationFilter,
+    clientCertificateFilter,
   });
   const securityProfile3 = anAuthenticationOptions({ securityProfile: 3 });
 
