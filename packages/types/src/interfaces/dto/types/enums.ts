@@ -353,7 +353,7 @@ export const LocationParkingEnumSchema = z.enum([
   'UndergroundGarage',
 ]);
 
-export const MessageFormatEnumSchema = z.enum(['ASCII', 'HTML', 'URI', 'UTF8']);
+export const MessageFormatEnumSchema = z.enum(['ASCII', 'HTML', 'URI', 'UTF8', 'QRCODE']);
 
 export const MonitorEnumSchema = z.enum([
   'UpperThreshold',
