@@ -31,7 +31,10 @@ vi.mock('typed-rest-client', () => ({
 
 vi.mock('uuid', () => ({ v4: () => 'fixed-uuid' }));
 
-import { BaseClientApi, MissingRequiredParamException } from '../../../src/transport/trigger/base-client-api.js';
+import {
+  BaseClientApi,
+  MissingRequiredParamException,
+} from '../../../src/transport/trigger/base-client-api.js';
 import { UnsuccessfulRequestException } from '../../../src/apis/exception/unsuccessful-request-exception.js';
 import { ModuleId } from '../../../src/types/module-id.js';
 import { InterfaceRole } from '../../../src/types/interface-role.js';
