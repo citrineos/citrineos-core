@@ -707,10 +707,33 @@ describe('InstallCertificateHelperService', () => {
 
       expect(service.getCertificateHash).toHaveBeenCalledWith(MOCK_CERTIFICATE);
       expect(mockFileStorageSaveFile).toHaveBeenCalledWith(
-        `Existing_Cert_123456.pem`,
+        `Existing_Cert_${mockHash}.pem`,
         Buffer.from(MOCK_CERTIFICATE),
       );
       expect(mockCertificateCreate).toHaveBeenCalled();
+    });
+
+    it('should save two certificates with the same serial number to different files', async () => {
+      mockFileStorageSaveFile.mockImplementation((key: string) => Promise.resolve(key));
+      mockCertificateCreate.mockResolvedValue({ id: 1 });
+      vi.spyOn(service, 'getCertificateHash').mockImplementation((pem: string) => `hash-${pem}`);
+
+      for (const certificate of ['CERT-A', 'CERT-B']) {
+        await service.createNewCertificate(
+          tenantId,
+          certificate,
+          null,
+          'Test Issuer',
+          'Test Org',
+          'localhost',
+          'US' as any,
+          new Date('2027-02-17'),
+          'SHA256withECDSA' as any,
+        );
+      }
+
+      const savedFileNames = mockFileStorageSaveFile.mock.calls.map(([fileName]) => fileName);
+      expect(new Set(savedFileNames).size).toBe(2);
     });
 
     it('should save certificate record with correct values', async () => {
