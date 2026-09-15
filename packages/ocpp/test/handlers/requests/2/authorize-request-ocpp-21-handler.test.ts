@@ -138,4 +138,68 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       expect(response.tariff).not.toHaveProperty('validFrom');
     });
   });
+
+  describe('contract certificate status', () => {
+    async function authorizeWithCertificate(
+      certificateStatus: OCPP2_1.AuthorizeCertificateStatusEnumType,
+      authorization?: object,
+    ) {
+      const { logger } = createTestContainer();
+      const ocppSender = makeMockOcppSender();
+      const handler = new AuthorizeRequestOcpp21Handler({
+        logger,
+        ocppSender,
+        certificateAuthorityService: {
+          validateCertificateChainPem: vi.fn().mockResolvedValue(certificateStatus),
+        } as unknown as CertificateAuthorityService,
+        authorizers: [],
+        authorizationRepository: {
+          readOnlyOneByQuerystring: vi.fn().mockResolvedValue(authorization),
+        } as unknown as IAuthorizationRepository,
+        deviceModelRepository: {
+          readAllByQuerystring: vi.fn().mockResolvedValue([]),
+        } as unknown as IDeviceModelRepository,
+        tariffRepository: {} as unknown as ITariffRepository,
+      });
+
+      await handler.handle(
+        makeMessage({ ...anAuthorizeRequest(), certificate: 'A_CONTRACT_CERTIFICATE_CHAIN' }),
+      );
+      return ocppSender.sendCallResultWithMessage.mock.calls[0][1] as OCPP2_1.AuthorizeResponse;
+    }
+
+    it('reports the token expired when the contract certificate has expired', async () => {
+      const response = await authorizeWithCertificate(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.CertificateExpired,
+      );
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.CertificateExpired,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Expired);
+    });
+
+    it('cancels the contract of an eMAID the CSMS does not know', async () => {
+      const response = await authorizeWithCertificate(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.Accepted,
+      );
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.ContractCancelled,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Unknown);
+    });
+
+    it('cancels the contract of a blocked eMAID', async () => {
+      const response = await authorizeWithCertificate(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.Accepted,
+        { idToken: 'TOKEN01', status: AuthorizationStatusEnum.Blocked },
+      );
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_1.AuthorizeCertificateStatusEnumType.ContractCancelled,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Blocked);
+    });
+  });
 });
