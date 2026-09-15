@@ -35,26 +35,26 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _chargingStationRepository: IChargingStationRepository;
-  protected _locationRepository: IConnectorRepository;
+  protected _connectorRepository: IConnectorRepository;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
     chargingStationRepository,
-    locationRepository,
+    connectorRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     chargingStationRepository: IChargingStationRepository;
-    locationRepository: IConnectorRepository;
+    connectorRepository: IConnectorRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._chargingStationRepository = chargingStationRepository;
-    this._locationRepository = locationRepository;
+    this._connectorRepository = connectorRepository;
   }
 
   async handle(
@@ -101,7 +101,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
       // Query default tariffs from Connectors
       // I09.FR.01 & I09.FR.02: Filter by evseId if requested
-      const connectors = await this._locationRepository.readConnectorsWithTariffsByStationId(
+      const connectors = await this._connectorRepository.readConnectorsWithTariffsByStationId(
         tenantId,
         ocppConnectionName,
         requestedEvseId > 0 ? requestedEvseId : undefined,

@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '@citrineos/base';
+import { childLogger, type ICache } from '@citrineos/base';
 import type { Sequelize } from '@citrineos/dal';
 import type { SchemaValidationReport } from '@/util/index.js';
 import { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@/transport/index.js';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 // https://datatracker.ietf.org/doc/html/draft-inadarei-api-health-check
 // 'warn' reports a degraded but serviceable condition; it does not fail readiness.
@@ -30,9 +29,7 @@ export class HealthCheckService {
     logger?: Logger<ILogObj>,
   ) {
     this._notReadyThresholdMs = notReadyThresholdSeconds * 1000;
-    this._logger = logger
-      ? logger.getSubLogger({ name: 'HealthCheckService' })
-      : new Logger<ILogObj>({ name: 'HealthCheckService' });
+    this._logger = childLogger(logger, 'HealthCheckService');
   }
 
   shutdown() {

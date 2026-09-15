@@ -10,9 +10,9 @@ import {
   MessagesEventSchema,
   type MessagesQueueSpec,
 } from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
 
 export type MessagesEventHandler = (event: MessagesEvent) => Promise<void>;
@@ -36,9 +36,7 @@ export class MessagesEventConsumer {
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     // ChannelManager recreates channels after a reconnect but not consumers — the tags it held
     // referenced a dead channel. Re-subscribe from scratch.

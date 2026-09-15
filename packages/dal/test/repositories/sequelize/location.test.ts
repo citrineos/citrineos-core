@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ConnectorDto, SystemConfig } from '@citrineos/types';
+import { ChargingStation } from '@dal/models/location/charging-station.js';
 import { Connector } from '@dal/models/location/connector.js';
 import { Evse } from '@dal/models/location/evse.js';
 import { Tariff } from '@dal/models/tariff/tariffs.js';
@@ -146,6 +147,7 @@ describe('SequelizeLocationRepository', () => {
       }) as ConnectorDto & { evseTypeConnectorId: number };
 
     const stubUpsert = (created: boolean) => {
+      vi.spyOn(ChargingStation, 'findOne').mockResolvedValue({ id: 7 } as never);
       const saved = { id: 42 } as unknown as Connector;
       const readOrCreateByQuery = vi
         .spyOn(repository.connector, 'readOrCreateByQuery')

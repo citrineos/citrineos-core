@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { LocalStorage } from '@/config/index.js';
-import type { IFileStorage } from '@citrineos/base';
+import { childLogger, type IFileStorage } from '@citrineos/base';
 import type { WebsocketServerConfig } from '@citrineos/types';
 import * as https from 'https';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class TlsCredentialManager {
   private _credentialsPromise: Promise<{ key: Buffer; cert: Buffer; ca?: Buffer }>;
@@ -17,9 +16,7 @@ export class TlsCredentialManager {
   constructor(config: WebsocketServerConfig, fileStorage: IFileStorage, logger?: Logger<ILogObj>) {
     this.config = config;
     this._fileStorage = fileStorage;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
     this._credentialsPromise = this._readFromStorage();
   }
 

@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import {
-  type IApiAuthProvider,
-  type UserInfo,
   ApiAuthenticationResult,
   ApiAuthorizationResult,
+  childLogger,
+  type IApiAuthProvider,
+  type UserInfo,
 } from '@citrineos/base';
 
 /**
@@ -25,9 +25,7 @@ export class LocalBypassAuthProvider implements IApiAuthProvider {
    * @param logger Optional logger instance
    */
   constructor(logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._logger.warn(
       '⚠️ WARNING: Using LocalBypassAuthProvider - This should only be used in development environments',

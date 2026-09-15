@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { serializeError } from '@base-util/errors.js';
 import { createIdentifier } from '@base-util/identifiers.js';
+import { childLogger, loggerDefaults } from '@base-util/logging.js';
 import { RequestBuilder } from '@base-util/request.js';
 import {
   ErrorCode,
@@ -27,7 +28,7 @@ import {
 } from '@interfaces/messages/index.js';
 import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
 import { OcppError } from '@ocpp/rpc/message.js';
-import { type ILogObj, Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -56,10 +57,10 @@ export class OcppSender implements IOcppSender {
     logger?: Logger<ILogObj>;
     ocppValidator?: OCPPValidator;
   }) {
+    this._config = config;
     this._logger = this._initLogger(logger);
     this._ocppValidator = ocppValidator ? ocppValidator : new OCPPValidator(logger);
     this._logger.info('Initializing OcppSender...');
-    this._config = config;
     this._sender = sender;
     this._cache = cache;
   }
@@ -226,6 +227,7 @@ export class OcppSender implements IOcppSender {
     }
 
     message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
   }
 
@@ -271,6 +273,7 @@ export class OcppSender implements IOcppSender {
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
     message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
   }
 
@@ -280,12 +283,9 @@ export class OcppSender implements IOcppSender {
    * @return {Logger<ILogObj>} The initialized logger.
    */
   protected _initLogger(baseLogger?: Logger<ILogObj>): Logger<ILogObj> {
-    return baseLogger
-      ? baseLogger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({
-          name: this.constructor.name,
-          minLevel: this._config.logLevel,
-          hideLogPositionForProduction: this._config.env === 'production',
-        });
+    return childLogger(baseLogger, this.constructor.name, () => ({
+      ...loggerDefaults(this._config.env),
+      minLevel: this._config.logLevel,
+    }));
   }
 }
