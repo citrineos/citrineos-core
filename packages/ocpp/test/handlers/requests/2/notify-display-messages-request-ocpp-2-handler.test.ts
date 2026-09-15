@@ -7,6 +7,7 @@ import {
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
+  OCPP2_1,
   OCPP_CallAction,
   type OCPP2_request_types,
   type OcppRequest,
@@ -102,5 +103,41 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
 
     expect(ocppSender.sendCallErrorWithMessage).toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
+  });
+
+  it('stores a 2.1 QRCODE message and acknowledges', async () => {
+    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+    const qrCodeMessage: OCPP2_1.MessageInfoType = {
+      id: 7,
+      priority: OCPP2_1.MessagePriorityEnumType.NormalCycle,
+      message: {
+        format: OCPP2_1.MessageFormatEnumType.QRCODE,
+        content: 'https://pay.example.com/station-001',
+      },
+    };
+
+    await handler.handle(
+      aNotifyDisplayMessagesMessage({ requestId: REQUEST_ID, messageInfo: [qrCodeMessage] }),
+    );
+
+    expect(messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      qrCodeMessage,
+      STATION_ID,
+      undefined,
+    );
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
+    expect(ocppSender.sendCallErrorWithMessage).not.toHaveBeenCalled();
+  });
+
+  it('acknowledges a report that carries no messageInfo', async () => {
+    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+
+    await handler.handle(aNotifyDisplayMessagesMessage({ requestId: REQUEST_ID }));
+
+    expect(
+      messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId,
+    ).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
   });
 });
