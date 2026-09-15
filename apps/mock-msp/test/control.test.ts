@@ -10,8 +10,8 @@
 // ============================================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { ModuleId } from '@citrineos/ocpi-base';
 import type { MockContext } from '../src/core/types.js';
+import { ModuleId } from '../src/ocpi/barrel.js';
 import { makeServer, functionalHeaders, validSession } from './harness.js';
 
 const tick = (ms = 50): Promise<void> => new Promise((r) => setTimeout(r, ms));
