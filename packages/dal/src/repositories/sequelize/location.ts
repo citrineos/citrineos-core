@@ -154,7 +154,19 @@ export class SequelizeLocationRepository
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
+      StatusNotification.build({
+        tenantId,
+        stationId,
+        ocppConnectionName,
+        timestamp: statusNotification.timestamp,
+        connectorStatus: statusNotification.connectorStatus,
+        evseId: statusNotification.evseId,
+        connectorId: statusNotification.connectorId,
+        errorCode: statusNotification.errorCode,
+        info: statusNotification.info,
+        vendorId: statusNotification.vendorId,
+        vendorErrorCode: statusNotification.vendorErrorCode,
+      }),
     );
     try {
       await this.updateLatestStatusNotification(
