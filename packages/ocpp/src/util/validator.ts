@@ -703,7 +703,7 @@ export function validateMessageContent(
           'UTF8 format requires valid UTF-8 encoded content without unpaired surrogate characters',
       };
 
-    case OCPP2_1.MessageFormatEnumType.QRCODE:
+    case MessageFormatEnum.QRCODE:
       if (content) {
         return { isValid: true };
       }
