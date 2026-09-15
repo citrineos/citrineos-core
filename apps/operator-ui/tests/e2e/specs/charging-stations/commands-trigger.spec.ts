@@ -14,7 +14,7 @@ test.describe('charging-stations › TriggerMessage command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/trigger message/i);
     const modal = new ModalHarness(page, /trigger message/i);
@@ -32,7 +32,7 @@ test.describe('charging-stations › TriggerMessage command', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/trigger message/i);
     const modal = new ModalHarness(page, /trigger message/i);

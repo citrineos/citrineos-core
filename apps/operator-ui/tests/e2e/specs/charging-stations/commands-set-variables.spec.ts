@@ -14,7 +14,7 @@ test.describe('charging-stations › SetVariables command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const modal = new ModalHarness(page, /set variables/i);
@@ -34,7 +34,7 @@ test.describe('charging-stations › SetVariables command', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const modal = new ModalHarness(page, /set variables/i);
