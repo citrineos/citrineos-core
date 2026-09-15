@@ -23,8 +23,8 @@ export interface RealTimeAuthorizationRequestBody {
   idTokenType: IdTokenEnumType;
   locationId?: string;
   ocppConnectionName: string;
-  evseId: number;
-  connectorId: number;
+  evseId?: number;
+  connectorId?: number;
 }
 
 export interface RealTimeAuthorizationResponse {
@@ -113,10 +113,9 @@ export class RealTimeAuthorizer implements IAuthorizer {
       }
 
       if (evseId === undefined || connectorId === undefined) {
-        this._logger.error(
+        this._logger.debug(
           `Cannot determine evseId and connectorId for Realtime Auth of authorization ${authorization.id}`,
         );
-        return authorization.status;
       } else if (authorization.realTimeAuthLastAttempt) {
         const realTimeAuthLastAttempt = authorization.realTimeAuthLastAttempt;
         // Check if last attempt was at the same station and connector within the timeout period
@@ -214,7 +213,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       result,
       ocppConnectionName: context.ocppConnectionName,
       evseId: evseId,
-      connectorId: connectorId!,
+      connectorId: connectorId,
     };
 
     try {
