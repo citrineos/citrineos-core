@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { createHash } from 'node:crypto';
 import {
   type IDeviceModelRepository,
   type ITransactionEventRepository,
@@ -177,11 +178,11 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
         if (receiptByCSMS) {
           const receiptBaseUrl = this._config.transactions.receiptBaseUrl;
           if (receiptBaseUrl) {
-            const receiptId = request.transactionId
+            const receiptReference = request.transactionId
               ? `${ocppConnectionName}-${request.transactionId}-${request.pspRef}`
               : `${ocppConnectionName}-${request.pspRef}`;
-            response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptId)}`;
-            response.receiptId = receiptId;
+            response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptReference)}`;
+            response.receiptId = createHash('sha256').update(receiptReference).digest('base64url');
             this._logger.info(`ReceiptByCSMS is true, generated receiptUrl=${response.receiptUrl}`);
           } else {
             this._logger.warn(
