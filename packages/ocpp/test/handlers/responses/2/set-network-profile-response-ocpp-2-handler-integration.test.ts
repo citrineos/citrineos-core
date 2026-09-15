@@ -21,7 +21,7 @@ import {
   SequelizeTenantRepository,
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
-  SetNetworkProfile,
+  SequelizeSetNetworkProfileRepository,
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -45,6 +45,7 @@ let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
 let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
+let setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -91,6 +92,11 @@ beforeAll(async () => {
     logger: undefined,
     sequelizeInstance,
   } as never);
+  setNetworkProfileRepository = new SequelizeSetNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -117,9 +123,9 @@ function aResponse(
   } as unknown as IMessage<OCPP2_response_types.SetNetworkProfileResponse>;
 }
 
-async function aSetNetworkProfileRow(stationId: number, configurationSlot: number) {
-  return SetNetworkProfile.build({
-    stationId,
+async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {
+  return setNetworkProfileRepository.createPending({
+    ocppConnectionName,
     correlationId: CORRELATION_ID,
     configurationSlot,
     websocketServerConfigId: PROFILE_ID,
@@ -130,7 +136,7 @@ async function aSetNetworkProfileRow(stationId: number, configurationSlot: numbe
     securityProfile: 1,
     ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired0,
     tenantId: DEFAULT_TENANT_ID,
-  } as never).save();
+  } as never);
 }
 
 describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', () => {
@@ -180,6 +186,7 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
         logger: undefined,
         sequelizeInstance,
       } as never),
+      setNetworkProfileRepository,
       chargingStationRepository: new SequelizeLocationRepository({
         config,
         logger: undefined,
@@ -192,9 +199,11 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
     const stored = await ChargingStationNetworkProfile.findOne({
       where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
     });
-    const ownRow = await SetNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
-    });
+    const ownRow = await setNetworkProfileRepository.readByCorrelationId(
+      DEFAULT_TENANT_ID,
+      STATION_B,
+      CORRELATION_ID,
+    );
 
     expect(stored).not.toBeNull();
     expect(stored!.setNetworkProfileId).toBe(ownRow!.id);

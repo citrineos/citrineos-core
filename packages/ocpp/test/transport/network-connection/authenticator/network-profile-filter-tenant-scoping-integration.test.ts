@@ -12,7 +12,7 @@ import {
   SequelizeTenantRepository,
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
-  SetNetworkProfile,
+  SequelizeSetNetworkProfileRepository,
 } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
@@ -31,7 +31,6 @@ const TENANT_A = 1;
 const TENANT_B = 2;
 const STATION = 'CP001';
 const SHARED_PROFILE_ID = 'websocket-server-0';
-const SET_NETWORK_PROFILE_ID = 123;
 const CONFIGURATION_SLOT = 1;
 
 let pgContainer: StartedTestContainer;
@@ -40,6 +39,7 @@ let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
 let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
+let setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -83,6 +83,11 @@ beforeAll(async () => {
     sequelizeInstance,
   } as never);
   serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  setNetworkProfileRepository = new SequelizeSetNetworkProfileRepository({
     config,
     logger: undefined,
     sequelizeInstance,
@@ -154,9 +159,8 @@ describe('NetworkProfileFilter tenant scoping', () => {
     });
     stationId = (station as unknown as { id: number }).id;
 
-    await SetNetworkProfile.create({
-      id: SET_NETWORK_PROFILE_ID,
-      stationId,
+    const setNetworkProfile = await setNetworkProfileRepository.createPending({
+      ocppConnectionName: STATION,
       correlationId: 'any-correlation-id',
       configurationSlot: 1,
       ocppVersion: OCPP2_0_1.OCPPVersionEnumType.OCPP20,
@@ -174,7 +178,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
       tenantId: TENANT_A,
-      setNetworkProfileId: SET_NETWORK_PROFILE_ID,
+      setNetworkProfileId: setNetworkProfile.id!,
     } as never);
   });
 
