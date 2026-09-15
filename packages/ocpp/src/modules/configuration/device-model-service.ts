@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type VariableAttributeDto } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
@@ -28,7 +27,7 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageSetVariablesAttributes: VariableAttribute[] =
+    const itemsPerMessageSetVariablesAttributes: VariableAttributeDto[] =
       await this._deviceModelRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
@@ -62,7 +61,7 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageGetVariablesAttributes: VariableAttribute[] =
+    const itemsPerMessageGetVariablesAttributes: VariableAttributeDto[] =
       await this._deviceModelRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,

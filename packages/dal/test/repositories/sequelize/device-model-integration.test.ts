@@ -9,9 +9,9 @@ import {
   DefaultSequelizeInstance,
   SequelizeDeviceModelRepository,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
+import { VariableAttribute } from '../../../src/models/device-model/variable-attribute.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { aGetVariableResult } from '../../providers/monitoring.js';

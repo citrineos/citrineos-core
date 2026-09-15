@@ -20,7 +20,6 @@ export {
   Transaction,
   EvseType,
   Variable,
-  VariableAttribute,
   VariableStatus,
   CountryNameEnumType,
   LocalListAuthorization,

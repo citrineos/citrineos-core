@@ -10,6 +10,7 @@ import {
   OCPP2_1,
   type IdTokenEnumType,
   type OCPP2_common_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
@@ -17,7 +18,6 @@ import type {
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import type { ChargingNeeds, Transaction } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
@@ -117,7 +117,7 @@ export async function validateChargingProfileType(
     transactionContext = { transaction, chargingNeeds: receivedChargingNeeds };
   }
 
-  const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
+  const periodsPerSchedules: VariableAttributeDto[] = await deviceModelRepository.readAllByQuerystring(
     tenantId,
     {
       tenantId: tenantId,

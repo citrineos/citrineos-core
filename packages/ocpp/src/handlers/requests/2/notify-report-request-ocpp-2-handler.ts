@@ -23,7 +23,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { Component, type IDeviceModelRepository, Variable } from '@citrineos/dal';
+import { type IDeviceModelRepository } from '@citrineos/dal';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
@@ -86,10 +86,8 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
             timestamp,
           );
         for (const variableAttribute of variableAttributes) {
-          // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
-          await variableAttribute.reload({
-            include: [Component, Variable],
-          });
+          // createOrUpdateDeviceModelByStationId already returns the attribute with its
+          // component/variable hydrated, so no reload is needed.
           await this._deviceModelRepository.updateResultByStationId(
             tenantId,
             {
