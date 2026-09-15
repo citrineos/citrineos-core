@@ -47,6 +47,7 @@ dist
 
 # Server data
 /apps/ocpp-server/data
+/apps/ocpi-server/data
 
 # IntelliJ
 out/

@@ -16,12 +16,12 @@ import type { AuthMode, MockContext, OcpiRoute } from './types.js';
 
 const TOKEN_PREFIX = 'Token ';
 
-/** base64-encode a raw token exactly like ocpi-base `base64Encode`. */
+/** base64-encode a raw token exactly like ocpi `base64Encode`. */
 export function base64Encode(input: string): string {
   return Buffer.from(input, 'utf-8').toString('base64');
 }
 
-/** base64-decode a wire token exactly like ocpi-base `base64Decode` (lenient). */
+/** base64-decode a wire token exactly like ocpi `base64Decode` (lenient). */
 export function base64Decode(input: string): string {
   return Buffer.from(input, 'base64').toString('utf-8');
 }
@@ -43,7 +43,7 @@ export interface DecodedAuth {
 
 /**
  * Strip the `Token ` prefix and base64-decode the remainder. Mirrors
- * ocpi-base `extractToken`. base64 decoding in Node is lenient and will not
+ * ocpi `extractToken`. base64 decoding in Node is lenient and will not
  * throw for arbitrary input, so a garbage token simply fails the later
  * equality check rather than being flagged malformed here.
  */

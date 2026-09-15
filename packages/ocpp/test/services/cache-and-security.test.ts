@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { DEFAULT_TENANT_ID, type IFileStorage } from '@citrineos/base';
+import { DEFAULT_TENANT_ID, type IFileStorage, MemoryCache } from '@citrineos/base';
 import type { OCPP2_common_types, SystemConfig } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { MemoryCache } from '@services/cache/memory.js';
 import { generatePassword, isValidPassword } from '@services/security/authentication.js';
 import { SignedMeterValuesUtil } from '@services/security/signed-meter-values-util.js';
 import { generateKeyPairSync } from 'node:crypto';

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // The Actor pulling Citrine's SENDER endpoints: every list answers 2xx and
-// parses against the ocpi-base schemas, except where a documented defect is
+// parses against the @citrineos/ocpi schemas, except where a documented defect is
 // allowlisted.
 import { describe, expect, it } from 'vitest';
 import type { Exchange } from '../../src/core/types.js';
