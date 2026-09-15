@@ -107,6 +107,18 @@ export class MeterValueUtils {
         val = this.sumPhasedValues(mv.sampledValue, MeasurandEnum['Energy.Active.Import.Register']);
       }
       if (val !== null) {
+        // A charger that reboots (or otherwise opens a transaction) while still
+        // offline cannot read its cumulative Energy.Active.Import.Register yet, so
+        // it emits a Transaction.Begin placeholder of 0. Taken as the baseline it
+        // turns the next real reading (e.g. 909948 Wh) into the whole lifetime
+        // odometer of delivered energy — getMeterStart locks meterStart=0 and
+        // getTotalKwh returns last - 0. A cumulative register on a charger that has
+        // ever delivered energy is never genuinely 0 at Transaction.Begin, so skip
+        // this reading: the baseline then comes from the first real register that
+        // arrives once the charger is online (RemoteStart / periodic sampling).
+        if (val === 0 && mv.sampledValue[0]?.context === ReadingContextEnum['Transaction.Begin']) {
+          continue;
+        }
         valuesMap.set(ts, val);
       }
     }
