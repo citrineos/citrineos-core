@@ -314,6 +314,31 @@ describe('evDriver message endpoints', () => {
       expect(sendCall).not.toHaveBeenCalled();
     });
 
+    it('sends the charging profile without the transactionId it strips', async () => {
+      await handle(
+        aRequest({
+          chargingProfile: {
+            id: 1,
+            stackLevel: 0,
+            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
+            transactionId: 'tx-abc',
+            chargingSchedule: [
+              {
+                id: 1,
+                chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.W,
+                chargingSchedulePeriod: [{ startPeriod: 0, limit: 10 }],
+              },
+            ],
+          },
+        }),
+      );
+
+      expect(sendCall).toHaveBeenCalledOnce();
+      expect(sendCall.mock.calls[0][0].payload.chargingProfile).toMatchObject({ id: 1 });
+      expect(sendCall.mock.calls[0][0].payload.chargingProfile.transactionId).toBeUndefined();
+    });
+
     it('caches a 2.1 transaction limit before sending', async () => {
       await handle(
         aRequest({ customData: { vendorId: 'citrineos', transactionLimit: { maxCost: 10 } } }),
