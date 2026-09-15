@@ -21,7 +21,7 @@ import {
   SequelizeTenantRepository,
   type ITenantRepository,
   SequelizeServerNetworkProfileRepository,
-  SetNetworkProfile,
+  SequelizeSetNetworkProfileRepository,
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -45,6 +45,7 @@ let config: SystemConfig;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
 let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
+let setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -91,6 +92,11 @@ beforeAll(async () => {
     logger: undefined,
     sequelizeInstance,
   } as never);
+  setNetworkProfileRepository = new SequelizeSetNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -118,7 +124,7 @@ function aResponse(
 }
 
 async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {
-  return SetNetworkProfile.build({
+  return setNetworkProfileRepository.createPending({
     ocppConnectionName,
     correlationId: CORRELATION_ID,
     configurationSlot,
@@ -130,7 +136,7 @@ async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSl
     securityProfile: 1,
     ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired0,
     tenantId: DEFAULT_TENANT_ID,
-  } as never).save();
+  } as never);
 }
 
 describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', () => {
@@ -174,6 +180,7 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
         logger: undefined,
         sequelizeInstance,
       } as never),
+      setNetworkProfileRepository,
       chargingStationRepository: new SequelizeLocationRepository({
         config,
         logger: undefined,
@@ -186,9 +193,11 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
     const stored = await ChargingStationNetworkProfile.findOne({
       where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
     });
-    const ownRow = await SetNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
-    });
+    const ownRow = await setNetworkProfileRepository.readByCorrelationId(
+      DEFAULT_TENANT_ID,
+      STATION_B,
+      CORRELATION_ID,
+    );
 
     expect(stored).not.toBeNull();
     expect(stored!.setNetworkProfileId).toBe(ownRow!.id);

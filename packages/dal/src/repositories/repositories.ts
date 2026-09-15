@@ -730,6 +730,11 @@ export interface SetNetworkProfileCreateInput {
 
 export interface ISetNetworkProfileRepository {
   createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto>;
+  readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined>;
 }
 
 export interface IChangeConfigurationRepository {

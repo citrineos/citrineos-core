@@ -29,7 +29,6 @@ export {
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
-  SetNetworkProfile,
   StatusNotification,
   ChargingStationNetworkProfile,
   AsyncJobStatusDTO,
