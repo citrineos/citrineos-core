@@ -263,7 +263,7 @@ describe('CertificateAuthorityService', () => {
       const result = await certificateAuthorityService.validateCertificateChainPem(
         faker.lorem.sentence(),
       );
-      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable);
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
     });
 
     it('fails when no root certificates match', async () => {

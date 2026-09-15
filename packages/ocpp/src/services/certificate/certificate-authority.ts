@@ -178,7 +178,7 @@ export class CertificateAuthorityService {
     const certificatePems: string[] = parseCertificateChainPem(certificateChainPem);
     this._logger.debug(`Found ${certificatePems.length} certificates in chain.`);
     if (certificatePems.length < 1) {
-      return OCPP2_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable;
+      return OCPP2_1.AuthorizeCertificateStatusEnumType.CertChainError;
     }
 
     try {
