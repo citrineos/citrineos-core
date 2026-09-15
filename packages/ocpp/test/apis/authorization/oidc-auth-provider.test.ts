@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { generateKeyPairSync } from 'node:crypto';
+import type { FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import type { UserInfo } from '@citrineos/base';
 import { OIDCAuthProvider } from '@/apis/authorization/provider/oidc-auth-provider.js';
 
 const ISSUER = 'https://idp.example.test/realms/citrineos';
@@ -41,6 +43,27 @@ function aProvider() {
 
 function aTokenSignedBy(payload: Record<string, unknown>) {
   return jwt.sign(payload, privateKey, { algorithm: 'RS256', keyid: KID });
+}
+
+function aUser(tenantId: string, roles: string[] = ['user']): UserInfo {
+  return { id: 'user-1', name: 'user-1', email: '', roles, tenantId };
+}
+
+function aRequest(override: {
+  url: string;
+  method?: string;
+  query?: Record<string, string>;
+  body?: unknown;
+}): FastifyRequest {
+  return { method: 'POST', query: {}, ...override } as unknown as FastifyRequest;
+}
+
+function givenRequiredRoles(provider: OIDCAuthProvider, roles: Record<string, string[]>) {
+  const getRequiredRoles = vi.fn((tenantId: string) => roles[tenantId] ?? null);
+  (
+    provider as unknown as { _rulesLoader: { getRequiredRoles: typeof getRequiredRoles } }
+  )._rulesLoader.getRequiredRoles = getRequiredRoles;
+  return getRequiredRoles;
 }
 
 describe('OIDCAuthProvider.authenticateToken', () => {
@@ -93,5 +116,67 @@ describe('OIDCAuthProvider.authenticateToken', () => {
     const result = await aProvider().authenticateToken(token);
 
     expect(result.isAuthenticated).toBe(false);
+  });
+});
+
+describe('OIDCAuthProvider.authorizeUser', () => {
+  const resetUrl = '/ocpp/2.0.1/configuration/reset';
+
+  it('refuses a token for one tenant that names another tenant in the query', async () => {
+    const provider = aProvider();
+    givenRequiredRoles(provider, { '1': ['user'], '2': ['user'] });
+
+    const result = await provider.authorizeUser(
+      aUser('2'),
+      aRequest({
+        url: `${resetUrl}?identifier=CS-1&tenantId=1`,
+        query: { identifier: 'CS-1', tenantId: '1' },
+      }),
+    );
+
+    expect(result.isAuthorized).toBe(false);
+  });
+
+  it('looks up the rules of the token tenant when the request names no tenant', async () => {
+    const provider = aProvider();
+    const getRequiredRoles = givenRequiredRoles(provider, { '1': ['user'], '2': ['user'] });
+
+    await provider.authorizeUser(
+      aUser('2'),
+      aRequest({ url: `${resetUrl}?identifier=CS-1`, query: { identifier: 'CS-1' } }),
+    );
+
+    expect(getRequiredRoles).toHaveBeenCalledWith('2', `${resetUrl}?identifier=CS-1`, 'POST');
+  });
+
+  it('refuses a token for one tenant that names another tenant in the body', async () => {
+    const provider = aProvider();
+    givenRequiredRoles(provider, { '1': ['user'], '2': ['user'] });
+
+    const result = await provider.authorizeUser(
+      aUser('2'),
+      aRequest({
+        url: '/commands/installRootCertificate',
+        method: 'PUT',
+        body: { tenantId: 1, ocppConnectionName: 'CS-1' },
+      }),
+    );
+
+    expect(result.isAuthorized).toBe(false);
+  });
+
+  it('authorises a token whose tenant is the requested tenant', async () => {
+    const provider = aProvider();
+    givenRequiredRoles(provider, { '2': ['user'] });
+
+    const result = await provider.authorizeUser(
+      aUser('2'),
+      aRequest({
+        url: `${resetUrl}?identifier=CS-1&tenantId=2`,
+        query: { identifier: 'CS-1', tenantId: '2' },
+      }),
+    );
+
+    expect(result.isAuthorized).toBe(true);
   });
 });
