@@ -32,18 +32,16 @@ export function aVariableAttribute(
     ...override,
   } as VariableAttributeFixture;
 
-  variableAttribute.statuses =
-    override?.statuses?.map((status) => ({
-      ...(status as object),
+  variableAttribute.statuses = override?.statuses?.map((status) => ({
+    ...(status as object),
+    variable: variableAttribute,
+  })) ?? [
+    {
+      value: faker.string.alpha(),
+      status: 'Accepted',
       variable: variableAttribute,
-    })) ??
-    [
-      {
-        value: faker.string.alpha(),
-        status: 'Accepted',
-        variable: variableAttribute,
-      },
-    ];
+    },
+  ];
 
   return variableAttribute;
 }
