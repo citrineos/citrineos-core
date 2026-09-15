@@ -14,7 +14,7 @@ import { VariableAttribute } from '../../models/device-model/variable-attribute.
 import { VariableCharacteristics } from '../../models/device-model/variable-characteristics.js';
 import { VariableStatus } from '../../models/device-model/variable-status.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
+import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 
 // TODO: Document this
 
@@ -274,7 +274,7 @@ export class SequelizeDeviceModelRepository
           tenantId,
           VariableAttribute.build({
             tenantId,
-            stationId: await resolveStationId(tenantId, ocppConnectionName),
+            stationId: await stationIdFilter(tenantId, ocppConnectionName),
             variableId: defaultComponentVariable.id,
             componentId: component.id,
             evseDatabaseId: evse?.databaseId,
@@ -334,7 +334,7 @@ export class SequelizeDeviceModelRepository
         const [variableAttribute] = await this.readOrCreateByQuery(tenantId, {
           where: {
             tenantId,
-            stationId: await resolveStationId(tenantId, ocppConnectionName),
+            stationId: await stationIdFilter(tenantId, ocppConnectionName),
             variableId: variable.id,
             componentId: component.id,
             type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual,
@@ -411,7 +411,7 @@ export class SequelizeDeviceModelRepository
     if (!existingVariableAttribute) {
       existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [
@@ -473,7 +473,7 @@ export class SequelizeDeviceModelRepository
   ): Promise<OCPP2_0_1.SetVariableDataType[]> {
     const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         bootConfigSetId: { [Op.ne]: null },
       },
       include: [{ model: Component, include: [EvseType] }, Variable],
@@ -609,7 +609,7 @@ export class SequelizeDeviceModelRepository
       where: {
         ...(queryParams.ocppConnectionName
           ? {
-              stationId: await resolveStationId(
+              stationId: await stationIdFilter(
                 queryParams.tenantId,
                 queryParams.ocppConnectionName,
               ),

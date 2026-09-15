@@ -23,7 +23,7 @@ import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { MeterValue } from '../../models/transaction-event/meter-value.js';
-import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
+import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 import { StartTransaction } from '../../models/transaction-event/start-transaction.js';
 import { StopTransaction } from '../../models/transaction-event/stop-transaction.js';
 import { Transaction } from '../../models/transaction-event/transaction.js';
@@ -438,7 +438,7 @@ export class SequelizeTransactionEventRepository
     transactionId: string,
   ): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
-      where: { stationId: await resolveStationId(tenantId, ocppConnectionName), transactionId },
+      where: { stationId: await stationIdFilter(tenantId, ocppConnectionName), transactionId },
     });
   }
 
@@ -465,7 +465,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}),
         },
         include: includeObj,
@@ -570,7 +570,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<number[]> {
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         isActive: true,
       },
       include: [Evse],
@@ -594,7 +594,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           isActive: true,
         },
         include: [
@@ -857,7 +857,7 @@ export class SequelizeTransactionEventRepository
       where: {
         // unique constraint
         transactionId,
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     });
     return transactions.length > 0 ? transactions[0] : undefined;
@@ -875,7 +875,7 @@ export class SequelizeTransactionEventRepository
 
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         isActive: true,
         transactionId: { [Op.ne]: excludeTransactionId },
       },

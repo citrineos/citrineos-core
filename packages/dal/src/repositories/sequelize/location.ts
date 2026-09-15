@@ -27,7 +27,11 @@ import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
+import {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './resolve-station-id.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -152,16 +156,11 @@ export class SequelizeLocationRepository
     statusNotification: StatusNotificationDto,
   ): Promise<void> {
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
-    const values =
-      statusNotification instanceof StatusNotification
-        ? statusNotification.get({ plain: true })
-        : statusNotification;
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
       StatusNotification.build({
         tenantId,
         stationId,
-        ocppConnectionName,
         timestamp: statusNotification.timestamp,
         connectorStatus: statusNotification.connectorStatus,
         evseId: statusNotification.evseId,
@@ -465,7 +464,7 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           connectorId: ocpp16ConnectorId,
         },
         include: [Evse],
@@ -490,7 +489,7 @@ export class SequelizeLocationRepository
     return (
       (await Evse.findOne({
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           evseTypeId: ocpp201EvseId,
           tenantId,
         },
@@ -508,7 +507,7 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           evseTypeConnectorId: ocpp201EvseType.connectorId,
         },
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
@@ -524,7 +523,7 @@ export class SequelizeLocationRepository
     return await this.connector.readAllByQuery(tenantId, {
       where: {
         tenantId,
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         tariffId: { [Op.ne]: null },
       },
       include: [

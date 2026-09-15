@@ -7,7 +7,11 @@ import type { IBootRepository } from '../repositories.js';
 import { Boot } from '../../models/boot.js';
 import { VariableAttribute } from '../../models/device-model/variable-attribute.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
+import {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './resolve-station-id.js';
 
 export class SequelizeBootRepository extends SequelizeRepository<Boot> implements IBootRepository {
   variableAttributes: CrudRepository<VariableAttribute>;
@@ -124,7 +128,7 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
       { bootConfigId: null },
       {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
         },
       },
     );

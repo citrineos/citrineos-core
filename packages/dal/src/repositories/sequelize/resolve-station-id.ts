@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Transaction } from 'sequelize';
+import { Op, type Transaction } from 'sequelize';
 import { ChargingStation } from '../../models/location/charging-station.js';
 
 /**
@@ -40,4 +40,17 @@ export async function resolveStationIdOrThrow(
     );
   }
   return stationId;
+}
+
+/**
+ * Returns the resolved "stationId" for use in a `where` clause, or a condition matching
+ * no rows when the name resolves to no station in the tenant.
+ */
+export async function stationIdFilter(
+  tenantId: number,
+  ocppConnectionName: string | undefined | null,
+  transaction?: Transaction,
+): Promise<number | { [Op.in]: number[] }> {
+  const stationId = await resolveStationId(tenantId, ocppConnectionName, transaction);
+  return stationId ?? { [Op.in]: [] };
 }

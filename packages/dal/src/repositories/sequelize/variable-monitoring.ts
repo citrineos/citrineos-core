@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
+import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 import { Component } from '../../models/device-model/component.js';
 import { EventData } from '../../models/variable-monitoring/event-data.js';
 import { Variable } from '../../models/device-model/variable.js';
@@ -175,7 +175,7 @@ export class SequelizeVariableMonitoringRepository
   ): Promise<void> {
     await this.readAllByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -198,7 +198,7 @@ export class SequelizeVariableMonitoringRepository
     await this.readAllByQuery(tenantId, {
       where: {
         id,
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -220,7 +220,7 @@ export class SequelizeVariableMonitoringRepository
     const savedVariableMonitoring = await super
       .readAllByQuery(tenantId, {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           type: result.type,
           severity: result.severity,
         },
