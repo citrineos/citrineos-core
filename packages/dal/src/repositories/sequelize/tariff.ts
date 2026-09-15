@@ -63,7 +63,8 @@ export class SequelizeTariffRepository
           })
         : undefined;
       if (savedTariff) {
-        const updatedTariff = await savedTariff.set(model.data).save({ transaction });
+        const { pricePerKwh: _pricePerKwh, ...tariffTypeData } = tariff;
+        const updatedTariff = await savedTariff.set(tariffTypeData).save({ transaction });
         this.emit('updated', [updatedTariff]);
         return updatedTariff;
       }
