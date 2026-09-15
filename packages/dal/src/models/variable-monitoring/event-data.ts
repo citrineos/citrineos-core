@@ -19,7 +19,6 @@ import {
   Column,
   DataType,
   ForeignKey,
-  Index,
   Model,
   Table,
 } from 'sequelize-typescript';
@@ -27,7 +26,14 @@ import { Component, Variable } from '../device-model/index.js';
 import { ChargingStation } from '../location/index.js';
 import { Tenant } from '../tenant.js';
 
-@Table
+@Table({
+  indexes: [
+    {
+      fields: ['ocppConnectionName', 'tenantId', 'eventId'],
+      name: 'event_data_stationName_tenantId_eventId',
+    },
+  ],
+})
 export class EventData extends Model implements EventDataDto {
   static readonly MODEL_NAME: string = OCPP2_Namespace.EventDataType;
 
@@ -39,7 +45,6 @@ export class EventData extends Model implements EventDataDto {
   @Column(DataType.INTEGER)
   declare stationId?: number;
 
-  @Index
   @Column(DataType.STRING)
   declare ocppConnectionName: string;
 
