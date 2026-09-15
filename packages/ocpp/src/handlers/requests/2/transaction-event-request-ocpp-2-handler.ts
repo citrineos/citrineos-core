@@ -115,17 +115,18 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
 
     const transactionEvent = message.payload;
     const transactionId = transactionEvent.transactionInfo.transactionId;
-    let response: OCPP2_response_types.TransactionEventResponse | undefined = undefined;
+    let authorizationResponse: OCPP2_response_types.TransactionEventResponse | undefined =
+      undefined;
     let transaction: Transaction | undefined = undefined;
     if (transactionEvent.idToken) {
       if (isOcpp21) {
-        response = await this._transactionService.authorizeOcpp21IdToken(
+        authorizationResponse = await this._transactionService.authorizeOcpp21IdToken(
           tenantId,
           transactionEvent,
           message.context,
         );
       } else {
-        response = await this._transactionService.authorizeOcpp201IdToken(
+        authorizationResponse = await this._transactionService.authorizeOcpp201IdToken(
           tenantId,
           transactionEvent,
           message.context,
@@ -133,7 +134,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
 
       recordAuthorizeResult({
-        status: response.idTokenInfo?.status,
+        status: authorizationResponse.idTokenInfo?.status,
         ocppVersion: String(message.protocol),
         action: 'TransactionEvent',
       });
@@ -149,7 +150,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         this._logger.warn(
           `Received ${transactionEvent.eventType} for already-ended transaction ${transactionId} on ${ocppConnectionName}. Ignoring.`,
         );
-        await this._ocppSender.sendCallResultWithMessage(message, response ?? {});
+        await this._ocppSender.sendCallResultWithMessage(message, authorizationResponse ?? {});
         return;
       }
     }
@@ -190,472 +191,432 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       transactionEvent,
     );
 
-    if (response) {
-      // F07: Remote start with fixed cost, energy, SoC or time
-      // When TransactionEvent(Started) arrives with remoteStartId, check cache for stored transactionLimit
-      if (
-        transactionEvent.eventType === TransactionEventEnum.Started &&
-        transactionEvent.transactionInfo.remoteStartId &&
-        isOcpp21
-      ) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
-        const remoteStartId = transactionEvent.transactionInfo.remoteStartId;
+    // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
+    const response: OCPP2_response_types.TransactionEventResponse = authorizationResponse ?? {};
 
+    // F07: Remote start with fixed cost, energy, SoC or time
+    // When TransactionEvent(Started) arrives with remoteStartId, check cache for stored transactionLimit
+    if (
+      transactionEvent.eventType === TransactionEventEnum.Started &&
+      transactionEvent.transactionInfo.remoteStartId &&
+      isOcpp21
+    ) {
+      const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+      const remoteStartId = transactionEvent.transactionInfo.remoteStartId;
+
+      try {
+        const cacheKey = `remotestart:${tenantId}:${ocppConnectionName}:${remoteStartId}`;
+        const cachedLimitStr = await this._cache.get<string>(cacheKey, CacheNamespace.Other);
+
+        if (cachedLimitStr) {
+          const remoteStartLimit: OCPP2_1.TransactionLimitType = JSON.parse(cachedLimitStr);
+
+          // F07.FR.02: Set transactionLimit in response
+          if (
+            remoteStartLimit.maxCost != null ||
+            remoteStartLimit.maxEnergy != null ||
+            remoteStartLimit.maxTime != null ||
+            remoteStartLimit.maxSoC != null
+          ) {
+            ocpp21Response.transactionLimit = {};
+            if (remoteStartLimit.maxCost != null) {
+              ocpp21Response.transactionLimit.maxCost = remoteStartLimit.maxCost;
+            }
+            if (remoteStartLimit.maxEnergy != null) {
+              ocpp21Response.transactionLimit.maxEnergy = remoteStartLimit.maxEnergy;
+            }
+            if (remoteStartLimit.maxTime != null) {
+              ocpp21Response.transactionLimit.maxTime = remoteStartLimit.maxTime;
+            }
+            if (remoteStartLimit.maxSoC != null) {
+              ocpp21Response.transactionLimit.maxSoC = remoteStartLimit.maxSoC;
+            }
+
+            // Clear the cache entry - limit is consumed on first transaction start
+            await this._cache.remove(cacheKey, CacheNamespace.Other);
+
+            this._logger.info(
+              `Set transactionLimit from RequestStartTransaction for station ${ocppConnectionName}, ` +
+                `remoteStartId=${remoteStartId}, transaction ${transactionId}: ` +
+                `maxCost=${remoteStartLimit.maxCost}, maxEnergy=${remoteStartLimit.maxEnergy}, ` +
+                `maxTime=${remoteStartLimit.maxTime}, maxSoC=${remoteStartLimit.maxSoC}`,
+            );
+          }
+        }
+      } catch (error) {
+        this._logger.error(
+          `Failed to read remote start transaction limit from cache for remoteStartId ${remoteStartId}`,
+          error,
+        );
+      }
+    }
+
+    // Include transactionLimit in TransactionEventResponse when setting/changing a limit.
+    if (isOcpp21 && transaction) {
+      const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+      const stationTransactionLimit = (
+        message.payload as unknown as OCPP2_1.TransactionEventRequest
+      ).transactionInfo?.transactionLimit;
+
+      this.syncTransactionLimitToResponse(
+        ocpp21Response,
+        transaction,
+        stationTransactionLimit,
+        ocppConnectionName,
+        transactionId,
+      );
+    }
+
+    // For DirectPayment tokens on Started events, include transactionLimit.
+    // C25: First check cache for QR web payment limits (maxCost/maxTime/maxEnergy from QR URL).
+    // Fall back to PaymentCtrlr.AuthorizationAmount from the device model if no QR limits found.
+    if (
+      transactionEvent.eventType === TransactionEventEnum.Started &&
+      response.idTokenInfo?.status === AuthorizationStatusEnum.Accepted &&
+      isOcpp21 &&
+      transactionEvent.idToken?.type === OCPP2_1.IdTokenEnumType.DirectPayment
+    ) {
+      const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+
+      // C25.FR.03-06: Check cache for QR payment limits set by initiateWebPayment endpoint
+      if (!ocpp21Response.transactionLimit && transactionEvent.evse?.id != null) {
         try {
-          const cacheKey = `remotestart:${tenantId}:${ocppConnectionName}:${remoteStartId}`;
-          const cachedLimitStr = await this._cache.get<string>(cacheKey, CacheNamespace.Other);
-
-          if (cachedLimitStr) {
-            const remoteStartLimit: OCPP2_1.TransactionLimitType = JSON.parse(cachedLimitStr);
-
-            // F07.FR.02: Set transactionLimit in response
+          const cacheKey = `webpayment:${tenantId}:${ocppConnectionName}:${transactionEvent.evse.id}`;
+          const cachedLimitsStr = await this._cache.get<string>(cacheKey, CacheNamespace.Other);
+          if (cachedLimitsStr) {
+            const qrLimits: { maxCost?: number; maxTime?: number; maxEnergy?: number } =
+              JSON.parse(cachedLimitsStr);
             if (
-              remoteStartLimit.maxCost != null ||
-              remoteStartLimit.maxEnergy != null ||
-              remoteStartLimit.maxTime != null ||
-              remoteStartLimit.maxSoC != null
+              qrLimits.maxCost != null ||
+              qrLimits.maxTime != null ||
+              qrLimits.maxEnergy != null
             ) {
               ocpp21Response.transactionLimit = {};
-              if (remoteStartLimit.maxCost != null) {
-                ocpp21Response.transactionLimit.maxCost = remoteStartLimit.maxCost;
+              if (qrLimits.maxCost != null) {
+                ocpp21Response.transactionLimit.maxCost = qrLimits.maxCost;
               }
-              if (remoteStartLimit.maxEnergy != null) {
-                ocpp21Response.transactionLimit.maxEnergy = remoteStartLimit.maxEnergy;
+              if (qrLimits.maxTime != null) {
+                ocpp21Response.transactionLimit.maxTime = qrLimits.maxTime;
               }
-              if (remoteStartLimit.maxTime != null) {
-                ocpp21Response.transactionLimit.maxTime = remoteStartLimit.maxTime;
+              if (qrLimits.maxEnergy != null) {
+                ocpp21Response.transactionLimit.maxEnergy = qrLimits.maxEnergy;
               }
-              if (remoteStartLimit.maxSoC != null) {
-                ocpp21Response.transactionLimit.maxSoC = remoteStartLimit.maxSoC;
-              }
-
-              // Clear the cache entry - limit is consumed on first transaction start
               await this._cache.remove(cacheKey, CacheNamespace.Other);
-
               this._logger.info(
-                `Set transactionLimit from RequestStartTransaction for station ${ocppConnectionName}, ` +
-                  `remoteStartId=${remoteStartId}, transaction ${transactionId}: ` +
-                  `maxCost=${remoteStartLimit.maxCost}, maxEnergy=${remoteStartLimit.maxEnergy}, ` +
-                  `maxTime=${remoteStartLimit.maxTime}, maxSoC=${remoteStartLimit.maxSoC}`,
+                `Set transactionLimit from QR payment session for station ${ocppConnectionName}, ` +
+                  `evseId=${transactionEvent.evse.id}, transaction ${transactionId}: ` +
+                  `maxCost=${qrLimits.maxCost}, maxTime=${qrLimits.maxTime}, ` +
+                  `maxEnergy=${qrLimits.maxEnergy}`,
+              );
+            }
+          }
+        } catch (error) {
+          this._logger.error('Failed to read QR payment limits from cache', error);
+        }
+      }
+
+      // Fall back to PaymentCtrlr.AuthorizationAmount if no QR limits were found
+      if (!ocpp21Response.transactionLimit) {
+        try {
+          const authAmountAttributes: VariableAttribute[] =
+            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+              tenantId,
+              ocppConnectionName,
+              component_name: 'PaymentCtrlr',
+              variable_name: 'AuthorizationAmount',
+              type: AttributeEnum.Actual,
+            });
+
+          if (authAmountAttributes.length > 0 && authAmountAttributes[0].value) {
+            const authorizationAmount = parseFloat(authAmountAttributes[0].value);
+            if (!isNaN(authorizationAmount) && authorizationAmount > 0) {
+              // Only set if not already set by another flow (e.g., C17 prepaid)
+              ocpp21Response.transactionLimit = {
+                maxCost: authorizationAmount,
+              };
+              this._logger.info(
+                `Set transactionLimit.maxCost=${authorizationAmount} for DirectPayment ` +
+                  `token on station ${ocppConnectionName}, transaction ${transactionId}.`,
               );
             }
           }
         } catch (error) {
           this._logger.error(
-            `Failed to read remote start transaction limit from cache for remoteStartId ${remoteStartId}`,
+            'Failed to read PaymentCtrlr.AuthorizationAmount from device model',
             error,
           );
         }
       }
+    }
 
-      // Include transactionLimit in TransactionEventResponse when setting/changing a limit.
-      if (isOcpp21 && transaction) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
-        const stationTransactionLimit = (
-          message.payload as unknown as OCPP2_1.TransactionEventRequest
-        ).transactionInfo?.transactionLimit;
-
-        this.syncTransactionLimitToResponse(
-          ocpp21Response,
-          transaction,
-          stationTransactionLimit,
-          ocppConnectionName,
-          transactionId,
-        );
+    if (message.payload.eventType === TransactionEventEnum.Updated) {
+      // I02 - Show EV Driver Running Total Cost During Charging
+      if (
+        transaction &&
+        transaction.isActive &&
+        transaction.totalKwh &&
+        this._sendCostUpdatedOnMeterValue
+      ) {
+        response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
       }
 
-      // For DirectPayment tokens on Started events, include transactionLimit.
-      // C25: First check cache for QR web payment limits (maxCost/maxTime/maxEnergy from QR URL).
-      // Fall back to PaymentCtrlr.AuthorizationAmount from the device model if no QR limits found.
-      if (
-        transactionEvent.eventType === TransactionEventEnum.Started &&
-        response.idTokenInfo?.status === AuthorizationStatusEnum.Accepted &&
-        isOcpp21 &&
-        transactionEvent.idToken?.type === OCPP2_1.IdTokenEnumType.DirectPayment
-      ) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+      // C23: Increasing authorization amount
+      // When CS sends TransactionEventRequest(Updated) with triggerReason=LimitSet (OCPP 2.1),
+      // it indicates the authorization amount has been increased and transactionLimit.maxCost updated.
+      if (isOcpp21 && transaction && transaction.isActive) {
+        const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
+        if (
+          ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.LimitSet &&
+          ocpp21Payload.transactionInfo?.transactionLimit?.maxCost != null
+        ) {
+          const newMaxCost = ocpp21Payload.transactionInfo.transactionLimit.maxCost;
+          this._logger.info(
+            `Authorization amount increased for station ${ocppConnectionName}, ` +
+              `transaction ${transactionId}. New maxCost=${newMaxCost}.`,
+          );
 
-        // C25.FR.03-06: Check cache for QR payment limits set by initiateWebPayment endpoint
-        if (!ocpp21Response.transactionLimit && transactionEvent.evse?.id != null) {
+          // Persist the updated limit to the transactionLimit column so that
+          // subsequent E16 sync checks read the correct value.
           try {
-            const cacheKey = `webpayment:${tenantId}:${ocppConnectionName}:${transactionEvent.evse.id}`;
-            const cachedLimitsStr = await this._cache.get<string>(cacheKey, CacheNamespace.Other);
-            if (cachedLimitsStr) {
-              const qrLimits: { maxCost?: number; maxTime?: number; maxEnergy?: number } =
-                JSON.parse(cachedLimitsStr);
-              if (
-                qrLimits.maxCost != null ||
-                qrLimits.maxTime != null ||
-                qrLimits.maxEnergy != null
-              ) {
-                ocpp21Response.transactionLimit = {};
-                if (qrLimits.maxCost != null) {
-                  ocpp21Response.transactionLimit.maxCost = qrLimits.maxCost;
-                }
-                if (qrLimits.maxTime != null) {
-                  ocpp21Response.transactionLimit.maxTime = qrLimits.maxTime;
-                }
-                if (qrLimits.maxEnergy != null) {
-                  ocpp21Response.transactionLimit.maxEnergy = qrLimits.maxEnergy;
-                }
-                await this._cache.remove(cacheKey, CacheNamespace.Other);
-                this._logger.info(
-                  `Set transactionLimit from QR payment session for station ${ocppConnectionName}, ` +
-                    `evseId=${transactionEvent.evse.id}, transaction ${transactionId}: ` +
-                    `maxCost=${qrLimits.maxCost}, maxTime=${qrLimits.maxTime}, ` +
-                    `maxEnergy=${qrLimits.maxEnergy}`,
-                );
-              }
-            }
-          } catch (error) {
-            this._logger.error('Failed to read QR payment limits from cache', error);
-          }
-        }
-
-        // Fall back to PaymentCtrlr.AuthorizationAmount if no QR limits were found
-        if (!ocpp21Response.transactionLimit) {
-          try {
-            const authAmountAttributes: VariableAttribute[] =
-              await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-                tenantId,
-                ocppConnectionName,
-                component_name: 'PaymentCtrlr',
-                variable_name: 'AuthorizationAmount',
-                type: AttributeEnum.Actual,
-              });
-
-            if (authAmountAttributes.length > 0 && authAmountAttributes[0].value) {
-              const authorizationAmount = parseFloat(authAmountAttributes[0].value);
-              if (!isNaN(authorizationAmount) && authorizationAmount > 0) {
-                // Only set if not already set by another flow (e.g., C17 prepaid)
-                ocpp21Response.transactionLimit = {
-                  maxCost: authorizationAmount,
-                };
-                this._logger.info(
-                  `Set transactionLimit.maxCost=${authorizationAmount} for DirectPayment ` +
-                    `token on station ${ocppConnectionName}, transaction ${transactionId}.`,
-                );
-              }
-            }
+            const updatedLimit = {
+              ...(transaction.transactionLimit ?? {}),
+              maxCost: newMaxCost,
+            };
+            await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+              tenantId,
+              { transactionLimit: updatedLimit } as Partial<Transaction>,
+              transactionId,
+              ocppConnectionName,
+            );
           } catch (error) {
             this._logger.error(
-              'Failed to read PaymentCtrlr.AuthorizationAmount from device model',
+              `Failed to store updated maxCost for transaction ${transactionId}`,
               error,
             );
           }
         }
       }
 
-      // E16.FR.02: Persist the CSMS-set transactionLimit to the DB so that subsequent
-      // TransactionEventRequests can have the limit echoed back via the E16 sync logic.
-      // This covers limits set by C17 (prepaid), C25 (QR web payment), and E16 itself.
-      if (isOcpp21 && transaction) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
-        await this.persistTransactionLimitToDb(
+      // I06 - Update Tariff Information During Transaction
+      const tariffAvailableAttributes: VariableAttribute[] =
+        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
           tenantId,
-          ocpp21Response,
-          transactionId,
-          ocppConnectionName,
+          ocppConnectionName: ocppConnectionName,
+          component_name: 'TariffCostCtrlr',
+          variable_instance: 'Tariff',
+          variable_name: 'Available',
+          type: AttributeEnum.Actual,
+        });
+      // A device model boolean arrives as the string "false" or "true" (Part 2 §2.1.4), so it
+      // has to be compared, not coerced.
+      const supportTariff: boolean = tariffAvailableAttributes[0]?.value?.toLowerCase() === 'true';
+
+      if (supportTariff && transaction && transaction.isActive) {
+        this._logger.debug(
+          `Checking if updated tariff information is available for traction ${transaction.transactionId}`,
         );
+        // TODO: checks if there is updated tariff information available and set it in the PersonalMessage field.
       }
 
-      const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(
-        message,
-        response,
-      );
-      this._logger.debug('Transaction response sent: ', messageConfirmation);
-      // If the transaction is accepted and interval is set, start the cost update
-      if (
-        transactionEvent.eventType === TransactionEventEnum.Started &&
-        response.idTokenInfo?.status === AuthorizationStatusEnum.Accepted &&
-        this._costUpdatedInterval
-      ) {
-        this._costNotifier.notifyWhileActive(
-          ocppConnectionName,
-          transactionId,
-          message.context.tenantId,
-          this._costUpdatedInterval,
-          message.protocol,
-        );
-      }
-    } else {
-      const response: OCPP2_response_types.TransactionEventResponse = {
-        // TODO determine how to set chargingPriority and updatedPersonalMessage for anonymous users
-      };
-
-      // E16.FR.02: Include transactionLimit in TransactionEventResponse when setting/changing a limit.
-      if (isOcpp21 && transaction) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
-        const stationTransactionLimit = (
-          message.payload as unknown as OCPP2_1.TransactionEventRequest
-        ).transactionInfo?.transactionLimit;
-
-        this.syncTransactionLimitToResponse(
-          ocpp21Response,
-          transaction,
-          stationTransactionLimit,
-          ocppConnectionName,
-          transactionId,
-        );
-      }
-
-      if (message.payload.eventType === TransactionEventEnum.Updated) {
-        // I02 - Show EV Driver Running Total Cost During Charging
-        if (
-          transaction &&
-          transaction.isActive &&
-          transaction.totalKwh &&
-          this._sendCostUpdatedOnMeterValue
-        ) {
-          response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
-        }
-
-        // C23: Increasing authorization amount
-        // When CS sends TransactionEventRequest(Updated) with triggerReason=LimitSet (OCPP 2.1),
-        // it indicates the authorization amount has been increased and transactionLimit.maxCost updated.
-        if (isOcpp21 && transaction && transaction.isActive) {
-          const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
-          if (
-            ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.LimitSet &&
-            ocpp21Payload.transactionInfo?.transactionLimit?.maxCost != null
-          ) {
-            const newMaxCost = ocpp21Payload.transactionInfo.transactionLimit.maxCost;
-            this._logger.info(
-              `Authorization amount increased for station ${ocppConnectionName}, ` +
-                `transaction ${transactionId}. New maxCost=${newMaxCost}.`,
-            );
-
-            // Persist the updated limit to the transactionLimit column so that
-            // subsequent E16 sync checks read the correct value.
-            try {
-              const updatedLimit = {
-                ...(transaction.transactionLimit ?? {}),
-                maxCost: newMaxCost,
-              };
-              await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
-                tenantId,
-                { transactionLimit: updatedLimit } as Partial<Transaction>,
-                transactionId,
-                ocppConnectionName,
-              );
-            } catch (error) {
-              this._logger.error(
-                `Failed to store updated maxCost for transaction ${transactionId}`,
-                error,
-              );
-            }
-          }
-        }
-
-        // I06 - Update Tariff Information During Transaction
-        const tariffAvailableAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-            tenantId,
-            ocppConnectionName: ocppConnectionName,
-            component_name: 'TariffCostCtrlr',
-            variable_instance: 'Tariff',
-            variable_name: 'Available',
-            type: AttributeEnum.Actual,
-          });
-        // A device model boolean arrives as the string "false" or "true" (Part 2 §2.1.4), so it
-        // has to be compared, not coerced.
-        const supportTariff: boolean =
-          tariffAvailableAttributes[0]?.value?.toLowerCase() === 'true';
-
-        if (supportTariff && transaction && transaction.isActive) {
-          this._logger.debug(
-            `Checking if updated tariff information is available for traction ${transaction.transactionId}`,
+      // E17 - Transaction resumption after power loss
+      // When CS sends TransactionEventRequest(Updated) with triggerReason=TxResumed,
+      // it indicates the transaction has resumed after a power loss or reboot.
+      // CSMS should re-send any applicable TxProfile charging profiles for this transaction.
+      if (isOcpp21 && transaction && transaction.isActive) {
+        const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
+        if (ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.TxResumed) {
+          this._logger.info(
+            `Transaction ${transactionId} resumed after power loss on station ${ocppConnectionName}. ` +
+              `Checking for TxProfile charging profiles to re-send.`,
           );
-          // TODO: checks if there is updated tariff information available and set it in the PersonalMessage field.
-        }
 
-        // E17 - Transaction resumption after power loss
-        // When CS sends TransactionEventRequest(Updated) with triggerReason=TxResumed,
-        // it indicates the transaction has resumed after a power loss or reboot.
-        // CSMS should re-send any applicable TxProfile charging profiles for this transaction.
-        if (isOcpp21 && transaction && transaction.isActive) {
-          const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
-          if (ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.TxResumed) {
-            this._logger.info(
-              `Transaction ${transactionId} resumed after power loss on station ${ocppConnectionName}. ` +
-                `Checking for TxProfile charging profiles to re-send.`,
-            );
-
-            try {
-              // Query active TxProfile charging profiles associated with this transaction
-              const txProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
-                where: {
-                  tenantId,
-                  ocppConnectionName,
-                  chargingProfilePurpose: OCPP2_1.ChargingProfilePurposeEnumType.TxProfile,
-                  transactionDatabaseId: transaction.id,
-                  isActive: true,
-                },
-                include: [{ model: ChargingSchedule, as: 'chargingSchedule' }],
-              });
-
-              if (txProfiles.length > 0) {
-                this._logger.info(
-                  `Found ${txProfiles.length} active TxProfile(s) to re-send for ` +
-                    `transaction ${transactionId} on station ${ocppConnectionName}.`,
-                );
-
-                for (const profile of txProfiles) {
-                  try {
-                    const chargingProfileType =
-                      OCPP2_0_1_Mapper.ChargingProfileMapper.toChargingProfileType(
-                        profile,
-                        transactionId,
-                      );
-                    await this._ocppSender.sendCall({
-                      ocppConnectionName,
-                      tenantId,
-                      protocol: message.protocol,
-                      action: OCPP_CallAction.SetChargingProfile,
-                      eventGroup: EventGroup.Transactions,
-                      payload: {
-                        evseId: profile.evseId ?? transaction.evseId,
-                        chargingProfile: chargingProfileType,
-                      } as OCPP2_request_types.SetChargingProfileRequest,
-                    });
-                    this._logger.info(
-                      `Re-sent TxProfile id=${profile.id} for transaction ${transactionId} ` +
-                        `on station ${ocppConnectionName}.`,
-                    );
-                  } catch (sendError) {
-                    this._logger.error(
-                      `Failed to re-send TxProfile id=${profile.id} for ` +
-                        `transaction ${transactionId} on station ${ocppConnectionName}`,
-                      sendError,
-                    );
-                  }
-                }
-              } else {
-                this._logger.debug(
-                  `No active TxProfile charging profiles found for ` +
-                    `transaction ${transactionId} on station ${ocppConnectionName}.`,
-                );
-              }
-            } catch (error) {
-              this._logger.error(
-                `Failed to query TxProfile charging profiles for ` +
-                  `transaction ${transactionId} on station ${ocppConnectionName}`,
-                error,
-              );
-            }
-          }
-        }
-      }
-
-      if (message.payload.eventType === TransactionEventEnum.Ended && transaction.totalKwh) {
-        response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
-      }
-
-      // OCPP 2.1 C20 Cancel transaction after start of transaction before costs has been incurred
-      if (
-        isOcpp21 &&
-        transactionEvent.eventType === TransactionEventEnum.Ended &&
-        (transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.StopAuthorized ||
-          transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.EVConnectTimeout) &&
-        (!transaction.totalKwh || transaction.totalKwh <= 0)
-      ) {
-        const tariffEnabled: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-            tenantId,
-            ocppConnectionName: message.context.ocppConnectionName,
-            component_name: 'TariffCostCtrlr',
-            variable_name: 'Enabled',
-            variable_instance: 'Tariff',
-            type: AttributeEnum.Actual,
-          });
-        // C20.FR.03: central cost calculation is what applies when the station is not doing it
-        // itself, i.e. TariffCostCtrlr.Enabled[Tariff] is false or was never reported. A device
-        // model boolean arrives as the string "false" or "true" (Part 2 §2.1.4).
-        const localCostCalculation = tariffEnabled[0]?.value?.toLowerCase() === 'true';
-        if (!localCostCalculation) {
-          this._logger.info(`Central cost calculation is used for transaction ${transactionId}`);
-          response.totalCost = 0;
-        }
-      }
-
-      // Store total cost in db
-      if (response.totalCost && transaction) {
-        await this._transactionEventRepository.updateTransactionTotalCostById(
-          tenantId,
-          response.totalCost,
-          transaction.id,
-        );
-      }
-
-      // C21.FR.05/FR.06: If SettlementByCSMS is true and transaction ended, CSMS should settle with PSP
-      if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
-        try {
-          const settlementByCSMSAttributes: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-              tenantId,
-              ocppConnectionName,
-              component_name: 'PaymentCtrlr',
-              variable_name: 'SettlementByCSMS',
-              type: AttributeEnum.Actual,
+          try {
+            // Query active TxProfile charging profiles associated with this transaction
+            const txProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
+              where: {
+                tenantId,
+                ocppConnectionName,
+                chargingProfilePurpose: OCPP2_1.ChargingProfilePurposeEnumType.TxProfile,
+                transactionDatabaseId: transaction.id,
+                isActive: true,
+              },
+              include: [{ model: ChargingSchedule, as: 'chargingSchedule' }],
             });
 
-          const settlementByCSMS =
-            settlementByCSMSAttributes.length > 0 &&
-            settlementByCSMSAttributes[0].value?.toLowerCase() === 'true';
+            if (txProfiles.length > 0) {
+              this._logger.info(
+                `Found ${txProfiles.length} active TxProfile(s) to re-send for ` +
+                  `transaction ${transactionId} on station ${ocppConnectionName}.`,
+              );
 
-          if (settlementByCSMS) {
-            const totalCost = response.totalCost ?? transaction.totalCost;
-            this._logger.info(
-              `SettlementByCSMS is true for station ${ocppConnectionName}, ` +
-                `transaction ${transaction.transactionId}. ` +
-                `CSMS should settle totalCost=${totalCost} with PSP. ` +
-                `This requires external PSP integration.`,
+              for (const profile of txProfiles) {
+                try {
+                  const chargingProfileType =
+                    OCPP2_0_1_Mapper.ChargingProfileMapper.toChargingProfileType(
+                      profile,
+                      transactionId,
+                    );
+                  await this._ocppSender.sendCall({
+                    ocppConnectionName,
+                    tenantId,
+                    protocol: message.protocol,
+                    action: OCPP_CallAction.SetChargingProfile,
+                    eventGroup: EventGroup.Transactions,
+                    payload: {
+                      evseId: profile.evseId ?? transaction.evseId,
+                      chargingProfile: chargingProfileType,
+                    } as OCPP2_request_types.SetChargingProfileRequest,
+                  });
+                  this._logger.info(
+                    `Re-sent TxProfile id=${profile.id} for transaction ${transactionId} ` +
+                      `on station ${ocppConnectionName}.`,
+                  );
+                } catch (sendError) {
+                  this._logger.error(
+                    `Failed to re-send TxProfile id=${profile.id} for ` +
+                      `transaction ${transactionId} on station ${ocppConnectionName}`,
+                    sendError,
+                  );
+                }
+              }
+            } else {
+              this._logger.debug(
+                `No active TxProfile charging profiles found for ` +
+                  `transaction ${transactionId} on station ${ocppConnectionName}.`,
+              );
+            }
+          } catch (error) {
+            this._logger.error(
+              `Failed to query TxProfile charging profiles for ` +
+                `transaction ${transactionId} on station ${ocppConnectionName}`,
+              error,
             );
-            // PSP settlement integration point:
-            // Implementers should extend this to call their PSP API to settle
-            // the payment using the pspRef from the authorization's idToken.
           }
-        } catch (error) {
-          this._logger.error(
-            'Failed to check PaymentCtrlr.SettlementByCSMS from device model',
-            error,
-          );
         }
       }
+    }
 
-      if (transactionEvent.meterValue) {
-        const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+    if (message.payload.eventType === TransactionEventEnum.Ended && transaction.totalKwh) {
+      response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
+    }
+
+    // OCPP 2.1 C20 Cancel transaction after start of transaction before costs has been incurred
+    if (
+      isOcpp21 &&
+      transactionEvent.eventType === TransactionEventEnum.Ended &&
+      (transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.StopAuthorized ||
+        transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.EVConnectTimeout) &&
+      (!transaction.totalKwh || transaction.totalKwh <= 0)
+    ) {
+      const tariffEnabled: VariableAttribute[] =
+        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
           tenantId,
-          ocppConnectionName,
-          transactionEvent.meterValue,
-        );
-
-        if (!meterValuesValid) {
-          this._logger.warn(
-            'One or more MeterValues in this TransactionEvent have an invalid signature.',
-          );
-        }
+          ocppConnectionName: message.context.ocppConnectionName,
+          component_name: 'TariffCostCtrlr',
+          variable_name: 'Enabled',
+          variable_instance: 'Tariff',
+          type: AttributeEnum.Actual,
+        });
+      // C20.FR.03: central cost calculation is what applies when the station is not doing it
+      // itself, i.e. TariffCostCtrlr.Enabled[Tariff] is false or was never reported. A device
+      // model boolean arrives as the string "false" or "true" (Part 2 §2.1.4).
+      const localCostCalculation = tariffEnabled[0]?.value?.toLowerCase() === 'true';
+      if (!localCostCalculation) {
+        this._logger.info(`Central cost calculation is used for transaction ${transactionId}`);
+        response.totalCost = 0;
       }
+    }
 
-      // E16.FR.02: Persist the CSMS-set transactionLimit to the DB so that subsequent
-      // TransactionEventRequests can have the limit echoed back via the E16 sync logic.
-      if (isOcpp21 && transaction) {
-        const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
-        await this.persistTransactionLimitToDb(
-          tenantId,
-          ocpp21Response,
-          transactionId,
-          ocppConnectionName,
-        );
-      }
-
-      const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(
-        message,
-        response,
+    // Store total cost in db
+    if (response.totalCost && transaction) {
+      await this._transactionEventRepository.updateTransactionTotalCostById(
+        tenantId,
+        response.totalCost,
+        transaction.id,
       );
-      this._logger.debug(
-        this.createHandlerSentMessageLog('TransactionEventResponse'),
-        messageConfirmation,
+    }
+
+    // C21.FR.05/FR.06: If SettlementByCSMS is true and transaction ended, CSMS should settle with PSP
+    if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
+      try {
+        const settlementByCSMSAttributes: VariableAttribute[] =
+          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+            tenantId,
+            ocppConnectionName,
+            component_name: 'PaymentCtrlr',
+            variable_name: 'SettlementByCSMS',
+            type: AttributeEnum.Actual,
+          });
+
+        const settlementByCSMS =
+          settlementByCSMSAttributes.length > 0 &&
+          settlementByCSMSAttributes[0].value?.toLowerCase() === 'true';
+
+        if (settlementByCSMS) {
+          const totalCost = response.totalCost ?? transaction.totalCost;
+          this._logger.info(
+            `SettlementByCSMS is true for station ${ocppConnectionName}, ` +
+              `transaction ${transaction.transactionId}. ` +
+              `CSMS should settle totalCost=${totalCost} with PSP. ` +
+              `This requires external PSP integration.`,
+          );
+          // PSP settlement integration point:
+          // Implementers should extend this to call their PSP API to settle
+          // the payment using the pspRef from the authorization's idToken.
+        }
+      } catch (error) {
+        this._logger.error(
+          'Failed to check PaymentCtrlr.SettlementByCSMS from device model',
+          error,
+        );
+      }
+    }
+
+    if (transactionEvent.meterValue) {
+      const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+        tenantId,
+        ocppConnectionName,
+        transactionEvent.meterValue,
+      );
+
+      if (!meterValuesValid) {
+        this._logger.warn(
+          'One or more MeterValues in this TransactionEvent have an invalid signature.',
+        );
+      }
+    }
+
+    // E16.FR.02: Persist the CSMS-set transactionLimit to the DB so that subsequent
+    // TransactionEventRequests can have the limit echoed back via the E16 sync logic.
+    // This covers limits set by C17 (prepaid), C25 (QR web payment), and E16 itself.
+    if (isOcpp21 && transaction) {
+      const ocpp21Response = response as OCPP2_1.TransactionEventResponse;
+      await this.persistTransactionLimitToDb(
+        tenantId,
+        ocpp21Response,
+        transactionId,
+        ocppConnectionName,
+      );
+    }
+
+    const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
+    this._logger.debug(
+      this.createHandlerSentMessageLog('TransactionEventResponse'),
+      messageConfirmation,
+    );
+
+    // If the transaction is accepted and interval is set, start the cost update
+    if (
+      transactionEvent.eventType === TransactionEventEnum.Started &&
+      response.idTokenInfo?.status === AuthorizationStatusEnum.Accepted &&
+      this._costUpdatedInterval
+    ) {
+      this._costNotifier.notifyWhileActive(
+        ocppConnectionName,
+        transactionId,
+        message.context.tenantId,
+        this._costUpdatedInterval,
+        message.protocol,
       );
     }
   }
