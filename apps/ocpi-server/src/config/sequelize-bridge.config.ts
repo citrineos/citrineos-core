@@ -27,7 +27,6 @@ export default (async () => {
       port,
       database,
       username,
-      password,
     });
 
     return {
