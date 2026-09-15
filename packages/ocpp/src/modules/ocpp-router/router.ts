@@ -63,6 +63,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
 import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
 
+const OUTSTANDING_CALL_CACHE_KEY = 'outstanding-csms-call';
+
 /**
  * Implementation of the ocpp router
  */
@@ -418,7 +420,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     const message = new Call(correlationId, action, payload);
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
-      if (!(await this._cache.existsAnyInNamespace(transactionNamespace))) {
+      if (
+        !(await this._cache.existsAnyInNamespace(transactionNamespace)) &&
+        (await this._cache.setIfNotExist(
+          OUTSTANDING_CALL_CACHE_KEY,
+          correlationId,
+          transactionNamespace,
+          this._config.timeouts.maxCallLengthSeconds,
+        ))
+      ) {
         const cacheTimestamp = new Date();
         await this._cache.set(
           correlationId,
@@ -447,6 +457,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         } else {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.SendFailed);
           const removed = await this._cache.remove(correlationId, transactionNamespace);
+          await this._releaseOutstandingCall(identifier);
           this._logger.warn(
             `Failed to send call, removed from cache: ${removed}`,
             identifier,
@@ -763,6 +774,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
+    await this._releaseOutstandingCall(identifier);
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
     recordOcppCallRoundtripDuration(
@@ -846,6 +858,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
+    await this._releaseOutstandingCall(identifier);
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
     recordOcppCallRoundtripDuration(
@@ -948,6 +961,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._logger.error('Failed to publish outbound frame event', err);
       });
     return sentTimestamp;
+  }
+
+  private async _releaseOutstandingCall(identifier: string): Promise<void> {
+    await this._cache
+      .remove(OUTSTANDING_CALL_CACHE_KEY, CacheNamespace.Transactions + identifier)
+      .catch((err) => {
+        this._logger.error('Failed to release the outstanding call', identifier, err);
+      });
   }
 
   private async _sendCallIsAllowed(
