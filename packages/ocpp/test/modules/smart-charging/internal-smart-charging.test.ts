@@ -58,7 +58,7 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
       chargingProfileRepository,
       deviceModelRepository: { readAllByQuerystring } as unknown as IDeviceModelRepository,
       logger: logger as never,
-    } as ConstructorParameters<typeof InternalSmartCharging>[0]);
+    });
   });
 
   /** The single period of the single schedule the profile is built from. */
