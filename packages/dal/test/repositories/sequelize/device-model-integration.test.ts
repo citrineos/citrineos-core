@@ -5,6 +5,7 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
+  Boot,
   ChargingStation,
   Component,
   DefaultSequelizeInstance,
@@ -285,5 +286,36 @@ describe('createOrUpdateByGetVariablesResultAndStationId', () => {
       expect(variableStatus).not.toBeNull();
       expect(variableStatus?.variableAttributeId).not.toBeNull();
     });
+  });
+});
+
+describe('readAllSetVariableByStationId', () => {
+  it('returns the attributes assigned to the station boot config as SetVariableData', async () => {
+    await seedBase();
+    const station = await ChargingStation.findOne({
+      where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+    });
+    const boot = await Boot.create({
+      stationId: station?.id,
+      status: 'Pending',
+      tenantId: TENANT_ID,
+    } as any);
+    const assigned = await seedVariableAttribute('OCPPCommCtrlr', 'HeartbeatInterval', '30');
+    await assigned.update({ bootConfigId: boot.id });
+    await seedVariableAttribute('Connector', 'MaxVoltage', '230');
+
+    const setVariableData = await makeRepo().readAllSetVariableByStationId(
+      TENANT_ID,
+      OCPP_CONNECTION_NAME,
+    );
+
+    expect(setVariableData).toEqual([
+      expect.objectContaining({
+        attributeType: OCPP2_0_1.AttributeEnumType.Actual,
+        attributeValue: '30',
+        component: expect.objectContaining({ name: 'OCPPCommCtrlr' }),
+        variable: expect.objectContaining({ name: 'HeartbeatInterval' }),
+      }),
+    ]);
   });
 });
