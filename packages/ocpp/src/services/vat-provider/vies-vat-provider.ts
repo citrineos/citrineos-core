@@ -87,10 +87,10 @@ export class ViesVatProvider implements IVatProvider {
     const { postalCode, city } = ViesVatProvider._splitPostalCodeAndCity(lastLine);
 
     return {
-      name: data.name,
-      address1: lines[0] ?? '',
-      address2: lines.length > 2 ? lines.slice(1, -1).join(', ') : undefined,
-      city,
+      name: data.name.slice(0, 50),
+      address1: (lines[0] ?? '').slice(0, 100),
+      address2: lines.length > 2 ? lines.slice(1, -1).join(', ').slice(0, 100) : undefined,
+      city: city.slice(0, 100),
       postalCode,
       country: data.countryCode,
     };
