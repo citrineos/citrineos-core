@@ -10,6 +10,7 @@ import { SequelizeLocationRepository } from '@dal/repositories/sequelize/locatio
 import {
   resolveStationId,
   resolveStationIdOrThrow,
+  stationIdFilter,
 } from '@dal/repositories/sequelize/resolve-station-id.js';
 import { createTestContainer, getTestInstance } from '../../test-container.js';
 import { Op } from 'sequelize';
@@ -27,6 +28,7 @@ vi.mock('@dal/db/sequelize/util', () => ({
 vi.mock('@dal/repositories/sequelize/resolve-station-id.js', () => ({
   resolveStationId: vi.fn(),
   resolveStationIdOrThrow: vi.fn(),
+  stationIdFilter: vi.fn(),
 }));
 
 const TENANT_ID = 1;
@@ -62,6 +64,7 @@ describe('SequelizeLocationRepository', () => {
 
     vi.mocked(resolveStationId).mockResolvedValue(STATION_ID);
     vi.mocked(resolveStationIdOrThrow).mockResolvedValue(STATION_ID);
+    vi.mocked(stationIdFilter).mockResolvedValue(STATION_ID);
   });
 
   describe('readConnectorsWithTariffsByStationId', () => {
