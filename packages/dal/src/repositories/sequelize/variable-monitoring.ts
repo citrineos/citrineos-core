@@ -57,7 +57,11 @@ export class SequelizeVariableMonitoringRepository
               const existingVariableMonitoring = await this.s.models[
                 VariableMonitoring.MODEL_NAME
               ].findOne({
-                where: { ocppConnectionName: ocppConnectionName, variableId, componentId },
+                where: {
+                  tenantId,
+                  ocppConnectionName: ocppConnectionName,
+                  id: variableMonitoring.id,
+                },
                 transaction,
               });
 
@@ -123,10 +127,13 @@ export class SequelizeVariableMonitoringRepository
     let result: VariableMonitoring | null = null;
 
     await this.s.transaction(async (transaction) => {
-      const savedVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
-        where: { ocppConnectionName: ocppConnectionName, variableId, componentId },
-        transaction,
-      });
+      const savedVariableMonitoring =
+        value.id != null
+          ? await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
+              where: { tenantId, ocppConnectionName: ocppConnectionName, id: value.id },
+              transaction,
+            })
+          : null;
 
       if (!savedVariableMonitoring) {
         const variableMonitoring = VariableMonitoring.build({
@@ -227,6 +234,7 @@ export class SequelizeVariableMonitoringRepository
             },
           },
         ],
+        order: [['id', 'ASC NULLS FIRST']],
       })
       .then((variableMonitorings) => variableMonitorings[0]); // TODO: Make sure this uniqueness constraint is actually enforced.
 
