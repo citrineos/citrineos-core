@@ -188,13 +188,56 @@ describe('CertificateUtil', () => {
         validBefore,
         signatureAlgorithm,
       } = extractCertificateDetails(givenEncodedString);
-      expect(serialNumber).toEqual(1916);
+      expect(serialNumber).toEqual(0x1916c392dce);
       expect(issuerName).toEqual('/CN=localhost SubCA/O=s44/C=US');
       expect(organizationName).toEqual('s44');
       expect(commonName).toEqual('localhost');
       expect(countryName).toEqual('US');
       expect(validBefore).toEqual(new Date('2034-08-19T00:00:00.000Z'));
       expect(signatureAlgorithm).toEqual('SHA256withECDSA');
+    });
+
+    it('reads the serial of a certificate the CSMS signed as its full hex value', () => {
+      const signedAt = new Date('2028-03-01T00:00:00.000Z');
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(signedAt);
+      let givenCertPem: string;
+      try {
+        givenCertPem = createSignedCertificateFromCSR(
+          readFile('ChargingStationCSRSample.pem'),
+          readFile('SubCACertificateSample.pem'),
+          readFile('SubCAKeySample.pem'),
+        ).getPEM();
+      } finally {
+        vi.useRealTimers();
+      }
+
+      const { serialNumber } = extractCertificateDetails(givenCertPem);
+
+      expect(serialNumber).toBe(signedAt.getTime());
+    });
+
+    it.each([
+      ['00c5', 0xc5],
+      ['00c5a1b2c3d4e5f60718293a4b5c6d7e', null],
+    ])('reads serial %s as %s', (serialHex, expectedSerialNumber) => {
+      const { prvKeyObj, pubKeyObj } = jsrsasign.KEYUTIL.generateKeypair('EC', 'secp256r1');
+      const givenCertPem = new jsrsasign.KJUR.asn1.x509.Certificate({
+        version: 3,
+        serial: { hex: serialHex },
+        issuer: { str: '/CN=Serial Test' },
+        subject: { str: '/CN=Serial Test' },
+        notbefore: '250101000000Z',
+        notafter: '350101000000Z',
+        sbjpubkey: pubKeyObj,
+        ext: [{ extname: 'basicConstraints', cA: true }],
+        sigalg: 'SHA256withECDSA',
+        cakey: prvKeyObj,
+      }).getPEM();
+
+      const { serialNumber } = extractCertificateDetails(givenCertPem);
+
+      expect(serialNumber).toBe(expectedSerialNumber);
     });
   });
 });
