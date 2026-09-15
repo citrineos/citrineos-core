@@ -26,8 +26,6 @@ export {
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
-  ServerNetworkProfile,
-  SetNetworkProfile,
   ChargingStationNetworkProfile,
   AsyncJobStatusDTO,
   SignatureAlgorithmEnumType,
