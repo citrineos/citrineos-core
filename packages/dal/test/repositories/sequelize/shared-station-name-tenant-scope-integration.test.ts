@@ -8,15 +8,15 @@ import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
   Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeTransactionEventRepository,
-  Tenant,
   Transaction,
 } from '../../../index.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
 const SHARED_STATION_NAME = 'CS-SHARED';

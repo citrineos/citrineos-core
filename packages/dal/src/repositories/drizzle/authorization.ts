@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type {
+  AuthorizationCreate,
   AuthorizationDto,
   AuthorizationStatusEnumType,
   AuthorizationWhitelistEnumType,
@@ -166,5 +167,12 @@ export class DrizzleAuthorizationRepository
     key: string,
   ): Promise<AuthorizationDto | undefined> {
     return this.updateById(tenantId, Number(key), value);
+  }
+
+  async createAuthorization(
+    tenantId: number,
+    input: AuthorizationCreate,
+  ): Promise<AuthorizationDto> {
+    return await this.insert(tenantId, { ...input });
   }
 }
