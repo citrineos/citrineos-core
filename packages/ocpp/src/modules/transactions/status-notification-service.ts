@@ -16,15 +16,13 @@ import type {
   IEvseRepository,
   IStatusNotificationRepository,
 } from '@citrineos/dal';
+import { Component, EvseType, OCPP1_6_Mapper, OCPP2_0_1_Mapper, Variable } from '@citrineos/dal';
 import {
-  Component,
-  EvseType,
-  OCPP1_6_Mapper,
-  OCPP2_0_1_Mapper,
-  StatusNotification,
-  Variable,
-} from '@citrineos/dal';
-import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
+  OCPP1_6,
+  OCPP2_0_1,
+  type ConnectorDto,
+  type StatusNotificationDto,
+} from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
@@ -89,14 +87,14 @@ export class StatusNotificationService {
       return;
     }
 
-    const statusNotification = StatusNotification.build({
+    const statusNotification: StatusNotificationDto = {
       tenantId,
       ocppConnectionName: ocppConnectionName,
       ...statusNotificationRequest,
       connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
       ),
-    });
+    };
 
     let matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
@@ -276,7 +274,7 @@ export class StatusNotificationService {
 
       // Now that the Connector record exists (upserted above, or pre-existing in
       // the broadcast path), save the StatusNotification record.
-      const statusNotificationInput: Partial<StatusNotification> = {
+      const statusNotificationInput: StatusNotificationDto = {
         tenantId,
         ...statusNotificationRequest,
         ocppConnectionName: ocppConnectionName,
@@ -288,11 +286,10 @@ export class StatusNotificationService {
       if (matchingEvse) {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
       }
-      const statusNotification = StatusNotification.build(statusNotificationInput);
       await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
-        statusNotification,
+        statusNotificationInput,
       );
     } else {
       this._logger.warn(

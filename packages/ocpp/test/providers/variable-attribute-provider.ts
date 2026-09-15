@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { VariableAttribute, VariableStatus } from '@citrineos/dal';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type VariableAttributeDto } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 
-export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
+// `statuses` is a Sequelize association on the model, not a field on VariableAttributeDto, so it is
+// carried here as a loose extension for the tests that inspect it.
+type VariableAttributeFixture = VariableAttributeDto & { statuses?: unknown[] };
+
+export function aVariableAttribute(
+  override?: Partial<VariableAttributeFixture>,
+): VariableAttributeDto {
   const variableAttribute = {
     ocppConnectionName: faker.string.uuid(),
     type: OCPP2_0_1.AttributeEnumType.Actual,
@@ -25,26 +30,25 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
     },
     variableId: faker.number.int({ min: 1, max: 100_000 }),
     ...override,
-  } as VariableAttribute;
+  } as VariableAttributeFixture;
 
-  variableAttribute.statuses =
-    override?.statuses?.map(
-      (status) => ({ ...status, variable: variableAttribute }) as unknown as VariableStatus,
-    ) ??
-    ([
-      {
-        value: faker.string.alpha(),
-        status: 'Accepted',
-        variable: variableAttribute,
-      },
-    ] as unknown as VariableStatus[]);
+  variableAttribute.statuses = override?.statuses?.map((status) => ({
+    ...(status as object),
+    variable: variableAttribute,
+  })) ?? [
+    {
+      value: faker.string.alpha(),
+      status: 'Accepted',
+      variable: variableAttribute,
+    },
+  ];
 
-  return variableAttribute as VariableAttribute;
+  return variableAttribute;
 }
 
 export function aBasicAuthPasswordVariable(
-  override?: Partial<VariableAttribute>,
-): VariableAttribute {
+  override?: Partial<VariableAttributeDto>,
+): VariableAttributeDto {
   return aVariableAttribute({
     ...override,
     dataType: OCPP2_0_1.DataEnumType.passwordString,

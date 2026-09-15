@@ -27,6 +27,7 @@ import {
   TransactionEventEnum,
   OCPP2_request_types,
   OCPP2_response_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import {
   ChargingSchedule,
@@ -35,7 +36,6 @@ import {
   type ITransactionEventRepository,
   OCPP2_0_1_Mapper,
   Transaction,
-  VariableAttribute,
 } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
@@ -315,7 +315,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         // Fall back to PaymentCtrlr.AuthorizationAmount if no QR limits were found
         if (!ocpp21Response.transactionLimit) {
           try {
-            const authAmountAttributes: VariableAttribute[] =
+            const authAmountAttributes: VariableAttributeDto[] =
               await this._deviceModelRepository.readAllByQuerystring(tenantId, {
                 tenantId,
                 ocppConnectionName,
@@ -448,7 +448,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         }
 
         // I06 - Update Tariff Information During Transaction
-        const tariffAvailableAttributes: VariableAttribute[] =
+        const tariffAvailableAttributes: VariableAttributeDto[] =
           await this._deviceModelRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName: ocppConnectionName,
@@ -559,7 +559,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
           transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.EVConnectTimeout) &&
         (!transaction.totalKwh || transaction.totalKwh <= 0)
       ) {
-        const tariffEnabled: VariableAttribute[] =
+        const tariffEnabled: VariableAttributeDto[] =
           await this._deviceModelRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName: message.context.ocppConnectionName,
@@ -590,7 +590,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       // C21.FR.05/FR.06: If SettlementByCSMS is true and transaction ended, CSMS should settle with PSP
       if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
         try {
-          const settlementByCSMSAttributes: VariableAttribute[] =
+          const settlementByCSMSAttributes: VariableAttributeDto[] =
             await this._deviceModelRepository.readAllByQuerystring(tenantId, {
               tenantId,
               ocppConnectionName,

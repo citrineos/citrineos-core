@@ -27,6 +27,7 @@ import {
   OCPPVersion,
   OCPP2_request_types,
   OCPP2_response_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import { CertificateAuthorityService } from '@services/index.js';
 import { validateOcpp21IdToken } from '@util/index.js';
@@ -35,7 +36,7 @@ import {
   type IDeviceModelRepository,
   type ITariffRepository,
 } from '@citrineos/dal';
-import { OCPP2_1_Mapper, VariableAttribute } from '@citrineos/dal';
+import { OCPP2_1_Mapper } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.Authorize)
 export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
@@ -176,7 +177,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
           if (hasConnectorTypeRestriction) {
             evseIds = new Set();
-            const connectorTypes: VariableAttribute[] =
+            const connectorTypes: VariableAttributeDto[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                 tenantId: context.tenantId,
                 ocppConnectionName: message.context.ocppConnectionName,
@@ -204,7 +205,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
               authorization.disallowedEvseIdPrefixes.length > 0
             ) {
               evseIds = evseIds ? evseIds : new Set();
-              const evseIdAttributes: VariableAttribute[] =
+              const evseIdAttributes: VariableAttributeDto[] =
                 await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                   tenantId: context.tenantId,
                   ocppConnectionName: message.context.ocppConnectionName,
@@ -293,7 +294,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     }
 
     if (response.idTokenInfo.status === AuthorizationStatusEnum.Accepted) {
-      const tariffEnabled: VariableAttribute[] =
+      const tariffEnabled: VariableAttributeDto[] =
         await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,

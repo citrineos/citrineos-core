@@ -5,13 +5,13 @@
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
 import {
   DefaultSequelizeInstance,
-  Evse,
   SequelizeLocationRepository,
   SequelizeTenantRepository,
   type ITenantRepository,
 } from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
+import { QueryTypes } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -89,10 +89,13 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     expect(evseId).toBeGreaterThan(0);
 
     // Confirm the Evse row exists and is linked to the right station
-    const evse = await Evse.findOne({ where: { id: evseId } });
-    expect(evse).not.toBeNull();
-    expect(evse?.ocppConnectionName).toBe(ocppConnectionName);
-    expect(evse?.stationId).toBe(station.id);
+    const [evse] = await sequelizeInstance.query<{ ocppConnectionName: string; stationId: number }>(
+      'SELECT "ocppConnectionName", "stationId" FROM "Evses" WHERE id = :id',
+      { replacements: { id: evseId }, type: QueryTypes.SELECT },
+    );
+    expect(evse).toBeDefined();
+    expect(evse.ocppConnectionName).toBe(ocppConnectionName);
+    expect(evse.stationId).toBe(station.id);
 
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
     // by actually inserting a Connector row. A 1.6 connector carries no
@@ -117,15 +120,14 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
       ocppConnectionName,
       isOnline: true,
     });
-    const evse = await Evse.create({
+    const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      tenantId: DEFAULT_TENANT_ID,
       evseTypeId: 1,
     });
 
     const dbConnector = await locationRepository.createOrUpdateOcpp2Connector(DEFAULT_TENANT_ID, {
       ocppConnectionName,
-      evseId: evse.id,
+      evseId: evse.id!,
       evseTypeConnectorId: 1,
       status: 'Available',
       timestamp: new Date().toISOString(),
@@ -236,9 +238,14 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       } as any);
     }
 
-    expect(await Evse.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } })).toBe(
-      1,
+    const [{ count }] = await sequelizeInstance.query<{ count: number }>(
+      'SELECT count(*)::int AS count FROM "Evses" WHERE "tenantId" = :tenantId AND "ocppConnectionName" = :ocppConnectionName',
+      {
+        replacements: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
+        type: QueryTypes.SELECT,
+      },
     );
+    expect(count).toBe(1);
     expect(
       (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName))
         .length,

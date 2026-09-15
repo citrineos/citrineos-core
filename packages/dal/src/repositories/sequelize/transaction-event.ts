@@ -4,6 +4,7 @@
 import { CrudRepository, MeterValueUtils } from '@citrineos/base';
 import {
   type MeterValueDto,
+  type TransactionDto,
   ChargingStationSequenceTypeEnum,
   OCPP1_6,
   OCPP2_0_1,
@@ -483,6 +484,42 @@ export class SequelizeTransactionEventRepository
     return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true, authorizationId },
     });
+  }
+
+  async readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]> {
+    const rows = await this.transaction.readAllByQuery(tenantId, {
+      where: {
+        ocppConnectionName,
+        isActive: true,
+        authorizationId: { [Op.ne]: null },
+      },
+      include: [
+        {
+          model: Authorization,
+          as: 'authorization',
+          required: true,
+          where: { tariffId: { [Op.ne]: null } },
+          include: [
+            {
+              model: Tariff,
+              as: 'tariff',
+              required: true,
+            },
+          ],
+        },
+        {
+          model: Evse,
+          as: 'evse',
+          required: true,
+          ...(evseTypeId !== undefined ? { where: { evseTypeId } } : {}),
+        },
+      ],
+    });
+    return rows as unknown as TransactionDto[];
   }
 
   async readAllMeterValuesByTransactionDataBaseId(

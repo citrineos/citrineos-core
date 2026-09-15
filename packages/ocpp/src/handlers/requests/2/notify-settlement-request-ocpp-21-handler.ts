@@ -5,7 +5,6 @@ import {
   type IDeviceModelRepository,
   type ITransactionEventRepository,
   Transaction,
-  VariableAttribute,
 } from '@citrineos/dal';
 import {
   AbstractHandler,
@@ -24,6 +23,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
   type SystemConfig,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 
 /**
@@ -161,7 +161,7 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
     // Do NOT include receiptUrl or receiptId for Rejected/Failed statuses.
     if (isSettled) {
       try {
-        const receiptByCSMSAttributes: VariableAttribute[] =
+        const receiptByCSMSAttributes: VariableAttributeDto[] =
           await this._deviceModelRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName,

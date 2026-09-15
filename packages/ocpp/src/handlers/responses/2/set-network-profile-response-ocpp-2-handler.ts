@@ -14,24 +14,32 @@ import {
   SetNetworkProfileStatusEnum,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IChargingStationRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
-import { ChargingStationNetworkProfile, SetNetworkProfile } from '@citrineos/dal';
+import type {
+  IChargingStationRepository,
+  IServerNetworkProfileRepository,
+  ISetNetworkProfileRepository,
+} from '@citrineos/dal';
+import { ChargingStationNetworkProfile } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetNetworkProfile)
 export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
   protected _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  protected _setNetworkProfileRepository: ISetNetworkProfileRepository;
   protected _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
     serverNetworkProfileRepository,
+    setNetworkProfileRepository,
     chargingStationRepository,
   }: AbstractHandlerDependencies & {
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    setNetworkProfileRepository: ISetNetworkProfileRepository;
     chargingStationRepository: IChargingStationRepository;
   }) {
     super(logger);
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._setNetworkProfileRepository = setNetworkProfileRepository;
     this._chargingStationRepository = chargingStationRepository;
   }
 
@@ -49,13 +57,11 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const setNetworkProfile = await SetNetworkProfile.findOne({
-      where: {
-        tenantId: message.context.tenantId,
-        correlationId: message.context.correlationId,
-        ocppConnectionName: message.context.ocppConnectionName,
-      },
-    });
+    const setNetworkProfile = await this._setNetworkProfileRepository.readByCorrelationId(
+      message.context.tenantId,
+      message.context.ocppConnectionName,
+      message.context.correlationId,
+    );
     if (!setNetworkProfile) {
       return;
     }
@@ -86,7 +92,7 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
     });
     chargingStationNetworkProfile.websocketServerConfigId =
       setNetworkProfile.websocketServerConfigId!;
-    chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+    chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id!;
     await chargingStationNetworkProfile.save();
   }
 }

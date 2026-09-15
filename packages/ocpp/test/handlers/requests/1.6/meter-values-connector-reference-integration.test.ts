@@ -5,7 +5,6 @@
 import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   MeterValue,
   SequelizeLocationRepository,
@@ -106,15 +105,14 @@ async function aConnectorOn(ocppConnectionName: string, connectorNumber: number)
     id: evseNumber,
     connectorId: null,
   } as never);
-  const evse = await Evse.create({
-    tenantId: DEFAULT_TENANT_ID,
+  const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     evseTypeId: evseNumber,
-  } as never);
+  });
   const connector = await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     connectorId: connectorNumber,
-    evseId: (evse as unknown as { id: number }).id,
+    evseId: evse.id!,
     evseTypeConnectorId: (evseType as unknown as { databaseId: number }).databaseId,
     status: 'Available',
     errorCode: 'NoError',

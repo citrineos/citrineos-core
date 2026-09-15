@@ -41,6 +41,18 @@ export class SequelizeSetNetworkProfileRepository
     } as Parameters<typeof SetNetworkProfile.build>[0]).save();
   }
 
+  async readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    return (
+      (await SetNetworkProfile.findOne({
+        where: { tenantId, ocppConnectionName, correlationId },
+      })) ?? undefined
+    );
+  }
+
   private async resolveStationId(
     tenantId: number,
     ocppConnectionName?: string,
