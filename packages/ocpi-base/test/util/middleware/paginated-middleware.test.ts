@@ -12,30 +12,44 @@ vi.mock('typedi', () => ({
 
 import { PaginatedMiddleware } from '../../../src/util/middleware/paginated-middleware.js';
 
-function aContext(body: unknown) {
+function aMiddleware() {
+  return new PaginatedMiddleware({
+    config: { defaultPageLimit: 50, maxPageLimit: 1000 },
+  } as never);
+}
+
+function aContext(body: unknown, query: Record<string, unknown> = { limit: '10' }) {
   const set: Record<string, unknown> = {};
   return {
     ctx: {
-      request: { protocol: 'https', host: 'cpo.test', url: '/ocpi/2.2.1/cdrs?limit=10' },
+      request: { protocol: 'https', host: 'cpo.test', url: '/ocpi/2.2.1/cdrs?limit=10', query },
       response: {
         body,
         set: (field: string, value: unknown) => {
           set[field] = value;
         },
       },
-    } as never,
+    } as any,
     set,
   };
 }
 
 const next = () => Promise.resolve();
 
+function anEndpointEchoingTheLimit(ctx: any) {
+  return () => {
+    const limit = Number(ctx.request.query.limit);
+    ctx.response.body = { data: [], total: 5000, limit, offset: 0 };
+    return Promise.resolve(limit);
+  };
+}
+
 describe('PaginatedMiddleware', () => {
   it('publishes the paging headers and strips the paging fields from the body', async () => {
     const body: any = { data: [1, 2], total: 30, limit: 10, offset: 0 };
     const { ctx, set } = aContext(body);
 
-    await new PaginatedMiddleware().use(ctx, next);
+    await aMiddleware().use(ctx, next);
 
     expect(set['X-Total-Count']).toBe(30);
     expect(set['X-Limit']).toBe(10);
@@ -48,7 +62,7 @@ describe('PaginatedMiddleware', () => {
   it('offers no next link on the last page', async () => {
     const { ctx, set } = aContext({ data: [1], total: 30, limit: 10, offset: 20 });
 
-    await new PaginatedMiddleware().use(ctx, next);
+    await aMiddleware().use(ctx, next);
 
     expect(set).not.toHaveProperty('Link');
   });
@@ -59,16 +73,43 @@ describe('PaginatedMiddleware', () => {
     // fields off either threw a TypeError out of the middleware.
     const { ctx } = aContext(undefined);
 
-    await expect(new PaginatedMiddleware().use(ctx, next)).resolves.not.toThrow();
+    await expect(aMiddleware().use(ctx, next)).resolves.not.toThrow();
   });
 
   it('leaves an error response body alone', async () => {
     const errorBody: any = { status_code: 2001, status_message: 'Invalid parameters' };
     const { ctx, set } = aContext(errorBody);
 
-    await new PaginatedMiddleware().use(ctx, next);
+    await aMiddleware().use(ctx, next);
 
     expect(errorBody).toEqual({ status_code: 2001, status_message: 'Invalid parameters' });
     expect(set).not.toHaveProperty('X-Total-Count');
+  });
+
+  it('caps a requested limit at maxPageLimit and reports the cap in X-Limit', async () => {
+    const { ctx, set } = aContext(undefined, { limit: '100000' });
+
+    await aMiddleware().use(ctx, anEndpointEchoingTheLimit(ctx));
+
+    expect(Number(ctx.request.query.limit)).toBe(1000);
+    expect(set['X-Limit']).toBe(1000);
+  });
+
+  it('applies defaultPageLimit when the request names no limit', async () => {
+    const { ctx, set } = aContext(undefined, {});
+
+    await aMiddleware().use(ctx, anEndpointEchoingTheLimit(ctx));
+
+    expect(Number(ctx.request.query.limit)).toBe(50);
+    expect(set['X-Limit']).toBe(50);
+  });
+
+  it('leaves a limit under the cap as requested', async () => {
+    const { ctx, set } = aContext(undefined, { limit: '20', offset: '40' });
+
+    await aMiddleware().use(ctx, anEndpointEchoingTheLimit(ctx));
+
+    expect(ctx.request.query).toEqual({ limit: '20', offset: '40' });
+    expect(set['X-Limit']).toBe(20);
   });
 });
