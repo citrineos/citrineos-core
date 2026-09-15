@@ -850,7 +850,7 @@ export type GetTransactionByIdQueryVariables = Exact<{
 }>;
 
 export type GetTransactionByIdQueryResult = {
-  Transactions_by_pk?: {
+  Transactions: Array<{
     id: number;
     stationId: number;
     ocppConnectionName: string;
@@ -913,7 +913,7 @@ export type GetTransactionByIdQueryResult = {
       timestamp?: any | null;
       sampledValue?: any | null;
     }>;
-  } | null;
+  }>;
 };
 
 export type GetActiveTransactionForStopSessionQueryVariables = Exact<{

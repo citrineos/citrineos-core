@@ -107,14 +107,14 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
         id: transactionDto.id,
       });
 
-      if (!fullTransactionDtoResponse.Transactions_by_pk) {
+      if (!fullTransactionDtoResponse.Transactions[0]) {
         this._logger.error(
           `Full Transaction DTO not found for id ${transactionDto.id}, cannot broadcast.`,
         );
         return;
       }
 
-      const fullTransactionDto = fullTransactionDtoResponse.Transactions_by_pk as TransactionDto;
+      const fullTransactionDto = fullTransactionDtoResponse.Transactions[0] as TransactionDto;
       await this.cdrBroadcaster.broadcastPostCdr(fullTransactionDto);
     }
   }
