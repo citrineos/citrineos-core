@@ -12,14 +12,17 @@ import { ChargingStationDetailTabsCard } from '@lib/client/pages/charging-statio
 import { S3_BUCKET_FOLDER_IMAGES_CHARGING_STATIONS } from '@lib/utils/consts';
 import { getPresignedUrlForGet } from '@lib/server/actions/file/get-presinged-url-for-get';
 import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
+import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
 
 type ChargingStationDetailProps = {
-  params: { id: number };
+  params: { ocppConnectionName: string };
 };
 
 export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ params }) => {
-  const { id } = params;
+  const { ocppConnectionName } = params;
+  const { id, isNotFound } = useChargingStationId(ocppConnectionName);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +34,14 @@ export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ pa
       });
     }
   }, [id]);
+
+  if (isNotFound) {
+    return (
+      <div className={`${pageMargin} ${pageFlex}`}>
+        <NoDataFoundCard />
+      </div>
+    );
+  }
 
   if (!id) {
     return (

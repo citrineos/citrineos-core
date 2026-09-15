@@ -20,7 +20,7 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     apiClient,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.openMessagesTab();
 
     // UI proof the live OCPP stream reaches the table (Hasura → UI): the OCPP
@@ -63,7 +63,7 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     // The card binds this text to station.isOnline via useOne (no seeding) —
     // it is Online only because the live OCPP connection was ingested.
@@ -75,7 +75,7 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     // The "Last OCPP Message" KeyValue reads N/A when nothing has been
     // ingested; against a live station it must hold a real timestamp.
