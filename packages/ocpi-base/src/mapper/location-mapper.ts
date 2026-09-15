@@ -64,6 +64,7 @@ export class LocationMapper {
       id: location.id!.toString(),
       country_code: location.tenant!.countryCode!,
       party_id: location.tenant!.partyId!,
+      operator: { name: location.tenant!.name },
       publish: location.publishUpstream,
       name: location.name,
       address: location.address,
@@ -93,6 +94,7 @@ export class LocationMapper {
 
   fromPartialGraphql(location: Partial<LocationDto>): Partial<LocationDTO> {
     return {
+      operator: location.tenant ? { name: location.tenant.name } : undefined,
       publish: location.publishUpstream,
       name: location.name,
       address: location.address,

@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IFileStorage } from '@citrineos/base';
+import { childLogger, type IFileStorage } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { Bucket, Storage } from '@google-cloud/storage';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class GcpCloudStorage implements IFileStorage {
   protected readonly _logger: Logger<ILogObj>;
@@ -26,9 +25,7 @@ export class GcpCloudStorage implements IFileStorage {
       credentials: config.credentials,
     });
     this.defaultBucketName = defaultBucket || config.defaultBucketName;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

@@ -6,11 +6,11 @@
 import React from 'react';
 import {
   type ConnectorDto,
-  type TariffDto,
   ConnectorFormatEnum,
   ConnectorPowerTypeEnum,
   ConnectorProps,
   ConnectorTypeEnum,
+  type TariffDto,
 } from '@citrineos/types';
 import { Form } from '@lib/client/components/form';
 import {
@@ -150,7 +150,7 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
   };
 
   return (
-    <Form {...form} submitHandler={handleOnFinish}>
+    <Form {...form} submitHandler={handleOnFinish} hideCancel>
       <ScrollArea>
         <div className={evsesFormUpsertGrid}>
           <FormField

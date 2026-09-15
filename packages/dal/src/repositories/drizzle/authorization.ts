@@ -159,4 +159,12 @@ export class DrizzleAuthorizationRepository
       tariff: toTariffDto(tariff as TariffEntity),
     }));
   }
+
+  async updateByKey(
+    tenantId: number,
+    value: object,
+    key: string,
+  ): Promise<AuthorizationDto | undefined> {
+    return this.updateById(tenantId, Number(key), value);
+  }
 }

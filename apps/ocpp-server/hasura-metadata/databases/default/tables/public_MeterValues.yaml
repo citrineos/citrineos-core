@@ -7,7 +7,13 @@ table:
 object_relationships:
   - name: StopTransaction
     using:
-      foreign_key_constraint_on: stopTransactionDatabaseId
+      manual_configuration:
+        remote_table:
+          name: StopTransactions
+          schema: public
+        column_mapping:
+          stopTransactionDatabaseId: id
+          transactionCreatedAt: transactionCreatedAt
   - name: Tariff
     using:
       foreign_key_constraint_on: tariffId
@@ -16,16 +22,28 @@ object_relationships:
       foreign_key_constraint_on: tenantId
   - name: Transaction
     using:
-      foreign_key_constraint_on: transactionDatabaseId
+      manual_configuration:
+        remote_table:
+          name: Transactions
+          schema: public
+        column_mapping:
+          transactionDatabaseId: id
+          transactionCreatedAt: createdAt
   - name: TransactionEvent
     using:
-      foreign_key_constraint_on: transactionEventId
+      manual_configuration:
+        remote_table:
+          name: TransactionEvents
+          schema: public
+        column_mapping:
+          transactionEventId: id
+          transactionCreatedAt: transactionCreatedAt
 select_permissions:
   - role: user
     permission:
-      columns: '*'
+      columns: "*"
       filter:
         tenantId:
           _eq: x-hasura-tenant-id
       allow_aggregations: true
-    comment: ''
+    comment: ""

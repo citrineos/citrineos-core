@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IVatProvider } from '@citrineos/base';
+import { childLogger, type IVatProvider } from '@citrineos/base';
 import type { AddressType } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 const VIES_REST_BASE = 'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number';
 
@@ -30,9 +29,7 @@ export class ViesVatProvider implements IVatProvider {
   private readonly _logger: Logger<ILogObj>;
 
   constructor({ logger }: { logger?: Logger<ILogObj> } = {}) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async getVat(vatNumber: string): Promise<AddressType | null | undefined> {

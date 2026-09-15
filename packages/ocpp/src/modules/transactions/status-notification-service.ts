@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   CacheNamespace,
+  childLogger,
   createIdentifier,
   CrudRepository,
   type ICache,
@@ -24,16 +25,15 @@ import {
   Variable,
 } from '@citrineos/dal';
 import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
   protected _componentRepository: CrudRepository<Component>;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingStationRepository: IChargingStationRepository;
-  protected _locationRepository: IConnectorRepository &
-    IEvseRepository &
-    IStatusNotificationRepository;
+  protected _evseRepository: IEvseRepository;
+  protected _connectorRepository: IConnectorRepository;
+  protected _statusNotificationRepository: IStatusNotificationRepository;
   protected _cache: ICache;
   protected _logger: Logger<ILogObj>;
 
@@ -41,25 +41,29 @@ export class StatusNotificationService {
     componentRepository,
     deviceModelRepository,
     chargingStationRepository,
-    locationRepository,
+    evseRepository,
+    connectorRepository,
+    statusNotificationRepository,
     cache,
     logger,
   }: {
     componentRepository: CrudRepository<Component>;
     deviceModelRepository: IDeviceModelRepository;
     chargingStationRepository: IChargingStationRepository;
-    locationRepository: IConnectorRepository & IEvseRepository & IStatusNotificationRepository;
+    evseRepository: IEvseRepository;
+    connectorRepository: IConnectorRepository;
+    statusNotificationRepository: IStatusNotificationRepository;
     cache: ICache;
     logger?: Logger<ILogObj>;
   }) {
     this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._chargingStationRepository = chargingStationRepository;
-    this._locationRepository = locationRepository;
+    this._evseRepository = evseRepository;
+    this._connectorRepository = connectorRepository;
+    this._statusNotificationRepository = statusNotificationRepository;
     this._cache = cache;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**
@@ -113,7 +117,7 @@ export class StatusNotificationService {
         return;
       }
     } else if (!matchingEvse) {
-      matchingEvse = await this._locationRepository.createOrUpdateEvse(tenantId, {
+      matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
         evseTypeId: statusNotificationRequest.evseId,
         ocppConnectionName,
       });
@@ -137,9 +141,9 @@ export class StatusNotificationService {
       timestamp: statusNotificationRequest.timestamp,
     };
 
-    await this._locationRepository.createOrUpdateOcpp2Connector(tenantId, connector);
+    await this._connectorRepository.createOrUpdateOcpp2Connector(tenantId, connector);
 
-    await this._locationRepository.addStatusNotificationToChargingStation(
+    await this._statusNotificationRepository.addStatusNotificationToChargingStation(
       tenantId,
       ocppConnectionName,
       statusNotification,
@@ -236,14 +240,12 @@ export class StatusNotificationService {
       if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
         // update all connectors at this station — connectorId stripped so we
         // don't overwrite the per-row connectorId values
-        await this._locationRepository.updateAllConnectorsByQuery(
+        await this._connectorRepository.updateAllConnectorsByStationId(
           tenantId,
+          chargingStation.id!,
           {
             ...connector,
             connectorId: undefined,
-          },
-          {
-            where: { stationId: chargingStation.id, tenantId },
           },
         );
       } else if (statusNotificationRequest.connectorId !== 0) {
@@ -260,7 +262,7 @@ export class StatusNotificationService {
               `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
             );
           }
-          const commissioned = await this._locationRepository.autoCommissionEvseForOcpp16Connector(
+          const commissioned = await this._evseRepository.autoCommissionEvseForOcpp16Connector(
             tenantId,
             ocppConnectionName,
           );
@@ -269,7 +271,7 @@ export class StatusNotificationService {
           connector.evseId = matchingEvse.id as number;
         }
 
-        await this._locationRepository.createOrUpdateOcpp16Connector(tenantId, connector);
+        await this._connectorRepository.createOrUpdateOcpp16Connector(tenantId, connector);
       }
 
       // Now that the Connector record exists (upserted above, or pre-existing in
@@ -287,7 +289,7 @@ export class StatusNotificationService {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
       }
       const statusNotification = StatusNotification.build(statusNotificationInput);
-      await this._locationRepository.addStatusNotificationToChargingStation(
+      await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
         statusNotification,

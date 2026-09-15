@@ -144,9 +144,16 @@ export const TRANSACTION_SUCCESS_RATE_QUERY = gql`
   }
 `;
 
+// Transactions is partitioned by `createdAt`, so its primary key is the
+// composite (id, createdAt) and Hasura's `Transactions_by_pk` demands both
+// columns. The detail route only carries `id`, so this selects the row with a
+// `where` filter instead and aliases the result to the `Transactions_by_pk`
+// field name that the Hasura data provider reads the response off of. The
+// alias yields a single-element array, which `getSingleFromListPlainToInstanceOptions`
+// unwraps back into the object `useOne` callers expect.
 export const TRANSACTION_GET_QUERY = gql`
   query GetTransactionById($id: Int!) {
-    Transactions_by_pk(id: $id) {
+    Transactions_by_pk: Transactions(where: { id: { _eq: $id } }, limit: 1) {
       ${TRANSACTION_DETAIL_FIELDS}
       stationId
       locationId
@@ -170,12 +177,17 @@ export const TRANSACTION_GET_QUERY = gql`
   }
 `;
 
+// Same composite-key constraint as TRANSACTION_GET_QUERY: `pk_columns` would
+// have to carry `createdAt` as well, so update by `where` on the id and alias
+// back to the `update_Transactions_by_pk` response key.
 export const TRANSACTION_EDIT_MUTATION = gql`
   mutation TransactionEdit($id: Int!, $object: Transactions_set_input!) {
-    update_Transactions_by_pk(pk_columns: { id: $id }, _set: $object) {
-      id
-      isActive
-      updatedAt
+    update_Transactions_by_pk: update_Transactions(where: { id: { _eq: $id } }, _set: $object) {
+      returning {
+        id
+        isActive
+        updatedAt
+      }
     }
   }
 `;

@@ -33,23 +33,24 @@ import { TransactionEvent } from './transaction-event.js';
 export class MeterValue extends Model implements MeterValueDto {
   static readonly MODEL_NAME: string = Namespace.MeterValue;
 
-  @ForeignKey(() => TransactionEvent)
+  // @BelongsTo associations below still work for reads.
   @Column(DataType.INTEGER)
   declare transactionEventId?: number | null;
 
   @BelongsTo(() => TransactionEvent, 'transactionEventId')
   declare transactionEvent?: TransactionEventDto;
 
-  @ForeignKey(() => Transaction)
   @Column(DataType.INTEGER)
   declare transactionDatabaseId?: number | null;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;
 
-  @ForeignKey(() => StopTransaction)
   @Column(DataType.INTEGER)
   declare stopTransactionDatabaseId?: number | null;
+
+  @Column(DataType.DATE)
+  declare transactionCreatedAt?: Date;
 
   @BelongsTo(() => StopTransaction, 'stopTransactionDatabaseId')
   declare stopTransaction?: StopTransactionDto;
@@ -95,6 +96,38 @@ export class MeterValue extends Model implements MeterValueDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
+
+  @BeforeCreate
+  static async resolvePartitionKey(instance: MeterValue): Promise<void> {
+    if (instance.transactionCreatedAt != null) {
+      return;
+    }
+    if (instance.transactionDatabaseId != null) {
+      instance.transactionCreatedAt = await Transaction.resolveCreatedAt(
+        instance.transactionDatabaseId,
+      );
+      return;
+    }
+    // Not linked to a Transaction directly, but a linked sibling carries the same key.
+    const sibling =
+      instance.stopTransactionDatabaseId != null
+        ? await StopTransaction.findOne({
+            where: { id: instance.stopTransactionDatabaseId },
+            attributes: ['transactionCreatedAt'],
+          })
+        : instance.transactionEventId != null
+          ? await TransactionEvent.findOne({
+              where: { id: instance.transactionEventId },
+              attributes: ['transactionCreatedAt'],
+            })
+          : null;
+    const key = sibling?.get('transactionCreatedAt') as Date | undefined;
+    if (key) {
+      instance.transactionCreatedAt = key;
+      return;
+    }
+    instance.transactionCreatedAt = new Date();
+  }
 
   @BeforeUpdate
   @BeforeCreate

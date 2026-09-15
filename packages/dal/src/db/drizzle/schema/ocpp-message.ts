@@ -9,6 +9,7 @@ import {
   jsonb,
   pgSchema,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -21,7 +22,7 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function ocppMessageColumns() {
   return {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     stationId: integer('stationId'),
     ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
     correlationId: varchar('correlationId', { length: 255 }),
@@ -56,10 +57,11 @@ function ocppMessageColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const ocppMessageTable = pgTable(TableName.OCPPMessages, ocppMessageColumns(), (t) => [
+  primaryKey({ columns: [t.id, t.createdAt] }),
   index('ocpp_messages_ocpp_connection_name').on(t.ocppConnectionName),
   index('ocpp_messages_correlation_id').on(t.correlationId),
   index('ocpp_messages_request_message_id').on(t.requestMessageId),
-  // Serves the request/response lookups in the ocpp_correlate_message() insert trigger.
+  // Serves the request/response lookups in the correlation insert triggers.
   index('ocpp_messages_correlation_lookup').on(t.tenantId, t.ocppConnectionName, t.correlationId),
 ]);
 

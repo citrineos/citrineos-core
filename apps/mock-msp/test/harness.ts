@@ -85,6 +85,32 @@ export function makeServer(
   return { ctx, app };
 }
 
+export interface ListeningServer extends TestServer {
+  origin: string; // http://127.0.0.1:PORT
+  close(): Promise<void>;
+}
+
+/**
+ * Same as makeServer() but bound to a real ephemeral port. Needed where
+ * app.inject() cannot observe the behaviour: the `abort` fault destroys the
+ * socket, `delay` is only measurable end to end, and the entrypoint-style
+ * paths talk to a URL.
+ */
+export async function makeListeningServer(
+  overrides: Partial<MockConfig> = {},
+  probeOverride?: Partial<StatusProbes>,
+): Promise<ListeningServer> {
+  const { ctx, app } = makeServer(overrides, probeOverride);
+  await app.listen({ port: 0, host: '127.0.0.1' });
+  const addr = app.server.address() as AddressInfo;
+  return {
+    ctx,
+    app,
+    origin: `http://127.0.0.1:${addr.port}`,
+    close: () => app.close(),
+  };
+}
+
 // ---- Authorization + routing header helpers --------------------------------
 
 export function authHeader(rawToken: string): string {

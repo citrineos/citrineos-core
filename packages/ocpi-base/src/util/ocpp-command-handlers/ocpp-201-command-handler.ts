@@ -98,6 +98,15 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
         });
       });
 
+    let evseId: number | undefined;
+    if (startSession.evse_uid !== null && startSession.evse_uid !== undefined) {
+      evseId = Number(EXTRACT_EVSE_ID(startSession.evse_uid));
+      if (!Number.isInteger(evseId) || evseId <= 0) {
+        this.reportEvseNotFound(startSession, tenantPartner, startSession.response_url, commandId);
+        return;
+      }
+    }
+
     const requestStartTransactionRequest: OCPP2_0_1.RequestStartTransactionRequest = {
       remoteStartId,
       idToken: {
@@ -106,7 +115,7 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           this.tokensMapper.mapOcpiTokenTypeToOcppIdTokenType(startSession.token.type),
         ),
       },
-      evseId: Number(EXTRACT_EVSE_ID(startSession.evse_uid!)),
+      ...(evseId !== undefined ? { evseId } : {}),
     };
     await this.sendOCPPMessage(
       this.commandUrls.requestStartTransactionRequestUrl,
@@ -412,5 +421,30 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
           commandId,
         );
     }
+  }
+
+  private reportEvseNotFound(
+    startSession: StartSession,
+    tenantPartner: TenantPartnerDto,
+    responseUrl: string,
+    commandId: string,
+  ): void {
+    this.logger.error('StartSession failed, EVSE not found', startSession);
+    this.commandsClientApi
+      .postCommandResult(
+        tenantPartner,
+        responseUrl,
+        {
+          result: CommandResultType.FAILED,
+          message: {
+            language: 'en',
+            text: 'EVSE not found on charging station',
+          },
+        },
+        commandId,
+      )
+      .catch((error) => {
+        this.logger.error('Failed to post command result', { error });
+      });
   }
 }
