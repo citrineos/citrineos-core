@@ -4,10 +4,17 @@
 
 import { type IBootRepository } from '../../../index.js';
 import type { BootCreate, BootDto, VariableAttributeDto } from '@citrineos/types';
-import type { DrizzleVariableAttributeRepository } from '@dal/repositories/drizzle/variable-attribute.js';
+import {
+  type DrizzleVariableAttributeRepository,
+  toVariableAttributeDto,
+} from '@dal/repositories/drizzle/variable-attribute.js';
 import { and, eq } from 'drizzle-orm';
 import { type BootEntity, bootTable, tenantBootTable } from '../../db/drizzle/schema/boot.js';
 import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
+import {
+  type VariableAttributeEntity,
+  variableAttributeTable,
+} from '../../db/drizzle/schema/variable-attribute.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository, type DrizzleRepositoryDependencies } from './base.js';
 
@@ -57,11 +64,12 @@ export class DrizzleBootRepository
   constructor({
     config,
     logger,
+    drizzleInstance,
     variableAttributeRepository,
   }: DrizzleRepositoryDependencies & {
     variableAttributeRepository: DrizzleVariableAttributeRepository;
   }) {
-    super({ config, logger });
+    super({ config, logger, drizzleInstance });
 
     this._variableAttributeRepository = variableAttributeRepository;
   }
@@ -93,7 +101,7 @@ export class DrizzleBootRepository
       .returning()) as BootEntity[];
 
     if (!rows[0]) return undefined;
-    const dto = this.toDto(rows[0]);
+    const dto = await this.toDtoWithPendingBootSetVariables(rows[0]);
 
     this.emit('updated', [dto]);
 
@@ -202,7 +210,19 @@ export class DrizzleBootRepository
       .where(eq(bootTable.stationId, stationId))
       .limit(1);
 
-    return rows[0] ? this.toDto(rows[0]) : undefined;
+    return rows[0] ? await this.toDtoWithPendingBootSetVariables(rows[0]) : undefined;
+  }
+
+  private async toDtoWithPendingBootSetVariables(row: BootEntity): Promise<BootDto> {
+    const variableAttributes = (await this.db
+      .select()
+      .from(variableAttributeTable)
+      .where(eq(variableAttributeTable.bootConfigId, row.id))) as VariableAttributeEntity[];
+
+    return {
+      ...this.toDto(row),
+      pendingBootSetVariables: variableAttributes.map(toVariableAttributeDto),
+    };
   }
 
   // Resolves a tenant-scoped `ocppConnectionName` to a ChargingStation id.

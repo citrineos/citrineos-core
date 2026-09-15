@@ -84,7 +84,10 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
   async readByKey(tenantId: number, key: string): Promise<Boot | undefined> {
     const stationId = await this.findStationId(tenantId, key);
     if (stationId === undefined) return undefined;
-    return await this.readOnlyOneByQuery(tenantId, { where: { stationId } });
+    return await this.readOnlyOneByQuery(tenantId, {
+      where: { stationId },
+      include: [VariableAttribute],
+    });
   }
 
   async existsByKey(tenantId: number, key: string): Promise<boolean> {
@@ -101,7 +104,10 @@ export class SequelizeBootRepository extends SequelizeRepository<Boot> implement
 
     // Never let a caller move a boot record between tenants or stations.
     const { tenantId: _tenantId, stationId: _stationId, ...safeValue } = value as any;
-    const [updated] = await this._updateAllByQuery(tenantId, safeValue, { where: { stationId } });
+    const [updated] = await this._updateAllByQuery(tenantId, safeValue, {
+      where: { stationId },
+      include: [VariableAttribute],
+    });
     return updated;
   }
 

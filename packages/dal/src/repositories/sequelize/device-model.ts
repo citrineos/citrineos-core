@@ -467,7 +467,7 @@ export class SequelizeDeviceModelRepository
     const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
         ocppConnectionName: ocppConnectionName,
-        bootConfigSetId: { [Op.ne]: null },
+        bootConfigId: { [Op.ne]: null },
       },
       include: [{ model: Component, include: [EvseType] }, Variable],
     });
@@ -574,10 +574,22 @@ export class SequelizeDeviceModelRepository
         attributeType: input.type,
         attributeValue: input.value,
         component: {
-          ...input.component,
+          name: input.component.name,
+          ...(input.component.instance ? { instance: input.component.instance } : {}),
+          ...(input.component.evse
+            ? {
+                evse: {
+                  id: input.component.evse.id,
+                  ...(input.component.evse.connectorId
+                    ? { connectorId: input.component.evse.connectorId }
+                    : {}),
+                },
+              }
+            : {}),
         },
         variable: {
-          ...input.variable,
+          name: input.variable.name,
+          ...(input.variable.instance ? { instance: input.variable.instance } : {}),
         },
       };
     }
