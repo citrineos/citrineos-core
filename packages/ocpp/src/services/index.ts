@@ -7,8 +7,6 @@ export * from './vat-provider/index.js';
 export * from './certificate/index.js';
 export { InstallCertificateHelperService } from './certificate/install-certificate-helper-service.js';
 
-export { MemoryCache } from './cache/memory.js';
-export { RedisCache } from './cache/redis.js';
 export { DeviceModelService } from './device-model/device-model-service.js';
 export { NetworkProfileService } from './network-profile/network-profile-service.js';
 export type { PersistSetNetworkProfileOptions } from './network-profile/network-profile-service.js';
