@@ -152,10 +152,12 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
 
     const stationIds: Record<string, number> = {};
     for (const name of [STATION_A, STATION_B]) {
-      await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
+      const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
         ocppConnectionName: name,
         isOnline: false,
       });
+      // SetNetworkProfiles link by FK, so the rows below need the ids back.
+      stationIds[name] = (station as unknown as { id: number }).id;
     }
     stationBId = stationIds[STATION_B];
 

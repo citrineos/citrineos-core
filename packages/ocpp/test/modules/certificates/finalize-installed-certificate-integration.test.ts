@@ -105,8 +105,6 @@ function aService() {
 }
 
 let nextSerialNumber = 1;
-let stationId: number;
-
 /** A pending attempt, as either prepare path leaves one before the request goes out. */
 async function aPendingAttempt(certificateType: CertificateUseEnumType) {
   const certificate = await certificateRepository.createCertificate(DEFAULT_TENANT_ID, {

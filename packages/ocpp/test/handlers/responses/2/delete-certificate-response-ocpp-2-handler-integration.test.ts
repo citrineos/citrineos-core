@@ -114,8 +114,6 @@ afterAll(async () => {
 
 type CertificateHashData = typeof CERT_A;
 
-let stationId: number;
-
 /** The request the endpoint sent, which is what says which certificate a response answers for. */
 async function aDeleteCertificateRequest(
   correlationId: string,

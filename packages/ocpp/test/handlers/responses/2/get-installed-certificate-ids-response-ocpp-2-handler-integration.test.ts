@@ -107,8 +107,6 @@ afterAll(async () => {
 
 type CertificateHashData = typeof ROOT_ONE;
 
-let stationId: number;
-
 function aResponseReporting(...certificates: CertificateHashData[]): IMessage<OcppRequest> {
   return {
     context: {
