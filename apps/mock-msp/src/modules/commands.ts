@@ -27,7 +27,7 @@
 // async command callback; that is now fixed upstream, and this strict check guards
 // against a regression.
 //
-// Validation: the inbound body is validated against ocpi-base CommandResultSchema
+// Validation: the inbound body is validated against ocpi CommandResultSchema
 // (drift => Finding, recorded by the dispatcher). The sync CommandResponse Citrine
 // returns to our SEND is validated by OcpiClient (CommandResponseSchema) on the
 // outbound side — not here. Our own reply is the empty envelope (OcpiEmptyResponseSchema).
@@ -127,8 +127,8 @@ const commandResultRoute: OcpiRoute = {
   operation: 'commands.result',
   auth: 'callback', // token required; routing headers strict-validated as from=CPO, to=eMSP
   requireRoutingHeaders: true,
-  requestSchema: CommandResultSchema, // ocpi-base — validates Citrine's async CommandResult body
-  responseSchema: OcpiEmptyResponseSchema, // ocpi-base — our empty-envelope reply self-check + fault target
+  requestSchema: CommandResultSchema, // ocpi — validates Citrine's async CommandResult body
+  responseSchema: OcpiEmptyResponseSchema, // ocpi — our empty-envelope reply self-check + fault target
   handle: handleCommandResult,
 };
 

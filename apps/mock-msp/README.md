@@ -9,7 +9,7 @@ A mock **eMSP** (e-Mobility Service Provider) that speaks **OCPI 2.2.1** and
 impersonates the seeded partner **`US/TST` "TestMobilitySolutions"**. Its job is
 to test CitrineOS's **CPO-side** OCPI implementation from the outside: it listens
 on **port 8083**, exposes exactly the endpoint paths the partner seed advertises,
-and **reuses `@citrineos/ocpi-base`'s Zod schemas verbatim** to validate every
+and **reuses `@citrineos/ocpi`'s Zod schemas verbatim** to validate every
 inbound request and self-check every reply.
 
 Because those schemas are the _same catalog `zod` instance_ (`4.1.12`) Citrine
@@ -46,16 +46,16 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
   live-charging flows also the EVerest simulator containers. The scripts under
   `scripts/` handle the git-bash quirks (`MSYS_NO_PATHCONV`, netstat pid
   resolution) themselves — run them from git bash on Windows as-is.
-- **Build `@citrineos/ocpi-base` first.** The mock deep-imports a handful of
-  schemas from `@citrineos/ocpi-base/dist/...` (see `src/ocpi/barrel.ts`), and
-  ocpi-base ships **only `dist/`** (no `src`, no `exports` map). ocpi-base's
+- **Build `@citrineos/ocpi` first.** The mock deep-imports a handful of
+  schemas from `@citrineos/ocpi/dist/...` (see `src/ocpi/barrel.ts`), and
+  ocpi ships **only `dist/`** (no `src`, no `exports` map). ocpi's
   `tsc -b` references `@citrineos/base` and `@citrineos/ocpp`, so build the
   closure in order:
 
   ```bash
   pnpm --filter @citrineos/base build
   pnpm --filter @citrineos/ocpp build
-  pnpm --filter @citrineos/ocpi-base build
+  pnpm --filter @citrineos/ocpi build
   ```
 
   or in one shot (builds the whole dependency closure topologically):
@@ -67,7 +67,7 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 > If the barrel fails to resolve at runtime with unrewritten path aliases
 > (`@interfaces/*`, `@ocpp/*`, …), the upstream package's `dist` was built with a
 > bare `tsc -b` that skipped its `tsc-alias` step. Re-run the package's full
-> `build` script (`tsc -b && tsc-alias`) for `base`/`core`/`ocpi-base`.
+> `build` script (`tsc -b && tsc-alias`) for `base`/`core`/`ocpi`.
 
 ---
 
@@ -75,7 +75,7 @@ async traffic, drive the Actor, arm faults, and run assertion oracles.
 
 ```bash
 # from the repo root
-pnpm --filter "@citrineos/mock-msp..." build   # ensures ocpi-base/dist exists
+pnpm --filter "@citrineos/mock-msp..." build   # ensures ocpi/dist exists
 pnpm --filter @citrineos/mock-msp start        # node dist/index.js, listens on :8083
 ```
 
@@ -214,11 +214,11 @@ status, never build the envelope, never check auth.
 | `src/identity.ts`                           | `US/TST` EMSP identity + `buildEndpointCatalog()` (the 8 split `{identifier,role,url}` endpoints)                                     |
 | `src/context.ts`                            | `buildContext(cfg)` — assembles the singletons (WireLogger → Store → FaultEngine → OcpiClient)                                        |
 | `src/server.ts`                             | `buildServer(ctx)` — Fastify factory, raw-JSON parser, mounts modules + control API                                                   |
-| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi-base` (barrel exports + `dist` deep-imports)                                            |
+| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi` (barrel exports + `dist` deep-imports)                                            |
 | `src/ocpi/dispatcher.ts`                    | `dispatch(route, ctx, freq, freply)` — the uniform per-request pipeline                                                               |
 | `src/core/registry.ts`                      | `registerAllModules` — binds each `OcpiRoute` through the dispatcher                                                                  |
 | `src/core/types.ts`                         | All shared types/interfaces (`MockContext`, `Exchange`, `Store`, `FaultEngine`, `Scenario`, …)                                        |
-| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi-base envelope builders                                             |
+| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi envelope builders                                             |
 | `src/core/store.ts`                         | Exchange ring buffer (cap 10k) + `DomainState` + `waitForReceived` + findings + `reset`                                               |
 | `src/core/auth.ts`                          | base64 `Token` encode/decode; inbound verify; outbound `Authorization` builder                                                        |
 | `src/core/routing-headers.ts`                | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
@@ -259,7 +259,7 @@ Two bootstrap tokens (both **base64-encoded on the wire**, format
 | `serverCredentials.token` | the seed's `serverCredentials.token` (unsigned dev value) | The mock **presents** this calling Citrine.                             |
 
 The exact bootstrap values live in the seed
-(`apps/ocpi-server/seeders/20250806120002-default-tenant-partner.ts`) — the mock
+(`apps/ocpi-server/db/seeders/20250806120002-default-tenant-partner.ts`) — the mock
 reads them from there (or from the `MOCK_MSP_*` env vars) rather than repeating
 them here.
 
@@ -340,7 +340,7 @@ is that missing charger. With it connected, the mock's `START_SESSION` reaches a
 live station and completes the full round-trip: sync **ACCEPTED** → async
 **CommandResult** → a real **Session** push → (on stop) a real **CDR** push.
 
-**Why it just works: the seed already aligns.** `apps/ocpi-server/seeders/20250822120003-basic-objects.ts`
+**Why it just works: the seed already aligns.** `apps/ocpi-server/db/seeders/20250822120003-basic-objects.ts`
 seeds Location `1` / Station `cp001` / EVSE `cp001::1` / Connector `1` under the
 `US/TST` partner, plus an Accepted `ISO14443` authorization `DEADBEEF`. That is
 exactly the station EVerest registers as at `ws://host.docker.internal:8081/cp001`.
@@ -798,6 +798,13 @@ observing Citrine's CPO-side behavior:
     500s** — the three semantic gaps the spec probes check for; see §Spec
     probes for the mechanics and consequences of each.
 
+13. **EVSE served with an empty `connectors` array.** OCPI 2.2.1 requires at
+    least one connector per EVSE, but `EvseMapper.fromGraphql` drops connectors
+    that fail its own validation and then returns the EVSE anyway — its
+    `return;` for the no-valid-connectors case is commented out with a
+    `// TODO: solve this case`. The pulled Locations payload then fails the
+    @citrineos/ocpi schema at `data[].evses[].connectors`.
+
 ---
 
 ## Environment variables
@@ -839,8 +846,8 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 **In-repo (hermetic — no docker, no live Citrine):**
 
 - **Compiles clean** — `tsc -b apps/mock-msp/tsconfig.json` → exit 0.
-- **Self-tests pass** — `pnpm --filter @citrineos/mock-msp test` → **11 test
-  files, 68 tests**. Coverage: both credentials handshakes + rotation with the
+- **Self-tests pass** — `pnpm --filter @citrineos/mock-msp test` → **27 test
+  files, 248 tests**. Coverage: both credentials handshakes + rotation with the
   stale-token probe; fault injection (`ocpiStatus`/`httpStatus`/`malformBody`,
   scope `times`, disarm); functional RECEIVER/SENDER modules (good body stored +
   `validation.ok:true`, bad body → `Finding`; bad token → 401/2002; wrong
@@ -851,7 +858,19 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
   a stub CPO (incl. the CDR pull fallback and per-cycle seq floors); token
   push/patch/verify; coverage + provoke + status aggregation; and the `expect[]`
   oracle over every shipped fixture. The suite drives the app via
-  `app.inject()` with a stub CPO — nothing needs the live stack.
+  `app.inject()` with a stub CPO — nothing needs the live stack. The rest of
+  the control API (state/received/wait/scenario/authorize/register/pull…), the
+  control secret, every fault kind (abort/delay over a real socket), the
+  remaining OCPI receivers and readers, the dispatcher edge cases, the charge
+  flow's degraded branches, the spec probes, the scenario grammar, the Store
+  ring buffer, the wire log, `loadConfig`, the dashboard routes and the built
+  entrypoint (spawned `dist/index.js`) are covered the same way.
+- **Dashboard** — Playwright (`test:e2e`, 34 specs) against a mock it boots
+  itself: header/cards/coverage grid, the wire trace filters and detail rows,
+  the fault builder, the actor/charging/probe buttons with Citrine down, the
+  control secret, the poll loop surviving an outage.
+- **Live** — `test:live` (41 tests) and `test:everest` (10) run in CI against
+  the real stack; see the CI section.
 
 **Live against a running CitrineOS + EVerest (all reproduced on the dev stack):**
 
@@ -865,3 +884,49 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 - Every rough-edge in the list above that is marked as observed, including the
   coordinates finding, the CDR envelope inconsistency, and the PATCH-omits-
   `valid` token block.
+
+---
+
+## CI
+
+`.github/workflows/mock-msp.yml` (workflow name **Mock eMSP**) runs on pull
+requests, on every push to `next`, nightly and on `workflow_dispatch`. Lanes:
+
+| job | what | when (PR) |
+|---|---|---|
+| `unit` | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,ocpp,ocpi}/**`, shared config |
+| `docker-image` | builds the compose `mock-msp` service from `deploy.Dockerfile`, boots it alone, checks `/_mock/health` + the dashboard | same + compose files |
+| `dashboard` | Playwright against the dashboard (`e2e/*.e2e.ts`, project `dashboard`); the mock is started by Playwright's `webServer`, no Citrine behind it | `apps/mock-msp/**`, shared config |
+| `live` | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts` | `apps/mock-msp/**`, `packages/ocpi/**`, `apps/ocpi-server/**`, compose files |
+| `everest` | `live` plus EVerest as `cp001`: `test-live/everest/*.live.ts` (plug → START_SESSION → Session → STOP_SESSION → CDR) and the `@live`/`@everest` dashboard specs | push to `next`, nightly, dispatch, or the PR label `ci:mock-msp-everest` |
+| `mock-msp-ci` | aggregate status — the one check to require on `next` | always |
+
+`schedule` and `workflow_dispatch` only fire once the workflow file exists on the
+repository's default branch (`main`); until then the label is the way to run the
+EVerest lane on a PR.
+
+Two things the live lanes need that nothing else in the repo does: the OCPI
+seeders (`docker compose … exec -e OCPI_ENV=docker citrineos-ocpi pnpm run db:seed`
+— the containers only migrate), and `host.docker.internal` resolvable from the
+`citrineos-ocpi` container (`extra_hosts` in `docker-compose.local.yml`; the
+partner seed hardcodes it).
+
+Run the same things locally:
+
+```bash
+pnpm --filter @citrineos/mock-msp test            # hermetic
+pnpm --filter @citrineos/mock-msp test:e2e        # dashboard (boots its own mock on :18083)
+docker compose -f docker-compose.yml -f docker-compose.local.yml --profile ocpi \
+  up -d --build citrine citrineos-ocpi graphql-engine   # stack without the mock container
+bash apps/mock-msp/scripts/ci/seed-citrine.sh     # once per fresh DB
+bash apps/mock-msp/scripts/ci/mock-up.sh          # native mock on :8083
+pnpm --filter @citrineos/mock-msp test:live       # test-live/pr
+bash apps/mock-msp/scripts/everest-up.sh && pnpm --filter @citrineos/mock-msp test:everest
+```
+
+Live runs tolerate the documented Citrine defects listed above through
+`test-live/support/known-findings.ts`; any other error-level finding fails the
+lane. When one of those defects gets fixed upstream, drop its entry there.
+Artifacts (`reports/`, `playwright-report/`) carry the junit files, the mock's
+NDJSON wire log, the `/_mock/exchanges|findings|coverage|probes|status` dumps and
+the compose logs.

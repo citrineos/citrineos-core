@@ -251,7 +251,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 
 **[Scroll down to FINDINGS in the drawer.]**
 
-> The finding: _"Citrine response to pull.locations failed the ocpi-base schema."_ One accusation. That's why the card says 1.
+> The finding: _"Citrine response to pull.locations failed the ocpi schema."_ One accusation. That's why the card says 1.
 >
 > And here are the seventeen receipts.
 
@@ -455,7 +455,7 @@ Everything else — the **Provoke** buttons, **Pull all**, the **Send command** 
 >
 > So I never wrote a schema. Not one.
 >
-> That locations response is validated by **`OcpiResponseSchema(LocationDTOSchema)` — imported straight out of `@citrineos/ocpi-base`.** Citrine's own schema object. Same package, same monorepo link, same Zod instance, same version. The exact object Citrine itself parses with.
+> That locations response is validated by **`OcpiResponseSchema(LocationDTOSchema)` — imported straight out of `@citrineos/ocpi`.** Citrine's own schema object. Same package, same monorepo link, same Zod instance, same version. The exact object Citrine itself parses with.
 >
 > Which means when those seventeen issues show up, there are only two possibilities. **Either Citrine's output is wrong, or Citrine's own schema is wrong.** It cannot be mine. I don't have one to be wrong.
 >
