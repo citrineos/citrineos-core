@@ -20,8 +20,8 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import {
-  Component,
-  Variable,
+  type IDeviceModelRepository,
+  type IOCPPMessageRepository,
   VariableAttribute,
   stationIdFilter,
   type IDeviceModelRepository,
@@ -167,32 +167,15 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     variableInstance: string | null,
     variableValue: string,
     attributeType: AttributeEnumType,
-  ): Promise<VariableAttribute> {
-    let existingVariableAttribute = (await this._deviceModelRepository.readOnlyOneByQuery(
-      tenantId,
-      {
-        where: {
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          type: attributeType,
-        },
-        include: [
-          {
-            model: Component,
-            where: {
-              name: componentName,
-              instance: componentInstance ? componentInstance : null,
-            },
-          },
-          {
-            model: Variable,
-            where: {
-              name: variableName,
-              instance: variableInstance ? variableInstance : null,
-            },
-          },
-        ],
-      },
-    )) as VariableAttribute;
+  ): Promise<VariableAttribute | undefined> {
+    let existingVariableAttribute =
+      await this._deviceModelRepository.findVariableAttributeByComponentAndVariable(
+        tenantId,
+        ocppConnectionName,
+        attributeType,
+        { name: componentName, instance: componentInstance ?? null },
+        { name: variableName, instance: variableInstance ?? null },
+      );
     if (!existingVariableAttribute) {
       const createdVariableAttributes =
         await this._deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
