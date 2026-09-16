@@ -4,14 +4,14 @@
 
 import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
-  ChargingStation,
-  Connector,
   DefaultSequelizeInstance,
   Evse,
   EvseType,
   MeterValue,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
   SequelizeTransactionEventRepository,
-  Tenant,
   Transaction,
 } from '@citrineos/dal';
 import {
@@ -45,6 +45,8 @@ const TRANSACTION_ID = 4711;
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -76,6 +78,17 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -98,8 +111,7 @@ async function aConnectorOn(ocppConnectionName: string, connectorNumber: number)
     ocppConnectionName,
     evseTypeId: evseNumber,
   } as never);
-  const connector = await Connector.create({
-    tenantId: DEFAULT_TENANT_ID,
+  const connector = await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     connectorId: connectorNumber,
     evseId: (evse as unknown as { id: number }).id,
@@ -107,16 +119,15 @@ async function aConnectorOn(ocppConnectionName: string, connectorNumber: number)
     status: 'Available',
     errorCode: 'NoError',
     timestamp: new Date().toISOString(),
-  } as never);
+  });
   return (connector as unknown as { id: number }).id;
 }
 
 async function aStation(ocppConnectionName: string) {
-  await ChargingStation.create({
+  await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 function aMeterValuesMessage(connectorId: number): IMessage<OcppRequest> {
@@ -154,7 +165,7 @@ describe('OCPP 1.6 MeterValues on a station whose connector number is not a data
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
 
     nextEvseNumber = 1;
 

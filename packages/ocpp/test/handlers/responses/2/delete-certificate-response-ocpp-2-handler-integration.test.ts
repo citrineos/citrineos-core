@@ -5,6 +5,7 @@
 import { DEFAULT_TENANT_ID, type IMessage } from '@citrineos/base';
 import {
   CertificateUseEnum,
+  type DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnum,
   EventGroup,
   HashAlgorithmEnum,
@@ -17,15 +18,13 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
-  DeleteCertificateAttempt,
-  InstalledCertificate,
-  OCPPMessage,
+  type ITenantRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
+  SequelizeLocationRepository,
   SequelizeOCPPMessageRepository,
-  Tenant,
+  SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { DeleteCertificateResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -63,6 +62,11 @@ const CERT_B = {
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let deleteCertificateAttemptRepository: SequelizeDeleteCertificateAttemptRepository;
+let installedCertificateRepository: SequelizeInstalledCertificateRepository;
+let ocppMessageRepository: SequelizeOCPPMessageRepository;
+let tenantRepository: ITenantRepository;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -94,6 +98,13 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  const deps = { config, logger: undefined, sequelizeInstance } as never;
+  deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository(deps);
+  installedCertificateRepository = new SequelizeInstalledCertificateRepository(deps);
+  ocppMessageRepository = new SequelizeOCPPMessageRepository(deps);
+  tenantRepository = new SequelizeTenantRepository(deps);
+  locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
 
 afterAll(async () => {
@@ -109,7 +120,7 @@ async function aDeleteCertificateRequest(
   certificateHashData: CertificateHashData,
 ) {
   const payload = { certificateHashData };
-  return OCPPMessage.create({
+  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
@@ -119,27 +130,24 @@ async function aDeleteCertificateRequest(
     payload,
     raw: JSON.stringify([MessageTypeId.Call, correlationId, 'DeleteCertificate', payload]),
     timestamp: new Date().toISOString(),
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 /** A pending attempt, as prepareToDeleteCertificate leaves one before the request goes out. */
 async function aPendingDeleteAttempt(certificateHashData: CertificateHashData) {
-  return DeleteCertificateAttempt.create({
+  return deleteCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     ...certificateHashData,
     status: null,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
-  return InstalledCertificate.create({
+  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
 function anAcceptedResponse(correlationId: string): IMessage<OcppRequest> {
@@ -159,41 +167,37 @@ function anAcceptedResponse(correlationId: string): IMessage<OcppRequest> {
   } as unknown as IMessage<OcppRequest>;
 }
 
-function statusOf(attempt: DeleteCertificateAttempt) {
-  return DeleteCertificateAttempt.findByPk((attempt as unknown as { id: number }).id).then(
-    (row) => row?.status ?? null,
-  );
+function statusOf(attempt: DeleteCertificateAttemptDto) {
+  return deleteCertificateAttemptRepository
+    .readByKey(DEFAULT_TENANT_ID, attempt.id!)
+    .then((row) => row?.status ?? null);
 }
 
 function installedCertificatesFor(serialNumber: string) {
-  return InstalledCertificate.count({ where: { serialNumber } });
+  return installedCertificateRepository
+    .findAllByStation(DEFAULT_TENANT_ID, STATION)
+    .then((rows) => rows.filter((row) => row.serialNumber === serialNumber).length);
 }
 
 describe('DeleteCertificateResponseOcpp2Handler with more than one delete in flight', () => {
   const { container } = createTestContainer();
 
   function aHandler() {
-    const deps = { config, logger: undefined, sequelizeInstance } as never;
     return getTestInstance(container, DeleteCertificateResponseOcpp2Handler, {
-      deleteCertificateAttemptRepository: new SequelizeDeleteCertificateAttemptRepository(deps),
-      installedCertificateRepository: new SequelizeInstalledCertificateRepository(deps),
-      ocppMessageRepository: new SequelizeOCPPMessageRepository(deps),
+      deleteCertificateAttemptRepository,
+      installedCertificateRepository,
+      ocppMessageRepository,
     });
   }
 
   beforeEach(async () => {
-    await OCPPMessage.destroy({ where: {}, truncate: true, cascade: true });
-    await InstalledCertificate.destroy({ where: {}, truncate: true, cascade: true });
-    await DeleteCertificateAttempt.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    await tenantRepository.createTenant({ id: DEFAULT_TENANT_ID, name: 'A', isUserTenant: false });
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName: STATION,
       isOnline: true,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    });
   });
 
   it('settles the attempt for the certificate that was answered', async () => {

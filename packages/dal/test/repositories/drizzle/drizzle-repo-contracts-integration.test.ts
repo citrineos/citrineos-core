@@ -3,6 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  Boot,
+  Certificate,
+  ChargingStation,
+  DeleteCertificateAttempt,
+  InstalledCertificate,
+} from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import {
@@ -13,16 +20,11 @@ import {
   InstallCertificateStatusEnum,
 } from '@citrineos/types';
 import {
-  Boot,
-  Certificate,
-  ChargingStation,
-  DeleteCertificateAttempt,
   type IBootRepository,
   type ICertificateRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
-  InstalledCertificate,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
   SequelizeDeleteCertificateAttemptRepository,

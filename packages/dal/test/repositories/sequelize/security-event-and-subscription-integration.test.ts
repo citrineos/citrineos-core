@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Subscription } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import {
   SequelizeSecurityEventRepository,
   SequelizeSubscriptionRepository,
-  Subscription,
 } from '../../../index.js';
 // Not re-exported from the package barrel.
 import { SecurityEvent } from '@dal/models/security-event.js';

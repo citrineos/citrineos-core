@@ -3,21 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { PartnerProfile, TenantDto } from '@citrineos/types';
 import {
   AsyncJobStatus,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
   OCPPMessage,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-  Tariff,
   Tenant,
   TenantPartner,
-} from '../../../index.js';
+} from '@dal/db/sequelize/index.js';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { PartnerProfile, TenantDto } from '@citrineos/types';
+import { ServerNetworkProfile, SetNetworkProfile, Tariff } from '../../../index.js';
 import {
   DrizzleAsyncJobStatusRepository,
   toAsyncJobStatusDto,

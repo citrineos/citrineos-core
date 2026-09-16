@@ -3,16 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { MessageOrigin, type OCPPMessageDto, OCPPVersion } from '@citrineos/types';
 import {
   AsyncJobStatus,
   Certificate,
   ChargingStation,
   OCPPMessage,
+  TenantPartner,
+} from '@dal/db/sequelize/index.js';
+import { MessageOrigin, type OCPPMessageDto, OCPPVersion } from '@citrineos/types';
+import {
   SequelizeAsyncJobStatusRepository,
   SequelizeCertificateRepository,
   SequelizeOCPPMessageRepository,
-  TenantPartner,
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
