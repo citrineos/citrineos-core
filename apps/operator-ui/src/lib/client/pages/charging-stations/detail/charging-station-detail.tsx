@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { CanAccess } from '@refinedev/core';
+import { CanAccess, useTranslate } from '@refinedev/core';
 import { ChargingStationDetailCard } from '@lib/client/pages/charging-stations/detail/charging-station-detail-card';
 import { pageFlex, pageMargin } from '@lib/client/styles/page';
 import { ChargingStationDetailTabsCard } from '@lib/client/pages/charging-stations/detail/charging-station-detail-tabs-card';
@@ -22,6 +22,7 @@ type ChargingStationDetailProps = {
 
 export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ params }) => {
   const { ocppConnectionName } = params;
+  const translate = useTranslate();
   const { id, isNotFound } = useChargingStationId(ocppConnectionName);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -38,7 +39,9 @@ export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ pa
   if (isNotFound) {
     return (
       <div className={`${pageMargin} ${pageFlex}`}>
-        <NoDataFoundCard />
+        <NoDataFoundCard
+          message={translate('ChargingStations.noDataFound', { id: ocppConnectionName })}
+        />
       </div>
     );
   }
