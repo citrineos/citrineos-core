@@ -123,7 +123,7 @@ async function aDeleteCertificateRequest(
 ) {
   const payload = { certificateHashData };
   return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, STATION, {
-        correlationId,
+    correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
     protocol: OCPPVersion.OCPP2_0_1,
@@ -137,14 +137,14 @@ async function aDeleteCertificateRequest(
 /** A pending attempt, as prepareToDeleteCertificate leaves one before the request goes out. */
 async function aPendingDeleteAttempt(certificateHashData: CertificateHashData) {
   return deleteCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, STATION, {
-        ...certificateHashData,
+    ...certificateHashData,
     status: null,
   });
 }
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
   return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, STATION, {
-        ...certificateHashData,
+    ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
   });
 }

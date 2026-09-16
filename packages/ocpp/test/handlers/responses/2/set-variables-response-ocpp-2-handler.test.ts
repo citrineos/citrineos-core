@@ -207,7 +207,7 @@ async function seedSetVariablesRequest(
 ) {
   const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
   return ocppMessageRepository.createOCPPMessage(TENANT_ID, OCPP_CONNECTION_NAME, {
-        correlationId,
+    correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
     protocol: OCPPVersion.OCPP2_0_1,

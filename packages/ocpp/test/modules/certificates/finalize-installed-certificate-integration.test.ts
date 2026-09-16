@@ -118,7 +118,7 @@ async function aPendingAttempt(certificateType: CertificateUseEnumType) {
   });
 
   return installCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, STATION, {
-        certificateType,
+    certificateType,
     certificateId: certificate.id,
     status: null,
   });
