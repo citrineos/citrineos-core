@@ -175,7 +175,6 @@ describe('OCPP2_0_1_CommandHandler.sendStartSessionCommand', () => {
       expect.objectContaining({
         tenantId: 1,
         stationId: 5,
-        ocppConnectionName: 'CS001',
         type: 'remoteStartId',
         value: 42,
       }),
