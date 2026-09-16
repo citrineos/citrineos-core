@@ -346,6 +346,12 @@ export class TokensService {
       }
       return value;
     });
-    return mergedAdditionalInfo as [AdditionalInfoType, ...AdditionalInfoType[]];
+    const addedAdditionalInfo = newPartialAdditionalInfo.filter(
+      (newValue) => !oldCompleteAdditionalInfo.some((oldValue) => oldValue.type === newValue.type),
+    );
+    return [...mergedAdditionalInfo, ...addedAdditionalInfo] as [
+      AdditionalInfoType,
+      ...AdditionalInfoType[],
+    ];
   }
 }
