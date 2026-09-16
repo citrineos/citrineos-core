@@ -12,7 +12,7 @@
 //
 // Per OCPI 2.2.1 the CPO POSTs a full Cdr to the BARE base (no path params) and
 // the receiver answers HTTP 200 with a `Location` header pointing at the GET url
-// of the stored CDR. requestSchema is the reused @citrineos/ocpi-base CdrSchema
+// of the stored CDR. requestSchema is the reused @citrineos/ocpi CdrSchema
 // so a schema-invalid inbound body is recorded as a Finding (drift detection);
 // responseSchema is OcpiEmptyResponseSchema (the LIVE broadcaster path parses an
 // empty envelope — `data` MUST be omitted, so we reply ctx.empty()).
