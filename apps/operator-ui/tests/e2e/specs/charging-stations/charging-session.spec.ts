@@ -96,7 +96,7 @@ test.describe('charging-stations › live charging session @everest', () => {
       // Navigate first so a cold route compile is paid before the vehicle
       // plugs in (keeping the RemoteStart inside the 120 s auth window).
       const detail = new ChargingStationDetailPage(page);
-      await detail.goto(everestStation.id);
+      await detail.goto(everestStation.ocppConnectionName);
       await expect(detail.commandBar.remoteStartButton.first()).toBeVisible({
         timeout: 60_000,
       });

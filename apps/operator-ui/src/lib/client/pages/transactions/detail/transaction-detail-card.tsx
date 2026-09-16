@@ -6,6 +6,7 @@
 import React, { useCallback } from 'react';
 import type { TransactionDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import { Badge } from '@lib/client/components/ui/badge';
 import { Button } from '@lib/client/components/ui/button';
@@ -107,7 +108,7 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             value={''}
             valueRender={() => (
               <Link
-                to={`/${MenuSection.CHARGING_STATIONS}/${transaction.stationId}`}
+                to={chargingStationPath(transaction.ocppConnectionName)}
                 className={clickableLinkStyle}
                 title={transaction.station?.ocppConnectionName}
               >

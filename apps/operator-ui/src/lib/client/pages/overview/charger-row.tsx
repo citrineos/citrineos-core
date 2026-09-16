@@ -12,6 +12,7 @@ import React from 'react';
 import { Separator } from '@radix-ui/react-menu';
 import type { ChargerStatusEnum } from '@lib/utils/enums';
 import { useTranslate } from '@refinedev/core';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 
 export interface ChargerRowProps {
   chargingStation: ChargingStationDetailsDto;
@@ -39,7 +40,7 @@ export const ChargerRow: React.FC<ChargerRowProps> = ({
       <div className="flex flex-col w-full">
         <div
           className="flex justify-between cursor-pointer hover:text-secondary"
-          onClick={() => push(`/${MenuSection.CHARGING_STATIONS}/${chargingStation.id}`)}
+          onClick={() => push(chargingStationPath(chargingStation.ocppConnectionName))}
         >
           <div className="flex items-center gap-2">
             <span className="font-bold text-lg">

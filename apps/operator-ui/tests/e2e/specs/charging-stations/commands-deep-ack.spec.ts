@@ -20,7 +20,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.commandBar.openViaOtherCommands(/clear cache/i);
     const modal = new ModalHarness(page, /clear cache/i);
     await modal.expectOpen();
@@ -32,7 +32,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.commandBar.openViaOtherCommands(/get base report/i);
     const modal = new ModalHarness(page, /get base report/i);
     await modal.expectOpen();
@@ -45,7 +45,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.commandBar.openViaOtherCommands(/get transaction status/i);
     const modal = new ModalHarness(page, /get transaction status/i);
     await modal.expectOpen();
@@ -57,7 +57,7 @@ test.describe('charging-stations › deep command ACKs @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.commandBar.openViaOtherCommands(/get installed certificate/i);
     const modal = new ModalHarness(page, /installed certificate/i);
     await modal.expectOpen();

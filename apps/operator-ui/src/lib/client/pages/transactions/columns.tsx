@@ -13,6 +13,7 @@ import {
   ChargingStationProps,
 } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 import GenericTag from '@lib/client/components/tag';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 import { CircleCheck, CircleX, Eye } from 'lucide-react';
@@ -76,10 +77,14 @@ export const getTransactionsColumns = (
         const chargingStation = row.original.station;
         return (
           <div className="flex items-center gap-2">
-            <TableCellLink
-              path={`/${MenuSection.CHARGING_STATIONS}/${chargingStation?.id}`}
-              value={chargingStation?.ocppConnectionName ?? EMPTY_VALUE}
-            />
+            {chargingStation?.ocppConnectionName ? (
+              <TableCellLink
+                path={chargingStationPath(chargingStation.ocppConnectionName)}
+                value={chargingStation.ocppConnectionName}
+              />
+            ) : (
+              <span>{EMPTY_VALUE}</span>
+            )}
             {onPreview && chargingStation && (
               <button
                 type="button"
