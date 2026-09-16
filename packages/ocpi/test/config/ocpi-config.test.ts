@@ -29,6 +29,8 @@ const FIXTURE_VALUE = 'secret';
 
 // Satisfies ocpiConfigSchema (the processed schema defineOcpiConfig validates
 // against), which carries no defaults — every required field must be present.
+// logRedaction is spelled out with the values its schema would otherwise supply,
+// so a parse round-trip leaves the fixture untouched.
 // Fresh object per test: the env merge mutates nested objects in place.
 function aFullConfig() {
   return {
@@ -52,6 +54,13 @@ function aFullConfig() {
       ocpp2_1: OCPP2_URLS,
     },
     logLevel: 2,
+    logRedaction: {
+      keys: ['password'],
+      paths: [],
+      patterns: [],
+      placeholder: '[***]',
+      redactKeyCodes: true,
+    },
     defaultPageLimit: 50,
     maxPageLimit: 1000,
   };
