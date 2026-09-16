@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Authorization } from '@dal/db/sequelize/index.js';
 import {
   AuthorizationStatusEnum,
   IdTokenEnum,
@@ -11,7 +12,6 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  Authorization,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,

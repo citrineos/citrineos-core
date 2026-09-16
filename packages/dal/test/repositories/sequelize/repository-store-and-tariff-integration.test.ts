@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation, Connector } from '@dal/db/sequelize/index.js';
+import { ChargingStation, Connector, Evse, Tariff } from '@dal/db/sequelize/index.js';
 import type { SystemConfig, TariffDto } from '@citrineos/types';
 import { type ILogObj, Logger } from 'tslog';
 import {
@@ -26,7 +26,6 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
-  Evse,
   RepositoryStore,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -51,7 +50,6 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  Tariff,
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 

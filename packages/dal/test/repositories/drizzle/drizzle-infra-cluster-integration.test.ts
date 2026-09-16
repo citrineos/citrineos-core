@@ -9,6 +9,9 @@ import {
   ChargingStationSecurityInfo,
   ChargingStationSequence,
   OCPPMessage,
+  ServerNetworkProfile,
+  SetNetworkProfile,
+  Tariff,
   Tenant,
   TenantPartner,
 } from '@dal/db/sequelize/index.js';
@@ -16,7 +19,6 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { PartnerProfile, TenantDto } from '@citrineos/types';
-import { ServerNetworkProfile, SetNetworkProfile, Tariff } from '../../../index.js';
 import {
   DrizzleAsyncJobStatusRepository,
   toAsyncJobStatusDto,
