@@ -98,6 +98,7 @@ apps/ocpp-server/src/assets/websocket-servers.json
 
 # Documentation
 AGENTS.md
+CLAUDE.md
 packages/ocpp/test/resources/README.md
 apps/ocpp-server/everest/README.md
 packages/ocpp/src/handlers/HANDLERS.md
