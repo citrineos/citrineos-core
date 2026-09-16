@@ -11,6 +11,7 @@ import { MapMarkerV2 } from '@lib/client/components/map/map-clusters-marker';
 import { ChargingStationStatusTag } from '@lib/client/pages/charging-stations/charging-station-status-tag';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { useTranslate } from '@refinedev/core';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 
 /**
  * Reference: https://github.com/visgl/react-google-maps/blob/main/examples/marker-clustering/src/clustered-tree-markers.tsx
@@ -97,7 +98,7 @@ export const ClusteredLocationMarkers = ({ locations }: { locations: LocationDto
                     <span
                       className={`cursor-pointer font-semibold underline text-base text-black hover:text-gray-500`}
                       onClick={() =>
-                        window.open(`/${MenuSection.CHARGING_STATIONS}/${charger.id}`, '_blank')
+                        window.open(chargingStationPath(charger.ocppConnectionName), '_blank')
                       }
                     >
                       {charger.ocppConnectionName}
