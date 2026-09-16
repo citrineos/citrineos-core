@@ -1,296 +1,572 @@
-// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import type { SystemConfig } from '@citrineos/types';
+import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
 import {
   ChargingStation,
   Component,
-  DefaultSequelizeInstance,
   SequelizeVariableMonitoringRepository,
-  Tenant,
   Variable,
-} from '@citrineos/dal';
-import type { Sequelize } from 'sequelize-typescript';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+} from '../../../index.js';
+// Not re-exported from the package barrel.
+import {
+  EventData,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from '@dal/models/variable-monitoring/index.js';
+import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
-const TENANT_ID = DEFAULT_TENANT_ID;
-const OCPP_CONNECTION_NAME = 'CS-001';
-const { UpperThreshold, LowerThreshold } = OCPP2_0_1.MonitorEnumType;
+// SequelizeVariableMonitoringRepository persists monitors set on charging stations
+// (SetVariableMonitoring / NotifyMonitoringReport) plus a status row per request
+// outcome and NotifyEvent payloads. A monitor is keyed on
+// (ocppConnectionName, componentId, variableId); the station-assigned OCPP monitor
+// id lives in the `id` column, distinct from the databaseId primary key.
 
-let pgContainer: StartedTestContainer;
-let sequelizeInstance: Sequelize;
+const TENANT_A = 1;
+const TENANT_B = 2;
+const STATION = 'cp001';
+
+let h: PgHarness;
 
 beforeAll(async () => {
-  pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
-    .withEnvironment({
-      POSTGRES_USER: 'test',
-      POSTGRES_PASSWORD: 'test',
-      POSTGRES_DB: 'citrineos_test',
-    })
-    .withExposedPorts(5432)
-    .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
-    .start();
-
-  const dbConfig = {
-    database: {
-      host: pgContainer.getHost(),
-      port: pgContainer.getMappedPort(5432),
-      database: 'citrineos_test',
-      dialect: 'postgres',
-      username: 'test',
-      password: 'test',
-      sync: false,
-      alter: false,
-      force: false,
-      maxRetries: 1,
-      retryDelay: 100,
-    },
-  } as unknown as SystemConfig;
-
-  sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
-  await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
-  await sequelizeInstance.sync({ force: true });
+  h = await startPgHarness();
 }, 90_000);
 
 afterAll(async () => {
-  await sequelizeInstance.close();
-  await pgContainer.stop();
+  await h.stop();
 });
 
 beforeEach(async () => {
-  await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
+  await resetDb(h);
 });
 
 function makeRepo(): SequelizeVariableMonitoringRepository {
   return new SequelizeVariableMonitoringRepository({
     config: {} as SystemConfig,
-    sequelizeInstance,
+    sequelizeInstance: h.sequelizeInstance,
   });
 }
 
-async function seedEvsePower(): Promise<{ componentId: string; variableId: string }> {
-  await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
-    isOnline: false,
-    tenantId: TENANT_ID,
-  });
-  const component = await Component.create({ name: 'EVSE', tenantId: TENANT_ID });
-  const variable = await Variable.create({ name: 'Power', tenantId: TENANT_ID });
-  return { componentId: String(component.id), variableId: String(variable.id) };
+async function aComponent(name: string, instance?: string, tenantId = TENANT_A) {
+  return Component.create({ name, instance: instance ?? null, tenantId } as any);
 }
 
-function aSetMonitoringData(
-  type: OCPP2_0_1.MonitorEnumType,
-  value: number,
-  id?: number,
-): OCPP2_0_1.SetMonitoringDataType {
+async function aVariable(name: string, tenantId = TENANT_A) {
+  return Variable.create({ name, tenantId } as any);
+}
+
+async function aMonitoringRow(overrides: Record<string, unknown> = {}) {
+  return VariableMonitoring.create({
+    tenantId: TENANT_A,
+    ocppConnectionName: STATION,
+    id: 1,
+    transaction: false,
+    value: 42,
+    type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+    severity: 5,
+    ...overrides,
+  } as any);
+}
+
+function monitoringData(
+  entries: [OCPP2_0_1.VariableMonitoringType, ...OCPP2_0_1.VariableMonitoringType[]],
+): OCPP2_0_1.MonitoringDataType {
   return {
-    ...(id !== undefined ? { id } : {}),
-    value,
-    type,
-    severity: 4,
     component: { name: 'EVSE' },
     variable: { name: 'Power' },
+    variableMonitoring: entries,
   };
 }
 
-function anAcceptedResult(
-  id: number,
-  type: OCPP2_0_1.MonitorEnumType,
-): OCPP2_0_1.SetMonitoringResultType {
-  return {
-    id,
-    status: OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
-    type,
-    severity: 4,
-    component: { name: 'EVSE' },
-    variable: { name: 'Power' },
-  };
-}
+describe('SequelizeVariableMonitoringRepository', () => {
+  describe('createOrUpdateByMonitoringDataTypeAndStationId', () => {
+    it('creates one row per monitor entry plus an Accepted status each', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
 
-async function monitorsOnStation() {
-  return makeRepo().readAllByQuery(TENANT_ID, {
-    where: { ocppConnectionName: OCPP_CONNECTION_NAME },
-    order: [['databaseId', 'ASC']],
-  });
-}
+      const created = await makeRepo().createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT_A,
+        monitoringData([
+          {
+            id: 7,
+            transaction: false,
+            value: 42,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 5,
+          },
+          {
+            id: 8,
+            transaction: true,
+            value: 10,
+            type: OCPP2_0_1.MonitorEnumType.Delta,
+            severity: 3,
+          },
+        ]),
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
 
-describe('SequelizeVariableMonitoringRepository with more than one monitor on a variable', () => {
-  it('keeps a row for each new monitor set on the same variable', async () => {
-    const { componentId, variableId } = await seedEvsePower();
-    const repo = makeRepo();
+      expect(created).toHaveLength(2);
+      expect(created.map((vm) => vm.id).sort()).toEqual([7, 8]);
+      const first = created.find((vm) => vm.id === 7)!;
+      expect(first.value).toBe(42);
+      expect(first.type).toBe('UpperThreshold');
+      expect(first.severity).toBe(5);
+      expect(first.transaction).toBe(false);
+      expect(first.tenantId).toBe(TENANT_A);
+      expect(first.ocppConnectionName).toBe(STATION);
+      expect(await VariableMonitoring.count()).toBe(2);
 
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 22000),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(LowerThreshold, 100),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(2);
+      expect(statuses.every((s) => s.status === 'Accepted')).toBe(true);
+      expect(statuses.every((s) => s.statusInfo?.reasonCode === 'NotifyMonitoringReport')).toBe(
+        true,
+      );
+      expect(statuses.map((s) => s.variableMonitoringId).sort()).toEqual(
+        created.map((vm) => vm.databaseId).sort(),
+      );
+    });
 
-    const rows = await monitorsOnStation();
-    expect(rows.map((row) => [row.type, row.value])).toEqual([
-      [UpperThreshold, 22000],
-      [LowerThreshold, 100],
-    ]);
-  });
+    it('updates the row matched on station and monitor id instead of inserting', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+      const repo = makeRepo();
 
-  it('stores the id the station assigned to each monitor', async () => {
-    const { componentId, variableId } = await seedEvsePower();
-    const repo = makeRepo();
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 22000),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(LowerThreshold, 100),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
+      const [original] = await repo.createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT_A,
+        monitoringData([
+          {
+            id: 7,
+            transaction: false,
+            value: 42,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 5,
+          },
+        ]),
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
 
-    await repo.updateResultByStationId(
-      TENANT_ID,
-      anAcceptedResult(11, UpperThreshold),
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.updateResultByStationId(
-      TENANT_ID,
-      anAcceptedResult(12, LowerThreshold),
-      OCPP_CONNECTION_NAME,
-    );
+      const [updated] = await repo.createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT_A,
+        monitoringData([
+          {
+            id: 7,
+            transaction: true,
+            value: 99,
+            type: OCPP2_0_1.MonitorEnumType.LowerThreshold,
+            severity: 2,
+          },
+        ]),
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
 
-    const rows = await monitorsOnStation();
-    expect(rows.map((row) => [row.type, row.id])).toEqual([
-      [UpperThreshold, 11],
-      [LowerThreshold, 12],
-    ]);
-  });
+      expect(updated.databaseId).toBe(original.databaseId);
+      expect(updated.id).toBe(7);
+      expect(updated.value).toBe(99);
+      expect(updated.type).toBe('LowerThreshold');
+      expect(updated.severity).toBe(2);
+      expect(updated.transaction).toBe(true);
+      expect(await VariableMonitoring.count()).toBe(1);
+      // One Accepted status per request, both pointing at the same monitor.
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(2);
+      expect(statuses.map((s) => s.variableMonitoringId)).toEqual([
+        original.databaseId,
+        original.databaseId,
+      ]);
+    });
 
-  it('replaces the monitor whose id is given', async () => {
-    const { componentId, variableId } = await seedEvsePower();
-    const repo = makeRepo();
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 22000),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.updateResultByStationId(
-      TENANT_ID,
-      anAcceptedResult(11, UpperThreshold),
-      OCPP_CONNECTION_NAME,
-    );
+    it('links the row to the charging station that owns the connection name', async () => {
+      const station = await ChargingStation.create({
+        ocppConnectionName: STATION,
+        isOnline: false,
+        tenantId: TENANT_A,
+      } as any);
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
 
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 30000, 11),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
+      const [created] = await makeRepo().createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT_A,
+        monitoringData([
+          {
+            id: 7,
+            transaction: false,
+            value: 42,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 5,
+          },
+        ]),
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
 
-    const rows = await monitorsOnStation();
-    expect(rows.map((row) => [row.id, row.type, row.value])).toEqual([[11, UpperThreshold, 30000]]);
-  });
-
-  it('records a Duplicate answer against the new monitor and leaves the installed one alone', async () => {
-    const { componentId, variableId } = await seedEvsePower();
-    const repo = makeRepo();
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 22000),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.updateResultByStationId(
-      TENANT_ID,
-      anAcceptedResult(11, UpperThreshold),
-      OCPP_CONNECTION_NAME,
-    );
-    await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      aSetMonitoringData(UpperThreshold, 30000),
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
-
-    const answered = await repo.updateResultByStationId(
-      TENANT_ID,
-      {
-        status: OCPP2_0_1.SetMonitoringStatusEnumType.Duplicate,
-        type: UpperThreshold,
-        severity: 4,
-        component: { name: 'EVSE' },
-        variable: { name: 'Power' },
-      },
-      OCPP_CONNECTION_NAME,
-    );
-
-    expect(answered.value).toBe(30000);
-    const rows = await monitorsOnStation();
-    expect(rows.map((row) => [row.id, row.value])).toEqual([
-      [11, 22000],
-      [null, 30000],
-    ]);
+      expect(created.stationId).toBe(station.id);
+    });
   });
 
-  it('updates each reported monitor on its own row', async () => {
-    const { componentId, variableId } = await seedEvsePower();
-    for (const [id, type, value] of [
-      [11, UpperThreshold, 22000],
-      [12, LowerThreshold, 100],
-    ] as const) {
-      await sequelizeInstance.models.VariableMonitoring.create({
-        tenantId: TENANT_ID,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
-        componentId,
-        variableId,
-        id,
-        type,
-        value,
-        severity: 4,
-        transaction: false,
+  describe('createOrUpdateBySetMonitoringDataTypeAndStationId', () => {
+    it('creates a monitor without a station-assigned id', async () => {
+      const component = await aComponent('Connector');
+      const variable = await aVariable('Temperature');
+
+      const created = await makeRepo().createOrUpdateBySetMonitoringDataTypeAndStationId(
+        TENANT_A,
+        {
+          value: 100,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 4,
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+        },
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
+
+      const row = (await VariableMonitoring.findByPk(created.databaseId))!;
+      expect(row.id).toBeNull();
+      expect(row.value).toBe(100);
+      expect(row.type).toBe('UpperThreshold');
+      expect(row.severity).toBe(4);
+      expect(row.ocppConnectionName).toBe(STATION);
+      expect(row.tenantId).toBe(TENANT_A);
+      expect(row.componentId).toBe(component.id);
+      expect(row.variableId).toBe(variable.id);
+      expect(await VariableMonitoring.count()).toBe(1);
+    });
+
+    it('updates the matched monitor in place, keeping its databaseId', async () => {
+      const component = await aComponent('Connector');
+      const variable = await aVariable('Temperature');
+      const repo = makeRepo();
+
+      const original = await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
+        TENANT_A,
+        {
+          id: 12,
+          value: 100,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 4,
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+        },
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
+
+      const updated = await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
+        TENANT_A,
+        {
+          id: 12,
+          transaction: true,
+          value: 250,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 1,
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+        },
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
+
+      expect(updated.databaseId).toBe(original.databaseId);
+      expect(updated.id).toBe(12);
+      expect(updated.value).toBe(250);
+      expect(updated.severity).toBe(1);
+      expect(updated.transaction).toBe(true);
+      expect(await VariableMonitoring.count()).toBe(1);
+      // Unlike the NotifyMonitoringReport path, no status row is written here.
+      expect(await VariableMonitoringStatus.count()).toBe(0);
+    });
+  });
+
+  describe('createVariableMonitoringStatus', () => {
+    it('stores the action as the statusInfo reasonCode', async () => {
+      const vm = await aMonitoringRow();
+
+      await makeRepo().createVariableMonitoringStatus(
+        TENANT_A,
+        OCPP2_0_1.SetMonitoringStatusEnumType.Duplicate,
+        OCPP_CallAction.SetVariableMonitoring,
+        vm.databaseId,
+      );
+
+      const status = (await VariableMonitoringStatus.findOne())!;
+      expect(status.status).toBe('Duplicate');
+      expect(status.statusInfo).toEqual({ reasonCode: 'SetVariableMonitoring' });
+      expect(status.variableMonitoringId).toBe(vm.databaseId);
+      expect(status.tenantId).toBe(TENANT_A);
+    });
+  });
+
+  describe('rejectAllVariableMonitoringsByStationId', () => {
+    it('adds a Rejected status to every monitor on the station and no others', async () => {
+      const vm1 = await aMonitoringRow({ id: 1 });
+      const vm2 = await aMonitoringRow({ id: 2 });
+      const otherStation = await aMonitoringRow({ id: 1, ocppConnectionName: 'cp002' });
+
+      await makeRepo().rejectAllVariableMonitoringsByStationId(
+        TENANT_A,
+        OCPP_CallAction.SetVariableMonitoring,
+        STATION,
+      );
+
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(2);
+      expect(statuses.every((s) => s.status === 'Rejected')).toBe(true);
+      expect(statuses.every((s) => s.statusInfo?.reasonCode === 'SetVariableMonitoring')).toBe(
+        true,
+      );
+      expect(statuses.map((s) => s.variableMonitoringId).sort()).toEqual(
+        [vm1.databaseId, vm2.databaseId].sort(),
+      );
+      expect(
+        await VariableMonitoringStatus.count({
+          where: { variableMonitoringId: otherStation.databaseId },
+        }),
+      ).toBe(0);
+    });
+
+    it("leaves another tenant's monitors on the same connection name alone", async () => {
+      await aMonitoringRow({ id: 1, tenantId: TENANT_A });
+      const tenantBRow = await aMonitoringRow({ id: 1, tenantId: TENANT_B });
+
+      await makeRepo().rejectAllVariableMonitoringsByStationId(
+        TENANT_B,
+        OCPP_CallAction.SetVariableMonitoring,
+        STATION,
+      );
+
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(1);
+      expect(statuses[0].variableMonitoringId).toBe(tenantBRow.databaseId);
+      expect(statuses[0].tenantId).toBe(TENANT_B);
+    });
+  });
+
+  describe('rejectVariableMonitoringByIdAndStationId', () => {
+    it('targets only the monitor with the given OCPP id', async () => {
+      const vm1 = await aMonitoringRow({ id: 1 });
+      await aMonitoringRow({ id: 2 });
+
+      await makeRepo().rejectVariableMonitoringByIdAndStationId(
+        TENANT_A,
+        OCPP_CallAction.SetVariableMonitoring,
+        1,
+        STATION,
+      );
+
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(1);
+      expect(statuses[0].variableMonitoringId).toBe(vm1.databaseId);
+      expect(statuses[0].status).toBe('Rejected');
+    });
+
+    it('creates nothing when the station does not match', async () => {
+      await aMonitoringRow({ id: 1 });
+
+      await makeRepo().rejectVariableMonitoringByIdAndStationId(
+        TENANT_A,
+        OCPP_CallAction.SetVariableMonitoring,
+        1,
+        'cp999',
+      );
+
+      expect(await VariableMonitoringStatus.count()).toBe(0);
+    });
+  });
+
+  describe('updateResultByStationId', () => {
+    it('writes the station-assigned id and appends the status when accepted', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+      const vm = await aMonitoringRow({
+        id: null,
+        componentId: component.id,
+        variableId: variable.id,
       });
-    }
 
-    await makeRepo().createOrUpdateByMonitoringDataTypeAndStationId(
-      TENANT_ID,
-      {
-        component: { name: 'EVSE' },
-        variable: { name: 'Power' },
-        variableMonitoring: [
-          { id: 11, transaction: false, value: 23000, type: UpperThreshold, severity: 4 },
-          { id: 12, transaction: false, value: 50, type: LowerThreshold, severity: 4 },
-        ],
-      },
-      componentId,
-      variableId,
-      OCPP_CONNECTION_NAME,
-    );
+      const result = await makeRepo().updateResultByStationId(
+        TENANT_A,
+        {
+          status: OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
+          id: 77,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 5,
+          component: { name: 'EVSE' },
+          variable: { name: 'Power' },
+          statusInfo: { reasonCode: 'MonitorInstalled' },
+        },
+        STATION,
+      );
 
-    const rows = await monitorsOnStation();
-    expect(rows.map((row) => [row.id, row.type, row.value])).toEqual([
-      [11, UpperThreshold, 23000],
-      [12, LowerThreshold, 50],
-    ]);
+      expect(result.databaseId).toBe(vm.databaseId);
+      expect(result.id).toBe(77);
+      expect(result.statuses).toHaveLength(1);
+      expect(result.statuses![0].status).toBe('Accepted');
+      expect(result.statuses![0].statusInfo).toEqual({ reasonCode: 'MonitorInstalled' });
+      expect((await VariableMonitoring.findByPk(vm.databaseId))!.id).toBe(77);
+    });
+
+    it('keeps the id column untouched for a rejected result', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+      const vm = await aMonitoringRow({
+        id: 31,
+        componentId: component.id,
+        variableId: variable.id,
+      });
+
+      const result = await makeRepo().updateResultByStationId(
+        TENANT_A,
+        {
+          status: OCPP2_0_1.SetMonitoringStatusEnumType.Rejected,
+          id: 99,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 5,
+          component: { name: 'EVSE' },
+          variable: { name: 'Power' },
+        },
+        STATION,
+      );
+
+      expect(result.databaseId).toBe(vm.databaseId);
+      expect(result.id).toBe(31);
+      expect(result.statuses).toHaveLength(1);
+      expect(result.statuses![0].status).toBe('Rejected');
+      expect((await VariableMonitoring.findByPk(vm.databaseId))!.id).toBe(31);
+    });
+
+    it('selects the monitor through the component instance', async () => {
+      const bareComponent = await aComponent('EVSE');
+      const instancedComponent = await aComponent('EVSE', '1');
+      const variable = await aVariable('Power');
+      await aMonitoringRow({ id: 41, componentId: bareComponent.id, variableId: variable.id });
+      const instancedVm = await aMonitoringRow({
+        id: 42,
+        componentId: instancedComponent.id,
+        variableId: variable.id,
+      });
+
+      const result = await makeRepo().updateResultByStationId(
+        TENANT_A,
+        {
+          status: OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
+          id: 88,
+          type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+          severity: 5,
+          component: { name: 'EVSE', instance: '1' },
+          variable: { name: 'Power' },
+        },
+        STATION,
+      );
+
+      expect(result.databaseId).toBe(instancedVm.databaseId);
+      expect(result.id).toBe(88);
+      const statuses = await VariableMonitoringStatus.findAll();
+      expect(statuses).toHaveLength(1);
+      expect(statuses[0].variableMonitoringId).toBe(instancedVm.databaseId);
+    });
+
+    it('throws when type and severity match no monitor', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+      await aMonitoringRow({ componentId: component.id, variableId: variable.id, severity: 5 });
+
+      await expect(
+        makeRepo().updateResultByStationId(
+          TENANT_A,
+          {
+            status: OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
+            id: 77,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 9,
+            component: { name: 'EVSE' },
+            variable: { name: 'Power' },
+          },
+          STATION,
+        ),
+      ).rejects.toThrow(/Unable to update set monitoring result/);
+      expect(await VariableMonitoringStatus.count()).toBe(0);
+    });
+
+    it("throws for another tenant's monitor", async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+      const vm = await aMonitoringRow({
+        id: 31,
+        componentId: component.id,
+        variableId: variable.id,
+        tenantId: TENANT_A,
+      });
+
+      await expect(
+        makeRepo().updateResultByStationId(
+          TENANT_B,
+          {
+            status: OCPP2_0_1.SetMonitoringStatusEnumType.Accepted,
+            id: 77,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 5,
+            component: { name: 'EVSE' },
+            variable: { name: 'Power' },
+          },
+          STATION,
+        ),
+      ).rejects.toThrow(/Unable to update set monitoring result/);
+      expect((await VariableMonitoring.findByPk(vm.databaseId))!.id).toBe(31);
+    });
+  });
+
+  describe('createEventDatumByComponentIdAndVariableIdAndStationId', () => {
+    it('persists the event with station, component and variable keys', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+
+      const created = await makeRepo().createEventDatumByComponentIdAndVariableIdAndStationId(
+        TENANT_A,
+        {
+          eventId: 5,
+          timestamp: '2026-01-01T00:00:00.000Z',
+          trigger: OCPP2_0_1.EventTriggerEnumType.Alerting,
+          actualValue: '42.1',
+          eventNotificationType: OCPP2_0_1.EventNotificationEnumType.HardWiredMonitor,
+          component: { name: 'EVSE' },
+          variable: { name: 'Power' },
+          techCode: 'T01',
+          cleared: false,
+        },
+        String(component.id),
+        String(variable.id),
+        STATION,
+      );
+
+      expect(created.eventId).toBe(5);
+      expect(created.trigger).toBe('Alerting');
+      expect(created.actualValue).toBe('42.1');
+      expect(created.tenantId).toBe(TENANT_A);
+      expect(created.ocppConnectionName).toBe(STATION);
+      expect(await EventData.count()).toBe(1);
+
+      const row = (await EventData.findOne({ where: { eventId: 5 } }))!;
+      expect(row.timestamp).toBe('2026-01-01T00:00:00.000Z');
+      expect(row.eventNotificationType).toBe('HardWiredMonitor');
+      expect(row.techCode).toBe('T01');
+      expect(row.cleared).toBe(false);
+      expect(row.componentId).toBe(component.id);
+      expect(row.variableId).toBe(variable.id);
+    });
   });
 });
