@@ -5,6 +5,7 @@
 export { resolveStationProtocol } from './station-protocol.js';
 export type { ReadChargingStation, StationProtocolResolution } from './station-protocol.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './parser.js';
+export { keyCodeRedactionRule } from './key-code-redaction.js';
 export {
   validateLanguageTag,
   validateChargingProfileType,
