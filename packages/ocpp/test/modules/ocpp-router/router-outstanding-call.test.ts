@@ -14,7 +14,7 @@ import {
 } from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/ocpp-router/router.js';
 import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
-import { MemoryCache } from '@services/cache/memory.js';
+import { MemoryCache } from '@citrineos/base';
 import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
