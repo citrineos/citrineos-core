@@ -50,6 +50,7 @@ import type {
   TenantDto,
   TransactionDto,
   UpdateEnumType,
+  VariableAttributeDto,
   VariableCharacteristicsDto,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
@@ -69,7 +70,6 @@ import type {
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
-import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Connector } from '../models/location/connector.js';
@@ -133,26 +133,26 @@ export interface IDeviceModelRepository extends IVariableCharacteristicsReposito
     value: OCPP2_common_types.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateByGetVariablesResultAndStationId(
     tenantId: number,
     getVariablesResult: OCPP2_common_types.GetVariableResultType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateBySetVariablesDataAndStationId(
     tenantId: number,
     setVariablesData: OCPP2_common_types.SetVariableDataType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   updateResultByStationId(
     tenantId: number,
     result: OCPP2_common_types.SetVariableResultType,
     ocppConnectionName: string,
     isoTimestamp: string,
-    existingVariableAttribute?: VariableAttribute,
-  ): Promise<VariableAttribute | undefined>;
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined>;
   readAllSetVariableByStationId(
     tenantId: number,
     ocppConnectionName: string,
@@ -160,18 +160,18 @@ export interface IDeviceModelRepository extends IVariableCharacteristicsReposito
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   findVariableAttributeByComponentAndVariable(
     tenantId: number,
     ocppConnectionName: string,
     attributeType: AttributeEnumType,
     componentType: OCPP2_common_types.ComponentType,
     variableType: OCPP2_common_types.VariableType,
-  ): Promise<VariableAttribute | undefined>;
+  ): Promise<VariableAttributeDto | undefined>;
   findComponentAndVariable(
     tenantId: number,
     componentType: OCPP2_common_types.ComponentType,

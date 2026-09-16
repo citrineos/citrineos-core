@@ -3,14 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChargingStation, VariableCharacteristics } from '@dal/db/sequelize/index.js';
+import {
+  ChargingStation,
+  VariableAttribute,
+  VariableCharacteristics,
+} from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import {
   Component,
   DrizzleVariableAttributeRepository,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '../../../index.js';
 import { EventData } from '@dal/models/variable-monitoring/index.js';
