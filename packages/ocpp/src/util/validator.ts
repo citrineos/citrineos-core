@@ -656,7 +656,7 @@ export function validateUTF8Content(content: string): boolean {
 /**
  * Message content validator - routes to appropriate validator based on format
  * Returns validation result with detailed error message if invalid
- * @param format Message format type (ASCII, HTML, URI, UTF8)
+ * @param format Message format type (ASCII, HTML, URI, UTF8, QRCODE)
  * @param content Message content to validate
  * @returns {ValidationResult} Validation result with error message if invalid
  */
@@ -701,6 +701,15 @@ export function validateMessageContent(
         isValid: false,
         errorMessage:
           'UTF8 format requires valid UTF-8 encoded content without unpaired surrogate characters',
+      };
+
+    case MessageFormatEnum.QRCODE:
+      if (content) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'QRCODE format requires the text to display as a QR code',
       };
 
     default:
