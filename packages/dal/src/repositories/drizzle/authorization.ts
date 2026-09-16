@@ -70,6 +70,17 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
   return dto;
 }
 
+function toAuthorizationEntity(value: object): AuthorizationEntity {
+  const v = value as { cacheExpiryDateTime?: string | Date | null };
+  if (typeof v.cacheExpiryDateTime === 'string') {
+    return {
+      ...value,
+      cacheExpiryDateTime: new Date(v.cacheExpiryDateTime),
+    } as AuthorizationEntity;
+  }
+  return value as AuthorizationEntity;
+}
+
 export class DrizzleAuthorizationRepository
   extends DrizzleRepository<typeof authorizationTable, AuthorizationDto>
   implements IAuthorizationRepository
@@ -165,6 +176,6 @@ export class DrizzleAuthorizationRepository
     value: object,
     key: string,
   ): Promise<AuthorizationDto | undefined> {
-    return this.updateById(tenantId, Number(key), value);
+    return this.updateById(tenantId, Number(key), toAuthorizationEntity(value));
   }
 }

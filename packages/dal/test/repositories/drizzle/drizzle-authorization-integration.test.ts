@@ -26,6 +26,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 const GROUP_TOKEN = 'FLEET-PARENT';
 const CARD_TOKEN = 'DRIVER-CARD-1';
 const TARIFF_TOKEN = 'DRIVER-CARD-2';
+const REAL_TIME_TOKEN = 'REAL-TIME-CARD';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
@@ -155,5 +156,46 @@ describe('DrizzleAuthorizationRepository relations', () => {
     expect(found).toHaveLength(1);
     expect(found[0].idToken).toBe(TARIFF_TOKEN);
     expect(found[0].tariff?.tariffId).toBe('driver-tariff-1');
+  });
+});
+
+describe('DrizzleAuthorizationRepository.updateByKey', () => {
+  beforeEach(async () => {
+    await Authorization.destroy({ where: {}, truncate: true, cascade: true });
+    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+
+    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await Authorization.create({
+      idToken: REAL_TIME_TOKEN,
+      idTokenType: IdTokenEnum.ISO14443,
+      status: 'Accepted',
+      cacheExpiryDateTime: '2027-01-01T00:00:00.000Z',
+      tenantId: DEFAULT_TENANT_ID,
+    } as never);
+  });
+
+  it('saves the authorization it read with a new realTimeAuthLastAttempt', async () => {
+    const repository = aRepository();
+    const authorization = await repository.readOnlyOneByQuerystring(DEFAULT_TENANT_ID, {
+      idToken: REAL_TIME_TOKEN,
+    });
+    const lastAttempt = {
+      timestamp: '2026-09-14T10:00:00.000Z',
+      result: 'Accepted',
+      ocppConnectionName: 'CS-1',
+      evseId: 1,
+      connectorId: 1,
+    };
+
+    await repository.updateByKey(
+      DEFAULT_TENANT_ID,
+      { ...authorization, realTimeAuthLastAttempt: lastAttempt },
+      String(authorization!.id),
+    );
+
+    const saved = await repository.readOnlyOneByQuerystring(DEFAULT_TENANT_ID, {
+      idToken: REAL_TIME_TOKEN,
+    });
+    expect(saved!.realTimeAuthLastAttempt).toEqual(lastAttempt);
   });
 });
