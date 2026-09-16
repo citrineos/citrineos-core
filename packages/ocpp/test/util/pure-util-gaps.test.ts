@@ -26,7 +26,7 @@ import {
   validateVINIdToken,
 } from '@util/validator.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('IdGenerator', () => {
   it('delegates generateRequestId to the sequence repository', async () => {
