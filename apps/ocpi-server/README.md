@@ -105,7 +105,7 @@ The following service must be running before starting the OCPI Server:
 
 - **CitrineOS Core** (the OCPP server stack)
   Provides PostgreSQL, RabbitMQ, the OCPP Message APIs, and Hasura. See the
-  [Server README](../ocpp-server/README.md).
+  [Server README](../ocpp/README.md).
 
 ## Getting Started
 
@@ -143,7 +143,7 @@ cd apps/ocpi-server
 pnpm run start
 ```
 
-This launches the OCPI Server via `nodemon` (see `nodemon.json`), which builds the workspace, runs database
+This launches the OCPI Server via `nodemon` (see `config/nodemon.json`), which builds the workspace, runs database
 migrations, and starts the process with the Node.js inspector listening on port `9229`. Hot reload is enabled for
 `src` and the workspace packages it depends on.
 
@@ -187,7 +187,7 @@ The following OCPI modules are mounted:
 
 ## Working with workspace packages
 
-The OCPI Server depends on `@citrineos/base`, `@citrineos/ocpp`, and `@citrineos/ocpi-base` via `workspace:*`
+The OCPI Server depends on `@citrineos/base`, `@citrineos/ocpp`, and `@citrineos/ocpi` via `workspace:*`
 dependencies, so pnpm resolves them from the local `packages/` directory automatically — no `npm link` step is
 required. Just build the workspace packages so the compiled output is available:
 
@@ -212,8 +212,8 @@ and the `process.env.*` fallbacks in the config files), including `DB_HOST`, `DB
 ## Related Documentation
 
 - **CitrineOS Core / OCPP Server**
-  - [Server README](../ocpp-server/README.md)
-  - [Dependency Injection](../../packages/core/src/server/DEPENDENCY_INJECTION.md) - the Awilix model this server follows too
+  - [Server README](../ocpp/README.md)
+  - [Dependency Injection](../../packages/ocpp/src/server/DEPENDENCY_INJECTION.md) - the Awilix model this server follows too
 - **CitrineOS Operator UI**
   - [Operator UI README](../operator-ui/README.MD)
 - **CitrineOS Project Docs**
