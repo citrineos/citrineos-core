@@ -73,6 +73,10 @@ beforeAll(async () => {
     user: config.database.username,
     password: config.database.password,
   });
+  // Stopping the container terminates idle connections (Postgres 57P01). pg
+  // escalates an unhandled pool 'error' to an uncaught exception, which fails
+  // the run even when every test passed.
+  drizzlePool.on('error', () => {});
   drizzleInstance = drizzle(drizzlePool);
 }, 90_000);
 

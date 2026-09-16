@@ -28,7 +28,7 @@ export function error(
 ): OcpiReply {
   return { statusCode: code, status_message, httpStatus };
 }
-// Turn an OcpiReply into the actual wire body using the reused ocpi-base builders.
+// Turn an OcpiReply into the actual wire body using the reused ocpi builders.
 // empty:true => buildOcpiEmptyResponse (data OMITTED — OcpiEmptyResponseSchema is z.undefined()).
 export function buildBody(reply: OcpiReply): unknown {
   if (reply.empty) return buildOcpiEmptyResponse(reply.statusCode);
