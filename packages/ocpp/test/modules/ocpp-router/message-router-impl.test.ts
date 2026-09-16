@@ -37,7 +37,7 @@ import {
 } from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/ocpp-router/router.js';
 import { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
-import { MemoryCache } from '@services/index.js';
+import { MemoryCache } from '@citrineos/base';
 import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
 import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
