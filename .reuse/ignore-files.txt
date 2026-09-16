@@ -97,6 +97,7 @@ apps/ocpp-server/src/assets/certificates/subCAKey.pem
 apps/ocpp-server/src/assets/websocket-servers.json
 
 # Documentation
+AGENTS.md
 packages/ocpp/test/resources/README.md
 apps/ocpp-server/everest/README.md
 packages/ocpp/src/handlers/HANDLERS.md

@@ -5,12 +5,12 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { MeterValueDto, SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
   SequelizeTransactionEventRepository,
-  Tenant,
   Transaction,
 } from '../../../index.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';

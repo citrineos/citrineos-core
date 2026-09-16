@@ -3,6 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  ChargingStation,
+  Connector,
+  StopTransaction,
+  TransactionEvent,
+} from '@dal/db/sequelize/index.js';
 import type { MeterValueDto, SampledValue, SystemConfig } from '@citrineos/types';
 import {
   IdTokenEnum,
@@ -13,16 +19,12 @@ import {
 } from '@citrineos/types';
 import {
   Authorization,
-  ChargingStation,
-  Connector,
   Evse,
   MeterValue,
   SequelizeTransactionEventRepository,
   StartTransaction,
-  StopTransaction,
   Tariff,
   Transaction,
-  TransactionEvent,
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 

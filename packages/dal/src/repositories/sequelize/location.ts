@@ -472,15 +472,6 @@ export class SequelizeLocationRepository
     );
   }
 
-  async readConnectorsByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<ConnectorDto[]> {
-    return await Connector.findAll({
-      where: { tenantId, stationId: await stationIdFilter(tenantId, ocppConnectionName) },
-    });
-  }
-
   async readEvseByStationIdAndOcpp201EvseId(
     tenantId: number,
     ocppConnectionName: string,
@@ -513,6 +504,16 @@ export class SequelizeLocationRepository
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
       })) ?? undefined
     );
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    return await this.connector.readAllByQuery(tenantId, {
+      where: { tenantId, stationId: await stationIdFilter(tenantId, ocppConnectionName) },
+      include: [{ model: Evse, as: 'evse' }],
+    });
   }
 
   async readConnectorsWithTariffsByStationId(

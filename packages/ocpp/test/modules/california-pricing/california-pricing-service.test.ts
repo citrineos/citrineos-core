@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import { type ConnectorDto, EventGroup, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type {
   IChangeConfigurationRepository,
   IConnectorRepository,
   ITariffRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
-import type { Connector, Transaction } from '@citrineos/dal';
+import type { Transaction } from '@citrineos/dal';
 import { CaliforniaPricingService } from '@modules/california-pricing/california-pricing-service.js';
 import {
   COSTMSG_VENDOR_ID,
@@ -378,7 +378,9 @@ describe('CaliforniaPricingService', () => {
   }
 
   function givenConnectors(connectors: { id: number; tariffId: number | null }[]) {
-    locationRepository.readConnectorsByStationId.mockResolvedValue(connectors as Connector[]);
+    locationRepository.readConnectorsByStationId.mockResolvedValue(
+      connectors as unknown as ConnectorDto[],
+    );
   }
 
   function givenUsdTariffOnOneConnector() {

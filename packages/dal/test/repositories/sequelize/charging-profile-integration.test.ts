@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
-  ChargingStation,
   Evse,
   SequelizeChargingProfileRepository,
   Transaction,

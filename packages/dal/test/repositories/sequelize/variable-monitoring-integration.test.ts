@@ -3,14 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
-import {
-  ChargingStation,
-  Component,
-  SequelizeVariableMonitoringRepository,
-  Variable,
-} from '../../../index.js';
+import { Component, SequelizeVariableMonitoringRepository, Variable } from '../../../index.js';
 // Not re-exported from the package barrel.
 import {
   EventData,

@@ -178,26 +178,6 @@ export class DrizzleConnectorRepository
     return rows[0] ? await this.withEvse(tenantId, rows[0]) : undefined;
   }
 
-  async readConnectorsByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<ConnectorDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
-    if (stationId === undefined) {
-      return [];
-    }
-
-    const table = this.getTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(table)
-      .where(
-        and(eq(table.stationId, stationId), this.tenantFilter(table, tenantId)),
-      )) as ConnectorEntity[];
-
-    return rows.map((row) => this.toDto(row));
-  }
-
   async readConnectorByStationIdAndOcpp201EvseType(
     tenantId: number,
     ocppConnectionName: string,
@@ -327,6 +307,30 @@ export class DrizzleConnectorRepository
       ...this.toDto(row.connector as ConnectorEntity),
       evse: toEvseDto(row.evse as EvseEntity),
       tariff: toTariffDto(row.tariff as TariffEntity),
+    }));
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
+    const table = this.getTable(tenantId);
+    const evses = this.getEvseTable(tenantId);
+
+    const rows = await this.db
+      .select({ connector: table, evse: evses })
+      .from(table)
+      .leftJoin(evses, and(eq(table.evseId, evses.id), this.tenantFilter(evses, tenantId)))
+      .where(and(eq(table.stationId, stationId), this.tenantFilter(table, tenantId)));
+
+    return rows.map((row) => ({
+      ...this.toDto(row.connector as ConnectorEntity),
+      evse: row.evse ? toEvseDto(row.evse as EvseEntity) : undefined,
     }));
   }
 

@@ -20,6 +20,7 @@ here: <https://github.com/citrineos/citrineos>.
 
 ## Table of Contents
 
+- [For Automated Agents](#for-automated-agents)
 - [Overview](#overview)
 - [Architecture Flow](#architecture-flow)
 - [Repository Structure](#repository-structure)
@@ -35,6 +36,13 @@ here: <https://github.com/citrineos/citrineos>.
 - [Licensing](#licensing)
 - [Support and Contact](#support-and-contact)
 - [Roadmap](#roadmap)
+
+## For Automated Agents
+
+If you are an AI coding agent, read [AGENTS.md](./AGENTS.md) before making any change to this repository. It is
+the operating manual for automated contributors: environment and setup, the exact build/test/lint commands,
+repository layout, the conventions CI enforces, and the working practices expected of you. This README explains
+the project to people; `AGENTS.md` instructs an agent how to work in it.
 
 ## Overview
 

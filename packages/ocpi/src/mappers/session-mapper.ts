@@ -221,7 +221,9 @@ export class SessionMapper extends BaseTransactionMapper {
       session.status = this.getTransactionStatus(transaction as TransactionDto);
     }
 
-    session.auth_method = this.getAuthMethod(transaction);
+    if (transaction.remoteStartId !== undefined) {
+      session.auth_method = this.getAuthMethod(transaction);
+    }
 
     // Set optional fields that are typically null in your implementation
     session.authorization_reference = null;
@@ -271,7 +273,9 @@ export class SessionMapper extends BaseTransactionMapper {
     }
 
     // Set defaults for fields that don't depend on external context
-    session.auth_method = this.getAuthMethod(transaction);
+    if (transaction.remoteStartId !== undefined) {
+      session.auth_method = this.getAuthMethod(transaction);
+    }
     session.authorization_reference = null;
     session.meter_id = null;
 

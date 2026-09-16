@@ -121,7 +121,7 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
 
     const tenantId = message.context.tenantId;
 
-    for (const messageInfoType of messageInfoTypes) {
+    for (const messageInfoType of messageInfoTypes ?? []) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
         const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(

@@ -65,7 +65,7 @@ export const GET_TRANSACTIONS_QUERY = gql`
 
 export const GET_TRANSACTION_BY_ID_QUERY = gql`
   query GetTransactionById($id: Int!) {
-    Transactions_by_pk(id: $id) {
+    Transactions(where: { id: { _eq: $id } }, limit: 1) {
       tenant: Tenant {
         countryCode
         partyId

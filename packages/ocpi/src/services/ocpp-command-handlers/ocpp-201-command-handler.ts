@@ -99,8 +99,11 @@ export class OCPP2_0_1_CommandHandler extends OCPPCommandHandler {
 
     let evseId: number | undefined;
     if (startSession.evse_uid !== null && startSession.evse_uid !== undefined) {
-      evseId = Number(EXTRACT_EVSE_ID(startSession.evse_uid));
-      if (!Number.isInteger(evseId) || evseId <= 0) {
+      const evseDatabaseId = Number(EXTRACT_EVSE_ID(startSession.evse_uid));
+      evseId = Array.from(chargingStation.evses || []).find(
+        (evse) => evse.id === evseDatabaseId,
+      )?.evseTypeId;
+      if (evseId === undefined || evseId <= 0) {
         this.reportEvseNotFound(startSession, tenantPartner, startSession.response_url, commandId);
         return;
       }

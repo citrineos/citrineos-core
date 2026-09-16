@@ -14,17 +14,25 @@ import {
   SetNetworkProfileStatusEnum,
   OCPP2_response_types,
 } from '@citrineos/types';
-import {
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-} from '@citrineos/dal';
+import type { IChargingStationRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
+import { ChargingStationNetworkProfile, SetNetworkProfile } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetNetworkProfile)
 export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
-  constructor({ logger }: AbstractHandlerDependencies) {
+  protected _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
+
+  constructor({
+    logger,
+    serverNetworkProfileRepository,
+    chargingStationRepository,
+  }: AbstractHandlerDependencies & {
+    serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    chargingStationRepository: IChargingStationRepository;
+  }) {
     super(logger);
+    this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -41,12 +49,12 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const chargingStation = await ChargingStation.findOne({
-      where: {
-        ocppConnectionName: message.context.ocppConnectionName,
-        tenantId: message.context.tenantId,
-      },
-    });
+    // Resolved up front: the SetNetworkProfile row below is keyed on stationId.
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+        message.context.tenantId,
+        message.context.ocppConnectionName,
+      );
     if (!chargingStation) {
       return;
     }
@@ -62,12 +70,10 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const serverNetworkProfile = await ServerNetworkProfile.findOne({
-      where: {
-        id: setNetworkProfile.websocketServerConfigId!,
-        tenantId: message.context.tenantId,
-      },
-    });
+    const serverNetworkProfile = await this._serverNetworkProfileRepository.findByProfileId(
+      message.context.tenantId,
+      setNetworkProfile.websocketServerConfigId!,
+    );
     if (!serverNetworkProfile) {
       return;
     }

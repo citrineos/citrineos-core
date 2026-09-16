@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation, StopTransaction, TransactionEvent } from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type {
@@ -12,14 +13,7 @@ import type {
   TransactionDto,
   TransactionEventDto,
 } from '@citrineos/types';
-import {
-  ChargingStation,
-  MeterValue,
-  StartTransaction,
-  StopTransaction,
-  Transaction,
-  TransactionEvent,
-} from '../../../index.js';
+import { MeterValue, StartTransaction, Transaction } from '../../../index.js';
 import {
   DrizzleMeterValueRepository,
   toMeterValueDto,
