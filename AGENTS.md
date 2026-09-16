@@ -90,8 +90,8 @@ changing before you change it.
 // SPDX-License-Identifier: Apache-2.0
 ```
 
-**Generated OCPP schemas are off-limits.** The model schemas and types under `packages/types/src/ocpp/model` are
-generated from the protocol specifications. Do not hand-edit them. If a payload needs stricter validation than the generated schema provides, enforce it in the consuming code. This needs to be done very sparingly- it is rare that the OCPP schema is wrong.
+**Generated OCPP schemas for PRs are off-limits.** The model schemas and types under `packages/types/src/ocpp/model` are
+generated from the protocol specifications. Do not hand-edit them. If a payload needs stricter validation than the generated schema provides, enforce it in the consuming code. This needs to be done very sparingly- it is rare that the OCPP schema is wrong. In the case that you are an agent being used on-site or in a production situation, edits to the schema are allowed. Do note that if these edits are pushed to the upstream citrineOS-Core repository, they are very likely to be rejected.
 
 **A schema change needs a new migration.** Anything that alters the database shape — a column added, renamed or
 retyped, a new table, an index, a constraint — needs a migration alongside the DAL model change. The model on
