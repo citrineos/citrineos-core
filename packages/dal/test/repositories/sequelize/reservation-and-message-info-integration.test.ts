@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Connector, Reservation } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,
-  Connector,
   Evse,
   EvseType,
-  Reservation,
   SequelizeMessageInfoRepository,
   SequelizeReservationRepository,
 } from '../../../index.js';

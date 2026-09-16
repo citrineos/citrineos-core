@@ -6,14 +6,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type { SubscriptionDto } from '@citrineos/types';
+import { LocalListAuthorization, LocalListVersion, SendLocalList } from '../../../index.js';
 import {
   ChangeConfiguration,
-  LocalListAuthorization,
-  LocalListVersion,
-  SendLocalList,
+  MessageInfo,
+  SecurityEvent,
   Subscription,
-} from '../../../index.js';
-import { MessageInfo, SecurityEvent } from '@dal/db/sequelize/index.js';
+} from '@dal/db/sequelize/index.js';
 import {
   DrizzleChangeConfigurationRepository,
   toChangeConfigurationDto,

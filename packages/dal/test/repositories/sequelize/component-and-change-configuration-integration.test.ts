@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChangeConfiguration } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import {
-  ChangeConfiguration,
   Component,
   SequelizeChangeConfigurationRepository,
   SequelizeComponentRepository,
