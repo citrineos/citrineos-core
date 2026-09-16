@@ -47,6 +47,7 @@ dist
 
 # Server data
 /apps/ocpp-server/data
+/apps/ocpi-server/data
 
 # IntelliJ
 out/
@@ -59,3 +60,5 @@ out/
 
 # Generated certificate backup files
 **/certificates/*.pem.backup
+
+coverage/
