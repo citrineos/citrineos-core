@@ -17,14 +17,13 @@ tsconfig.test.base.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
-apps/ocpp-server/tsconfig.migrations.json
+apps/ocpp-server/config/tsconfig.migrations.json
 apps/ocpp-server/src/assets/logo.png
 
 # CI/CD files
 .github/workflows/tests/CI/collection.json
 .github/workflows/tests/CI/environment.json
 .github/workflows/renew-certs/openssl.config
-.husky/pre-commit
 
 # Package files
 packages/types/package.json
@@ -32,7 +31,6 @@ packages/base/package.json
 packages/dal/package.json
 packages/ocpp/package.json
 apps/ocpp-server/package.json
-package-lock.json
 
 # TypeScript config files
 packages/types/tsconfig.eslint.json
@@ -47,17 +45,16 @@ packages/dal/tsconfig.json
 packages/ocpp/tsconfig.eslint.json
 packages/ocpp/tsconfig.src.json
 packages/ocpp/tsconfig.json
-packages/ocpi-base/tsconfig.eslint.json
-packages/ocpi-base/tsconfig.src.json
-packages/ocpi-base/tsconfig.json
-apps/ocpp-server/tsconfig.eslint.json
-apps/ocpp-server/tsconfig.json
-apps/ocpp-server/tsconfig.src.json
+packages/ocpi/tsconfig.eslint.json
+packages/ocpi/tsconfig.src.json
+packages/ocpi/tsconfig.json
+apps/ocpp-server/config/tsconfig.eslint.json
+apps/ocpp-server/config/tsconfig.json
+apps/ocpp-server/config/tsconfig.src.json
 apps/mock-msp/tsconfig.eslint.json
 apps/mock-msp/tsconfig.json
 apps/mock-msp/tsconfig.src.json
 tsconfig.build.json
-tsconfig.eslint.json
 tsconfig.json
 
 # OCPP 1.6 Schema files
@@ -105,7 +102,7 @@ apps/ocpp-server/everest/README.md
 packages/ocpp/src/handlers/HANDLERS.md
 
 # Configuration files
-apps/ocpp-server/nodemon.json
+apps/ocpp-server/config/nodemon.json
 
 apps/ocpp-server/everest/
 
@@ -179,7 +176,6 @@ apps/operator-ui/src/lib/client/components/ui/tooltip.tsx
 apps/operator-ui/src/lib/client/components/ui/undoable-notification.tsx
 apps/operator-ui/src/lib/utils/cn.ts
 apps/operator-ui/src/lib/utils/types.ts
-apps/operator-ui/playwright/.auth/admin.json
 apps/operator-ui/tsconfig.json
 apps/operator-ui/.env.local
 apps/operator-ui/.env.test
@@ -187,23 +183,13 @@ apps/operator-ui/.env.test
 # OCPI files
 
 apps/ocpi-server/.sequelizerc
-apps/ocpi-server/data/directus/uploads/444686d6-e2ae-48dd-9844-9bc40f3b83a1.png
-apps/ocpi-server/data/directus/uploads/444686d6-e2ae-48dd-9844-9bc40f3b83a1__589fd140dc03b11360453048b8c68765d61556b2.png
-apps/ocpi-server/data/directus/uploads/79611a20-d15c-472f-8a81-ba50a8d520cc.png
-apps/ocpi-server/data/directus/uploads/79611a20-d15c-472f-8a81-ba50a8d520cc__589fd140dc03b11360453048b8c68765d61556b2.png
-apps/ocpi-server/data/directus/uploads/b4f0a73e-1813-4ca4-8d76-5b7c5aed636c.png
-apps/ocpi-server/data/directus/uploads/b4f0a73e-1813-4ca4-8d76-5b7c5aed636c__589fd140dc03b11360453048b8c68765d61556b2.png
-apps/ocpi-server/data/directus/uploads/f388d2c3-bc4a-4fc6-9093-4152df0f768a.png
-apps/ocpi-server/data/directus/uploads/f388d2c3-bc4a-4fc6-9093-4152df0f768a__589fd140dc03b11360453048b8c68765d61556b2.png
-apps/ocpi-server/nodemon.json
+apps/ocpi-server/config/nodemon.json
 apps/ocpi-server/src/assets/certificates/acme_account_key.pem
 apps/ocpi-server/src/assets/certificates/certChain.pem
 apps/ocpi-server/src/assets/certificates/leafKey.pem
 apps/ocpi-server/src/assets/certificates/rootCertificate.pem
 apps/ocpi-server/src/assets/certificates/subCAKey.pem
-apps/ocpi-server/tsconfig.eslint.json
-apps/ocpi-server/tsconfig.src.json
-apps/ocpi-server/tsconfig.json
-apps/ocpi-server/tsconfig.migrations.json
-packages/ocpi-base/tsconfig.eslint.json
-packages/ocpi-base/tsconfig.json
+apps/ocpi-server/config/tsconfig.eslint.json
+apps/ocpi-server/config/tsconfig.src.json
+apps/ocpi-server/config/tsconfig.json
+apps/ocpi-server/config/tsconfig.migrations.json

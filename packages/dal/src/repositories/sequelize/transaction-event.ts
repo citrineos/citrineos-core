@@ -31,6 +31,26 @@ import { TransactionEvent } from '../../models/transaction-event/transaction-eve
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { SequelizeChargingStationSequenceRepository } from './charging-station-sequence.js';
 
+/** Seconds between the transaction start and the newest meter value; 1.6 has no reported value. */
+function elapsedSecondsSinceStart(
+  startTime: string | undefined,
+  meterValues: MeterValueDto[],
+): number | undefined {
+  if (!startTime || meterValues.length === 0) {
+    return undefined;
+  }
+
+  const startTimestamp = new Date(startTime).getTime();
+  const latestMeterValueTimestamp = Math.max(
+    ...meterValues.map((meterValue) => new Date(meterValue.timestamp).getTime()),
+  );
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(latestMeterValueTimestamp)) {
+    return undefined;
+  }
+
+  return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
+}
+
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
   implements ITransactionEventRepository
@@ -668,6 +688,7 @@ export class SequelizeTransactionEventRepository
           meterStart ?? undefined,
         ),
         meterStart: meterStart,
+        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
       });
     } else {
       await transaction.update({
@@ -676,6 +697,7 @@ export class SequelizeTransactionEventRepository
           transaction.totalKwh ?? 0,
           transaction.meterStart ?? undefined,
         ),
+        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
       });
     }
   }
