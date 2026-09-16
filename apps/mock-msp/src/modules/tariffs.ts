@@ -33,7 +33,7 @@ import {
 import type { MockContext, ModuleDef, OcpiReply } from '../core/types.js';
 
 // Envelope Citrine parses a GET reader response with (composed from the reused
-// ocpi-base factory + the reused TariffDTOSchema — not a locally invented schema).
+// ocpi factory + the reused TariffDTOSchema — not a locally invented schema).
 const TariffGetResponseSchema = OcpiResponseSchema(TariffDTOSchema);
 
 // Stable domain-map key = the path identity {country_code}/{party_id}/{tariff_id}.

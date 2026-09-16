@@ -7,8 +7,7 @@ import type { ICache } from '@citrineos/base';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { type ILogObj, Logger } from 'tslog';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { MemoryCache } from '@/services/cache/memory.js';
-import { RedisCache } from '@/services/cache/redis.js';
+import { MemoryCache, RedisCache } from '@citrineos/base';
 
 const NAMESPACE = 'CS01';
 const SUBSCRIBE_GRACE_MS = 500;
