@@ -20,8 +20,6 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import {
-  type IDeviceModelRepository,
-  type IOCPPMessageRepository,
   VariableAttribute,
   stationIdFilter,
   type IDeviceModelRepository,

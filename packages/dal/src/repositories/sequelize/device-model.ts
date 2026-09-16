@@ -517,7 +517,7 @@ export class SequelizeDeviceModelRepository
   ): Promise<VariableAttribute | undefined> {
     const variableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         type: attributeType,
       },
       include: [
