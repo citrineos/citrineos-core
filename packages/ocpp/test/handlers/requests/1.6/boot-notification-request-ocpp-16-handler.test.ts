@@ -26,14 +26,9 @@ import type {
   IChangeConfigurationRepository,
   IChargingStationRepository,
 } from '@citrineos/dal';
-import { ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { BootNotificationRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-
-// The Sequelize model is never initialized in unit tests, so build() would throw inside the
-// handler's fire-and-forget station update. Pass the attributes through instead.
-vi.spyOn(ChargingStation, 'build').mockImplementation(((data: unknown) => data) as never);
 
 const STATION_ID = 'station-001';
 const IDENTIFIER = createIdentifier(DEFAULT_TENANT_ID, STATION_ID);
