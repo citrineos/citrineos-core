@@ -10,6 +10,7 @@ export * from '@services/index.js';
 export * from '@util/index.js';
 
 // Module exports
+export * from '@modules/california-pricing/index.js';
 export * from '@modules/certificates/index.js';
 export * from '@modules/configuration/index.js';
 export * from '@modules/ev-driver/index.js';
