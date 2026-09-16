@@ -11,29 +11,12 @@ import {
   AuthorizationWhitelistEnum,
   type ConnectorDto,
   type EvseDto,
-  type IdTokenEnumType,
+  type RealTimeAuthorizationRequestBody,
+  type RealTimeAuthorizationResponse,
   type SystemConfig,
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-
-export interface RealTimeAuthorizationRequestBody {
-  tenantPartnerId: number;
-  idToken: string;
-  idTokenType: IdTokenEnumType;
-  locationId?: string;
-  ocppConnectionName: string;
-  evseId: number;
-  connectorId: number;
-}
-
-export interface RealTimeAuthorizationResponse {
-  timestamp: string;
-  data: {
-    allowed: string;
-    reason?: string;
-  };
-}
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _chargingStationRepository: IChargingStationRepository;

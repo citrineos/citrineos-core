@@ -581,6 +581,33 @@ describe('MessageRouterImpl', () => {
       expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
     });
 
+    it('answers a 1.6 Call that fails validation with FormationViolation', async () => {
+      cache.exists.mockResolvedValue(false);
+      vi.spyOn(router as any, '_validateCall').mockReturnValue({
+        isValid: false,
+        errors: [{ message: 'bad format' }],
+      });
+
+      const callMessage = JSON.stringify([
+        MessageTypeId.Call,
+        CORRELATION_ID,
+        OCPP_CallAction.BootNotification,
+        {},
+      ]);
+
+      const result = await router.onMessage(
+        IDENTIFIER,
+        callMessage,
+        timestamp,
+        OCPPVersion.OCPP1_6,
+      );
+
+      expect(result).toBe(false);
+      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
+      expect(sentMessage[0]).toBe(MessageTypeId.CallError);
+      expect(sentMessage[2]).toBe(ErrorCode.FormationViolation);
+    });
+
     it('should send CallError when _routeCall fails', async () => {
       cache.exists.mockResolvedValue(false);
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });

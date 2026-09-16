@@ -73,7 +73,7 @@ describe('GET /_mock/status — live aggregate', () => {
     stub = undefined;
   });
 
-  it('dead sources -> HTTP 200, every remote field unknown, and it answers fast', async () => {
+  it('dead sources -> HTTP 200 with every remote field unknown, without awaiting them', async () => {
     // Unreachable URLs; no ?fresh, so probes are still in-flight when the handler returns.
     ({ app, ctx } = makeServer(
       {
@@ -83,12 +83,12 @@ describe('GET /_mock/status — live aggregate', () => {
       { everest: async () => ({ state: 'up', detail: null }) },
     ));
     await app.ready();
-    const t0 = Date.now();
     const res = await app.inject({ method: 'GET', url: '/_mock/status' });
-    const elapsed = Date.now() - t0;
     expect(res.statusCode).toBe(200);
-    expect(elapsed).toBeLessThan(500); // snapshot never awaits outbound I/O
     const j = res.json();
+    // Everything below is 'unknown' only because the handler answered without
+    // awaiting the probes it kicked off - that is the real assertion, and it
+    // does not depend on how fast the machine is.
     expect(j.degraded).toBe(true);
     expect(j.citrine.ocpi.state).toBe('unknown');
     expect(j.citrine.hasura.state).toBe('unknown');
@@ -146,9 +146,11 @@ describe('GET /_mock/status — live aggregate', () => {
     expect(gql).toHaveLength(1); // TTL (5s) not expired -> no second query
   });
 
-  it('handler latency is independent of a slow Hasura source', async () => {
+  it('the handler answers without waiting for a slow Hasura source', async () => {
+    let answered = false;
     const slow = http.createServer((_req, res) => {
       setTimeout(() => {
+        answered = true;
         res.statusCode = 200;
         res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify(hasuraData()));
@@ -165,10 +167,11 @@ describe('GET /_mock/status — live aggregate', () => {
         EVEREST_UP,
       ));
       await app.ready();
-      // First plain call kicks the (slow) background refresh; the handler must not wait for it.
-      const t0 = Date.now();
-      await app.inject({ method: 'GET', url: '/_mock/status' });
-      expect(Date.now() - t0).toBeLessThan(300);
+      // First plain call kicks the (slow) background refresh; the handler must
+      // not wait for it, so the stub is still sleeping when we get our reply.
+      const res = await app.inject({ method: 'GET', url: '/_mock/status' });
+      expect(answered).toBe(false);
+      expect(res.json().citrine.hasura.state).toBe('unknown');
       // Let the background fetch finish before we tear the server down.
       await new Promise((r) => setTimeout(r, 900));
     } finally {
