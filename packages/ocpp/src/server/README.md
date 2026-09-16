@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # Extending `CitrineOSServer`
 
 `CitrineOSServer` is the whole application server — DI container, HTTP surface, modules, APIs,
-startup and shutdown. It ships from `@citrineos/core` so that a downstream distribution can
+startup and shutdown. It ships from `@citrineos/ocpp` so that a downstream distribution can
 **subclass** it instead of forking `citrineOSServer.ts` into its own repo and re-merging every
 upstream change by hand.
 
@@ -15,7 +15,7 @@ The runnable entrypoint is then just:
 
 ```ts
 import { ConfigLoader } from '@citrineos/base';
-import { CitrineOSServer } from '@citrineos/core';
+import { CitrineOSServer } from '@citrineos/ocpp';
 
 const config = await ConfigLoader.loadConfig();
 await new CitrineOSServer(process.env.APP_NAME!.toLowerCase(), config).run();
