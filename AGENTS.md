@@ -12,8 +12,7 @@ wins.
 
 A **pnpm monorepo** (TypeScript, Node) containing the CitrineOS charging station management system: OCPP message
 routing and handling, the persistence layer, the OCPI server, and the operator web UI. Charging stations connect
-over WebSocket; modules talk to each other through RabbitMQ; data lives in PostgreSQL; the UI reads through
-Hasura and writes through the server's REST surfaces.
+over WebSocket; modules talk to each other through RabbitMQ; data lives in PostgreSQL; the UI reads and writes through Hasura while messages triggered by the UI are routed to specific endpoints that handle them. 
 
 ## Environment and setup
 
