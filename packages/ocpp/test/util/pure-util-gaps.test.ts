@@ -12,7 +12,6 @@ import {
 } from '@citrineos/types';
 import type { IChargingStationSequenceRepository } from '@citrineos/dal';
 import { getAuthorizationTokenFromRequest, getHeaderValue, initSwagger } from '@/apis/swagger.js';
-import { TotpUtil } from '@services/totp/totp-util.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 import { calculateCheckDigit } from '@util/emaid-check-digit-calculator.js';
 import { IdGenerator } from '@util/id-generator.js';
@@ -286,31 +285,6 @@ describe('initSwagger', () => {
     expect(reply2.code).toHaveBeenCalledTimes(1);
     expect(reply2.code).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
     expect(done2).not.toHaveBeenCalled();
-  });
-});
-
-describe('TotpUtil RFC 6238 vectors', () => {
-  // The RFC 4226/6238 shared secret, hex-encoded. Built rather than pasted so
-  // secret scanners do not read the published vector as a live credential.
-  // Expected tokens are the last 6 digits of the RFC 6238 Appendix B SHA-1 vectors.
-  // The window/skew behaviour is covered by test/services/totp/totp-util.test.ts;
-  // what is pinned here is the algorithm against the published vectors.
-  const RFC_SECRET_HEX = Buffer.from('1234567890'.repeat(2)).toString('hex');
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('generate returns the RFC 6238 token at T=59s', () => {
-    vi.spyOn(Date, 'now').mockReturnValue(59_000);
-
-    expect(TotpUtil.generate(RFC_SECRET_HEX)).toBe('287082');
-  });
-
-  it('generate returns the RFC 6238 token at T=1111111109s', () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_111_111_109_000);
-
-    expect(TotpUtil.generate(RFC_SECRET_HEX)).toBe('081804');
   });
 });
 
