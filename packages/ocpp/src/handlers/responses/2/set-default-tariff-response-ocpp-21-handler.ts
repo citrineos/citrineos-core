@@ -17,7 +17,7 @@ import {
   TariffSetStatusEnum,
 } from '@citrineos/types';
 import { type IOCPPMessageRepository, type ITariffRepository } from '@citrineos/dal';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.SetDefaultTariff)
 export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
@@ -61,7 +61,7 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
     const storedRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         tenantId,
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

@@ -16,7 +16,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CancelReservation)
 export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
@@ -49,7 +49,7 @@ export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
         tenantId: message.context.tenantId,
-        stationId: await resolveStationId(
+        stationId: await stationIdFilter(
           message.context.tenantId,
           message.context.ocppConnectionName,
         ),

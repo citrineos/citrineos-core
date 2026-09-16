@@ -19,7 +19,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import { type IInstalledCertificateRepository, type IOCPPMessageRepository } from '@citrineos/dal';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
 export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {
@@ -152,7 +152,7 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
   ): Promise<OCPP2_request_types.GetInstalledCertificateIdsRequest['certificateType']> {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

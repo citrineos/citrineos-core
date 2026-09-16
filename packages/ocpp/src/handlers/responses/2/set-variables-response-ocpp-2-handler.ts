@@ -21,11 +21,11 @@ import {
 } from '@citrineos/types';
 import {
   Component,
-  type IDeviceModelRepository,
-  type IOCPPMessageRepository,
   Variable,
   VariableAttribute,
-  resolveStationId,
+  stationIdFilter,
+  type IDeviceModelRepository,
+  type IOCPPMessageRepository,
 } from '@citrineos/dal';
 
 type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataType };
@@ -88,7 +88,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     const requestOcppMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         tenantId,
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },
@@ -172,7 +172,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
       tenantId,
       {
         where: {
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           type: attributeType,
         },
         include: [

@@ -156,7 +156,6 @@ async function aTransaction(
 ): Promise<{ id: number }> {
   const row = await Transaction.create({
     stationId,
-    ocppConnectionName: STATION,
     transactionId,
     isActive: true,
     tenantId,

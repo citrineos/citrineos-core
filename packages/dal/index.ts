@@ -96,6 +96,7 @@ export { RepositoryStore } from './src/repositories/sequelize/repository-store.j
 export {
   resolveStationId,
   resolveStationIdOrThrow,
+  stationIdFilter,
 } from './src/repositories/sequelize/resolve-station-id.js';
 export {
   DefaultDrizzleInstance,

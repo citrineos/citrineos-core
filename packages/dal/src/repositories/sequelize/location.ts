@@ -477,7 +477,7 @@ export class SequelizeLocationRepository
     ocppConnectionName: string,
   ): Promise<ConnectorDto[]> {
     return await Connector.findAll({
-      where: { tenantId, ocppConnectionName },
+      where: { tenantId, stationId: await stationIdFilter(tenantId, ocppConnectionName) },
     });
   }
 

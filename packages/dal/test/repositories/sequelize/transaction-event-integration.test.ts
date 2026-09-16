@@ -68,6 +68,17 @@ async function aStation(ocppConnectionName = STATION, tenantId = TENANT_A) {
   return ChargingStation.create({ ocppConnectionName, isOnline: true, tenantId } as any);
 }
 
+// Evses and Connectors declare stationId NOT NULL and Transactions filter on it, so
+// seeds resolve the connection name to the FK themselves, creating the station when the
+// test has not seeded one (it is only reachable from seed helpers, never from a repo call).
+async function stationIdOf(ocppConnectionName = STATION, tenantId = TENANT_A): Promise<number> {
+  const existing = (await ChargingStation.findOne({
+    where: { ocppConnectionName, tenantId },
+  })) as unknown as { id: number } | null;
+  if (existing) return existing.id;
+  return ((await aStation(ocppConnectionName, tenantId)) as unknown as { id: number }).id;
+}
+
 async function anAuthorization(idToken = TOKEN, tenantId = TENANT_A) {
   return Authorization.create({
     idToken,
@@ -82,13 +93,14 @@ async function aTariff(tariffId: string, tenantId = TENANT_A) {
 }
 
 async function anEvse(evseTypeId: number, ocppConnectionName = STATION, tenantId = TENANT_A) {
-  return Evse.create({ tenantId, ocppConnectionName, evseTypeId } as any);
+  const stationId = await stationIdOf(ocppConnectionName, tenantId);
+  return Evse.create({ tenantId, stationId, evseTypeId } as any);
 }
 
 async function aTransactionRow(overrides: Record<string, unknown> = {}) {
   return Transaction.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION,
+    stationId: await stationIdOf(),
     transactionId: TX,
     isActive: true,
     ...overrides,
@@ -201,7 +213,6 @@ describe('SequelizeTransactionEventRepository', () => {
       const evses = await Evse.findAll();
       expect(evses).toHaveLength(1);
       expect(evses[0].evseTypeId).toBe(2);
-      expect(evses[0].ocppConnectionName).toBe(STATION);
       expect(evses[0].stationId).toBe(station.id);
 
       const connectors = await Connector.findAll();
@@ -221,7 +232,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const evse = await anEvse(1);
       const connector = await Connector.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(),
         evseId: evse.id,
         connectorId: 1,
         evseTypeConnectorId: 1,
@@ -385,7 +396,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const evse2 = await anEvse(2);
       const connector = await Connector.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(),
         evseId: evse1.id,
         connectorId: 1,
         evseTypeConnectorId: 1,
@@ -538,7 +549,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const evse = await anEvse(1);
       const connector = await Connector.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(),
         evseId: evse.id,
         connectorId: 1,
         evseTypeConnectorId: 1,

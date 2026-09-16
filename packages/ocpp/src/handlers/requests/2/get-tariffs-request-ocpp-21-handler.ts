@@ -19,7 +19,7 @@ import {
   Transaction,
 } from '@citrineos/dal';
 import { Op } from 'sequelize';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 /**
  * Handle OCPP 2.1 GetTariffs request
@@ -155,7 +155,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
       const activeTransactions = await Transaction.findAll({
         where: {
           tenantId,
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           isActive: true,
           authorizationId: { [Op.ne]: null },
         },

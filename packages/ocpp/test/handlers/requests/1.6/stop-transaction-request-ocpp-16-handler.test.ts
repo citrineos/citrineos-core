@@ -23,6 +23,7 @@ const STATION_DB_ID = vi.hoisted(() => 4242);
 vi.mock('@citrineos/dal', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@citrineos/dal')>()),
   resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
 }));
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {

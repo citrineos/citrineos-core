@@ -105,7 +105,6 @@ async function aConnector(stationId: number, evseId: number, connectorId: number
     stationId,
     evseId,
     connectorId,
-    ocppConnectionName: STATION,
     status: 'Available',
     errorCode: 'NoError',
     timestamp: new Date().toISOString(),

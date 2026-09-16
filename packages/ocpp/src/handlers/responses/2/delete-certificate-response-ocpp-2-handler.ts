@@ -21,7 +21,7 @@ import type {
   IInstalledCertificateRepository,
   IOCPPMessageRepository,
 } from '@citrineos/dal';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
 export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
@@ -60,7 +60,7 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
 
     const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
-        stationId: await resolveStationId(tenantId, ocppConnectionName),
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

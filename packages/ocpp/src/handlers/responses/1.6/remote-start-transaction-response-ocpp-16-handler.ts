@@ -17,7 +17,7 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IChargingProfileRepository, IOCPPMessageRepository } from '@citrineos/dal';
-import { resolveStationId } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.RemoteStartTransaction)
 export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler {
@@ -54,7 +54,7 @@ export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler
       const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
         where: {
           tenantId: tenantId,
-          stationId: await resolveStationId(tenantId, ocppConnectionName),
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           correlationId: message.context.correlationId,
           origin: MessageOrigin.ChargingStationManagementSystem,
         },

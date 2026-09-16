@@ -274,7 +274,11 @@ export class SequelizeDeviceModelRepository
           tenantId,
           VariableAttribute.build({
             tenantId,
-            stationId: await stationIdFilter(tenantId, ocppConnectionName),
+            stationId: await resolveStationIdOrThrow(
+              tenantId,
+              ocppConnectionName,
+              'create variable attribute',
+            ),
             variableId: defaultComponentVariable.id,
             componentId: component.id,
             evseDatabaseId: evse?.databaseId,
