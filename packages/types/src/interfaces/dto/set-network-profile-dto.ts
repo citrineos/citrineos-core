@@ -13,7 +13,7 @@ import {
 
 export const SetNetworkProfileSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  ocppConnectionName: z.string(),
+  stationId: z.number().int().nullable().optional(),
   correlationId: z.string(),
   websocketServerConfigId: z.string().optional(),
   websocketServerConfig: ServerNetworkProfileSchema.optional(),

@@ -105,7 +105,6 @@ function aService() {
 }
 
 let nextSerialNumber = 1;
-
 /** A pending attempt, as either prepare path leaves one before the request goes out. */
 async function aPendingAttempt(certificateType: CertificateUseEnumType) {
   const certificate = await certificateRepository.createCertificate(DEFAULT_TENANT_ID, {
@@ -116,8 +115,7 @@ async function aPendingAttempt(certificateType: CertificateUseEnumType) {
     certificateFileHash: `${certificateType}-hash`,
   });
 
-  return installCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, {
-    ocppConnectionName: STATION,
+  return installCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, STATION, {
     certificateType,
     certificateId: certificate.id,
     status: null,

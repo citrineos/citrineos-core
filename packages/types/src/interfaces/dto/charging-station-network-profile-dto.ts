@@ -8,7 +8,7 @@ import { SetNetworkProfileSchema } from './set-network-profile-dto.js';
 import { BaseSchema } from './types/base-dto.js';
 
 export const ChargingStationNetworkProfileSchema = BaseSchema.extend({
-  ocppConnectionName: z.string(),
+  stationId: z.number().int(),
   configurationSlot: z.number().int(),
   setNetworkProfileId: z.number().int(),
   setNetworkProfile: SetNetworkProfileSchema,

@@ -25,6 +25,7 @@ import type {
 } from '@citrineos/dal';
 import { Component } from '@citrineos/dal';
 import { validateMessageContentType } from '@util/index.js';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyDisplayMessages)
 export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
@@ -63,7 +64,10 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
       {
         where: {
           tenantId: message.context.tenantId,
-          ocppConnectionName: message.context.ocppConnectionName,
+          stationId: await stationIdFilter(
+            message.context.tenantId,
+            message.context.ocppConnectionName,
+          ),
           action: OCPP_CallAction.GetDisplayMessages,
           payload: {
             requestId: requestId,

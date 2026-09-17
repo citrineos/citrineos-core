@@ -133,8 +133,7 @@ export class InstallCertificateHelperService {
           signatureAlgorithm,
         );
       }
-      await this.installCertificateAttemptRepository.createAttempt(tenantId, {
-        ocppConnectionName,
+      await this.installCertificateAttemptRepository.createAttempt(tenantId, ocppConnectionName, {
         certificateType,
         certificateId: existingCertificate!.id!,
         ...(requestId != null ? { requestId } : {}),
@@ -158,8 +157,7 @@ export class InstallCertificateHelperService {
       );
 
     if (!existingPendingDeleteCertificateAttempt) {
-      await this.deleteCertificateAttemptRepository.createAttempt(tenantId, {
-        ocppConnectionName,
+      await this.deleteCertificateAttemptRepository.createAttempt(tenantId, ocppConnectionName, {
         hashAlgorithm: certificateHashData.hashAlgorithm,
         issuerNameHash: certificateHashData.issuerNameHash,
         issuerKeyHash: certificateHashData.issuerKeyHash,
@@ -277,11 +275,14 @@ export class InstallCertificateHelperService {
             const certificateString = certificateBuffer.toString();
             const cert = new jsrsasign.X509();
             cert.readCertPEM(certificateString);
-            await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
+            await this.installedCertificateRepository.createInstalledCertificate(
+              tenantId,
               ocppConnectionName,
-              certificateType: existingPendingInstallCertificateAttempt.certificateType,
-              certificateId: existingPendingInstallCertificateAttempt.certificateId,
-            });
+              {
+                certificateType: existingPendingInstallCertificateAttempt.certificateType,
+                certificateId: existingPendingInstallCertificateAttempt.certificateId,
+              },
+            );
           }
         }
       }
@@ -411,8 +412,7 @@ export class InstallCertificateHelperService {
         );
       }
       existingInstalledCertificate =
-        await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
-          ocppConnectionName: identifier,
+        await this.installedCertificateRepository.createInstalledCertificate(tenantId, identifier, {
           certificateType: uploadExistingCertificate.certificateType,
           certificateId: existingCertificate.id!,
         });

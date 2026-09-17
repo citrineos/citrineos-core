@@ -18,7 +18,7 @@ export function toChargingStationNetworkProfileDto(
   entity: ChargingStationNetworkProfileEntity,
 ): ChargingStationNetworkProfileDto {
   return {
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     configurationSlot: entity.configurationSlot ?? 0,
     setNetworkProfileId: entity.setNetworkProfileId ?? 0,
     websocketServerConfigId: entity.websocketServerConfigId ?? undefined,

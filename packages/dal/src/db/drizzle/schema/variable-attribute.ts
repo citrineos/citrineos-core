@@ -24,8 +24,7 @@ function variableAttributeColumns() {
   return {
     // Implicit PK — the sequelize model declares no @PrimaryKey, so Sequelize adds a serial id.
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    stationId: integer('stationId').notNull(),
     // Enum stored as string.
     type: varchar('type', { length: 255 }).default(OCPP2_0_1.AttributeEnumType.Actual),
     dataType: varchar('dataType', { length: 255 }).default(OCPP2_0_1.DataEnumType.string),
@@ -56,6 +55,8 @@ export const variableAttributeTable = pgTable(
   TableName.VariableAttributes,
   variableAttributeColumns(),
   (t) => [
+    // Non-unique @Index on the station FK
+    index('variable_attributes_station_id').on(t.stationId),
     // Partial unique indexes from the @Table decorator
     uniqueIndex('variable_attributes_stationId')
       .on(t.stationId)

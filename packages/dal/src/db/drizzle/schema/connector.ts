@@ -21,8 +21,7 @@ function connectorColumns() {
   return {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    stationId: integer('stationId').notNull(),
     evseId: integer('evseId').notNull(),
     // Serial int starting at 1 used in OCPP 1.6 to refer to the connector, unique per station.
     connectorId: integer('connectorId'),

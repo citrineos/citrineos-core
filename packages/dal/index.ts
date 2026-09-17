@@ -71,6 +71,11 @@ export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profil
 export type { TariffData } from './src/models/tariff/tariffs.js';
 export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
 export {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './src/repositories/sequelize/resolve-station-id.js';
+export {
   DefaultDrizzleInstance,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,

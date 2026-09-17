@@ -106,15 +106,19 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.stationId')}
             value={''}
-            valueRender={() => (
-              <Link
-                to={chargingStationPath(transaction.ocppConnectionName)}
-                className={clickableLinkStyle}
-                title={transaction.ocppConnectionName}
-              >
-                {transaction.ocppConnectionName}
-              </Link>
-            )}
+            valueRender={() =>
+              transaction.station?.ocppConnectionName ? (
+                <Link
+                  to={chargingStationPath(transaction.station.ocppConnectionName)}
+                  className={clickableLinkStyle}
+                  title={transaction.station.ocppConnectionName}
+                >
+                  {transaction.station.ocppConnectionName}
+                </Link>
+              ) : (
+                <span>{NOT_APPLICABLE}</span>
+              )
+            }
           />
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.location')}

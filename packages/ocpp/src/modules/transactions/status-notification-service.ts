@@ -24,7 +24,12 @@ import {
   StatusNotification,
   Variable,
 } from '@citrineos/dal';
-import { OCPP1_6, OCPP2_0_1, type ConnectorDto } from '@citrineos/types';
+import {
+  OCPP1_6,
+  OCPP2_0_1,
+  type ConnectorDto,
+  type StatusNotificationDto,
+} from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
@@ -89,14 +94,14 @@ export class StatusNotificationService {
       return;
     }
 
-    const statusNotification = StatusNotification.build({
+    const statusNotification = {
       tenantId,
-      ocppConnectionName: ocppConnectionName,
+      stationId: chargingStation.id!,
       ...statusNotificationRequest,
       connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
       ),
-    });
+    } as unknown as StatusNotificationDto;
 
     let matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
@@ -119,7 +124,7 @@ export class StatusNotificationService {
     } else if (!matchingEvse) {
       matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
         evseTypeId: statusNotificationRequest.evseId,
-        ocppConnectionName,
+        stationId: chargingStation.id!,
       });
 
       if (matchingEvse.evseTypeId! > 1) {
@@ -131,10 +136,9 @@ export class StatusNotificationService {
 
     const connector = {
       tenantId,
-      stationId: chargingStation.id,
+      stationId: chargingStation.id!,
       evseId: matchingEvse.id!,
       evseTypeConnectorId: statusNotificationRequest.connectorId,
-      ocppConnectionName: ocppConnectionName,
       status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
         statusNotificationRequest.connectorStatus,
       ),
@@ -219,9 +223,8 @@ export class StatusNotificationService {
       // StatusNotifications.connectorId has an FK to Connectors.connectorId.
       const connector = {
         tenantId,
-        stationId: chargingStation.id,
+        stationId: chargingStation.id!,
         connectorId: statusNotificationRequest.connectorId,
-        ocppConnectionName: ocppConnectionName,
         status: OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
           statusNotificationRequest.status,
         ),
@@ -279,7 +282,7 @@ export class StatusNotificationService {
       const statusNotificationInput: Partial<StatusNotification> = {
         tenantId,
         ...statusNotificationRequest,
-        ocppConnectionName: ocppConnectionName,
+        stationId: chargingStation.id!,
         connectorStatus:
           OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
             statusNotificationRequest.status,
@@ -288,11 +291,10 @@ export class StatusNotificationService {
       if (matchingEvse) {
         statusNotificationInput.evseId = matchingEvse.evseTypeId;
       }
-      const statusNotification = StatusNotification.build(statusNotificationInput);
       await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
-        statusNotification,
+        statusNotificationInput as unknown as StatusNotificationDto,
       );
     } else {
       this._logger.warn(

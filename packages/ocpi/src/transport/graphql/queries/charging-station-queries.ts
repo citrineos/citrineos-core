@@ -27,7 +27,7 @@ export const GET_CHARGING_STATION_BY_PK_QUERY = gql`
       evses: Evses {
         id
         tenantId
-        ocppConnectionName
+        stationId
         evseTypeId
         evseId
         physicalReference
@@ -38,7 +38,7 @@ export const GET_CHARGING_STATION_BY_PK_QUERY = gql`
       connectors: Connectors {
         id
         tenantId
-        ocppConnectionName
+        stationId
         evseId
         connectorId
         evseTypeConnectorId
@@ -84,7 +84,7 @@ export const GET_CHARGING_STATION_BY_ID_QUERY = gql`
       evses: Evses {
         id
         tenantId
-        ocppConnectionName
+        stationId
         evseTypeId
         evseId
         physicalReference
@@ -95,7 +95,7 @@ export const GET_CHARGING_STATION_BY_ID_QUERY = gql`
       connectors: Connectors {
         id
         tenantId
-        ocppConnectionName
+        stationId
         evseId
         connectorId
         evseTypeConnectorId

@@ -10,6 +10,7 @@ import {
   OCPP2_0_1,
   type TransactionDto,
   TransactionProps,
+  ChargingStationProps,
 } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { chargingStationPath } from '@lib/utils/resource-paths';
@@ -24,7 +25,7 @@ import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { TransactionClass } from '@lib/cls/transaction-dto';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 
-export const transactionStationIdField = 'ocppConnectionName';
+export const transactionStationIdField = 'ChargingStation.ocppConnectionName';
 export const transactionChargingStationLocationNameField = 'ChargingStation.Location.name';
 export const transactionAuthorizationIdTokenField = 'authorization.idToken';
 
@@ -73,7 +74,7 @@ export const getTransactionsColumns = (
       visible: true,
       sortable: true,
       cellRender: ({ row }: CellContext<TransactionClass, unknown>) => {
-        const chargingStation = row.original.chargingStation;
+        const chargingStation = row.original.station;
         return (
           <div className="flex items-center gap-2">
             {chargingStation?.ocppConnectionName ? (
@@ -108,8 +109,8 @@ export const getTransactionsColumns = (
       sortable: true,
       cellRender: ({ row }: CellContext<BaseRecord, unknown>) => (
         <TableCellLink
-          path={`/${MenuSection.LOCATIONS}/${row.original.chargingStation?.location?.id}`}
-          value={row.original.chargingStation?.location?.name ?? EMPTY_VALUE}
+          path={`/${MenuSection.LOCATIONS}/${row.original.station?.location?.id}`}
+          value={row.original.station?.location?.name ?? EMPTY_VALUE}
         />
       ),
     },
@@ -222,7 +223,7 @@ export const getTransactionsFilters = (value: string): CrudFilters => {
           value,
         },
         {
-          field: TransactionProps.ocppConnectionName,
+          field: `ChargingStation.${ChargingStationProps.ocppConnectionName}`,
           operator: 'contains',
           value,
         },

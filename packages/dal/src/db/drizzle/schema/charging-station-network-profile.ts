@@ -12,7 +12,6 @@ import { type z } from 'zod';
 function chargingStationNetworkProfileColumns() {
   return {
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     configurationSlot: integer('configurationSlot'),
     setNetworkProfileId: integer('setNetworkProfileId').notNull(),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),

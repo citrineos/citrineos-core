@@ -16,11 +16,11 @@ import {
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
-// Four thin repositories over the network-profile tables. ChargingStationNetworkProfile still
-// resolves stationId from ocppConnectionName in a BeforeCreate hook; SetNetworkProfile lost that
-// hook and resolves it inside SequelizeSetNetworkProfileRepository.createPending instead.
-// ServerNetworkProfile keys on a caller-supplied string id, and ChargingStationSecurityInfo
-// holds one row per (ocppConnectionName, tenantId).
+// Four thin repositories over the network-profile tables. ChargingStationNetworkProfile takes
+// stationId directly (NOT NULL); SetNetworkProfile still accepts a connection name and resolves
+// it inside SequelizeSetNetworkProfileRepository.createPending. ServerNetworkProfile keys on a
+// caller-supplied string id, and ChargingStationSecurityInfo holds one row per
+// (stationId, tenantId).
 
 const TENANT_A = 1;
 const TENANT_B = 2;
@@ -186,7 +186,6 @@ describe('SequelizeSetNetworkProfileRepository', () => {
       setNetworkProfileValues({ ocppConnectionName: 'CP-UNKNOWN' }),
     );
 
-    expect(created.ocppConnectionName).toBe('CP-UNKNOWN');
     expect(await SetNetworkProfile.count()).toBe(1);
 
     const [row] = await makeRepo().readAllByQuery(TENANT_A, {
@@ -272,8 +271,11 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
     tenantId = TENANT_A,
   ) {
     const setNetworkProfile = await aSetProfile(ocppConnectionName, configurationSlot, tenantId);
+    const station = (await ChargingStation.findOne({
+      where: { ocppConnectionName, tenantId },
+    })) as unknown as { id: number };
     return ChargingStationNetworkProfile.create({
-      ocppConnectionName,
+      stationId: station.id,
       configurationSlot,
       websocketServerConfigId,
       setNetworkProfileId: setNetworkProfile.id,
@@ -281,8 +283,8 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
     } as any);
   }
 
-  it('create resolves stationId from the connection name and the row reads back', async () => {
-    const station = await aStation(TENANT_A);
+  it('create stores the row against the station FK and it reads back', async () => {
+    const station = (await aStation(TENANT_A)) as unknown as { id: number };
     await aServerProfile('ws-0');
     const setNetworkProfile = await aSetProfile(STATION, 2);
     const repo = makeRepo();
@@ -290,7 +292,7 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
     await repo.create(
       TENANT_A,
       ChargingStationNetworkProfile.build({
-        ocppConnectionName: STATION,
+        stationId: station.id,
         configurationSlot: 2,
         websocketServerConfigId: 'ws-0',
         setNetworkProfileId: setNetworkProfile.id,
@@ -298,7 +300,7 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
       } as any),
     );
 
-    const rows = await repo.readAllByQuery(TENANT_A, { where: { ocppConnectionName: STATION } });
+    const rows = await repo.readAllByQuery(TENANT_A, { where: { stationId: station.id } });
     expect(rows).toHaveLength(1);
     expect(rows[0].stationId).toBe(station.id);
     expect(rows[0].configurationSlot).toBe(2);
@@ -308,8 +310,8 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
   });
 
   it('deleteAllByStationIdAndConfigurationSlots removes only the listed slots of that connection', async () => {
-    await aStation(TENANT_A, 'CP-A');
-    await aStation(TENANT_A, 'CP-B');
+    const cpA = (await aStation(TENANT_A, 'CP-A')) as unknown as { id: number };
+    const cpB = (await aStation(TENANT_A, 'CP-B')) as unknown as { id: number };
     for (const id of ['ws-1', 'ws-2', 'ws-3', 'ws-4']) {
       await aServerProfile(id);
     }
@@ -328,10 +330,12 @@ describe('SequelizeChargingStationNetworkProfileRepository', () => {
     expect(deleted.map((r) => r.configurationSlot).sort()).toEqual([1, 3]);
     const remaining = await ChargingStationNetworkProfile.findAll();
     expect(remaining).toHaveLength(2);
-    expect(remaining.map((r) => [r.ocppConnectionName, r.configurationSlot]).sort()).toEqual([
-      ['CP-A', 2],
-      ['CP-B', 9],
-    ]);
+    expect(remaining.map((r) => [r.stationId, r.configurationSlot]).sort()).toEqual(
+      [
+        [cpA.id, 2],
+        [cpB.id, 9],
+      ].sort(),
+    );
   });
 
   it("delete under one tenant leaves the other tenant's identically named rows", async () => {
@@ -376,22 +380,24 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
     return new SequelizeChargingStationSecurityInfoRepository(deps());
   }
 
-  // ocppConnectionName and publicKeyFileId are public class fields on the model, which shadow
-  // Sequelize's attribute getters under ES2022 define semantics: instance property reads come
-  // back undefined even though the columns persist. Row values are asserted through get();
-  // the found-row return of readChargingStationPublicKeyFileId and the resolveStationId hook
-  // (it reads the shadowed field) are left untested.
+  // publicKeyFileId is a public class field on the model, which shadows Sequelize's
+  // attribute getter under ES2022 define semantics: instance property reads come back
+  // undefined even though the column persists. Row values are asserted through get().
+  // The repository resolves the connection name to a station FK, so every test seeds
+  // the station first.
   it('readOrCreateChargingStationInfo creates the row with the fileId default', async () => {
+    const station = (await aStation(TENANT_A)) as unknown as { id: number };
     await makeRepo().readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-1');
 
     const rows = await ChargingStationSecurityInfo.findAll();
     expect(rows).toHaveLength(1);
-    expect(rows[0].get('ocppConnectionName')).toBe(STATION);
+    expect(rows[0].stationId).toBe(station.id);
     expect(rows[0].get('publicKeyFileId')).toBe('file-1');
     expect(rows[0].tenantId).toBe(TENANT_A);
   });
 
   it('a second readOrCreate keeps the original fileId', async () => {
+    await aStation(TENANT_A);
     const repo = makeRepo();
     await repo.readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-1');
     await repo.readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-2');
@@ -402,6 +408,7 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
   });
 
   it("readChargingStationPublicKeyFileId returns '' when the tenant has no row", async () => {
+    await aStation(TENANT_A);
     const repo = makeRepo();
     await repo.readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-9');
 
@@ -410,6 +417,8 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
   });
 
   it('the same connection name carries a distinct fileId per tenant', async () => {
+    const stationA = (await aStation(TENANT_A)) as unknown as { id: number };
+    const stationB = (await aStation(TENANT_B)) as unknown as { id: number };
     const repo = makeRepo();
     await repo.readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-a');
     await repo.readOrCreateChargingStationInfo(TENANT_B, STATION, 'file-b');
@@ -419,20 +428,21 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
     const rowB = await ChargingStationSecurityInfo.findOne({ where: { tenantId: TENANT_B } });
     expect(rowA!.get('publicKeyFileId')).toBe('file-a');
     expect(rowB!.get('publicKeyFileId')).toBe('file-b');
-    expect(rowA!.get('ocppConnectionName')).toBe(STATION);
-    expect(rowB!.get('ocppConnectionName')).toBe(STATION);
+    expect(rowA!.stationId).toBe(stationA.id);
+    expect(rowB!.stationId).toBe(stationB.id);
   });
 
-  it('a duplicate (connection name, tenant) row is rejected', async () => {
+  it('a duplicate (station, tenant) row is rejected', async () => {
+    const station = (await aStation(TENANT_A)) as unknown as { id: number };
     await ChargingStationSecurityInfo.create({
-      ocppConnectionName: STATION,
+      stationId: station.id,
       publicKeyFileId: 'file-1',
       tenantId: TENANT_A,
     } as any);
 
     await expect(
       ChargingStationSecurityInfo.create({
-        ocppConnectionName: STATION,
+        stationId: station.id,
         publicKeyFileId: 'file-2',
         tenantId: TENANT_A,
       } as any),

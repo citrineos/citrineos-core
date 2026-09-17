@@ -8,7 +8,7 @@ import { faker } from '@faker-js/faker';
 
 export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
   const variableAttribute = {
-    ocppConnectionName: faker.string.uuid(),
+    stationId: faker.number.int({ min: 1, max: 1_000_000 }),
     type: OCPP2_0_1.AttributeEnumType.Actual,
     dataType: OCPP2_0_1.DataEnumType.string,
     value: faker.string.alpha(),

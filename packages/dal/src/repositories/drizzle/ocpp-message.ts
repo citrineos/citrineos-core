@@ -16,7 +16,6 @@ import { DrizzleRepository } from './base.js';
 export function toOCPPMessageDto(entity: OCPPMessageEntity): OCPPMessageDto {
   const dto: Explicit<OCPPMessageDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
     stationId: entity.stationId ?? undefined,
     correlationId: entity.correlationId ?? undefined,
     origin: entity.origin as OCPPMessageDto['origin'],

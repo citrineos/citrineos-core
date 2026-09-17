@@ -94,9 +94,9 @@ export const ChargingStationDetailCard = ({
     sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
     filters: [
       {
-        field: OCPPMessageProps.ocppConnectionName,
+        field: OCPPMessageProps.stationId,
         operator: 'eq',
-        value: station?.ocppConnectionName,
+        value: station?.id,
       },
     ],
     pagination: {

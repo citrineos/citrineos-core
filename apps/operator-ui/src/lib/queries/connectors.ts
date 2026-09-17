@@ -24,7 +24,7 @@ export const CONNECTOR_LIST_FOR_STATION_QUERY = gql`
       where: { stationId: { _eq: $stationId } }
     ) {
       id
-      ocppConnectionName
+      stationId
       connectorId
       ${CONNECTOR_STATUS_FIELDS}
       createdAt
@@ -42,7 +42,7 @@ export const CONNECTORS_FOR_STATION_QUERY = gql`
   query GetConnectorListForStation($stationId: Int!) {
     Connectors(where: { stationId: { _eq: $stationId } }) {
       id
-      ocppConnectionName
+      stationId
       connectorId
       ${CONNECTOR_STATUS_FIELDS}
       createdAt
@@ -66,7 +66,7 @@ export const GET_CONNECTOR_LIST_FOR_STATION_EVSE = gql`
       limit: $limit
     ) {
       id
-      ocppConnectionName
+      stationId
       evseId
       connectorId
       evseTypeConnectorId

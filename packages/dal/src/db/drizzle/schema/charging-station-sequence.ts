@@ -21,8 +21,7 @@ import { type z } from 'zod';
 function chargingStationSequenceColumns() {
   return {
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 36 }).notNull(),
+    stationId: integer('stationId').notNull(),
     type: varchar('type', { length: 255 }).notNull(),
     value: bigint('value', { mode: 'number' }).notNull().default(0),
     tenantId: integer('tenantId').notNull(),

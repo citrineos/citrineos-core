@@ -59,14 +59,12 @@ export class Transaction extends Model implements TransactionDto {
   location?: LocationDto;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationId: number;
-
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
+    type: DataType.INTEGER,
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
   })
-  ocppConnectionName!: string;
+  declare stationId?: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   station!: ChargingStationDto;
@@ -199,19 +197,6 @@ export class Transaction extends Model implements TransactionDto {
       }
     }
     return new Date();
-  }
-
-  @BeforeCreate
-  static async resolveStationId(instance: Transaction): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
   }
 
   @BeforeUpdate

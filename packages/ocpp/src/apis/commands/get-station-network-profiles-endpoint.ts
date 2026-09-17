@@ -10,11 +10,7 @@ import { HttpMethod } from '@citrineos/types';
 import type { NetworkProfileQuerystring } from '@citrineos/dal';
 import { NetworkProfileQuerySchema } from '@citrineos/dal';
 import type { IChargingStationNetworkProfileRepository } from '@citrineos/dal';
-import {
-  type ChargingStationNetworkProfile,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-} from '@citrineos/dal';
+import type { ChargingStationNetworkProfile } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface GetStationNetworkProfilesEndpointDependencies extends AbstractEndpointDependencies {
@@ -43,12 +39,9 @@ export class GetStationNetworkProfilesEndpoint extends AbstractEndpoint<GetStati
   async handle(
     request: FastifyRequest<GetStationNetworkProfilesRoute>,
   ): Promise<ChargingStationNetworkProfile[]> {
-    return this._chargingStationNetworkProfileRepository.readAllByQuery(request.query.tenantId, {
-      where: {
-        ocppConnectionName: request.query.ocppConnectionName,
-        tenantId: request.query.tenantId,
-      },
-      include: [SetNetworkProfile, ServerNetworkProfile],
-    });
+    return this._chargingStationNetworkProfileRepository.readAllByOcppConnectionName(
+      request.query.tenantId,
+      request.query.ocppConnectionName,
+    );
   }
 }

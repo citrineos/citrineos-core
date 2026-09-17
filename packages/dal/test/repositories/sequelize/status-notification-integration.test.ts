@@ -78,7 +78,6 @@ beforeEach(async () => {
     await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
       stationId,
-      ocppConnectionName: OCPP_CONNECTION_NAME,
       connectorId,
       timestamp: new Date(),
     });
@@ -93,7 +92,6 @@ describe('SequelizeLocationRepository', () => {
         OCPP_CONNECTION_NAME,
         StatusNotification.build({
           tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: OCPP_CONNECTION_NAME,
           evseId: 1,
           connectorId: 1,
           connectorStatus: 'Occupied',
@@ -106,7 +104,6 @@ describe('SequelizeLocationRepository', () => {
       expect(rows[0].get({ plain: true })).toMatchObject({
         tenantId: DEFAULT_TENANT_ID,
         stationId,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
         evseId: 1,
         connectorId: 1,
         connectorStatus: 'Occupied',
@@ -120,7 +117,6 @@ describe('SequelizeLocationRepository', () => {
         OCPP_CONNECTION_NAME,
         StatusNotification.build({
           tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: OCPP_CONNECTION_NAME,
           connectorId: 2,
           connectorStatus: 'Faulted',
           errorCode: 'GroundFailure',
@@ -136,7 +132,6 @@ describe('SequelizeLocationRepository', () => {
       expect(rows[0].get({ plain: true })).toMatchObject({
         tenantId: DEFAULT_TENANT_ID,
         stationId,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
         connectorId: 2,
         connectorStatus: 'Faulted',
         errorCode: 'GroundFailure',
@@ -154,7 +149,6 @@ describe('SequelizeLocationRepository', () => {
           OCPP_CONNECTION_NAME,
           StatusNotification.build({
             tenantId: DEFAULT_TENANT_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
             evseId: 1,
             connectorId,
             connectorStatus: 'Available',

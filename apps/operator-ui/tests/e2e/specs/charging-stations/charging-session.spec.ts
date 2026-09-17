@@ -50,7 +50,10 @@ async function pollActiveTransaction(
     }>(
       `query ActiveTxn($name: String!) {
          Transactions(
-           where: { ocppConnectionName: { _eq: $name }, isActive: { _eq: true } }
+           where: {
+             ChargingStation: { ocppConnectionName: { _eq: $name } }
+             isActive: { _eq: true }
+           }
            limit: 1
          ) { id transactionId }
        }`,

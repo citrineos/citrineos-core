@@ -22,8 +22,7 @@ export function toTransactionDto(entity: TransactionEntity): TransactionDto {
   return {
     id: entity.id,
     transactionId: entity.transactionId,
-    ocppConnectionName: entity.ocppConnectionName,
-    stationId: entity.stationId!,
+    stationId: entity.stationId,
     isActive: entity.isActive,
     locationId: entity.locationId ?? undefined,
     evseId: entity.evseId ?? undefined,

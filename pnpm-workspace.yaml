@@ -33,7 +33,7 @@ catalog:
 
   # -- HTTP / Fastify --
   fastify: 5.12.4
-  "@fastify/auth": 5.1.0
+  "@fastify/auth": 5.1.1
   "@fastify/swagger": 9.8.1
   "@fastify/swagger-ui": 5.2.6
   "@fastify/type-provider-json-schema-to-ts": 4.0.1

@@ -20,9 +20,10 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import {
+  VariableAttribute,
+  stationIdFilter,
   type IDeviceModelRepository,
   type IOCPPMessageRepository,
-  VariableAttribute,
 } from '@citrineos/dal';
 
 type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataType };
@@ -85,7 +86,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     const requestOcppMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },
