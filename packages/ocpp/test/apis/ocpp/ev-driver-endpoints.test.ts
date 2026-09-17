@@ -314,8 +314,8 @@ describe('evDriver message endpoints', () => {
       expect(sendCall).not.toHaveBeenCalled();
     });
 
-    it('sends the charging profile without the transactionId it strips', async () => {
-      await handle(
+    it('refuses a charging profile that sets a transactionId', async () => {
+      const confirmations = await handle(
         aRequest({
           chargingProfile: {
             id: 1,
@@ -334,9 +334,12 @@ describe('evDriver message endpoints', () => {
         }),
       );
 
-      expect(sendCall).toHaveBeenCalledOnce();
-      expect(sendCall.mock.calls[0][0].payload.chargingProfile).toMatchObject({ id: 1 });
-      expect(sendCall.mock.calls[0][0].payload.chargingProfile.transactionId).toBeUndefined();
+      expect(confirmations[0]).toEqual({
+        success: false,
+        payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+      });
+      expect(sendCall).not.toHaveBeenCalled();
+      expect(createOrUpdateChargingProfile).not.toHaveBeenCalled();
     });
 
     it('caches a 2.1 transaction limit before sending', async () => {

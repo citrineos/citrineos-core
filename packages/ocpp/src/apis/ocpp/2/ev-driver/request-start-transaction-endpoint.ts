@@ -79,7 +79,6 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
 
     for (const ocppConnectionName of identifiers) {
       let payloadMessage: string | undefined;
-      let payload = request;
 
       const transactionLimit = request.customData?.transactionLimit;
       if (version === OCPPVersion.OCPP2_1 && transactionLimit) {
@@ -103,11 +102,11 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
         }
 
         if (chargingProfile.transactionId) {
-          chargingProfile.transactionId = undefined;
-          payload = { ...request, chargingProfile };
-          this._logger.warn(
-            `A transactionId cannot be provided in the ChargingProfile for station: ${ocppConnectionName}`,
-          );
+          results.push({
+            success: false,
+            payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+          });
+          continue;
         }
 
         try {
@@ -159,7 +158,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
           protocol: version,
           action: OCPP_CallAction.RequestStartTransaction,
           eventGroup: EventGroup.EVDriver,
-          payload,
+          payload: request,
           callbackUrl,
         });
 
