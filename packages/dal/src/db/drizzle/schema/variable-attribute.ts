@@ -7,6 +7,7 @@ import { TableName } from '@dal/models/table-name.js';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  index,
   integer,
   pgSchema,
   pgTable,
