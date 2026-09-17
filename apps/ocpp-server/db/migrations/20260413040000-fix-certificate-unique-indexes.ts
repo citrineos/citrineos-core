@@ -11,6 +11,9 @@ export default {
     console.log('Updating Certificates unique constraints to include tenantId...');
 
     await queryInterface.sequelize.query(
+      `ALTER TABLE "Certificates" DROP CONSTRAINT IF EXISTS "Certificates_serialNumber_issuerName_key"`,
+    );
+    await queryInterface.sequelize.query(
       `ALTER TABLE "Certificates" DROP CONSTRAINT IF EXISTS "serialNumber_issuerName"`,
     );
     await queryInterface.sequelize.query(`
