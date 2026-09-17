@@ -84,13 +84,18 @@ export class DrizzleSetNetworkProfileRepository
     ocppConnectionName: string,
     correlationId: string,
   ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     const table = this.getTable(tenantId);
     const rows = (await this.db
       .select()
       .from(table)
       .where(
         and(
-          eq(table.ocppConnectionName, ocppConnectionName),
+          eq(table.stationId, stationId),
           eq(table.correlationId, correlationId),
           this.tenantFilter(table, tenantId),
         ),

@@ -123,9 +123,9 @@ function aResponse(
   } as unknown as IMessage<OCPP2_response_types.SetNetworkProfileResponse>;
 }
 
-async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {
+async function aSetNetworkProfileRow(stationId: number, configurationSlot: number) {
   return setNetworkProfileRepository.createPending({
-    ocppConnectionName,
+    stationId,
     correlationId: CORRELATION_ID,
     configurationSlot,
     websocketServerConfigId: PROFILE_ID,

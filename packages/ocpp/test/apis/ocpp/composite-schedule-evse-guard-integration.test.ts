@@ -87,7 +87,7 @@ async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number
       defaults: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null } as never,
     });
     await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId,
       evseTypeId: evseNumber,
     });
   }

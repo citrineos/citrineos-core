@@ -110,7 +110,7 @@ async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Pro
     connectorId: null,
   } as never);
   const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
-    ocppConnectionName,
+    stationId: await stationIdOf(ocppConnectionName),
     evseTypeId: ocppEvseNumber,
   });
   return evse.id!;

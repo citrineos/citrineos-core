@@ -89,12 +89,11 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     expect(evseId).toBeGreaterThan(0);
 
     // Confirm the Evse row exists and is linked to the right station
-    const [evse] = await sequelizeInstance.query<{ ocppConnectionName: string; stationId: number }>(
-      'SELECT "ocppConnectionName", "stationId" FROM "Evses" WHERE id = :id',
+    const [evse] = await sequelizeInstance.query<{ stationId: number }>(
+      'SELECT "stationId" FROM "Evses" WHERE id = :id',
       { replacements: { id: evseId }, type: QueryTypes.SELECT },
     );
     expect(evse).toBeDefined();
-    expect(evse.ocppConnectionName).toBe(ocppConnectionName);
     expect(evse.stationId).toBe(station.id);
 
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
@@ -120,13 +119,14 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
       ocppConnectionName,
       isOnline: true,
     });
+    const stationId = station.id!;
     const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId,
       evseTypeId: 1,
     });
 
     const dbConnector = await locationRepository.createOrUpdateOcpp2Connector(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId,
       evseId: evse.id!,
       evseTypeConnectorId: 1,
       status: 'Available',
@@ -239,7 +239,9 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     }
 
     const [{ count }] = await sequelizeInstance.query<{ count: number }>(
-      'SELECT count(*)::int AS count FROM "Evses" WHERE "tenantId" = :tenantId AND "ocppConnectionName" = :ocppConnectionName',
+      'SELECT count(*)::int AS count FROM "Evses" e ' +
+        'JOIN "ChargingStations" c ON c.id = e."stationId" ' +
+        'WHERE e."tenantId" = :tenantId AND c."ocppConnectionName" = :ocppConnectionName',
       {
         replacements: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName },
         type: QueryTypes.SELECT,
