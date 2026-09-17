@@ -230,14 +230,23 @@ export class InstallCertificateHelperService {
     status: InstallCertificateStatusEnumType,
     requestId?: number,
     certificateType?: CertificateUseEnumType,
+    certificate?: string,
   ) {
     const existingPendingInstallCertificateAttempt =
-      await this.installCertificateAttemptRepository.findPendingByStation(
-        tenantId,
-        ocppConnectionName,
-        requestId,
-        certificateType,
-      );
+      certificate && certificateType
+        ? await this.installCertificateAttemptRepository.findPendingByStationTypeAndCertHash(
+            tenantId,
+            ocppConnectionName,
+            certificateType,
+            this.getCertificateHash(certificate),
+            requestId,
+          )
+        : await this.installCertificateAttemptRepository.findPendingByStation(
+            tenantId,
+            ocppConnectionName,
+            requestId,
+            certificateType,
+          );
     // should always be true
     if (existingPendingInstallCertificateAttempt) {
       await this.installCertificateAttemptRepository.updateStatus(
