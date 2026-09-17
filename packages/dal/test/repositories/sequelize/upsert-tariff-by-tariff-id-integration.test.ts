@@ -8,9 +8,8 @@ import {
   DefaultSequelizeInstance,
   DrizzleTariffRepository,
   SequelizeTariffRepository,
-  Tariff,
-  Tenant,
 } from '../../../index.js';
+import { Tariff, Tenant } from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type { Sequelize } from 'sequelize-typescript';
