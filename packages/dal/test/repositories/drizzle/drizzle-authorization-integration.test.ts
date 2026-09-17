@@ -4,13 +4,10 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { IdTokenEnum, type SystemConfig } from '@citrineos/types';
-import {
-  Authorization,
-  DefaultSequelizeInstance,
-  DrizzleAuthorizationRepository,
-  Tariff,
-  Tenant,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, DrizzleAuthorizationRepository } from '../../../index.js';
+import { Authorization } from '../../../src/models/authorization/authorization.js';
+import { Tariff } from '../../../src/models/tariff/tariffs.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type { Sequelize } from 'sequelize-typescript';
@@ -26,6 +23,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 const GROUP_TOKEN = 'FLEET-PARENT';
 const CARD_TOKEN = 'DRIVER-CARD-1';
 const TARIFF_TOKEN = 'DRIVER-CARD-2';
+const REAL_TIME_TOKEN = 'REAL-TIME-CARD';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
@@ -73,6 +71,10 @@ beforeAll(async () => {
     user: config.database.username,
     password: config.database.password,
   });
+  // Stopping the container terminates idle connections (Postgres 57P01). pg
+  // escalates an unhandled pool 'error' to an uncaught exception, which fails
+  // the run even when every test passed.
+  drizzlePool.on('error', () => {});
   drizzleInstance = drizzle(drizzlePool);
 }, 90_000);
 
@@ -151,5 +153,46 @@ describe('DrizzleAuthorizationRepository relations', () => {
     expect(found).toHaveLength(1);
     expect(found[0].idToken).toBe(TARIFF_TOKEN);
     expect(found[0].tariff?.tariffId).toBe('driver-tariff-1');
+  });
+});
+
+describe('DrizzleAuthorizationRepository.updateByKey', () => {
+  beforeEach(async () => {
+    await Authorization.destroy({ where: {}, truncate: true, cascade: true });
+    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+
+    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await Authorization.create({
+      idToken: REAL_TIME_TOKEN,
+      idTokenType: IdTokenEnum.ISO14443,
+      status: 'Accepted',
+      cacheExpiryDateTime: '2027-01-01T00:00:00.000Z',
+      tenantId: DEFAULT_TENANT_ID,
+    } as never);
+  });
+
+  it('saves the authorization it read with a new realTimeAuthLastAttempt', async () => {
+    const repository = aRepository();
+    const authorization = await repository.readOnlyOneByQuerystring(DEFAULT_TENANT_ID, {
+      idToken: REAL_TIME_TOKEN,
+    });
+    const lastAttempt = {
+      timestamp: '2026-09-14T10:00:00.000Z',
+      result: 'Accepted',
+      ocppConnectionName: 'CS-1',
+      evseId: 1,
+      connectorId: 1,
+    };
+
+    await repository.updateByKey(
+      DEFAULT_TENANT_ID,
+      { ...authorization, realTimeAuthLastAttempt: lastAttempt },
+      String(authorization!.id),
+    );
+
+    const saved = await repository.readOnlyOneByQuerystring(DEFAULT_TENANT_ID, {
+      idToken: REAL_TIME_TOKEN,
+    });
+    expect(saved!.realTimeAuthLastAttempt).toEqual(lastAttempt);
   });
 });

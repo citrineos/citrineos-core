@@ -23,9 +23,8 @@ function variableMonitoringColumns() {
   return {
     // @AutoIncrement @PrimaryKey integer — surrogate key.
     databaseId: serial('databaseId').primaryKey(),
-    // FK to ChargingStation; not part of the VariableMonitoringDto contract.
+    // FK to ChargingStation
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     // OCPP monitoring id (distinct from the databaseId surrogate key).
     id: integer('id'),
     transaction: boolean('transaction'),
@@ -51,13 +50,9 @@ export const variableMonitoringTable = pgTable(
   TableName.VariableMonitorings,
   variableMonitoringColumns(),
   (t) => [
-    index('variable_monitorings_ocpp_connection_name').on(t.ocppConnectionName),
-    // Composite unique 'stationName_tenantId_Id' (ocppConnectionName, id, tenantId).
-    uniqueIndex('variable_monitorings_station_name_tenant_id_id').on(
-      t.ocppConnectionName,
-      t.id,
-      t.tenantId,
-    ),
+    index('variable_monitorings_station_id').on(t.stationId),
+    // Composite unique 'stationId_tenantId_Id' (stationId, id, tenantId).
+    uniqueIndex('variable_monitorings_station_id_tenant_id_id').on(t.stationId, t.id, t.tenantId),
   ],
 );
 

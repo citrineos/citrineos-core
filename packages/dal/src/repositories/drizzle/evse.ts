@@ -24,8 +24,7 @@ import { toConnectorDto } from './connector.js';
 export function toEvseDto(entity: EvseEntity): EvseDto {
   const dto: Explicit<EvseDto> = {
     id: entity.id,
-    stationId: entity.stationId ?? undefined,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     evseTypeId: entity.evseTypeId ?? undefined,
     evseId: entity.evseId ?? '',
     physicalReference: entity.physicalReference,
@@ -42,7 +41,6 @@ export function toEvseDto(entity: EvseEntity): EvseDto {
 
 function writableEvseColumns(evse: EvseDto) {
   return {
-    ocppConnectionName: evse.ocppConnectionName,
     evseTypeId: evse.evseTypeId,
     evseId: evse.evseId,
     physicalReference: evse.physicalReference,
@@ -102,13 +100,18 @@ export class DrizzleEvseRepository
     ocppConnectionName: string,
     ocpp201EvseId: number,
   ): Promise<EvseDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const table = this.getTable(tenantId);
     const rows = (await this.db
       .select()
       .from(table)
       .where(
         and(
-          eq(table.ocppConnectionName, ocppConnectionName),
+          eq(table.stationId, stationId),
           eq(table.evseTypeId, ocpp201EvseId),
           this.tenantFilter(table, tenantId),
         ),
@@ -139,7 +142,7 @@ export class DrizzleEvseRepository
         .from(table)
         .where(
           and(
-            eq(table.ocppConnectionName, evse.ocppConnectionName),
+            eq(table.stationId, evse.stationId),
             eq(table.evseTypeId, evse.evseTypeId!),
             this.tenantFilter(table, tenantId),
           ),
@@ -158,15 +161,7 @@ export class DrizzleEvseRepository
 
       return await this.insert(
         tenantId,
-        {
-          ...writableEvseColumns(evse),
-          stationId: await this.resolveStationId(
-            tenantId,
-            evse.ocppConnectionName,
-            evse.stationId,
-            ctx,
-          ),
-        },
+        { ...writableEvseColumns(evse), stationId: evse.stationId },
         ctx,
       );
     });
@@ -179,8 +174,14 @@ export class DrizzleEvseRepository
     // OCPP 1.6 has no native EVSE concept. Conservative default: each connector maps
     // to its own Evse.
     const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot auto-commission an EVSE: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
 
-    const created = await this.insert(tenantId, { ocppConnectionName, stationId });
+    const created = await this.insert(tenantId, { stationId });
 
     return { evseId: created.id! };
   }

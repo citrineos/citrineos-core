@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 import { ChargingStationSecurityInfo } from '../../models/charging-station-security-info.js';
 import type { IChargingStationSecurityInfoRepository } from '../repositories.js';
 
@@ -17,8 +18,13 @@ export class SequelizeChargingStationSecurityInfoRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<string> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return '';
+    }
+
     const existingInfo = await this.readOnlyOneByQuery(tenantId, {
-      where: { ocppConnectionName: ocppConnectionName },
+      where: { stationId },
     });
     return existingInfo ? existingInfo.publicKeyFileId : '';
   }
@@ -28,10 +34,16 @@ export class SequelizeChargingStationSecurityInfoRepository
     ocppConnectionName: string,
     publicKeyFileId: string,
   ): Promise<void> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'store security info',
+    );
+
     await this.readOrCreateByQuery(tenantId, {
       where: {
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId,
       },
       defaults: {
         publicKeyFileId,

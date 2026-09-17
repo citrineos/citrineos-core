@@ -62,12 +62,14 @@ export {
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
+  logRedactionSchema,
   OCPP_VERSION_LIST,
   RbacRulesSchema,
   signedMeterValuesSigningMethods,
   websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
+  LogRedactionConfig,
   RbacRules,
   SystemConfig,
   SystemConfigInput,
@@ -110,6 +112,7 @@ export * from './src/interfaces/dto/location-dto.js';
 export * from './src/interfaces/dto/message-info-dto.js';
 export * from './src/interfaces/dto/meter-value-dto.js';
 export * from './src/interfaces/dto/ocpp-message-dto.js';
+export * from './src/interfaces/dto/real-time-authorization.js';
 export * from './src/interfaces/dto/reservation-dto.js';
 export * from './src/interfaces/dto/sales-tariff-dto.js';
 export * from './src/interfaces/dto/security-event-dto.js';

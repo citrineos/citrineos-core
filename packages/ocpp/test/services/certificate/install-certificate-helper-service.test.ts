@@ -314,11 +314,14 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 100,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 100,
+        },
+      );
     });
 
     it('should include requestId when checking for existing pending attempt', async () => {
@@ -365,12 +368,15 @@ describe('InstallCertificateHelperService', () => {
         42,
       );
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 100,
-        requestId: 42,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 100,
+          requestId: 42,
+        },
+      );
     });
 
     it('should use existing certificate if found and create install attempt', async () => {
@@ -401,11 +407,14 @@ describe('InstallCertificateHelperService', () => {
 
       expect(service.createNewCertificate).not.toHaveBeenCalled();
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 99,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 99,
+        },
+      );
     });
 
     describe('AdditionalRootCertificateCheck (M05.FR.10)', () => {
@@ -624,8 +633,7 @@ describe('InstallCertificateHelperService', () => {
       );
       expect(mockFileStorageGetFile).toHaveBeenCalledWith('file123');
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
       });
@@ -870,8 +878,7 @@ describe('InstallCertificateHelperService', () => {
         mockUploadRequest,
       );
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 99,
       });
@@ -902,8 +909,7 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
       });
@@ -1593,13 +1599,16 @@ describe('InstallCertificateHelperService', () => {
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        hashAlgorithm: certificateHashData.hashAlgorithm,
-        issuerNameHash: certificateHashData.issuerNameHash,
-        issuerKeyHash: certificateHashData.issuerKeyHash,
-        serialNumber: certificateHashData.serialNumber,
-      });
+        {
+          hashAlgorithm: certificateHashData.hashAlgorithm,
+          issuerNameHash: certificateHashData.issuerNameHash,
+          issuerKeyHash: certificateHashData.issuerKeyHash,
+          serialNumber: certificateHashData.serialNumber,
+        },
+      );
     });
 
     it('does not create a second attempt when one is already pending', async () => {

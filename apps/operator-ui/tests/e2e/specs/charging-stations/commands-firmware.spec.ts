@@ -14,7 +14,7 @@ test.describe('charging-stations › UpdateFirmware command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/update firmware/i);
     const modal = new ModalHarness(page, /update firmware/i);

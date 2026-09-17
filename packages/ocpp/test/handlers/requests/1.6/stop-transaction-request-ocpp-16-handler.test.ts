@@ -19,6 +19,13 @@ import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
     context: {
@@ -64,6 +71,11 @@ function makeHandler(transaction: ReturnType<typeof aTransaction> | null) {
 
   const transactionEventRepository = {
     createStopTransaction: vi.fn().mockResolvedValue({ id: 1 }),
+    updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const costCalculator = {
+    calculateTotalCost: vi.fn().mockResolvedValue(0),
   };
 
   const findOne = vi
@@ -76,9 +88,10 @@ function makeHandler(transaction: ReturnType<typeof aTransaction> | null) {
     authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
+    costCalculator,
   } as never);
 
-  return { handler, ocppSender, transactionEventRepository, findOne };
+  return { handler, ocppSender, transactionEventRepository, costCalculator, findOne };
 }
 
 const request: OCPP1_6.StopTransactionRequest = {

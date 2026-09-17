@@ -16,7 +16,7 @@ import {
 } from '../../db/drizzle/schema/connector.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
+import { DrizzleRepository, type DrizzleExecutor } from './base.js';
 import { toEvseDto } from './evse.js';
 import {
   type TariffEntity,
@@ -30,8 +30,7 @@ import { toTariffDto } from './tariff.js';
 export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
   const dto: Explicit<ConnectorDto> = {
     id: entity.id,
-    stationId: entity.stationId ?? undefined,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     evseId: entity.evseId,
     connectorId: entity.connectorId ?? undefined,
     evseTypeConnectorId: entity.evseTypeConnectorId ?? undefined,
@@ -50,6 +49,7 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
     vendorId: entity.vendorId,
     vendorErrorCode: entity.vendorErrorCode,
     termsAndConditionsUrl: entity.termsAndConditionsUrl,
+    tariffId: entity.tariffId,
     // Relations are not present on a flat DB row.
     tariff: undefined,
     evse: undefined,
@@ -64,7 +64,7 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
 
 function writableConnectorColumns(connector: Partial<ConnectorDto>) {
   return prune({
-    ocppConnectionName: connector.ocppConnectionName,
+    stationId: connector.stationId,
     evseId: connector.evseId,
     connectorId: connector.connectorId,
     evseTypeConnectorId: connector.evseTypeConnectorId,
@@ -117,16 +117,11 @@ export class DrizzleConnectorRepository
 
   private async resolveStationId(
     tenantId: number,
-    ocppConnectionName: string | undefined,
-    stationId: number | undefined,
-    ctx: DrizzleWriteContext,
+    ocppConnectionName: string,
+    db: DrizzleExecutor = this.db,
   ): Promise<number | undefined> {
-    if (stationId != null || !ocppConnectionName) {
-      return stationId;
-    }
-
     const stations = this.getChargingStationTable(tenantId);
-    const rows = await ctx.db
+    const rows = await db
       .select({ id: stations.id })
       .from(stations)
       .where(
@@ -162,13 +157,18 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
   ): Promise<ConnectorDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const table = this.getTable(tenantId);
     const rows = (await this.db
       .select()
       .from(table)
       .where(
         and(
-          eq(table.ocppConnectionName, ocppConnectionName),
+          eq(table.stationId, stationId),
           eq(table.connectorId, ocpp16ConnectorId),
           this.tenantFilter(table, tenantId),
         ),
@@ -183,6 +183,11 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     ocpp201EvseType: OCPP2_common_types.EVSEType,
   ): Promise<ConnectorDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const table = this.getTable(tenantId);
     const evses = this.getEvseTable(tenantId);
 
@@ -199,7 +204,7 @@ export class DrizzleConnectorRepository
       )
       .where(
         and(
-          eq(table.ocppConnectionName, ocppConnectionName),
+          eq(table.stationId, stationId),
           eq(table.evseTypeConnectorId, ocpp201EvseType.connectorId!),
           this.tenantFilter(table, tenantId),
         ),
@@ -239,19 +244,7 @@ export class DrizzleConnectorRepository
         );
       }
 
-      return await this.insert(
-        tenantId,
-        {
-          ...writableConnectorColumns(connector),
-          stationId: await this.resolveStationId(
-            tenantId,
-            connector.ocppConnectionName,
-            connector.stationId,
-            ctx,
-          ),
-        },
-        ctx,
-      );
+      return await this.insert(tenantId, writableConnectorColumns(connector), ctx);
     });
   }
 
@@ -260,10 +253,7 @@ export class DrizzleConnectorRepository
     connector: ConnectorDto & { connectorId: number },
   ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, (table) =>
-      and(
-        eq(table.ocppConnectionName, connector.ocppConnectionName),
-        eq(table.connectorId, connector.connectorId),
-      ),
+      and(eq(table.stationId, connector.stationId), eq(table.connectorId, connector.connectorId)),
     );
   }
 
@@ -284,6 +274,11 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     evseTypeId?: number,
   ): Promise<ConnectorDto[]> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
     const table = this.getTable(tenantId);
     const evses = this.getEvseTable(tenantId);
     const tariffs = this.getTariffTable(tenantId);
@@ -302,7 +297,7 @@ export class DrizzleConnectorRepository
       .innerJoin(tariffs, and(eq(table.tariffId, tariffs.id), this.tenantFilter(tariffs, tenantId)))
       .where(
         and(
-          eq(table.ocppConnectionName, ocppConnectionName),
+          eq(table.stationId, stationId),
           isNotNull(table.tariffId),
           this.tenantFilter(table, tenantId),
         ),
@@ -312,6 +307,30 @@ export class DrizzleConnectorRepository
       ...this.toDto(row.connector as ConnectorEntity),
       evse: toEvseDto(row.evse as EvseEntity),
       tariff: toTariffDto(row.tariff as TariffEntity),
+    }));
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
+    const table = this.getTable(tenantId);
+    const evses = this.getEvseTable(tenantId);
+
+    const rows = await this.db
+      .select({ connector: table, evse: evses })
+      .from(table)
+      .leftJoin(evses, and(eq(table.evseId, evses.id), this.tenantFilter(evses, tenantId)))
+      .where(and(eq(table.stationId, stationId), this.tenantFilter(table, tenantId)));
+
+    return rows.map((row) => ({
+      ...this.toDto(row.connector as ConnectorEntity),
+      evse: row.evse ? toEvseDto(row.evse as EvseEntity) : undefined,
     }));
   }
 

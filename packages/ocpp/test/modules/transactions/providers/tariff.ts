@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { Tariff } from '@citrineos/dal';
+import type { TariffDto } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 
-export function aTariff(override?: Partial<Tariff>): Tariff {
+export function aTariff(override?: Partial<TariffDto>): TariffDto {
   return {
     id: faker.string.uuid(),
     currency: 'USD',
@@ -15,5 +15,5 @@ export function aTariff(override?: Partial<Tariff>): Tariff {
     authorizationAmount: faker.number.float({ min: 0, max: 25, multipleOf: 1 }),
     paymentFee: faker.number.float({ min: 0, max: 25, multipleOf: 0.5 }),
     ...override,
-  } as Tariff;
+  } as unknown as TariffDto;
 }

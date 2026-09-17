@@ -22,8 +22,7 @@ function evseColumns() {
   return {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
+    stationId: integer('stationId').notNull(),
     // Serial int used in OCPP 2.0.1 to refer to the EVSE.
     evseTypeId: integer('evseTypeId'),
     // eMI3 compliant EVSE ID

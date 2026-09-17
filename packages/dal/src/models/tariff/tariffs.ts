@@ -69,7 +69,8 @@ export class Tariff extends Model implements TariffDto {
       min: 0,
     },
     get(this: Tariff) {
-      return parseFloat(this.getDataValue('pricePerMin'));
+      const value = this.getDataValue('pricePerMin');
+      return value == null ? null : parseFloat(value);
     },
   })
   declare pricePerMin?: number | null;
@@ -80,7 +81,8 @@ export class Tariff extends Model implements TariffDto {
       min: 0,
     },
     get(this: Tariff) {
-      return parseFloat(this.getDataValue('pricePerSession'));
+      const value = this.getDataValue('pricePerSession');
+      return value == null ? null : parseFloat(value);
     },
   })
   declare pricePerSession?: number | null;
@@ -91,7 +93,8 @@ export class Tariff extends Model implements TariffDto {
       min: 0,
     },
     get(this: Tariff) {
-      return parseFloat(this.getDataValue('authorizationAmount'));
+      const value = this.getDataValue('authorizationAmount');
+      return value == null ? null : parseFloat(value);
     },
   })
   declare authorizationAmount?: number | null;
@@ -102,7 +105,8 @@ export class Tariff extends Model implements TariffDto {
       min: 0,
     },
     get(this: Tariff) {
-      return parseFloat(this.getDataValue('paymentFee'));
+      const value = this.getDataValue('paymentFee');
+      return value == null ? null : parseFloat(value);
     },
   })
   declare paymentFee?: number | null;
@@ -113,7 +117,8 @@ export class Tariff extends Model implements TariffDto {
       min: 0,
     },
     get(this: Tariff) {
-      return parseFloat(this.getDataValue('taxRate'));
+      const value = this.getDataValue('taxRate');
+      return value == null ? null : parseFloat(value);
     },
   })
   declare taxRate?: number | null;
