@@ -172,21 +172,17 @@ export function generateCertificate(
   }
 
   // Prepare certificate extensions
-  const keyUsages = ['digitalSignature', 'keyCertSign', 'crlSign'];
+  const keyUsages = ['digitalSignature', 'keyCertSign', 'cRLSign'];
   if (!certificateEntity.isCA) {
     keyUsages.push('keyEncipherment');
   }
-  let basicConstraints: any = {
+  const basicConstraints: any = {
     extname: 'basicConstraints',
     critical: true,
     cA: certificateEntity.isCA,
   };
   if (certificateEntity.pathLen) {
-    basicConstraints = {
-      extname: 'basicConstraints',
-      cA: certificateEntity.isCA,
-      pathLen: certificateEntity.pathLen,
-    };
+    basicConstraints.pathLen = certificateEntity.pathLen;
   }
   const extensions = [
     basicConstraints,
