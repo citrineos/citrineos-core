@@ -421,13 +421,12 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const message = new Call(correlationId, action, payload);
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
       if (
-        !(await this._cache.existsAnyInNamespace(transactionNamespace)) &&
-        (await this._cache.setIfNotExist(
+        await this._cache.setIfNotExist(
           OUTSTANDING_CALL_CACHE_KEY,
           correlationId,
           transactionNamespace,
           this._config.timeouts.maxCallLengthSeconds,
-        ))
+        )
       ) {
         const cacheTimestamp = new Date();
         await this._cache.set(
