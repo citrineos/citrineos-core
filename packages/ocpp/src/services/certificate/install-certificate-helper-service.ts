@@ -311,7 +311,7 @@ export class InstallCertificateHelperService {
   ): Promise<CertificateDto> {
     const certificateHash = this.getCertificateHash(certificate);
     const certificateFileId = await this.fileStorage.saveFile(
-      `Existing_Cert_${serialNumber}.pem`,
+      `Existing_Cert_${certificateHash}.pem`,
       Buffer.from(certificate),
     );
     return await this.certificateRepository.createCertificate(tenantId, {
