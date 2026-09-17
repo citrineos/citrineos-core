@@ -174,14 +174,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
   const renderModalContent = () => {
     if (modalType === 'evse' && station.id) {
       const currentEvse = getCurrentEvse(selectedItem);
-      return (
-        <EvseUpsert
-          onSubmit={handleFormSubmit}
-          stationId={station.id}
-          ocppConnectionName={station.ocppConnectionName}
-          evse={currentEvse}
-        />
-      );
+      return <EvseUpsert onSubmit={handleFormSubmit} stationId={station.id} evse={currentEvse} />;
     }
     if (modalType === 'connector') {
       const currentConnector = getCurrentConnector(selectedItem);

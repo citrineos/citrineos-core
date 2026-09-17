@@ -124,13 +124,11 @@ async function aConnector(tariffId: number | null): Promise<Connector> {
   const evse = await Evse.create({
     tenantId: TENANT_A,
     stationId: station.id,
-    ocppConnectionName: STATION_NAME,
     evseTypeId: 1,
   } as any);
   return Connector.create({
     tenantId: TENANT_A,
     stationId: station.id,
-    ocppConnectionName: STATION_NAME,
     evseId: evse.id,
     connectorId: 1,
     evseTypeConnectorId: 1,

@@ -23,7 +23,6 @@ function setNetworkProfileColumns() {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     correlationId: varchar('correlationId', { length: 255 }),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),
     configurationSlot: integer('configurationSlot'),

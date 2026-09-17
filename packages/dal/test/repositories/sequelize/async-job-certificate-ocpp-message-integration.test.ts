@@ -250,9 +250,8 @@ describe('SequelizeOCPPMessageRepository', () => {
     return new SequelizeOCPPMessageRepository(deps());
   }
 
-  function aMessage(overrides: Partial<OCPPMessageDto> = {}): OCPPMessageDto {
+  function aMessage(overrides: Partial<OCPPMessageDto> = {}): Omit<OCPPMessageDto, 'stationId'> {
     return {
-      ocppConnectionName: 'cp001',
       origin: MessageOrigin.ChargingStation,
       protocol: OCPPVersion.OCPP2_0_1,
       action: 'BootNotification',
@@ -262,7 +261,7 @@ describe('SequelizeOCPPMessageRepository', () => {
       timestamp: '2026-01-05T10:00:00.000Z',
       tenantId: TENANT_A,
       ...overrides,
-    } as OCPPMessageDto;
+    } as Omit<OCPPMessageDto, 'stationId'>;
   }
 
   async function aStation(tenantId = TENANT_A, ocppConnectionName = 'cp001') {
@@ -272,7 +271,7 @@ describe('SequelizeOCPPMessageRepository', () => {
   it('createOCPPMessage resolves stationId from the connection name within the tenant', async () => {
     const station = await aStation();
 
-    const created = await makeRepo().createOCPPMessage(TENANT_A, aMessage());
+    const created = await makeRepo().createOCPPMessage(TENANT_A, 'cp001', aMessage());
 
     expect(created.stationId).toBe(station.id);
     expect(created.tenantId).toBe(TENANT_A);
@@ -285,21 +284,28 @@ describe('SequelizeOCPPMessageRepository', () => {
     expect(row.raw).toBe('[2,"corr-1","BootNotification",{"reason":"PowerUp"}]');
   });
 
+  // stationId is NOT NULL on OCPPMessages, so a message detached from its station is no
+  // longer representable: a name that resolves in another tenant only is refused outright.
   it("createOCPPMessage does not adopt another tenant's station", async () => {
     await aStation(TENANT_A, 'cp001');
 
-    const created = await makeRepo().createOCPPMessage(TENANT_B, aMessage({ tenantId: TENANT_B }));
+    await expect(
+      makeRepo().createOCPPMessage(TENANT_B, 'cp001', aMessage({ tenantId: TENANT_B })),
+    ).rejects.toThrow(/no charging station named 'cp001' exists in tenant 2/);
 
-    expect(created.stationId ?? null).toBeNull();
-    expect(created.tenantId).toBe(TENANT_B);
-    expect(await OCPPMessage.count()).toBe(1);
+    expect(await OCPPMessage.count()).toBe(0);
   });
 
   it('getRequestByCorrelationId returns the request row, not its response', async () => {
+    const station = (await aStation()) as unknown as { id: number };
     const repo = makeRepo();
-    const request = await repo.createOCPPMessage(TENANT_A, aMessage({ correlationId: 'corr-9' }));
+    const request = await repo.createOCPPMessage(
+      TENANT_A,
+      'cp001',
+      aMessage({ correlationId: 'corr-9' }),
+    );
     await OCPPMessage.create({
-      ocppConnectionName: 'cp001',
+      stationId: station.id,
       origin: MessageOrigin.ChargingStationManagementSystem,
       protocol: OCPPVersion.OCPP2_0_1,
       correlationId: 'corr-9',
@@ -318,15 +324,17 @@ describe('SequelizeOCPPMessageRepository', () => {
   });
 
   it('getRequestByCorrelationId under the wrong tenant returns undefined', async () => {
-    await makeRepo().createOCPPMessage(TENANT_A, aMessage({ correlationId: 'corr-9' }));
+    await aStation();
+    await makeRepo().createOCPPMessage(TENANT_A, 'cp001', aMessage({ correlationId: 'corr-9' }));
 
     expect(await makeRepo().getRequestByCorrelationId(TENANT_B, 'corr-9')).toBeUndefined();
   });
 
   it('getRequestByCorrelationId throws when two requests share a correlationId', async () => {
+    await aStation();
     const repo = makeRepo();
-    await repo.createOCPPMessage(TENANT_A, aMessage({ correlationId: 'corr-dup' }));
-    await repo.createOCPPMessage(TENANT_A, aMessage({ correlationId: 'corr-dup' }));
+    await repo.createOCPPMessage(TENANT_A, 'cp001', aMessage({ correlationId: 'corr-dup' }));
+    await repo.createOCPPMessage(TENANT_A, 'cp001', aMessage({ correlationId: 'corr-dup' }));
 
     await expect(repo.getRequestByCorrelationId(TENANT_A, 'corr-dup')).rejects.toThrow(
       /More than one value found/,

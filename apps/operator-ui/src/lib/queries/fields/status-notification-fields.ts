@@ -9,7 +9,7 @@ export const STATUS_NOTIFICATION_FIELDS = fieldSet([
   'connectorId',
   'connectorStatus',
   'evseId',
-  'ocppConnectionName',
+  'stationId',
   'timestamp',
   'createdAt',
   'updatedAt',

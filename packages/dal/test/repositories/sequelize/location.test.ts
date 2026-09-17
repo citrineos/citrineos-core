@@ -7,6 +7,11 @@ import { Connector } from '@dal/models/location/connector.js';
 import { Evse } from '@dal/models/location/evse.js';
 import { Tariff } from '@dal/models/tariff/tariffs.js';
 import { SequelizeLocationRepository } from '@dal/repositories/sequelize/location.js';
+import {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from '@dal/repositories/sequelize/resolve-station-id.js';
 import { createTestContainer, getTestInstance } from '../../test-container.js';
 import { Op } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
@@ -20,8 +25,15 @@ vi.mock('@dal/db/sequelize/util', () => ({
   },
 }));
 
+vi.mock('@dal/repositories/sequelize/resolve-station-id.js', () => ({
+  resolveStationId: vi.fn(),
+  resolveStationIdOrThrow: vi.fn(),
+  stationIdFilter: vi.fn(),
+}));
+
 const TENANT_ID = 1;
 const OCPP_CONNECTION_NAME = 'CP_TEST_001';
+const STATION_ID = 77;
 
 describe('SequelizeLocationRepository', () => {
   const { container } = createTestContainer();
@@ -49,6 +61,10 @@ describe('SequelizeLocationRepository', () => {
       logger: mockLogger,
       sequelizeInstance: mockSequelize,
     });
+
+    vi.mocked(resolveStationId).mockResolvedValue(STATION_ID);
+    vi.mocked(resolveStationIdOrThrow).mockResolvedValue(STATION_ID);
+    vi.mocked(stationIdFilter).mockResolvedValue(STATION_ID);
   });
 
   describe('readConnectorsWithTariffsByStationId', () => {
@@ -70,7 +86,7 @@ describe('SequelizeLocationRepository', () => {
         expect.objectContaining({
           where: {
             tenantId: TENANT_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
+            stationId: STATION_ID,
             tariffId: { [Op.ne]: null },
           },
         }),
@@ -131,7 +147,7 @@ describe('SequelizeLocationRepository', () => {
     const anOcpp16Connector = (): ConnectorDto & { connectorId: number } =>
       ({
         tenantId: TENANT_ID,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
+        stationId: STATION_ID,
         evseId: 4,
         connectorId: 3,
         status: 'Available',
@@ -140,7 +156,7 @@ describe('SequelizeLocationRepository', () => {
     const anOcpp2Connector = (): ConnectorDto & { evseTypeConnectorId: number } =>
       ({
         tenantId: TENANT_ID,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
+        stationId: STATION_ID,
         evseId: 4,
         evseTypeConnectorId: 1,
         status: 'Available',
@@ -169,7 +185,7 @@ describe('SequelizeLocationRepository', () => {
           expect.objectContaining({
             where: {
               tenantId: TENANT_ID,
-              ocppConnectionName: OCPP_CONNECTION_NAME,
+              stationId: STATION_ID,
               connectorId: 3,
             },
           }),

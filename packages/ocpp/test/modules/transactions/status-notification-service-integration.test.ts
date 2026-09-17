@@ -91,14 +91,13 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Confirm the Evse row exists and is linked to the right station
     const evse = await Evse.findOne({ where: { id: evseId } });
     expect(evse).not.toBeNull();
-    expect(evse?.ocppConnectionName).toBe(ocppConnectionName);
     expect(evse?.stationId).toBe(station.id);
 
     // Critical: verify the returned id satisfies whatever FK rules the live DB enforces
     // by actually inserting a Connector row. A 1.6 connector carries no
     // evseTypeConnectorId, so the column has to be genuinely nullable.
     const dbConnector = await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId: (station as unknown as { id: number }).id,
       connectorId: 1,
       evseId,
       status: 'Available',
@@ -113,18 +112,19 @@ describe('SequelizeLocationRepository.autoCommissionEvseForOcpp16Connector (#160
     // Mirror image of the above: a 2.0.1 connector is identified per-EVSE and has no
     // station-wide 1.6 number, so connectorId has to be nullable in the live schema too.
     const ocppConnectionName = 'CS-2.0.1-no-connector-id';
-    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
+    const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
       isOnline: true,
     });
+    const stationId = (station as unknown as { id: number }).id;
     const evse = await Evse.create({
-      ocppConnectionName,
+      stationId,
       tenantId: DEFAULT_TENANT_ID,
       evseTypeId: 1,
     });
 
     const dbConnector = await locationRepository.createOrUpdateOcpp2Connector(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId,
       evseId: evse.id,
       evseTypeConnectorId: 1,
       status: 'Available',
@@ -236,9 +236,6 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       } as any);
     }
 
-    expect(await Evse.count({ where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName } })).toBe(
-      1,
-    );
     expect(
       (await locationRepository.readConnectorsByStationId(DEFAULT_TENANT_ID, ocppConnectionName))
         .length,
@@ -253,7 +250,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
 
   it('processes a 1.6 StatusNotification for a commissioned station (matching evse path)', async () => {
     const ocppConnectionName = 'CS-1.6-e2e-commissioned';
-    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
+    const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName,
       isOnline: true,
     });
@@ -264,7 +261,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       ocppConnectionName,
     );
     await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
-      ocppConnectionName,
+      stationId: (station as unknown as { id: number }).id,
       connectorId: 1,
       evseId,
       status: 'Available',

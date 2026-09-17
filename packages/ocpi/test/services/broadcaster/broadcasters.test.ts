@@ -118,8 +118,8 @@ describe('LocationsBroadcaster', () => {
 
   it('PUT evse builds the path from locationId and stationName::evseId', async () => {
     const { broadcaster, locationsClientApi, evseMapper } = build();
-    const evseDto = { id: 2, ocppConnectionName: 'cp001' };
-    const stationDto = { locationId: 42 };
+    const evseDto = { id: 2 };
+    const stationDto = { locationId: 42, ocppConnectionName: 'cp001' };
     const mapped = { uid: 'cp001::2', status: 'AVAILABLE' };
     evseMapper.fromGraphql.mockReturnValue(mapped);
 
@@ -140,9 +140,10 @@ describe('LocationsBroadcaster', () => {
     await expect(
       broadcaster.broadcastPutEvse(
         TENANT,
-        { id: 2, ocppConnectionName: 'cp001' } as never,
+        { id: 2 } as never,
         {
           locationId: undefined,
+          ocppConnectionName: 'cp001',
         } as never,
       ),
     ).rejects.toThrow('Location ID missing in EVSE data');
@@ -157,9 +158,10 @@ describe('LocationsBroadcaster', () => {
     await expect(
       broadcaster.broadcastPutEvse(
         TENANT,
-        { id: 2, ocppConnectionName: 'cp001' } as never,
+        { id: 2 } as never,
         {
           locationId: 42,
+          ocppConnectionName: 'cp001',
         } as never,
       ),
     ).rejects.toThrow('Failed to map EVSE data');
@@ -176,9 +178,10 @@ describe('LocationsBroadcaster', () => {
     await expect(
       broadcaster.broadcastPatchEvse(
         TENANT,
-        { id: 2, ocppConnectionName: 'cp001' } as never,
+        { id: 2 } as never,
         {
           locationId: 42,
+          ocppConnectionName: 'cp001',
         } as never,
       ),
     ).resolves.toBeUndefined();
@@ -199,8 +202,7 @@ describe('LocationsBroadcaster', () => {
     const connectorDto = {
       id: 3,
       evseId: 2,
-      ocppConnectionName: 'cp001',
-      chargingStation: { locationId: 42 },
+      chargingStation: { locationId: 42, ocppConnectionName: 'cp001' },
     };
     const mapped = { id: '3', standard: 'IEC_62196_T2' };
     connectorMapper.fromGraphql.mockReturnValue(mapped);
@@ -233,8 +235,7 @@ describe('LocationsBroadcaster', () => {
       broadcaster.broadcastPatchConnector(TENANT, {
         id: 3,
         evseId: 2,
-        ocppConnectionName: 'cp001',
-        chargingStation: { locationId: 42 },
+        chargingStation: { locationId: 42, ocppConnectionName: 'cp001' },
       } as never),
     ).rejects.toThrow('Failed to map Connector data');
   });
@@ -249,8 +250,7 @@ describe('LocationsBroadcaster', () => {
       broadcaster.broadcastPutConnector(TENANT, {
         id: 3,
         evseId: 2,
-        ocppConnectionName: 'cp001',
-        chargingStation: { locationId: 42 },
+        chargingStation: { locationId: 42, ocppConnectionName: 'cp001' },
       } as never),
     ).resolves.toBeUndefined();
 

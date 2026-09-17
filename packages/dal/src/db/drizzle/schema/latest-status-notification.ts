@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import { integer, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgSchema, pgTable, serial, timestamp } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -14,8 +14,7 @@ function latestStatusNotificationColumns() {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
-    // FK to StatusNotification;
+    // FK to StatusNotification
     statusNotificationId: integer('statusNotificationId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })

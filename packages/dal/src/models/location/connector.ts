@@ -47,16 +47,10 @@ export class Connector extends Model implements ConnectorDto {
   @ForeignKey(() => ChargingStation)
   @Column({
     unique: 'stationId_connectorId',
-    allowNull: true,
+    allowNull: false,
     type: DataType.INTEGER,
   })
-  declare stationId?: number;
-
-  @Column({
-    allowNull: false,
-    type: DataType.STRING,
-  })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @ForeignKey(() => Evse)
   @Column({

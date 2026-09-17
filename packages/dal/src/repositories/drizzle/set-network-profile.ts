@@ -23,7 +23,7 @@ import { DrizzleRepository } from './base.js';
 export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetworkProfileDto {
   const dto: Explicit<SetNetworkProfileDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     correlationId: entity.correlationId ?? '',
     websocketServerConfigId: entity.websocketServerConfigId ?? undefined,
     // Relation is not present on a flat DB row.
@@ -60,10 +60,11 @@ export class DrizzleSetNetworkProfileRepository
 
   async createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto> {
     const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
-    const stationId = await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined);
+    const stationId =
+      values.stationId ??
+      (await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined));
     return this.insert(tenantId, {
       stationId,
-      ocppConnectionName: values.ocppConnectionName,
       correlationId: values.correlationId,
       websocketServerConfigId: values.websocketServerConfigId,
       configurationSlot: values.configurationSlot,

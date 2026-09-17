@@ -8,7 +8,7 @@ import { SERVER_NETWORK_PROFILE_BASIC_FIELDS } from '@lib/queries/fields/server-
 export const CHARGING_STATION_NETWORK_PROFILES_QUERY = gql`
   query GetChargingStationNetworkProfiles($ocppConnectionName: String!) {
     SetNetworkProfiles(
-      where: { ocppConnectionName: { _eq: $ocppConnectionName } }
+      where: { ChargingStation: { ocppConnectionName: { _eq: $ocppConnectionName } } }
       order_by: [{ configurationSlot: asc }, { updatedAt: desc }]
     ) {
       id

@@ -8,6 +8,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { type ILogObj, Logger } from 'tslog';
 import { ChargingStationSequence } from '@dal/models/charging-station-sequence/charging-station-sequence.js';
 import { SequelizeChargingStationSequenceRepository } from '@dal/repositories/sequelize/charging-station-sequence.js';
+import { resolveStationIdOrThrow } from '@dal/repositories/sequelize/resolve-station-id.js';
 import { createTestContainer, getTestInstance } from '../../test-container.js';
 
 // Mock the util module to avoid circular dependency issues during test loading
@@ -15,6 +16,11 @@ vi.mock('@dal/db/sequelize/util', () => ({
   DefaultSequelizeInstance: {
     getInstance: vi.fn(),
   },
+}));
+
+vi.mock('@dal/repositories/sequelize/resolve-station-id.js', () => ({
+  resolveStationId: vi.fn(),
+  resolveStationIdOrThrow: vi.fn(),
 }));
 
 describe('SequelizeChargingStationSequenceRepository', () => {
@@ -27,6 +33,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
 
   const tenantId = 1;
   const ocppConnectionName = 'CP_TEST_001';
+  const stationId = 42;
   const sequenceType = ChargingStationSequenceTypeEnum.getChargingProfiles;
 
   beforeEach(() => {
@@ -52,6 +59,8 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       logger: mockLogger,
       sequelizeInstance: mockSequelize,
     });
+
+    vi.mocked(resolveStationIdOrThrow).mockResolvedValue(stationId);
   });
 
   describe('getNextSequenceValue', () => {
@@ -203,7 +212,7 @@ describe('SequelizeChargingStationSequenceRepository', () => {
       expect(readOrCreateSpy).toHaveBeenCalledWith(tenantId, {
         where: {
           tenantId: tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId,
           type: sequenceType,
         },
         defaults: {
@@ -211,6 +220,22 @@ describe('SequelizeChargingStationSequenceRepository', () => {
         },
         transaction: mockTransaction,
       });
+    });
+
+    it('should throw when no station in the tenant carries the connection name', async () => {
+      vi.mocked(resolveStationIdOrThrow).mockRejectedValue(
+        new Error(
+          `Cannot allocate a ${sequenceType} sequence value: no charging station named ` +
+            `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+        ),
+      );
+      const readOrCreateSpy = vi.spyOn(repository as any, 'readOrCreateByQuery');
+
+      await expect(
+        repository.getNextSequenceValue(tenantId, ocppConnectionName, sequenceType),
+      ).rejects.toThrow(ocppConnectionName);
+
+      expect(readOrCreateSpy).not.toHaveBeenCalled();
     });
   });
 });

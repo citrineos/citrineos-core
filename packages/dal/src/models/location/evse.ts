@@ -36,14 +36,10 @@ export class Evse extends Model implements EvseDto {
   @ForeignKey(() => ChargingStation)
   @Column({
     type: DataType.INTEGER,
+    allowNull: false,
     unique: 'stationId_evseTypeId',
   })
-  declare stationId?: number;
-
-  @Column({
-    type: DataType.STRING,
-  })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @Column({
     type: DataType.INTEGER,

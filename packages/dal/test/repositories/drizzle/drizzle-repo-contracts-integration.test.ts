@@ -223,7 +223,7 @@ describe.each(kinds)('Boot repository (%s)', (kind) => {
     await expect(
       repo.createOrUpdateByKey(TENANT, { status: 'Pending' } as BootCreate, 'GHOST'),
     ).rejects.toThrow(
-      `Cannot store boot configuration: no charging station GHOST exists for tenant ${TENANT}`,
+      `Cannot store boot configuration: no charging station named 'GHOST' exists in tenant ${TENANT}.`,
     );
     expect(await Boot.count()).toBe(0);
   });
@@ -367,8 +367,7 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
     const repo = installedCertificateRepo(kind);
     const station = await aStation(TENANT);
 
-    const created = await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    const created = await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'inh-1',
@@ -389,14 +388,12 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
     const repo = installedCertificateRepo(kind);
     await aStation(TENANT);
     await aStation(OTHER_TENANT);
-    await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       serialNumber: 'sn-a',
     });
-    await repo.createInstalledCertificate(OTHER_TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(OTHER_TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       serialNumber: 'sn-b',
@@ -424,8 +421,7 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
     const repo = installedCertificateRepo(kind);
     await aStation(TENANT);
     const certificate = await aCertificate(TENANT, { serialNumber: 4242 });
-    const installed = await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    const installed = await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
     });
@@ -443,8 +439,7 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
   it('updateHashData rewrites the four hash fields', async () => {
     const repo = installedCertificateRepo(kind);
     await aStation(TENANT);
-    const installed = await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    const installed = await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'old-n',
@@ -470,13 +465,11 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
   it('deleteByStationAndType removes only rows of that type', async () => {
     const repo = installedCertificateRepo(kind);
     await aStation(TENANT);
-    await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
     });
-    await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.MORootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
     });
@@ -499,16 +492,14 @@ describe.each(kinds)('InstalledCertificate repository (%s)', (kind) => {
   it('deleteByStationAndHashData deletes only the matching hash tuple', async () => {
     const repo = installedCertificateRepo(kind);
     await aStation(TENANT);
-    await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'n1',
       issuerKeyHash: 'k1',
       serialNumber: 's1',
     });
-    await repo.createInstalledCertificate(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createInstalledCertificate(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'n1',
@@ -534,8 +525,7 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
     const repo = installAttemptRepo(kind);
     const station = await aStation(TENANT);
 
-    const created = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const created = await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       requestId: 7,
     });
@@ -552,13 +542,11 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
   it('findPendingByStation filters by requestId, certificateType and tenant', async () => {
     const repo = installAttemptRepo(kind);
     await aStation(TENANT);
-    await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       requestId: 1,
     });
-    await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       requestId: 2,
     });
@@ -579,8 +567,7 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
   it('updateStatus ends the pending state and is tenant-scoped', async () => {
     const repo = installAttemptRepo(kind);
     await aStation(TENANT);
-    const created = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const created = await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
     });
 
@@ -604,8 +591,7 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
     const repo = installAttemptRepo(kind);
     await aStation(TENANT);
     const certificate = await aCertificate(TENANT, { certificateFileHash: 'fh-1' });
-    const created = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const created = await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.CSMSRootCertificate,
       certificateId: certificate.id,
       requestId: 3,
@@ -635,12 +621,10 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
     const repo = installAttemptRepo(kind);
     await aStation(TENANT);
     const certificate = await aCertificate(TENANT, { serialNumber: 31337 });
-    const unlinked = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const unlinked = await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
     });
-    const linked = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const linked = await repo.createAttempt(TENANT, STATION, {
       certificateType: CertificateUseEnum.V2GRootCertificate,
       certificateId: certificate.id,
     });
@@ -654,42 +638,41 @@ describe.each(kinds)('InstallCertificateAttempt repository (%s)', (kind) => {
 });
 
 describe.each(kinds)('DeleteCertificateAttempt repository (%s)', (kind) => {
-  it('createAttempt resolves stationId, null for an unknown station', async () => {
+  it('createAttempt resolves stationId and refuses an unknown station', async () => {
     const repo = deleteAttemptRepo(kind);
     const station = await aStation(TENANT);
 
-    const resolved = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const resolved = await repo.createAttempt(TENANT, STATION, {
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'n1',
       issuerKeyHash: 'k1',
       serialNumber: 's1',
     });
-    const unresolved = await repo.createAttempt(TENANT, {
-      ocppConnectionName: 'GHOST',
-      hashAlgorithm: HashAlgorithmEnum.SHA256,
-      issuerNameHash: 'n2',
-      issuerKeyHash: 'k2',
-      serialNumber: 's2',
-    });
+
+    // stationId is NOT NULL, so an unresolvable name cannot yield a row.
+    await expect(
+      repo.createAttempt(TENANT, 'GHOST', {
+        hashAlgorithm: HashAlgorithmEnum.SHA256,
+        issuerNameHash: 'n2',
+        issuerKeyHash: 'k2',
+        serialNumber: 's2',
+      }),
+    ).rejects.toThrow(/no charging station named 'GHOST'/);
 
     expect(resolved.stationId).toBe(station.id);
-    expect(unresolved.stationId).toBeNull();
-    expect(await DeleteCertificateAttempt.count()).toBe(2);
+    expect(await DeleteCertificateAttempt.count()).toBe(1);
   });
 
   it('findPendingByStationAndHashData matches the full hash tuple of pending rows', async () => {
     const repo = deleteAttemptRepo(kind);
     await aStation(TENANT);
-    const target = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const target = await repo.createAttempt(TENANT, STATION, {
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'n1',
       issuerKeyHash: 'k1',
       serialNumber: 's1',
     });
-    await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    await repo.createAttempt(TENANT, STATION, {
       hashAlgorithm: HashAlgorithmEnum.SHA256,
       issuerNameHash: 'n1',
       issuerKeyHash: 'k1',
@@ -719,8 +702,7 @@ describe.each(kinds)('DeleteCertificateAttempt repository (%s)', (kind) => {
   it('updateStatus writes the status and is tenant-scoped', async () => {
     const repo = deleteAttemptRepo(kind);
     await aStation(TENANT);
-    const created = await repo.createAttempt(TENANT, {
-      ocppConnectionName: STATION,
+    const created = await repo.createAttempt(TENANT, STATION, {
       hashAlgorithm: HashAlgorithmEnum.SHA384,
       issuerNameHash: 'n1',
       issuerKeyHash: 'k1',
@@ -801,11 +783,10 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.certificateFileHash).toBe('fh');
   });
 
-  it('toInstalledCertificateDto drops the stationId and certificateId columns', () => {
+  it('toInstalledCertificateDto exposes stationId and drops the certificateId column', () => {
     const dto = toInstalledCertificateDto({
       id: 3,
       stationId: 12,
-      ocppConnectionName: STATION,
       hashAlgorithm: 'SHA256',
       issuerNameHash: null,
       issuerKeyHash: 'ikh',
@@ -816,17 +797,16 @@ describe('drizzle row-to-DTO mappers', () => {
       ...timestamps,
     } as InstalledCertificateEntity);
 
-    expect('stationId' in dto).toBe(false);
+    expect(dto.stationId).toBe(12);
     expect('certificateId' in dto).toBe(false);
     expect(dto.issuerNameHash).toBeNull();
     expect(dto.certificateType).toBe('CSMSRootCertificate');
   });
 
-  it('toInstallCertificateAttemptDto maps nullable FK and status columns to null', () => {
+  it('toInstallCertificateAttemptDto maps the nullable certificate and status columns to null', () => {
     const dto = toInstallCertificateAttemptDto({
       id: 2,
-      stationId: null,
-      ocppConnectionName: STATION,
+      stationId: 12,
       certificateType: 'V2GRootCertificate',
       certificateId: null,
       requestId: null,
@@ -835,7 +815,7 @@ describe('drizzle row-to-DTO mappers', () => {
       ...timestamps,
     } as InstallCertificateAttemptEntity);
 
-    expect(dto.stationId).toBeNull();
+    expect(dto.stationId).toBe(12);
     expect(dto.certificateId).toBeNull();
     expect(dto.requestId).toBeNull();
     expect(dto.status).toBeNull();
@@ -846,7 +826,6 @@ describe('drizzle row-to-DTO mappers', () => {
     const dto = toDeleteCertificateAttemptDto({
       id: 9,
       stationId: 4,
-      ocppConnectionName: STATION,
       hashAlgorithm: 'SHA512',
       issuerNameHash: 'n',
       issuerKeyHash: null,

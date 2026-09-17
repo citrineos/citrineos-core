@@ -8,8 +8,7 @@ import { BaseSchema } from './types/base-dto.js';
 
 export const EvseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  stationId: z.number().int().optional(),
-  ocppConnectionName: z.string(),
+  stationId: z.number().int(),
   evseTypeId: z.number().int().optional(),
   evseId: z.string().nullable().optional(), // eMI3 compliant EVSE ID
   physicalReference: z.string().nullable().optional(),

@@ -98,8 +98,17 @@ afterAll(async () => {
 
 let nextEvseNumber = 1;
 
+async function stationIdOf(ocppConnectionName: string): Promise<number> {
+  const station = await locationRepository.readChargingStationByOcppConnectionName(
+    DEFAULT_TENANT_ID,
+    ocppConnectionName,
+  );
+  return (station as unknown as { id: number }).id;
+}
+
 /** Adds one connector to a station and returns its database id. */
 async function aConnectorOn(ocppConnectionName: string, connectorNumber: number): Promise<number> {
+  const stationId = await stationIdOf(ocppConnectionName);
   const evseNumber = nextEvseNumber++;
   const evseType = await EvseType.create({
     tenantId: DEFAULT_TENANT_ID,
@@ -108,11 +117,11 @@ async function aConnectorOn(ocppConnectionName: string, connectorNumber: number)
   } as never);
   const evse = await Evse.create({
     tenantId: DEFAULT_TENANT_ID,
-    ocppConnectionName,
+    stationId,
     evseTypeId: evseNumber,
   } as never);
   const connector = await locationRepository.createOrUpdateOcpp16Connector(DEFAULT_TENANT_ID, {
-    ocppConnectionName,
+    stationId,
     connectorId: connectorNumber,
     evseId: (evse as unknown as { id: number }).id,
     evseTypeConnectorId: (evseType as unknown as { databaseId: number }).databaseId,
@@ -182,7 +191,7 @@ describe('OCPP 1.6 MeterValues on a station whose connector number is not a data
 
     await Transaction.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName: STATION,
+      stationId: await stationIdOf(STATION),
       transactionId: String(TRANSACTION_ID),
       isActive: true,
       connectorId: ownConnectorDatabaseId,

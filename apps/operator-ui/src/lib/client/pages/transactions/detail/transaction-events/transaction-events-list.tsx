@@ -30,6 +30,7 @@ import { useMemo, useState } from 'react';
 export const TransactionEventsList = ({
   transactionDatabaseId,
   ocppTransactionId,
+  stationId,
   ocppConnectionName,
 }: any) => {
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -59,7 +60,7 @@ export const TransactionEventsList = ({
     sorters: [{ field: 'timestamp', order: 'desc' }],
     meta: {
       gqlQuery: GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY,
-      gqlVariables: { ocppTransactionId, ocppConnectionName },
+      gqlVariables: { ocppTransactionId, stationId },
     },
     queryOptions: getPlainToInstanceOptions(OCPPMessageClass),
     pagination: { pageSize: 1000 },
@@ -92,7 +93,7 @@ export const TransactionEventsList = ({
 
       return {
         id: -m.id,
-        ocppConnectionName: String(m.ocppConnectionName ?? ''),
+        ocppConnectionName: String(ocppConnectionName ?? ''),
         evseId: payload?.connectorId ?? null,
         transactionDatabaseId: transactionDatabaseId,
         eventType: m.action as TransactionEventDto['eventType'],
@@ -111,7 +112,7 @@ export const TransactionEventsList = ({
     return [...events, ...messageRows].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
-  }, [eventsData?.data, messagesData?.data, transactionDatabaseId, tenantId]);
+  }, [eventsData?.data, messagesData?.data, transactionDatabaseId, tenantId, ocppConnectionName]);
 
   const columns = [
     ...getTransactionEventColumns(translate),
