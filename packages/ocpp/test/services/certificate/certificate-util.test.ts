@@ -9,15 +9,19 @@ import {
   extractCertificateArrayFromEncodedString,
   extractCertificateDetails,
   extractEncodedContentFromCSR,
+  generateCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
+  type CertificateGenerationInput,
 } from '@services/index.js';
+import { SignatureAlgorithmEnumType } from '@citrineos/dal';
 import { OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { readFile } from '../../utils/file-util.js';
 import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';
 import X509 = jsrsasign.X509;
+import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 
 describe('CertificateUtil', () => {
@@ -173,6 +177,47 @@ describe('CertificateUtil', () => {
       const actualResult = extractCertificateArrayFromEncodedString(givenEncodedString);
 
       expect(actualResult?.length).toBe(3);
+    });
+  });
+
+  describe('generateCSR', () => {
+    const csrInput = (
+      overrides: Partial<CertificateGenerationInput> = {},
+    ): CertificateGenerationInput =>
+      ({
+        signatureAlgorithm: SignatureAlgorithmEnumType.ECDSA,
+        commonName: 'localhost',
+        organizationName: 's44',
+        countryName: 'US',
+        isCA: false,
+        ...overrides,
+      }) as CertificateGenerationInput;
+
+    it('builds a CSR carrying the requested extensions', () => {
+      const [csrPem, privateKeyPem] = generateCSR(csrInput());
+
+      const actualParams = KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+      expect(actualParams.subject.str).toBe('/CN=localhost/O=s44/C=US');
+      expect(actualParams.sigalg).toBe('SHA256withECDSA');
+      expect(actualParams.extreq).toEqual([
+        { extname: 'basicConstraints' },
+        {
+          extname: 'keyUsage',
+          names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'cRLSign'],
+        },
+      ]);
+      expect(privateKeyPem).toContain('PRIVATE KEY');
+    });
+
+    it('requests cA and pathLen for a sub CA', () => {
+      const [csrPem] = generateCSR(csrInput({ isCA: true, pathLen: 1 }));
+
+      const actualParams = KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+      expect(actualParams.extreq?.[0]).toEqual({
+        extname: 'basicConstraints',
+        cA: true,
+        pathLen: 1,
+      });
     });
   });
 
