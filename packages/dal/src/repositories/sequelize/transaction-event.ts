@@ -51,6 +51,19 @@ function elapsedSecondsSinceStart(
   return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
 }
 
+/**
+ * Avoid to overwrite timeSpentCharging to null
+ */
+function transactionInfoForRow<T extends { timeSpentCharging?: number | null }>(
+  transactionInfo: T,
+): T | Omit<T, 'timeSpentCharging'> {
+  if (transactionInfo.timeSpentCharging != null) {
+    return transactionInfo;
+  }
+  const { timeSpentCharging: _unreported, ...rest } = transactionInfo;
+  return rest;
+}
+
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
   implements ITransactionEventRepository
@@ -221,7 +234,7 @@ export class SequelizeTransactionEventRepository
               value.eventType === OCPP2_0_1.TransactionEventEnumType.Ended
                 ? value.timestamp
                 : undefined,
-            ...value.transactionInfo,
+            ...transactionInfoForRow(value.transactionInfo),
             authorizationId,
             evseId,
             connectorId,
@@ -240,7 +253,7 @@ export class SequelizeTransactionEventRepository
             value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
               ? value.timestamp
               : undefined,
-          ...value.transactionInfo,
+          ...transactionInfoForRow(value.transactionInfo),
         });
 
         if (value.evse) {

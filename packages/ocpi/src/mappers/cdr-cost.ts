@@ -11,15 +11,40 @@ import {
 } from '@citrineos/base';
 import type { Price } from '@citrineos/base';
 import type { Session } from '../types/session.js';
+import { CdrDimensionType } from '../types/cdr-dimension-type.js';
 import { MINUTES_IN_HOUR } from '../util/consts.js';
 
-export type PricedSession = Pick<Session, 'kwh' | 'start_date_time' | 'end_date_time'>;
+export type PricedSession = Pick<
+  Session,
+  'kwh' | 'start_date_time' | 'end_date_time' | 'charging_periods'
+>;
 
 export function calculateTotalTimeHours(session: PricedSession): number {
   if (session.end_date_time) {
     return (session.end_date_time.getTime() - session.start_date_time.getTime()) / 3600000;
   }
   return 0;
+}
+
+export function calculateTotalParkingTimeHours(session: PricedSession): number {
+  const totalHours = (session.charging_periods ?? [])
+    .flatMap((period) => period.dimensions)
+    .filter((dimension) => dimension.type === CdrDimensionType.PARKING_TIME)
+    .reduce(
+      (total, dimension) => total + (Number.isFinite(dimension.volume) ? dimension.volume : 0),
+      0,
+    );
+
+  return Math.max(totalHours, 0);
+}
+
+/**
+ * Billable charging time, in minutes.
+ * OCPI 2.2.1, total_charging_time = total_time - total_parking_time
+ */
+export function calculateChargingMinutes(session: PricedSession): number {
+  const chargingHours = calculateTotalTimeHours(session) - calculateTotalParkingTimeHours(session);
+  return Math.max(chargingHours, 0) * MINUTES_IN_HOUR;
 }
 
 export function calculateFixedCost(tariff: TariffDto): Price | undefined {
@@ -31,15 +56,19 @@ export function calculateEnergyCost(session: PricedSession, tariff: TariffDto): 
 }
 
 export function calculateTimeCost(session: PricedSession, tariff: TariffDto): Price | undefined {
-  const totalMinutes = calculateTotalTimeHours(session) * MINUTES_IN_HOUR;
-  return baseCalculateTimeCost(totalMinutes, tariff.pricePerMin, tariff.currency, tariff.taxRate);
+  const chargingMinutes = calculateChargingMinutes(session);
+  return baseCalculateTimeCost(
+    chargingMinutes,
+    tariff.pricePerMin,
+    tariff.currency,
+    tariff.taxRate,
+  );
 }
 
 export function calculateTotalCdrCost(session: PricedSession, tariff: TariffDto): Price {
-  const totalMinutes = calculateTotalTimeHours(session) * MINUTES_IN_HOUR;
   return baseCalculateTotalCost(
     session.kwh,
-    totalMinutes,
+    calculateChargingMinutes(session),
     tariff.pricePerSession,
     tariff.pricePerKwh,
     tariff.pricePerMin,

@@ -38,6 +38,7 @@ import {
   VariableAttribute,
 } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
+import { deriveTimeSpentChargingSeconds } from '@modules/transactions/time-spent-charging.js';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
@@ -176,6 +177,23 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
       throw error;
     }
+
+    const timeSpentCharging = await this.resolveTimeSpentCharging(
+      tenantId,
+      ocppConnectionName,
+      transactionId,
+      transactionEvent,
+    );
+    if (timeSpentCharging != null && timeSpentCharging !== transaction.timeSpentCharging) {
+      transaction.timeSpentCharging = timeSpentCharging;
+      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
+        { timeSpentCharging },
+        transactionId,
+        ocppConnectionName,
+      );
+    }
+
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -619,6 +637,32 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         message.protocol,
       );
     }
+  }
+
+  /**
+   * Seconds energy has actually flowed in this transaction:
+   *  - what the station reported on this event,
+   *  - else its chargingState timeline,
+   *  - else the rise of its energy register.
+   *  Undefined when none can, which leaves any stored value untouched.
+   */
+  private async resolveTimeSpentCharging(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+    transactionEvent: OCPP2_request_types.TransactionEventRequest,
+  ): Promise<number | undefined> {
+    const reported = transactionEvent.transactionInfo.timeSpentCharging;
+    if (reported != null) {
+      return reported;
+    }
+
+    const events = await this._transactionEventRepository.readAllByStationIdAndTransactionId(
+      tenantId,
+      ocppConnectionName,
+      transactionId,
+    );
+    return deriveTimeSpentChargingSeconds(events);
   }
 
   protected async deactivateOtherActiveTransactionsAtEvse201(

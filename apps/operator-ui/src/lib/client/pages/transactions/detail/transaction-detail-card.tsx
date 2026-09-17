@@ -24,6 +24,25 @@ import { NOT_APPLICABLE } from '@lib/utils/consts';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 
+/**
+ * Seconds the EV actually drew energy, in clock notation: "02:30:00". Hours are not wrapped at 24,
+ * so a multi-day session reads "26:05:00" rather than restarting from zero. Undefined for an
+ * unreported value, which KeyValueDisplay renders as not applicable.
+ */
+const formatTimeSpentCharging = (seconds?: number | string | null): string | undefined => {
+  // The column is a bigint, which some drivers hand back as a string.
+  const total = Math.floor(Number(seconds));
+  if (seconds == null || !Number.isFinite(total) || total < 0) {
+    return undefined;
+  }
+
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = total % 60;
+
+  return [hours, minutes, remainder].map((part) => String(part).padStart(2, '0')).join(':');
+};
+
 export interface TransactionDetailCardProps {
   transaction: TransactionDto;
 }
@@ -167,6 +186,10 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
                 <span>{NOT_APPLICABLE}</span>
               )
             }
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Transactions.detail.timeSpentCharging')}
+            value={formatTimeSpentCharging(transaction.timeSpentCharging)}
           />
         </div>
       </CardContent>

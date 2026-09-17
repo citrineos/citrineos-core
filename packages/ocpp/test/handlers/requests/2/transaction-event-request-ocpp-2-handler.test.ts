@@ -178,6 +178,118 @@ describe('TransactionEventRequestOcpp2Handler', () => {
     });
   });
 
+  // timeSpentCharging is the seconds energy actually flowed, reported by the station in
+  // transactionInfo and declared identically in OCPP 2.0.1 and 2.1. Cost is charged on it rather
+  // than on the transaction's own duration, which also counts time parked and not charging.
+  describe('timeSpentCharging reported by the station', () => {
+    function anUpdatedEvent(
+      timeSpentCharging: number | null | undefined,
+    ): OCPP2_0_1.TransactionEventRequest {
+      const transactionInfo: Record<string, unknown> = { transactionId: 'txn-001' };
+      if (timeSpentCharging !== undefined) {
+        transactionInfo.timeSpentCharging = timeSpentCharging;
+      }
+      return {
+        eventType: OCPP2_0_1.TransactionEventEnumType.Updated,
+        triggerReason: OCPP2_0_1.TriggerReasonEnumType.MeterValuePeriodic,
+        timestamp: new Date().toISOString(),
+        seqNo: 2,
+        transactionInfo,
+      } as unknown as OCPP2_0_1.TransactionEventRequest;
+    }
+
+    function makeHandlerWithTransaction(stored: { timeSpentCharging?: number | null } = {}) {
+      const transaction: {
+        id: number;
+        transactionId: string;
+        isActive: boolean;
+        totalKwh: number | null;
+        timeSpentCharging?: number | null;
+      } = {
+        id: 1,
+        transactionId: 'txn-001',
+        isActive: true,
+        totalKwh: null,
+        ...stored,
+      };
+      return {
+        transaction,
+        ...makeHandler({
+          transactionEventRepository: {
+            createOrUpdateTransactionByTransactionEventAndStationId: vi
+              .fn()
+              .mockResolvedValue(transaction),
+          } as never,
+        }),
+      };
+    }
+
+    it.each([
+      ['OCPP 2.0.1', OCPPVersion.OCPP2_0_1],
+      ['OCPP 2.1', OCPPVersion.OCPP2_1],
+    ])('persists the reported value on %s', async (_label, protocol) => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), protocol));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        { timeSpentCharging: 2820 },
+        'txn-001',
+        'station-001',
+      );
+      expect(transaction.timeSpentCharging).toBe(2820);
+    });
+
+    it('leaves an earlier value alone when the event omits the field', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction({
+        timeSpentCharging: 1800,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('leaves an earlier value alone when the event reports null', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction({
+        timeSpentCharging: 1800,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(null), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('takes a reported zero, which is not the same as no report', async () => {
+      const { handler, transaction } = makeHandlerWithTransaction({ timeSpentCharging: 1800 });
+
+      await handler.handle(makeMessage(anUpdatedEvent(0), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(0);
+    });
+
+    it('does not write again when the station repeats the stored value', async () => {
+      const { handler, transactionEventRepository } = makeHandlerWithTransaction({
+        timeSpentCharging: 2820,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deactivateOtherActiveTransactionsAtEvse201', () => {
     it('calls deactivateOtherActiveTransactionsAtEvse when eventType=Started and evse is defined', async () => {
       const { handler, transactionService } = makeHandler();

@@ -10,8 +10,11 @@ import {
   calculateFixedCost,
   calculateTimeCost,
   calculateTotalCdrCost,
+  calculateTotalParkingTimeHours,
   calculateTotalTimeHours,
 } from '../../src/mappers/cdr-cost.js';
+import type { ChargingPeriod } from '../../src/types/charging-period.js';
+import { CdrDimensionType } from '../../src/types/cdr-dimension-type.js';
 
 /** 45 minutes, 10.5 kWh. */
 function aSession(overrides: Partial<PricedSession> = {}): PricedSession {
@@ -20,6 +23,17 @@ function aSession(overrides: Partial<PricedSession> = {}): PricedSession {
     start_date_time: new Date('2026-08-20T10:00:00Z'),
     end_date_time: new Date('2026-08-20T10:45:00Z'),
     ...overrides,
+  };
+}
+
+/** A charging period carrying the given PARKING_TIME volume, in hours. */
+function aParkingPeriod(hours: number): ChargingPeriod {
+  return {
+    start_date_time: new Date('2026-08-20T10:00:00Z'),
+    dimensions: [
+      { type: CdrDimensionType.TIME, volume: 0.25 },
+      { type: CdrDimensionType.PARKING_TIME, volume: hours },
+    ],
   };
 }
 
@@ -42,6 +56,43 @@ describe('calculateTotalTimeHours', () => {
 
   it('treats a session without an end date as zero hours', () => {
     expect(calculateTotalTimeHours(aSession({ end_date_time: undefined }))).toBe(0);
+  });
+});
+
+describe('calculateTotalParkingTimeHours', () => {
+  it('sums the PARKING_TIME volumes across charging periods', () => {
+    const session = aSession({
+      charging_periods: [aParkingPeriod(0.1), aParkingPeriod(0.15)],
+    });
+
+    expect(calculateTotalParkingTimeHours(session)).toBeCloseTo(0.25, 10);
+  });
+
+  it('ignores every dimension that is not PARKING_TIME', () => {
+    const session = aSession({
+      charging_periods: [
+        {
+          start_date_time: new Date('2026-08-20T10:00:00Z'),
+          dimensions: [
+            { type: CdrDimensionType.TIME, volume: 0.5 },
+            { type: CdrDimensionType.ENERGY, volume: 4 },
+          ],
+        },
+      ],
+    });
+
+    expect(calculateTotalParkingTimeHours(session)).toBe(0);
+  });
+
+  it('is zero for a session with no charging periods', () => {
+    expect(calculateTotalParkingTimeHours(aSession())).toBe(0);
+    expect(calculateTotalParkingTimeHours(aSession({ charging_periods: null }))).toBe(0);
+  });
+
+  it('never reports a negative total from a malformed dimension', () => {
+    expect(
+      calculateTotalParkingTimeHours(aSession({ charging_periods: [aParkingPeriod(-2)] })),
+    ).toBe(0);
   });
 });
 
@@ -107,6 +158,25 @@ describe('calculateTimeCost', () => {
 
   it('is undefined when the tariff has no per-minute rate', () => {
     expect(calculateTimeCost(aSession(), aTariff({ pricePerMin: undefined }))).toBeUndefined();
+  });
+
+  it('bills the charging time only, not the parking time', () => {
+    // 45 min window - 15 min parked = 30 min x 0.019 = 0.57
+    const session = aSession({ charging_periods: [aParkingPeriod(0.25)] });
+
+    expect(calculateTimeCost(session, aTariff())).toStrictEqual({ excl_vat: 0.57 });
+  });
+
+  it('charges nothing when parking covers the whole session', () => {
+    const session = aSession({ charging_periods: [aParkingPeriod(0.75)] });
+
+    expect(calculateTimeCost(session, aTariff())).toStrictEqual({ excl_vat: 0 });
+  });
+
+  it('does not go negative when parking exceeds the session window', () => {
+    const session = aSession({ charging_periods: [aParkingPeriod(5)] });
+
+    expect(calculateTimeCost(session, aTariff())).toStrictEqual({ excl_vat: 0 });
   });
 });
 

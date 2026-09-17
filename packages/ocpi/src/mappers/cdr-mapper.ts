@@ -11,7 +11,6 @@ import type { Tariff as OcpiTariff } from '../types/tariff.js';
 import type { SignedData } from '../types/signed-data.js';
 import type { LocationDTO } from '../types/dto/location-dto.js';
 import type { ChargingPeriod } from '../types/charging-period.js';
-import { CdrDimensionType } from '../types/cdr-dimension-type.js';
 import type { OcpiTransactionMapperDependencies } from './base-transaction-mapper.js';
 import { BaseTransactionMapper } from './base-transaction-mapper.js';
 import type { TariffDto, TransactionDto } from '@citrineos/types';
@@ -20,6 +19,7 @@ import {
   calculateFixedCost,
   calculateTimeCost,
   calculateTotalCdrCost,
+  calculateTotalParkingTimeHours,
   calculateTotalTimeHours,
 } from './cdr-cost.js';
 
@@ -118,7 +118,7 @@ export class CdrMapper extends BaseTransactionMapper {
       total_energy_cost: calculateEnergyCost(session, tariff),
       total_time: calculateTotalTimeHours(session),
       total_time_cost: calculateTimeCost(session, tariff),
-      total_parking_time: this.calculateTotalParkingTime(),
+      total_parking_time: calculateTotalParkingTimeHours(session),
       total_parking_cost: this.calculateTotalParkingCost(),
       total_reservation_cost: this.calculateTotalReservationCost(),
       remark: this.generateRemark(session),
@@ -188,10 +188,6 @@ export class CdrMapper extends BaseTransactionMapper {
   // (OCPP 2.1's reservationTime/reservationFixed fields are untyped `any`
   // placeholders and aren't populated), so these stay unsupported rather
   // than guessing at a calculation with no backing data.
-  private calculateTotalParkingTime(): number {
-    return 0;
-  }
-
   private calculateTotalParkingCost(): Price | undefined {
     return undefined;
   }
