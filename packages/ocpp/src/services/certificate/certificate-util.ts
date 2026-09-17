@@ -345,8 +345,6 @@ export function generateCSR(certificate: CertificateGenerationInput): [string, s
   const privateKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.prvKeyObj, 'PKCS8PRV');
   const publicKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.pubKeyObj);
 
-  // jsrsasign reads the extension parameters off the entry itself. Wrapping them in
-  // `array` leaves the extension unset and getPEM() throws 'parameter not yet set'.
   let basicConstraintParam: any;
   if (certificate.pathLen) {
     basicConstraintParam = {
