@@ -16,8 +16,8 @@ catalogs:
       specifier: 10.6.0
       version: 10.6.0
     '@fastify/auth':
-      specifier: 5.1.0
-      version: 5.1.0
+      specifier: 5.1.1
+      version: 5.1.1
     '@fastify/swagger':
       specifier: 9.8.1
       version: 9.8.1
@@ -840,7 +840,7 @@ importers:
         version: 10.6.0
       '@fastify/auth':
         specifier: 'catalog:'
-        version: 5.1.0
+        version: 5.1.1
       '@fastify/type-provider-json-schema-to-ts':
         specifier: 'catalog:'
         version: 4.0.1
@@ -1121,7 +1121,7 @@ importers:
         version: link:../types
       '@fastify/auth':
         specifier: 'catalog:'
-        version: 5.1.0
+        version: 5.1.1
       '@fastify/cors':
         specifier: 10.1.0
         version: 10.1.0
@@ -2144,8 +2144,8 @@ packages:
   '@fastify/ajv-compiler@4.0.6':
     resolution: {integrity: sha512-NtuzM0SfaMJbGlnjr9LWQUN5LzgSrbB8tf/wRZNas+4E1O/Nmzl53e7ruT61HDZyRCJGC6FxIogmNZO1c5ETBA==}
 
-  '@fastify/auth@5.1.0':
-    resolution: {integrity: sha512-j5ZXWeVrMJjWv6sBK+SXiuZxvNTj6i33IHRAeIdGKjqEOTQE7CuTltwigevqlGnIzlNxHoOwRkI/TEqsDOyf+A==}
+  '@fastify/auth@5.1.1':
+    resolution: {integrity: sha512-+6Uq4ODC5xoevkECTL3gDeZDV2yA5O4QG03ISU8VlYJtQ0xWNIAJcLigS5ttTuNn1wzrasPGnLf4tcVkWMPZbg==}
 
   '@fastify/cors@10.1.0':
     resolution: {integrity: sha512-MZyBCBJtII60CU9Xme/iE4aEy8G7QpzGR8zkdXZkDFt7ElEMachbE61tfhAG/bvSaULlqlf0huMT12T7iqEmdQ==}
@@ -11283,7 +11283,7 @@ snapshots:
       ajv-formats: 3.0.1(ajv@8.20.0)
       fast-uri: 4.1.4
 
-  '@fastify/auth@5.1.0':
+  '@fastify/auth@5.1.1':
     dependencies:
       fastify-plugin: 6.0.0
       reusify: 1.1.0
