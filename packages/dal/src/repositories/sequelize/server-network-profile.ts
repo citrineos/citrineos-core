@@ -32,6 +32,7 @@ export class SequelizeServerNetworkProfileRepository
     serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
     serverNetworkProfile.allowUnknownChargingStations =
       websocketServerConfig.allowUnknownChargingStations;
+    serverNetworkProfile.dynamicTenantResolution = websocketServerConfig.dynamicTenantResolution;
     serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
     serverNetworkProfile.tlsCertificateChainFilePath =
       websocketServerConfig.tlsCertificateChainFilePath;
