@@ -42,6 +42,7 @@ import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
 import {
+  initWsTransportMetrics,
   recordWsActiveConnectionsDelta,
   recordWsConnectionClosed,
   recordWsConnectionEstablished,
@@ -54,8 +55,8 @@ import {
   WsUpgradeResult,
 } from '../metrics.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
-import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
 import type { IUpgradeError } from './authenticator/errors/i-upgrade-error.js';
+import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
@@ -121,7 +122,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._getAllTenantWebsocketServerPaths = getAllTenantWebsocketServerPaths;
     this._cache = cache;
     this._config = config;
-    this._doesChargingStationExistByOcppConnectionName = doesChargingStationExistByOcppConnectionName;
+    this._doesChargingStationExistByOcppConnectionName =
+      doesChargingStationExistByOcppConnectionName;
     this._connectionManager = connectionManager;
     this._fileStorage = fileStorage;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
@@ -131,6 +133,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   public async initialize(): Promise<void> {
+    initWsTransportMetrics();
+
     this._websocketServers = await ConfigLoader.loadWebsocketServersConfig(
       this._fileStorage,
       this._config.websocketServerConfigFile,
