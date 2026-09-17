@@ -172,8 +172,6 @@ export function generateCertificate(
   }
 
   // Prepare certificate extensions
-  // jsrsasign only knows the key usage as 'cRLSign'; spelled any other way the bit is
-  // dropped from the certificate without an error.
   const keyUsages = ['digitalSignature', 'keyCertSign', 'cRLSign'];
   if (!certificateEntity.isCA) {
     keyUsages.push('keyEncipherment');
