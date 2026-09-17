@@ -14,6 +14,7 @@ import type { ChargingPeriod } from '../types/charging-period.js';
 import type { OcpiTransactionMapperDependencies } from './base-transaction-mapper.js';
 import { BaseTransactionMapper } from './base-transaction-mapper.js';
 import type { TariffDto, TransactionDto } from '@citrineos/types';
+import type { PricedSession } from './cdr-cost.js';
 import {
   calculateEnergyCost,
   calculateFixedCost,
@@ -47,11 +48,18 @@ export class CdrMapper extends BaseTransactionMapper {
       ]);
       const transactionIdToOcpiTariffMap: Map<string, OcpiTariff> =
         await this.getOcpiTariffsForTransactions(sessions, transactionIdToTariffMap);
+      const transactionIdToTimeSpentCharging = new Map(
+        validTransactions.map((transaction) => [
+          transaction.transactionId,
+          transaction.timeSpentCharging,
+        ]),
+      );
       return await this.mapSessionsToCDRs(
         sessions,
         transactionIdToLocationMap,
         transactionIdToTariffMap,
         transactionIdToOcpiTariffMap,
+        transactionIdToTimeSpentCharging,
       );
     } catch (error) {
       // Log the original error for debugging
@@ -72,6 +80,7 @@ export class CdrMapper extends BaseTransactionMapper {
     transactionIdToLocationMap: Map<string, LocationDTO>,
     transactionIdToTariffMap: Map<string, TariffDto>,
     transactionIdToOcpiTariffMap: Map<string, OcpiTariff>,
+    transactionIdToTimeSpentCharging: Map<string | undefined, number | null | undefined>,
   ): Promise<Cdr[]> {
     return Promise.all(
       sessions
@@ -85,6 +94,7 @@ export class CdrMapper extends BaseTransactionMapper {
             transactionIdToLocationMap.get(session.id)!,
             transactionIdToTariffMap.get(session.id)!,
             transactionIdToOcpiTariffMap.get(session.id)!,
+            transactionIdToTimeSpentCharging.get(session.id),
           ),
         ),
     );
@@ -95,7 +105,9 @@ export class CdrMapper extends BaseTransactionMapper {
     location: LocationDTO,
     tariff: TariffDto,
     ocpiTariff: OcpiTariff,
+    timeSpentChargingSeconds?: number | null,
   ): Promise<Cdr> {
+    const priced: PricedSession = { ...session, timeSpentChargingSeconds };
     return {
       country_code: session.country_code,
       party_id: session.party_id,
@@ -112,13 +124,13 @@ export class CdrMapper extends BaseTransactionMapper {
       tariffs: ocpiTariff ? [ocpiTariff] : undefined,
       charging_periods: session.charging_periods,
       signed_data: await this.getSignedData(session),
-      total_cost: calculateTotalCdrCost(session, tariff),
+      total_cost: calculateTotalCdrCost(priced, tariff),
       total_fixed_cost: calculateFixedCost(tariff),
       total_energy: session.kwh,
       total_energy_cost: calculateEnergyCost(session, tariff),
       total_time: calculateTotalTimeHours(session),
-      total_time_cost: calculateTimeCost(session, tariff),
-      total_parking_time: calculateTotalParkingTimeHours(session),
+      total_time_cost: calculateTimeCost(priced, tariff),
+      total_parking_time: calculateTotalParkingTimeHours(priced),
       total_parking_cost: this.calculateTotalParkingCost(),
       total_reservation_cost: this.calculateTotalReservationCost(),
       remark: this.generateRemark(session),

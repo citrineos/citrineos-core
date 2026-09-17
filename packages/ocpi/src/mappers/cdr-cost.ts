@@ -17,7 +17,9 @@ import { MINUTES_IN_HOUR } from '../util/consts.js';
 export type PricedSession = Pick<
   Session,
   'kwh' | 'start_date_time' | 'end_date_time' | 'charging_periods'
->;
+> & {
+  timeSpentChargingSeconds?: number | null;
+};
 
 export function calculateTotalTimeHours(session: PricedSession): number {
   if (session.end_date_time) {
@@ -27,7 +29,13 @@ export function calculateTotalTimeHours(session: PricedSession): number {
 }
 
 export function calculateTotalParkingTimeHours(session: PricedSession): number {
-  const totalHours = (session.charging_periods ?? [])
+  const totalTimeHours = calculateTotalTimeHours(session);
+  if (session.timeSpentChargingSeconds != null) {
+    const chargingSeconds = Number(session.timeSpentChargingSeconds);
+    return Math.max(totalTimeHours - Math.min(chargingSeconds / 3600, totalTimeHours), 0);
+  }
+
+  const dimensionHours = (session.charging_periods ?? [])
     .flatMap((period) => period.dimensions)
     .filter((dimension) => dimension.type === CdrDimensionType.PARKING_TIME)
     .reduce(
@@ -35,7 +43,7 @@ export function calculateTotalParkingTimeHours(session: PricedSession): number {
       0,
     );
 
-  return Math.max(totalHours, 0);
+  return Math.min(Math.max(dimensionHours, 0), totalTimeHours);
 }
 
 /**

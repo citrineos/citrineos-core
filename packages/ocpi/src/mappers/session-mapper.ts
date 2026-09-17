@@ -25,6 +25,13 @@ import { UID_FORMAT } from '../types/dto/evse-dto.js';
 import { calculateTotalCdrCost } from './cdr-cost.js';
 import { MeterValueUtils } from '@citrineos/base';
 
+interface ChargingPeriodSpan {
+  meterValue: MeterValueDto;
+  previousMeterValue?: MeterValueDto;
+  hours: number;
+  energyFlowed: boolean;
+}
+
 export class SessionMapper extends BaseTransactionMapper {
   constructor(dependencies: OcpiTransactionMapperDependencies) {
     super(dependencies);
@@ -213,6 +220,7 @@ export class SessionMapper extends BaseTransactionMapper {
       session.charging_periods = this.getChargingPeriods(
         transaction.meterValues,
         String(tariff.id),
+        transaction.startTime,
       );
     }
 
@@ -308,7 +316,11 @@ export class SessionMapper extends BaseTransactionMapper {
       evse_uid: this.getEvseUid(transaction),
       connector_id: transaction.connectorId!.toString(),
       currency: tariff.currency,
-      charging_periods: this.getChargingPeriods(transaction.meterValues, String(tariff?.id)),
+      charging_periods: this.getChargingPeriods(
+        transaction.meterValues,
+        String(tariff?.id),
+        transaction.startTime,
+      ),
       status: this.getTransactionStatus(transaction),
       last_updated: transaction.updatedAt!,
       // TODO: Fill in optional values
@@ -360,28 +372,70 @@ export class SessionMapper extends BaseTransactionMapper {
     }
   }
 
-  public getChargingPeriods(meterValues: MeterValueDto[] = [], tariffId: string): ChargingPeriod[] {
-    return meterValues
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-      .map((meterValue, index, sortedMeterValues) => {
-        const previousMeterValue = index > 0 ? sortedMeterValues[index - 1] : undefined;
-        return this.mapMeterValueToChargingPeriod(meterValue, tariffId, previousMeterValue);
-      });
+  public getChargingPeriods(
+    meterValues: MeterValueDto[] = [],
+    tariffId: string,
+    sessionStartTime?: string,
+  ): ChargingPeriod[] {
+    return this.toChargingPeriodSpans(meterValues, sessionStartTime).map((span) => ({
+      start_date_time: new Date(span.meterValue.timestamp),
+      dimensions: this.getCdrDimensions(
+        span.hours,
+        span.energyFlowed,
+        span.meterValue,
+        span.previousMeterValue,
+      ),
+      tariff_id: tariffId,
+    }));
   }
 
-  private mapMeterValueToChargingPeriod(
-    meterValue: MeterValueDto,
-    tariffId: string,
-    previousMeterValue?: MeterValueDto,
-  ): ChargingPeriod {
-    return {
-      start_date_time: new Date(meterValue.timestamp),
-      dimensions: this.getCdrDimensions(meterValue, previousMeterValue),
-      tariff_id: tariffId,
-    };
+  private toChargingPeriodSpans(
+    meterValues: MeterValueDto[],
+    sessionStartTime?: string,
+  ): ChargingPeriodSpan[] {
+    const sorted = [...meterValues].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+    const spans = sorted.map((meterValue, index) => {
+      const previousMeterValue = index > 0 ? sorted[index - 1] : undefined;
+      return {
+        meterValue,
+        previousMeterValue,
+        hours: this.getTimeElapsedForMeterValue(meterValue, previousMeterValue),
+        energyFlowed: this.didEnergyFlow(meterValue, previousMeterValue),
+      };
+    });
+    if (spans.length === 0) {
+      return spans;
+    }
+
+    // The first period has no reading before it, so it can only ever be parking; the wait between
+    // the session starting and the first reading is therefore folded into it.
+    spans[0].hours += this.hoursBetween(sessionStartTime, spans[0].meterValue.timestamp);
+    return spans;
+  }
+
+  /**
+   * Hours between two ISO timestamps; zero when `from` is absent, when either fails to parse, or
+   * when the span runs backwards.
+   */
+  private hoursBetween(from: string | undefined, to: string): number {
+    if (from == null) {
+      return 0;
+    }
+    const hours = (new Date(to).getTime() - new Date(from).getTime()) / 3600000;
+    return Number.isFinite(hours) ? Math.max(0, hours) : 0;
+  }
+
+  private didEnergyFlow(meterValue: MeterValueDto, previousMeterValue?: MeterValueDto): boolean {
+    const current = this.getEnergyImportForMeterValue(meterValue);
+    const previous = this.getEnergyImportForMeterValue(previousMeterValue);
+    return current !== undefined && previous !== undefined && current > previous;
   }
 
   private getCdrDimensions(
+    periodHours: number,
+    energyFlowed: boolean,
     meterValue: MeterValueDto,
     previousMeterValue?: MeterValueDto,
   ): CdrDimension[] {
@@ -423,8 +477,8 @@ export class SessionMapper extends BaseTransactionMapper {
       }
     }
     cdrDimensions.push({
-      type: CdrDimensionType.TIME,
-      volume: this.getTimeElapsedForMeterValue(meterValue, previousMeterValue),
+      type: energyFlowed ? CdrDimensionType.TIME : CdrDimensionType.PARKING_TIME,
+      volume: periodHours,
     });
     return cdrDimensions;
   }

@@ -54,7 +54,7 @@ export class SessionBroadcaster extends BaseBroadcaster {
     tenant: TenantDto,
     meterValueDto: MeterValueDto,
   ): Promise<void> {
-    const charging_periods = await this.sessionMapper.getChargingPeriods(
+    const charging_periods = this.sessionMapper.getChargingPeriods(
       [meterValueDto],
       meterValueDto.tariffId!.toString(),
     );
