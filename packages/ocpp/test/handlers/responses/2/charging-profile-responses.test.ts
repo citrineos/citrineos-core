@@ -235,7 +235,7 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
     });
   });
 
-  it('neither writes nor sends when the station rejected the profile', async () => {
+  it('does not write, but still resyncs, when the station rejected the profile', async () => {
     await handler.handle(
       makeMessage(OCPP_CallAction.SetChargingProfile, OCPPVersion.OCPP2_0_1, {
         status: ChargingProfileStatusEnum.Rejected,
@@ -243,9 +243,12 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
     );
 
     expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
-    expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to set charging profile: ${JSON.stringify({ status: ChargingProfileStatusEnum.Rejected })}`,
+    );
+    expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
+    expect(ocppSender.sendCall).toHaveBeenCalledWith(
+      expect.objectContaining({ action: OCPP_CallAction.GetChargingProfiles }),
     );
   });
 });
