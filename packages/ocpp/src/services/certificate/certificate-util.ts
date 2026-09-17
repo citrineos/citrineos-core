@@ -348,28 +348,23 @@ export function generateCSR(certificate: CertificateGenerationInput): [string, s
   let basicConstraintParam: any;
   if (certificate.pathLen) {
     basicConstraintParam = {
+      extname: 'basicConstraints',
       cA: certificate.isCA,
       pathLen: certificate.pathLen,
     };
   } else {
-    basicConstraintParam = { cA: certificate.isCA };
+    basicConstraintParam = { extname: 'basicConstraints', cA: certificate.isCA };
   }
+  const keyUsageParam: any = {
+    extname: 'keyUsage',
+    names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'cRLSign'],
+  };
   const csr = new KJUR.asn1.csr.CertificationRequest({
     subject: {
       str: `/CN=${certificate.commonName}/O=${certificate.organizationName}/C=${certificate.countryName}`,
     },
     sbjpubkey: publicKeyPem,
-    extreq: [
-      { extname: 'basicConstraints', array: [basicConstraintParam] },
-      {
-        extname: 'keyUsage',
-        array: [
-          {
-            names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'crlSign'],
-          },
-        ],
-      },
-    ],
+    extreq: [basicConstraintParam, keyUsageParam],
     sigalg: certificate.signatureAlgorithm
       ? certificate.signatureAlgorithm
       : SignatureAlgorithmEnumType.ECDSA,
