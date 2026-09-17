@@ -8,7 +8,6 @@ import type { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, type QueryInterface } from 'sequelize';
 import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  Authorization,
   DefaultSequelizeInstance,
   type ITenantRepository,
   SequelizeTenantRepository,
@@ -78,12 +77,11 @@ async function restorePreMigrationShape() {
 }
 
 function enrol(idToken: string, idTokenType: string | null, tenantId = DEFAULT_TENANT_ID) {
-  return Authorization.create({
-    idToken,
-    idTokenType,
-    status: 'Accepted',
-    tenantId,
-  } as never);
+  return sequelizeInstance.query(
+    `INSERT INTO "Authorizations" ("idToken", "idTokenType", "status", "tenantId", "createdAt", "updatedAt")
+     VALUES (:idToken, :idTokenType, 'Accepted', :tenantId, NOW(), NOW())`,
+    { replacements: { idToken, idTokenType, tenantId }, type: QueryTypes.INSERT },
+  );
 }
 
 async function uniqueConstraintNames(): Promise<string[]> {
@@ -109,7 +107,10 @@ describe('Authorizations uniqueness across a nullable idTokenType', () => {
 
     await expect(enrol(TOKEN, null)).resolves.toBeDefined();
 
-    const rows = await Authorization.findAll({ where: { idToken: TOKEN } });
+    const rows = await sequelizeInstance.query(
+      'SELECT id FROM "Authorizations" WHERE "idToken" = :idToken',
+      { replacements: { idToken: TOKEN }, type: QueryTypes.SELECT },
+    );
     expect(rows).toHaveLength(2);
   });
 

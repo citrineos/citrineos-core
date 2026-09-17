@@ -3,7 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation, ChargingStationSecurityInfo } from '@dal/db/sequelize/index.js';
+import {
+  ChargingStation,
+  ChargingStationSecurityInfo,
+  ServerNetworkProfile,
+  SetNetworkProfile,
+} from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import {
   ChargingStationNetworkProfile,
@@ -11,8 +16,6 @@ import {
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
-  ServerNetworkProfile,
-  SetNetworkProfile,
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 

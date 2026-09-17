@@ -11,13 +11,13 @@ import {
   type IdTokenEnumType,
   type OCPP2_common_types,
 } from '@citrineos/types';
+import type { VariableAttributeDto } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
   IDeviceModelRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import type { ChargingNeeds, Transaction } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
@@ -117,16 +117,14 @@ export async function validateChargingProfileType(
     transactionContext = { transaction, chargingNeeds: receivedChargingNeeds };
   }
 
-  const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
-    tenantId,
-    {
+  const periodsPerSchedules: VariableAttributeDto[] =
+    await deviceModelRepository.readAllByQuerystring(tenantId, {
       tenantId: tenantId,
       ocppConnectionName: ocppConnectionName,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
       type: AttributeEnum.Actual,
-    },
-  );
+    });
   logger.info(`Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`);
   let periodsPerSchedule;
   if (periodsPerSchedules.length > 0 && periodsPerSchedules[0].value) {
