@@ -86,10 +86,6 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
             timestamp,
           );
         for (const variableAttribute of variableAttributes) {
-          // Reload is necessary because in createOrUpdateDeviceModelByStationId does not do eager loading
-          await variableAttribute.reload({
-            include: [Component, Variable],
-          });
           await this._deviceModelRepository.updateResultByStationId(
             tenantId,
             {

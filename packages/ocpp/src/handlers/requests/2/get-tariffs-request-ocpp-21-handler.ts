@@ -10,16 +10,11 @@ import {
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP2_1, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import {
-  Authorization,
-  Evse,
   type IAuthorizationRepository,
   type IChargingStationRepository,
   type IConnectorRepository,
-  Tariff,
-  Transaction,
+  type ITransactionEventRepository,
 } from '@citrineos/dal';
-import { Op } from 'sequelize';
-import { stationIdFilter } from '@citrineos/dal';
 
 /**
  * Handle OCPP 2.1 GetTariffs request
@@ -37,6 +32,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _authorizationRepository: IAuthorizationRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _connectorRepository: IConnectorRepository;
+  protected _transactionEventRepository: ITransactionEventRepository;
 
   constructor({
     logger,
@@ -44,11 +40,13 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
     authorizationRepository,
     chargingStationRepository,
     connectorRepository,
+    transactionEventRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     chargingStationRepository: IChargingStationRepository;
     connectorRepository: IConnectorRepository;
+    transactionEventRepository: ITransactionEventRepository;
   }) {
     super(logger);
 
@@ -56,6 +54,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
     this._authorizationRepository = authorizationRepository;
     this._chargingStationRepository = chargingStationRepository;
     this._connectorRepository = connectorRepository;
+    this._transactionEventRepository = transactionEventRepository;
   }
 
   async handle(
@@ -152,46 +151,15 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
 
       // I09.FR.06: DriverTariff with active transaction includes evseIds
       // Query active transactions to associate driver tariffs with EVSEs
-      const activeTransactions = await Transaction.findAll({
-        where: {
+      const activeTransactions =
+        await this._transactionEventRepository.readActiveTransactionsWithTariffAndEvseByStationId(
           tenantId,
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          isActive: true,
-          authorizationId: { [Op.ne]: null },
-        },
-        include: [
-          {
-            model: Authorization,
-            as: 'authorization',
-            required: true,
-            where: {
-              tariffId: { [Op.ne]: null },
-            },
-            include: [
-              {
-                model: Tariff,
-                as: 'tariff',
-                required: true,
-              },
-            ],
-          },
-          {
-            model: Evse,
-            as: 'evse',
-            required: true,
-            ...(requestedEvseId > 0 && {
-              where: { evseTypeId: requestedEvseId },
-            }),
-          },
-        ],
-      });
+          ocppConnectionName,
+          requestedEvseId > 0 ? requestedEvseId : undefined,
+        );
 
       for (const transaction of activeTransactions) {
-        // TypeScript doesn't infer nested include types, so we need to access safely
-        const authorization = transaction.authorization as typeof transaction.authorization & {
-          tariff?: typeof Tariff.prototype;
-        };
-        const tariff = authorization?.tariff;
+        const tariff = transaction.authorization?.tariff;
         const evseTypeId = transaction.evse?.evseTypeId;
         if (tariff && tariff.tariffId && evseTypeId !== undefined && evseTypeId !== null) {
           const assignment = tariffAssignmentsMap.get(tariff.tariffId);

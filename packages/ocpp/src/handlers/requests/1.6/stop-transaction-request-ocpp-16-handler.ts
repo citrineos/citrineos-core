@@ -142,11 +142,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       ocppConnectionName,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) =>
-        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
-          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
-        ),
-      ) || [],
+      request.transactionData
+        ?.map((data) =>
+          OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+            data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+          ),
+        )
+        .filter((meterValue) => meterValue.sampledValue.length > 0) || [],
       stoppedReason,
       authorization?.id,
     );

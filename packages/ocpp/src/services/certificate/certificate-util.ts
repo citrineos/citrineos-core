@@ -172,21 +172,17 @@ export function generateCertificate(
   }
 
   // Prepare certificate extensions
-  const keyUsages = ['digitalSignature', 'keyCertSign', 'crlSign'];
+  const keyUsages = ['digitalSignature', 'keyCertSign', 'cRLSign'];
   if (!certificateEntity.isCA) {
     keyUsages.push('keyEncipherment');
   }
-  let basicConstraints: any = {
+  const basicConstraints: any = {
     extname: 'basicConstraints',
     critical: true,
     cA: certificateEntity.isCA,
   };
   if (certificateEntity.pathLen) {
-    basicConstraints = {
-      extname: 'basicConstraints',
-      cA: certificateEntity.isCA,
-      pathLen: certificateEntity.pathLen,
-    };
+    basicConstraints.pathLen = certificateEntity.pathLen;
   }
   const extensions = [
     basicConstraints,
@@ -348,28 +344,23 @@ export function generateCSR(certificate: CertificateGenerationInput): [string, s
   let basicConstraintParam: any;
   if (certificate.pathLen) {
     basicConstraintParam = {
+      extname: 'basicConstraints',
       cA: certificate.isCA,
       pathLen: certificate.pathLen,
     };
   } else {
-    basicConstraintParam = { cA: certificate.isCA };
+    basicConstraintParam = { extname: 'basicConstraints', cA: certificate.isCA };
   }
+  const keyUsageParam: any = {
+    extname: 'keyUsage',
+    names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'cRLSign'],
+  };
   const csr = new KJUR.asn1.csr.CertificationRequest({
     subject: {
       str: `/CN=${certificate.commonName}/O=${certificate.organizationName}/C=${certificate.countryName}`,
     },
     sbjpubkey: publicKeyPem,
-    extreq: [
-      { extname: 'basicConstraints', array: [basicConstraintParam] },
-      {
-        extname: 'keyUsage',
-        array: [
-          {
-            names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'crlSign'],
-          },
-        ],
-      },
-    ],
+    extreq: [basicConstraintParam, keyUsageParam],
     sigalg: certificate.signatureAlgorithm
       ? certificate.signatureAlgorithm
       : SignatureAlgorithmEnumType.ECDSA,

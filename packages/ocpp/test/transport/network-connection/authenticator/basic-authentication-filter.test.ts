@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { VariableAttribute } from '@citrineos/dal';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { aBasicAuthPasswordVariable } from '../../../providers/variable-attribute-provider.js';
@@ -268,7 +268,7 @@ describe('BasicAuthenticationFilter', () => {
     const passwordVariable = aBasicAuthPasswordVariable({
       ocppConnectionName: ocppConnectionName,
       value: storedPassword,
-    } as Partial<VariableAttribute>);
+    } as Partial<VariableAttributeDto>);
 
     deviceModelRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
   }

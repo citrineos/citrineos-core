@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation, Connector, Location } from '@dal/db/sequelize/index.js';
+import {
+  ChargingStation,
+  Connector,
+  Evse,
+  Location,
+  StatusNotification,
+} from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { OCPPVersion } from '@citrineos/types';
-import { Evse, EvseType, StatusNotification } from '../../../index.js';
+import { EvseType } from '../../../index.js';
 import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import {
   DrizzleChargingStationRepository,
