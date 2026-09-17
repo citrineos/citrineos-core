@@ -29,8 +29,7 @@ export function toInstallCertificateAttemptDto(
 ): InstallCertificateAttemptDto {
   const dto: Explicit<InstallCertificateAttemptDto> = {
     id: entity.id,
-    stationId: entity.stationId ?? null,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     certificateType: entity.certificateType as CertificateUseEnumType,
     certificateId: entity.certificateId ?? null,
     requestId: entity.requestId ?? null,
@@ -64,6 +63,11 @@ export class DrizzleInstallCertificateAttemptRepository
     certificateFileHash: string,
     requestId?: number | null,
   ): Promise<InstallCertificateAttemptDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     // Filter attempts by their linked certificate's file hash (Drizzle has no lazy `include`,
     // so this is an explicit inner join on the FK).
     const rows = (await this.db
@@ -76,7 +80,7 @@ export class DrizzleInstallCertificateAttemptRepository
       .where(
         and(
           eq(installCertificateAttemptTable.tenantId, tenantId),
-          eq(installCertificateAttemptTable.ocppConnectionName, ocppConnectionName),
+          eq(installCertificateAttemptTable.stationId, stationId),
           eq(installCertificateAttemptTable.certificateType, certificateType),
           isNull(installCertificateAttemptTable.status),
           eq(certificateTable.certificateFileHash, certificateFileHash),
@@ -94,13 +98,18 @@ export class DrizzleInstallCertificateAttemptRepository
     requestId?: number | null,
     certificateType?: CertificateUseEnumType,
   ): Promise<InstallCertificateAttemptDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const rows = await this.db
       .select()
       .from(installCertificateAttemptTable)
       .where(
         and(
           eq(installCertificateAttemptTable.tenantId, tenantId),
-          eq(installCertificateAttemptTable.ocppConnectionName, ocppConnectionName),
+          eq(installCertificateAttemptTable.stationId, stationId),
           isNull(installCertificateAttemptTable.status),
           requestId != null ? eq(installCertificateAttemptTable.requestId, requestId) : undefined,
           certificateType != null
@@ -115,11 +124,17 @@ export class DrizzleInstallCertificateAttemptRepository
 
   async createAttempt(
     tenantId: number,
-    input: InstallCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<InstallCertificateAttemptCreate, 'stationId'>,
   ): Promise<InstallCertificateAttemptDto> {
-    // Resolve stationId from ocppConnectionName + tenantId when the caller doesn't supply it.
-    const stationId =
-      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    // The row references its station by FK only; the caller supplies the name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot record an install-certificate attempt: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
     // Base insert spreads { ...values, tenantId } and emits 'created'.
     return await this.insert(tenantId, { ...input, stationId });
   }
@@ -164,7 +179,7 @@ export class DrizzleInstallCertificateAttemptRepository
   private async resolveStationId(
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<number | null> {
+  ): Promise<number | undefined> {
     const rows = await this.db
       .select({ id: chargingStationTable.id })
       .from(chargingStationTable)
@@ -176,6 +191,6 @@ export class DrizzleInstallCertificateAttemptRepository
       )
       .limit(1);
 
-    return rows[0]?.id ?? null;
+    return rows[0]?.id;
   }
 }

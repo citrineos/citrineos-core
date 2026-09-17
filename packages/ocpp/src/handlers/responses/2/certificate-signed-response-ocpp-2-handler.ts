@@ -20,6 +20,7 @@ import {
 } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
 import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned)
 export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
@@ -54,7 +55,7 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
 
     const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

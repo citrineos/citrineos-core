@@ -102,10 +102,11 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
         }
 
         if (chargingProfile.transactionId) {
-          chargingProfile.transactionId = undefined;
-          this._logger.warn(
-            `A transactionId cannot be provided in the ChargingProfile for station: ${ocppConnectionName}`,
-          );
+          results.push({
+            success: false,
+            payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+          });
+          continue;
         }
 
         try {

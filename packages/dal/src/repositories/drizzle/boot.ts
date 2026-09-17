@@ -117,7 +117,8 @@ export class DrizzleBootRepository
     const stationId = await this.findStationId(tenantId, key);
     if (stationId === undefined) {
       throw new Error(
-        `Cannot store boot configuration: no charging station ${key} exists for tenant ${tenantId}`,
+        `Cannot store boot configuration: no charging station named ` +
+          `'${key}' exists in tenant ${tenantId}.`,
       );
     }
 

@@ -7,7 +7,11 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import type { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, type QueryInterface } from 'sequelize';
 import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Authorization, DefaultSequelizeInstance, Tenant } from '@citrineos/dal';
+import {
+  DefaultSequelizeInstance,
+  type ITenantRepository,
+  SequelizeTenantRepository,
+} from '@citrineos/dal';
 import migration from '../../migrations/20260821120000-authorization-unique-constraint-nulls-not-distinct.js';
 
 const TOKEN = 'DEPOT-TOKEN-1';
@@ -16,6 +20,7 @@ const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let queryInterface: QueryInterface;
+let tenantRepository: ITenantRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -46,6 +51,11 @@ beforeAll(async () => {
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
   queryInterface = sequelizeInstance.getQueryInterface();
+  tenantRepository = new SequelizeTenantRepository({
+    config: {} as never,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -67,12 +77,11 @@ async function restorePreMigrationShape() {
 }
 
 function enrol(idToken: string, idTokenType: string | null, tenantId = DEFAULT_TENANT_ID) {
-  return Authorization.create({
-    idToken,
-    idTokenType,
-    status: 'Accepted',
-    tenantId,
-  } as never);
+  return sequelizeInstance.query(
+    `INSERT INTO "Authorizations" ("idToken", "idTokenType", "status", "tenantId", "createdAt", "updatedAt")
+     VALUES (:idToken, :idTokenType, 'Accepted', :tenantId, NOW(), NOW())`,
+    { replacements: { idToken, idTokenType, tenantId }, type: QueryTypes.INSERT },
+  );
 }
 
 async function uniqueConstraintNames(): Promise<string[]> {
@@ -87,10 +96,9 @@ async function uniqueConstraintNames(): Promise<string[]> {
 
 describe('Authorizations uniqueness across a nullable idTokenType', () => {
   beforeEach(async () => {
-    await Authorization.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await Tenant.create({ id: OTHER_TENANT_ID, name: 'B' } as never);
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
+    await tenantRepository.createTenant({ name: 'B', isUserTenant: false });
     await restorePreMigrationShape();
   });
 
@@ -99,7 +107,10 @@ describe('Authorizations uniqueness across a nullable idTokenType', () => {
 
     await expect(enrol(TOKEN, null)).resolves.toBeDefined();
 
-    const rows = await Authorization.findAll({ where: { idToken: TOKEN } });
+    const rows = await sequelizeInstance.query(
+      'SELECT id FROM "Authorizations" WHERE "idToken" = :idToken',
+      { replacements: { idToken: TOKEN }, type: QueryTypes.SELECT },
+    );
     expect(rows).toHaveLength(2);
   });
 

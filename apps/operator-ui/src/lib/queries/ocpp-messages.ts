@@ -19,7 +19,7 @@ export const GET_OCPP_MESSAGES_LIST_FOR_STATION = gql`
       limit: $limit
     ) {
       id
-      ocppConnectionName
+      stationId
       correlationId
       origin
       type
@@ -42,7 +42,7 @@ export const GET_OCPP_MESSAGES_LIST_FOR_STATION = gql`
 export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
   query OCPPMessageList(
     $ocppTransactionId: Int
-    $ocppConnectionName: String
+    $stationId: Int
     $offset: Int!
     $limit: Int!
     $order_by: [OCPPMessages_order_by!]
@@ -55,7 +55,7 @@ export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
       where: {
         _and: [
           { payload: { _contains: { transactionId: $ocppTransactionId } } }
-          { ocppConnectionName: { _eq: $ocppConnectionName } }
+          { stationId: { _eq: $stationId } }
           {
             _or: [
               {
@@ -86,7 +86,7 @@ export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
       }
     ) {
       id
-      ocppConnectionName
+      stationId
       action
       protocol
       type
@@ -99,7 +99,7 @@ export const GET_OCPP_MESSAGES_FOR_TRANSACTION_LIST_QUERY = gql`
       where: {
         _and: [
           { payload: { _contains: { transactionId: $ocppTransactionId } } }
-          { ocppConnectionName: { _eq: $ocppConnectionName } }
+          { stationId: { _eq: $stationId } }
           {
             _or: [
               {

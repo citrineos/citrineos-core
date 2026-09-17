@@ -2,12 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type IMessageContext } from '@citrineos/base';
-import type {
-  Authorization,
-  IAuthorizationRepository,
-  IChargingStationRepository,
-} from '@citrineos/dal';
+import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
   AuthorizationWhitelistEnum,
   type ConnectorDto,
@@ -30,7 +27,7 @@ function buildMockAuthorizationRepository(): Mocked<IAuthorizationRepository> {
   } as unknown as Mocked<IAuthorizationRepository>;
 }
 
-function buildAuthorization(overrides: Record<string, unknown> = {}): Authorization {
+function buildAuthorization(overrides: Record<string, unknown> = {}): AuthorizationDto {
   return {
     id: 42,
     realTimeAuthUrl: 'http://realtime-auth.test/check',
@@ -41,7 +38,7 @@ function buildAuthorization(overrides: Record<string, unknown> = {}): Authorizat
     idTokenType: 'ISO14443',
     realTimeAuthLastAttempt: undefined,
     ...overrides,
-  } as unknown as Authorization;
+  } as unknown as AuthorizationDto;
 }
 
 function buildContext(): IMessageContext {
@@ -128,7 +125,7 @@ describe('RealTimeAuthorizer', () => {
     expect(tenantId).toBe(context.tenantId);
     expect(key).toBe(String(authorization.id));
     expect(value).toBe(authorization);
-    expect((value as Authorization).realTimeAuthLastAttempt).toEqual({
+    expect((value as AuthorizationDto).realTimeAuthLastAttempt).toEqual({
       timestamp: expect.any(String),
       result: AuthorizationStatusEnum.Accepted,
       ocppConnectionName: context.ocppConnectionName,

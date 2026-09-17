@@ -39,7 +39,7 @@ test.describe('charging-stations › cp001 navigation surface @everest', () => {
     });
 
     await test.step('2. Operator opens cp001 detail page', async () => {
-      await detail.goto(everestStation.id);
+      await detail.goto(everestStation.ocppConnectionName);
       await expect(detail.commandBar.resetButton).toBeVisible();
     });
 

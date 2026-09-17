@@ -11,7 +11,7 @@ import { type Locator, type Page, expect } from '@playwright/test';
 // is disabled in edit-from-location-context paths.
 //
 // The OCPP identifier column is `ocppConnectionName` and the form binds it
-// to a field labelled "Name". The numeric route param is `id`.
+// to a field labelled "Name". It is also the route segment for the edit page.
 
 export interface ChargingStationFormPayload {
   readonly name?: string; // ocppConnectionName
@@ -21,8 +21,8 @@ export interface ChargingStationFormPayload {
 
 export class ChargingStationFormPage {
   static readonly newPath = '/charging-stations/new';
-  static editPath(id: number | string): string {
-    return `/charging-stations/${id}/edit`;
+  static editPath(ocppConnectionName: string): string {
+    return `/charging-stations/${encodeURIComponent(ocppConnectionName)}/edit`;
   }
 
   readonly heading: Locator;
@@ -54,8 +54,8 @@ export class ChargingStationFormPage {
     await this.expectLoaded();
   }
 
-  async gotoEdit(id: number | string): Promise<void> {
-    await this.page.goto(ChargingStationFormPage.editPath(id), {
+  async gotoEdit(ocppConnectionName: string): Promise<void> {
+    await this.page.goto(ChargingStationFormPage.editPath(ocppConnectionName), {
       waitUntil: 'domcontentloaded',
     });
     await this.expectLoaded();

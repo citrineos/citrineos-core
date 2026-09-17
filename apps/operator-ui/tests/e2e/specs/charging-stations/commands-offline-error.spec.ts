@@ -14,7 +14,7 @@ test.describe('charging-stations › offline command rejection', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.resetButton.click();
     const modal = new ModalHarness(page, /reset/i);

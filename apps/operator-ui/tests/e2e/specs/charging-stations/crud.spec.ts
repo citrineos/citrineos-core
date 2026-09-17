@@ -5,6 +5,7 @@
 import { test, expect } from '../../fixtures';
 import { ChargingStationsListPage } from '../../pages/charging-stations/list-page';
 import { ChargingStationFormPage } from '../../pages/charging-stations/form-page';
+import { ChargingStationDetailPage } from '../../pages/charging-stations/detail-page';
 import { deleteStation } from '../../fixtures/seeded-data';
 import { shortId } from '../../utils/random';
 
@@ -53,7 +54,7 @@ test.describe('charging-stations › CRUD', () => {
     seededStation,
   }) => {
     const form = new ChargingStationFormPage(page);
-    await form.gotoEdit(seededStation.id);
+    await form.gotoEdit(seededStation.ocppConnectionName);
     // The prefill lands after the edit query resolves, later than the heading.
     await expect(form.heading).toContainText(/edit charging\s*station/i, { timeout: 30_000 });
     await expect(form.nameInput).toHaveValue(seededStation.ocppConnectionName, {
@@ -66,7 +67,7 @@ test.describe('charging-stations › CRUD', () => {
     await form.floorLevelInput.fill(newFloor);
     await form.submit();
 
-    await form.gotoEdit(seededStation.id);
+    await form.gotoEdit(seededStation.ocppConnectionName);
     await expect(form.floorLevelInput).toHaveValue(newFloor, {
       timeout: 30_000,
     });
@@ -99,7 +100,7 @@ test.describe('charging-stations › CRUD', () => {
     );
 
     try {
-      await page.goto(`/charging-stations/${created.id}`);
+      await page.goto(ChargingStationDetailPage.path(name));
       const deleteButton = page.getByRole('button', { name: /^delete/i });
       await expect(deleteButton).toBeEnabled({ timeout: 30_000 });
       await deleteButton.click();

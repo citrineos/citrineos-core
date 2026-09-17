@@ -133,8 +133,7 @@ export class InstallCertificateHelperService {
           signatureAlgorithm,
         );
       }
-      await this.installCertificateAttemptRepository.createAttempt(tenantId, {
-        ocppConnectionName,
+      await this.installCertificateAttemptRepository.createAttempt(tenantId, ocppConnectionName, {
         certificateType,
         certificateId: existingCertificate!.id!,
         ...(requestId != null ? { requestId } : {}),
@@ -158,8 +157,7 @@ export class InstallCertificateHelperService {
       );
 
     if (!existingPendingDeleteCertificateAttempt) {
-      await this.deleteCertificateAttemptRepository.createAttempt(tenantId, {
-        ocppConnectionName,
+      await this.deleteCertificateAttemptRepository.createAttempt(tenantId, ocppConnectionName, {
         hashAlgorithm: certificateHashData.hashAlgorithm,
         issuerNameHash: certificateHashData.issuerNameHash,
         issuerKeyHash: certificateHashData.issuerKeyHash,
@@ -232,14 +230,23 @@ export class InstallCertificateHelperService {
     status: InstallCertificateStatusEnumType,
     requestId?: number,
     certificateType?: CertificateUseEnumType,
+    certificate?: string,
   ) {
     const existingPendingInstallCertificateAttempt =
-      await this.installCertificateAttemptRepository.findPendingByStation(
-        tenantId,
-        ocppConnectionName,
-        requestId,
-        certificateType,
-      );
+      certificate && certificateType
+        ? await this.installCertificateAttemptRepository.findPendingByStationTypeAndCertHash(
+            tenantId,
+            ocppConnectionName,
+            certificateType,
+            this.getCertificateHash(certificate),
+            requestId,
+          )
+        : await this.installCertificateAttemptRepository.findPendingByStation(
+            tenantId,
+            ocppConnectionName,
+            requestId,
+            certificateType,
+          );
     // should always be true
     if (existingPendingInstallCertificateAttempt) {
       await this.installCertificateAttemptRepository.updateStatus(
@@ -277,11 +284,14 @@ export class InstallCertificateHelperService {
             const certificateString = certificateBuffer.toString();
             const cert = new jsrsasign.X509();
             cert.readCertPEM(certificateString);
-            await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
+            await this.installedCertificateRepository.createInstalledCertificate(
+              tenantId,
               ocppConnectionName,
-              certificateType: existingPendingInstallCertificateAttempt.certificateType,
-              certificateId: existingPendingInstallCertificateAttempt.certificateId,
-            });
+              {
+                certificateType: existingPendingInstallCertificateAttempt.certificateType,
+                certificateId: existingPendingInstallCertificateAttempt.certificateId,
+              },
+            );
           }
         }
       }
@@ -301,7 +311,7 @@ export class InstallCertificateHelperService {
   ): Promise<CertificateDto> {
     const certificateHash = this.getCertificateHash(certificate);
     const certificateFileId = await this.fileStorage.saveFile(
-      `Existing_Cert_${serialNumber}.pem`,
+      `Existing_Cert_${certificateHash}.pem`,
       Buffer.from(certificate),
     );
     return await this.certificateRepository.createCertificate(tenantId, {
@@ -411,8 +421,7 @@ export class InstallCertificateHelperService {
         );
       }
       existingInstalledCertificate =
-        await this.installedCertificateRepository.createInstalledCertificate(tenantId, {
-          ocppConnectionName: identifier,
+        await this.installedCertificateRepository.createInstalledCertificate(tenantId, identifier, {
           certificateType: uploadExistingCertificate.certificateType,
           certificateId: existingCertificate.id!,
         });

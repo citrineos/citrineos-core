@@ -40,6 +40,7 @@ export class SequelizeMessageInfoRepository
     return await this.s.transaction(async (transaction) => {
       const savedMessageInfo = await this.s.models[MessageInfo.MODEL_NAME].findOne({
         where: {
+          tenantId: tenantId,
           ocppConnectionName: ocppConnectionName,
           id: message.id,
         },

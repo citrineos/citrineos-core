@@ -53,7 +53,7 @@ export const OCPPMessagesExportDialog = ({
     pageSize: 100,
     mapData: (ocppMessage) => {
       return {
-        ocppConnectionName: ocppMessage.ocppConnectionName,
+        stationId: ocppMessage.stationId,
         correlationId: ocppMessage.correlationId,
         timestamp: ocppMessage.timestamp,
         origin: ocppMessage.origin,

@@ -3,9 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Op } from 'sequelize';
+import type { ChargingStationNetworkProfileDto } from '@citrineos/types';
 import type { IChargingStationNetworkProfileRepository } from '../repositories.js';
 import { ChargingStationNetworkProfile } from '../../models/location/charging-station-network-profile.js';
+import { ServerNetworkProfile } from '../../models/location/server-network-profile.js';
+import { SetNetworkProfile } from '../../models/location/set-network-profile.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 export class SequelizeChargingStationNetworkProfileRepository
   extends SequelizeRepository<ChargingStationNetworkProfile>
@@ -20,18 +24,49 @@ export class SequelizeChargingStationNetworkProfileRepository
     });
   }
 
+  async readAllByOcppConnectionName(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ChargingStationNetworkProfile[]> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
+    return this.readAllByQuery(tenantId, {
+      where: { stationId, tenantId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
+  }
+
   async deleteAllByStationIdAndConfigurationSlots(
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
   ): Promise<ChargingStationNetworkProfile[]> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
     return this.deleteAllByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         tenantId,
         configurationSlot: { [Op.in]: configurationSlot },
       },
     });
+  }
+
+  async readAllByStationIdWithProfiles(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ChargingStationNetworkProfileDto[]> {
+    const rows = await this.readAllByQuery(tenantId, {
+      where: { ocppConnectionName, tenantId },
+      include: [SetNetworkProfile, ServerNetworkProfile],
+    });
+    return rows as unknown as ChargingStationNetworkProfileDto[];
   }
 }
 
