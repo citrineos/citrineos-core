@@ -436,7 +436,7 @@ export class SequelizeTransactionEventRepository
     return await super
       .readAllByQuery(tenantId, {
         where: { ocppConnectionName: ocppConnectionName },
-        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse],
+        include: [{ model: Transaction, where: { transactionId } }, MeterValue, EvseType],
       })
       .then((transactionEvents) => {
         transactionEvents?.forEach(
