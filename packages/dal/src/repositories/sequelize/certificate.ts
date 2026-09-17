@@ -41,6 +41,7 @@ export class SequelizeCertificateRepository
     return await this.s.transaction(async (transaction) => {
       const savedCert = await this.s.models[Certificate.MODEL_NAME].findOne({
         where: {
+          tenantId,
           serialNumber: input.serialNumber,
           issuerName: input.issuerName,
         },
