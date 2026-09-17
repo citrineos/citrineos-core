@@ -81,9 +81,9 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
     sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
     filters: [
       {
-        field: OCPPMessageProps.ocppConnectionName,
+        field: OCPPMessageProps.stationId,
         operator: 'eq',
-        value: station?.ocppConnectionName,
+        value: station?.id,
       },
     ],
     pagination: { pageSize: 1, currentPage: 1 },

@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import {
   type IChangeConfigurationRepository,
   type IDeviceModelRepository,
   type ILocalAuthListRepository,
   LocalListVersion,
   SendLocalList,
-  VariableAttribute,
 } from '@citrineos/dal';
 import { LocalAuthListService } from '@modules/ev-driver/local-auth-list-service.js';
 import { OCPP2_0_1, type VariableCharacteristicsDto } from '@citrineos/types';
@@ -241,9 +241,9 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const mockEntriesAttribute = vi.mocked<VariableAttribute>({
+    const mockEntriesAttribute = vi.mocked<VariableAttributeDto>({
       variable: { variableCharacteristics: { maxLimit: 1 } },
-    } as unknown as VariableAttribute);
+    } as unknown as VariableAttributeDto);
 
     mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(undefined); // No previous list version
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
@@ -311,9 +311,9 @@ describe('LocalAuthListService', () => {
       versionNumber: newVersionNumber,
     } as unknown as SendLocalList);
 
-    const mockEntriesAttribute = vi.mocked<VariableAttribute>({
+    const mockEntriesAttribute = vi.mocked<VariableAttributeDto>({
       variable: { variableCharacteristics: {} },
-    } as unknown as VariableAttribute);
+    } as unknown as VariableAttributeDto);
 
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
@@ -370,11 +370,11 @@ describe('LocalAuthListService', () => {
     const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
       maxLimit: 10,
     });
-    const mockVariableAttribute = vi.mocked<VariableAttribute>({
+    const mockVariableAttribute = vi.mocked<VariableAttributeDto>({
       ocppConnectionName: ocppConnectionName,
       dataType: OCPP2_0_1.DataEnumType.integer,
       value: '1', // Max 1 item per message
-    } as unknown as VariableAttribute);
+    } as unknown as VariableAttributeDto);
 
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
@@ -435,11 +435,11 @@ describe('LocalAuthListService', () => {
     const testMockVariableCharacteristics = Object.assign({}, baseMockVariableCharacteristics, {
       maxLimit: 10,
     });
-    const mockVariableAttribute = vi.mocked<VariableAttribute>({
+    const mockVariableAttribute = vi.mocked<VariableAttributeDto>({
       ocppConnectionName: ocppConnectionName,
       dataType: OCPP2_0_1.DataEnumType.integer,
       value: '3', // Max 1 item per message
-    } as unknown as VariableAttribute);
+    } as unknown as VariableAttributeDto);
 
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
@@ -456,6 +456,59 @@ describe('LocalAuthListService', () => {
         correlationId,
         sendLocalListRequest,
       );
+    expect(result).toEqual(mockSendLocalList);
+  });
+
+  it('counts a differential removal as freeing a slot, not taking one', async () => {
+    const newVersionNumber = 3;
+    const sendLocalListRequest = {
+      versionNumber: newVersionNumber,
+      updateType: OCPP2_0_1.UpdateEnumType.Differential,
+      localAuthorizationList: [
+        { idToken: { idToken: 'C', type: 'Central' } },
+        { idToken: { idToken: 'D', type: 'Central' }, idTokenInfo: { status: 'Accepted' } },
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
+    };
+
+    const currentVersion = vi.mocked<LocalListVersion>({
+      ocppConnectionName: ocppConnectionName,
+      versionNumber: initialVersionNumber,
+      localAuthorizationList: [
+        { authorizationId: 1, idToken: 'A', status: 'Accepted' },
+        { authorizationId: 2, idToken: 'B', status: 'Accepted' },
+        { authorizationId: 3, idToken: 'C', status: 'Accepted' },
+      ],
+    } as unknown as LocalListVersion);
+
+    const mockSendLocalList = vi.mocked<SendLocalList>({
+      correlationId: correlationId,
+      ocppConnectionName: ocppConnectionName,
+      updateType: OCPP2_0_1.UpdateEnumType.Differential,
+      versionNumber: newVersionNumber,
+      localAuthorizationList: [
+        { idToken: 'C', idTokenType: 'Central', status: 'Invalid' },
+        { authorizationId: 4, idToken: 'D', idTokenType: 'Central', status: 'Accepted' },
+      ],
+    } as unknown as SendLocalList);
+
+    const mockEntriesAttribute = vi.mocked<VariableAttributeDto>({
+      variable: { variableCharacteristics: { maxLimit: 3 } },
+    } as unknown as VariableAttributeDto);
+
+    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(currentVersion);
+    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+      mockSendLocalList,
+    );
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
+
+    const result =
+      await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
+        ocppConnectionName,
+        correlationId,
+        sendLocalListRequest,
+      );
+
     expect(result).toEqual(mockSendLocalList);
   });
 

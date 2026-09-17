@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { VariableAttribute } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,
   DefaultSequelizeInstance,
   SequelizeDeviceModelRepository,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
 import { Tenant } from '../../../src/models/tenant.js';
@@ -90,13 +90,16 @@ function makeRepo(): SequelizeDeviceModelRepository {
   return new SequelizeDeviceModelRepository({ config: {} as SystemConfig, sequelizeInstance });
 }
 
+let stationId: number;
+
 async function seedBase(): Promise<void> {
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
     tenantId: TENANT_ID,
   });
+  stationId = station.id;
 }
 
 async function seedVariableAttribute(
@@ -108,7 +111,7 @@ async function seedVariableAttribute(
   const component = await Component.create({ name: componentName, tenantId: TENANT_ID });
   const variable = await Variable.create({ name: variableName, tenantId: TENANT_ID });
   return VariableAttribute.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+    stationId,
     componentId: component.id,
     variableId: variable.id,
     type,
@@ -144,7 +147,7 @@ describe('createOrUpdateByGetVariablesResultAndStationId', () => {
       );
 
       const updated = await VariableAttribute.findOne({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(updated?.value).toBe('new-value');
     });
@@ -198,7 +201,7 @@ describe('createOrUpdateByGetVariablesResultAndStationId', () => {
       );
 
       const attr = await VariableAttribute.findOne({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(attr?.value).toBe('original-value');
     });
@@ -256,7 +259,7 @@ describe('createOrUpdateByGetVariablesResultAndStationId', () => {
       );
 
       const attr = await VariableAttribute.findOne({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(attr?.value).toBe('original-value');
     });

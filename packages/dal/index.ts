@@ -10,28 +10,21 @@ export * from './src/interfaces/index.js';
 export * from 'sequelize-typescript';
 export type { PaginatedParams } from './src/db/sequelize/index.js';
 export {
-  Authorization,
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
   Component,
   DefaultSequelizeInstance,
-  Evse,
   MeterValue,
-  Tariff,
   StartTransaction,
   Transaction,
   EvseType,
   Variable,
-  VariableAttribute,
   VariableStatus,
   CountryNameEnumType,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-  StatusNotification,
   ChargingStationNetworkProfile,
   AsyncJobStatusDTO,
   SignatureAlgorithmEnumType,
@@ -70,6 +63,11 @@ export {
 export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profile-mapper.js';
 export type { TariffData } from './src/models/tariff/tariffs.js';
 export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
+export {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './src/repositories/sequelize/resolve-station-id.js';
 export {
   DefaultDrizzleInstance,
   DrizzleAuthorizationRepository,

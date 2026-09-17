@@ -30,6 +30,12 @@ import { asValue } from 'awilix';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 const SIGN_REQUEST_ID = 42;
@@ -37,7 +43,7 @@ const SIGN_REQUEST_ID = 42;
 // Both certificate response handlers look up the original CSMS-originated request by correlation id.
 const ORIGINAL_REQUEST_QUERY = {
   where: {
-    ocppConnectionName: STATION,
+    stationId: STATION_DB_ID,
     correlationId: CORRELATION_ID,
     origin: MessageOrigin.ChargingStationManagementSystem,
   },
@@ -212,7 +218,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
     installCertificateHelperService = makeInstallCertificateHelperService();
   });
 
-  it('finalizes with the certificate type from the original request and no requestId', async () => {
+  it('finalizes with the certificate and type from the original request and no requestId', async () => {
     ocppMessageRepository = makeOcppMessageRepository({
       payload: {
         certificate: 'pem-cert',
@@ -239,6 +245,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
       OCPP2_0_1.InstallCertificateStatusEnumType.Accepted,
       undefined,
       OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate,
+      'pem-cert',
     );
   });
 
@@ -257,6 +264,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
       DEFAULT_TENANT_ID,
       STATION,
       OCPP2_0_1.InstallCertificateStatusEnumType.Failed,
+      undefined,
       undefined,
       undefined,
     );

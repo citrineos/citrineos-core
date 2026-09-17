@@ -71,18 +71,17 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
     const lockTimeout = request.body.timeout ?? DEFAULT_LOCK_TIMEOUT_SECONDS;
 
     let sharedSecret: string | undefined;
+    let validityTime: number;
+    let totpLength: number;
     try {
-      const sharedSecretAttrs = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-        tenantId,
-        ocppConnectionName: identifier,
-        component_name: 'WebPaymentsCtrlr',
-        variable_name: 'SharedSecret',
-        type: AttributeEnum.Actual,
-      });
-      sharedSecret = sharedSecretAttrs[0]?.value ?? undefined;
+      sharedSecret = await this._readWebPaymentsCtrlrValue(tenantId, identifier, 'SharedSecret');
+      validityTime = Number(
+        await this._readWebPaymentsCtrlrValue(tenantId, identifier, 'ValidityTime'),
+      );
+      totpLength = Number(await this._readWebPaymentsCtrlrValue(tenantId, identifier, 'Length'));
     } catch (error) {
       this._logger.error(
-        `Failed to read WebPaymentsCtrlr.SharedSecret for station ${identifier}`,
+        `Failed to read WebPaymentsCtrlr configuration for station ${identifier}`,
         error,
       );
       return reply
@@ -95,7 +94,19 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
       return reply.code(503).send({ error: 'Web payment not configured for this station.' });
     }
 
-    if (!TotpUtil.validate(sharedSecret, totp)) {
+    if (
+      !Number.isInteger(validityTime) ||
+      validityTime <= 0 ||
+      !Number.isInteger(totpLength) ||
+      totpLength <= 0
+    ) {
+      this._logger.warn(
+        `WebPaymentsCtrlr.ValidityTime or Length not configured for station ${identifier}`,
+      );
+      return reply.code(503).send({ error: 'Web payment not configured for this station.' });
+    }
+
+    if (!TotpUtil.validate(sharedSecret, totp, validityTime, totpLength)) {
       this._logger.warn(
         `TOTP validation failed for station ${identifier}, evseId=${evseId}. ` +
           'QR code may be expired or fraudulent.',
@@ -135,6 +146,21 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
       timeout: lockTimeout,
       limits,
     });
+  }
+
+  private async _readWebPaymentsCtrlrValue(
+    tenantId: number,
+    ocppConnectionName: string,
+    variableName: string,
+  ): Promise<string | undefined> {
+    const attributes = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      tenantId,
+      ocppConnectionName,
+      component_name: 'WebPaymentsCtrlr',
+      variable_name: variableName,
+      type: AttributeEnum.Actual,
+    });
+    return attributes[0]?.value ?? undefined;
   }
 
   private async _notifyStation(

@@ -6,7 +6,6 @@ import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-c
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
@@ -76,20 +75,21 @@ afterAll(async () => {
 });
 
 async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number[]) {
-  await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
+  const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
   });
+  // Evses link to the station by FK only, so the seed needs the id back.
+  const stationId = (station as unknown as { id: number }).id;
   for (const evseNumber of evseNumbers) {
     await EvseType.findOrCreate({
       where: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null },
       defaults: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null } as never,
     });
-    await Evse.create({
-      tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+    await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
+      stationId,
       evseTypeId: evseNumber,
-    } as never);
+    });
   }
 }
 

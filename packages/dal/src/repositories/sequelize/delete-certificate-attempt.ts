@@ -8,8 +8,8 @@ import type {
   DeleteCertificateStatusEnumType,
 } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 import { DeleteCertificateAttempt } from '../../models/certificate/delete-certificate-attempt.js';
-import { ChargingStation } from '../../models/location/index.js';
 import type { IDeleteCertificateAttemptRepository } from '../repositories.js';
 
 type DeleteCertificateHashData = Pick<
@@ -30,9 +30,13 @@ export class SequelizeDeleteCertificateAttemptRepository
     ocppConnectionName: string,
     hashData: DeleteCertificateHashData,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         hashAlgorithm: hashData.hashAlgorithm,
         issuerNameHash: hashData.issuerNameHash,
         issuerKeyHash: hashData.issuerKeyHash,
@@ -46,9 +50,13 @@ export class SequelizeDeleteCertificateAttemptRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         status: null,
       },
     });
@@ -56,10 +64,14 @@ export class SequelizeDeleteCertificateAttemptRepository
 
   async createAttempt(
     tenantId: number,
-    input: DeleteCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<DeleteCertificateAttemptCreate, 'stationId'>,
   ): Promise<DeleteCertificateAttemptDto> {
-    const stationId =
-      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record a delete-certificate attempt',
+    );
     const attempt = DeleteCertificateAttempt.build({ ...input, stationId, tenantId });
     const saved = await attempt.save();
     this.emit('created', [saved]);
@@ -72,17 +84,6 @@ export class SequelizeDeleteCertificateAttemptRepository
     status: DeleteCertificateStatusEnumType,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
     return await this.updateByKey(tenantId, { status }, id.toString());
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | null> {
-    const station = await ChargingStation.findOne({
-      where: { ocppConnectionName, tenantId },
-      attributes: ['id'],
-    });
-    return station?.id ?? null;
   }
 }
 

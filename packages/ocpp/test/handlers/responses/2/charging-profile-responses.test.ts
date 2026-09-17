@@ -34,6 +34,12 @@ import type { IdGenerator } from '@util/index.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 const REQUEST_ID = 77;
@@ -229,7 +235,7 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
     });
   });
 
-  it('neither writes nor sends when the station rejected the profile', async () => {
+  it('re-reads the CSO profiles without deactivating when the station rejected the profile', async () => {
     await handler.handle(
       makeMessage(OCPP_CallAction.SetChargingProfile, OCPPVersion.OCPP2_0_1, {
         status: ChargingProfileStatusEnum.Rejected,
@@ -237,10 +243,23 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
     );
 
     expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
-    expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to set charging profile: ${JSON.stringify({ status: ChargingProfileStatusEnum.Rejected })}`,
     );
+    expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
+    expect(ocppSender.sendCall).toHaveBeenCalledWith({
+      ocppConnectionName: STATION,
+      tenantId: DEFAULT_TENANT_ID,
+      protocol: OCPPVersion.OCPP2_0_1,
+      action: OCPP_CallAction.GetChargingProfiles,
+      eventGroup: EventGroup.SmartCharging,
+      payload: {
+        requestId: REQUEST_ID,
+        chargingProfile: {
+          chargingLimitSource: [ChargingLimitSourceEnum.CSO],
+        },
+      },
+    });
   });
 });
 
@@ -285,7 +304,7 @@ describe('SetDefaultTariffResponseOcpp21Handler', () => {
     expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
       where: {
         tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: STATION,
+        stationId: STATION_DB_ID,
         correlationId: CORRELATION_ID,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

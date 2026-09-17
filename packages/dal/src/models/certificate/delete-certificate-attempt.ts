@@ -26,14 +26,13 @@ export class DeleteCertificateAttempt extends Model {
   static readonly MODEL_NAME: string = OCPP2_Namespace.DeleteCertificateAttempt;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationId?: number;
-
   @Column({
-    type: DataType.STRING(36),
+    type: DataType.INTEGER,
     allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
   })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare station?: ChargingStationDto;

@@ -9,11 +9,11 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
-  Evse,
   DrizzleChargingStationRepository,
   SequelizeLocationRepository,
-  ServerNetworkProfile,
 } from '../../../index.js';
+import { Evse } from '../../../src/models/location/evse.js';
+import { ServerNetworkProfile } from '../../../src/models/location/server-network-profile.js';
 import { Connector } from '../../../src/models/location/connector.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
@@ -105,7 +105,6 @@ async function aConnector(stationId: number, evseId: number, connectorId: number
     stationId,
     evseId,
     connectorId,
-    ocppConnectionName: STATION,
     status: 'Available',
     errorCode: 'NoError',
     timestamp: new Date().toISOString(),

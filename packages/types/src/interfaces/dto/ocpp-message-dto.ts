@@ -13,8 +13,7 @@ import {
 
 export const OCPPMessageWithoutRequestResponseSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  ocppConnectionName: z.string(),
-  stationId: z.number().int().optional(),
+  stationId: z.number().int(),
   correlationId: z.string().optional(),
   origin: MessageOriginSchema,
   type: MessageTypeSchema.optional(),

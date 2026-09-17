@@ -6,7 +6,6 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_common_types, type SystemConfig } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeDeviceModelRepository,
@@ -95,6 +94,14 @@ async function aStation(ocppConnectionName: string) {
   });
 }
 
+async function stationIdOf(ocppConnectionName: string): Promise<number> {
+  const station = await locationRepository.readChargingStationByOcppConnectionName(
+    DEFAULT_TENANT_ID,
+    ocppConnectionName,
+  );
+  return (station as unknown as { id: number }).id;
+}
+
 /** Adds one commissioned EVSE to a station and returns its database id. */
 async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Promise<number> {
   await EvseType.create({
@@ -102,12 +109,11 @@ async function anEvseOn(ocppConnectionName: string, ocppEvseNumber: number): Pro
     id: nextEvseTypeNumber++,
     connectorId: null,
   } as never);
-  const evse = await Evse.create({
-    tenantId: DEFAULT_TENANT_ID,
-    ocppConnectionName,
+  const evse = await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
+    stationId: await stationIdOf(ocppConnectionName),
     evseTypeId: ocppEvseNumber,
-  } as never);
-  return (evse as unknown as { id: number }).id;
+  });
+  return evse.id!;
 }
 
 function aTxProfile() {
@@ -149,7 +155,7 @@ describe('Charging needs for a transaction on a station EVSE', () => {
 
     await Transaction.create({
       tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName: STATION,
+      stationId: await stationIdOf(STATION),
       transactionId: TRANSACTION_ID,
       isActive: true,
       evseId: ownEvseDatabaseId,

@@ -32,7 +32,7 @@ export const TRANSACTION_LIST_QUERY = gql`
       authorization: Authorization {
         ${AUTHORIZATION_FIELDS.omit('allowedConnectorTypes', 'disallowedEvseIdPrefixes', 'realTimeAuth', 'realTimeAuthUrl')}
       }
-      chargingStation: ChargingStation {
+      station: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
           ${LOCATION_CORE_FIELDS}
@@ -62,7 +62,7 @@ export const GET_TRANSACTIONS_FOR_AUTHORIZATION = gql`
       where: { _and: [{ authorizationId: { _eq: $id } }, $where] }
     ) {
       ${TRANSACTION_DETAIL_FIELDS}
-      chargingStation: ChargingStation {
+      station: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS}
         location: Location {
           ${LOCATION_CORE_FIELDS}
@@ -113,7 +113,7 @@ export const GET_TRANSACTION_LIST_FOR_STATION = gql`
         id
         idToken
       }
-      chargingStation: ChargingStation {
+      station: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS.omit('ocppConnectionName', 'protocol')}
         location: Location {
           ${LOCATION_CORE_FIELDS}

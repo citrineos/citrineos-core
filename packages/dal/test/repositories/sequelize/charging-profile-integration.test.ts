@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation } from '@dal/db/sequelize/index.js';
+import { ChargingStation, Evse } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
-  Evse,
   SequelizeChargingProfileRepository,
   Transaction,
 } from '../../../index.js';
@@ -87,6 +86,13 @@ async function aStation(ocppConnectionName = STATION, tenantId = TENANT_A) {
   return ChargingStation.create({ ocppConnectionName, isOnline: true, tenantId } as any);
 }
 
+async function stationIdOf(ocppConnectionName = STATION, tenantId = TENANT_A): Promise<number> {
+  const row = (await ChargingStation.findOne({
+    where: { ocppConnectionName, tenantId },
+  })) as unknown as { id: number };
+  return row.id;
+}
+
 async function aProfileRow(overrides: Record<string, unknown> = {}) {
   return ChargingProfile.create({
     id: 1,
@@ -101,14 +107,15 @@ async function aProfileRow(overrides: Record<string, unknown> = {}) {
 
 // Transaction.evseId is a foreign key to the Evse PK; the OCPP evse id lives on Evse.evseTypeId.
 async function anActiveTxOnEvse(evseTypeId: number, overrides: Record<string, unknown> = {}) {
+  const stationId = await stationIdOf();
   const evse = await Evse.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION,
+    stationId,
     evseTypeId,
   } as any);
   const tx = await Transaction.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION,
+    stationId,
     transactionId: 'tx-1',
     isActive: true,
     evseId: evse.id,
@@ -212,7 +219,7 @@ describe('SequelizeChargingProfileRepository', () => {
       await aStation();
       const tx = await Transaction.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(),
         transactionId: 'tx-100',
         isActive: true,
       } as any);
@@ -381,7 +388,7 @@ describe('SequelizeChargingProfileRepository', () => {
       await aStation();
       const evse = await Evse.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(),
         evseTypeId: 2,
       } as any);
 
@@ -397,9 +404,10 @@ describe('SequelizeChargingProfileRepository', () => {
     });
 
     it('stores null when the reported EVSE only exists for another tenant', async () => {
+      await aStation(STATION, TENANT_B);
       await Evse.create({
         tenantId: TENANT_B,
-        ocppConnectionName: STATION,
+        stationId: await stationIdOf(STATION, TENANT_B),
         evseTypeId: 2,
       } as any);
 

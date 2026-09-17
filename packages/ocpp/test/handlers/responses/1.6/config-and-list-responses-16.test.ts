@@ -36,6 +36,12 @@ import {
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 
@@ -189,7 +195,7 @@ describe('ChangeConfigurationResponseOcpp16Handler', () => {
 
     expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
       where: {
-        ocppConnectionName: STATION,
+        stationId: STATION_DB_ID,
         correlationId: CORRELATION_ID,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },
@@ -289,7 +295,7 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
     expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
       where: {
         tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: STATION,
+        stationId: STATION_DB_ID,
         correlationId: CORRELATION_ID,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

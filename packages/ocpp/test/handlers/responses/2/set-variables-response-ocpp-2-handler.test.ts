@@ -20,9 +20,9 @@ import {
   type IOCPPMessageRepository,
   SequelizeOCPPMessageRepository,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
+import { VariableAttribute } from '@dal/models/device-model/variable-attribute.js';
 import { SetVariablesResponseOcpp2Handler } from '@handlers/index.js';
 import {
   aSetVariableData,
@@ -152,12 +152,15 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 // Seed helpers
 // ---------------------------------------------------------------------------
 
+let stationId: number;
+
 async function seedBase(): Promise<void> {
   await tenantRepository.createTenant({ name: String(TENANT_ID), isUserTenant: false });
-  await locationRepository.createOrUpdateChargingStation(TENANT_ID, {
+  const station = await locationRepository.createOrUpdateChargingStation(TENANT_ID, {
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
   });
+  stationId = (station as unknown as { id: number }).id;
 }
 
 async function seedComponent(name: string, instance: string | null = null): Promise<Component> {
@@ -175,7 +178,7 @@ async function seedVariableAttribute(
   type: OCPP2_0_1.AttributeEnumType = OCPP2_0_1.AttributeEnumType.Actual,
 ): Promise<VariableAttribute> {
   return VariableAttribute.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+    stationId,
     componentId,
     variableId,
     type,
@@ -203,8 +206,7 @@ async function seedSetVariablesRequest(
   correlationId: string = CORRELATION_ID,
 ) {
   const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
-  return ocppMessageRepository.createOCPPMessage(TENANT_ID, {
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+  return ocppMessageRepository.createOCPPMessage(TENANT_ID, OCPP_CONNECTION_NAME, {
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
@@ -330,7 +332,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result.id).toBe(seeded.id);
       // Only the one we seeded exists
       const allAttrs = await VariableAttribute.findAll({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(allAttrs).toHaveLength(1);
     });
@@ -353,7 +355,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result).toBeDefined();
       const inDb = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [
@@ -712,7 +714,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
 
       const created = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [

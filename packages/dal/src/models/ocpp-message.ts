@@ -32,12 +32,14 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
   static readonly MODEL_NAME: string = Namespace.OCPPMessage;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationId?: number;
-
   @Index
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT',
+  })
+  declare stationId: number;
 
   @Index
   @Column(DataType.STRING)
@@ -113,19 +115,6 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
 
   @HasMany(() => OCPPMessage, { foreignKey: 'requestMessageId', as: 'responseMessages' })
   declare responseMessages?: OCPPMessage[];
-
-  @BeforeCreate
-  static async resolveStationId(instance: OCPPMessage): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

@@ -9,15 +9,19 @@ import {
   extractCertificateArrayFromEncodedString,
   extractCertificateDetails,
   extractEncodedContentFromCSR,
+  generateCSR,
   parseCertificateChainPem,
   sendOCSPRequest,
+  type CertificateGenerationInput,
 } from '@services/index.js';
+import { SignatureAlgorithmEnumType } from '@citrineos/dal';
 import { OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { readFile } from '../../utils/file-util.js';
 import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';
 import X509 = jsrsasign.X509;
+import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 
 describe('CertificateUtil', () => {
@@ -176,6 +180,47 @@ describe('CertificateUtil', () => {
     });
   });
 
+  describe('generateCSR', () => {
+    const csrInput = (
+      overrides: Partial<CertificateGenerationInput> = {},
+    ): CertificateGenerationInput =>
+      ({
+        signatureAlgorithm: SignatureAlgorithmEnumType.ECDSA,
+        commonName: 'localhost',
+        organizationName: 's44',
+        countryName: 'US',
+        isCA: false,
+        ...overrides,
+      }) as CertificateGenerationInput;
+
+    it('builds a CSR carrying the requested extensions', () => {
+      const [csrPem, privateKeyPem] = generateCSR(csrInput());
+
+      const actualParams = KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+      expect(actualParams.subject.str).toBe('/CN=localhost/O=s44/C=US');
+      expect(actualParams.sigalg).toBe('SHA256withECDSA');
+      expect(actualParams.extreq).toEqual([
+        { extname: 'basicConstraints' },
+        {
+          extname: 'keyUsage',
+          names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'cRLSign'],
+        },
+      ]);
+      expect(privateKeyPem).toContain('PRIVATE KEY');
+    });
+
+    it('requests cA and pathLen for a sub CA', () => {
+      const [csrPem] = generateCSR(csrInput({ isCA: true, pathLen: 1 }));
+
+      const actualParams = KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+      expect(actualParams.extreq?.[0]).toEqual({
+        extname: 'basicConstraints',
+        cA: true,
+        pathLen: 1,
+      });
+    });
+  });
+
   describe('extractCertificateDetails', () => {
     it('successes', async () => {
       const givenEncodedString = readFile('LeafCertificateSample.pem');
@@ -188,13 +233,56 @@ describe('CertificateUtil', () => {
         validBefore,
         signatureAlgorithm,
       } = extractCertificateDetails(givenEncodedString);
-      expect(serialNumber).toEqual(1916);
+      expect(serialNumber).toEqual(0x1916c392dce);
       expect(issuerName).toEqual('/CN=localhost SubCA/O=s44/C=US');
       expect(organizationName).toEqual('s44');
       expect(commonName).toEqual('localhost');
       expect(countryName).toEqual('US');
       expect(validBefore).toEqual(new Date('2034-08-19T00:00:00.000Z'));
       expect(signatureAlgorithm).toEqual('SHA256withECDSA');
+    });
+
+    it('reads the serial of a certificate the CSMS signed as its full hex value', () => {
+      const signedAt = new Date('2028-03-01T00:00:00.000Z');
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(signedAt);
+      let givenCertPem: string;
+      try {
+        givenCertPem = createSignedCertificateFromCSR(
+          readFile('ChargingStationCSRSample.pem'),
+          readFile('SubCACertificateSample.pem'),
+          readFile('SubCAKeySample.pem'),
+        ).getPEM();
+      } finally {
+        vi.useRealTimers();
+      }
+
+      const { serialNumber } = extractCertificateDetails(givenCertPem);
+
+      expect(serialNumber).toBe(signedAt.getTime());
+    });
+
+    it.each([
+      ['00c5', 0xc5],
+      ['00c5a1b2c3d4e5f60718293a4b5c6d7e', null],
+    ])('reads serial %s as %s', (serialHex, expectedSerialNumber) => {
+      const { prvKeyObj, pubKeyObj } = jsrsasign.KEYUTIL.generateKeypair('EC', 'secp256r1');
+      const givenCertPem = new jsrsasign.KJUR.asn1.x509.Certificate({
+        version: 3,
+        serial: { hex: serialHex },
+        issuer: { str: '/CN=Serial Test' },
+        subject: { str: '/CN=Serial Test' },
+        notbefore: '250101000000Z',
+        notafter: '350101000000Z',
+        sbjpubkey: pubKeyObj,
+        ext: [{ extname: 'basicConstraints', cA: true }],
+        sigalg: 'SHA256withECDSA',
+        cakey: prvKeyObj,
+      }).getPEM();
+
+      const { serialNumber } = extractCertificateDetails(givenCertPem);
+
+      expect(serialNumber).toBe(expectedSerialNumber);
     });
   });
 });

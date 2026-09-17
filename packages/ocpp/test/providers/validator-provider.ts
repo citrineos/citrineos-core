@@ -4,15 +4,14 @@
 
 import {
   ChargingNeeds,
-  Evse,
   type IChargingProfileRepository,
   type IDeviceModelRepository,
   type ITransactionEventRepository,
-  VariableAttribute,
 } from '@citrineos/dal';
+import type { VariableAttributeDto } from '@citrineos/types';
 import { type ILogObj, Logger } from 'tslog';
 import { vi, type Mocked } from 'vitest';
-import { OCPP2_0_1, type TransactionEventDto } from '@citrineos/types';
+import { type EvseDto, OCPP2_0_1, type TransactionEventDto } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 
 // Mock logger that can be used in tests
@@ -126,7 +125,7 @@ export function createMockTransactionEventRepository(): Mocked<ITransactionEvent
 }
 
 // Test data for repository responses
-export function aVariableAttribute(override?: Partial<VariableAttribute>): VariableAttribute {
+export function aVariableAttribute(override?: Partial<VariableAttributeDto>): VariableAttributeDto {
   return {
     id: faker.number.int({ min: 1, max: 999999 }),
     tenantId: faker.number.int({ min: 1, max: 100 }),
@@ -139,7 +138,7 @@ export function aVariableAttribute(override?: Partial<VariableAttribute>): Varia
     constant: false,
     generatedAt: new Date().toISOString(),
     ...override,
-  } as VariableAttribute;
+  } as VariableAttributeDto;
 }
 
 export function aTransactionEvent(override?: Partial<TransactionEventDto>): TransactionEventDto {
@@ -158,7 +157,7 @@ export function aTransactionEvent(override?: Partial<TransactionEventDto>): Tran
   } as TransactionEventDto;
 }
 
-export function anEvse(override?: Partial<Evse>): Evse {
+export function anEvse(override?: Partial<EvseDto>): EvseDto {
   return {
     databaseId: faker.number.int({ min: 1, max: 999999 }),
     id: faker.number.int({ min: 1, max: 10 }),
@@ -166,7 +165,7 @@ export function anEvse(override?: Partial<Evse>): Evse {
     ocppConnectionName: faker.string.alphanumeric(10),
     connectorId: faker.number.int({ min: 1, max: 2 }),
     ...override,
-  } as Evse;
+  } as unknown as EvseDto;
 }
 
 export function aChargingNeeds(override?: Partial<ChargingNeeds>): ChargingNeeds {

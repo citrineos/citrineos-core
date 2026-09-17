@@ -131,16 +131,14 @@ function aResponseReporting(...certificates: CertificateHashData[]): IMessage<Oc
 }
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
-  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, {
-    ocppConnectionName: STATION,
+  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, STATION, {
     ...certificateHashData,
     certificateType: CertificateUseEnum.V2GRootCertificate,
   });
 }
 
 async function aManufacturerCertificate() {
-  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, {
-    ocppConnectionName: STATION,
+  return installedCertificateRepository.createInstalledCertificate(DEFAULT_TENANT_ID, STATION, {
     hashAlgorithm: ROOT_ONE.hashAlgorithm,
     issuerNameHash: 'issuer-mf',
     issuerKeyHash: 'key-mf',
@@ -150,8 +148,7 @@ async function aManufacturerCertificate() {
 }
 
 async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
-  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, {
-    ocppConnectionName: STATION,
+  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, STATION, {
     correlationId: 'corr-1',
     origin: MessageOrigin.ChargingStationManagementSystem,
     action: OCPP_CallAction.GetInstalledCertificateIds,

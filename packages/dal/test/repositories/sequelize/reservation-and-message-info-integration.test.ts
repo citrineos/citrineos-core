@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { Connector, Reservation } from '@dal/db/sequelize/index.js';
+import { ChargingStation, Connector, Evse, Reservation } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,
-  Evse,
   EvseType,
   SequelizeMessageInfoRepository,
   SequelizeReservationRepository,
@@ -177,13 +176,19 @@ describe('SequelizeReservationRepository', () => {
 
     it('resolves evseId to the databaseId of the connectorless evse row', async () => {
       const evse = await EvseType.create({ id: 2, connectorId: null, tenantId: TENANT_A } as any);
+      // Evses and Connectors link to the station by FK only, so the station has to exist.
+      const station = (await ChargingStation.create({
+        ocppConnectionName: STATION_A,
+        isOnline: false,
+        tenantId: TENANT_A,
+      } as any)) as unknown as { id: number };
       // Same OCPP evse id with a connector attached; the lookup must skip it.
       const stationEvse = await Evse.create({
-        ocppConnectionName: STATION_A,
+        stationId: station.id,
         tenantId: TENANT_A,
       } as any);
       const connector = await Connector.create({
-        ocppConnectionName: STATION_A,
+        stationId: station.id,
         evseId: stationEvse.id,
         connectorId: 1,
         evseTypeConnectorId: evse.databaseId,
