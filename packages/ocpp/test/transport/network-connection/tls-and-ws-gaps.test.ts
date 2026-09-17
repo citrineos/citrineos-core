@@ -210,11 +210,14 @@ describe('CertificateUtil gaps', () => {
       expect(cert.getNotAfter()).toBe('270305060708Z');
       expect(cert.getExtBasicConstraints()).toEqual({
         extname: 'basicConstraints',
+        critical: true,
         cA: true,
         pathLen: 2,
       });
       // isCA branch: keyEncipherment must not be granted to a CA
       expect(cert.getExtKeyUsage().names).not.toContain('keyEncipherment');
+      // a CA signs revocation lists, so the bit has to survive into the certificate
+      expect(cert.getExtKeyUsage().names).toContain('cRLSign');
       expect(keyPem).toContain(pemMarker('PRIVATE KEY', 'BEGIN'));
       expect(isSignedBy(certPem, certPem)).toBe(true);
     });

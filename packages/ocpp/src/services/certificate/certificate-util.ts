@@ -172,21 +172,19 @@ export function generateCertificate(
   }
 
   // Prepare certificate extensions
-  const keyUsages = ['digitalSignature', 'keyCertSign', 'crlSign'];
+  // jsrsasign only knows the key usage as 'cRLSign'; spelled any other way the bit is
+  // dropped from the certificate without an error.
+  const keyUsages = ['digitalSignature', 'keyCertSign', 'cRLSign'];
   if (!certificateEntity.isCA) {
     keyUsages.push('keyEncipherment');
   }
-  let basicConstraints: any = {
+  const basicConstraints: any = {
     extname: 'basicConstraints',
     critical: true,
     cA: certificateEntity.isCA,
   };
   if (certificateEntity.pathLen) {
-    basicConstraints = {
-      extname: 'basicConstraints',
-      cA: certificateEntity.isCA,
-      pathLen: certificateEntity.pathLen,
-    };
+    basicConstraints.pathLen = certificateEntity.pathLen;
   }
   const extensions = [
     basicConstraints,
