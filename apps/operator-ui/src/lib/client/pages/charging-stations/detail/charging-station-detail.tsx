@@ -5,21 +5,25 @@
 
 import React, { useEffect, useState } from 'react';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { CanAccess } from '@refinedev/core';
+import { CanAccess, useTranslate } from '@refinedev/core';
 import { ChargingStationDetailCard } from '@lib/client/pages/charging-stations/detail/charging-station-detail-card';
 import { pageFlex, pageMargin } from '@lib/client/styles/page';
 import { ChargingStationDetailTabsCard } from '@lib/client/pages/charging-stations/detail/charging-station-detail-tabs-card';
 import { S3_BUCKET_FOLDER_IMAGES_CHARGING_STATIONS } from '@lib/utils/consts';
 import { getPresignedUrlForGet } from '@lib/server/actions/file/get-presinged-url-for-get';
 import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
+import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
 
 type ChargingStationDetailProps = {
-  params: { id: number };
+  params: { ocppConnectionName: string };
 };
 
 export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ params }) => {
-  const { id } = params;
+  const { ocppConnectionName } = params;
+  const translate = useTranslate();
+  const { id, isNotFound } = useChargingStationId(ocppConnectionName);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +35,16 @@ export const ChargingStationDetail: React.FC<ChargingStationDetailProps> = ({ pa
       });
     }
   }, [id]);
+
+  if (isNotFound) {
+    return (
+      <div className={`${pageMargin} ${pageFlex}`}>
+        <NoDataFoundCard
+          message={translate('ChargingStations.noDataFound', { id: ocppConnectionName })}
+        />
+      </div>
+    );
+  }
 
   if (!id) {
     return (

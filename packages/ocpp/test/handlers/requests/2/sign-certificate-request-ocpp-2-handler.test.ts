@@ -276,7 +276,7 @@ describe('SignCertificateRequestOcpp2Handler', () => {
   });
 
   it('stops after the forced accept when the certificate type is unsupported', async () => {
-    const message = makeMessage(aSignCertificateRequest({ certificateType: undefined }));
+    const message = makeMessage(aSignCertificateRequest({ certificateType: 'Bogus' }));
 
     await handler.handle(message);
 
@@ -289,7 +289,7 @@ describe('SignCertificateRequestOcpp2Handler', () => {
     expect(logger.error).toHaveBeenCalledOnce();
     const [prefix, error] = logger.error.mock.calls[0];
     expect(prefix).toBe('Sign certificate failed:');
-    expect((error as Error).message).toBe('Unsupported certificate type: undefined');
+    expect((error as Error).message).toBe('Unsupported certificate type: Bogus');
 
     expect(getCertificateChain).not.toHaveBeenCalled();
     expect(prepareToInstallCertificate).not.toHaveBeenCalled();

@@ -85,7 +85,7 @@ export const GET_TRANSACTIONS_FOR_TARIFF = gql`
       order_by: $order_by
       where: { tariffId: { _eq: $tariffId }, _and: $where }
     ) {
-      ${TRANSACTION_DETAIL_FIELDS.omit('ocppConnectionName')}
+      ${TRANSACTION_DETAIL_FIELDS}
       chargingStation: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS}
         location: Location {

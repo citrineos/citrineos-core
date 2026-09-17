@@ -78,6 +78,7 @@ export class CostNotifier extends Scheduler {
     transaction: Transaction,
     tenantId: number,
     protocol: OCPPVersionType,
+    ocppConnectionName: string,
   ): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
 
@@ -88,7 +89,7 @@ export class CostNotifier extends Scheduler {
     );
 
     await this._notifyCostUpdated({
-      ocppConnectionName: transaction.ocppConnectionName,
+      ocppConnectionName,
       tenantId,
       totalCost: cost,
       transactionId: transaction.transactionId,
@@ -129,7 +130,7 @@ export class CostNotifier extends Scheduler {
         return;
       }
 
-      await this.calculateCostAndNotify(transaction, tenantId, protocol);
+      await this.calculateCostAndNotify(transaction, tenantId, protocol, ocppConnectionName);
     } catch (error) {
       this._logger.error(`Failed to send CostUpdated call for ${transactionId} transaction`, error);
       this.unschedule(this._key(ocppConnectionName, transactionId));

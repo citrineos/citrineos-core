@@ -3,14 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
-import {
-  ChargingStation,
-  Component,
-  SequelizeVariableMonitoringRepository,
-  Variable,
-} from '../../../index.js';
+import { Component, SequelizeVariableMonitoringRepository, Variable } from '../../../index.js';
 // Not re-exported from the package barrel.
 import {
   EventData,
@@ -39,8 +35,30 @@ afterAll(async () => {
   await h.stop();
 });
 
+// The repositories resolve the connection name to a station FK, so the station has
+// to exist; resetDb truncates, so seed it per test.
+let station: { id: number };
+const stationIds = new Map<string, number>();
+
+// VariableMonitorings.stationId is the only link to the station, so seeds resolve
+// the connection name themselves, creating the station on first use per tenant.
+async function stationIdFor(ocppConnectionName: string, tenantId: number): Promise<number> {
+  const key = `${tenantId}:${ocppConnectionName}`;
+  const cached = stationIds.get(key);
+  if (cached !== undefined) return cached;
+  const row = (await ChargingStation.create({
+    ocppConnectionName,
+    isOnline: false,
+    tenantId,
+  } as any)) as unknown as { id: number };
+  stationIds.set(key, row.id);
+  return row.id;
+}
+
 beforeEach(async () => {
   await resetDb(h);
+  stationIds.clear();
+  station = { id: await stationIdFor(STATION, TENANT_A) };
 });
 
 function makeRepo(): SequelizeVariableMonitoringRepository {
@@ -59,15 +77,16 @@ async function aVariable(name: string, tenantId = TENANT_A) {
 }
 
 async function aMonitoringRow(overrides: Record<string, unknown> = {}) {
+  const { ocppConnectionName = STATION, tenantId = TENANT_A, ...rest } = overrides;
   return VariableMonitoring.create({
-    tenantId: TENANT_A,
-    ocppConnectionName: STATION,
+    tenantId,
+    stationId: await stationIdFor(ocppConnectionName as string, tenantId as number),
     id: 1,
     transaction: false,
     value: 42,
     type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
     severity: 5,
-    ...overrides,
+    ...rest,
   } as any);
 }
 
@@ -118,7 +137,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       expect(first.severity).toBe(5);
       expect(first.transaction).toBe(false);
       expect(first.tenantId).toBe(TENANT_A);
-      expect(first.ocppConnectionName).toBe(STATION);
+      expect(first.stationId).toBe(station.id);
       expect(await VariableMonitoring.count()).toBe(2);
 
       const statuses = await VariableMonitoringStatus.findAll();
@@ -186,11 +205,6 @@ describe('SequelizeVariableMonitoringRepository', () => {
     });
 
     it('links the row to the charging station that owns the connection name', async () => {
-      const station = await ChargingStation.create({
-        ocppConnectionName: STATION,
-        isOnline: false,
-        tenantId: TENANT_A,
-      } as any);
       const component = await aComponent('EVSE');
       const variable = await aVariable('Power');
 
@@ -238,7 +252,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       expect(row.value).toBe(100);
       expect(row.type).toBe('UpperThreshold');
       expect(row.severity).toBe(4);
-      expect(row.ocppConnectionName).toBe(STATION);
+      expect(row.stationId).toBe(station.id);
       expect(row.tenantId).toBe(TENANT_A);
       expect(row.componentId).toBe(component.id);
       expect(row.variableId).toBe(variable.id);
@@ -557,7 +571,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       expect(created.trigger).toBe('Alerting');
       expect(created.actualValue).toBe('42.1');
       expect(created.tenantId).toBe(TENANT_A);
-      expect(created.ocppConnectionName).toBe(STATION);
+      expect(created.stationId).toBe(station.id);
       expect(await EventData.count()).toBe(1);
 
       const row = (await EventData.findOne({ where: { eventId: 5 } }))!;

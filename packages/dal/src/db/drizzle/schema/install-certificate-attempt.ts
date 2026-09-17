@@ -12,9 +12,8 @@ import { type z } from 'zod';
 function installCertificateAttemptColumns() {
   return {
     id: serial('id').primaryKey(),
-    // FK to ChargingStation (resolved from ocppConnectionName in the domain layer).
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 36 }).notNull(),
+    // FK to ChargingStation
+    stationId: integer('stationId').notNull(),
     certificateType: varchar('certificateType', { length: 255 }).notNull(),
     // FK to Certificate.
     certificateId: integer('certificateId'),

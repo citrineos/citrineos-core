@@ -44,9 +44,6 @@ export class SetNetworkProfile extends Model implements SetNetworkProfileDto {
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
 
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
-
   @Index
   @Column({
     type: DataType.STRING,

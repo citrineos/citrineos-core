@@ -81,7 +81,7 @@ test.describe('charging-stations › device model sequence @everest', () => {
     apiClient,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     // Request a full inventory; NotifyReport flows back asynchronously.
     await detail.commandBar.openViaOtherCommands(/get base report/i);
@@ -117,7 +117,7 @@ test.describe('charging-stations › device model sequence @everest', () => {
     await waitForDeviceModel(apiClient);
 
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const setVars = new ModalHarness(page, /set variables/i);
     await setVars.expectOpen();

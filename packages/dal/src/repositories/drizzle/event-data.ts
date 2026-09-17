@@ -19,7 +19,7 @@ export function toEventDataDto(entity: EventDataEntity): EventDataDto {
   // TODO: map relations (variable, component)
   return {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     eventId: entity.eventId,
     trigger: entity.trigger,
     cause: entity.cause,

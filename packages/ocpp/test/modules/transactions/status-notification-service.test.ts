@@ -14,7 +14,6 @@ import {
   type IDeviceModelRepository,
   type IEvseRepository,
   type IStatusNotificationRepository,
-  StatusNotification,
 } from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -32,39 +31,8 @@ import {
 } from './providers/device-model-provider.js';
 import {
   aOcpp16StatusNotificationRequest,
-  aStatusNotification,
   aStatusNotificationRequest,
 } from './providers/status-notification.js';
-
-// Mock StatusNotification model
-vi.mock('@dal/models/location/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@dal/models/location/index.js')>();
-
-  class MockStatusNotification {
-    id?: number;
-    tenantId?: number;
-    ocppConnectionName?: string;
-    timestamp?: string;
-    status?: string;
-    connectorId?: number;
-    errorCode?: string;
-    info?: string;
-    vendorId?: string;
-    vendorErrorCode?: string;
-    save = vi.fn().mockResolvedValue(this);
-
-    static build = vi.fn().mockImplementation((data) => {
-      const instance = new MockStatusNotification();
-      Object.assign(instance, data);
-      return instance;
-    });
-  }
-
-  return {
-    ...actual,
-    StatusNotification: MockStatusNotification,
-  };
-});
 
 describe('StatusNotificationService', () => {
   const { container } = createTestContainer();
@@ -134,9 +102,6 @@ describe('StatusNotificationService', () => {
       aChargingStation(),
     );
     componentRepository.readAllByQuery.mockResolvedValue([]);
-    vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
-      return aStatusNotification();
-    });
 
     await statusNotificationService.processStatusNotification(
       DEFAULT_TENANT_ID,
@@ -163,9 +128,6 @@ describe('StatusNotificationService', () => {
     locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
       aChargingStation(),
     );
-    vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
-      return aStatusNotification();
-    });
     componentRepository.readAllByQuery.mockResolvedValue([
       aComponent((c) => {
         c.name = 'Connector';
@@ -274,7 +236,6 @@ describe('StatusNotificationService', () => {
         aTwoEvseChargingStation(),
       );
       componentRepository.readAllByQuery.mockResolvedValue([]);
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
     });
 
     it('should update the second EVSE when it reports its connector 1', async () => {
@@ -332,7 +293,6 @@ describe('StatusNotificationService', () => {
   describe('Test process OCPP 2.0.1 StatusNotification for an unknown connector', () => {
     beforeEach(() => {
       componentRepository.readAllByQuery.mockResolvedValue([]);
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
     });
 
     it('should commission an EVSE and synthesize the connector when neither exists and allowUnknownChargingStations is true', async () => {
@@ -360,7 +320,7 @@ describe('StatusNotificationService', () => {
 
       expect(locationRepository.createOrUpdateEvse).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
         evseTypeId: 1,
-        ocppConnectionName: MOCK_STATION_ID,
+        stationId: MOCK_STATION_ID,
       });
       expect(locationRepository.createOrUpdateOcpp2Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
@@ -369,7 +329,6 @@ describe('StatusNotificationService', () => {
           stationId: MOCK_STATION_ID,
           evseId: 99,
           evseTypeConnectorId: 1,
-          ocppConnectionName: MOCK_STATION_ID,
         }),
       );
     });
@@ -510,9 +469,6 @@ describe('StatusNotificationService', () => {
           cs.evses = [aEvse()];
         }),
       );
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => {
-        return aStatusNotification();
-      });
 
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
@@ -549,7 +505,6 @@ describe('StatusNotificationService', () => {
           cs.evses = [aEvse()];
         }),
       );
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
 
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
@@ -574,7 +529,6 @@ describe('StatusNotificationService', () => {
           cs.evses = [aEvse()];
         }),
       );
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
 
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
@@ -603,7 +557,6 @@ describe('StatusNotificationService', () => {
       locationRepository.autoCommissionEvseForOcpp16Connector.mockResolvedValue({
         evseId: newEvseId,
       });
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
 
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
@@ -643,7 +596,6 @@ describe('StatusNotificationService', () => {
         allowUnknownChargingStations: false,
       };
       cache.get = vi.fn().mockResolvedValue(JSON.stringify(strictConnection));
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
 
       await expect(
         statusNotificationService.processOcpp16StatusNotification(
@@ -667,12 +619,6 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      const mockStatusNotification = aStatusNotification();
-      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
-        expect(input.evseId).toBe(MOCK_EVSE_ID);
-        return mockStatusNotification;
-      });
-
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
@@ -681,8 +627,10 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(buildSpy).toHaveBeenCalled();
       expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      const [, , statusNotification] =
+        locationRepository.addStatusNotificationToChargingStation.mock.calls[0];
+      expect(statusNotification.evseId).toBe(MOCK_EVSE_ID);
     });
 
     it('should not set evseId on StatusNotification record when no matching evse is found, then auto-commission for the Connector record', async () => {
@@ -697,11 +645,6 @@ describe('StatusNotificationService', () => {
         evseId: 50,
       });
 
-      const buildSpy = vi.spyOn(StatusNotification, 'build').mockImplementation((input: any) => {
-        expect(input.evseId).toBeUndefined();
-        return aStatusNotification();
-      });
-
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
@@ -710,8 +653,10 @@ describe('StatusNotificationService', () => {
         }),
       );
 
-      expect(buildSpy).toHaveBeenCalled();
       expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      const [, , statusNotification] =
+        locationRepository.addStatusNotificationToChargingStation.mock.calls[0];
+      expect(statusNotification.evseId).toBeUndefined();
       expect(locationRepository.autoCommissionEvseForOcpp16Connector).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         MOCK_STATION_ID,
@@ -733,7 +678,6 @@ describe('StatusNotificationService', () => {
           cs.evses = [aEvse()];
         }),
       );
-      vi.spyOn(StatusNotification, 'build').mockImplementation(() => aStatusNotification());
 
       await statusNotificationService.processOcpp16StatusNotification(
         DEFAULT_TENANT_ID,

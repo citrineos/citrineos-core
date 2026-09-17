@@ -15,12 +15,13 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-  Tenant,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
+  SequelizeServerNetworkProfileRepository,
+  SequelizeSetNetworkProfileRepository,
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -40,6 +41,11 @@ const PROFILE_ID = 'websocket-server-0';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
+let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
+let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
+let setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -52,7 +58,7 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance({
+  config = {
     database: {
       host: pgContainer.getHost(),
       port: pgContainer.getMappedPort(5432),
@@ -66,9 +72,31 @@ beforeAll(async () => {
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as unknown as SystemConfig);
+  } as unknown as SystemConfig;
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  setNetworkProfileRepository = new SequelizeSetNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -95,9 +123,9 @@ function aResponse(
   } as unknown as IMessage<OCPP2_response_types.SetNetworkProfileResponse>;
 }
 
-async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSlot: number) {
-  return SetNetworkProfile.build({
-    ocppConnectionName,
+async function aSetNetworkProfileRow(stationId: number, configurationSlot: number) {
+  return setNetworkProfileRepository.createPending({
+    stationId,
     correlationId: CORRELATION_ID,
     configurationSlot,
     websocketServerConfigId: PROFILE_ID,
@@ -108,58 +136,74 @@ async function aSetNetworkProfileRow(ocppConnectionName: string, configurationSl
     securityProfile: 1,
     ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired0,
     tenantId: DEFAULT_TENANT_ID,
-  } as never).save();
+  } as never);
 }
 
 describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', () => {
   const { container } = createTestContainer();
 
+  let stationBId: number;
+
   beforeEach(async () => {
-    await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await SetNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await ServerNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ServerNetworkProfile.create({
-      id: PROFILE_ID,
-      host: 'localhost',
-      port: 8080,
-      pingInterval: 60,
-      protocols: [OCPPVersion.OCPP2_0_1],
-      messageTimeout: 30,
-      securityProfile: 1,
-      allowUnknownChargingStations: false,
-      dynamicTenantResolution: false,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
+    await serverNetworkProfileRepository.upsertServerNetworkProfile(
+      {
+        id: PROFILE_ID,
+        host: 'localhost',
+        port: 8080,
+        pingInterval: 60,
+        protocols: [OCPPVersion.OCPP2_0_1],
+        securityProfile: 1,
+        allowUnknownChargingStations: false,
+        tenantId: DEFAULT_TENANT_ID,
+      },
+      30,
+    );
 
+    const stationIds: Record<string, number> = {};
     for (const name of [STATION_A, STATION_B]) {
-      await ChargingStation.create({
+      const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
         ocppConnectionName: name,
         isOnline: false,
-        tenantId: DEFAULT_TENANT_ID,
-      } as never);
+      });
+      // SetNetworkProfiles link by FK, so the rows below need the ids back.
+      stationIds[name] = (station as unknown as { id: number }).id;
     }
+    stationBId = stationIds[STATION_B];
 
     // One row per station under the one correlation id, exactly as prepareSetNetworkProfile
     // writes them: same slot and same profile, differing only by station.
-    await aSetNetworkProfileRow(STATION_A, 1);
-    await aSetNetworkProfileRow(STATION_B, 1);
+    await aSetNetworkProfileRow(stationIds[STATION_A], 1);
+    await aSetNetworkProfileRow(stationIds[STATION_B], 1);
   });
 
   it('links the station to the request that was sent to it', async () => {
-    const handler = getTestInstance(container, SetNetworkProfileResponseOcpp2Handler, {});
+    const handler = getTestInstance(container, SetNetworkProfileResponseOcpp2Handler, {
+      serverNetworkProfileRepository: new SequelizeServerNetworkProfileRepository({
+        config,
+        logger: undefined,
+        sequelizeInstance,
+      } as never),
+      setNetworkProfileRepository,
+      chargingStationRepository: new SequelizeLocationRepository({
+        config,
+        logger: undefined,
+        sequelizeInstance,
+      } as never),
+    });
 
     await handler.handle(aResponse(STATION_B));
 
     const stored = await ChargingStationNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
+      where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
     });
-    const ownRow = await SetNetworkProfile.findOne({
-      where: { tenantId: DEFAULT_TENANT_ID, ocppConnectionName: STATION_B },
-    });
+    const ownRow = await setNetworkProfileRepository.readByCorrelationId(
+      DEFAULT_TENANT_ID,
+      STATION_B,
+      CORRELATION_ID,
+    );
 
     expect(stored).not.toBeNull();
     expect(stored!.setNetworkProfileId).toBe(ownRow!.id);

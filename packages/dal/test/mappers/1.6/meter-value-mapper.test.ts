@@ -401,6 +401,29 @@ describe('MeterValueMapper (OCPP 1.6)', () => {
         expect(result.sampledValue[0].value).toBe(200);
         expect(result.sampledValue[0].measurand).toBe('Energy.Active.Import.Register');
       });
+
+      it('leaves out a SignedData sampled value', () => {
+        const result = MeterValueMapper.fromMeterValueType({
+          timestamp: '2025-05-29T14:30:00Z',
+          sampledValue: [
+            { value: '200', unit: OCPP1_6.MeterValuesRequestUnit.Wh },
+            { value: 'OCMF|{}|{}', format: OCPP1_6.MeterValuesRequestFormat.SignedData },
+          ],
+        });
+
+        expect(result.sampledValue).toEqual([expect.objectContaining({ value: 200 })]);
+      });
+
+      it('maps a meterValue that carries only SignedData to no sampled values', () => {
+        const result = MeterValueMapper.fromMeterValueType({
+          timestamp: '2025-05-29T14:30:00Z',
+          sampledValue: [
+            { value: 'OCMF|{}|{}', format: OCPP1_6.MeterValuesRequestFormat.SignedData },
+          ],
+        });
+
+        expect(result.sampledValue).toEqual([]);
+      });
     });
   });
 

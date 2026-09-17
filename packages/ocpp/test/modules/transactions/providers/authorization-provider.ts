@@ -2,21 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { AuthorizationStatusEnum, AuthorizationWhitelistEnum, IdTokenEnum } from '@citrineos/types';
-import { Authorization } from '@citrineos/dal';
+import {
+  type AuthorizationDto,
+  AuthorizationStatusEnum,
+  AuthorizationWhitelistEnum,
+  IdTokenEnum,
+} from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
-export function anAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
-  const item = Object.create(Authorization.prototype) as Authorization;
-  item.tenantId = DEFAULT_TENANT_ID;
-  item.idToken = faker.string.uuid();
-  item.idTokenType = IdTokenEnum.Central;
-  item.status = AuthorizationStatusEnum.Accepted;
-  item.groupAuthorizationId = 1;
-  item.cacheExpiryDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  item.realTimeAuth = AuthorizationWhitelistEnum.Never;
-  // Optionally add more default fields as needed
+export function anAuthorization(
+  updateFunction?: UpdateFunction<AuthorizationDto>,
+): AuthorizationDto {
+  const item: AuthorizationDto = {
+    tenantId: DEFAULT_TENANT_ID,
+    idToken: faker.string.uuid(),
+    idTokenType: IdTokenEnum.Central,
+    status: AuthorizationStatusEnum.Accepted,
+    groupAuthorizationId: 1,
+    cacheExpiryDateTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    realTimeAuth: AuthorizationWhitelistEnum.Never,
+  } as AuthorizationDto;
 
   return applyUpdateFunction(item, updateFunction);
 }

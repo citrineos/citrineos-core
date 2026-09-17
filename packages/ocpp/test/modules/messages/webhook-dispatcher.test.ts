@@ -2,8 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { ISubscriptionRepository, Subscription } from '@citrineos/dal';
-import { type FrameEvent, MessageOrigin, MessageTypeId, OCPPVersion } from '@citrineos/types';
+import type { ISubscriptionRepository } from '@citrineos/dal';
+import {
+  type FrameEvent,
+  MessageOrigin,
+  MessageTypeId,
+  OCPPVersion,
+  type SubscriptionDto,
+} from '@citrineos/types';
 import { buildFrameEvent } from '@/transport/index.js';
 import { WebhookDispatcher } from '@modules/messages/webhook-dispatcher.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -53,7 +59,7 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription();
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.tenantId, subscription.ocppConnectionName);
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
 
       expect(subscriptionRepository.readAllByStationId).toBeCalledWith(
         subscription.tenantId,
@@ -65,7 +71,7 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription({ onConnect: true });
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.tenantId, subscription.ocppConnectionName);
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
 
       expect(fetch).toHaveBeenCalledWith(subscription.url, expect.anything());
       expect(bodyOf(0)).toEqual({
@@ -78,7 +84,7 @@ describe('WebhookDispatcher', () => {
       const subscription = aSubscription({ onConnect: false });
       givenSubscriptions(subscription);
 
-      await webhookDispatcher.register(subscription.tenantId, subscription.ocppConnectionName);
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -528,7 +534,7 @@ describe('WebhookDispatcher', () => {
     return JSON.parse(String(fetch.mock.calls[call][1]?.body));
   }
 
-  function givenSubscriptions(...subscriptions: Subscription[]) {
+  function givenSubscriptions(...subscriptions: SubscriptionDto[]) {
     subscriptionRepository.readAllByStationId.mockResolvedValue(subscriptions);
   }
 

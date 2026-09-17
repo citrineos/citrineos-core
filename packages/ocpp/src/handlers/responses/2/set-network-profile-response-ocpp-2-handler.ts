@@ -14,17 +14,33 @@ import {
   SetNetworkProfileStatusEnum,
   OCPP2_response_types,
 } from '@citrineos/types';
-import {
-  ChargingStation,
-  ChargingStationNetworkProfile,
-  ServerNetworkProfile,
-  SetNetworkProfile,
+import type {
+  IChargingStationRepository,
+  IServerNetworkProfileRepository,
+  ISetNetworkProfileRepository,
 } from '@citrineos/dal';
+import { ChargingStationNetworkProfile } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetNetworkProfile)
 export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
-  constructor({ logger }: AbstractHandlerDependencies) {
+  protected _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  protected _setNetworkProfileRepository: ISetNetworkProfileRepository;
+  protected _chargingStationRepository: IChargingStationRepository;
+
+  constructor({
+    logger,
+    serverNetworkProfileRepository,
+    setNetworkProfileRepository,
+    chargingStationRepository,
+  }: AbstractHandlerDependencies & {
+    serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    setNetworkProfileRepository: ISetNetworkProfileRepository;
+    chargingStationRepository: IChargingStationRepository;
+  }) {
     super(logger);
+    this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._setNetworkProfileRepository = setNetworkProfileRepository;
+    this._chargingStationRepository = chargingStationRepository;
   }
 
   async handle(
@@ -41,33 +57,28 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const setNetworkProfile = await SetNetworkProfile.findOne({
-      where: {
-        tenantId: message.context.tenantId,
-        correlationId: message.context.correlationId,
-        ocppConnectionName: message.context.ocppConnectionName,
-      },
-    });
+    const setNetworkProfile = await this._setNetworkProfileRepository.readByCorrelationId(
+      message.context.tenantId,
+      message.context.ocppConnectionName,
+      message.context.correlationId,
+    );
     if (!setNetworkProfile) {
       return;
     }
 
-    const serverNetworkProfile = await ServerNetworkProfile.findOne({
-      where: {
-        id: setNetworkProfile.websocketServerConfigId!,
-        tenantId: message.context.tenantId,
-      },
-    });
+    const serverNetworkProfile = await this._serverNetworkProfileRepository.findByProfileId(
+      message.context.tenantId,
+      setNetworkProfile.websocketServerConfigId!,
+    );
     if (!serverNetworkProfile) {
       return;
     }
 
-    const chargingStation = await ChargingStation.findOne({
-      where: {
-        ocppConnectionName: message.context.ocppConnectionName,
-        tenantId: message.context.tenantId,
-      },
-    });
+    const chargingStation =
+      await this._chargingStationRepository.readChargingStationByOcppConnectionName(
+        message.context.tenantId,
+        message.context.ocppConnectionName,
+      );
     if (!chargingStation) {
       return;
     }
@@ -75,13 +86,13 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
     const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({
       where: {
         tenantId: message.context.tenantId,
-        ocppConnectionName: chargingStation.ocppConnectionName,
+        stationId: chargingStation.id,
         configurationSlot: setNetworkProfile.configurationSlot!,
       },
     });
     chargingStationNetworkProfile.websocketServerConfigId =
       setNetworkProfile.websocketServerConfigId!;
-    chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id;
+    chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id!;
     await chargingStationNetworkProfile.save();
   }
 }

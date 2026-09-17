@@ -71,14 +71,18 @@ export class RedisCache implements ICache {
     classConstructor?: (() => ClassConstructor<T>) | undefined,
   ): Promise<T | null> {
     namespace = namespace || 'default';
-    key = `${namespace}:${key}`;
+    const namespacedKey = `${namespace}:${key}`;
 
     return new Promise((resolve) => {
       // Create a Redis subscriber to listen for operations affecting the key
-      const subscriber = createClient();
+      const subscriber = this._client.duplicate();
+      subscriber.on('error', (err) => this._logger.error('Redis subscriber error', err));
+      subscriber.connect().catch((error) => {
+        this._logger.error('Error connecting Redis subscriber', error);
+      });
       // Channel: Key-space, message: the name of the event, which is the command executed on the key
       subscriber
-        .subscribe(`__keyspace@0__:${key}`, (channel, message) => {
+        .subscribe(`__keyspace@0__:${namespacedKey}`, (message) => {
           switch (message) {
             case 'set':
               resolve(this.get(key, namespace, classConstructor));
