@@ -41,6 +41,23 @@ export class SequelizeSetNetworkProfileRepository
       vpn: values.vpn ?? undefined,
     } as Parameters<typeof SetNetworkProfile.build>[0]).save();
   }
+
+  async readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+    return (
+      (await SetNetworkProfile.findOne({
+        where: { tenantId, stationId, correlationId },
+      })) ?? undefined
+    );
+  }
 }
 
 export default SequelizeSetNetworkProfileRepository;

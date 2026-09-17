@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository } from '@citrineos/base';
-import { type AttributeEnumType, OCPP2_0_1, type OCPP2_common_types } from '@citrineos/types';
+import {
+  type AttributeEnumType,
+  OCPP2_0_1,
+  type OCPP2_common_types,
+  type VariableAttributeDto,
+} from '@citrineos/types';
 import { Op } from 'sequelize';
 import { type VariableAttributeQuerystring } from '../../interfaces/queries/variable-attribute.js';
 import { type IDeviceModelRepository } from '../repositories.js';
@@ -74,7 +79,7 @@ export class SequelizeDeviceModelRepository
     value: OCPP2_0_1.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]> {
+  ): Promise<VariableAttributeDto[]> {
     // Doing this here so that no records are created if the data is invalid
     const variableAttributeTypes = value.variableAttribute.map(
       (attr) => attr.type ?? OCPP2_0_1.AttributeEnumType.Actual,
@@ -138,7 +143,7 @@ export class SequelizeDeviceModelRepository
       });
     }
 
-    return await Promise.all(
+    const savedVariableAttributes = await Promise.all(
       value.variableAttribute.map(async (variableAttribute) => {
         const [savedVariableAttribute, variableAttributeCreated] = await this.readOrCreateByQuery(
           tenantId,
@@ -188,6 +193,13 @@ export class SequelizeDeviceModelRepository
         return savedVariableAttribute;
       }),
     );
+    // Hydrate the resolved component and variable so callers get fully-populated DTOs
+    // without a follow-up reload (createOrUpdate does not eager-load these relations).
+    for (const savedVariableAttribute of savedVariableAttributes) {
+      savedVariableAttribute.setDataValue('component', component);
+      savedVariableAttribute.setDataValue('variable', variable);
+    }
+    return savedVariableAttributes;
   }
 
   async findOrCreateEvseAndComponentAndVariable(
@@ -298,8 +310,8 @@ export class SequelizeDeviceModelRepository
     getVariablesResult: OCPP2_0_1.GetVariableResultType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]> {
-    const savedVariableAttributes: VariableAttribute[] = [];
+  ): Promise<VariableAttributeDto[]> {
+    const savedVariableAttributes: VariableAttributeDto[] = [];
     for (const result of getVariablesResult) {
       if (result.attributeStatus === OCPP2_0_1.GetVariableStatusEnumType.Accepted) {
         const savedVariableAttribute = (
@@ -322,7 +334,7 @@ export class SequelizeDeviceModelRepository
               value: result.attributeValue,
               status: result.attributeStatus,
               statusInfo: result.attributeStatusInfo,
-              variableAttributeId: savedVariableAttribute.get('id'),
+              variableAttributeId: savedVariableAttribute.id,
             },
             { include: [VariableAttribute] },
           ),
@@ -376,8 +388,8 @@ export class SequelizeDeviceModelRepository
     setVariablesData: OCPP2_0_1.SetVariableDataType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]> {
-    const savedVariableAttributes: VariableAttribute[] = [];
+  ): Promise<VariableAttributeDto[]> {
+    const savedVariableAttributes: VariableAttributeDto[] = [];
     for (const data of setVariablesData) {
       const savedVariableAttribute = (
         await this.createOrUpdateDeviceModelByStationId(
@@ -410,33 +422,37 @@ export class SequelizeDeviceModelRepository
     result: OCPP2_0_1.SetVariableResultType,
     ocppConnectionName: string,
     isoTimestamp: string,
-    existingVariableAttribute?: VariableAttribute,
-  ): Promise<VariableAttribute | undefined> {
-    if (!existingVariableAttribute) {
-      existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
-        where: {
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual,
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined> {
+    const existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
+      where: {
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
+        type: result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual,
+      },
+      include: [
+        {
+          model: Component,
+          where: {
+            name: result.component.name,
+            instance: result.component.instance ? result.component.instance : null,
+          },
         },
-        include: [
-          {
-            model: Component,
-            where: {
-              name: result.component.name,
-              instance: result.component.instance ? result.component.instance : null,
-            },
+        {
+          model: Variable,
+          where: {
+            name: result.variable.name,
+            instance: result.variable.instance ? result.variable.instance : null,
           },
-          {
-            model: Variable,
-            where: {
-              name: result.variable.name,
-              instance: result.variable.instance ? result.variable.instance : null,
-            },
-          },
-        ],
-      });
-    }
+        },
+      ],
+    });
     if (existingVariableAttribute) {
+      if (
+        result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted &&
+        acceptedValue !== undefined
+      ) {
+        existingVariableAttribute.setDataValue('value', acceptedValue);
+      }
       await this.variableStatus.create(
         tenantId,
         VariableStatus.build({
@@ -491,7 +507,7 @@ export class SequelizeDeviceModelRepository
   async readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]> {
+  ): Promise<VariableAttributeDto[]> {
     const readQuery = await this.constructQuery(query);
     readQuery.include.push(VariableStatus);
     return await super.readAllByQuery(tenantId, readQuery);
@@ -504,7 +520,7 @@ export class SequelizeDeviceModelRepository
   async deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]> {
+  ): Promise<VariableAttributeDto[]> {
     return await super.deleteAllByQuery(tenantId, await this.constructQuery(query));
   }
 
@@ -514,7 +530,7 @@ export class SequelizeDeviceModelRepository
     attributeType: AttributeEnumType,
     componentType: OCPP2_common_types.ComponentType,
     variableType: OCPP2_common_types.VariableType,
-  ): Promise<VariableAttribute | undefined> {
+  ): Promise<VariableAttributeDto | undefined> {
     const variableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),

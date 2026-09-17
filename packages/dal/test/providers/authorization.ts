@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type AdditionalInfo, AuthorizationStatusEnum, IdTokenEnum } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
-import { Authorization } from '@citrineos/dal';
+import { Authorization } from '../../src/models/authorization/authorization.js';
 import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {

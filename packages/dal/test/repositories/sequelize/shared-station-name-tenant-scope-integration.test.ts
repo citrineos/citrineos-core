@@ -10,13 +10,13 @@ import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   ChargingProfile,
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeChargingProfileRepository,
   SequelizeMessageInfoRepository,
   SequelizeTransactionEventRepository,
   Transaction,
 } from '../../../index.js';
+import { Evse } from '../../../src/models/location/evse.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 
