@@ -328,7 +328,12 @@ export class SessionMapper extends BaseTransactionMapper {
       total_cost: null,
       meter_id: null,
     };
-    session.total_cost = session.end_date_time ? calculateTotalCdrCost(session, tariff) : null;
+    session.total_cost = session.end_date_time
+      ? calculateTotalCdrCost(
+          { ...session, timeSpentChargingSeconds: transaction.timeSpentCharging },
+          tariff,
+        )
+      : null;
     return session;
   }
 

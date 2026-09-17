@@ -89,6 +89,43 @@ describe('calculateTotalParkingTimeHours', () => {
     expect(calculateTotalParkingTimeHours(aSession({ charging_periods: null }))).toBe(0);
   });
 
+  it('prefers the transaction figure over the periods when it is present', () => {
+    // 45-minute session, station reports 15 minutes of charging -> 30 minutes parked.
+    const session = aSession({
+      charging_periods: [aParkingPeriod(0.1)],
+      timeSpentChargingSeconds: 15 * 60,
+    });
+
+    expect(calculateTotalParkingTimeHours(session)).toBeCloseTo(0.5, 10);
+  });
+
+  it.each([
+    ['a plain number', 2700],
+    ['a bigint handed back as a string', '2700'],
+  ])('reads the figure from %s', (_label, reported) => {
+    const session = aSession({ timeSpentChargingSeconds: reported as never });
+
+    expect(calculateTotalParkingTimeHours(session)).toBe(0);
+  });
+
+  it.each([
+    ['null', null],
+    ['undefined', undefined],
+  ])('ignores %s and falls back to the dimensions', (_label, reported) => {
+    const session = aSession({
+      charging_periods: [aParkingPeriod(0.25)],
+      timeSpentChargingSeconds: reported,
+    });
+
+    expect(calculateTotalParkingTimeHours(session)).toBeCloseTo(0.25, 10);
+  });
+
+  it('never reports negative parking when the station over-reports charging', () => {
+    const session = aSession({ timeSpentChargingSeconds: 10 * 3600 });
+
+    expect(calculateTotalParkingTimeHours(session)).toBe(0);
+  });
+
   it('never reports a negative total from a malformed dimension', () => {
     expect(
       calculateTotalParkingTimeHours(aSession({ charging_periods: [aParkingPeriod(-2)] })),
@@ -177,6 +214,36 @@ describe('calculateTimeCost', () => {
     const session = aSession({ charging_periods: [aParkingPeriod(5)] });
 
     expect(calculateTimeCost(session, aTariff())).toStrictEqual({ excl_vat: 0 });
+  });
+});
+
+describe('calculateChargingMinutes reconciles with the OCPP figure', () => {
+  it.each([
+    ['half the session', 15 * 60, 15],
+    ['the whole session', 45 * 60, 45],
+    ['nothing at all', 0, 0],
+  ])('bills exactly the reported charging time: %s', (_label, seconds, expectedMinutes) => {
+    const session = aSession({
+      charging_periods: [aParkingPeriod(0.75)],
+      timeSpentChargingSeconds: seconds,
+    });
+
+    // total_time - total_parking_time, in minutes.
+    const billed =
+      (calculateTotalTimeHours(session) - calculateTotalParkingTimeHours(session)) * 60;
+
+    expect(billed).toBeCloseTo(expectedMinutes, 10);
+  });
+
+  it('bills the whole session for 1.6, whose figure is wall-clock elapsed', () => {
+    // The 1.6 StopTransaction handler sets timeSpentCharging to the full duration, so a flat
+    // register late in the session must not shorten the bill.
+    const session = aSession({
+      charging_periods: [aParkingPeriod(0.5)],
+      timeSpentChargingSeconds: 45 * 60,
+    });
+
+    expect(calculateTimeCost(session, aTariff())).toStrictEqual({ excl_vat: 0.85 });
   });
 });
 

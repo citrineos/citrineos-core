@@ -69,6 +69,7 @@ function makeHandler(
       totalKwh: null,
     }),
     readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(null),
+    readAllByStationIdAndTransactionId: vi.fn().mockResolvedValue([]),
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
     updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
     ...overrides.transactionEventRepository,
@@ -198,7 +199,19 @@ describe('TransactionEventRequestOcpp2Handler', () => {
       } as unknown as OCPP2_0_1.TransactionEventRequest;
     }
 
-    function makeHandlerWithTransaction(stored: { timeSpentCharging?: number | null } = {}) {
+    /** A Wh reading of the cumulative import register. */
+    function energy(wh: number) {
+      return {
+        value: wh,
+        measurand: 'Energy.Active.Import.Register',
+        unitOfMeasure: { unit: 'Wh' },
+      };
+    }
+
+    function makeHandlerWithTransaction(
+      stored: { timeSpentCharging?: number | null } = {},
+      history: unknown[] = [],
+    ) {
       const transaction: {
         id: number;
         transactionId: string;
@@ -219,6 +232,7 @@ describe('TransactionEventRequestOcpp2Handler', () => {
             createOrUpdateTransactionByTransactionEventAndStationId: vi
               .fn()
               .mockResolvedValue(transaction),
+            readAllByStationIdAndTransactionId: vi.fn().mockResolvedValue(history),
           } as never,
         }),
       };
@@ -287,6 +301,61 @@ describe('TransactionEventRequestOcpp2Handler', () => {
       expect(
         transactionEventRepository.updateTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
+    });
+
+    it('does not read the event history when the station reports the field', async () => {
+      const { handler, transactionEventRepository } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), OCPPVersion.OCPP2_0_1));
+
+      // The station is the authority, so the fallback must not cost a query.
+      expect(transactionEventRepository.readAllByStationIdAndTransactionId).not.toHaveBeenCalled();
+    });
+
+    it('derives from the chargingState timeline when the station does not report it', async () => {
+      // Charging from 10:00 to 10:30, then parked - 1800 seconds of charging.
+      const { handler, transaction } = makeHandlerWithTransaction({}, [
+        { timestamp: '2026-08-20T10:00:00Z', transactionInfo: { chargingState: 'Charging' } },
+        { timestamp: '2026-08-20T10:30:00Z', transactionInfo: { chargingState: 'SuspendedEV' } },
+        { timestamp: '2026-08-20T11:00:00Z', transactionInfo: { chargingState: 'SuspendedEV' } },
+      ]);
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('falls back to the energy register when no event carries a chargingState', async () => {
+      // The register rises over the first half hour only.
+      const { handler, transaction } = makeHandlerWithTransaction({}, [
+        {
+          timestamp: '2026-08-20T10:00:00Z',
+          meterValue: [{ timestamp: '2026-08-20T10:00:00Z', sampledValue: [energy(0)] }],
+        },
+        {
+          timestamp: '2026-08-20T10:30:00Z',
+          meterValue: [{ timestamp: '2026-08-20T10:30:00Z', sampledValue: [energy(5000)] }],
+        },
+        {
+          timestamp: '2026-08-20T11:00:00Z',
+          meterValue: [{ timestamp: '2026-08-20T11:00:00Z', sampledValue: [energy(5000)] }],
+        },
+      ]);
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('leaves the value unset when neither source can answer', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBeUndefined();
     });
   });
 
