@@ -74,6 +74,9 @@ export class StartTransaction extends Model implements StartTransactionDto {
   @BelongsTo(() => Connector, 'connectorDatabaseId')
   declare connector: ConnectorDto;
 
+  @Column(DataType.INTEGER)
+  declare idTokenDatabaseId?: number;
+
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

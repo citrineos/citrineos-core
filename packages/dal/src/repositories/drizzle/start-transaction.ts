@@ -26,6 +26,7 @@ export function toStartTransactionDto(entity: StartTransactionEntity): StartTran
     connectorDatabaseId: entity.connectorDatabaseId,
     // Relation not present as a scalar column.
     connector: undefined,
+    idTokenDatabaseId: entity.idTokenDatabaseId,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

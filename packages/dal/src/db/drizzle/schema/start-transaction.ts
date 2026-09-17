@@ -31,6 +31,7 @@ function startTransactionColumns() {
       .notNull()
       .$defaultFn(() => new Date()),
     connectorDatabaseId: integer('connectorDatabaseId').notNull(),
+    idTokenDatabaseId: integer('idTokenDatabaseId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
