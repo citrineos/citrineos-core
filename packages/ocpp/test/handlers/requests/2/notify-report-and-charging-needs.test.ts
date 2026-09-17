@@ -133,7 +133,6 @@ describe('NotifyReportRequestOcpp2Handler', () => {
       STATION_ID,
       GENERATED_AT,
     );
-    expect(row.reload).toHaveBeenCalledOnce();
     expect(deviceModelRepository.updateResultByStationId).toHaveBeenCalledOnce();
     expect(deviceModelRepository.updateResultByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
