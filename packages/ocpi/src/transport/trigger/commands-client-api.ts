@@ -14,18 +14,25 @@ import {
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from '../../util/consts.js';
 import type { CacheWrapper } from '../../util/cache-wrapper.js';
-import type { OcpiClientApiDependencies } from '../../server/dependencies.js';
+import type {
+  OcpiClientApiDependencies,
+  OcpiConfiguredDependencies,
+} from '../../server/dependencies.js';
 
-export interface CommandsClientApiDependencies extends OcpiClientApiDependencies {
+export interface CommandsClientApiDependencies
+  extends OcpiClientApiDependencies,
+    OcpiConfiguredDependencies {
   cacheWrapper: CacheWrapper;
 }
 
 export class CommandsClientApi extends BaseClientApi {
   protected cache: ICache;
+  private readonly commandTimeoutSeconds: number;
 
   constructor(dependencies: CommandsClientApiDependencies) {
     super(dependencies);
     this.cache = dependencies.cacheWrapper.cache;
+    this.commandTimeoutSeconds = dependencies.config.commands.timeout;
   }
 
   CONTROLLER_PATH = ModuleId.Commands;
@@ -44,7 +51,7 @@ export class CommandsClientApi extends BaseClientApi {
       commandId,
       COMMAND_RESPONSE_URL_CACHE_RESOLVED,
       COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
-      5, // Flush the resolution after a few seconds so that it doesn't stay in cache indefinitely
+      this.commandTimeoutSeconds,
     );
 
     // A CommandResult flows from the CPO (us) to the eMSP counterparty, so the OCPI
