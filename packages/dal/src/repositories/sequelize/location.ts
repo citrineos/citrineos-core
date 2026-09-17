@@ -154,7 +154,19 @@ export class SequelizeLocationRepository
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
+      StatusNotification.build({
+        tenantId,
+        stationId,
+        ocppConnectionName,
+        timestamp: statusNotification.timestamp,
+        connectorStatus: statusNotification.connectorStatus,
+        evseId: statusNotification.evseId,
+        connectorId: statusNotification.connectorId,
+        errorCode: statusNotification.errorCode,
+        info: statusNotification.info,
+        vendorId: statusNotification.vendorId,
+        vendorErrorCode: statusNotification.vendorErrorCode,
+      }),
     );
     try {
       await this.updateLatestStatusNotification(
@@ -477,15 +489,6 @@ export class SequelizeLocationRepository
     );
   }
 
-  async readConnectorsByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<ConnectorDto[]> {
-    return await Connector.findAll({
-      where: { tenantId, ocppConnectionName },
-    });
-  }
-
   async readEvseByStationIdAndOcpp201EvseId(
     tenantId: number,
     ocppConnectionName: string,
@@ -518,6 +521,16 @@ export class SequelizeLocationRepository
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
       })) ?? undefined
     );
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    return await this.connector.readAllByQuery(tenantId, {
+      where: { tenantId, ocppConnectionName },
+      include: [{ model: Evse, as: 'evse' }],
+    });
   }
 
   async readConnectorsWithTariffsByStationId(

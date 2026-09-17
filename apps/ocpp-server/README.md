@@ -18,14 +18,14 @@ It is one workspace member of the `citrineos-core` pnpm monorepo. For repository
 `pnpm install`, building, the full-stack Docker Compose files, and the operator UI), see the
 [root README](../../README.md).
 
-The server class itself lives in `@citrineos/core` as
-[`CitrineOSServer`](../../packages/core/src/server/CitrineOSServer.ts); this app is only the
+The server class itself lives in `@citrineos/ocpp` as
+[`CitrineOSServer`](../../packages/ocpp/src/server/citrineos-server.ts); this app is only the
 entrypoint that loads config and runs it. Downstream distributions should subclass that class rather
-than copy it — see [Extending `CitrineOSServer`](../../packages/core/src/server/README.md).
+than copy it — see [Extending `CitrineOSServer`](../../packages/ocpp/src/server/README.md).
 
 How the server wires its dependencies — the Awilix container, module/service registration, and the
 bootstrap sequence — is documented in
-[`DEPENDENCY_INJECTION.md`](../../packages/core/src/server/DEPENDENCY_INJECTION.md), alongside the
+[`DEPENDENCY_INJECTION.md`](../../packages/ocpp/src/server/DEPENDENCY_INJECTION.md), alongside the
 server class it describes.
 
 ## Table of Contents
@@ -89,7 +89,7 @@ cd apps/ocpp-server
 pnpm run start
 ```
 
-This launches the server via `nodemon` (see `nodemon.json`), which builds the workspace, runs database migrations,
+This launches the server via `nodemon` (see `config/nodemon.json`), which builds the workspace, runs database migrations,
 and then starts the process with the Node.js inspector listening on port 9229.
 
 The schema defaults are the local-development values, so this needs no configuration to come up. To change how your
@@ -102,7 +102,7 @@ for the websocket endpoints themselves. Make sure local-only changes to that fil
 Whether you run the application with Docker or locally with pnpm, you can attach a debugger to port 9229 and set
 breakpoints in the TypeScript code directly from your IDE.
 
-To make the process **wait for the debugger to attach** before executing, modify the `nodemon.json` exec command from:
+To make the process **wait for the debugger to attach** before executing, modify the `config/nodemon.json` exec command from:
 
 ```shell
 pnpm run build --prefix ../../ && pnpm run db:migrate && node --inspect=0.0.0.0:9229 ./dist/index.js
@@ -131,7 +131,7 @@ file and the published ports in `docker-compose.yml` together.
 ## Database Migrations
 
 CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm run db:migrate` script — run
-automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
+automatically on start via `config/nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
 
 ### Table Partitioning
@@ -243,6 +243,39 @@ after changing configuration.
 | `CITRINEOS_SWAGGER_ENABLED`  | `true`                | Set `false` to stop serving the docs                  |
 | `CITRINEOS_SWAGGER_PATH`     | `/docs`               | Where the docs are mounted                            |
 | `CITRINEOS_SWAGGER_LOGOPATH` | `src/assets/logo.png` | Resolved from the working directory, not `fileAccess` |
+
+#### Keeping secrets out of the logs
+
+The logger redacts what `logRedaction` names, everywhere it appears in anything logged — no call site has to
+remember to strip it, and adding to the list needs no code change.
+
+| Variable                                | Default        | Notes                                                             |
+| --------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| `CITRINEOS_LOGREDACTION_KEYS`           | `["password"]` | Property names to censor at any depth, matched case-insensitively |
+| `CITRINEOS_LOGREDACTION_PATHS`          | `[]`           | Dotted paths to censor, where `*` matches one segment             |
+| `CITRINEOS_LOGREDACTION_PATTERNS`       | `[]`           | Regexes matched against logged strings; each is applied globally  |
+| `CITRINEOS_LOGREDACTION_PLACEHOLDER`    | `[***]`        | What a censored value is replaced with                            |
+| `CITRINEOS_LOGREDACTION_REDACTKEYCODES` | `true`         | Redact OCPP `KeyCode` idTokens — see below                        |
+
+Values are JSON, so a list is set as one:
+
+```bash
+CITRINEOS_LOGREDACTION_KEYS='["password","clientSecret","authorization"]'
+CITRINEOS_LOGREDACTION_PATHS='["credentials.token","*.privateKey"]'
+CITRINEOS_LOGREDACTION_PATTERNS='["sk-[A-Za-z0-9]{20,}"]'
+```
+
+Pick the narrowest one that fits: `keys` for a name that means the same thing wherever it appears, `paths` when
+only one location is sensitive, `patterns` for a value recognizable by shape rather than by position.
+
+`redactKeyCodes` is separate because it cannot be expressed as any of the three. An OCPP `idToken` is a public
+tag id or a driver's typed PIN depending on its sibling `type` field, and OCPP 2.x C04.FR.04 requires that a
+`KeyCode` one never appear in logging. It is applied by a rule that inspects the whole object, so it holds
+wherever a key code could reach a log rather than only where someone remembered. Leave it on unless the
+deployment is somewhere the rule is moot.
+
+To redact something else that depends on an object's shape, write a `RedactionRule` and return it from
+`CitrineOSServer.redactionRules()`.
 
 ### Database
 
@@ -439,13 +472,8 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-<<<<<<< HEAD
-The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
-=======
-The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
-
-> > > > > > > next
-> > > > > > > compiling it onto that validator's AJV and passing it in:
+The OCPP message validator is created in `packages/ocpp/src/server/citrineos-server.ts`. Register a DataTransfer schema by
+compiling it onto that validator's AJV and passing it in:
 
 ```ts
 const ocppAjv = OCPPValidator.createValidatorAjvInstance();
@@ -483,7 +511,7 @@ evse as inactive, leading to an inconsistent state with the charging station.
 ## Hasura Metadata
 
 In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata
-already exported into the `apps/ocpp-server/hasura-metadata` folder.
+already exported into the `apps/ocpp-server/db/hasura-metadata` folder.
 Running the Docker container will automatically import this metadata and track all tables and relationships.
 
 Unfortunately, Hasura doesn't currently support importing metadata from a JSON (which is the format if you export your
@@ -527,7 +555,7 @@ hasura metadata export
 ```
 
 - Find the exported files in the `graphql-engine` container's files in the metadata filepath `<name of project i.e. citrine>/metadata` and pull that metadata backup onto your local machine
-- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/hasura-metadata` folder in this repository
+- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/db/hasura-metadata` folder in this repository
 
 ## Testing with EVerest
 

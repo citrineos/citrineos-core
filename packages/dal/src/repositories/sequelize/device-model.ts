@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { type AttributeEnumType, OCPP2_0_1, type OCPP2_common_types } from '@citrineos/types';
 import { Op } from 'sequelize';
 import { type VariableAttributeQuerystring } from '../../interfaces/queries/variable-attribute.js';
 import { type IDeviceModelRepository } from '../repositories.js';
@@ -486,15 +486,43 @@ export class SequelizeDeviceModelRepository
     return await super.readAllByQuery(tenantId, readQuery);
   }
 
-  async existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number> {
-    return await super.existByQuery(tenantId, this.constructQuery(query));
-  }
-
   async deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
   ): Promise<VariableAttribute[]> {
     return await super.deleteAllByQuery(tenantId, this.constructQuery(query));
+  }
+
+  async findVariableAttributeByComponentAndVariable(
+    tenantId: number,
+    ocppConnectionName: string,
+    attributeType: AttributeEnumType,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<VariableAttribute | undefined> {
+    const variableAttribute = await super.readOnlyOneByQuery(tenantId, {
+      where: {
+        ocppConnectionName,
+        type: attributeType,
+      },
+      include: [
+        {
+          model: Component,
+          where: {
+            name: componentType.name,
+            instance: componentType.instance ?? null,
+          },
+        },
+        {
+          model: Variable,
+          where: {
+            name: variableType.name,
+            instance: variableType.instance ?? null,
+          },
+        },
+      ],
+    });
+    return variableAttribute ?? undefined;
   }
 
   async findComponentAndVariable(
@@ -525,20 +553,6 @@ export class SequelizeDeviceModelRepository
     }
 
     return [component, variable];
-  }
-
-  async findEvseByIdAndConnectorId(
-    tenantId: number,
-    id: number,
-    connectorId: number | null,
-  ): Promise<EvseType | undefined> {
-    const storedEvses = await this.evse.readAllByQuery(tenantId, {
-      where: {
-        id: id,
-        connectorId: connectorId,
-      },
-    });
-    return storedEvses.length > 0 ? storedEvses[0] : undefined;
   }
 
   async findVariableCharacteristicsByVariableNameAndVariableInstance(

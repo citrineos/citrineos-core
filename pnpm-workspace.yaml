@@ -3,7 +3,7 @@ packages:
   - "packages/base"
   - "packages/dal"
   - "packages/ocpp"
-  - "packages/ocpi-base"
+  - "packages/ocpi"
   - "apps/ocpp-server"
   - "apps/ocpi-server"
   - "apps/operator-ui"
@@ -29,7 +29,7 @@ catalog:
   vitest: 3.2.7
   "@vitest/coverage-v8": 3.2.7
   testcontainers: 11.14.0
-  "@faker-js/faker": 10.5.0
+  "@faker-js/faker": 10.6.0
 
   # -- HTTP / Fastify --
   fastify: 5.12.4
@@ -76,7 +76,7 @@ catalog:
   bufferutil: 4.1.0
   utf-8-validate: 6.0.6
   "@opentelemetry/api": 1.9.1
-  "@aws-sdk/client-s3": 3.1128.0
+  "@aws-sdk/client-s3": 3.1133.0
   "@google-cloud/storage": 7.22.0
 
   # -- Types --

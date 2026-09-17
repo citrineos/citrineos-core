@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { and, eq } from 'drizzle-orm';
 import type { IServerNetworkProfileRepository } from '@dal/repositories/repositories.js';
 import type { ServerNetworkProfileDto } from '@citrineos/types';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
@@ -97,6 +98,19 @@ export class DrizzleServerNetworkProfileRepository
     const dto = this.toDto(rows[0]);
     this.emit('updated', [dto]);
     return dto;
+  }
+
+  // Reads a single ServerNetworkProfile by its id, scoped to the tenant.
+  async findByProfileId(
+    tenantId: number,
+    id: string,
+  ): Promise<ServerNetworkProfileDto | undefined> {
+    const table = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(table as any)
+      .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))) as ServerNetworkProfileEntity[];
+    return rows[0] ? this.toDto(rows[0]) : undefined;
   }
 }
 

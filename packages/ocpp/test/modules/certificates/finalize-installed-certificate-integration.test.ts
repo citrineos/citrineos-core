@@ -5,20 +5,20 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   CertificateUseEnum,
+  type CertificateUseEnumType,
+  type InstallCertificateAttemptDto,
   InstallCertificateStatusEnum,
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  Certificate,
-  ChargingStation,
   DefaultSequelizeInstance,
-  InstallCertificateAttempt,
-  InstalledCertificate,
+  type ITenantRepository,
   SequelizeCertificateRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
-  Tenant,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import type { Sequelize } from 'sequelize-typescript';
@@ -41,6 +41,10 @@ const STATION = 'CP-PNC-1';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
+let certificateRepository: SequelizeCertificateRepository;
+let installCertificateAttemptRepository: SequelizeInstallCertificateAttemptRepository;
+let tenantRepository: ITenantRepository;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -72,6 +76,12 @@ beforeAll(async () => {
   sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  const deps = { config, logger: undefined, sequelizeInstance } as never;
+  certificateRepository = new SequelizeCertificateRepository(deps);
+  installCertificateAttemptRepository = new SequelizeInstallCertificateAttemptRepository(deps);
+  tenantRepository = new SequelizeTenantRepository(deps);
+  locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
 
 afterAll(async () => {
@@ -97,50 +107,43 @@ function aService() {
 let nextSerialNumber = 1;
 
 /** A pending attempt, as either prepare path leaves one before the request goes out. */
-async function aPendingAttempt(certificateType: string) {
-  const certificate = await Certificate.create({
+async function aPendingAttempt(certificateType: CertificateUseEnumType) {
+  const certificate = await certificateRepository.createCertificate(DEFAULT_TENANT_ID, {
     serialNumber: nextSerialNumber++,
     issuerName: 'issuer',
     organizationName: 'org',
     commonName: certificateType,
     certificateFileHash: `${certificateType}-hash`,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 
-  return InstallCertificateAttempt.create({
+  return installCertificateAttemptRepository.createAttempt(DEFAULT_TENANT_ID, {
     ocppConnectionName: STATION,
     certificateType,
-    certificateId: (certificate as unknown as { id: number }).id,
+    certificateId: certificate.id,
     status: null,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
 }
 
-function statusOf(attempt: InstallCertificateAttempt) {
-  return InstallCertificateAttempt.findByPk((attempt as unknown as { id: number }).id).then(
-    (row) => row?.status ?? null,
-  );
+function statusOf(attempt: InstallCertificateAttemptDto) {
+  return installCertificateAttemptRepository
+    .readByKey(DEFAULT_TENANT_ID, attempt.id!)
+    .then((row) => row?.status ?? null);
 }
 
 describe('finalizeInstalledCertificate with more than one certificate in flight', () => {
   beforeEach(async () => {
-    await InstalledCertificate.destroy({ where: {}, truncate: true, cascade: true });
-    await InstallCertificateAttempt.destroy({ where: {}, truncate: true, cascade: true });
-    await Certificate.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
 
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    await tenantRepository.createTenant({ id: DEFAULT_TENANT_ID, name: 'A', isUserTenant: false });
+    await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
       ocppConnectionName: STATION,
       isOnline: true,
-      tenantId: DEFAULT_TENANT_ID,
-    } as never);
+    });
   });
 
   it('settles the attempt for the certificate that was answered', async () => {
     const root = await aPendingAttempt(CertificateUseEnum.V2GRootCertificate);
-    const leaf = await aPendingAttempt('ChargingStationCertificate');
+    const leaf = await aPendingAttempt('ChargingStationCertificate' as CertificateUseEnumType);
 
     await aService().finalizeInstalledCertificate(
       DEFAULT_TENANT_ID,

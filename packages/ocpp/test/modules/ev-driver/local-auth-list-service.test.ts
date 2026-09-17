@@ -10,10 +10,9 @@ import {
   LocalListVersion,
   SendLocalList,
   VariableAttribute,
-  VariableCharacteristics,
 } from '@citrineos/dal';
 import { LocalAuthListService } from '@modules/ev-driver/local-auth-list-service.js';
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type VariableCharacteristicsDto } from '@citrineos/types';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
@@ -32,9 +31,9 @@ describe('LocalAuthListService', () => {
     ocppConnectionName: ocppConnectionName,
     versionNumber: initialVersionNumber,
   } as unknown as LocalListVersion);
-  const baseMockVariableCharacteristics = vi.mocked<VariableCharacteristics>({
+  const baseMockVariableCharacteristics = vi.mocked<VariableCharacteristicsDto>({
     dataType: OCPP2_0_1.DataEnumType.integer,
-  } as unknown as VariableCharacteristics);
+  } as unknown as VariableCharacteristicsDto);
 
   beforeEach(() => {
     mockLocalAuthListRepository = {
@@ -92,7 +91,7 @@ describe('LocalAuthListService', () => {
       mockSendLocalList,
     );
     mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      testMockVariableCharacteristics,
+      testMockVariableCharacteristics as never,
     );
     mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([]);
 
@@ -381,7 +380,7 @@ describe('LocalAuthListService', () => {
       mockSendLocalList,
     );
     mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      testMockVariableCharacteristics,
+      testMockVariableCharacteristics as never,
     );
     mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 
@@ -446,7 +445,7 @@ describe('LocalAuthListService', () => {
       mockSendLocalList,
     );
     mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
-      testMockVariableCharacteristics,
+      testMockVariableCharacteristics as never,
     );
     mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 

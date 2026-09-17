@@ -8,15 +8,15 @@ import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
-  Connector,
   DefaultSequelizeInstance,
   Evse,
   DrizzleChargingStationRepository,
   SequelizeLocationRepository,
   ServerNetworkProfile,
-  Tenant,
 } from '../../../index.js';
+import { Connector } from '../../../src/models/location/connector.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
@@ -76,6 +76,10 @@ beforeAll(async () => {
     user: config.database.username,
     password: config.database.password,
   });
+  // Stopping the container terminates idle connections (Postgres 57P01). pg
+  // escalates an unhandled pool 'error' to an uncaught exception, which fails
+  // the run even when every test passed.
+  drizzlePool.on('error', () => {});
   drizzleInstance = drizzle(drizzlePool);
 
   locationRepository = new SequelizeLocationRepository({

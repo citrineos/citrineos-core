@@ -20,6 +20,7 @@ import { ResourceType } from '@lib/utils/access-types';
 import { useList, useTranslate } from '@refinedev/core';
 import { plainToInstance } from 'class-transformer';
 import React, { useState } from 'react';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 
 export interface CombinedMapProps {
   defaultCenter?: google.maps.LatLngLiteral;
@@ -102,10 +103,14 @@ export const CombinedMap: React.FC<CombinedMapProps> = ({
                 <TooltipTrigger asChild>
                   <Button
                     onClick={() => {
-                      window.location.href =
-                        selectedType === 'location'
-                          ? `/locations/${selectedId}`
-                          : `/charging-stations/${selectedId}`;
+                      if (selectedType === 'location') {
+                        window.location.href = `/locations/${selectedId}`;
+                        return;
+                      }
+                      const station = stations.find((s) => String(s.id) === selectedId);
+                      if (station?.ocppConnectionName) {
+                        window.location.href = chargingStationPath(station.ocppConnectionName);
+                      }
                     }}
                   >
                     {translate('Locations.map.viewDetails')}

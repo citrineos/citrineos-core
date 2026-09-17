@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type {
+  AuthorizationCreate,
   AuthorizationDto,
   AuthorizationStatusEnumType,
   AuthorizationWhitelistEnumType,
@@ -68,6 +69,17 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     updatedAt: entity.updatedAt,
   };
   return dto;
+}
+
+function toAuthorizationEntity(value: object): AuthorizationEntity {
+  const v = value as { cacheExpiryDateTime?: string | Date | null };
+  if (typeof v.cacheExpiryDateTime === 'string') {
+    return {
+      ...value,
+      cacheExpiryDateTime: new Date(v.cacheExpiryDateTime),
+    } as AuthorizationEntity;
+  }
+  return value as AuthorizationEntity;
 }
 
 export class DrizzleAuthorizationRepository
@@ -165,6 +177,13 @@ export class DrizzleAuthorizationRepository
     value: object,
     key: string,
   ): Promise<AuthorizationDto | undefined> {
-    return this.updateById(tenantId, Number(key), value);
+    return this.updateById(tenantId, Number(key), toAuthorizationEntity(value));
+  }
+
+  async createAuthorization(
+    tenantId: number,
+    input: AuthorizationCreate,
+  ): Promise<AuthorizationDto> {
+    return await this.insert(tenantId, { ...input });
   }
 }
