@@ -142,15 +142,19 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.location')}
             value={''}
-            valueRender={() => (
-              <Link
-                to={`/${MenuSection.LOCATIONS}/${transaction.locationId}`}
-                className={clickableLinkStyle}
-                title={transaction.locationId}
-              >
-                {transaction.location?.name ?? NOT_APPLICABLE}
-              </Link>
-            )}
+            valueRender={() =>
+              transaction.locationId ? (
+                <Link
+                  to={`/${MenuSection.LOCATIONS}/${transaction.locationId}`}
+                  className={clickableLinkStyle}
+                  title={String(transaction.locationId)}
+                >
+                  {transaction.location?.name ?? String(transaction.locationId)}
+                </Link>
+              ) : (
+                <span>{NOT_APPLICABLE}</span>
+              )
+            }
           />
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.totalKwh')}
