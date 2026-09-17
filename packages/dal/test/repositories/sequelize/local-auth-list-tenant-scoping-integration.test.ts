@@ -8,12 +8,9 @@ import {
   OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/types';
-import {
-  Authorization,
-  DefaultSequelizeInstance,
-  SequelizeLocalAuthListRepository,
-  Tenant,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeLocalAuthListRepository } from '../../../index.js';
+import { Authorization } from '../../../src/models/authorization/authorization.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';

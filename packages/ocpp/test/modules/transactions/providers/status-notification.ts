@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
+import { OCPP1_6, OCPP2_0_1, type StatusNotificationDto } from '@citrineos/types';
 import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
 import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './device-model-provider.js';
-import { StatusNotification } from '@citrineos/dal';
 
 export function aStatusNotificationRequest(
   updateFunction?: UpdateFunction<OCPP2_0_1.StatusNotificationRequest>,
@@ -20,14 +19,14 @@ export function aStatusNotificationRequest(
 }
 
 export function aStatusNotification(
-  updateFunction?: UpdateFunction<StatusNotification>,
-): StatusNotification {
-  const statusNotification: StatusNotification = {
+  updateFunction?: UpdateFunction<StatusNotificationDto>,
+): StatusNotificationDto {
+  const statusNotification: StatusNotificationDto = {
     timestamp: new Date().toISOString(),
     connectorStatus: OCPP2_0_1.ConnectorStatusEnumType.Available,
     evseId: MOCK_EVSE_ID,
     connectorId: MOCK_CONNECTOR_ID,
-  } as StatusNotification;
+  } as StatusNotificationDto;
 
   return applyUpdateFunction(statusNotification, updateFunction);
 }

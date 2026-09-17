@@ -40,7 +40,7 @@ export const CONNECTOR_SPEC_FIELDS = fieldSet([
  */
 export const CONNECTOR_FULL_FIELDS = fieldSet([
   'id',
-  'ocppConnectionName',
+  'stationId',
   'evseId',
   'evseTypeConnectorId',
   'connectorId',

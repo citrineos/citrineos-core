@@ -31,7 +31,7 @@ export const LOCATIONS_LIST_QUERY = gql`
         }
         LatestStatusNotifications {
           id
-          ocppConnectionName
+          stationId
           statusNotificationId
           updatedAt
           createdAt
@@ -76,7 +76,7 @@ export const LOCATIONS_GET_QUERY = gql`
         }
         LatestStatusNotifications {
           id
-          ocppConnectionName
+          stationId
           statusNotificationId
           updatedAt
           createdAt

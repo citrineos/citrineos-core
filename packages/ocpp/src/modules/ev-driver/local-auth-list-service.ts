@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { AttributeEnum, OCPP1_6, UpdateEnum, OCPP2_request_types } from '@citrineos/types';
+import type { VariableAttributeDto } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,13 +11,7 @@ import type {
   IDeviceModelRepository,
   ILocalAuthListRepository,
 } from '@citrineos/dal';
-import {
-  SendLocalList,
-  Variable,
-  VariableAttribute,
-  LocalListVersion,
-  LocalListAuthorization,
-} from '@citrineos/dal';
+import { SendLocalList, Variable, LocalListVersion, LocalListAuthorization } from '@citrineos/dal';
 
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
@@ -205,7 +200,7 @@ export class LocalAuthListService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageSendLocalList: VariableAttribute[] =
+    const itemsPerMessageSendLocalList: VariableAttributeDto[] =
       await this._deviceModelRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
@@ -347,7 +342,7 @@ export class LocalAuthListService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const entriesAttributes: VariableAttribute[] =
+    const entriesAttributes: VariableAttributeDto[] =
       await this._deviceModelRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,

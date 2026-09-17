@@ -6,15 +6,10 @@ import {
   type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { type ChargingStationNetworkProfileDto, HttpMethod } from '@citrineos/types';
 import type { NetworkProfileQuerystring } from '@citrineos/dal';
 import { NetworkProfileQuerySchema } from '@citrineos/dal';
 import type { IChargingStationNetworkProfileRepository } from '@citrineos/dal';
-import {
-  type ChargingStationNetworkProfile,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-} from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface GetStationNetworkProfilesEndpointDependencies extends AbstractEndpointDependencies {
@@ -42,13 +37,10 @@ export class GetStationNetworkProfilesEndpoint extends AbstractEndpoint<GetStati
 
   async handle(
     request: FastifyRequest<GetStationNetworkProfilesRoute>,
-  ): Promise<ChargingStationNetworkProfile[]> {
-    return this._chargingStationNetworkProfileRepository.readAllByQuery(request.query.tenantId, {
-      where: {
-        ocppConnectionName: request.query.ocppConnectionName,
-        tenantId: request.query.tenantId,
-      },
-      include: [SetNetworkProfile, ServerNetworkProfile],
-    });
+  ): Promise<ChargingStationNetworkProfileDto[]> {
+    return this._chargingStationNetworkProfileRepository.readAllByStationIdWithProfiles(
+      request.query.tenantId,
+      request.query.ocppConnectionName,
+    );
   }
 }

@@ -28,11 +28,10 @@ export class LatestStatusNotification extends Model implements LatestStatusNotif
   static readonly MODEL_NAME: string = OCPP2_Namespace.LatestStatusNotification;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+  })
   declare stationId?: number;
-
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation: ChargingStationDto;

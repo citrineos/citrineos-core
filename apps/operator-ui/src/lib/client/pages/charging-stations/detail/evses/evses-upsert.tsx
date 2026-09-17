@@ -20,16 +20,10 @@ import { useTranslate } from '@refinedev/core';
 interface EvseUpsertProps {
   onSubmit: () => void;
   stationId: number;
-  ocppConnectionName?: string;
   evse: EvseDto | null;
 }
 
-export const EvseUpsert: React.FC<EvseUpsertProps> = ({
-  onSubmit,
-  stationId,
-  ocppConnectionName,
-  evse,
-}) => {
+export const EvseUpsert: React.FC<EvseUpsertProps> = ({ onSubmit, stationId, evse }) => {
   const translate = useTranslate();
   const tenantId = useTenantId();
 
@@ -76,7 +70,6 @@ export const EvseUpsert: React.FC<EvseUpsertProps> = ({
 
     newItem.updatedAt = now;
     newItem.stationId = stationId;
-    newItem.ocppConnectionName = ocppConnectionName ?? evse?.ocppConnectionName;
 
     form.refineCore.onFinish(newItem).then(() => reset());
   };

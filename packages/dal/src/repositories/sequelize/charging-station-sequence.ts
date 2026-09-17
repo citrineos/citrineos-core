@@ -5,6 +5,7 @@ import type { ChargingStationSequenceTypeEnumType } from '@citrineos/types';
 import type { IChargingStationSequenceRepository } from '../repositories.js';
 import { ChargingStationSequence } from '../../models/charging-station-sequence/charging-station-sequence.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationIdOrThrow } from './resolve-station-id.js';
 
 export class SequelizeChargingStationSequenceRepository
   extends SequelizeRepository<ChargingStationSequence>
@@ -43,11 +44,17 @@ export class SequelizeChargingStationSequenceRepository
     ocppConnectionName: string,
     type: ChargingStationSequenceTypeEnumType,
   ): Promise<number> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      `allocate a ${type} sequence value`,
+    );
+
     return await this.s.transaction(async (transaction) => {
       const [storedSequence, sequenceCreated] = await this.readOrCreateByQuery(tenantId, {
         where: {
           tenantId: tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId,
           type: type,
         },
         defaults: {
