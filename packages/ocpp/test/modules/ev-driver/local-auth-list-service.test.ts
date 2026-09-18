@@ -459,6 +459,59 @@ describe('LocalAuthListService', () => {
     expect(result).toEqual(mockSendLocalList);
   });
 
+  it('counts a differential removal as freeing a slot, not taking one', async () => {
+    const newVersionNumber = 3;
+    const sendLocalListRequest = {
+      versionNumber: newVersionNumber,
+      updateType: OCPP2_0_1.UpdateEnumType.Differential,
+      localAuthorizationList: [
+        { idToken: { idToken: 'C', type: 'Central' } },
+        { idToken: { idToken: 'D', type: 'Central' }, idTokenInfo: { status: 'Accepted' } },
+      ] as [OCPP2_0_1.AuthorizationData, OCPP2_0_1.AuthorizationData],
+    };
+
+    const currentVersion = vi.mocked<LocalListVersion>({
+      ocppConnectionName: ocppConnectionName,
+      versionNumber: initialVersionNumber,
+      localAuthorizationList: [
+        { authorizationId: 1, idToken: 'A', status: 'Accepted' },
+        { authorizationId: 2, idToken: 'B', status: 'Accepted' },
+        { authorizationId: 3, idToken: 'C', status: 'Accepted' },
+      ],
+    } as unknown as LocalListVersion);
+
+    const mockSendLocalList = vi.mocked<SendLocalList>({
+      correlationId: correlationId,
+      ocppConnectionName: ocppConnectionName,
+      updateType: OCPP2_0_1.UpdateEnumType.Differential,
+      versionNumber: newVersionNumber,
+      localAuthorizationList: [
+        { idToken: 'C', idTokenType: 'Central', status: 'Invalid' },
+        { authorizationId: 4, idToken: 'D', idTokenType: 'Central', status: 'Accepted' },
+      ],
+    } as unknown as SendLocalList);
+
+    const mockEntriesAttribute = vi.mocked<VariableAttributeDto>({
+      variable: { variableCharacteristics: { maxLimit: 3 } },
+    } as unknown as VariableAttributeDto);
+
+    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(currentVersion);
+    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+      mockSendLocalList,
+    );
+    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
+
+    const result =
+      await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
+        tenantId,
+        ocppConnectionName,
+        correlationId,
+        sendLocalListRequest,
+      );
+
+    expect(result).toEqual(mockSendLocalList);
+  });
+
   describe('prepareSendLocalList', () => {
     it('mints a correlation id and persists the request against that same id', async () => {
       const persist = vi

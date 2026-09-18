@@ -147,6 +147,7 @@ describe('getUrl endpoint selection', () => {
     const api = new CommandsClientApi({
       ...deps().dependencies,
       cacheWrapper: { cache: { set: vi.fn() } },
+      config: { commands: { timeout: 5 } },
     } as never);
     // MissingRequiredParamException(field, msg?) receives the text as `field`,
     // leaving message empty — only the error type is asserted here.
@@ -588,6 +589,7 @@ describe('CommandsClientApi.postCommandResult', () => {
     const api = new CommandsClientApi({
       ...deps().dependencies,
       cacheWrapper: { cache: { set } },
+      config: { commands: { timeout: 5 } },
     } as never);
     const request = spyRequest(api);
     const profile = aProfile();

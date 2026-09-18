@@ -192,9 +192,26 @@ export class DrizzleTariffRepository
       const values = this.toTariffValues(tariff, tenantId);
 
       if (exists) {
+        const {
+          pricePerKwh,
+          pricePerMin,
+          pricePerSession,
+          authorizationAmount,
+          paymentFee,
+          taxRate,
+        } = existing[0];
         const updated = (await tx
           .update(tariffTable)
-          .set({ ...values, updatedAt: new Date() } as any)
+          .set({
+            ...values,
+            pricePerKwh,
+            pricePerMin,
+            pricePerSession,
+            authorizationAmount,
+            paymentFee,
+            taxRate,
+            updatedAt: new Date(),
+          } as any)
           .where(eq(tariffTable.id, existing[0].id))
           .returning()) as TariffEntity[];
         if (updated[0]) saved = this.toDto(updated[0]);
