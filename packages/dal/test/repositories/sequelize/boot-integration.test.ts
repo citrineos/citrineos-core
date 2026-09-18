@@ -7,6 +7,7 @@ import { DefaultSequelizeInstance, SequelizeBootRepository } from '../../../inde
 import { Boot } from '../../../src/models/boot.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
+import { Component, Variable, VariableAttribute } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { VariableAttribute } from '@dal/db/sequelize/index.js';
+import { Boot, VariableAttribute } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,

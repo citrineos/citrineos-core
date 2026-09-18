@@ -9,15 +9,13 @@ import pg from 'pg';
 import type { Sequelize } from 'sequelize-typescript';
 import type { SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   Component,
   DefaultSequelizeInstance,
   DrizzleBootRepository,
   DrizzleVariableAttributeRepository,
-  Tenant,
   Variable,
-  VariableAttribute,
 } from '../../../index.js';
+import { ChargingStation, Tenant, VariableAttribute } from '@dal/db/sequelize/index.js';
 
 const TENANT_ID = 1;
 const STATION = 'CS-001';
