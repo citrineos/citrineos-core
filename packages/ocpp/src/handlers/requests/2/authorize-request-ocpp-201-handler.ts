@@ -12,6 +12,7 @@ import {
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AttributeEnum,
   AuthorizationStatusEnum,
@@ -34,7 +35,6 @@ import {
   type IAuthorizationRepository,
   type IDeviceModelRepository,
   OCPP2_0_1_Mapper,
-  VariableAttribute,
 } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.Authorize)
@@ -188,7 +188,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
           if (hasConnectorTypeRestriction) {
             evseIds = new Set();
-            const connectorTypes: VariableAttribute[] =
+            const connectorTypes: VariableAttributeDto[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                 tenantId: context.tenantId,
                 ocppConnectionName: message.context.ocppConnectionName,
@@ -217,7 +217,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
               authorization.disallowedEvseIdPrefixes.length > 0
             ) {
               evseIds = evseIds ? evseIds : new Set();
-              const evseIdAttributes: VariableAttribute[] =
+              const evseIdAttributes: VariableAttributeDto[] =
                 await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                   tenantId: context.tenantId,
                   ocppConnectionName: message.context.ocppConnectionName,
@@ -284,7 +284,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     }
 
     if (response.idTokenInfo.status === AuthorizationStatusEnum.Accepted) {
-      const tariffAvailable: VariableAttribute[] =
+      const tariffAvailable: VariableAttributeDto[] =
         await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
@@ -294,7 +294,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           type: AttributeEnum.Actual,
         });
 
-      const displayMessageAvailable: VariableAttribute[] =
+      const displayMessageAvailable: VariableAttributeDto[] =
         await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,

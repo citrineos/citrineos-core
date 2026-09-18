@@ -4,7 +4,7 @@
 
 // ============================================================================
 // Two functional RECEIVER/SENDER modules validate a good payload and detect
-//     a bad one. The mock reuses the SAME ocpi-base Zod schema Citrine parses
+//     a bad one. The mock reuses the SAME ocpi Zod schema Citrine parses
 //     with, so validation.ok===false + an error Finding IS a detected contract
 //     drift. Also proves auth + routing-header enforcement, and the strictInbound
 //     scenario option that turns detection into an outright 2001 rejection.

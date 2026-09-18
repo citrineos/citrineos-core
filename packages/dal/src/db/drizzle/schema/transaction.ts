@@ -26,8 +26,7 @@ function transactionColumns() {
   return {
     id: serial('id'),
     locationId: integer('locationId'),
-    stationId: integer('stationId').notNull(),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    stationId: integer('stationId'),
     evseId: integer('evseId'),
     connectorId: integer('connectorId'),
     authorizationId: integer('authorizationId'),

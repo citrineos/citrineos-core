@@ -32,6 +32,7 @@ export class SequelizeServerNetworkProfileRepository
     serverNetworkProfile.securityProfile = websocketServerConfig.securityProfile;
     serverNetworkProfile.allowUnknownChargingStations =
       websocketServerConfig.allowUnknownChargingStations;
+    serverNetworkProfile.dynamicTenantResolution = websocketServerConfig.dynamicTenantResolution;
     serverNetworkProfile.tlsKeyFilePath = websocketServerConfig.tlsKeyFilePath;
     serverNetworkProfile.tlsCertificateChainFilePath =
       websocketServerConfig.tlsCertificateChainFilePath;
@@ -42,6 +43,13 @@ export class SequelizeServerNetworkProfileRepository
     serverNetworkProfile.tenantId = websocketServerConfig.tenantId;
     await serverNetworkProfile.save();
     return serverNetworkProfile;
+  }
+
+  /**
+   * Reads a single ServerNetworkProfile by its id, scoped to the tenant.
+   */
+  async findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfile | undefined> {
+    return (await ServerNetworkProfile.findOne({ where: { id, tenantId } })) ?? undefined;
   }
 }
 

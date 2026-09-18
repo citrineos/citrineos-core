@@ -15,8 +15,7 @@ import {
 
 export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   id: z.number().int().optional(),
-  stationId: z.number().int().optional(),
-  ocppConnectionName: z.string(),
+  stationId: z.number().int(),
   evseId: z.number().int(),
   connectorId: z.number().int().optional(),
   evseTypeConnectorId: z.number().int().optional(),
@@ -33,6 +32,7 @@ export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   vendorId: z.string().nullable().optional(),
   vendorErrorCode: z.string().nullable().optional(),
   termsAndConditionsUrl: z.string().nullable().optional(),
+  tariffId: z.number().int().nullable().optional(),
   tariff: TariffSchema.nullable().optional(),
 });
 

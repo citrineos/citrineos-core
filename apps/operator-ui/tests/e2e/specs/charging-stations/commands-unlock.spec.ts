@@ -14,7 +14,7 @@ test.describe('charging-stations › UnlockConnector command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/unlock connector/i);
     const modal = new ModalHarness(page, /unlock connector/i);
@@ -37,7 +37,7 @@ test.describe('charging-stations › UnlockConnector command', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/unlock connector/i);
     const modal = new ModalHarness(page, /unlock connector/i);

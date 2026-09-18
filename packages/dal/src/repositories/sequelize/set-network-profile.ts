@@ -8,9 +8,9 @@ import type {
   ISetNetworkProfileRepository,
   SetNetworkProfileCreateInput,
 } from '../repositories.js';
-import { ChargingStation } from '../../models/location/charging-station.js';
 import { SetNetworkProfile } from '../../models/location/set-network-profile.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 export class SequelizeSetNetworkProfileRepository
   extends SequelizeRepository<SetNetworkProfile>
@@ -22,11 +22,12 @@ export class SequelizeSetNetworkProfileRepository
 
   async createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto> {
     const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
-    const stationId = await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined);
+    // An unresolvable name leaves "stationId" null, which the column allows.
+    const stationId =
+      values.stationId ?? (await resolveStationId(tenantId, values.ocppConnectionName));
     return SetNetworkProfile.build({
       stationId,
       tenantId,
-      ocppConnectionName: values.ocppConnectionName ?? undefined,
       correlationId: values.correlationId ?? undefined,
       websocketServerConfigId: values.websocketServerConfigId ?? undefined,
       configurationSlot: values.configurationSlot ?? undefined,
@@ -41,18 +42,21 @@ export class SequelizeSetNetworkProfileRepository
     } as Parameters<typeof SetNetworkProfile.build>[0]).save();
   }
 
-  private async resolveStationId(
+  async readByCorrelationId(
     tenantId: number,
-    ocppConnectionName?: string,
-  ): Promise<number | undefined> {
-    if (!ocppConnectionName) {
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
       return undefined;
     }
-    const station = await ChargingStation.findOne({
-      where: { ocppConnectionName, tenantId },
-      attributes: ['id'],
-    });
-    return station?.id;
+    return (
+      (await SetNetworkProfile.findOne({
+        where: { tenantId, stationId, correlationId },
+      })) ?? undefined
+    );
   }
 }
 

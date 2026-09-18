@@ -12,6 +12,7 @@ import {
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AttributeEnum,
   AuthorizationStatusEnum,
@@ -35,7 +36,7 @@ import {
   type IDeviceModelRepository,
   type ITariffRepository,
 } from '@citrineos/dal';
-import { OCPP2_1_Mapper, VariableAttribute } from '@citrineos/dal';
+import { OCPP2_1_Mapper } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.Authorize)
 export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
@@ -180,7 +181,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
           if (hasConnectorTypeRestriction) {
             evseIds = new Set();
-            const connectorTypes: VariableAttribute[] =
+            const connectorTypes: VariableAttributeDto[] =
               await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                 tenantId: context.tenantId,
                 ocppConnectionName: message.context.ocppConnectionName,
@@ -209,7 +210,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
               authorization.disallowedEvseIdPrefixes.length > 0
             ) {
               evseIds = evseIds ? evseIds : new Set();
-              const evseIdAttributes: VariableAttribute[] =
+              const evseIdAttributes: VariableAttributeDto[] =
                 await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
                   tenantId: context.tenantId,
                   ocppConnectionName: message.context.ocppConnectionName,
@@ -300,7 +301,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     }
 
     if (response.idTokenInfo.status === AuthorizationStatusEnum.Accepted) {
-      const tariffEnabled: VariableAttribute[] =
+      const tariffEnabled: VariableAttributeDto[] =
         await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,

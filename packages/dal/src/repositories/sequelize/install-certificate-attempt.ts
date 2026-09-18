@@ -10,10 +10,10 @@ import type {
   InstallCertificateStatusEnumType,
 } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 import type { IInstallCertificateAttemptRepository } from '../repositories.js';
 import { InstallCertificateAttempt } from '../../models/certificate/install-certificate-attempt.js';
 import { Certificate } from '../../models/certificate/certificate.js';
-import { ChargingStation } from '../../models/location/index.js';
 
 export class SequelizeInstallCertificateAttemptRepository
   extends SequelizeRepository<InstallCertificateAttempt>
@@ -30,9 +30,13 @@ export class SequelizeInstallCertificateAttemptRepository
     certificateFileHash: string,
     requestId?: number | null,
   ): Promise<InstallCertificateAttemptDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         certificateType,
         status: null,
         ...(requestId != null ? { requestId } : {}),
@@ -54,9 +58,13 @@ export class SequelizeInstallCertificateAttemptRepository
     requestId?: number | null,
     certificateType?: CertificateUseEnumType,
   ): Promise<InstallCertificateAttemptDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         status: null,
         ...(requestId != null ? { requestId } : {}),
         ...(certificateType != null ? { certificateType } : {}),
@@ -66,10 +74,14 @@ export class SequelizeInstallCertificateAttemptRepository
 
   async createAttempt(
     tenantId: number,
-    input: InstallCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<InstallCertificateAttemptCreate, 'stationId'>,
   ): Promise<InstallCertificateAttemptDto> {
-    const stationId =
-      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record an install-certificate attempt',
+    );
     const attempt = InstallCertificateAttempt.build({ ...input, stationId, tenantId });
     const saved = await attempt.save();
     this.emit('created', [saved]);
@@ -93,17 +105,6 @@ export class SequelizeInstallCertificateAttemptRepository
       return undefined;
     }
     return (await attempt.$get('certificate')) ?? undefined;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | null> {
-    const station = await ChargingStation.findOne({
-      where: { ocppConnectionName, tenantId },
-      attributes: ['id'],
-    });
-    return station?.id ?? null;
   }
 }
 

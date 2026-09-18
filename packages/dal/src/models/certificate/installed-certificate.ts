@@ -32,15 +32,9 @@ export class InstalledCertificate extends Model implements InstalledCertificateD
   @ForeignKey(() => ChargingStation)
   @Column({
     type: DataType.INTEGER,
-    allowNull: true,
-  })
-  declare stationId?: number;
-
-  @Column({
-    type: DataType.STRING(36),
     allowNull: false,
   })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @Column({
     type: DataType.STRING,

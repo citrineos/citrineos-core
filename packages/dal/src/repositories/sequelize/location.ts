@@ -27,7 +27,11 @@ import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationId } from './resolve-station-id.js';
+import {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './resolve-station-id.js';
 
 export class SequelizeLocationRepository
   extends SequelizeRepository<Location>
@@ -154,15 +158,21 @@ export class SequelizeLocationRepository
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
-      StatusNotification.build({ ...statusNotification, tenantId, stationId }),
+      StatusNotification.build({
+        tenantId,
+        stationId,
+        timestamp: statusNotification.timestamp,
+        connectorStatus: statusNotification.connectorStatus,
+        evseId: statusNotification.evseId,
+        connectorId: statusNotification.connectorId,
+        errorCode: statusNotification.errorCode,
+        info: statusNotification.info,
+        vendorId: statusNotification.vendorId,
+        vendorErrorCode: statusNotification.vendorErrorCode,
+      }),
     );
     try {
-      await this.updateLatestStatusNotification(
-        tenantId,
-        ocppConnectionName,
-        stationId,
-        savedStatusNotification,
-      );
+      await this.updateLatestStatusNotification(tenantId, savedStatusNotification);
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
@@ -170,19 +180,18 @@ export class SequelizeLocationRepository
 
   async updateLatestStatusNotification(
     tenantId: number,
-    ocppConnectionName: string,
-    stationId: number | undefined,
     statusNotification: StatusNotification,
   ): Promise<void> {
     const evseId = statusNotification.evseId;
     const connectorId = statusNotification.connectorId;
     const statusNotificationId = statusNotification.id;
+    const stationId = statusNotification.stationId;
     // delete operation doesn't support "include" in query
     // so we need to find them at first and then delete
     const existingLatestStatusNotifications: LatestStatusNotification[] =
       await this.latestStatusNotification.readAllByQuery(tenantId, {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId,
         },
         include: [
           {
@@ -198,7 +207,7 @@ export class SequelizeLocationRepository
     const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
     await this.latestStatusNotification.deleteAllByQuery(tenantId, {
       where: {
-        ocppConnectionName: ocppConnectionName,
+        stationId,
         id: {
           [Op.in]: idsToDelete,
         },
@@ -208,9 +217,8 @@ export class SequelizeLocationRepository
       tenantId,
       LatestStatusNotification.build({
         tenantId,
-        ocppConnectionName: ocppConnectionName,
-        statusNotificationId,
         stationId,
+        statusNotificationId,
       }),
     );
   }
@@ -337,15 +345,10 @@ export class SequelizeLocationRepository
       const [savedEvse, evseCreated] = await this.evse.readOrCreateByQuery(tenantId, {
         where: {
           tenantId,
-          ocppConnectionName: evse.ocppConnectionName,
+          stationId: evse.stationId,
           evseTypeId: evse.evseTypeId,
         },
-        defaults: {
-          ...evse,
-          stationId:
-            evse.stationId ??
-            (await resolveStationId(tenantId, evse.ocppConnectionName, sequelizeTransaction)),
-        },
+        defaults: { ...evse },
         transaction: sequelizeTransaction,
       });
       if (!evseCreated) {
@@ -369,7 +372,7 @@ export class SequelizeLocationRepository
   ): Promise<ConnectorDto | undefined> {
     return await this.upsertConnector(tenantId, connector, {
       tenantId,
-      ocppConnectionName: connector.ocppConnectionName,
+      stationId: connector.stationId,
       connectorId: connector.connectorId,
     });
   }
@@ -396,16 +399,7 @@ export class SequelizeLocationRepository
         tenantId,
         {
           where,
-          defaults: {
-            ...connector,
-            stationId:
-              connector.stationId ??
-              (await resolveStationId(
-                tenantId,
-                connector.ocppConnectionName,
-                sequelizeTransaction,
-              )),
-          },
+          defaults: { ...connector },
           transaction: sequelizeTransaction,
         },
       );
@@ -440,11 +434,12 @@ export class SequelizeLocationRepository
   ): Promise<{ evseId: number }> {
     // OCPP 1.6 has no native EVSE concept. Conservative default: each connector
     // maps to its own Evse
-    const evse = await Evse.create({
+    const stationId = await resolveStationIdOrThrow(
       tenantId,
       ocppConnectionName,
-      stationId: await resolveStationId(tenantId, ocppConnectionName),
-    });
+      'auto-commission an EVSE',
+    );
+    const evse = await Evse.create({ tenantId, stationId });
     return { evseId: evse.id };
   }
 
@@ -469,7 +464,7 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           connectorId: ocpp16ConnectorId,
         },
         include: [Evse],
@@ -485,7 +480,7 @@ export class SequelizeLocationRepository
     return (
       (await Evse.findOne({
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           evseTypeId: ocpp201EvseId,
           tenantId,
         },
@@ -503,12 +498,22 @@ export class SequelizeLocationRepository
       (await Connector.findOne({
         where: {
           tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           evseTypeConnectorId: ocpp201EvseType.connectorId,
         },
         include: [{ model: Evse, where: { evseTypeId: ocpp201EvseType.id }, required: true }],
       })) ?? undefined
     );
+  }
+
+  async readConnectorsByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ConnectorDto[]> {
+    return await this.connector.readAllByQuery(tenantId, {
+      where: { tenantId, stationId: await stationIdFilter(tenantId, ocppConnectionName) },
+      include: [{ model: Evse, as: 'evse' }],
+    });
   }
 
   async readConnectorsWithTariffsByStationId(
@@ -519,7 +524,7 @@ export class SequelizeLocationRepository
     return await this.connector.readAllByQuery(tenantId, {
       where: {
         tenantId,
-        ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         tariffId: { [Op.ne]: null },
       },
       include: [

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
-import type { VariableAttribute } from '@citrineos/dal';
 import type { VariableAttributeQuerystring } from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
@@ -20,7 +20,7 @@ interface IDeviceModelLookup {
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
 }
 
 export class BasicAuthenticationFilter extends AuthenticatorFilter {

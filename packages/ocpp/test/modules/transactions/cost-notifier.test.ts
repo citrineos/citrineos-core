@@ -13,6 +13,7 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 describe('CostNotifier', () => {
   const { container } = createTestContainer();
   const anyTenantId = DEFAULT_TENANT_ID;
+  const anyConnectionName = 'CP_TEST_001';
   const anyProtocol = OCPPVersion.OCPP2_0_1;
 
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
@@ -58,7 +59,7 @@ describe('CostNotifier', () => {
       const transaction = givenTransaction(aTransaction());
 
       costNotifier.notifyWhileActive(
-        transaction.ocppConnectionName,
+        anyConnectionName,
         transaction.transactionId,
         anyTenantId,
         intervalSeconds,
@@ -88,7 +89,7 @@ describe('CostNotifier', () => {
       const transaction = givenTransaction(aTransaction());
 
       costNotifier.notifyWhileActive(
-        transaction.ocppConnectionName,
+        anyConnectionName,
         transaction.transactionId,
         anyTenantId,
         intervalSeconds,
@@ -113,7 +114,7 @@ describe('CostNotifier', () => {
       const transaction = givenTransaction(aTransaction());
 
       costNotifier.notifyWhileActive(
-        transaction.ocppConnectionName,
+        anyConnectionName,
         transaction.transactionId,
         anyTenantId,
         intervalSeconds,
@@ -121,7 +122,7 @@ describe('CostNotifier', () => {
       );
 
       costNotifier.notifyWhileActive(
-        transaction.ocppConnectionName,
+        anyConnectionName,
         transaction.transactionId,
         anyTenantId,
         intervalSeconds,
@@ -139,7 +140,7 @@ describe('CostNotifier', () => {
     totalCost: number,
   ) {
     expect(costUpdatedNotifier).toHaveBeenLastCalledWith({
-      ocppConnectionName: transaction.ocppConnectionName,
+      ocppConnectionName: anyConnectionName,
       tenantId,
       totalCost,
       transactionId: transaction.transactionId,

@@ -21,14 +21,20 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import { Transaction } from '@citrineos/dal';
-import type { IChargingProfileRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type {
+  IChargingProfileRepository,
+  IDeviceModelRepository,
+  ITransactionEventRepository,
+} from '@citrineos/dal';
 import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
+import { generateChargingProfileId } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingSchedule)
 export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _deviceModelRepository: IDeviceModelRepository;
   protected _smartChargingService: ISmartCharging;
 
   constructor({
@@ -36,17 +42,20 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     ocppSender,
     transactionEventRepository,
     chargingProfileRepository,
+    deviceModelRepository,
     smartChargingService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     transactionEventRepository: ITransactionEventRepository;
     chargingProfileRepository: IChargingProfileRepository;
+    deviceModelRepository: IDeviceModelRepository;
     smartChargingService: ISmartCharging;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
     this._transactionEventRepository = transactionEventRepository;
     this._chargingProfileRepository = chargingProfileRepository;
+    this._deviceModelRepository = deviceModelRepository;
     this._smartChargingService = smartChargingService;
   }
 
@@ -149,7 +158,9 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     }
 
     const chargingProfile = {
-      id: await this._chargingProfileRepository.getNextChargingProfileId(
+      id: await generateChargingProfileId(
+        this._chargingProfileRepository,
+        this._deviceModelRepository,
         tenantId,
         ocppConnectionName,
       ),

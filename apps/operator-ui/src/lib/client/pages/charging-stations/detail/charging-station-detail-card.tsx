@@ -27,6 +27,7 @@ import {
 } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { DETAIL_TAB_STATE, NOT_APPLICABLE } from '@lib/utils/consts';
+import { chargingStationEditPath, chargingStationPath } from '@lib/utils/resource-paths';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, Link, useDelete, useList, useOne, useTranslate } from '@refinedev/core';
@@ -93,9 +94,9 @@ export const ChargingStationDetailCard = ({
     sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
     filters: [
       {
-        field: OCPPMessageProps.ocppConnectionName,
+        field: OCPPMessageProps.stationId,
         operator: 'eq',
-        value: station?.ocppConnectionName,
+        value: station?.id,
       },
     ],
     pagination: {
@@ -229,7 +230,7 @@ export const ChargingStationDetailCard = ({
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => push(`/${MenuSection.CHARGING_STATIONS}/${station.id}/edit`)}
+              onClick={() => push(chargingStationEditPath(station.ocppConnectionName))}
             >
               <Edit className={buttonIconSize} />
               {translate('buttons.edit')}
@@ -431,7 +432,7 @@ export const ChargingStationDetailCard = ({
                 valueRender={(serverId: any) =>
                   serverId != null ? (
                     <Link
-                      to={`/charging-stations/${id}?${DETAIL_TAB_STATE}=networkProfiles`}
+                      to={`${chargingStationPath(station.ocppConnectionName)}?${DETAIL_TAB_STATE}=networkProfiles`}
                       className={clickableLinkStyle}
                       title={translate('ChargingStations.columns.serverId')}
                     >

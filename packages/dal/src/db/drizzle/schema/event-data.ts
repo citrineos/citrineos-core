@@ -11,7 +11,6 @@ import {
   pgTable,
   serial,
   timestamp,
-  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -25,7 +24,6 @@ function eventDataColumns() {
     id: serial('id').primaryKey(),
     // FK to ChargingStation; not part of the EventDataDto contract.
     stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     eventId: integer('eventId'),
     trigger: varchar('trigger', { length: 255 }),
     cause: integer('cause'),
@@ -52,11 +50,10 @@ function eventDataColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const eventDataTable = pgTable(TableName.EventData, eventDataColumns(), (t) => [
-  index('event_data_ocpp_connection_name').on(t.ocppConnectionName),
-  // Composite unique 'stationName_tenantId_eventId' (ocppConnectionName, tenantId).
-  uniqueIndex('event_data_station_name_tenant_id_event_id').on(t.ocppConnectionName, t.tenantId),
-  // Single-column unique 'stationName_eventId' (eventId) as declared on the model.
-  uniqueIndex('event_data_station_name_event_id').on(t.eventId),
+  index('event_data_station_id').on(t.stationId),
+  // Lookup index only. eventId is assigned by the station and restarts from zero
+  // on reboot, so (station, tenant, eventId) is not unique over time
+  index('event_data_station_id_tenant_id_event_id').on(t.stationId, t.tenantId, t.eventId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

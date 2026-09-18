@@ -15,17 +15,20 @@ import {
 } from '@citrineos/base';
 import type { IChargingStationRepository } from '@citrineos/dal';
 import {
+  type CallAction,
   ErrorCode,
   EventGroup,
   MessageOrigin,
   MessageState,
   MessageTypeId,
   NO_ACTION,
+  OCPP1_6,
   OCPP2_0_1,
   OCPP_CallAction,
   type OcppRequest,
   type OcppResponse,
   OCPPVersion,
+  type OCPPVersionType,
   type RawCall,
   type RawCallError,
   type RawCallResult,
@@ -33,6 +36,8 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import { MessageRouterImpl } from '@modules/ocpp-router/router.js';
+import { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
+import { MemoryCache } from '@citrineos/base';
 import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
 import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -579,6 +584,33 @@ describe('MessageRouterImpl', () => {
       expect(networkHook).toHaveBeenCalled();
       const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
       expect(sentMessage[2]).toBe(ErrorCode.FormatViolation);
+    });
+
+    it('answers a 1.6 Call that fails validation with FormationViolation', async () => {
+      cache.exists.mockResolvedValue(false);
+      vi.spyOn(router as any, '_validateCall').mockReturnValue({
+        isValid: false,
+        errors: [{ message: 'bad format' }],
+      });
+
+      const callMessage = JSON.stringify([
+        MessageTypeId.Call,
+        CORRELATION_ID,
+        OCPP_CallAction.BootNotification,
+        {},
+      ]);
+
+      const result = await router.onMessage(
+        IDENTIFIER,
+        callMessage,
+        timestamp,
+        OCPPVersion.OCPP1_6,
+      );
+
+      expect(result).toBe(false);
+      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
+      expect(sentMessage[0]).toBe(MessageTypeId.CallError);
+      expect(sentMessage[2]).toBe(ErrorCode.FormationViolation);
     });
 
     it('should send CallError when _routeCall fails', async () => {
@@ -1391,6 +1423,159 @@ describe('MessageRouterImpl', () => {
       );
 
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('a station message the CSMS triggered while the boot is Pending', () => {
+    const timestamp = new Date('2025-01-01T00:00:00Z');
+    let memoryCache: MemoryCache;
+
+    beforeEach(() => {
+      memoryCache = new MemoryCache();
+      router = getTestInstance(container, MessageRouterImpl, {
+        config,
+        cache: memoryCache,
+        routerSender: sender,
+        routerHandler: handler,
+        messagesExchangeSink: sink,
+        callbackUrlNotifier: notifier,
+        networkHook,
+        ocppValidator: undefined,
+        chargingStationRepository,
+      });
+      vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
+    });
+
+    async function bootPending(protocol: OCPPVersionType) {
+      const bootService = getTestInstance(container, BootNotificationService, {
+        bootRepository: {},
+        cache: memoryCache,
+        config: {},
+      });
+      if (protocol === OCPPVersion.OCPP1_6) {
+        await bootService.cacheOcpp16ChargerActionsPermissions(
+          IDENTIFIER,
+          null,
+          OCPP1_6.BootNotificationResponseStatus.Pending,
+        );
+      } else {
+        await bootService.cacheChargerActionsPermissions(
+          IDENTIFIER,
+          null,
+          OCPP2_0_1.RegistrationStatusEnumType.Pending,
+        );
+      }
+      await memoryCache.set(
+        CacheNamespace.BootStatus,
+        OCPP2_0_1.RegistrationStatusEnumType.Pending,
+        IDENTIFIER,
+      );
+    }
+
+    function callErrorsSent() {
+      return networkHook.mock.calls
+        .map(([, raw]) => JSON.parse(raw as string))
+        .filter((frame) => frame[0] === MessageTypeId.CallError);
+    }
+
+    const triggers: [string, OCPPVersionType, CallAction, object, CallAction][] = [
+      [
+        'TriggerMessage(StatusNotification)',
+        OCPPVersion.OCPP2_0_1,
+        OCPP_CallAction.TriggerMessage,
+        { requestedMessage: OCPP2_0_1.MessageTriggerEnumType.StatusNotification },
+        OCPP_CallAction.StatusNotification,
+      ],
+      [
+        'TriggerMessage(SignChargingStationCertificate)',
+        OCPPVersion.OCPP2_0_1,
+        OCPP_CallAction.TriggerMessage,
+        { requestedMessage: OCPP2_0_1.MessageTriggerEnumType.SignChargingStationCertificate },
+        OCPP_CallAction.SignCertificate,
+      ],
+      [
+        'TriggerMessage(SignCombinedCertificate)',
+        OCPPVersion.OCPP2_1,
+        OCPP_CallAction.TriggerMessage,
+        { requestedMessage: OCPP2_0_1.MessageTriggerEnumType.SignCombinedCertificate },
+        OCPP_CallAction.SignCertificate,
+      ],
+      [
+        'GetReport',
+        OCPPVersion.OCPP2_0_1,
+        OCPP_CallAction.GetReport,
+        { requestId: 1 },
+        OCPP_CallAction.NotifyReport,
+      ],
+      [
+        'GetBaseReport',
+        OCPPVersion.OCPP2_0_1,
+        OCPP_CallAction.GetBaseReport,
+        { requestId: 1, reportBase: OCPP2_0_1.ReportBaseEnumType.FullInventory },
+        OCPP_CallAction.NotifyReport,
+      ],
+      [
+        'OCPP 1.6 TriggerMessage(MeterValues)',
+        OCPPVersion.OCPP1_6,
+        OCPP_CallAction.TriggerMessage,
+        { requestedMessage: OCPP1_6.TriggerMessageRequestRequestedMessage.MeterValues },
+        OCPP_CallAction.MeterValues,
+      ],
+    ];
+
+    it.each(triggers)(
+      'answers the message a %s asked for (B02.FR.09)',
+      async (_label, protocol, action, payload, triggeredAction) => {
+        await bootPending(protocol);
+        await router.sendCall(
+          STATION_ID,
+          TENANT_ID,
+          protocol,
+          action,
+          payload as OcppRequest,
+          CORRELATION_ID,
+        );
+
+        await router.onMessage(
+          IDENTIFIER,
+          JSON.stringify([MessageTypeId.Call, 'triggered-1', triggeredAction, {}]),
+          timestamp,
+          protocol,
+        );
+
+        expect(callErrorsSent()).toEqual([]);
+      },
+    );
+
+    it('still refuses a message the CSMS did not ask for', async () => {
+      await bootPending(OCPPVersion.OCPP2_0_1);
+      await router.sendCall(
+        STATION_ID,
+        TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
+        OCPP_CallAction.TriggerMessage,
+        {
+          requestedMessage: OCPP2_0_1.MessageTriggerEnumType.StatusNotification,
+        } as unknown as OcppRequest,
+        CORRELATION_ID,
+      );
+
+      await router.onMessage(
+        IDENTIFIER,
+        JSON.stringify([MessageTypeId.Call, 'untriggered-1', OCPP_CallAction.Heartbeat, {}]),
+        timestamp,
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(callErrorsSent()).toEqual([
+        [
+          MessageTypeId.CallError,
+          'untriggered-1',
+          ErrorCode.SecurityError,
+          expect.any(String),
+          expect.anything(),
+        ],
+      ]);
     });
   });
 

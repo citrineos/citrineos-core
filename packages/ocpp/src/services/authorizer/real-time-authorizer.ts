@@ -11,29 +11,12 @@ import {
   AuthorizationWhitelistEnum,
   type ConnectorDto,
   type EvseDto,
-  type IdTokenEnumType,
+  type RealTimeAuthorizationRequestBody,
+  type RealTimeAuthorizationResponse,
   type SystemConfig,
 } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-
-export interface RealTimeAuthorizationRequestBody {
-  tenantPartnerId: number;
-  idToken: string;
-  idTokenType: IdTokenEnumType;
-  locationId?: string;
-  ocppConnectionName: string;
-  evseId: number;
-  connectorId: number;
-}
-
-export interface RealTimeAuthorizationResponse {
-  timestamp: string;
-  data: {
-    allowed: string;
-    reason?: string;
-  };
-}
 
 export class RealTimeAuthorizer implements IAuthorizer {
   private _chargingStationRepository: IChargingStationRepository;
@@ -113,10 +96,9 @@ export class RealTimeAuthorizer implements IAuthorizer {
       }
 
       if (evseId === undefined || connectorId === undefined) {
-        this._logger.error(
+        this._logger.debug(
           `Cannot determine evseId and connectorId for Realtime Auth of authorization ${authorization.id}`,
         );
-        return authorization.status;
       } else if (authorization.realTimeAuthLastAttempt) {
         const realTimeAuthLastAttempt = authorization.realTimeAuthLastAttempt;
         // Check if last attempt was at the same station and connector within the timeout period
@@ -214,7 +196,7 @@ export class RealTimeAuthorizer implements IAuthorizer {
       result,
       ocppConnectionName: context.ocppConnectionName,
       evseId: evseId,
-      connectorId: connectorId!,
+      connectorId: connectorId,
     };
 
     try {
