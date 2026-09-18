@@ -328,6 +328,11 @@ export const ChargingStationDetailCard = ({
               />
 
               <KeyValueDisplay
+                keyLabel={translate('ChargingStations.columns.chargePointSerialNumber')}
+                value={station.chargePointSerialNumber || NOT_APPLICABLE}
+              />
+
+              <KeyValueDisplay
                 keyLabel={translate('ChargingStations.columns.floorLevel')}
                 value={station.floorLevel || NOT_APPLICABLE}
               />
