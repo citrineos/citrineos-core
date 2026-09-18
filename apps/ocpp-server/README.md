@@ -293,7 +293,7 @@ To redact something else that depends on an object's shape, write a `RedactionRu
 | `CITRINEOS_DATABASE_MAXRETRIES` | `3`         |
 | `CITRINEOS_DATABASE_RETRYDELAY` | `1000`      |
 
-Schema validation, applied to both data layers:
+Schema validation, applied to both Sequelize and Drizzle layers:
 
 | Variable                                    | Default  |
 | ------------------------------------------- | -------- |
@@ -301,20 +301,21 @@ Schema validation, applied to both data layers:
 | `CITRINEOS_DATABASE_VALIDATESCHEMA`         | `true`   |
 | `CITRINEOS_DATABASE_VALIDATESCHEMASEVERITY` | `error`  |
 
-On startup the server checks the live schema against what the code declares, and refuses to start if they disagree.
+When `CITRINEOS_DATABASE_VALIDATESCHEMA` is true, on startup the server will check the live schema against the schemas
+the code declares and log its findings. If `CITRINEOS_DATABASE_VALIDATESCHEMASEVERITY` is `error`, the server will not start up.
+If `CITRINEOS_DATABASE_VALIDATESCHEMASEVERITY` is `warn`, the server will continue to run - this is the intended way
+to roll the check onto an existing deployment before making it a hard gate. Suppressed errors are surfaced on
+`/health/ready` as a `warn` on the `schema` and `drizzleSchema` checks. Validation is skipped entirely when
+`SYNC`/`ALTER`/`FORCE` is set, since `sequelize.sync()` has just reshaped the database from the models.
+
 There is one check per data layer — the Sequelize models, and (when `CITRINEOS_USE_DRIZZLE=true`) the Drizzle table
-declarations — but both read the settings above, so one switch governs schema validation whichever layer is active.
+declarations — but both read the settings above.
 
 Each check verifies that every declared table and column exists, with a compatible type and nullability; the Drizzle
 check additionally verifies that every declared index exists, which Sequelize's model metadata does not expose. A
 column narrower than the code expects is an error, since values the code permits would be rejected at runtime; a wider
 one is only a warning. Columns and tables that exist in the database but are not declared are warnings, not errors —
 except a `NOT NULL` column with no default, which breaks every insert.
-
-Set `CITRINEOS_DATABASE_VALIDATESCHEMASEVERITY=warn` to report drift without blocking startup; this is the intended way
-to roll the check onto an existing deployment before making it a hard gate. Suppressed errors are surfaced on
-`/health/ready` as a `warn` on the `schema` and `drizzleSchema` checks. Validation is skipped entirely when
-`SYNC`/`ALTER`/`FORCE` is set, since `sequelize.sync()` has just reshaped the database from the models.
 
 Connection pooling and TLS are optional blocks: `CITRINEOS_DATABASE_POOL_MAX`, `..._POOL_MIN`, `..._POOL_ACQUIRE`,
 `..._POOL_IDLE`, and `CITRINEOS_DATABASE_SSL_REQUIRE`, `..._SSL_REJECTUNAUTHORIZED`, `..._SSL_CA`.
