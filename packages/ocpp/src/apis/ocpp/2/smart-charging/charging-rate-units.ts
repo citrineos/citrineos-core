@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DataEnum } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableCharacteristicsRepository } from '@citrineos/dal';
 import { stringToSet } from '@util/index.js';
 import type { ILogObj, Logger } from 'tslog';
 
 export async function readChargingRateUnitMemberList(
-  deviceModelRepository: IDeviceModelRepository,
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository,
   tenantId: number,
   logger: Logger<ILogObj>,
 ): Promise<Set<string> | undefined> {
   const chargingScheduleChargingRateUnit =
-    await deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+    await variableCharacteristicsRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
       tenantId,
       'RateUnit',
       null,

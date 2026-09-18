@@ -249,6 +249,17 @@ describe('ConfigLoader', () => {
       expect(servers[0].dynamicTenantResolution).toBe(false);
     });
 
+    it('turns permessage-deflate on unless a server turns it off', async () => {
+      const fileStorage = mockFileStorage();
+      vi.mocked(fileStorage.getFile).mockResolvedValue(
+        JSON.stringify([server(), server({ id: 'ws-2', port: 8082, perMessageDeflate: false })]),
+      );
+
+      const servers = await ConfigLoader.loadWebsocketServersConfig(fileStorage, 'ws.json');
+
+      expect(servers.map((s) => s.perMessageDeflate)).toEqual([true, false]);
+    });
+
     it('reads the file once and hands every caller the same array', async () => {
       const fileStorage = mockFileStorage();
       vi.mocked(fileStorage.getFile).mockResolvedValue(JSON.stringify([server()]));

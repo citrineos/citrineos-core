@@ -19,6 +19,13 @@ import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
     context: {
@@ -161,5 +168,33 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     await handler.handle(makeMessage({ ...request, idTag: undefined, reason: undefined }));
 
     expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe('Local');
+  });
+
+  it('stores no SignedData sampled value from transactionData', async () => {
+    const rawRegister = { value: '25000', unit: OCPP1_6.StopTransactionRequestUnit.Wh };
+    const signedRegister = {
+      value: 'OCMF|{}|{}',
+      format: OCPP1_6.StopTransactionRequestFormat.SignedData,
+    };
+    const transaction = aTransaction(true);
+    const { handler, transactionEventRepository } = makeHandler(transaction);
+
+    await handler.handle(
+      makeMessage({
+        ...request,
+        transactionData: [
+          { timestamp: '2026-09-14T10:00:00.000Z', sampledValue: [rawRegister, signedRegister] },
+          { timestamp: '2026-09-14T10:00:01.000Z', sampledValue: [signedRegister] },
+        ],
+      }),
+    );
+
+    const stored = transactionEventRepository.createStopTransaction.mock.calls[0][5];
+    expect(stored).toEqual([
+      expect.objectContaining({
+        timestamp: '2026-09-14T10:00:00.000Z',
+        sampledValue: [expect.objectContaining({ value: 25000 })],
+      }),
+    ]);
   });
 });

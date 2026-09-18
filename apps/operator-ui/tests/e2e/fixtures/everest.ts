@@ -17,8 +17,6 @@ import { makeApiClient, type ApiClient } from './api-client';
 //   ChargingStations.ocppConnectionName   — string identifier ('cp001')
 //   Child tables (Evses / Connectors / StatusNotifications / OCPPMessages):
 //     stationId (int)          — FK to ChargingStations.id
-//     ocppConnectionName       — string identifier (trigger-populated from
-//                                ocppConnectionName + tenantId)
 
 const EVEREST_OCPP_CONNECTION_NAME = 'cp001';
 // The EVerest SIL stack runs an internal MQTT broker (everest_net, not host-
@@ -88,16 +86,18 @@ async function awaitStationOnline(
       const data = await api.gql<{
         ChargingStations: { id: number; ocppConnectionName: string }[];
         StatusNotifications: {
-          ocppConnectionName: string;
           timestamp: string;
         }[];
       }>(
         `query EverestProbe($name: String!, $since: timestamptz!) {
            ChargingStations(where: { ocppConnectionName: { _eq: $name } }) { id ocppConnectionName }
            StatusNotifications(
-             where: { ocppConnectionName: { _eq: $name }, timestamp: { _gte: $since } }
+             where: {
+               ChargingStation: { ocppConnectionName: { _eq: $name } }
+               timestamp: { _gte: $since }
+             }
              limit: 1
-           ) { ocppConnectionName timestamp }
+           ) { timestamp }
          }`,
         { name: ocppConnectionName, since: fixtureStart },
       );
@@ -186,6 +186,29 @@ export async function waitForEverestOffline(timeoutMs: number): Promise<void> {
   } finally {
     await api.dispose();
   }
+}
+
+// Prints the manager container's recent output. The worker handle's `stop()`
+// runs `docker compose down`, so the container is already gone by the time the
+// workflow's own dump step runs — a boot failure has to be captured here, while
+// it still exists, or nothing ever explains why cp001 failed to register.
+function dumpEverestManagerLogs(tailLines = 200): Promise<void> {
+  return new Promise((res) => {
+    const proc = spawn(
+      process.platform === 'win32' ? 'docker.exe' : 'docker',
+      ['logs', '--tail', String(tailLines), 'everest-manager-1'],
+      { stdio: ['ignore', 'pipe', 'pipe'], shell: false },
+    );
+    let output = '';
+    proc.stdout?.on('data', (c: Buffer) => (output += c.toString()));
+    proc.stderr?.on('data', (c: Buffer) => (output += c.toString()));
+    const report = () => {
+      console.warn(`[e2e:everest] last ${tailLines} lines of everest-manager-1:\n${output}`);
+      res();
+    };
+    proc.on('exit', report);
+    proc.on('error', report);
+  });
 }
 
 function restartEverestManager(): Promise<void> {
@@ -446,7 +469,6 @@ async function ensureEverestEvseAndConnector(api: ApiClient, stationId: number):
       {
         obj: {
           stationId,
-          ocppConnectionName: EVEREST_OCPP_CONNECTION_NAME,
           evseTypeId: 1,
           removed: false,
           createdAt: now,
@@ -481,7 +503,6 @@ async function ensureEverestEvseAndConnector(api: ApiClient, stationId: number):
           evseId: evse.id,
           connectorId: 1,
           evseTypeConnectorId: 1,
-          ocppConnectionName: EVEREST_OCPP_CONNECTION_NAME,
           stationId,
           createdAt: now,
           updatedAt: now,
@@ -556,7 +577,12 @@ export async function startEverest(options: EverestStartOptions = {}): Promise<E
         `[e2e:everest] ${EVEREST_OCPP_CONNECTION_NAME} not up after compose — restarting the manager container`,
       );
       await restartEverestManager();
-      id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs * 2);
+      try {
+        id = await awaitStationOnline(api, EVEREST_OCPP_CONNECTION_NAME, bootTimeoutMs * 2);
+      } catch (error) {
+        await dumpEverestManagerLogs();
+        throw error;
+      }
     }
     await ensureEverestEvseAndConnector(api, id);
     await ensureEverestAuthorization(api);

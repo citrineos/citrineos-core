@@ -7,7 +7,7 @@ import { fieldSet } from '@lib/queries/fields/field-set';
 /** An installed certificate's own scalar fields (list/detail share the same selection). */
 export const INSTALLED_CERTIFICATE_FIELDS = fieldSet([
   'id',
-  'ocppConnectionName',
+  'stationId',
   'hashAlgorithm',
   'issuerNameHash',
   'issuerKeyHash',

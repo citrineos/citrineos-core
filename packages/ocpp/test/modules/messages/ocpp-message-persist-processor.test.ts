@@ -22,6 +22,10 @@ describe('OcppMessagePersistProcessor', () => {
   let processor: OcppMessagePersistProcessor;
 
   function written(): any {
+    return ocppMessageRepository.createOCPPMessage.mock.calls[0][2];
+  }
+
+  function writtenConnectionName(): string {
     return ocppMessageRepository.createOCPPMessage.mock.calls[0][1];
   }
 
@@ -51,6 +55,7 @@ describe('OcppMessagePersistProcessor', () => {
 
       expect(ocppMessageRepository.createOCPPMessage).toHaveBeenCalledWith(
         42,
+        expect.any(String),
         expect.objectContaining({ tenantId: 42 }),
       );
     });
@@ -60,9 +65,9 @@ describe('OcppMessagePersistProcessor', () => {
 
       await processor.process(event, {});
 
+      expect(writtenConnectionName()).toBe(event.ocppConnectionName);
       expect(written()).toMatchObject({
         tenantId: event.tenantId,
-        ocppConnectionName: event.ocppConnectionName,
         correlationId: event.correlationId,
         origin: MessageOrigin.ChargingStation,
         type: MessageTypeId.Call,

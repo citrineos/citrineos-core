@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Subscription } from '@citrineos/dal';
+import type { SubscriptionDto } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 
-export function aSubscription(override?: Partial<Subscription>): Subscription {
+export function aSubscription(override?: Partial<SubscriptionDto>): SubscriptionDto {
   return {
     tenantId: DEFAULT_TENANT_ID,
     ocppConnectionName: faker.string.uuid(),
@@ -16,5 +16,5 @@ export function aSubscription(override?: Partial<Subscription>): Subscription {
     messageRegexFilter: 'CostUpdated',
     url: faker.internet.url(),
     ...override,
-  } as Subscription;
+  } as SubscriptionDto;
 }

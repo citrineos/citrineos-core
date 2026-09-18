@@ -28,11 +28,10 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   static readonly MODEL_NAME: string = Namespace.StatusNotificationRequest;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+  })
   declare stationId?: number;
-
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation: ChargingStationDto;

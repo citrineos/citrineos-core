@@ -179,7 +179,8 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
                 ocppTransactionId={
                   transaction.transactionId ? Number(transaction.transactionId) : undefined
                 }
-                ocppConnectionName={transaction.ocppConnectionName}
+                stationId={transaction.stationId}
+                ocppConnectionName={transaction.station?.ocppConnectionName}
               />
             </CanAccess>
           </TabsContent>
@@ -194,21 +195,25 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
                 accessType: TransactionAccessType.EVENTS,
               }}
             >
-              <OCPPMessages
-                stationId={transaction.stationId}
-                initialStartDate={
-                  transaction.startTime
-                    ? new Date(new Date(transaction.startTime).getTime() - twoMinutesInMs)
-                    : null
-                }
-                initialEndDate={
-                  transaction.endTime
-                    ? new Date(new Date(transaction.endTime).getTime() + twoMinutesInMs)
-                    : null
-                }
-                liveLogEnabled={liveLogEnabled}
-                onLiveLogEnabledChange={setLiveLogEnabled}
-              />
+              {/* A transaction whose charging station has been deleted has a null
+                  station link, and so no station-scoped message log to show. */}
+              {transaction.stationId == null ? null : (
+                <OCPPMessages
+                  stationId={transaction.stationId}
+                  initialStartDate={
+                    transaction.startTime
+                      ? new Date(new Date(transaction.startTime).getTime() - twoMinutesInMs)
+                      : null
+                  }
+                  initialEndDate={
+                    transaction.endTime
+                      ? new Date(new Date(transaction.endTime).getTime() + twoMinutesInMs)
+                      : null
+                  }
+                  liveLogEnabled={liveLogEnabled}
+                  onLiveLogEnabledChange={setLiveLogEnabled}
+                />
+              )}
             </CanAccess>
           </TabsContent>
         </Tabs>

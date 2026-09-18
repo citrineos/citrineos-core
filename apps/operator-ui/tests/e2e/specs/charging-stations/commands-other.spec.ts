@@ -13,7 +13,7 @@ test.describe('charging-stations › OtherCommandsModal dispatcher', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.otherCommandsButton.click();
 

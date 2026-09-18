@@ -13,6 +13,7 @@ import {
   ChargingStationDetailsProps,
 } from '@lib/cls/charging-station-dto';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import ProtocolTag from '@lib/client/components/protocol-tag';
 import { ACTIONS_COLUMN } from '@lib/client/hooks/use-column-preferences';
@@ -46,7 +47,7 @@ export const getChargingStationsColumns = (
       filterConfig: { type: 'text', label: t('ChargingStations.columns.stationId', 'Station ID') },
       cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
         <TableCellLink
-          path={`/${MenuSection.CHARGING_STATIONS}/${row.original.id}`}
+          path={chargingStationPath(row.original[ChargingStationDetailsProps.ocppConnectionName])}
           value={row.original[ChargingStationDetailsProps.ocppConnectionName]}
         />
       ),
