@@ -1,0 +1,158 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Label Conflicted Pull Requests
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  sweep:
+    name: Label and close conflicted pull requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sweep open pull requests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const WARN_DAYS = 14;
+            const CLOSE_DAYS = 21;
+            const CONFLICT_LABEL = 'has-conflict';
+            const EXEMPT_LABEL = 'no-autoclose';
+            const WARNING_MARKER = '<!-- citrineos:conflict-warning -->';
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            const MERGEABILITY_ATTEMPTS = 3;
+            const MERGEABILITY_WAIT_MS = 4000;
+
+            const { owner, repo } = context.repo;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            // GitHub computes mergeability lazily: the first read of a PR that has not been
+            // checked recently returns null while a background job runs.
+            async function readMergeable(number) {
+              for (let attempt = 0; attempt < MERGEABILITY_ATTEMPTS; attempt += 1) {
+                const { data } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                if (data.mergeable !== null) return data.mergeable;
+                // No event fires when that job finishes, so the only way to get an answer is to wait and re-read.
+                await sleep(MERGEABILITY_WAIT_MS);
+              }
+              return null;
+            }
+
+            async function labelAppliedAt(number) {
+              const events = await github.paginate(github.rest.issues.listEvents, {
+                owner,
+                repo,
+                issue_number: number,
+                per_page: 100,
+              });
+              const applied = events.filter(
+                (event) => event.event === 'labeled' && event.label?.name === CONFLICT_LABEL,
+              );
+              const last = applied[applied.length - 1];
+              return last ? new Date(last.created_at) : null;
+            }
+
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            for (const pr of pulls) {
+              if (pr.draft) continue;
+
+              const labelled = pr.labels.some((label) => label.name === CONFLICT_LABEL);
+              const mergeable = await readMergeable(pr.number);
+
+              if (mergeable === null) {
+                core.warning(`#${pr.number}: GitHub did not report mergeability in time; skipped this run.`);
+                continue;
+              }
+
+              if (mergeable) {
+                if (labelled) {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: pr.number,
+                    name: CONFLICT_LABEL,
+                  });
+                  core.info(`#${pr.number}: conflict resolved, label removed.`);
+                }
+                continue;
+              }
+
+              if (!labelled) {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  labels: [CONFLICT_LABEL],
+                });
+                core.info(`#${pr.number}: conflict detected, labelled.`);
+                continue;
+              }
+
+              if (pr.labels.some((label) => label.name === EXEMPT_LABEL)) continue;
+
+              const since = await labelAppliedAt(pr.number);
+              if (since === null) {
+                core.warning(`#${pr.number}: carries ${CONFLICT_LABEL} but no labelling event was found.`);
+                continue;
+              }
+
+              const daysConflicted = (Date.now() - since.getTime()) / DAY_MS;
+
+              if (daysConflicted >= CLOSE_DAYS) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  body: [
+                    `Closed automatically: this pull request has had unresolved merge conflicts since`,
+                    `${since.toISOString().slice(0, 10)}, ${CLOSE_DAYS} days ago.`,
+                    '',
+                    'Rebase or merge the base branch to resolve them and reopen it.',
+                  ].join('\n'),
+                });
+                await github.rest.pulls.update({ owner, repo, pull_number: pr.number, state: 'closed' });
+                core.notice(`#${pr.number}: closed after ${Math.floor(daysConflicted)} days conflicted.`);
+                continue;
+              }
+
+              if (daysConflicted < WARN_DAYS) continue;
+
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              });
+              const alreadyWarned = comments.some(
+                (comment) => (comment.body || '').includes(WARNING_MARKER) && new Date(comment.created_at) > since,
+              );
+              if (alreadyWarned) continue;
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: [
+                  WARNING_MARKER,
+                  `This pull request has had unresolved merge conflicts since ${since.toISOString().slice(0, 10)},`,
+                  `${WARN_DAYS} days ago. It will be closed automatically once they have stood for ${CLOSE_DAYS} days,`,
+                  `in ${CLOSE_DAYS - WARN_DAYS} days' time.`,
+                  '',
+                  'Rebase or merge the base branch to clear them.',
+                ].join('\n'),
+              });
+              core.notice(`#${pr.number}: warned after ${Math.floor(daysConflicted)} days conflicted.`);
+            }

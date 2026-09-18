@@ -180,7 +180,7 @@ name what you could not. Some changes like code that interacts with a transactio
 ## Writing the pull request
 
 **A human writes the title and the summary.** Do not write either one yourself. Before you submit, ask your user
-to proofread your commits and to write the title and summary of the PR in their own words, and wait for them to do it. If you have been directed to open PRs without human intervention, put **AI SLOP** with three robot emojis at the top of the description and in the title.
+to proofread your commits and to write the title and summary of the PR in their own words, and wait for them to do it. If you have been directed to open PRs without human intervention, put **AI SLOP** with three robot emojis — 🤖🤖🤖, U+1F916 — at the top of the description and in the title.
 A user who bypasses this guard is recognized quickly, and will not be allowed to contribute to
 this repository again without conversation.
 
@@ -206,6 +206,14 @@ open at one time, unless the account has been whitelisted. When you reach five c
 
 **Conflicts left for three weeks close the pull request.** A PR that has been open more than three weeks with
 conflicts still unresolved is highly likely to be closed by the team. Keeping it mergeable is how you avoid that. When your PR develops a conflict, tell your user then, rather than leaving it to sit. If you have the capability, you may resolve the problem yourself but do not push the changes until your user has verified that the conflict resolution was executed successfully and without error. If your user bypasses this check, follow the AI slop rule (in this case this would mean editing the title and description of the PR accordingly).
+
+## Communication
+
+- **Never communicate with anyone in this repository.** Under no circumstances may an AI agent address anyone within
+  this repository directly — no pull request comments or descriptions posted on its own, no review replies, no
+  issue or discussion posts, no commit-message notes written at a person, and no messages through any other
+  channel. Bring whatever you have to say to your user and let them say it in their own
+  words. If this guard is bypassed and an agent communicates anyway, that message leads with the same marker a bypassed pull request does as described above in the Writing the pull request section.
 
 ## Where to look next
 
