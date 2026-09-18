@@ -51,10 +51,8 @@ async function waitForDeviceModel(apiClient: { gql: <T>(q: string) => Promise<T>
     .toBeGreaterThan(0);
 }
 
-/**
- * The name of a component holding at least one variable that is not ReadOnly.
- */
-async function aWritableComponentName(apiClient: {
+/** The name of a component holding at least one variable that is not ReadOnly, if one exists. */
+async function findWritableComponentName(apiClient: {
   gql: <T>(q: string) => Promise<T>;
 }): Promise<string> {
   const data = await apiClient.gql<{ Components: { name: string }[] }>(
@@ -66,13 +64,27 @@ async function aWritableComponentName(apiClient: {
        ) { name }
      }`,
   );
-  const name = data.Components[0]?.name;
-  if (!name) {
-    throw new Error(
-      'No component exposes a writable variable, so SetVariables has nothing to offer: the ' +
-        'device model is populated but every attribute is ReadOnly.',
-    );
-  }
+  return data.Components[0]?.name ?? '';
+}
+
+/**
+ * Waits for a component SetVariables can actually offer variables for, and names it.
+ *
+ * It also has to wait rather than read once: NotifyReport ingests the model progressively, so
+ * Components > 0 can be true while the writable ones are still arriving.
+ */
+async function waitForWritableComponentName(apiClient: {
+  gql: <T>(q: string) => Promise<T>;
+}): Promise<string> {
+  let name = '';
+  await expect
+    .poll(async () => (name = await findWritableComponentName(apiClient)), {
+      timeout: 90_000,
+      intervals: [3_000],
+      message:
+        'No component ever exposed a writable variable, so SetVariables had nothing to offer.',
+    })
+    .not.toBe('');
   return name;
 }
 
@@ -162,6 +174,9 @@ test.describe('charging-stations › device model sequence @everest', () => {
     // E2E-097 (serial-prior) populated the persistent model; wait for it
     // deterministically so this test does not silently depend on ordering.
     await waitForDeviceModel(apiClient);
+    // Resolved before the modal opens: the writable components arrive at the tail of the
+    // NotifyReport stream, well after Components > 0 first becomes true.
+    const writableComponent = await waitForWritableComponentName(apiClient);
 
     const detail = new ChargingStationDetailPage(page);
     await detail.goto(everestStation.ocppConnectionName);
@@ -171,7 +186,7 @@ test.describe('charging-stations › device model sequence @everest', () => {
 
     // SetVariables lists only writable variables, and the
     // first component has none, which would leave the variable combobox empty.
-    await selectOption(page, setVars, /component #1/i, await aWritableComponentName(apiClient));
+    await selectOption(page, setVars, /component #1/i, writableComponent);
     await selectFirstOption(page, setVars, /variable #1/i);
 
     await setVars.dialog
