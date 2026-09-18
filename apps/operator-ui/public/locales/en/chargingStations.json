@@ -61,6 +61,7 @@
       "vendorModel": "Vendor / Model",
       "vendor": "Vendor",
       "floorLevel": "Floor Level",
+      "chargePointSerialNumber": "Charge Point Serial Number",
       "parkingRestrictions": "Parking Restrictions",
       "capabilities": "Capabilities",
       "firmwareVersion": "Firmware Version",

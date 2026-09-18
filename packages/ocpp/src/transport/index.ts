@@ -6,6 +6,7 @@ export { UnknownStationFilter } from './network-connection/authenticator/unknown
 export { ConnectedStationFilter } from './network-connection/authenticator/connected-station-filter.js';
 export { NetworkProfileFilter } from './network-connection/authenticator/network-profile-filter.js';
 export { BasicAuthenticationFilter } from './network-connection/authenticator/basic-authentication-filter.js';
+export { ClientCertificateFilter } from './network-connection/authenticator/client-certificate-filter.js';
 
 export * from './queue/index.js';
 export * from './network-connection/index.js';
