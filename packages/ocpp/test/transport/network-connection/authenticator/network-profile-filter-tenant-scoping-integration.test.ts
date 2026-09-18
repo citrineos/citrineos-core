@@ -6,12 +6,13 @@ import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
 import type { IDeviceModelRepository } from '@citrineos/dal';
 import {
-  ChargingStation,
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
-  ServerNetworkProfile,
-  SetNetworkProfile,
-  Tenant,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
+  SequelizeServerNetworkProfileRepository,
+  SequelizeSetNetworkProfileRepository,
 } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
@@ -30,11 +31,15 @@ const TENANT_A = 1;
 const TENANT_B = 2;
 const STATION = 'CP001';
 const SHARED_PROFILE_ID = 'websocket-server-0';
-const SET_NETWORK_PROFILE_ID = 123;
 const CONFIGURATION_SLOT = 1;
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
+let config: SystemConfig;
+let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
+let serverNetworkProfileRepository: SequelizeServerNetworkProfileRepository;
+let setNetworkProfileRepository: SequelizeSetNetworkProfileRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -47,7 +52,7 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  const dbConfig = {
+  config = {
     database: {
       host: pgContainer.getHost(),
       port: pgContainer.getMappedPort(5432),
@@ -63,9 +68,30 @@ beforeAll(async () => {
     },
   } as unknown as SystemConfig;
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance(dbConfig);
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  setNetworkProfileRepository = new SequelizeSetNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 }, 90_000);
 
 afterAll(async () => {
@@ -90,44 +116,50 @@ function aFilter(): TestNetworkProfileFilter {
     readAllByQuerystring: vi.fn().mockResolvedValue([{ value: String(CONFIGURATION_SLOT) }]),
   } as unknown as IDeviceModelRepository;
 
+  const serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
+    config,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+
   return new TestNetworkProfileFilter({
     deviceModelRepository,
+    serverNetworkProfileRepository,
     logger: new Logger({ type: 'hidden' }),
   });
 }
 
 describe('NetworkProfileFilter tenant scoping', () => {
-  beforeEach(async () => {
-    await ChargingStationNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await ChargingStation.destroy({ where: {}, truncate: true, cascade: true });
-    await ServerNetworkProfile.destroy({ where: {}, truncate: true, cascade: true });
-    await Tenant.destroy({ where: {}, truncate: true, cascade: true });
+  let stationId: number;
 
-    await Tenant.create({ id: TENANT_A, name: 'A' } as never);
-    await Tenant.create({ id: TENANT_B, name: 'B' } as never);
+  beforeEach(async () => {
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
+
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
+    await tenantRepository.createTenant({ name: 'B', isUserTenant: false });
 
     // Only tenant B owns this profile, and it permits security profile 1.
-    await ServerNetworkProfile.create({
-      id: SHARED_PROFILE_ID,
-      host: 'localhost',
-      port: 8080,
-      pingInterval: 60,
-      protocols: [OCPPVersion.OCPP2_0_1],
-      messageTimeout: 30,
-      securityProfile: 1,
-      allowUnknownChargingStations: false,
-      dynamicTenantResolution: false,
-      tenantId: TENANT_B,
-    } as never);
+    await serverNetworkProfileRepository.upsertServerNetworkProfile(
+      {
+        id: SHARED_PROFILE_ID,
+        host: 'localhost',
+        port: 8080,
+        pingInterval: 60,
+        protocols: [OCPPVersion.OCPP2_0_1],
+        securityProfile: 1,
+        allowUnknownChargingStations: false,
+        tenantId: TENANT_B,
+      },
+      30,
+    );
 
-    const station = await ChargingStation.create({
+    const station = await locationRepository.createOrUpdateChargingStation(TENANT_A, {
       ocppConnectionName: STATION,
       isOnline: false,
-      tenantId: TENANT_A,
-    } as never);
+    });
+    stationId = (station as unknown as { id: number }).id;
 
-    await SetNetworkProfile.create({
-      id: SET_NETWORK_PROFILE_ID,
+    const setNetworkProfile = await setNetworkProfileRepository.createPending({
       ocppConnectionName: STATION,
       correlationId: 'any-correlation-id',
       configurationSlot: 1,
@@ -142,12 +174,11 @@ describe('NetworkProfileFilter tenant scoping', () => {
 
     // Tenant A's station names it anyway. Nothing validates the reference on the way in.
     await ChargingStationNetworkProfile.create({
-      stationId: (station as unknown as { id: number }).id,
-      ocppConnectionName: STATION,
+      stationId,
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
       tenantId: TENANT_A,
-      setNetworkProfileId: SET_NETWORK_PROFILE_ID,
+      setNetworkProfileId: setNetworkProfile.id!,
     } as never);
   });
 
@@ -156,21 +187,22 @@ describe('NetworkProfileFilter tenant scoping', () => {
   });
 
   it('allows the station once the profile belongs to its own tenant', async () => {
-    await ServerNetworkProfile.create({
-      id: 'websocket-server-a',
-      host: 'localhost',
-      port: 8080,
-      pingInterval: 60,
-      protocols: [OCPPVersion.OCPP2_0_1],
-      messageTimeout: 30,
-      securityProfile: 1,
-      allowUnknownChargingStations: false,
-      dynamicTenantResolution: false,
-      tenantId: TENANT_A,
-    } as never);
+    await serverNetworkProfileRepository.upsertServerNetworkProfile(
+      {
+        id: 'websocket-server-a',
+        host: 'localhost',
+        port: 8080,
+        pingInterval: 60,
+        protocols: [OCPPVersion.OCPP2_0_1],
+        securityProfile: 1,
+        allowUnknownChargingStations: false,
+        tenantId: TENANT_A,
+      },
+      30,
+    );
     await ChargingStationNetworkProfile.update(
       { websocketServerConfigId: 'websocket-server-a' },
-      { where: { tenantId: TENANT_A, ocppConnectionName: STATION } },
+      { where: { tenantId: TENANT_A, stationId } },
     );
 
     await expect(aFilter().check(TENANT_A, STATION, 1)).resolves.toBeUndefined();

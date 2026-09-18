@@ -19,9 +19,8 @@ import {
   ChargingProfile,
   ChargingSchedule,
   DrizzleReservationRepository,
-  Reservation,
 } from '../../../index.js';
-import { CompositeSchedule, SalesTariff } from '@dal/db/sequelize/index.js';
+import { CompositeSchedule, Reservation, SalesTariff } from '@dal/db/sequelize/index.js';
 import {
   DrizzleChargingNeedsRepository,
   toChargingNeedsDto,

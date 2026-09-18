@@ -5,10 +5,10 @@
 import { ChargingStationDetail } from '@lib/client/pages/charging-stations/detail/charging-station-detail';
 
 type PageProps = {
-  params: Promise<{ id: number }>;
+  params: Promise<{ ocppConnectionName: string }>;
 };
 
 export default async function ShowChargingStationPage({ params }: PageProps) {
-  const { id } = await params;
-  return <ChargingStationDetail params={{ id: Number(id) }} />;
+  const { ocppConnectionName } = await params;
+  return <ChargingStationDetail params={{ ocppConnectionName }} />;
 }

@@ -25,9 +25,17 @@ import { uidDelimiter } from '../../../src/types/dto/evse-dto.js';
  * RequestStartTransaction - an absent one leaves the choice to the station.
  */
 const STATION = 'CS001';
+const EVSE_DATABASE_ID = 7;
 const OCPP_EVSE_NUMBER = 3;
 
-const chargingStation = { id: 5, ocppConnectionName: STATION } as never;
+const chargingStation = {
+  id: 5,
+  ocppConnectionName: STATION,
+  evses: [
+    { id: 6, evseTypeId: 1 },
+    { id: EVSE_DATABASE_ID, evseTypeId: OCPP_EVSE_NUMBER },
+  ],
+} as never;
 
 const tenantPartner = {
   id: 3,
@@ -85,7 +93,7 @@ describe('An OCPI StartSession sent to an OCPP 2.0.1 station', () => {
     const { handler, sent } = aHandler();
 
     await handler.sendStartSessionCommand(
-      aStartSession(`${STATION}${uidDelimiter}${OCPP_EVSE_NUMBER}`),
+      aStartSession(`${STATION}${uidDelimiter}${EVSE_DATABASE_ID}`),
       tenantPartner,
       chargingStation,
       'command-1',
@@ -93,6 +101,22 @@ describe('An OCPI StartSession sent to an OCPP 2.0.1 station', () => {
 
     expect(sent).toHaveLength(1);
     expect(sent[0].payload).toMatchObject({ evseId: OCPP_EVSE_NUMBER });
+  });
+
+  it('reports a failure for an EVSE the station does not have', async () => {
+    const { handler, sent, postCommandResult } = aHandler();
+
+    await handler.sendStartSessionCommand(
+      aStartSession(`${STATION}${uidDelimiter}99`),
+      tenantPartner,
+      chargingStation,
+      'command-1',
+    );
+
+    expect(sent).toHaveLength(0);
+    expect(postCommandResult.mock.calls[0][2]).toMatchObject({
+      result: CommandResultType.FAILED,
+    });
   });
 
   it('leaves the EVSE to the station when the command names none', async () => {

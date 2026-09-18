@@ -4,6 +4,8 @@
 
 import type { CrudRepository } from '@citrineos/base';
 import type {
+  AttributeEnumType,
+  AuthorizationCreate,
   AuthorizationDto,
   BootCreate,
   BootDto,
@@ -17,6 +19,7 @@ import type {
   ChargingProfilePurposeEnumType,
   ChargingStateEnumType,
   ChargingStationDto,
+  ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
@@ -45,7 +48,10 @@ import type {
   SubscriptionDto,
   TariffDto,
   TenantDto,
+  TransactionDto,
   UpdateEnumType,
+  VariableAttributeDto,
+  VariableCharacteristicsDto,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/tariff.js';
@@ -64,9 +70,6 @@ import type {
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
-import type { EvseType } from '../models/device-model/evse-type.js';
-import type { VariableAttribute } from '../models/device-model/variable-attribute.js';
-import type { VariableCharacteristics } from '../models/device-model/variable-characteristics.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { Connector } from '../models/location/connector.js';
@@ -98,6 +101,7 @@ export interface IAuthorizationRepository {
     value: object,
     key: string,
   ) => Promise<AuthorizationDto | undefined>;
+  createAuthorization: (tenantId: number, input: AuthorizationCreate) => Promise<AuthorizationDto>;
 }
 
 /**
@@ -115,33 +119,40 @@ export interface IBootRepository {
   deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
 }
 
-export interface IDeviceModelRepository
-  extends CrudRepository<OCPP2_common_types.VariableAttributeType> {
+export interface IVariableCharacteristicsRepository {
+  findVariableCharacteristicsByVariableNameAndVariableInstance(
+    tenantId: number,
+    variableName: string,
+    variableInstance: string | null,
+  ): Promise<VariableCharacteristicsDto | undefined>;
+}
+
+export interface IDeviceModelRepository extends IVariableCharacteristicsRepository {
   createOrUpdateDeviceModelByStationId(
     tenantId: number,
     value: OCPP2_common_types.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateByGetVariablesResultAndStationId(
     tenantId: number,
     getVariablesResult: OCPP2_common_types.GetVariableResultType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   createOrUpdateBySetVariablesDataAndStationId(
     tenantId: number,
     setVariablesData: OCPP2_common_types.SetVariableDataType[],
     ocppConnectionName: string,
     isoTimestamp: string,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
   updateResultByStationId(
     tenantId: number,
     result: OCPP2_common_types.SetVariableResultType,
     ocppConnectionName: string,
     isoTimestamp: string,
-    existingVariableAttribute?: VariableAttribute,
-  ): Promise<VariableAttribute | undefined>;
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined>;
   readAllSetVariableByStationId(
     tenantId: number,
     ocppConnectionName: string,
@@ -149,12 +160,18 @@ export interface IDeviceModelRepository
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
-  existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number>;
+  ): Promise<VariableAttributeDto[]>;
   deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
-  ): Promise<VariableAttribute[]>;
+  ): Promise<VariableAttributeDto[]>;
+  findVariableAttributeByComponentAndVariable(
+    tenantId: number,
+    ocppConnectionName: string,
+    attributeType: AttributeEnumType,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<VariableAttributeDto | undefined>;
   findComponentAndVariable(
     tenantId: number,
     componentType: OCPP2_common_types.ComponentType,
@@ -170,16 +187,6 @@ export interface IDeviceModelRepository
     componentType: OCPP2_common_types.ComponentType,
     ocppConnectionName: string,
   ): Promise<Component>;
-  findEvseByIdAndConnectorId(
-    tenantId: number,
-    id: number,
-    connectorId: number | null,
-  ): Promise<EvseType | undefined>;
-  findVariableCharacteristicsByVariableNameAndVariableInstance(
-    tenantId: number,
-    variableName: string,
-    variableInstance: string | null,
-  ): Promise<VariableCharacteristics | undefined>;
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
@@ -283,15 +290,15 @@ export interface IStatusNotificationRepository {
 }
 
 export interface IConnectorRepository {
+  readConnectorsByStationId: (
+    tenantId: number,
+    ocppConnectionName: string,
+  ) => Promise<ConnectorDto[]>;
   readConnectorByStationIdAndOcpp16ConnectorId: (
     tenantId: number,
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
   ) => Promise<ConnectorDto | undefined>;
-  readConnectorsByStationId: (
-    tenantId: number,
-    ocppConnectionName: string,
-  ) => Promise<ConnectorDto[]>;
   readConnectorByStationIdAndOcpp201EvseType: (
     tenantId: number,
     ocppConnectionName: string,
@@ -397,6 +404,11 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     authorizationId: number,
   ): Promise<Transaction[]>;
+  readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]>;
   readAllMeterValuesByTransactionDataBaseId(
     tenantId: number,
     transactionDataBaseId: number,
@@ -523,7 +535,8 @@ export interface IInstalledCertificateRepository {
   ): Promise<CertificateDto | undefined>;
   createInstalledCertificate(
     tenantId: number,
-    input: InstalledCertificateCreateInput,
+    ocppConnectionName: string,
+    input: Omit<InstalledCertificateCreateInput, 'stationId'>,
   ): Promise<InstalledCertificateDto>;
   setCertificateId(
     tenantId: number,
@@ -568,7 +581,8 @@ export interface IInstallCertificateAttemptRepository {
   ): Promise<InstallCertificateAttemptDto | undefined>;
   createAttempt(
     tenantId: number,
-    input: InstallCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<InstallCertificateAttemptCreate, 'stationId'>,
   ): Promise<InstallCertificateAttemptDto>;
   updateStatus(
     tenantId: number,
@@ -594,7 +608,8 @@ export interface IDeleteCertificateAttemptRepository {
   ): Promise<DeleteCertificateAttemptDto | undefined>;
   createAttempt(
     tenantId: number,
-    input: DeleteCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<DeleteCertificateAttemptCreate, 'stationId'>,
   ): Promise<DeleteCertificateAttemptDto>;
   updateStatus(
     tenantId: number,
@@ -659,7 +674,11 @@ export interface IReservationRepository {
 }
 
 export interface IOCPPMessageRepository {
-  createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessageDto>;
+  createOCPPMessage(
+    tenantId: number,
+    ocppConnectionName: string,
+    message: Omit<OCPPMessageDto, 'stationId'>,
+  ): Promise<OCPPMessageDto>;
   getRequestByCorrelationId(
     tenantId: number,
     correlationId: string,
@@ -692,6 +711,7 @@ export interface IServerNetworkProfileRepository {
     websocketServerConfig: any,
     maxCallLengthSeconds: number,
   ): Promise<ServerNetworkProfileDto>;
+  findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
 export interface IChargingStationNetworkProfileRepository
@@ -701,6 +721,10 @@ export interface IChargingStationNetworkProfileRepository
     ocppConnectionName: string,
     configurationSlot: number[],
   ): Promise<ChargingStationNetworkProfile[]>;
+  readAllByStationIdWithProfiles(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<ChargingStationNetworkProfileDto[]>;
 }
 
 export interface SetNetworkProfileCreateInput {
@@ -722,6 +746,11 @@ export interface SetNetworkProfileCreateInput {
 
 export interface ISetNetworkProfileRepository {
   createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto>;
+  readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined>;
 }
 
 export interface IChangeConfigurationRepository {

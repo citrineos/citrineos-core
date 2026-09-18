@@ -36,17 +36,13 @@ export class ChargingStationNetworkProfile
   @ForeignKey(() => ChargingStation)
   @Column({
     type: DataType.INTEGER,
+    allowNull: false,
     unique: 'stationId_configurationSlot',
   })
-  declare stationId?: number;
+  declare stationId: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;
-
-  @Column({
-    type: DataType.STRING,
-  })
-  declare ocppConnectionName: string;
 
   /**
    * Possible values for a particular station found in device model:
@@ -92,19 +88,6 @@ export class ChargingStationNetworkProfile
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: ChargingStationNetworkProfile): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

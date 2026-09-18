@@ -2,12 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { type IMessageContext } from '@citrineos/base';
-import type {
-  Authorization,
-  IAuthorizationRepository,
-  IChargingStationRepository,
-} from '@citrineos/dal';
+import type { IAuthorizationRepository, IChargingStationRepository } from '@citrineos/dal';
 import {
+  type AuthorizationDto,
   AuthorizationStatusEnum,
   AuthorizationWhitelistEnum,
   type ConnectorDto,
@@ -30,7 +27,7 @@ function buildMockAuthorizationRepository(): Mocked<IAuthorizationRepository> {
   } as unknown as Mocked<IAuthorizationRepository>;
 }
 
-function buildAuthorization(overrides: Record<string, unknown> = {}): Authorization {
+function buildAuthorization(overrides: Record<string, unknown> = {}): AuthorizationDto {
   return {
     id: 42,
     realTimeAuthUrl: 'http://realtime-auth.test/check',
@@ -41,7 +38,7 @@ function buildAuthorization(overrides: Record<string, unknown> = {}): Authorizat
     idTokenType: 'ISO14443',
     realTimeAuthLastAttempt: undefined,
     ...overrides,
-  } as unknown as Authorization;
+  } as unknown as AuthorizationDto;
 }
 
 function buildContext(): IMessageContext {
@@ -128,7 +125,7 @@ describe('RealTimeAuthorizer', () => {
     expect(tenantId).toBe(context.tenantId);
     expect(key).toBe(String(authorization.id));
     expect(value).toBe(authorization);
-    expect((value as Authorization).realTimeAuthLastAttempt).toEqual({
+    expect((value as AuthorizationDto).realTimeAuthLastAttempt).toEqual({
       timestamp: expect.any(String),
       result: AuthorizationStatusEnum.Accepted,
       ocppConnectionName: context.ocppConnectionName,
@@ -195,4 +192,51 @@ describe('RealTimeAuthorizer', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(authorizationRepository.updateByKey).not.toHaveBeenCalled();
   });
+
+  it('asks the real-time auth endpoint when no EVSE and connector can be determined', async () => {
+    fetchMock.mockResolvedValue({
+      json: async () => ({
+        timestamp: new Date().toISOString(),
+        data: { allowed: 'BLOCKED' },
+      }),
+    });
+    const authorizer = buildAuthorizer(aStationWithTwoEvses());
+
+    const result = await authorizer.authorize(buildAuthorization(), buildContext());
+
+    expect(result).toBe(AuthorizationStatusEnum.Blocked);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.evseId).toBeUndefined();
+    expect(body.connectorId).toBeUndefined();
+  });
+
+  it('does not reuse a last attempt made for a connector when this call has none', async () => {
+    const authorizer = buildAuthorizer(aStationWithTwoEvses());
+    const context = buildContext();
+    const authorization = buildAuthorization({
+      realTimeAuthTimeout: 600,
+      realTimeAuthLastAttempt: {
+        timestamp: new Date().toISOString(),
+        result: AuthorizationStatusEnum.Accepted,
+        ocppConnectionName: context.ocppConnectionName,
+        evseId: evse.id,
+        connectorId: connector.id,
+      },
+    });
+
+    await authorizer.authorize(authorization, context);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  function aStationWithTwoEvses() {
+    return {
+      locationId: null,
+      evses: [
+        { id: 10, connectors: [{ id: 100 }] },
+        { id: 11, connectors: [{ id: 101 }] },
+      ],
+    };
+  }
 });

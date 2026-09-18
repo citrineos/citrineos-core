@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { type ITariffRepository, Tariff } from '@citrineos/dal';
+import { type ITariffRepository } from '@citrineos/dal';
+import type { TariffDto } from '@citrineos/types';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { CostCalculator } from '@modules/transactions/cost-calculator.js';
@@ -131,7 +132,7 @@ describe('CostCalculator', () => {
     });
   });
 
-  function anEnergyTariff(pricePerKwh: number): Tariff {
+  function anEnergyTariff(pricePerKwh: number): TariffDto {
     return aTariff({ pricePerKwh, pricePerMin: null, pricePerSession: null });
   }
 
@@ -143,7 +144,7 @@ describe('CostCalculator', () => {
     });
   }
 
-  function givenTariff(tariff: Tariff) {
+  function givenTariff(tariff: TariffDto) {
     tariffRepository.findByConnectorId.mockResolvedValue(tariff);
     return tariff;
   }

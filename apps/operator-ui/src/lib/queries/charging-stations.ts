@@ -38,7 +38,6 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
       LatestStatusNotifications {
         id
         stationId
-        ocppConnectionName
         statusNotificationId
         updatedAt
         createdAt
@@ -94,7 +93,7 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
       }
       LatestStatusNotifications {
         id
-        ocppConnectionName
+        stationId
         statusNotificationId
         updatedAt
         createdAt
@@ -161,21 +160,18 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
       evses: Evses {
         ${EVSE_CORE_FIELDS}
         ${EVSE_DETAIL_FIELDS}
-        stationId
         connectors: Connectors {
           ${CONNECTOR_FULL_FIELDS}
         }
       }
       LatestStatusNotifications {
         id
-        ocppConnectionName
         stationId
         statusNotificationId
         updatedAt
         createdAt
         statusNotification: StatusNotification {
           ${STATUS_NOTIFICATION_FIELDS}
-          stationId
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
@@ -184,7 +180,6 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
       }
       connectors: Connectors {
         id
-        ocppConnectionName
         stationId
         evseId
         connectorId

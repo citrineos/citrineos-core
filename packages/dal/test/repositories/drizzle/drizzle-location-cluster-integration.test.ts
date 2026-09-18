@@ -3,17 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
-import { OCPPVersion } from '@citrineos/types';
 import {
   ChargingStation,
   Connector,
   Evse,
-  EvseType,
   Location,
   StatusNotification,
-} from '../../../index.js';
+} from '@dal/db/sequelize/index.js';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
+import { OCPPVersion } from '@citrineos/types';
+import { EvseType } from '../../../index.js';
 import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import {
   DrizzleChargingStationRepository,
@@ -142,7 +142,6 @@ async function aCommissionedStation(tenantId: number) {
   const evse = (await Evse.create({
     tenantId,
     stationId: station.id,
-    ocppConnectionName: STATION,
     evseTypeId: 1,
     evseId: 'DE*ABC*E001',
   } as any)) as unknown as { id: number };
@@ -162,7 +161,6 @@ async function aConnector(
   const connector = await Connector.create({
     tenantId,
     stationId,
-    ocppConnectionName: STATION,
     evseId: evseDbId,
     connectorId,
     evseTypeConnectorId: evseTypeDbId,
@@ -336,7 +334,6 @@ describe('DrizzleEvseRepository', () => {
     const dto = await repo.findById(TENANT, evse.id);
 
     expect(dto!.stationId).toBe(station.id);
-    expect(dto!.ocppConnectionName).toBe(STATION);
     expect(dto!.evseTypeId).toBe(1);
     expect(dto!.evseId).toBe('DE*ABC*E001');
     expect(dto!.physicalReference).toBeNull();
@@ -365,7 +362,6 @@ describe('DrizzleEvseRepository', () => {
     const second = (await Evse.create({
       tenantId: TENANT,
       stationId: station.id,
-      ocppConnectionName: STATION,
       evseTypeId: 2,
     } as any)) as unknown as { id: number };
 
@@ -376,13 +372,13 @@ describe('DrizzleEvseRepository', () => {
 
   // The stationId lookup that used to be an Evse BeforeCreate hook now lives in
   // the repository, on the two write paths that create EVSEs.
-  it('createOrUpdateEvse and autoCommissionEvseForOcpp16Connector resolve stationId', async () => {
+  it('createOrUpdateEvse takes the FK; autoCommissionEvseForOcpp16Connector resolves it', async () => {
     const repo = new DrizzleEvseRepository(deps());
     const station = await aStation(TENANT);
 
     const created = await repo.createOrUpdateEvse(TENANT, {
       tenantId: TENANT,
-      ocppConnectionName: STATION,
+      stationId: station.id,
       evseTypeId: 7,
     });
     expect(created.stationId).toBe(station.id);
@@ -392,17 +388,14 @@ describe('DrizzleEvseRepository', () => {
     expect((await repo.findById(TENANT, evseId))!.stationId).toBe(station.id);
   });
 
-  it('createOrUpdateEvse leaves stationId null for an unknown connection name', async () => {
+  it('autoCommissionEvseForOcpp16Connector refuses an unknown connection name', async () => {
     const repo = new DrizzleEvseRepository(deps());
     await aStation(TENANT);
 
-    const created = await repo.createOrUpdateEvse(TENANT, {
-      tenantId: TENANT,
-      ocppConnectionName: 'CS-UNKNOWN',
-      evseTypeId: 1,
-    });
-
-    expect(created.stationId).toBeUndefined();
+    await expect(repo.autoCommissionEvseForOcpp16Connector(TENANT, 'CS-UNKNOWN')).rejects.toThrow(
+      /no charging station named 'CS-UNKNOWN'/,
+    );
+    expect(await Evse.count()).toBe(0);
   });
 });
 
@@ -442,7 +435,6 @@ describe('DrizzleConnectorRepository', () => {
     const dto = await repo.findById(TENANT, connector.id);
 
     expect(dto!.stationId).toBe(station.id);
-    expect(dto!.ocppConnectionName).toBe(STATION);
     expect(dto!.evseId).toBe(evse.id);
     expect(dto!.connectorId).toBe(1);
     expect(dto!.evseTypeConnectorId).toBe(typeA.databaseId);
@@ -513,7 +505,6 @@ describe('DrizzleStatusNotificationRepository', () => {
     const sn = (await StatusNotification.create({
       tenantId: TENANT,
       stationId: station.id,
-      ocppConnectionName: STATION,
       timestamp: TS,
       connectorStatus: 'Available',
       evseId: 1,
@@ -523,9 +514,7 @@ describe('DrizzleStatusNotificationRepository', () => {
 
     const dto = await repo.findById(TENANT, sn.id);
 
-    // StatusNotificationDto carries no stationId, so the FK is checked on the row.
-    expect((await StatusNotification.findByPk(sn.id))!.stationId).toBe(station.id);
-    expect(dto!.ocppConnectionName).toBe(STATION);
+    expect(dto!.stationId).toBe(station.id);
     expect(dto!.timestamp).toBe(TS);
     expect(dto!.connectorStatus).toBe('Available');
     expect(dto!.evseId).toBe(1);
@@ -540,17 +529,14 @@ describe('DrizzleStatusNotificationRepository', () => {
     const repo = new DrizzleStatusNotificationRepository(deps());
     await StatusNotification.create({
       tenantId: TENANT,
-      ocppConnectionName: STATION,
       connectorStatus: 'Available',
     } as any);
     await StatusNotification.create({
       tenantId: TENANT,
-      ocppConnectionName: STATION,
       connectorStatus: 'Charging',
     } as any);
     await StatusNotification.create({
       tenantId: OTHER_TENANT,
-      ocppConnectionName: STATION,
       connectorStatus: 'Faulted',
     } as any);
 
@@ -564,7 +550,6 @@ describe('DrizzleStatusNotificationRepository', () => {
     const repo = new DrizzleStatusNotificationRepository(deps());
     const sn = (await StatusNotification.create({
       tenantId: TENANT,
-      ocppConnectionName: STATION,
       connectorStatus: 'Available',
     } as any)) as unknown as { id: number };
 
@@ -577,27 +562,27 @@ describe('DrizzleStatusNotificationRepository', () => {
 
 describe('DrizzleLatestStatusNotificationRepository', () => {
   async function aPointer(tenantId: number) {
-    await aStation(tenantId);
+    const station = await aStation(tenantId);
     const sn = (await StatusNotification.create({
       tenantId,
-      ocppConnectionName: STATION,
+      stationId: station.id,
       connectorStatus: 'Available',
     } as any)) as unknown as { id: number };
     const lsn = (await LatestStatusNotification.create({
       tenantId,
-      ocppConnectionName: STATION,
+      stationId: station.id,
       statusNotificationId: sn.id,
     } as any)) as unknown as { id: number };
-    return { sn, lsn };
+    return { station, sn, lsn };
   }
 
   it('findById maps the pointer row and is tenant-scoped', async () => {
     const repo = new DrizzleLatestStatusNotificationRepository(deps());
-    const { sn, lsn } = await aPointer(TENANT);
+    const { station, sn, lsn } = await aPointer(TENANT);
 
     const dto = await repo.findById(TENANT, lsn.id);
 
-    expect(dto!.ocppConnectionName).toBe(STATION);
+    expect(dto!.stationId).toBe(station.id);
     // The column is an integer FK in the DB; compare numerically.
     expect(Number(dto!.statusNotificationId)).toBe(sn.id);
     expect(dto!.statusNotification).toBeUndefined();
@@ -610,7 +595,6 @@ describe('DrizzleLatestStatusNotificationRepository', () => {
     const { lsn } = await aPointer(TENANT);
     const sn2 = (await StatusNotification.create({
       tenantId: TENANT,
-      ocppConnectionName: STATION,
       connectorStatus: 'Charging',
     } as any)) as unknown as { id: number };
 
@@ -701,8 +685,7 @@ describe('location cluster row-to-DTO mappers', () => {
   it('toEvseDto maps null FKs to undefined and null evseId to empty string', () => {
     const dto = toEvseDto({
       id: 5,
-      stationId: null,
-      ocppConnectionName: null,
+      stationId: 12,
       evseTypeId: null,
       evseId: null,
       physicalReference: null,
@@ -711,8 +694,7 @@ describe('location cluster row-to-DTO mappers', () => {
       ...timestamps,
     } as EvseEntity);
 
-    expect(dto.stationId).toBeUndefined();
-    expect(dto.ocppConnectionName).toBe('');
+    expect(dto.stationId).toBe(12);
     expect(dto.evseTypeId).toBeUndefined();
     expect(dto.evseId).toBe('');
     expect(dto.physicalReference).toBeNull();
@@ -738,8 +720,7 @@ describe('location cluster row-to-DTO mappers', () => {
   it('toConnectorDto maps a null timestamp to empty string and exposes tariffId', () => {
     const dto = toConnectorDto({
       id: 9,
-      stationId: null,
-      ocppConnectionName: STATION,
+      stationId: 12,
       evseId: 4,
       connectorId: 1,
       evseTypeConnectorId: 2,
@@ -761,7 +742,7 @@ describe('location cluster row-to-DTO mappers', () => {
       ...timestamps,
     } as ConnectorEntity);
 
-    expect(dto.stationId).toBeUndefined();
+    expect(dto.stationId).toBe(12);
     expect(dto.status).toBe('Available');
     expect(dto.format).toBe('Cable');
     expect(dto.timestamp).toBe('');
@@ -775,7 +756,6 @@ describe('location cluster row-to-DTO mappers', () => {
     const dto = toStatusNotificationDto({
       id: 2,
       stationId: 8,
-      ocppConnectionName: null,
       timestamp: new Date(TS),
       connectorStatus: 'Faulted',
       evseId: null,
@@ -788,7 +768,7 @@ describe('location cluster row-to-DTO mappers', () => {
       ...timestamps,
     } as StatusNotificationEntity);
 
-    expect(dto.ocppConnectionName).toBe('');
+    expect(dto.stationId).toBe(8);
     expect(dto.timestamp).toBe(TS);
     expect(dto.connectorStatus).toBe('Faulted');
     expect(dto.evseId).toBeNull();
@@ -801,13 +781,12 @@ describe('location cluster row-to-DTO mappers', () => {
     const dto = toLatestStatusNotificationDto({
       id: 6,
       stationId: 8,
-      ocppConnectionName: STATION,
       statusNotificationId: null,
       tenantId: TENANT,
       ...timestamps,
     } as LatestStatusNotificationEntity);
 
-    expect(dto.ocppConnectionName).toBe(STATION);
+    expect(dto.stationId).toBe(8);
     // DTO types statusNotificationId as a required int.
     expect(dto.statusNotificationId).toBe(0);
     expect(dto.chargingStation).toBeUndefined();

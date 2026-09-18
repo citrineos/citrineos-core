@@ -3,15 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { childLogger, loggerDefaults, MASKED_LOG_KEYS } from '@base-util/logging.js';
+import { type LogRedactionConfig, logRedactionSchema } from '@citrineos/types';
 import { type ILogObj, type ILogObjMeta, Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
 const SECRET = 'hunter2';
 
-function aLogger(env = 'production') {
+/** A redaction config with the schema's defaults, so each test states only what it is about. */
+const configured = (overrides: Partial<LogRedactionConfig>): LogRedactionConfig =>
+  logRedactionSchema.parse({ ...overrides });
+
+function aLogger(env = 'production', redaction?: Partial<LogRedactionConfig>) {
   const written: (ILogObj & ILogObjMeta)[] = [];
   const logger = new Logger<ILogObj>({
-    ...loggerDefaults(env),
+    ...loggerDefaults(env, redaction === undefined ? undefined : configured(redaction)),
     name: 'test',
     minLevel: 0,
     type: 'hidden',
@@ -63,6 +68,71 @@ describe('loggerDefaults', () => {
 
       expect(MASKED_LOG_KEYS.length).toBeGreaterThan(0);
       expect(everythingWritten(written)).not.toContain(SECRET);
+    });
+  });
+
+  describe('driven by logRedaction config', () => {
+    it('masks the keys the config names instead of the built-in default', () => {
+      const { logger, written } = aLogger('production', { keys: ['clientSecret'] });
+
+      logger.info('oidc', { clientSecret: SECRET });
+
+      expect(everythingWritten(written)).not.toContain(SECRET);
+    });
+
+    it('masks a key regardless of its capitalization', () => {
+      const { logger, written } = aLogger('production', { keys: ['password'] });
+
+      logger.info('auth', { Password: SECRET, PASSWORD: SECRET });
+
+      expect(everythingWritten(written)).not.toContain(SECRET);
+    });
+
+    it('masks a configured dotted path', () => {
+      const { logger, written } = aLogger('production', { paths: ['credentials.token'] });
+
+      logger.info({ credentials: { token: SECRET, url: 'https://example.test' } });
+
+      expect(everythingWritten(written)).not.toContain(SECRET);
+      expect(everythingWritten(written)).toContain('https://example.test');
+    });
+
+    it('masks a path with a wildcard segment', () => {
+      const { logger, written } = aLogger('production', { paths: ['*.token'] });
+
+      logger.info({ partner: { token: SECRET } });
+
+      expect(everythingWritten(written)).not.toContain(SECRET);
+    });
+
+    it('masks every part of a string a configured pattern matches, not just the first', () => {
+      // A non-global regex would censor one occurrence and leave the rest in plaintext.
+      const { logger, written } = aLogger('production', { patterns: ['sk-[A-Za-z0-9]+'] });
+
+      logger.info(`first sk-aaa111 then sk-bbb222`);
+
+      expect(everythingWritten(written)).not.toContain('sk-aaa111');
+      expect(everythingWritten(written)).not.toContain('sk-bbb222');
+    });
+
+    it('writes the configured placeholder in place of a masked value', () => {
+      const { logger, written } = aLogger('production', {
+        keys: ['password'],
+        placeholder: '[gone]',
+      });
+
+      logger.info('auth', { password: SECRET });
+
+      expect(everythingWritten(written)).toContain('[gone]');
+    });
+
+    it('rejects a pattern that is not a valid regular expression at config load', () => {
+      // Better here than as a throw from deep inside logger construction at boot.
+      expect(() => logRedactionSchema.parse({ patterns: ['(unclosed'] })).toThrow();
+    });
+
+    it('defaults to masking password when the config says nothing', () => {
+      expect(logRedactionSchema.parse({}).keys).toEqual([...MASKED_LOG_KEYS]);
     });
   });
 

@@ -12,9 +12,7 @@ import { type z } from 'zod';
 function deleteCertificateAttemptColumns() {
   return {
     id: serial('id').primaryKey(),
-    // FK to ChargingStation (resolved from ocppConnectionName in the domain layer).
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 36 }).notNull(),
+    stationId: integer('stationId').notNull(),
     hashAlgorithm: varchar('hashAlgorithm', { length: 255 }).notNull(),
     issuerNameHash: varchar('issuerNameHash', { length: 255 }),
     issuerKeyHash: varchar('issuerKeyHash', { length: 255 }),

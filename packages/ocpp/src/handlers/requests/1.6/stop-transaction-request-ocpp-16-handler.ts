@@ -23,6 +23,7 @@ import {
   Transaction,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
@@ -110,7 +111,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     const transaction = await Transaction.findOne({
       where: {
-        ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         tenantId,
         transactionId: request.transactionId.toString(),
       },
@@ -141,11 +142,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       ocppConnectionName,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) =>
-        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
-          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
-        ),
-      ) || [],
+      request.transactionData
+        ?.map((data) =>
+          OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+            data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+          ),
+        )
+        .filter((meterValue) => meterValue.sampledValue.length > 0) || [],
       stoppedReason,
       authorization?.id,
     );

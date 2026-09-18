@@ -10,15 +10,18 @@ import type {
   InstalledCertificateDto,
 } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 import type { IInstalledCertificateRepository } from '../repositories.js';
 import { InstalledCertificate } from '../../models/certificate/installed-certificate.js';
-import { ChargingStation } from '../../models/location/index.js';
 
 type InstalledCertificateHashData = Pick<
   InstalledCertificateDto,
   'hashAlgorithm' | 'issuerNameHash' | 'issuerKeyHash' | 'serialNumber'
 >;
-type InstalledCertificateCreateInput = Omit<InstalledCertificateCreate, 'hashAlgorithm'> & {
+type InstalledCertificateCreateInput = Omit<
+  InstalledCertificateCreate,
+  'hashAlgorithm' | 'stationId'
+> & {
   hashAlgorithm?: HashAlgorithmEnumType;
   certificateId?: number | null;
 };
@@ -36,8 +39,12 @@ export class SequelizeInstalledCertificateRepository
     ocppConnectionName: string,
     certificateType: CertificateUseEnumType,
   ): Promise<InstalledCertificateDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
-      where: { ocppConnectionName, certificateType },
+      where: { stationId, certificateType },
     });
   }
 
@@ -46,8 +53,12 @@ export class SequelizeInstalledCertificateRepository
     id: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
     return await this.readOnlyOneByQuery(tenantId, {
-      where: { id, ocppConnectionName },
+      where: { id, stationId },
     });
   }
 
@@ -64,9 +75,14 @@ export class SequelizeInstalledCertificateRepository
 
   async createInstalledCertificate(
     tenantId: number,
+    ocppConnectionName: string,
     input: InstalledCertificateCreateInput,
   ): Promise<InstalledCertificateDto> {
-    const stationId = await this.resolveStationId(tenantId, input.ocppConnectionName);
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record an installed certificate',
+    );
     const installed = InstalledCertificate.build({ ...input, stationId, tenantId });
     const saved = await installed.save();
     this.emit('created', [saved]);
@@ -102,7 +118,11 @@ export class SequelizeInstalledCertificateRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto[]> {
-    return await this.readAllByQuery(tenantId, { where: { ocppConnectionName } });
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+    return await this.readAllByQuery(tenantId, { where: { stationId } });
   }
 
   async deleteById(tenantId: number, id: number): Promise<InstalledCertificateDto | undefined> {
@@ -113,7 +133,11 @@ export class SequelizeInstalledCertificateRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto[]> {
-    return await this.deleteAllByQuery(tenantId, { where: { ocppConnectionName } });
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+    return await this.deleteAllByQuery(tenantId, { where: { stationId } });
   }
 
   async deleteByStationAndType(
@@ -121,8 +145,12 @@ export class SequelizeInstalledCertificateRepository
     ocppConnectionName: string,
     certificateType: CertificateUseEnumType,
   ): Promise<InstalledCertificateDto[]> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
     return await this.deleteAllByQuery(tenantId, {
-      where: { ocppConnectionName, certificateType },
+      where: { stationId, certificateType },
     });
   }
 
@@ -131,26 +159,19 @@ export class SequelizeInstalledCertificateRepository
     ocppConnectionName: string,
     hashData: InstalledCertificateHashData,
   ): Promise<InstalledCertificateDto[]> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
     return await this.deleteAllByQuery(tenantId, {
       where: {
-        ocppConnectionName,
+        stationId,
         hashAlgorithm: hashData.hashAlgorithm,
         issuerNameHash: hashData.issuerNameHash,
         issuerKeyHash: hashData.issuerKeyHash,
         serialNumber: hashData.serialNumber,
       },
     });
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | null> {
-    const station = await ChargingStation.findOne({
-      where: { ocppConnectionName, tenantId },
-      attributes: ['id'],
-    });
-    return station?.id ?? null;
   }
 }
 

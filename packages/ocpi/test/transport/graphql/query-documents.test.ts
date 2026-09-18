@@ -362,8 +362,10 @@ describe('transaction queries', () => {
     expect(GET_TRANSACTIONS_QUERY).toContain('Transactions_aggregate(where: $where)');
   });
 
-  it('GET_TRANSACTION_BY_ID looks up by primary key', () => {
-    expect(GET_TRANSACTION_BY_ID_QUERY).toContain('Transactions_by_pk(id: $id)');
+  it('GET_TRANSACTION_BY_ID filters on id, since the partitioned table has no single-column primary key', () => {
+    expect(GET_TRANSACTION_BY_ID_QUERY).toContain(
+      'Transactions(where: { id: { _eq: $id } }, limit: 1)',
+    );
   });
 
   it('STOP_SESSION lookup only matches active sessions of the calling party', () => {

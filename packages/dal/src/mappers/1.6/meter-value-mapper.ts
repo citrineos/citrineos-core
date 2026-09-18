@@ -467,9 +467,9 @@ export class MeterValueMapper {
   static fromSampledValueTypes(
     sampledValueTypes: OCPP1_6.MeterValuesRequest['meterValue'][0]['sampledValue'],
   ): [SampledValue, ...SampledValue[]] {
-    const sampledValues = sampledValueTypes.map((svt) =>
-      MeterValueMapper.fromSampledValueType(svt),
-    );
+    const sampledValues = sampledValueTypes
+      .map((svt) => MeterValueMapper.fromSampledValueType(svt))
+      .filter((sampledValue) => sampledValue !== undefined);
 
     return sampledValues as [SampledValue, ...SampledValue[]];
   }

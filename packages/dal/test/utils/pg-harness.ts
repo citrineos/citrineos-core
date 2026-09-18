@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { SystemConfig } from '@citrineos/types';
+import { Tenant } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { DefaultSequelizeInstance, Tenant } from '../../index.js';
+import { DefaultSequelizeInstance } from '../../index.js';
 
 // Shared Postgres harness for the DAL integration suites. DefaultSequelizeInstance
 // is a process-wide singleton (first getInstance wins), so the unit of isolation

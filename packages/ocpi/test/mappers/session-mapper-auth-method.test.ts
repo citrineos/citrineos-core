@@ -31,7 +31,8 @@ async function authMethodOf(overrides: Partial<TransactionDto>): Promise<AuthMet
     totalKwh: 50,
     connectorId: 1,
     evseId: 1,
-    ocppConnectionName: 'cs-001',
+    stationId: 1,
+    station: { ocppConnectionName: 'cs-001' },
     updatedAt: new Date('2026-08-20T11:00:00Z'),
     meterValues: [],
     ...overrides,
@@ -57,5 +58,55 @@ describe('Session auth_method', () => {
 
   it('reports WHITELIST for a session the driver started at the charger', async () => {
     expect(await authMethodOf({ remoteStartId: null })).toBe(AuthMethod.WHITELIST);
+  });
+});
+
+function aPartialMapper(context: 'found' | 'failed' = 'found'): SessionMapper {
+  const mapper = new SessionMapper({
+    logger: new Logger({ type: 'hidden' }),
+    locationsService: {},
+    ocpiGraphqlClient: {},
+  } as never);
+  const lookup = vi.spyOn(mapper, 'getLocationsTokensAndTariffsMapsForTransactions');
+  if (context === 'found') {
+    lookup.mockResolvedValue([new Map(), new Map(), new Map()]);
+  } else {
+    lookup.mockRejectedValue(new Error('GraphQL unavailable'));
+  }
+  return mapper;
+}
+
+function anUpdateNotification(overrides: Partial<TransactionDto> = {}): Partial<TransactionDto> {
+  return {
+    id: 1,
+    transactionId: TRANSACTION_ID,
+    tenant: { countryCode: 'GB', partyId: 'VLT' },
+    updatedAt: new Date('2026-08-20T10:30:00Z'),
+    totalKwh: 3,
+    ...overrides,
+  } as Partial<TransactionDto>;
+}
+
+describe('Session auth_method on a partial update', () => {
+  it('leaves auth_method out when the update did not carry remoteStartId', async () => {
+    const session =
+      await aPartialMapper().mapPartialTransactionToPartialSession(anUpdateNotification());
+
+    expect(session).not.toHaveProperty('auth_method');
+  });
+
+  it('leaves auth_method out when the context lookup fails', async () => {
+    const session =
+      await aPartialMapper('failed').mapPartialTransactionToPartialSession(anUpdateNotification());
+
+    expect(session).not.toHaveProperty('auth_method');
+  });
+
+  it('reports COMMAND when the update sets remoteStartId', async () => {
+    const session = await aPartialMapper().mapPartialTransactionToPartialSession(
+      anUpdateNotification({ remoteStartId: 5 }),
+    );
+
+    expect(session.auth_method).toBe(AuthMethod.COMMAND);
   });
 });

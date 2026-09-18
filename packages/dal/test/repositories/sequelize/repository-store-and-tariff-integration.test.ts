@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation, Connector, Evse, Tariff } from '@dal/db/sequelize/index.js';
 import type { SystemConfig, TariffDto } from '@citrineos/types';
 import { type ILogObj, Logger } from 'tslog';
 import {
-  ChargingStation,
-  Connector,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
@@ -27,7 +26,6 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
-  Evse,
   RepositoryStore,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -52,7 +50,6 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
   SequelizeVariableMonitoringRepository,
-  Tariff,
 } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
@@ -125,13 +122,11 @@ async function aConnector(tariffId: number | null): Promise<Connector> {
   const evse = await Evse.create({
     tenantId: TENANT_A,
     stationId: station.id,
-    ocppConnectionName: STATION_NAME,
     evseTypeId: 1,
   } as any);
   return Connector.create({
     tenantId: TENANT_A,
     stationId: station.id,
-    ocppConnectionName: STATION_NAME,
     evseId: evse.id,
     connectorId: 1,
     evseTypeConnectorId: 1,
@@ -459,7 +454,8 @@ describe('SequelizeTariffRepository', () => {
 
       expect(updated.id).toBe(existing.id);
       expect(updated.currency).toBe('USD');
-      expect(updated.pricePerKwh).toBe(0.5);
+      // An existing row keeps its central pricePerKwh; the incoming 0.5 is ignored.
+      expect(updated.pricePerKwh).toBe(0.3);
       expect(await Tariff.count()).toBe(1);
       expect((await Tariff.findByPk(existing.id))!.currency).toBe('USD');
     });

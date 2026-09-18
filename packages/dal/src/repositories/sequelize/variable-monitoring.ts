@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 import { Component } from '../../models/device-model/component.js';
 import { EventData } from '../../models/variable-monitoring/event-data.js';
 import { Variable } from '../../models/device-model/variable.js';
@@ -49,6 +50,12 @@ export class SequelizeVariableMonitoringRepository
     variableId: string,
     ocppConnectionName: string,
   ): Promise<VariableMonitoring[]> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record variable monitoring',
+    );
+
     return await Promise.all(
       value.variableMonitoring.map(
         async (variableMonitoring: OCPP2_common_types.VariableMonitoringType) => {
@@ -57,7 +64,7 @@ export class SequelizeVariableMonitoringRepository
               const existingVariableMonitoring = await this.s.models[
                 VariableMonitoring.MODEL_NAME
               ].findOne({
-                where: { ocppConnectionName: ocppConnectionName, variableId, componentId },
+                where: { stationId, variableId, componentId },
                 transaction,
               });
 
@@ -65,7 +72,7 @@ export class SequelizeVariableMonitoringRepository
                 // If the record does not exist, build and save a new instance
                 const vm = VariableMonitoring.build({
                   tenantId,
-                  ocppConnectionName: ocppConnectionName,
+                  stationId,
                   variableId,
                   componentId,
                   ...variableMonitoring,
@@ -120,18 +127,24 @@ export class SequelizeVariableMonitoringRepository
     variableId: string,
     ocppConnectionName: string,
   ): Promise<VariableMonitoring> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record variable monitoring',
+    );
+
     let result: VariableMonitoring | null = null;
 
     await this.s.transaction(async (transaction) => {
       const savedVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
-        where: { ocppConnectionName: ocppConnectionName, variableId, componentId },
+        where: { stationId, variableId, componentId },
         transaction,
       });
 
       if (!savedVariableMonitoring) {
         const variableMonitoring = VariableMonitoring.build({
           tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId,
           variableId,
           componentId,
           ...value,
@@ -162,7 +175,7 @@ export class SequelizeVariableMonitoringRepository
   ): Promise<void> {
     await this.readAllByQuery(tenantId, {
       where: {
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -185,7 +198,7 @@ export class SequelizeVariableMonitoringRepository
     await this.readAllByQuery(tenantId, {
       where: {
         id,
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     }).then(async (variableMonitorings) => {
       for (const variableMonitoring of variableMonitorings) {
@@ -207,7 +220,7 @@ export class SequelizeVariableMonitoringRepository
     const savedVariableMonitoring = await super
       .readAllByQuery(tenantId, {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           type: result.type,
           severity: result.severity,
         },
@@ -268,11 +281,17 @@ export class SequelizeVariableMonitoringRepository
     variableId: string,
     ocppConnectionName: string,
   ): Promise<EventData> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record event data',
+    );
+
     return await this.eventData.create(
       tenantId,
       EventData.build({
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId,
         variableId,
         componentId,
         ...event,

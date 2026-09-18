@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { IVariableCharacteristicsRepository } from '@dal/repositories/repositories.js';
 import type { VariableCharacteristicsDto } from '@citrineos/types';
+import { and, eq, isNull } from 'drizzle-orm';
+import {
+  type VariableEntity,
+  variableTable,
+  tenantVariableTable,
+} from '../../db/drizzle/schema/variable.js';
 import {
   type VariableCharacteristicsEntity,
   variableCharacteristicsTable,
@@ -34,10 +41,10 @@ export function toVariableCharacteristicsDto(
   } as VariableCharacteristicsDto;
 }
 
-export class DrizzleVariableCharacteristicsRepository extends DrizzleRepository<
-  typeof variableCharacteristicsTable,
-  VariableCharacteristicsDto
-> {
+export class DrizzleVariableCharacteristicsRepository
+  extends DrizzleRepository<typeof variableCharacteristicsTable, VariableCharacteristicsDto>
+  implements IVariableCharacteristicsRepository
+{
   protected getTable(tenantId: number): typeof variableCharacteristicsTable {
     return this.useTenantSchema
       ? tenantVariableCharacteristicsTable(tenantId)
@@ -48,5 +55,51 @@ export class DrizzleVariableCharacteristicsRepository extends DrizzleRepository<
     return toVariableCharacteristicsDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  private getVariableTable(tenantId: number): typeof variableTable {
+    return this.useTenantSchema ? tenantVariableTable(tenantId) : variableTable;
+  }
+
+  // ─── IVariableCharacteristicsRepository methods ──────────────────────────
+
+  async findVariableCharacteristicsByVariableNameAndVariableInstance(
+    tenantId: number,
+    variableName: string,
+    variableInstance: string | null,
+  ): Promise<VariableCharacteristicsDto | undefined> {
+    const table = this.getTable(tenantId);
+    const variable = this.getVariableTable(tenantId);
+
+    const rows = (await this.db
+      .select({ characteristics: table, variable })
+      .from(table)
+      .innerJoin(variable, eq(table.variableId, variable.id))
+      .where(
+        and(
+          eq(variable.name, variableName),
+          variableInstance === null
+            ? isNull(variable.instance)
+            : eq(variable.instance, variableInstance),
+          this.tenantFilter(table, tenantId),
+          this.tenantFilter(variable, tenantId),
+        ),
+      )
+      .limit(1)) as { characteristics: VariableCharacteristicsEntity; variable: VariableEntity }[];
+
+    const row = rows[0];
+    if (!row) {
+      return undefined;
+    }
+
+    return {
+      ...toVariableCharacteristicsDto(row.characteristics),
+      variable: {
+        id: row.variable.id,
+        name: row.variable.name ?? '',
+        instance: row.variable.instance ?? null,
+        tenantId: row.variable.tenantId,
+        createdAt: row.variable.createdAt,
+        updatedAt: row.variable.updatedAt,
+      },
+    };
+  }
 }

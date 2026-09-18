@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Authorization, Tariff } from '@dal/db/sequelize/index.js';
 import { IdTokenEnum, type SystemConfig } from '@citrineos/types';
-import { Authorization, SequelizeAuthorizationRepository, Tariff } from '../../../index.js';
+import { SequelizeAuthorizationRepository } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
 // SequelizeAuthorizationRepository resolves idTokens for every OCPP authorize path.

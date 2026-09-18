@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { logRedactionSchema } from '@citrineos/types';
 import { z } from 'zod';
 
 /**
@@ -173,6 +174,10 @@ export const ocpiConfigInputSchema = z.object({
 
   // OCPI-specific settings
   logLevel: z.number().min(0).max(6).default(2).optional(),
+  // `.optional()` on top of the schema's own default, matching logLevel above: OcpiConfigInput is
+  // inferred from this schema's OUTPUT, so a defaulted field would otherwise be required of every
+  // hand-authored env config.
+  logRedaction: logRedactionSchema.optional(),
   defaultPageLimit: z.number().int().positive().default(50).optional(),
   maxPageLimit: z.number().int().positive().default(1000).optional(),
 
@@ -328,6 +333,7 @@ export const ocpiConfigSchema = z.object({
   }),
 
   logLevel: z.number().min(0).max(6),
+  logRedaction: logRedactionSchema,
   defaultPageLimit: z.number().int().positive(),
   maxPageLimit: z.number().int().positive(),
   oidc: oidcConfigSchema,
