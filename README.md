@@ -111,7 +111,7 @@ This repository is a **pnpm monorepo** with the following workspace members:
 citrineos-core/
 ├── apps/
 │   ├── ocpp/            # OCPP server entrypoint, Docker setup, migrations (@citrineos/ocpp-server)
-│   ├── ocpi/            # OCPI server entrypoint, Docker setup, migrations (@citrineos/ocpi-demo)
+│   ├── ocpi/            # OCPI server entrypoint, Docker setup, migrations (@citrineos/ocpi-server)
 │   ├── mock-msp/        # Mock MSP for OCPI conformance testing (@citrineos/mock-msp)
 │   └── operator-ui/     # Operator web UI — Next.js + Refine (@citrineos/operator-ui)
 ├── packages/
