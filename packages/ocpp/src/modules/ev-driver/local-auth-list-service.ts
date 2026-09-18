@@ -183,12 +183,17 @@ export class LocalAuthListService {
       case UpdateEnum.Full:
         return sendLocalList?.localAuthorizationList?.length ?? 0;
       case UpdateEnum.Differential: {
-        const uniqueAuths = new Set(
-          [
-            ...(sendLocalList.localAuthorizationList ?? []),
-            ...(localListVersion?.localAuthorizationList ?? []),
-          ].map((auth) => auth.authorizationId),
-        );
+        const currentAuths = localListVersion?.localAuthorizationList ?? [];
+        const uniqueAuths = new Set(currentAuths.map((auth) => auth.authorizationId));
+        for (const auth of sendLocalList.localAuthorizationList ?? []) {
+          if (!auth.authorizationId && auth.status === 'Invalid') {
+            currentAuths
+              .filter((current) => current.idToken === auth.idToken)
+              .forEach((current) => uniqueAuths.delete(current.authorizationId));
+          } else {
+            uniqueAuths.add(auth.authorizationId);
+          }
+        }
         return uniqueAuths.size;
       }
       default:

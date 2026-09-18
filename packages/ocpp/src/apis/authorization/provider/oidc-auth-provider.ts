@@ -13,6 +13,7 @@ import {
   ApiAuthorizationResult,
   childLogger,
   type IApiAuthProvider,
+  notNull,
   type UserInfo,
 } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
@@ -113,7 +114,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
         name: payload.preferred_username || payload.name || payload.sub,
         email: payload.email || '',
         roles: this.extractRoles(payload),
-        tenantId: payload.tenant_id || this._defaultTenantId,
+        tenantId: String(payload.tenant_id || this._defaultTenantId),
         metadata: {
           firstName: payload.given_name,
           lastName: payload.family_name,
@@ -146,7 +147,15 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       // Get the requested resource and method
       const url = request.url;
       const method = request.method;
-      const tenantId = (request.query as { tenantId?: string }).tenantId || this._defaultTenantId;
+      const tenantId = user.tenantId;
+      const requestedTenantId =
+        (request.query as { tenantId?: string }).tenantId ??
+        (request.body as { tenantId?: number | string } | undefined)?.tenantId;
+      if (notNull(requestedTenantId) && String(requestedTenantId) !== tenantId) {
+        return ApiAuthorizationResult.failure(
+          `Token tenant ${tenantId} may not act on tenant ${requestedTenantId}`,
+        );
+      }
 
       const requiredRoles = this._rulesLoader.getRequiredRoles(tenantId, url, method);
 

@@ -18,7 +18,7 @@ export const RealTimeAuthLastAttemptSchema = z.object({
   result: AuthorizationStatusEnumSchema,
   ocppConnectionName: z.string(),
   evseId: z.number().nullable().optional(),
-  connectorId: z.number(),
+  connectorId: z.number().nullable().optional(),
 });
 
 export type RealTimeAuthLastAttempt = z.infer<typeof RealTimeAuthLastAttemptSchema>;

@@ -454,7 +454,8 @@ describe('SequelizeTariffRepository', () => {
 
       expect(updated.id).toBe(existing.id);
       expect(updated.currency).toBe('USD');
-      expect(updated.pricePerKwh).toBe(0.5);
+      // An existing row keeps its central pricePerKwh; the incoming 0.5 is ignored.
+      expect(updated.pricePerKwh).toBe(0.3);
       expect(await Tariff.count()).toBe(1);
       expect((await Tariff.findByPk(existing.id))!.currency).toBe('USD');
     });
