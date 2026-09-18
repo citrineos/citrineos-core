@@ -9,13 +9,21 @@ import {
   type OCPP2_common_types,
   type VariableAttributeDto,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IDeviceModelRepository, IVariableAttributeRepository } from '@citrineos/dal';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
+  constructor({
+    deviceModelRepository,
+    variableAttributeRepository,
+  }: {
+    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
+  }) {
     this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async provisionVariableAttributes(
@@ -81,7 +89,7 @@ export class DeviceModelService {
     ocppConnectionName: string,
   ): Promise<number | null> {
     const itemsPerMessageAttributes: VariableAttributeDto[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: componentName,
@@ -116,7 +124,7 @@ export class DeviceModelService {
     ocppConnectionName: string,
   ): Promise<number | null> {
     const bytesPerMessageAttributes: VariableAttributeDto[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: componentName,

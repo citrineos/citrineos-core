@@ -20,11 +20,13 @@ describe('BasicAuthenticationFilter', () => {
   const password = 'SEPtwLckb5QD5on0EXcCAmuQVmJ*bu3ZXmA:Clt3';
   const anotherPassword = '_Oec8yF4r1hH6ildo4yvM25:SU2hpL*jobDskYos';
 
-  const deviceModelRepository = { readAllByQuerystring: vi.fn() };
-  const filter = getTestInstance(container, BasicAuthenticationFilter, { deviceModelRepository });
+  const variableAttributeRepository = { readAllByQuerystring: vi.fn() };
+  const filter = getTestInstance(container, BasicAuthenticationFilter, {
+    variableAttributeRepository,
+  });
 
   afterEach(() => {
-    deviceModelRepository.readAllByQuerystring.mockReset();
+    variableAttributeRepository.readAllByQuerystring.mockReset();
   });
 
   describe.each([1, 2])(`given %i security profile `, (securityProfile) => {
@@ -52,7 +54,7 @@ describe('BasicAuthenticationFilter', () => {
             authenticationOptions,
           ),
         ).rejects.toThrow(`Unauthorized ${ocppConnectionName}`);
-        expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+        expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
       },
     );
 
@@ -67,7 +69,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when Authorization header is empty', async () => {
@@ -81,7 +83,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when Authorization header is not Basic', async () => {
@@ -97,7 +99,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when missing username', async () => {
@@ -111,7 +113,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when missing password', async () => {
@@ -125,7 +127,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when missing username and password', async () => {
@@ -139,7 +141,7 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow('Auth header missing or incorrectly formatted');
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should reject when password is not found for station', async () => {
@@ -154,13 +156,16 @@ describe('BasicAuthenticationFilter', () => {
           authenticationOptions,
         ),
       ).rejects.toThrow(`Unauthorized ${ocppConnectionName}`);
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: ocppConnectionName,
-        component_name: 'SecurityCtrlr',
-        variable_name: 'BasicAuthPassword',
-        type: OCPP2_0_1.AttributeEnumType.Actual,
-      });
+      expect(variableAttributeRepository.readAllByQuerystring).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        {
+          tenantId: DEFAULT_TENANT_ID,
+          ocppConnectionName: ocppConnectionName,
+          component_name: 'SecurityCtrlr',
+          variable_name: 'BasicAuthPassword',
+          type: OCPP2_0_1.AttributeEnumType.Actual,
+        },
+      );
     });
 
     it.each([
@@ -247,7 +252,7 @@ describe('BasicAuthenticationFilter', () => {
         aRequestWithAuthorization(undefined),
         authenticationOptions,
       );
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
 
     it('should do nothing when Authorization header is present', async () => {
@@ -260,7 +265,7 @@ describe('BasicAuthenticationFilter', () => {
         authenticationOptions,
       );
 
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
     });
   });
 
@@ -270,10 +275,10 @@ describe('BasicAuthenticationFilter', () => {
       value: storedPassword,
     } as Partial<VariableAttributeDto>);
 
-    deviceModelRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
+    variableAttributeRepository.readAllByQuerystring.mockResolvedValue([passwordVariable]);
   }
 
   function givenNoPassword() {
-    deviceModelRepository.readAllByQuerystring.mockResolvedValue([]);
+    variableAttributeRepository.readAllByQuerystring.mockResolvedValue([]);
   }
 });

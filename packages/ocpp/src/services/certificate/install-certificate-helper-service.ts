@@ -22,7 +22,7 @@ import {
 import type {
   ICertificateRepository,
   IDeleteCertificateAttemptRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@citrineos/dal';
@@ -52,7 +52,7 @@ export class InstallCertificateHelperService {
   protected installedCertificateRepository: IInstalledCertificateRepository;
   protected installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  protected deviceModelRepository: IDeviceModelRepository;
+  protected variableAttributeRepository: IVariableAttributeRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
   protected fileStorage: IFileStorage;
   protected logger: Logger<ILogObj>;
@@ -62,7 +62,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository,
     installCertificateAttemptRepository,
     deleteCertificateAttemptRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     certificateAuthorityService,
     fileStorage,
     logger,
@@ -71,7 +71,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository: IInstalledCertificateRepository;
     installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     certificateAuthorityService: CertificateAuthorityService;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
@@ -80,7 +80,7 @@ export class InstallCertificateHelperService {
     this.installedCertificateRepository = installedCertificateRepository;
     this.installCertificateAttemptRepository = installCertificateAttemptRepository;
     this.deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
-    this.deviceModelRepository = deviceModelRepository;
+    this.variableAttributeRepository = variableAttributeRepository;
     this.certificateAuthorityService = certificateAuthorityService;
     this.fileStorage = fileStorage;
     this.logger = logger;
@@ -182,7 +182,7 @@ export class InstallCertificateHelperService {
     }
 
     const [additionalRootCertificateCheckAttribute] =
-      await this.deviceModelRepository.readAllByQuerystring(tenantId, {
+      await this.variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId,
         ocppConnectionName,
         component_name: 'SecurityCtrlr',

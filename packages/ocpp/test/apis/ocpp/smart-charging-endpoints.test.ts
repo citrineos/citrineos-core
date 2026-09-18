@@ -331,7 +331,7 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, SetChargingProfileEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: { readAllByQuerystring },
+        variableAttributeRepository: { readAllByQuerystring },
         variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: vi
             .fn()

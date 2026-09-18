@@ -4,7 +4,7 @@
 
 import type {
   IChangeConfigurationRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ILocalAuthListRepository,
 } from '@citrineos/dal';
 import { LocalListVersion, SendLocalList } from '@citrineos/dal';
@@ -28,7 +28,7 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
   const correlationId = 'test-correlation-id';
 
   let localAuthListRepository: Mocked<ILocalAuthListRepository>;
-  let deviceModelRepository: Mocked<IDeviceModelRepository>;
+  let variableAttributeRepository: Mocked<IVariableAttributeRepository>;
   let changeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let service: LocalAuthListService;
   let configuration: Record<string, string>;
@@ -41,9 +41,9 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
       createSendLocalListFromRequestData16: vi.fn().mockResolvedValue({} as SendLocalList),
     } as unknown as Mocked<ILocalAuthListRepository>;
 
-    deviceModelRepository = {
+    variableAttributeRepository = {
       readAllByQuerystring: vi.fn().mockResolvedValue([]),
-    } as unknown as Mocked<IDeviceModelRepository>;
+    } as unknown as Mocked<IVariableAttributeRepository>;
 
     changeConfigurationRepository = {
       findByStationAndKey: vi.fn(
@@ -56,7 +56,7 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
 
     service = getTestInstance(container, LocalAuthListService, {
       localAuthListRepository,
-      deviceModelRepository,
+      variableAttributeRepository,
       changeConfigurationRepository,
     });
   });

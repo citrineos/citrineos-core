@@ -20,9 +20,9 @@ describe('Authenticator', () => {
   const unknownStationFilter = { authenticate: vi.fn() };
   const connectedStationFilter = { authenticate: vi.fn() };
   const networkProfileFilter = { authenticate: vi.fn() };
-  const deviceModelRepository = { readAllByQuerystring: vi.fn() };
+  const variableAttributeRepository = { readAllByQuerystring: vi.fn() };
   const basicAuthenticationFilter = getTestInstance(container, BasicAuthenticationFilter, {
-    deviceModelRepository,
+    variableAttributeRepository,
   });
   const authenticator = getTestInstance(container, Authenticator, {
     unknownStationFilter,
@@ -41,7 +41,7 @@ describe('Authenticator', () => {
   ])(
     'authenticates the percent-encoded path segment %s as station %s',
     async (pathSegment, identity) => {
-      deviceModelRepository.readAllByQuerystring.mockResolvedValue([{ value: password }]);
+      variableAttributeRepository.readAllByQuerystring.mockResolvedValue([{ value: password }]);
 
       const result = await authenticator.authenticate(
         aRequestWithAuthorization(basicAuth(identity, password), {

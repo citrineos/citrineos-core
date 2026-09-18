@@ -93,7 +93,7 @@ function aHelperService() {
     installedCertificateRepository: new SequelizeInstalledCertificateRepository(deps),
     installCertificateAttemptRepository: new SequelizeInstallCertificateAttemptRepository(deps),
     deleteCertificateAttemptRepository: new SequelizeDeleteCertificateAttemptRepository(deps),
-    deviceModelRepository: {} as never,
+    variableAttributeRepository: {} as never,
     certificateAuthorityService: {} as never,
     fileStorage: { getFile: async () => undefined } as never,
     logger: new Logger({ type: 'hidden' }),
