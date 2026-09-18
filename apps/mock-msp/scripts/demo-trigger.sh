@@ -9,7 +9,7 @@
 # Adds a charging Location to CitrineOS. Citrine's LocationNotification pgNotify
 # trigger fires, the OCPI server broadcasts the new Location to every registered
 # roaming partner — which is the mock eMSP on :8083. The mock validates the
-# payload against @citrineos/ocpi-base's own Zod schemas and records the result.
+# payload against @citrineos/ocpi's own Zod schemas and records the result.
 #
 # This is REAL Citrine traffic, not a simulation.
 #

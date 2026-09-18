@@ -67,6 +67,22 @@ export class SequelizeLocalAuthListRepository
       }),
     );
     for (const authData of localAuthorizationList ?? []) {
+      if (updateType === OCPP2_0_1.UpdateEnumType.Differential && !authData.idTokenInfo) {
+        const tombstone = await this.localListAuthorization.create(
+          tenantId,
+          LocalListAuthorization.build({
+            idToken: authData.idToken.idToken,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
+            status: 'Invalid',
+          }),
+        );
+        await SendLocalListAuthorization.create({
+          tenantId,
+          sendLocalListId: sendLocalList.id,
+          authorizationId: tombstone.id,
+        });
+        continue;
+      }
       const auth = await Authorization.findOne({
         where: {
           tenantId,
@@ -100,6 +116,7 @@ export class SequelizeLocalAuthListRepository
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,
         LocalListAuthorization.build({
+          tenantId,
           authorizationId: auth.id,
           idToken: auth.idToken,
           idTokenType: auth.idTokenType,
@@ -198,6 +215,7 @@ export class SequelizeLocalAuthListRepository
         tenantId,
         LocalListAuthorization.build({
           ...baseFields,
+          tenantId,
           idToken: authData.idTag,
           idTokenType: null,
           status: isDelete
@@ -387,7 +405,7 @@ export class SequelizeLocalAuthListRepository
       }
 
       for (const sendAuth of sendLocalList.localAuthorizationList) {
-        // 1.6 differential delete: tombstone rows have no linked Authorization and status 'Invalid'.
+        // Differential delete: tombstone rows have no linked Authorization and status 'Invalid'.
         // Drop existing entries on the version that match the tombstone's idToken and skip insertion.
         const isTombstone = !sendAuth.authorizationId && sendAuth.status === 'Invalid';
 

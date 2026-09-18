@@ -34,6 +34,8 @@ export { BadRequestError } from './src/interfaces/api/exceptions/bad-request-err
 export { NotFoundError } from './src/interfaces/api/exceptions/not-found-error.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
 export type { ICache } from './src/interfaces/cache/cache.js';
+export { MemoryCache } from './src/cache/memory.js';
+export { RedisCache } from './src/cache/redis.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';
 export type { IWebsocketConnection } from './src/interfaces/cache/types.js';
 export type { IFileAccess } from './src/interfaces/files/file-access.js';
@@ -107,6 +109,7 @@ export {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
   childLogger,
+  redactionMiddleware,
   loggerDefaults,
   MASKED_LOG_KEYS,
   MeterValueUtils,
@@ -114,6 +117,7 @@ export {
   RequestBuilder,
   serializeError,
 } from './src/util/index.js';
+export type { RedactionRule } from './src/util/index.js';
 
 export {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,

@@ -26,7 +26,7 @@ import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 export function toStatusNotificationDto(entity: StatusNotificationEntity): StatusNotificationDto {
   const dto: Explicit<StatusNotificationDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp ? entity.timestamp.toISOString() : null,
     // Enum stored as string in the DB — cast back to the DTO's enum union.
@@ -102,7 +102,6 @@ export class DrizzleStatusNotificationRepository
       const saved = await this.insert(
         tenantId,
         {
-          ocppConnectionName,
           stationId,
           timestamp: statusNotification.timestamp ? new Date(statusNotification.timestamp) : null,
           connectorStatus: statusNotification.connectorStatus,
@@ -116,13 +115,7 @@ export class DrizzleStatusNotificationRepository
         ctx,
       );
 
-      await this.replaceLatestStatusNotification(
-        tenantId,
-        ocppConnectionName,
-        stationId,
-        saved,
-        ctx,
-      );
+      await this.replaceLatestStatusNotification(tenantId, stationId, saved, ctx);
     });
   }
 
@@ -132,7 +125,6 @@ export class DrizzleStatusNotificationRepository
    */
   private async replaceLatestStatusNotification(
     tenantId: number,
-    ocppConnectionName: string,
     stationId: number | undefined,
     statusNotification: StatusNotificationDto,
     ctx: DrizzleWriteContext,
@@ -145,13 +137,16 @@ export class DrizzleStatusNotificationRepository
         ? eq(notifications.evseId, statusNotification.evseId)
         : sql`${notifications.evseId} is null`;
 
+    const stationMatch =
+      stationId != null ? eq(latest.stationId, stationId) : sql`${latest.stationId} is null`;
+
     const stale = await ctx.db
       .select({ id: latest.id })
       .from(latest)
       .innerJoin(notifications, eq(latest.statusNotificationId, notifications.id))
       .where(
         and(
-          eq(latest.ocppConnectionName, ocppConnectionName),
+          stationMatch,
           evseMatch,
           eq(notifications.connectorId, statusNotification.connectorId),
           this.tenantFilter(latest, tenantId),
@@ -172,7 +167,6 @@ export class DrizzleStatusNotificationRepository
 
     await ctx.db.insert(latest).values({
       tenantId,
-      ocppConnectionName,
       statusNotificationId: statusNotification.id,
       stationId,
     });

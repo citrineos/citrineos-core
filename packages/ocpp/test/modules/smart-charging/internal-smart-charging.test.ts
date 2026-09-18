@@ -4,8 +4,8 @@
 
 import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { OCPP2_0_1 } from '@citrineos/types';
-import type { IChargingProfileRepository } from '@citrineos/dal';
+import { AttributeEnum, OCPP2_0_1 } from '@citrineos/types';
+import type { IChargingProfileRepository, IDeviceModelRepository } from '@citrineos/dal';
 import type { Transaction } from '@citrineos/dal';
 import { InternalSmartCharging } from '@modules/smart-charging/internal-smart-charging.js';
 import { createTestContainer } from '@test/test-container.js';
@@ -40,6 +40,7 @@ function aTransaction(): Transaction {
 describe('InternalSmartCharging.calculateChargingProfile', () => {
   let smartCharging: InternalSmartCharging;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let readAllByQuerystring: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     const { logger } = createTestContainer();
@@ -51,9 +52,11 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
       // No pre-existing profile, so the limit is not validated against anything.
       readAllByQuery: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
+    readAllByQuerystring = vi.fn().mockResolvedValue([]);
 
     smartCharging = new InternalSmartCharging({
       chargingProfileRepository,
+      deviceModelRepository: { readAllByQuerystring } as unknown as IDeviceModelRepository,
       logger: logger as never,
     });
   });
@@ -120,5 +123,46 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
     const ceiling =
       unit === OCPP2_0_1.ChargingRateUnitEnumType.W ? EV_MAX_POWER_W : EV_MAX_CURRENT_A;
     expect(limit).toBeLessThanOrEqual(ceiling);
+  });
+
+  const withMaxExternalConstraintsId = (value: string) => {
+    readAllByQuerystring.mockImplementation(
+      async (
+        _tenantId: number,
+        query: { component_name?: string; variable_name?: string; type?: string },
+      ) =>
+        query.component_name === 'SmartChargingCtrlr' &&
+        query.variable_name === 'MaxExternalConstraintsId' &&
+        query.type === AttributeEnum.Actual
+          ? [{ value }]
+          : [],
+    );
+  };
+
+  const profileId = async () =>
+    (
+      await smartCharging.calculateChargingProfile(
+        aRequest({ evMaxCurrent: EV_MAX_CURRENT_A, evMaxVoltage: EV_MAX_VOLTAGE_V }),
+        aTransaction(),
+        DEFAULT_TENANT_ID,
+        STATION,
+      )
+    ).id;
+
+  it('chooses a profile id above the MaxExternalConstraintsId the station reports', async () => {
+    withMaxExternalConstraintsId('2147400000');
+
+    expect(await profileId()).toBe(2147400001);
+  });
+
+  it('keeps the next stored profile id when it is already above MaxExternalConstraintsId', async () => {
+    withMaxExternalConstraintsId('100');
+    chargingProfileRepository.getNextChargingProfileId.mockResolvedValue(150);
+
+    expect(await profileId()).toBe(150);
+  });
+
+  it('uses the next stored profile id when the station does not report MaxExternalConstraintsId', async () => {
+    expect(await profileId()).toBe(1);
   });
 });

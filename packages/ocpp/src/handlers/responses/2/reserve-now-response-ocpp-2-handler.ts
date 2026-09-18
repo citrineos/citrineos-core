@@ -17,6 +17,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReserveNow)
 export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
@@ -45,7 +46,10 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
         tenantId: message.context.tenantId,
-        ocppConnectionName: message.context.ocppConnectionName,
+        stationId: await stationIdFilter(
+          message.context.tenantId,
+          message.context.ocppConnectionName,
+        ),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },

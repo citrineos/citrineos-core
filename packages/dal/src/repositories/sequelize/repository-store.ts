@@ -32,6 +32,7 @@ import type {
   ITariffRepository,
   ITenantRepository,
   ITransactionEventRepository,
+  IVariableCharacteristicsRepository,
   IVariableMonitoringRepository,
 } from '../repositories.js';
 import {
@@ -46,6 +47,7 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
@@ -53,6 +55,7 @@ import {
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
+  DrizzleVariableCharacteristicsRepository,
 } from '../../db/drizzle/index.js';
 import type { Component } from '../../models/device-model/component.js';
 import { SequelizeAuthorizationRepository } from './authorization.js';
@@ -109,6 +112,7 @@ export class RepositoryStore {
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 
   constructor({
     config,
@@ -140,6 +144,7 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
+    this.variableCharacteristicsRepository = this.deviceModelRepository;
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
@@ -182,6 +187,7 @@ export class RepositoryStore {
         config,
         logger,
       });
+      this.messageInfoRepository = new DrizzleMessageInfoRepository({ config, logger });
       this.locationRepository = new DrizzleLocationRepository({ config, logger });
       this.reservationRepository = new DrizzleReservationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
@@ -196,6 +202,10 @@ export class RepositoryStore {
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
       this.tariffRepository = new DrizzleTariffRepository({ config, logger });
+      this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
+        config,
+        logger,
+      });
     } else {
       this.authorizationRepository = new SequelizeAuthorizationRepository({
         config,
@@ -224,6 +234,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.installedCertificateRepository = new SequelizeInstalledCertificateRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.messageInfoRepository = new SequelizeMessageInfoRepository({
         config,
         logger,
         sequelizeInstance,

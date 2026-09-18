@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
 import {
   validateASCIIContent,
@@ -925,6 +925,20 @@ describe('validateMessageContent', () => {
     const result = validateMessageContent(unknownFormat, 'test');
     expect(result.isValid).toBe(false);
     expect(result.errorMessage).toBe('Unknown message format: UnknownFormat');
+  });
+
+  it('should validate 2.1 QRCODE content', () => {
+    const result = validateMessageContent(
+      OCPP2_1.MessageFormatEnumType.QRCODE,
+      'https://pay.example.com/station-001',
+    );
+    expect(result.isValid).toBe(true);
+    expect(result.errorMessage).toBeUndefined();
+  });
+
+  it('should return error for empty 2.1 QRCODE content', () => {
+    const result = validateMessageContent(OCPP2_1.MessageFormatEnumType.QRCODE, '');
+    expect(result.isValid).toBe(false);
   });
 });
 

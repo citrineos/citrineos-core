@@ -31,8 +31,7 @@ export function toDeleteCertificateAttemptDto(
 ): DeleteCertificateAttemptDto {
   const dto: Explicit<DeleteCertificateAttemptDto> = {
     id: entity.id,
-    stationId: entity.stationId ?? null,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     hashAlgorithm: entity.hashAlgorithm as HashAlgorithmEnumType,
     issuerNameHash: entity.issuerNameHash ?? null,
     issuerKeyHash: entity.issuerKeyHash ?? null,
@@ -65,13 +64,18 @@ export class DrizzleDeleteCertificateAttemptRepository
     ocppConnectionName: string,
     hashData: DeleteCertificateHashData,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const rows = await this.db
       .select()
       .from(deleteCertificateAttemptTable)
       .where(
         and(
           eq(deleteCertificateAttemptTable.tenantId, tenantId),
-          eq(deleteCertificateAttemptTable.ocppConnectionName, ocppConnectionName),
+          eq(deleteCertificateAttemptTable.stationId, stationId),
           eq(deleteCertificateAttemptTable.hashAlgorithm, hashData.hashAlgorithm),
           eq(deleteCertificateAttemptTable.issuerNameHash, hashData.issuerNameHash ?? ''),
           eq(deleteCertificateAttemptTable.issuerKeyHash, hashData.issuerKeyHash ?? ''),
@@ -88,13 +92,18 @@ export class DrizzleDeleteCertificateAttemptRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
     const rows = await this.db
       .select()
       .from(deleteCertificateAttemptTable)
       .where(
         and(
           eq(deleteCertificateAttemptTable.tenantId, tenantId),
-          eq(deleteCertificateAttemptTable.ocppConnectionName, ocppConnectionName),
+          eq(deleteCertificateAttemptTable.stationId, stationId),
           isNull(deleteCertificateAttemptTable.status),
         ),
       )
@@ -105,10 +114,17 @@ export class DrizzleDeleteCertificateAttemptRepository
 
   async createAttempt(
     tenantId: number,
-    input: DeleteCertificateAttemptCreate,
+    ocppConnectionName: string,
+    input: Omit<DeleteCertificateAttemptCreate, 'stationId'>,
   ): Promise<DeleteCertificateAttemptDto> {
-    const stationId =
-      input.stationId ?? (await this.resolveStationId(tenantId, input.ocppConnectionName));
+    // The row references its station by FK only; the caller supplies the name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot record a delete-certificate attempt: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
     // Base insert spreads { ...values, tenantId } and emits 'created'.
     return await this.insert(tenantId, { ...input, stationId });
   }
@@ -124,7 +140,7 @@ export class DrizzleDeleteCertificateAttemptRepository
   private async resolveStationId(
     tenantId: number,
     ocppConnectionName: string,
-  ): Promise<number | null> {
+  ): Promise<number | undefined> {
     const rows = await this.db
       .select({ id: chargingStationTable.id })
       .from(chargingStationTable)
@@ -136,6 +152,6 @@ export class DrizzleDeleteCertificateAttemptRepository
       )
       .limit(1);
 
-    return rows[0]?.id ?? null;
+    return rows[0]?.id;
   }
 }

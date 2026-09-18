@@ -154,6 +154,18 @@ export {
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
 export {
+  DrizzleMessageInfoRepository,
+  toMessageInfoDto,
+} from '../../repositories/drizzle/message-info.js';
+export {
+  messageInfoTable,
+  tenantMessageInfoTable,
+  MessageInfoEntitySchema,
+  MessageInfoEntityInsertSchema,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
+export {
   DrizzleReservationRepository,
   toReservationDto,
 } from '../../repositories/drizzle/reservation.js';
@@ -177,6 +189,18 @@ export {
   type SecurityEventEntity,
   type SecurityEventEntityInsert,
 } from './schema/security-event.js';
+export {
+  DrizzleSetNetworkProfileRepository,
+  toSetNetworkProfileDto,
+} from '../../repositories/drizzle/set-network-profile.js';
+export {
+  setNetworkProfileTable,
+  tenantSetNetworkProfileTable,
+  SetNetworkProfileEntitySchema,
+  SetNetworkProfileEntityInsertSchema,
+  type SetNetworkProfileEntity,
+  type SetNetworkProfileEntityInsert,
+} from './schema/set-network-profile.js';
 export {
   DrizzleSubscriptionRepository,
   toSubscriptionDto,
@@ -231,3 +255,15 @@ export {
   type VariableAttributeEntity,
   type VariableAttributeEntityInsert,
 } from './schema/variable-attribute.js';
+export {
+  DrizzleVariableCharacteristicsRepository,
+  toVariableCharacteristicsDto,
+} from '../../repositories/drizzle/variable-characteristics.js';
+export {
+  variableCharacteristicsTable,
+  tenantVariableCharacteristicsTable,
+  VariableCharacteristicsEntitySchema,
+  VariableCharacteristicsEntityInsertSchema,
+  type VariableCharacteristicsEntity,
+  type VariableCharacteristicsEntityInsert,
+} from './schema/variable-characteristics.js';

@@ -57,10 +57,10 @@ export class SetChargingProfileResponseOcpp2Handler extends AbstractHandler {
 
     const tenantId = message.context.tenantId;
     const response: OCPP2_response_types.SetChargingProfileResponse = message.payload;
+    const ocppConnectionName: string = message.context.ocppConnectionName;
     if (response.status === ChargingProfileStatusEnum.Rejected) {
       this._logger.error(`Failed to set charging profile: ${JSON.stringify(response)}`);
     } else {
-      const ocppConnectionName: string = message.context.ocppConnectionName;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
         tenantId,
@@ -77,24 +77,24 @@ export class SetChargingProfileResponseOcpp2Handler extends AbstractHandler {
           returning: false,
         },
       );
-      // Request charging profiles to get the latest data
-      await this._ocppSender.sendCall({
-        ocppConnectionName,
-        tenantId: message.context.tenantId,
-        protocol: message.protocol,
-        action: OCPP_CallAction.GetChargingProfiles,
-        eventGroup: EventGroup.SmartCharging,
-        payload: {
-          requestId: await this._idGenerator.generateRequestId(
-            message.context.tenantId,
-            message.context.ocppConnectionName,
-            ChargingStationSequenceTypeEnum.getChargingProfiles,
-          ),
-          chargingProfile: {
-            chargingLimitSource: [ChargingLimitSourceEnum.CSO],
-          } as OCPP2_common_types.ChargingProfileCriterionType,
-        } as OCPP2_request_types.GetChargingProfilesRequest,
-      });
     }
+    // Request charging profiles to get the latest data
+    await this._ocppSender.sendCall({
+      ocppConnectionName,
+      tenantId: message.context.tenantId,
+      protocol: message.protocol,
+      action: OCPP_CallAction.GetChargingProfiles,
+      eventGroup: EventGroup.SmartCharging,
+      payload: {
+        requestId: await this._idGenerator.generateRequestId(
+          message.context.tenantId,
+          message.context.ocppConnectionName,
+          ChargingStationSequenceTypeEnum.getChargingProfiles,
+        ),
+        chargingProfile: {
+          chargingLimitSource: [ChargingLimitSourceEnum.CSO],
+        } as OCPP2_common_types.ChargingProfileCriterionType,
+      } as OCPP2_request_types.GetChargingProfilesRequest,
+    });
   }
 }

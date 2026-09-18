@@ -77,9 +77,9 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
     },
     filters: [
       {
-        field: InstalledCertificateProps.ocppConnectionName,
+        field: InstalledCertificateProps.stationId,
         operator: 'eq',
-        value: parsedStation.ocppConnectionName,
+        value: parsedStation.id,
       },
     ],
     pagination: { mode: 'off' },
@@ -102,7 +102,7 @@ export const DeleteCertificateModal = ({ station }: DeleteCertificateModalProps)
 
     const certificate = JSON.parse(values.certificate);
 
-    if (parsedStation.ocppConnectionName !== certificate.ocppConnectionName) {
+    if (parsedStation.id !== certificate.stationId) {
       toast.error(translate('ChargingStations.deleteCertificateModal.wrongStationError'));
       return;
     }

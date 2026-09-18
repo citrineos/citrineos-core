@@ -5,13 +5,12 @@
 import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-composite-schedule-endpoint.js';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
-  Tenant,
+  SequelizeTenantRepository,
+  type ITenantRepository,
 } from '@citrineos/dal';
 import { OCPPVersion, type SystemConfig } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -30,6 +29,7 @@ const SINGLE_EVSE_STATION = 'CS-GUARD-ONE';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
 let deviceModelRepository: SequelizeDeviceModelRepository;
 
 beforeAll(async () => {
@@ -65,6 +65,7 @@ beforeAll(async () => {
 
   const dependencies = { config, logger: undefined, sequelizeInstance } as never;
   locationRepository = new SequelizeLocationRepository(dependencies);
+  tenantRepository = new SequelizeTenantRepository(dependencies);
   deviceModelRepository = new SequelizeDeviceModelRepository(dependencies);
 }, 90_000);
 
@@ -74,21 +75,21 @@ afterAll(async () => {
 });
 
 async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number[]) {
-  await ChargingStation.create({
+  const station = await locationRepository.createOrUpdateChargingStation(DEFAULT_TENANT_ID, {
     ocppConnectionName,
     isOnline: true,
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
+  });
+  // Evses link to the station by FK only, so the seed needs the id back.
+  const stationId = (station as unknown as { id: number }).id;
   for (const evseNumber of evseNumbers) {
     await EvseType.findOrCreate({
       where: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null },
       defaults: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null } as never,
     });
-    await Evse.create({
-      tenantId: DEFAULT_TENANT_ID,
-      ocppConnectionName,
+    await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
+      stationId,
       evseTypeId: evseNumber,
-    } as never);
+    });
   }
 }
 
@@ -98,7 +99,7 @@ describe('Asking a station for one of its EVSEs', () => {
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-    await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
     sendCall = vi.fn().mockResolvedValue({ success: true, payload: 'queued' });
 
     await aStationWithEvses(SIX_EVSE_STATION, [1, 2, 3, 4, 5, 6]);
@@ -108,8 +109,7 @@ describe('Asking a station for one of its EVSEs', () => {
   function handle(ocppConnectionName: string, evseId: number) {
     return getTestInstance(container, GetCompositeScheduleEndpoint, {
       ocppSender: { sendCall },
-      deviceModelRepository,
-      // SequelizeLocationRepository still satisfies IEvseRepository
+      variableCharacteristicsRepository: deviceModelRepository,
       evseRepository: locationRepository,
     }).handle(
       [ocppConnectionName],

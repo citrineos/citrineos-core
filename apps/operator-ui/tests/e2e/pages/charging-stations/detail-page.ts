@@ -13,12 +13,11 @@ interface DetailTabs {
 }
 
 export class ChargingStationDetailPage {
-  // Refine's hasura-default data provider is configured with `idType: 'Int'`
-  // and the route binds to `ChargingStations_by_pk(id: Int!)`. The int PK
-  // column is `id`; the string OCPP identifier is `ocppConnectionName`.
-  // Specs pass the seeded station's `.id`.
-  static path(id: number | string): string {
-    return `/charging-stations/${id}`;
+  // The route segment is the station's `ocppConnectionName`; the page resolves
+  // it to the int PK (`id`) that the detail query fetches by. Specs pass the
+  // seeded station's `.ocppConnectionName`.
+  static path(ocppConnectionName: string): string {
+    return `/charging-stations/${encodeURIComponent(ocppConnectionName)}`;
   }
   static readonly urlGlob = '**/charging-stations/*';
 
@@ -40,8 +39,8 @@ export class ChargingStationDetailPage {
     };
   }
 
-  async goto(id: number | string): Promise<void> {
-    await this.page.goto(ChargingStationDetailPage.path(id), {
+  async goto(ocppConnectionName: string): Promise<void> {
+    await this.page.goto(ChargingStationDetailPage.path(ocppConnectionName), {
       waitUntil: 'domcontentloaded',
     });
     await this.expectLoaded();
