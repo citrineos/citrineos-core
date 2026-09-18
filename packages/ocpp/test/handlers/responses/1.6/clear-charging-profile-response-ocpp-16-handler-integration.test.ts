@@ -19,8 +19,8 @@ import {
   type IOCPPMessageRepository,
   OCPP1_6_Mapper,
   SequelizeChargingProfileRepository,
-  Tenant,
 } from '@citrineos/dal';
+import { Tenant } from '@dal/db/sequelize/index.js';
 import { ClearChargingProfileResponseOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
