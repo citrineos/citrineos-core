@@ -579,7 +579,11 @@ describe('SequelizeLocalAuthListRepository', () => {
         'corr-d2',
         OCPP2_0_1.UpdateEnumType.Differential,
         2,
-        [authData('TOKEN-A'), authData('TOKEN-B')],
+        // D01.FR.17: a Differential entry without idTokenInfo is a removal, not an addition.
+        [
+          authData('TOKEN-A', { status: AuthorizationStatusEnum.Accepted }),
+          authData('TOKEN-B', { status: AuthorizationStatusEnum.Accepted }),
+        ],
       );
       const v2 = await repo.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
         TENANT_A,

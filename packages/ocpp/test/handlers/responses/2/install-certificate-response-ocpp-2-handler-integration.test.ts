@@ -16,19 +16,21 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  Certificate,
-  ChargingStation,
   DefaultSequelizeInstance,
-  InstallCertificateAttempt,
-  InstalledCertificate,
-  OCPPMessage,
   SequelizeCertificateRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
   SequelizeOCPPMessageRepository,
-  Tenant,
 } from '@citrineos/dal';
+import {
+  Certificate,
+  ChargingStation,
+  InstallCertificateAttempt,
+  InstalledCertificate,
+  OCPPMessage,
+  Tenant,
+} from '@dal/db/sequelize/index.js';
 import { InstallCertificateResponseOcpp2Handler } from '@handlers/index.js';
 import { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -99,6 +101,7 @@ function aHelperService() {
 }
 
 let nextSerialNumber = 1;
+let stationId: number;
 
 async function aPendingAttempt(certificatePem: string) {
   const certificate = await Certificate.create({
@@ -111,7 +114,7 @@ async function aPendingAttempt(certificatePem: string) {
   } as never);
 
   return InstallCertificateAttempt.create({
-    ocppConnectionName: STATION,
+    stationId,
     certificateType: CertificateUseEnum.V2GRootCertificate,
     certificateId: (certificate as unknown as { id: number }).id,
     status: null,
@@ -125,7 +128,7 @@ async function anInstallCertificateRequest(certificatePem: string) {
     certificate: certificatePem,
   };
   return OCPPMessage.create({
-    ocppConnectionName: STATION,
+    stationId,
     correlationId: CORRELATION_ID,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
@@ -186,11 +189,12 @@ describe('InstallCertificateResponseOcpp2Handler with an earlier install of that
     await Tenant.destroy({ where: {}, truncate: true, cascade: true });
 
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    await ChargingStation.create({
+    const station = await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: DEFAULT_TENANT_ID,
     } as never);
+    stationId = (station as unknown as { id: number }).id;
   });
 
   it('settles the attempt for the certificate the station accepted', async () => {

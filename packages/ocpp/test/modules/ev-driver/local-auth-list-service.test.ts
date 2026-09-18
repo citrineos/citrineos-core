@@ -491,9 +491,9 @@ describe('LocalAuthListService', () => {
       ],
     } as unknown as SendLocalList);
 
-    const mockEntriesAttribute = vi.mocked<VariableAttribute>({
+    const mockEntriesAttribute = vi.mocked<VariableAttributeDto>({
       variable: { variableCharacteristics: { maxLimit: 3 } },
-    } as unknown as VariableAttribute);
+    } as unknown as VariableAttributeDto);
 
     mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(currentVersion);
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(

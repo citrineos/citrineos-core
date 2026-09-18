@@ -192,4 +192,51 @@ describe('RealTimeAuthorizer', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(authorizationRepository.updateByKey).not.toHaveBeenCalled();
   });
+
+  it('asks the real-time auth endpoint when no EVSE and connector can be determined', async () => {
+    fetchMock.mockResolvedValue({
+      json: async () => ({
+        timestamp: new Date().toISOString(),
+        data: { allowed: 'BLOCKED' },
+      }),
+    });
+    const authorizer = buildAuthorizer(aStationWithTwoEvses());
+
+    const result = await authorizer.authorize(buildAuthorization(), buildContext());
+
+    expect(result).toBe(AuthorizationStatusEnum.Blocked);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.evseId).toBeUndefined();
+    expect(body.connectorId).toBeUndefined();
+  });
+
+  it('does not reuse a last attempt made for a connector when this call has none', async () => {
+    const authorizer = buildAuthorizer(aStationWithTwoEvses());
+    const context = buildContext();
+    const authorization = buildAuthorization({
+      realTimeAuthTimeout: 600,
+      realTimeAuthLastAttempt: {
+        timestamp: new Date().toISOString(),
+        result: AuthorizationStatusEnum.Accepted,
+        ocppConnectionName: context.ocppConnectionName,
+        evseId: evse.id,
+        connectorId: connector.id,
+      },
+    });
+
+    await authorizer.authorize(authorization, context);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  function aStationWithTwoEvses() {
+    return {
+      locationId: null,
+      evses: [
+        { id: 10, connectors: [{ id: 100 }] },
+        { id: 11, connectors: [{ id: 101 }] },
+      ],
+    };
+  }
 });
