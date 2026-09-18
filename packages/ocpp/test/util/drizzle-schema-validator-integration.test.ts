@@ -4,7 +4,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { registeredTables, tableMap } from '@citrineos/dal';
+import { drizzleSchema, registeredTables } from '@citrineos/dal';
 import { validateDrizzleSchema } from '@/util/index.js';
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -53,9 +53,7 @@ beforeAll(async () => {
   await db.execute(sql.raw('CREATE EXTENSION IF NOT EXISTS postgis;'));
 
   const push = await pushSchema(
-    // The nested schema barrel has to be flattened: drizzle-kit only inspects the
-    // top level of what it is given, and reports "no tables" rather than erroring.
-    tableMap(),
+    drizzleSchema,
     db,
     ['public'],
     // Without a table filter, postgis' own spatial_ref_sys looks like a table to
@@ -252,7 +250,7 @@ describe('DrizzleSchemaValidatorIntegration', () => {
         expect(report.errors.filter((f) => f.table === 'ChargingStationSequences')).toHaveLength(1);
       } finally {
         const push = await pushSchema(
-          tableMap(),
+          drizzleSchema,
           db,
           ['public'],
           registeredTables().map((t) => t.name),

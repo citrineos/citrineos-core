@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { registeredTables, type RegisteredTable } from '@citrineos/dal';
+import { type RegisteredTable, registeredTables } from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
 import { sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -11,17 +11,17 @@ import type { ILogObj, Logger } from 'tslog';
 import {
   array,
   buildReport,
+  type CanonicalType,
   character,
   compareNullability,
   compareTypes,
-  DEFAULT_SCHEMA,
   decimal,
+  DEFAULT_SCHEMA,
   runSchemaValidationGate,
-  simple,
-  type CanonicalType,
   type SchemaFinding,
   type SchemaValidationOptions,
   type SchemaValidationReport,
+  simple,
 } from './schema-validation.js';
 
 /**
@@ -42,18 +42,11 @@ import {
  * Deliberately NOT covered:
  *   - foreign keys: no schema file declares any.
  *   - index definitions: existence by name only, see `introspectIndexNames`.
- *   - column defaults, unless `checkDefaults` is set.
  */
 
 export interface DrizzleSchemaValidationOptions extends SchemaValidationOptions {
   /** Tables to validate. Defaults to every table in the schema barrel. */
   tables?: RegisteredTable[];
-  /**
-   * Also compare column defaults. Off by default: most defaults in this schema
-   * are application-side (`$defaultFn`) with no database counterpart, so the
-   * check is opt-in. Compares presence only — see {@link compareDefault}.
-   */
-  checkDefaults?: boolean;
 }
 
 /** Drizzle pseudo-types whose default is supplied by the underlying sequence. */
@@ -271,7 +264,6 @@ export async function validateDrizzleSchema(
   options: DrizzleSchemaValidationOptions = {},
 ): Promise<SchemaValidationReport> {
   const schema = options.schema ?? DEFAULT_SCHEMA;
-  const checkDefaults = options.checkDefaults ?? false;
   const tables = options.tables ?? registeredTables();
   const tableNames = tables.map((t: RegisteredTable) => t.name);
   const findings: SchemaFinding[] = [];
@@ -305,8 +297,6 @@ export async function validateDrizzleSchema(
     const config = getTableConfig(table);
     const dbColumnsForTable = dbTables.get(name);
 
-    // No rows in pg_attribute means the table does not exist. Reported once,
-    // rather than as one missing-column finding per declared column.
     if (!dbColumnsForTable) {
       findings.push({
         kind: 'missing-table',
@@ -355,8 +345,6 @@ export async function validateDrizzleSchema(
           });
           break;
         case 'narrower':
-          // The database cannot hold everything the declaration believes it can,
-          // so some insert path will fail at runtime.
           findings.push({
             kind: 'length-narrower',
             severity: 'error',
@@ -401,11 +389,6 @@ export async function validateDrizzleSchema(
           actual: 'NOT NULL',
           message: `Column "${name}"."${column.name}" is NOT NULL but the drizzle schema does not declare it NOT NULL; inserts and updates writing null will fail`,
         });
-      }
-
-      if (checkDefaults) {
-        const finding = compareDefault(name, column, dbColumn);
-        if (finding) findings.push(finding);
       }
     }
 
@@ -462,53 +445,6 @@ export async function validateDrizzleSchema(
 }
 
 /**
- * Compares default *presence* only, and only where a comparison is meaningful.
- *
- * Value comparison is intentionally not attempted: PostgreSQL rewrites default
- * expressions into its own canonical form and adds casts, so comparing them
- * textually against a drizzle `SQL` object is unreliable. Presence is the part
- * that is both well defined and worth knowing.
- *
- * Skipped cases, each of which would otherwise be a guaranteed false positive:
- *   - serial columns: the default comes from the sequence, and drizzle does not
- *     model it as a column default.
- *   - `$defaultFn` columns: the value is generated in the application, so the
- *     database legitimately has none — and one would be harmless, since drizzle
- *     always sends an explicit value.
- */
-function compareDefault(
-  table: string,
-  column: { name: string; default: unknown; defaultFn: unknown; getSQLType: () => string },
-  dbColumn: DbColumnInfo,
-): SchemaFinding | undefined {
-  if (SERIAL_BASES[column.getSQLType().trim().toLowerCase()]) return undefined;
-  if (column.defaultFn !== undefined) return undefined;
-
-  const declaresDefault = column.default !== undefined;
-  if (declaresDefault === dbColumn.hasDefault) return undefined;
-
-  return declaresDefault
-    ? {
-        kind: 'default-mismatch',
-        severity: 'warning',
-        table,
-        column: column.name,
-        expected: 'a column default',
-        actual: 'no column default',
-        message: `Column "${table}"."${column.name}" has no database default but the drizzle schema declares one; rows inserted outside drizzle get no default value`,
-      }
-    : {
-        kind: 'default-mismatch',
-        severity: 'warning',
-        table,
-        column: column.name,
-        expected: 'no column default',
-        actual: `default ${dbColumn.defaultExpression ?? '(unknown)'}`,
-        message: `Column "${table}"."${column.name}" has a database default (${dbColumn.defaultExpression ?? 'unknown'}) that the drizzle schema does not describe`,
-      };
-}
-
-/**
  * Startup gate for the drizzle schema declarations. Introspects the schema, logs
  * one consolidated block, and throws when errors are present.
  *
@@ -520,7 +456,7 @@ export async function assertDrizzleSchemaMatches(
   db: NodePgDatabase,
   config: SystemConfig,
   logger: Logger<ILogObj>,
-  options: Pick<DrizzleSchemaValidationOptions, 'checkDefaults' | 'tables'> = {},
+  options: DrizzleSchemaValidationOptions = {},
 ): Promise<SchemaValidationReport | null> {
   return runSchemaValidationGate({
     config,
