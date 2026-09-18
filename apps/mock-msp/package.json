@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@playwright/test": "^1.49.0",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

@@ -96,7 +96,7 @@
     "@axe-core/playwright": "^4.10.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "catalog:",
-    "@playwright/test": "^1.49.0",
+    "@playwright/test": "catalog:",
     "@tailwindcss/postcss": "4",
     "@types/geojson": "7946.0.16",
     "@types/js-cookie": "3.0.6",

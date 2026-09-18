@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Close AI SLOP Pull Requests
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  close-ai-slop:
+    name: Close AI SLOP pull requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close when the AI SLOP marker is present
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const MARKER = 'AI SLOP';
+            const ROBOT = '\u{1F916}';
+            const ANY_CASING = /ai\s*slop/i;
+
+            // The marker is the phrase and the robot emojis together on one line, in any casing. Prose
+            // about "the AI slop rule" carries no emoji and so does not trip this.
+            const carriesMarker = (text) =>
+              (text || '').split('\n').some((line) => ANY_CASING.test(line) && line.includes(ROBOT));
+
+            const pr = context.payload.pull_request;
+
+            if (pr.state !== 'open') {
+              core.info(`PR #${pr.number} is already ${pr.state}.`);
+              return;
+            }
+
+            const inTitle = carriesMarker(pr.title);
+            const inBody = carriesMarker(pr.body);
+
+            if (!inTitle && !inBody) {
+              core.info(`PR #${pr.number} does not carry the ${MARKER} marker.`);
+              return;
+            }
+
+            const where = [inTitle && 'title', inBody && 'description'].filter(Boolean).join(' and ');
+            core.notice(`PR #${pr.number} carries the ${MARKER} marker in its ${where}; closing.`);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: [
+                `Closed automatically: this pull request carries the **${MARKER}** marker in its ${where}.`,
+                '',
+                'That marker means the change was opened without the human review AGENTS.md requires — the person',
+                'directing the agent has to read the diff and write the title and summary in their own words.',
+                'Once that has happened, open a new pull request without the marker.',
+              ].join('\n'),
+            });
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              state: 'closed',
+            });
