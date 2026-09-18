@@ -51,65 +51,6 @@ async function waitForDeviceModel(apiClient: { gql: <T>(q: string) => Promise<T>
     .toBeGreaterThan(0);
 }
 
-/** The name of a component holding at least one variable that is not ReadOnly, if one exists. */
-async function findWritableComponentName(apiClient: {
-  gql: <T>(q: string) => Promise<T>;
-}): Promise<string> {
-  const data = await apiClient.gql<{ Components: { name: string }[] }>(
-    `query WritableComponent {
-       Components(
-         where: { ComponentVariables: { Variable: { VariableAttributes: { mutability: { _neq: "ReadOnly" } } } } }
-         order_by: { id: asc }
-         limit: 1
-       ) { name }
-     }`,
-  );
-  return data.Components[0]?.name ?? '';
-}
-
-/**
- * Waits for a component SetVariables can actually offer variables for, and names it.
- *
- * It also has to wait rather than read once: NotifyReport ingests the model progressively, so
- * Components > 0 can be true while the writable ones are still arriving.
- */
-async function waitForWritableComponentName(apiClient: {
-  gql: <T>(q: string) => Promise<T>;
-}): Promise<string> {
-  let name = '';
-  await expect
-    .poll(async () => (name = await findWritableComponentName(apiClient)), {
-      timeout: 90_000,
-      intervals: [3_000],
-      message:
-        'No component ever exposed a writable variable, so SetVariables had nothing to offer.',
-    })
-    .not.toBe('');
-  return name;
-}
-
-// Opens the combobox anchored on the given group label and picks the option matching
-// `optionLabel`, or the first option when no label is given.
-async function selectOption(
-  page: Page,
-  modal: ModalHarness,
-  groupLabel: RegExp,
-  optionLabel?: string,
-): Promise<void> {
-  const trigger = modal.dialog
-    .getByRole('group')
-    .filter({ hasText: groupLabel })
-    .getByRole('combobox')
-    .first();
-  await expect(trigger).toBeEnabled({ timeout: 15_000 });
-  await trigger.click();
-  const option = optionLabel
-    ? page.getByRole('option', { name: optionLabel, exact: true }).first()
-    : page.getByRole('option').first();
-  await expect(option).toBeVisible({ timeout: 15_000 });
-  await option.click();
-}
-
 // Opens the combobox anchored on the given group label and picks its first
 // real option. Waits for an option to render before clicking so a still-
 // loading useSelect query (the trigger flips enabled before the option list
@@ -174,9 +115,6 @@ test.describe('charging-stations › device model sequence @everest', () => {
     // E2E-097 (serial-prior) populated the persistent model; wait for it
     // deterministically so this test does not silently depend on ordering.
     await waitForDeviceModel(apiClient);
-    // Resolved before the modal opens: the writable components arrive at the tail of the
-    // NotifyReport stream, well after Components > 0 first becomes true.
-    const writableComponent = await waitForWritableComponentName(apiClient);
 
     const detail = new ChargingStationDetailPage(page);
     await detail.goto(everestStation.ocppConnectionName);
@@ -184,9 +122,7 @@ test.describe('charging-stations › device model sequence @everest', () => {
     const setVars = new ModalHarness(page, /set variables/i);
     await setVars.expectOpen();
 
-    // SetVariables lists only writable variables, and the
-    // first component has none, which would leave the variable combobox empty.
-    await selectOption(page, setVars, /component #1/i, writableComponent);
+    await selectFirstOption(page, setVars, /component #1/i);
     await selectFirstOption(page, setVars, /variable #1/i);
 
     await setVars.dialog
