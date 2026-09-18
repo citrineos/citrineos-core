@@ -450,14 +450,22 @@ export class ConnectorMapper {
         return ConnectorType.DOMESTIC_B;
       case ConnectorTypeEnum.DomesticC:
         return ConnectorType.DOMESTIC_C;
+      case ConnectorTypeEnum.DomesticD:
+        return ConnectorType.DOMESTIC_D;
+      case ConnectorTypeEnum.DomesticE:
+        return ConnectorType.DOMESTIC_E;
       case ConnectorTypeEnum.DomesticF:
         return ConnectorType.DOMESTIC_F;
       case ConnectorTypeEnum.DomesticG:
         return ConnectorType.DOMESTIC_G;
+      case ConnectorTypeEnum.DomesticH:
+        return ConnectorType.DOMESTIC_H;
       case ConnectorTypeEnum.DomesticI:
         return ConnectorType.DOMESTIC_I;
       case ConnectorTypeEnum.DomesticJ:
         return ConnectorType.DOMESTIC_J;
+      case ConnectorTypeEnum.DomesticK:
+        return ConnectorType.DOMESTIC_K;
       case ConnectorTypeEnum.DomesticL:
         return ConnectorType.DOMESTIC_L;
       case ConnectorTypeEnum.DomesticM:
