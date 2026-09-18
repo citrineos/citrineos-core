@@ -116,6 +116,7 @@ export class SequelizeLocalAuthListRepository
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,
         LocalListAuthorization.build({
+          tenantId,
           authorizationId: auth.id,
           idToken: auth.idToken,
           idTokenType: auth.idTokenType,
@@ -214,6 +215,7 @@ export class SequelizeLocalAuthListRepository
         tenantId,
         LocalListAuthorization.build({
           ...baseFields,
+          tenantId,
           idToken: authData.idTag,
           idTokenType: null,
           status: isDelete

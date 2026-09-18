@@ -119,7 +119,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
       const response = sentResponse(ocppSender);
       expect(response).toEqual({
-        receiptId: 'station-001-txn-001-psp-123',
+        receiptId: '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
         receiptUrl: 'https://receipts.example.com/station-001-txn-001-psp-123',
       });
       expect(ocppSender.sendCallResultWithMessage.mock.calls[0][0]).toBe(message);
@@ -148,7 +148,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       await handler.handle(makeMessage({ ...settledRequest, transactionId: undefined }));
 
       const response = sentResponse(ocppSender);
-      expect(response.receiptId).toBe('station-001-psp-123');
+      expect(response.receiptId).toBe('CykjsHKl98MfRCIi4xD7Dvtm_95qwO1FXVSrrKOuQ08');
       expect(response.receiptUrl).toBe('https://receipts.example.com/station-001-psp-123');
       expect(
         transactionEventRepository.readTransactionByStationIdAndTransactionId,
@@ -158,7 +158,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('percent-encodes the receiptId in the receiptUrl', async () => {
+    it('percent-encodes the receipt reference in the receiptUrl', async () => {
       const { handler, ocppSender } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
       });
@@ -166,7 +166,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       await handler.handle(makeMessage({ ...settledRequest, pspRef: 'psp/123' }));
 
       const response = sentResponse(ocppSender);
-      expect(response.receiptId).toBe('station-001-txn-001-psp/123');
+      expect(response.receiptId).toBe('gyDgAMHg-sbdH2qzlRrsiC-1ycpH8FnTZFwqfaY2qPM');
       expect(response.receiptUrl).toBe(
         'https://receipts.example.com/station-001-txn-001-psp%2F123',
       );
@@ -318,7 +318,9 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(logger.error.mock.calls[0][0]).toBe(
         'Failed to store settlement data for transaction txn-001',
       );
-      expect(sentResponse(ocppSender).receiptId).toBe('station-001-txn-001-psp-123');
+      expect(sentResponse(ocppSender).receiptId).toBe(
+        '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
+      );
     });
   });
 
@@ -358,7 +360,9 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
       await handler.handle(makeMessage(settledRequest));
 
-      expect(sentResponse(ocppSender).receiptId).toBe('station-001-txn-001-psp-123');
+      expect(sentResponse(ocppSender).receiptId).toBe(
+        '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
+      );
       expect(logger.error).toHaveBeenCalledOnce();
       expect(logger.error.mock.calls[0][0]).toBe(
         'Failed to send SetDisplayMessageRequest to station station-001',

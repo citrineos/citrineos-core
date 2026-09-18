@@ -587,8 +587,10 @@ describe('regenerateCredentialsToken', () => {
         VersionNumber.TWO_DOT_TWO_DOT_ONE,
       ),
     ).rejects.toThrow(/Regenerate credentials token failed/);
-    // The first update ran before the partner call; the reply update never did.
-    expect(updateCalls(h.graphqlCalls)).toHaveLength(1);
+    // The first update ran before the partner call; the second restores the previous profile.
+    const updates = updateCalls(h.graphqlCalls);
+    expect(updates).toHaveLength(2);
+    expect(updates[1].variables.input.serverCredentials.token).toBe('initial-server-token');
   });
 });
 

@@ -49,6 +49,7 @@ export const websocketServerSchema = z
     // strict per-server tenant.
     dynamicTenantResolution: z.boolean().optional().default(false),
     forceProtocol: z.enum(OCPP_VERSION_LIST).optional(),
+    perMessageDeflate: z.boolean().default(true).optional(),
   })
   .refine(
     (o) => {

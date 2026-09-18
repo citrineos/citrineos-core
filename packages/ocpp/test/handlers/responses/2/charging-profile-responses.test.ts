@@ -235,7 +235,7 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
     });
   });
 
-  it('does not write, but still resyncs, when the station rejected the profile', async () => {
+  it('re-reads the CSO profiles without deactivating when the station rejected the profile', async () => {
     await handler.handle(
       makeMessage(OCPP_CallAction.SetChargingProfile, OCPPVersion.OCPP2_0_1, {
         status: ChargingProfileStatusEnum.Rejected,
@@ -247,9 +247,19 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
       `Failed to set charging profile: ${JSON.stringify({ status: ChargingProfileStatusEnum.Rejected })}`,
     );
     expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
-    expect(ocppSender.sendCall).toHaveBeenCalledWith(
-      expect.objectContaining({ action: OCPP_CallAction.GetChargingProfiles }),
-    );
+    expect(ocppSender.sendCall).toHaveBeenCalledWith({
+      ocppConnectionName: STATION,
+      tenantId: DEFAULT_TENANT_ID,
+      protocol: OCPPVersion.OCPP2_0_1,
+      action: OCPP_CallAction.GetChargingProfiles,
+      eventGroup: EventGroup.SmartCharging,
+      payload: {
+        requestId: REQUEST_ID,
+        chargingProfile: {
+          chargingLimitSource: [ChargingLimitSourceEnum.CSO],
+        },
+      },
+    });
   });
 });
 
