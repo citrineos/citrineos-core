@@ -494,7 +494,7 @@ export class SequelizeDeviceModelRepository
     const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        bootConfigSetId: { [Op.ne]: null },
+        bootConfigId: { [Op.ne]: null },
       },
       include: [{ model: Component, include: [EvseType] }, Variable],
     });

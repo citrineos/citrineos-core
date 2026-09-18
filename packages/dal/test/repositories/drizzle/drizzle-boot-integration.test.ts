@@ -25,6 +25,7 @@ let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let drizzlePool: pg.Pool;
 let drizzleInstance: NodePgDatabase;
+let station: ChargingStation;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -76,7 +77,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
+  station = await ChargingStation.create({
     ocppConnectionName: STATION,
     isOnline: false,
     tenantId: TENANT_ID,
@@ -98,7 +99,7 @@ async function aPendingBootWithOneSetVariable(): Promise<number> {
   const component = await Component.create({ name: 'OCPPCommCtrlr', tenantId: TENANT_ID } as any);
   const variable = await Variable.create({ name: 'HeartbeatInterval', tenantId: TENANT_ID } as any);
   const attribute = await VariableAttribute.create({
-    ocppConnectionName: STATION,
+    stationId: station.id,
     componentId: component.id,
     variableId: variable.id,
     value: '30',

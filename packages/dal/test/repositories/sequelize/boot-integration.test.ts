@@ -158,11 +158,11 @@ describe('SequelizeBootRepository tenant scoping', () => {
 });
 
 describe('SequelizeBootRepository pending boot SetVariables', () => {
-  async function anAttribute(tenantId: number): Promise<VariableAttribute> {
+  async function anAttribute(tenantId: number, stationId: number): Promise<VariableAttribute> {
     const component = await Component.create({ name: 'OCPPCommCtrlr', tenantId } as any);
     const variable = await Variable.create({ name: 'HeartbeatInterval', tenantId } as any);
     return VariableAttribute.create({
-      ocppConnectionName: SHARED_NAME,
+      stationId,
       componentId: component.id,
       variableId: variable.id,
       value: '30',
@@ -179,8 +179,8 @@ describe('SequelizeBootRepository pending boot SetVariables', () => {
   }
 
   it('readByKey returns the variable attributes assigned to the boot', async () => {
-    await aStation(TENANT_A);
-    const attribute = await anAttribute(TENANT_A);
+    const station = await aStation(TENANT_A);
+    const attribute = await anAttribute(TENANT_A, station.id);
     await aPendingBootWith(attribute);
 
     const boot = await makeRepo().readByKey(TENANT_A, SHARED_NAME);
@@ -189,8 +189,8 @@ describe('SequelizeBootRepository pending boot SetVariables', () => {
   });
 
   it('updateByKey returns the variable attributes assigned to the boot', async () => {
-    await aStation(TENANT_A);
-    const attribute = await anAttribute(TENANT_A);
+    const station = await aStation(TENANT_A);
+    const attribute = await anAttribute(TENANT_A, station.id);
     await aPendingBootWith(attribute);
 
     const boot = await makeRepo().updateByKey(
