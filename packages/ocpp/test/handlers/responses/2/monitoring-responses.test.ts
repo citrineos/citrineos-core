@@ -272,7 +272,7 @@ describe('SetVariableMonitoringResponseOcpp2Handler', () => {
     );
   });
 
-  it('stops at the first failing result and rethrows', async () => {
+  it('applies the remaining results when one of them fails', async () => {
     variableMonitoringRepository.updateResultByStationId.mockRejectedValueOnce(
       new Error('constraint violation'),
     );
@@ -284,9 +284,9 @@ describe('SetVariableMonitoringResponseOcpp2Handler', () => {
           setMonitoringResult: [resultAccepted, resultRejected],
         } as never),
       ),
-    ).rejects.toThrow('constraint violation');
+    ).resolves.toBeUndefined();
 
-    expect(variableMonitoringRepository.updateResultByStationId).toHaveBeenCalledTimes(1);
+    expect(variableMonitoringRepository.updateResultByStationId).toHaveBeenCalledTimes(2);
   });
 });
 
