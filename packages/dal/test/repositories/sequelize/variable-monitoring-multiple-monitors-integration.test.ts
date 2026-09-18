@@ -5,13 +5,12 @@
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   Component,
   DefaultSequelizeInstance,
   SequelizeVariableMonitoringRepository,
-  Tenant,
   Variable,
 } from '@citrineos/dal';
+import { ChargingStation, Tenant } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -22,6 +21,7 @@ const { UpperThreshold, LowerThreshold } = OCPP2_0_1.MonitorEnumType;
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
+let stationId: number;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -73,11 +73,12 @@ function makeRepo(): SequelizeVariableMonitoringRepository {
 
 async function seedEvsePower(): Promise<{ componentId: string; variableId: string }> {
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
     tenantId: TENANT_ID,
   });
+  stationId = station.id;
   const component = await Component.create({ name: 'EVSE', tenantId: TENANT_ID });
   const variable = await Variable.create({ name: 'Power', tenantId: TENANT_ID });
   return { componentId: String(component.id), variableId: String(variable.id) };
@@ -114,7 +115,7 @@ function anAcceptedResult(
 
 async function monitorsOnStation() {
   return makeRepo().readAllByQuery(TENANT_ID, {
-    where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+    where: { stationId },
     order: [['databaseId', 'ASC']],
   });
 }
@@ -261,7 +262,7 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     ] as const) {
       await sequelizeInstance.models.VariableMonitoring.create({
         tenantId: TENANT_ID,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
+        stationId,
         componentId,
         variableId,
         id,

@@ -65,7 +65,7 @@ export class SequelizeVariableMonitoringRepository
                 VariableMonitoring.MODEL_NAME
               ].findOne({
                 where: {
-                  stationId
+                  stationId,
                   id: variableMonitoring.id,
                 },
                 transaction,
