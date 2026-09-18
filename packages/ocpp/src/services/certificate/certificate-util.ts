@@ -399,7 +399,8 @@ export const extractCertificateDetails = (
     cert.readCertPEM(pemString);
 
     // Extract details
-    const serialNumber = parseInt(cert.getSerialNumberHex());
+    const parsedSerialNumber = parseInt(cert.getSerialNumberHex(), 16);
+    const serialNumber = Number.isSafeInteger(parsedSerialNumber) ? parsedSerialNumber : null;
     const issuerName = cert.getIssuerString();
     const organizationName = cert.getSubjectString().match(/\/O=([^/]+)/)?.[1] || null;
     const commonName = cert.getSubjectString().match(/\/CN=([^/]+)/)?.[1] || null;

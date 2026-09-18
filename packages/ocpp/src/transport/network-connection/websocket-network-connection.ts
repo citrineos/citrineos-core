@@ -979,6 +979,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         handleProtocols: (protocols, req) =>
           this._handleProtocols(protocols, req, wsConfig.protocols, wsConfig.forceProtocol),
         clientTracking: false,
+        perMessageDeflate: wsConfig.perMessageDeflate ?? true,
       });
 
       wss.on('connection', (ws, req) =>

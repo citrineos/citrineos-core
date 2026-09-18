@@ -5,6 +5,7 @@
 import {
   AuthorizationStatusEnum,
   IdTokenEnum,
+  OCPP1_6,
   OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/types';
@@ -137,5 +138,37 @@ describe('SequelizeLocalAuthListRepository tenant scoping', () => {
         authorizationData,
       ),
     ).rejects.toThrow(/Authorization not found/);
+  });
+
+  it("persists the 2.0.1 list entry under the request's own tenant, not the default tenant", async () => {
+    await enrolSharedTokenForBothTenants();
+
+    const sendLocalList = await aRepo().createSendLocalListFromRequestData(
+      TENANT_B,
+      STATION,
+      'corr-3',
+      OCPP2_0_1.UpdateEnumType.Full,
+      1,
+      authorizationData,
+    );
+
+    const [entry] = sendLocalList.localAuthorizationList!;
+    expect(entry.tenantId).toBe(TENANT_B);
+  });
+
+  it("persists the 1.6 list entry under the request's own tenant, not the default tenant", async () => {
+    await enrolSharedTokenForBothTenants();
+
+    const sendLocalList = await aRepo().createSendLocalListFromRequestData16(
+      TENANT_B,
+      STATION,
+      'corr-4',
+      OCPP1_6.SendLocalListRequestUpdateType.Full,
+      1,
+      [{ idTag: SHARED_TOKEN, idTagInfo: { status: OCPP1_6.SendLocalListRequestStatus.Accepted } }],
+    );
+
+    const [entry] = sendLocalList.localAuthorizationList!;
+    expect(entry.tenantId).toBe(TENANT_B);
   });
 });

@@ -10,8 +10,8 @@ export interface RealTimeAuthorizationRequestBody {
   idTokenType: IdTokenEnumType;
   locationId?: string;
   ocppConnectionName: string;
-  evseId: number;
-  connectorId: number;
+  evseId?: number;
+  connectorId?: number;
 }
 
 export interface RealTimeAuthorizationResponse {

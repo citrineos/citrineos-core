@@ -61,6 +61,7 @@ export interface BroadcastParams<T extends ZodTypeAny> {
   paginatedParams?: PaginatedParams;
   otherParams?: Record<string, string | number | (string | number)[]>;
   path?: string;
+  tenantPartnerId?: number;
 }
 
 export interface TriggerRequestOptions extends IRequestOptions {
@@ -249,6 +250,7 @@ export abstract class BaseClientApi {
       paginatedParams,
       otherParams,
       path,
+      tenantPartnerId,
     } = params;
     this.logger.debug(`Broadcasting to clients for ${moduleId}_${interfaceRole}`);
     this.logger.debug(`Requesting partners for ${cpoCountryCode}_${cpoPartyId}`);
@@ -262,7 +264,9 @@ export abstract class BaseClientApi {
       cpoPartyId,
       endpointIdentifier: `${moduleId}_${interfaceRole}`,
     });
-    const partners = response.TenantPartners as TenantPartnerDto[];
+    const partners = (response.TenantPartners as TenantPartnerDto[]).filter(
+      (partner) => tenantPartnerId === undefined || partner.id === tenantPartnerId,
+    );
     for (const partner of partners) {
       this.logger.debug(`Requesting partner ${partner.countryCode}_${partner.partyId}`);
       const response = await this.request(
