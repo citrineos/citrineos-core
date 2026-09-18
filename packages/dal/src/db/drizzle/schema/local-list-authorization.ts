@@ -14,7 +14,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { type z } from 'zod'; // Column definitions are a function to ensure fresh objects per table instance,
+import { type z } from 'zod';
 
 // Column definitions are a function to ensure fresh objects per table instance,
 // which is required when the same schema is used across multiple pgSchema() calls.
