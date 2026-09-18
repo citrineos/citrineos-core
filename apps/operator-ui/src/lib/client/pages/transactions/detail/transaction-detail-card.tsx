@@ -25,9 +25,8 @@ import { openModal } from '@lib/utils/store/modal-slice';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
 
 /**
- * Seconds the EV actually drew energy, in clock notation: "02:30:00". Hours are not wrapped at 24,
- * so a multi-day session reads "26:05:00" rather than restarting from zero. Undefined for an
- * unreported value, which KeyValueDisplay renders as not applicable.
+ * Contains the total seconds that energy flowed from EVSE to EV during the transaction,
+ * in clock notation: "02:30:00".
  */
 const formatTimeSpentCharging = (seconds?: number | string | null): string | undefined => {
   // The column is a bigint, which some drivers hand back as a string.

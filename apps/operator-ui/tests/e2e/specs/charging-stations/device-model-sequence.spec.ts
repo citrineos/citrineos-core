@@ -118,6 +118,8 @@ test.describe('charging-stations › device model sequence @everest', () => {
 
     const detail = new ChargingStationDetailPage(page);
     await detail.goto(everestStation.ocppConnectionName);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await detail.expectLoaded();
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const setVars = new ModalHarness(page, /set variables/i);
     await setVars.expectOpen();
