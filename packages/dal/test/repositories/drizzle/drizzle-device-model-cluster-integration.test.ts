@@ -3,15 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  ChargingStation,
+  VariableAttribute,
+  VariableCharacteristics,
+} from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import {
-  ChargingStation,
   Component,
   DrizzleVariableAttributeRepository,
   Variable,
-  VariableAttribute,
-  VariableCharacteristics,
   VariableStatus,
 } from '../../../index.js';
 import { EventData } from '@dal/models/variable-monitoring/index.js';
@@ -91,6 +93,13 @@ async function aStation(tenantId: number, ocppConnectionName = STATION): Promise
   return station as unknown as { id: number };
 }
 
+async function stationIdFor(tenantId: number, ocppConnectionName: string): Promise<number> {
+  const existing = (await ChargingStation.findOne({
+    where: { ocppConnectionName, tenantId },
+  })) as unknown as { id: number } | null;
+  return existing ? existing.id : (await aStation(tenantId, ocppConnectionName)).id;
+}
+
 async function aVariable(
   tenantId: number,
   name: string,
@@ -113,10 +122,11 @@ async function anAttribute(
   tenantId: number,
   overrides: Record<string, unknown> = {},
 ): Promise<{ id: number }> {
+  const { ocppConnectionName = STATION, ...rest } = overrides;
   const attribute = await VariableAttribute.create({
-    ocppConnectionName: STATION,
+    stationId: await stationIdFor(tenantId, ocppConnectionName as string),
     tenantId,
-    ...overrides,
+    ...rest,
   } as any);
   return attribute as unknown as { id: number };
 }
@@ -300,15 +310,16 @@ describe('DrizzleEventDataRepository', () => {
     tenantId: number,
     overrides: Record<string, unknown> = {},
   ): Promise<{ id: number }> {
+    const { ocppConnectionName = STATION, ...rest } = overrides;
     const event = await EventData.create({
-      ocppConnectionName: STATION,
+      stationId: await stationIdFor(tenantId, ocppConnectionName as string),
       eventId: 1,
       trigger: 'Delta',
       timestamp: new Date('2025-04-01T08:30:00.000Z'),
       actualValue: '22.5',
       eventNotificationType: 'HardWiredNotification',
       tenantId,
-      ...overrides,
+      ...rest,
     } as any);
     return event as unknown as { id: number };
   }
@@ -355,7 +366,7 @@ describe('DrizzleEventDataRepository', () => {
 });
 
 describe('DrizzleVariableAttributeRepository', () => {
-  it('findById maps sequelize defaults and drops the stationId column', async () => {
+  it('findById maps sequelize defaults and carries the station FK', async () => {
     const station = await aStation(TENANT);
     const variable = await aVariable(TENANT, 'HeartbeatInterval');
     const attribute = await anAttribute(TENANT, {
@@ -374,8 +385,7 @@ describe('DrizzleVariableAttributeRepository', () => {
     expect(dto!.value).toBe('3600');
     expect(dto!.generatedAt).toBe('2025-03-01T10:00:00.000Z');
     expect(dto!.variableId).toBe(variable.id);
-    expect('stationId' in dto!).toBe(false);
-    // The sequelize BeforeCreate hook resolved the FK on the stored row.
+    expect(dto!.stationId).toBe(station.id);
     expect((await VariableAttribute.findByPk(attribute.id))!.get('stationId')).toBe(station.id);
   });
 
@@ -435,7 +445,6 @@ describe('drizzle row-to-DTO mappers', () => {
     const dto = toVariableAttributeDto({
       id: 4,
       stationId: 9,
-      ocppConnectionName: STATION,
       type: null,
       dataType: 'string',
       value: null,
@@ -459,14 +468,13 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.constant).toBe(false);
     expect(dto.variableId).toBe(12);
     expect(dto.componentId).toBeNull();
-    expect('stationId' in dto).toBe(false);
+    expect(dto.stationId).toBe(9);
   });
 
   it('toVariableAttributeDto leaves generatedAt undefined when the column is null', () => {
     const dto = toVariableAttributeDto({
       id: 5,
-      stationId: null,
-      ocppConnectionName: STATION,
+      stationId: 12,
       type: 'Target',
       dataType: 'integer',
       value: '10',
@@ -564,7 +572,6 @@ describe('drizzle row-to-DTO mappers', () => {
     const dto = toEventDataDto({
       id: 7,
       stationId: 9,
-      ocppConnectionName: STATION,
       eventId: 3,
       trigger: 'Alerting',
       cause: null,
@@ -587,14 +594,13 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.variableId).toBeUndefined();
     expect(dto.componentId).toBeUndefined();
     expect(dto.variableMonitoringId).toBe(11);
-    expect('stationId' in dto).toBe(false);
+    expect(dto.stationId).toBe(9);
   });
 
   it('toEventDataDto leaves timestamp undefined when the column is null', () => {
     const dto = toEventDataDto({
       id: 8,
       stationId: null,
-      ocppConnectionName: STATION,
       eventId: 4,
       trigger: 'Delta',
       cause: 2,

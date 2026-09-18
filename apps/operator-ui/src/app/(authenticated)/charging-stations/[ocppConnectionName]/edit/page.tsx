@@ -6,12 +6,15 @@ import { ChargingStationUpsert } from '@lib/client/pages/charging-stations/upser
 import config from '@lib/utils/config';
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ ocppConnectionName: string }>;
 };
 
 export default async function EditChargingStationPage({ params }: PageProps) {
-  const { id } = await params;
+  const { ocppConnectionName } = await params;
   return (
-    <ChargingStationUpsert params={{ id: Number(id) }} allowImageUpload={config.allowImageUpload} />
+    <ChargingStationUpsert
+      params={{ ocppConnectionName }}
+      allowImageUpload={config.allowImageUpload}
+    />
   );
 }

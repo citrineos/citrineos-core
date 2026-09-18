@@ -107,6 +107,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
             activeTransaction,
             message.context.tenantId,
             message.protocol,
+            message.context.ocppConnectionName,
           );
         }
       }

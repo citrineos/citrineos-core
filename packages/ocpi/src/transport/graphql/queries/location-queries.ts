@@ -51,7 +51,7 @@ export const GET_LOCATIONS_QUERY = gql`
         updatedAt
         evses: Evses {
           id
-          ocppConnectionName
+          stationId
           evseTypeId
           evseId
           physicalReference
@@ -60,7 +60,7 @@ export const GET_LOCATIONS_QUERY = gql`
           updatedAt
           connectors: Connectors {
             id
-            ocppConnectionName
+            stationId
             evseId
             connectorId
             evseTypeConnectorId
@@ -146,7 +146,7 @@ export const GET_LOCATION_BY_ID_QUERY = gql`
         updatedAt
         evses: Evses {
           id
-          ocppConnectionName
+          stationId
           evseTypeId
           evseId
           physicalReference
@@ -155,7 +155,7 @@ export const GET_LOCATION_BY_ID_QUERY = gql`
           updatedAt
           connectors: Connectors {
             id
-            ocppConnectionName
+            stationId
             evseId
             connectorId
             evseTypeConnectorId
@@ -221,7 +221,7 @@ export const GET_EVSE_BY_ID_QUERY = gql`
         updatedAt
         evses: Evses(where: { id: { _eq: $evseId } }) {
           id
-          ocppConnectionName
+          stationId
           evseTypeId
           evseId
           physicalReference
@@ -253,7 +253,7 @@ export const GET_CONNECTOR_BY_ID_QUERY = gql`
         evses: Evses(where: { id: { _eq: $evseId } }) {
           connectors: Connectors(where: { connectorId: { _eq: $connectorId } }) {
             id
-            ocppConnectionName
+            stationId
             evseId
             connectorId
             evseTypeConnectorId

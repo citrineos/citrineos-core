@@ -26,6 +26,7 @@ import {
   UPDATE_TENANT_PARTNER_PROFILE,
 } from '../transport/graphql/index.js';
 import type { CredentialsDTO } from '../types/dto/credentials-dto.js';
+import type { CredentialsResponse } from '../types/credentials-response.js';
 import type { Endpoint } from '../types/endpoint.js';
 import type { UnregisterClientRequestDTO } from '../types/unregister-client-request-dto.js';
 import type { AdminCredentialsRequestDTO } from '../types/dto/admin-credentials-request-dto.js';
@@ -272,6 +273,7 @@ export class CredentialsService {
         clientPartyId: credentialsRequest.mspPartyId,
       });
       const tenantPartner = response.TenantPartners[0] as TenantPartnerDto;
+      const previousPartnerProfile = structuredClone(tenantPartner.partnerProfileOCPI!);
       const newCredentialsToken = uuidv4();
       tenantPartner.partnerProfileOCPI!.serverCredentials.versionsUrl = credentialsRequest.url;
       tenantPartner.partnerProfileOCPI!.serverCredentials.token = newCredentialsToken;
@@ -287,14 +289,29 @@ export class CredentialsService {
         input: tenantPartner.partnerProfileOCPI!,
       });
 
-      const putCredentialsResponse = await this.credentialsClientApi.putCredentials(
-        credentialsRequest.role.country_code,
-        credentialsRequest.role.party_id,
-        credentialsRequest.mspCountryCode,
-        credentialsRequest.mspPartyId,
-        tenantPartner.partnerProfileOCPI!,
-        newCredentialsDto,
-      );
+      let putCredentialsResponse: CredentialsResponse | undefined;
+      try {
+        putCredentialsResponse = await this.credentialsClientApi.putCredentials(
+          credentialsRequest.role.country_code,
+          credentialsRequest.role.party_id,
+          credentialsRequest.mspCountryCode,
+          credentialsRequest.mspPartyId,
+          tenantPartner.partnerProfileOCPI!,
+          newCredentialsDto,
+        );
+        if (!putCredentialsResponse?.data?.token) {
+          throw new NotFoundError('Token not found in credentials response');
+        }
+      } catch (error) {
+        await this.ocpiGraphqlClient.request<
+          UpdateTenantPartnerProfileMutationResult,
+          UpdateTenantPartnerProfileMutationVariables
+        >(UPDATE_TENANT_PARTNER_PROFILE, {
+          partnerId: tenantPartner.id!,
+          input: previousPartnerProfile,
+        });
+        throw error;
+      }
 
       tenantPartner.partnerProfileOCPI!.credentials = {
         versionsUrl: putCredentialsResponse!.data!.url!,

@@ -9,7 +9,6 @@ export const GET_TRANSACTIONS_QUERY = gql`
     Transactions(offset: $offset, limit: $limit, order_by: { createdAt: asc }, where: $where) {
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState
@@ -66,7 +65,7 @@ export const GET_TRANSACTIONS_QUERY = gql`
 
 export const GET_TRANSACTION_BY_ID_QUERY = gql`
   query GetTransactionById($id: Int!) {
-    Transactions_by_pk(id: $id) {
+    Transactions(where: { id: { _eq: $id } }, limit: 1) {
       tenant: Tenant {
         countryCode
         partyId
@@ -75,7 +74,6 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
       }
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState
@@ -133,6 +131,18 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
   }
 `;
 
+export const GET_TRANSACTION_TENANT_PARTNER_QUERY = gql`
+  query GetTransactionTenantPartner($id: Int!) {
+    Transactions(where: { id: { _eq: $id } }, limit: 1) {
+      authorization: Authorization {
+        tenantPartner: TenantPartner {
+          id
+        }
+      }
+    }
+  }
+`;
+
 // Scoped lookup for the OCPI StopSession command: the eMSP only knows the
 // (non-unique) transactionId, so we additionally scope to the calling partner
 // (countryCode/partyId) and to active sessions. The caller must treat a result
@@ -161,7 +171,6 @@ export const GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY = gql`
       }
       id
       stationId
-      ocppConnectionName
       transactionId
       isActive
       chargingState

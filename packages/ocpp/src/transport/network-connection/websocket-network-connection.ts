@@ -7,7 +7,12 @@
  * Extracts the charging station identifier (ocppConnectionName) from a WebSocket upgrade URL.
  */
 export function getClientIdFromUrl(url: string): string {
-  return url.split('?')[0].split('/').pop() as string;
+  const pathSegment = url.split('?')[0].split('/').pop() as string;
+  try {
+    return decodeURIComponent(pathSegment);
+  } catch {
+    throw new UpgradeUnknownError(`Unknown identifier ${pathSegment}`);
+  }
 }
 
 import {
@@ -49,6 +54,7 @@ import {
   WsUpgradeResult,
 } from '../metrics.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
+import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
 import type { IUpgradeError } from './authenticator/errors/i-upgrade-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 
@@ -973,6 +979,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         handleProtocols: (protocols, req) =>
           this._handleProtocols(protocols, req, wsConfig.protocols, wsConfig.forceProtocol),
         clientTracking: false,
+        perMessageDeflate: wsConfig.perMessageDeflate ?? true,
       });
 
       wss.on('connection', (ws, req) =>

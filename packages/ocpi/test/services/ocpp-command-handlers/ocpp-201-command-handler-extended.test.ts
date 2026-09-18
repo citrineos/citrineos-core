@@ -137,7 +137,7 @@ describe('OCPP2_0_1_CommandHandler.sendStartSessionCommand', () => {
     expect(sent[0].payload).toEqual({
       remoteStartId: 42,
       idToken: { idToken: 'TAG001', type: 'ISO14443' },
-      evseId: 2,
+      evseId: 102,
     });
     expect(mapOcpiTokenTypeToOcppIdTokenType).toHaveBeenCalledTimes(1);
     expect(mapOcpiTokenTypeToOcppIdTokenType).toHaveBeenCalledWith('RFID');
@@ -175,7 +175,6 @@ describe('OCPP2_0_1_CommandHandler.sendStartSessionCommand', () => {
       expect.objectContaining({
         tenantId: 1,
         stationId: 5,
-        ocppConnectionName: 'CS001',
         type: 'remoteStartId',
         value: 42,
       }),

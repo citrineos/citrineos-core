@@ -3,12 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { StatusNotification } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
-import {
-  DefaultSequelizeInstance,
-  SequelizeLocationRepository,
-  StatusNotification,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeLocationRepository } from '../../../index.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { Connector } from '../../../src/models/location/connector.js';
@@ -78,7 +75,6 @@ beforeEach(async () => {
     await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
       stationId,
-      ocppConnectionName: OCPP_CONNECTION_NAME,
       connectorId,
       timestamp: new Date(),
     });
@@ -93,7 +89,6 @@ describe('SequelizeLocationRepository', () => {
         OCPP_CONNECTION_NAME,
         StatusNotification.build({
           tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: OCPP_CONNECTION_NAME,
           evseId: 1,
           connectorId: 1,
           connectorStatus: 'Occupied',
@@ -106,7 +101,6 @@ describe('SequelizeLocationRepository', () => {
       expect(rows[0].get({ plain: true })).toMatchObject({
         tenantId: DEFAULT_TENANT_ID,
         stationId,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
         evseId: 1,
         connectorId: 1,
         connectorStatus: 'Occupied',
@@ -120,7 +114,6 @@ describe('SequelizeLocationRepository', () => {
         OCPP_CONNECTION_NAME,
         StatusNotification.build({
           tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: OCPP_CONNECTION_NAME,
           connectorId: 2,
           connectorStatus: 'Faulted',
           errorCode: 'GroundFailure',
@@ -136,7 +129,6 @@ describe('SequelizeLocationRepository', () => {
       expect(rows[0].get({ plain: true })).toMatchObject({
         tenantId: DEFAULT_TENANT_ID,
         stationId,
-        ocppConnectionName: OCPP_CONNECTION_NAME,
         connectorId: 2,
         connectorStatus: 'Faulted',
         errorCode: 'GroundFailure',
@@ -154,7 +146,6 @@ describe('SequelizeLocationRepository', () => {
           OCPP_CONNECTION_NAME,
           StatusNotification.build({
             tenantId: DEFAULT_TENANT_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
             evseId: 1,
             connectorId,
             connectorStatus: 'Available',

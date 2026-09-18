@@ -117,6 +117,13 @@ function aConfig(): OcpiConfig {
       ocpp2_1: OCPP2_URLS,
     },
     logLevel: 2,
+    logRedaction: {
+      keys: ['password'],
+      paths: [],
+      patterns: [],
+      placeholder: '[***]',
+      redactKeyCodes: true,
+    },
     defaultPageLimit: 50,
     maxPageLimit: 1000,
   } as OcpiConfig;

@@ -79,6 +79,8 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
     const csrString: string = message.payload.csr.replace(/\n/g, '');
     const certificateType: CertificateSigningUseEnumType | undefined | null =
       message.payload.certificateType;
+    const signingType: CertificateSigningUseEnumType =
+      certificateType ?? CertificateSigningUseEnum.ChargingStationCertificate;
     let requestId: number | undefined | null;
     if (message.protocol === OCPPVersion.OCPP2_1) {
       const payload21 = message.payload as OCPP2_1.SignCertificateRequest;
@@ -110,12 +112,12 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
 
     let certificateChainPem: string;
     try {
-      await this._verifySignCertRequest(csrString, tenantId, ocppConnectionName, certificateType);
+      await this._verifySignCertRequest(csrString, tenantId, ocppConnectionName, signingType);
 
       certificateChainPem = await this._certificateAuthorityService.getCertificateChain(
         csrString,
         ocppConnectionName,
-        certificateType,
+        signingType,
       );
     } catch (error) {
       this._logger.error('Sign certificate failed:', error);
@@ -141,7 +143,7 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
       tenantId,
       ocppConnectionName,
       certificateChainPem,
-      certificateType as unknown as CertificateUseEnumType,
+      signingType as unknown as CertificateUseEnumType,
       requestId,
     );
 

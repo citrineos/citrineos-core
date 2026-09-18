@@ -3,12 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
-import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { PartnerProfile, TenantDto } from '@citrineos/types';
 import {
   AsyncJobStatus,
+  ChargingStation,
   ChargingStationSecurityInfo,
   ChargingStationSequence,
   OCPPMessage,
@@ -17,7 +14,11 @@ import {
   Tariff,
   Tenant,
   TenantPartner,
-} from '../../../index.js';
+} from '@dal/db/sequelize/index.js';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import type { PartnerProfile, TenantDto } from '@citrineos/types';
 import {
   DrizzleAsyncJobStatusRepository,
   toAsyncJobStatusDto,
@@ -110,11 +111,27 @@ afterAll(async () => {
   await h?.stop();
 }, 90_000);
 
+// Station rows are per-test: stationId is a NOT NULL FK, and resetDb truncates.
+const stationIds = new Map<number, number>();
+
 beforeEach(async () => {
   await resetDb(h);
+  stationIds.clear();
 });
 
 const deps = () => ({ config: h.config, drizzleInstance: db });
+
+async function aStation(tenantId: number): Promise<number> {
+  const cached = stationIds.get(tenantId);
+  if (cached !== undefined) return cached;
+  const station = (await ChargingStation.create({
+    ocppConnectionName: STATION,
+    isOnline: false,
+    tenantId,
+  } as any)) as unknown as { id: number };
+  stationIds.set(tenantId, station.id);
+  return station.id;
+}
 
 // ─── Seed helpers (rows written through the sequelize layer) ─────────────────
 
@@ -136,7 +153,7 @@ async function aMessage(
   overrides: Record<string, unknown> = {},
 ): Promise<{ id: number }> {
   const message = await OCPPMessage.create({
-    ocppConnectionName: STATION,
+    stationId: await aStation(tenantId),
     correlationId: 'corr-1',
     origin: 'cs',
     type: 2,
@@ -202,8 +219,7 @@ describe('drizzle row-to-DTO mappers', () => {
   it('toOCPPMessageDto converts timestamp to ISO and null columns to undefined', () => {
     const dto = toOCPPMessageDto({
       id: 4,
-      stationId: null,
-      ocppConnectionName: STATION,
+      stationId: 12,
       correlationId: null,
       origin: 'cs',
       type: 2,
@@ -220,7 +236,7 @@ describe('drizzle row-to-DTO mappers', () => {
     } as OCPPMessageEntity);
 
     expect(dto.timestamp).toBe(TS);
-    expect(dto.stationId).toBeUndefined();
+    expect(dto.stationId).toBe(12);
     expect(dto.correlationId).toBeUndefined();
     expect(dto.action).toBeUndefined();
     expect(dto.payload).toBeUndefined();
@@ -231,21 +247,20 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.responseMessages).toBeUndefined();
   });
 
-  it('toChargingStationSequenceDto keys on connection name and drops stationId', () => {
+  it('toChargingStationSequenceDto keys on the station FK', () => {
     const dto = toChargingStationSequenceDto({
       id: 6,
       stationId: 12,
-      ocppConnectionName: STATION,
       type: 'transactionId',
       value: 41,
       tenantId: TENANT,
       ...timestamps,
     } as ChargingStationSequenceEntity);
 
-    expect(dto.ocppConnectionName).toBe(STATION);
+    expect(dto.stationId).toBe(12);
     expect(dto.type).toBe('transactionId');
     expect(dto.value).toBe(41);
-    expect('stationId' in dto).toBe(false);
+    expect('ocppConnectionName' in dto).toBe(false);
     expect(dto.station).toBeUndefined();
   });
 
@@ -321,7 +336,6 @@ describe('drizzle row-to-DTO mappers', () => {
       ...timestamps,
     } as SetNetworkProfileEntity);
 
-    expect(dto.ocppConnectionName).toBe('');
     expect(dto.correlationId).toBe('');
     expect(dto.websocketServerConfigId).toBeUndefined();
     expect(dto.configurationSlot).toBe(0);
@@ -335,8 +349,7 @@ describe('drizzle row-to-DTO mappers', () => {
   it('toChargingStationNetworkProfileDto zero-fills the slot and FK columns', () => {
     const dto = toChargingStationNetworkProfileDto({
       id: 5,
-      stationId: null,
-      ocppConnectionName: null,
+      stationId: 12,
       configurationSlot: null,
       setNetworkProfileId: null,
       websocketServerConfigId: null,
@@ -344,24 +357,23 @@ describe('drizzle row-to-DTO mappers', () => {
       ...timestamps,
     } as ChargingStationNetworkProfileEntity);
 
-    expect(dto.ocppConnectionName).toBe('');
+    expect(dto.stationId).toBe(12);
     expect(dto.configurationSlot).toBe(0);
     expect(dto.setNetworkProfileId).toBe(0);
     expect(dto.websocketServerConfigId).toBeUndefined();
     expect(dto.tenantId).toBe(OTHER_TENANT);
   });
 
-  it('toChargingStationSecurityInfoDto empty-strings nullable identity columns', () => {
+  it('toChargingStationSecurityInfoDto empty-strings the nullable key-file column', () => {
     const dto = toChargingStationSecurityInfoDto({
       id: 8,
-      stationId: null,
-      ocppConnectionName: null,
+      stationId: 12,
       publicKeyFileId: null,
       tenantId: TENANT,
       ...timestamps,
     } as ChargingStationSecurityInfoEntity);
 
-    expect(dto.ocppConnectionName).toBe('');
+    expect(dto.stationId).toBe(12);
     expect(dto.publicKeyFileId).toBe('');
     expect(dto.tenantId).toBe(TENANT);
   });
@@ -640,7 +652,7 @@ describe('DrizzleOCPPMessageRepository (base CRUD)', () => {
 
     const dto = await repo.findById(TENANT, seeded.id);
 
-    expect(dto!.ocppConnectionName).toBe(STATION);
+    expect(dto!.stationId).toBe(await aStation(TENANT));
     expect(dto!.correlationId).toBe('corr-1');
     expect(dto!.origin).toBe('cs');
     expect(dto!.type).toBe(2);
@@ -667,7 +679,7 @@ describe('DrizzleOCPPMessageRepository (base CRUD)', () => {
 describe('DrizzleChargingStationSequenceRepository (base CRUD)', () => {
   async function aSequence(tenantId: number, value: number): Promise<{ id: number }> {
     const sequence = await ChargingStationSequence.create({
-      ocppConnectionName: STATION,
+      stationId: await aStation(tenantId),
       type: 'transactionId',
       value,
       tenantId,
@@ -681,7 +693,7 @@ describe('DrizzleChargingStationSequenceRepository (base CRUD)', () => {
 
     const dto = await repo.findById(TENANT, seeded.id);
 
-    expect(dto!.ocppConnectionName).toBe(STATION);
+    expect(dto!.stationId).toBe(await aStation(TENANT));
     expect(dto!.type).toBe('transactionId');
     expect(dto!.value).toBe(41);
     expect(typeof dto!.value).toBe('number');
@@ -784,8 +796,9 @@ describe('DrizzleTenantPartnerRepository (base CRUD)', () => {
 describe('DrizzleSetNetworkProfileRepository (base CRUD)', () => {
   it('findById maps the stored profile fields; foreign updates return undefined', async () => {
     const repo = new DrizzleSetNetworkProfileRepository(deps());
+    const stationId = await aStation(TENANT);
     const seeded = (await SetNetworkProfile.create({
-      ocppConnectionName: STATION,
+      stationId,
       correlationId: 'corr-snp',
       configurationSlot: 1,
       ocppVersion: 'ocpp2.0.1',
@@ -799,7 +812,7 @@ describe('DrizzleSetNetworkProfileRepository (base CRUD)', () => {
 
     const dto = await repo.findById(TENANT, seeded.id);
 
-    expect(dto!.ocppConnectionName).toBe(STATION);
+    expect(dto!.stationId).toBe(stationId);
     expect(dto!.correlationId).toBe('corr-snp');
     expect(dto!.configurationSlot).toBe(1);
     expect(dto!.ocppVersion).toBe('ocpp2.0.1');
@@ -838,18 +851,19 @@ describe('DrizzleChargingStationSecurityInfoRepository (base insert)', () => {
     const created: unknown[] = [];
     repo.on('created', (dtos: unknown[]) => created.push(...dtos));
 
+    const stationId = await aStation(TENANT);
     const dto = await repo.create(TENANT, {
-      ocppConnectionName: STATION,
+      stationId,
       publicKeyFileId: 'file-1',
     });
 
     expect(dto.tenantId).toBe(TENANT);
-    expect(dto.ocppConnectionName).toBe(STATION);
+    expect(dto.stationId).toBe(stationId);
     expect(dto.publicKeyFileId).toBe('file-1');
     expect(created).toEqual([dto]);
 
     const row = (await ChargingStationSecurityInfo.findOne({
-      where: { ocppConnectionName: STATION },
+      where: { stationId },
     })) as any;
     expect(row.tenantId).toBe(TENANT);
     // The model declares publicKeyFileId as a plain class field (not `declare`),
@@ -864,7 +878,7 @@ describe('DrizzleChargingStationSecurityInfoRepository (base insert)', () => {
     const repo = new InsertableSecurityInfoRepository(deps());
 
     await expect(
-      repo.create(999, { ocppConnectionName: STATION, publicKeyFileId: 'file-1' }),
+      repo.create(999, { stationId: await aStation(TENANT), publicKeyFileId: 'file-1' }),
     ).rejects.toThrow(/Failed query: insert into "ChargingStationSecurityInfos"/);
     expect(await ChargingStationSecurityInfo.count()).toBe(0);
   });

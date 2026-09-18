@@ -23,7 +23,7 @@ import { DrizzleRepository } from './base.js';
 export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetworkProfileDto {
   const dto: Explicit<SetNetworkProfileDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     correlationId: entity.correlationId ?? '',
     websocketServerConfigId: entity.websocketServerConfigId ?? undefined,
     // Relation is not present on a flat DB row.
@@ -60,10 +60,11 @@ export class DrizzleSetNetworkProfileRepository
 
   async createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto> {
     const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
-    const stationId = await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined);
+    const stationId =
+      values.stationId ??
+      (await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined));
     return this.insert(tenantId, {
       stationId,
-      ocppConnectionName: values.ocppConnectionName,
       correlationId: values.correlationId,
       websocketServerConfigId: values.websocketServerConfigId,
       configurationSlot: values.configurationSlot,
@@ -76,6 +77,32 @@ export class DrizzleSetNetworkProfileRepository
       apn: values.apn,
       vpn: values.vpn,
     });
+  }
+
+  async readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+    const table = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(table)
+      .where(
+        and(
+          eq(table.stationId, stationId),
+          eq(table.correlationId, correlationId),
+          this.tenantFilter(table, tenantId),
+        ),
+      )
+      .limit(1)) as SetNetworkProfileEntity[];
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
   }
 
   private async resolveStationId(

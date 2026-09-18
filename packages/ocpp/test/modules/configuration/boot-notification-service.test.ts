@@ -8,8 +8,14 @@ import {
   type ICache,
   MemoryCache,
 } from '@citrineos/base';
-import { Boot, type IBootRepository } from '@citrineos/dal';
-import { OCPP1_6, OCPP2_0_1, OCPP_CallAction, type SystemConfig } from '@citrineos/types';
+import type { IBootRepository } from '@citrineos/dal';
+import {
+  OCPP1_6,
+  OCPP2_0_1,
+  OCPP_CallAction,
+  type BootDto,
+  type SystemConfig,
+} from '@citrineos/types';
 import { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
@@ -61,7 +67,7 @@ describe('BootService', () => {
 
   describe('determineBootStatus', () => {
     const runDetermineBootStatusTest = (
-      bootConfig: Boot | undefined,
+      bootConfig: BootDto | undefined,
       expectedStatus: OCPP2_0_1.RegistrationStatusEnumType,
     ) => {
       const result = bootService.determineBootStatus(bootConfig);
@@ -82,19 +88,19 @@ describe('BootService', () => {
         expectedStatus: OCPP2_0_1.RegistrationStatusEnumType.Rejected,
       },
     ])('should return bootConfig status if not pending', ({ bootConfigStatus, expectedStatus }) => {
-      const bootConfig = aValidBootConfig((item: Boot) => (item.status = bootConfigStatus));
+      const bootConfig = aValidBootConfig((item: BootDto) => (item.status = bootConfigStatus));
       runDetermineBootStatusTest(bootConfig, expectedStatus);
     });
 
     it('should return Pending status when bootConfig.status is pending and no actions are needed', () => {
       const bootConfig = aValidBootConfig(
-        (item: Boot) => (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
+        (item: BootDto) => (item.status = OCPP2_0_1.RegistrationStatusEnumType.Pending),
       );
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Pending);
     });
 
     it('should return Accepted status when bootConfig.status is pending and no actions are needed but autoAccept is true', () => {
-      const bootConfig = aValidBootConfig((item: Boot) => (item.getBaseReportOnPending = false));
+      const bootConfig = aValidBootConfig((item: BootDto) => (item.getBaseReportOnPending = false));
 
       mockConfig.autoAccept = true;
 
@@ -102,13 +108,13 @@ describe('BootService', () => {
     });
 
     it('should return Pending status when bootConfig.status is pending and getBaseReportOnPending is true', () => {
-      const bootConfig = aValidBootConfig((item: Boot) => (item.getBaseReportOnPending = true));
+      const bootConfig = aValidBootConfig((item: BootDto) => (item.getBaseReportOnPending = true));
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Pending);
     });
 
     it('should return Pending status when bootConfig.status is pending and pendingBootSetVariables is not empty', () => {
       const bootConfig = aValidBootConfig(
-        (item: Boot) => (item.pendingBootSetVariables = [{}] as any),
+        (item: BootDto) => (item.pendingBootSetVariables = [{}] as any),
       );
       runDetermineBootStatusTest(bootConfig, OCPP2_0_1.RegistrationStatusEnumType.Pending);
     });

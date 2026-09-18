@@ -21,8 +21,7 @@ function chargingStationNetworkProfileColumns() {
   return {
     // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
+    stationId: integer('stationId').notNull(),
     configurationSlot: integer('configurationSlot'),
     setNetworkProfileId: integer('setNetworkProfileId'),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),

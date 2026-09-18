@@ -20,7 +20,7 @@ test.describe('charging-stations › RemoteStop command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     // The detail page mutually-exclusively renders StartTransaction (when
     // hasActiveTransactions=false) or StopTransaction (when true). The
@@ -42,7 +42,7 @@ test.describe('charging-stations › RemoteStop command', () => {
     expect(seededTransaction.stationId).toBe(seededStation.id);
 
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.remoteStopButton.click();
     const modal = new ModalHarness(page, /(remote stop|stop transaction)/i);
@@ -56,7 +56,7 @@ test.describe('charging-stations › RemoteStop command', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     // hasActiveTransactions === false → StartTransactionButton is shown,
     // StopTransactionButton is not rendered. This is the source-level

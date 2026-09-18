@@ -158,7 +158,6 @@ export default {
     const evse = {
       id: EVSE_ID,
       stationId: STATION_ID,
-      ocppConnectionName: STATION_NAME,
       evseTypeId: 1,
       evseId: 'US*TST*E123456*1', // eMI3 compliant EVSE ID format
       // OCPI caps physical_reference at 16 chars; keep the sample value inside it
@@ -175,7 +174,6 @@ export default {
     const connector = {
       id: CONNECTOR_ID,
       stationId: STATION_ID,
-      ocppConnectionName: STATION_NAME,
       evseId: EVSE_ID,
       connectorId: 1,
       evseTypeConnectorId: 1,

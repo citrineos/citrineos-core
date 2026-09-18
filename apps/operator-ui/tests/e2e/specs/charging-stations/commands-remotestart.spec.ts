@@ -14,7 +14,7 @@ test.describe('charging-stations › RemoteStart command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.remoteStartButton.click();
     const modal = new ModalHarness(page, /(remote start|start transaction)/i);
@@ -34,7 +34,7 @@ test.describe('charging-stations › RemoteStart command', () => {
   }) => {
     void seededAuthorization;
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.remoteStartButton.click();
     const modal = new ModalHarness(page, /(remote start|start transaction)/i);
@@ -49,7 +49,7 @@ test.describe('charging-stations › RemoteStart command', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.remoteStartButton.click();
     const modal = new ModalHarness(page, /(remote start|start transaction)/i);

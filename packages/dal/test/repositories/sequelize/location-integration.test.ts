@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { OCPPVersion, type StatusNotificationDto, type SystemConfig } from '@citrineos/types';
 import {
   ChargingStation,
   Connector,
   Evse,
   Location,
-  SequelizeLocationRepository,
   StatusNotification,
-} from '../../../index.js';
+} from '@dal/db/sequelize/index.js';
+import { OCPPVersion, type StatusNotificationDto, type SystemConfig } from '@citrineos/types';
+import { SequelizeLocationRepository } from '../../../index.js';
 import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
@@ -76,20 +76,17 @@ async function aStation(overrides: Record<string, unknown> = {}) {
 // Station with one EVSE (OCPP 2.0.1 evse id 1) and two connectors.
 // Connector.evseTypeConnectorId is the per-EVSE OCPP 2.0.1 connector number;
 // Connector.connectorId is the station-wide OCPP 1.6 connector number.
-// stationId has to be passed on the Evse and the Connectors: the models dropped
-// their resolving hooks, so a direct create leaves the FK null and the rows detached
-// from the station.
+// stationId has to be passed on the Evse and the Connectors: it is the only link
+// to the station now, and it is NOT NULL, so a direct create without it is rejected.
 async function aCommissionedStation() {
   const station = await aStation();
   const evse = await Evse.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION_NAME,
     stationId: station.id,
     evseTypeId: 1,
   } as any);
   const connector1 = await Connector.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION_NAME,
     stationId: station.id,
     evseId: evse.id,
     connectorId: 1,
@@ -99,7 +96,6 @@ async function aCommissionedStation() {
   } as any);
   const connector2 = await Connector.create({
     tenantId: TENANT_A,
-    ocppConnectionName: STATION_NAME,
     stationId: station.id,
     evseId: evse.id,
     connectorId: 2,
@@ -115,7 +111,6 @@ function aStatusNotification(
   overrides: Partial<StatusNotificationDto> = {},
 ): StatusNotificationDto {
   return {
-    ocppConnectionName: STATION_NAME,
     timestamp: TS,
     connectorStatus: 'Available',
     evseId: 1,
@@ -386,7 +381,6 @@ describe('SequelizeLocationRepository', () => {
       expect(latest).toHaveLength(1);
       expect(latest[0].statusNotificationId).toBe(rows[0].id);
       expect(latest[0].stationId).toBe(station.id);
-      expect(latest[0].ocppConnectionName).toBe(STATION_NAME);
     });
 
     it('a newer notification for the same evse and connector replaces the latest entry', async () => {
@@ -434,45 +428,42 @@ describe('SequelizeLocationRepository', () => {
   });
 
   describe('createOrUpdateEvse', () => {
-    it('creates the evse and resolves the station FK from the connection name', async () => {
+    it('creates the evse against the station FK it was given', async () => {
       const station = await aStation();
 
       const created = await makeRepo().createOrUpdateEvse(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseTypeId: 1,
         evseId: 'DE*ICE*E1',
       } as any);
 
       expect(created.evseTypeId).toBe(1);
       expect(await Evse.count()).toBe(1);
-      const row = await Evse.findOne({ where: { ocppConnectionName: STATION_NAME } });
+      const row = await Evse.findOne({ where: { stationId: station.id } });
       expect(row!.stationId).toBe(station.id);
       expect(row!.evseId).toBe('DE*ICE*E1');
       expect(row!.tenantId).toBe(TENANT_A);
     });
 
-    it('leaves stationId empty when no station matches the connection name', async () => {
-      await makeRepo().createOrUpdateEvse(TENANT_A, {
-        ocppConnectionName: 'CS-UNSEEN',
-        evseTypeId: 1,
-      } as any);
+    it('rejects an evse whose station does not exist', async () => {
+      await expect(
+        makeRepo().createOrUpdateEvse(TENANT_A, { stationId: 987654, evseTypeId: 1 } as any),
+      ).rejects.toThrow();
 
-      const row = await Evse.findOne({ where: { ocppConnectionName: 'CS-UNSEEN' } });
-      expect(row).toBeDefined();
-      expect(row!.stationId ?? null).toBeNull();
+      expect(await Evse.count()).toBe(0);
     });
 
     it('updates the existing evse in place', async () => {
-      await aStation();
+      const station = await aStation();
       const repo = makeRepo();
       const created = await repo.createOrUpdateEvse(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseTypeId: 1,
         evseId: 'DE*ICE*E1',
       } as any);
 
       const updated = await repo.createOrUpdateEvse(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseTypeId: 1,
         evseId: 'DE*ICE*E2',
         physicalReference: 'Bay 4',
@@ -486,16 +477,16 @@ describe('SequelizeLocationRepository', () => {
   });
 
   describe('createOrUpdateOcpp16Connector', () => {
-    it('creates the connector under its evse and resolves the station FK', async () => {
+    it('creates the connector under its evse against the station FK', async () => {
       const station = await aStation();
       const evse = await Evse.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseTypeId: 1,
       } as any);
 
       const created = await makeRepo().createOrUpdateOcpp16Connector(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         connectorId: 1,
         evseId: evse.id,
         status: 'Available',
@@ -512,10 +503,10 @@ describe('SequelizeLocationRepository', () => {
     });
 
     it('updates the existing connector in place', async () => {
-      const { connector1 } = await aCommissionedStation();
+      const { station, connector1 } = await aCommissionedStation();
 
       const updated = await makeRepo().createOrUpdateOcpp16Connector(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         connectorId: 1,
         evseId: connector1.evseId,
         status: 'Charging',
@@ -535,12 +526,12 @@ describe('SequelizeLocationRepository', () => {
       const station = await aStation();
       const evse = await Evse.create({
         tenantId: TENANT_A,
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseTypeId: 1,
       } as any);
 
       const created = await makeRepo().createOrUpdateOcpp2Connector(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseId: evse.id,
         evseTypeConnectorId: 1,
         status: 'Available',
@@ -555,11 +546,11 @@ describe('SequelizeLocationRepository', () => {
     });
 
     it('a second report on the same evse connector updates rather than duplicates', async () => {
-      const { evse, connector1 } = await aCommissionedStation();
+      const { station, evse, connector1 } = await aCommissionedStation();
       const repo = makeRepo();
 
       const updated = await repo.createOrUpdateOcpp2Connector(TENANT_A, {
-        ocppConnectionName: STATION_NAME,
+        stationId: station.id,
         evseId: evse.id,
         evseTypeConnectorId: 1,
         status: 'Faulted',
@@ -601,7 +592,6 @@ describe('SequelizeLocationRepository', () => {
       const other = await aStation({ ocppConnectionName: 'CS002' });
       const otherConnector = await Connector.create({
         tenantId: TENANT_A,
-        ocppConnectionName: 'CS002',
         stationId: other.id,
         connectorId: 1,
         status: 'Available',
@@ -623,7 +613,6 @@ describe('SequelizeLocationRepository', () => {
       const result = await makeRepo().autoCommissionEvseForOcpp16Connector(TENANT_A, STATION_NAME);
 
       const evse = await Evse.findByPk(result.evseId);
-      expect(evse!.ocppConnectionName).toBe(STATION_NAME);
       expect(evse!.stationId).toBe(station.id);
       expect(evse!.tenantId).toBe(TENANT_A);
       // OCPP 1.6 has no EVSE concept, so no OCPP 2.0.1 evse number is assigned.

@@ -47,19 +47,16 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
   declare databaseId: number;
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationId?: number;
-
   @Index
   @Column({
-    type: DataType.STRING,
-    unique: 'stationName_tenantId_Id',
+    type: DataType.INTEGER,
+    unique: 'stationId_tenantId_Id',
   })
-  declare ocppConnectionName: string;
+  declare stationId?: number;
 
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationName_tenantId_Id',
+    unique: 'stationId_tenantId_Id',
   })
   declare id: number;
 
@@ -115,27 +112,12 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
     allowNull: false,
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
-    unique: 'stationName_tenantId_Id',
+    unique: 'stationId_tenantId_Id',
   })
   declare tenantId: number;
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: VariableMonitoring): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      // Lazy load ChargingStation to avoid circular dependency
-      const { ChargingStation } = await import('../location/index.js');
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate
