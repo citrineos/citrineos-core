@@ -18,7 +18,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IChargingStationRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, IChargingStationRepository } from '@citrineos/dal';
 import type { InitiateWebPaymentRequest } from '@modules/ev-driver/interface.js';
 import { InitiateWebPaymentRequestSchema } from '@modules/ev-driver/interface.js';
 import { TotpUtil } from '@services/index.js';
@@ -30,7 +30,7 @@ const DEFAULT_LOCK_TIMEOUT_SECONDS = 300;
 interface Dependencies extends AbstractEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
-  deviceModelRepository: IDeviceModelRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
   chargingStationRepository: IChargingStationRepository;
 }
 
@@ -45,20 +45,20 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
 
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
   private readonly _chargingStationRepository: IChargingStationRepository;
 
   constructor({
     logger,
     ocppSender,
     cache,
-    deviceModelRepository,
+    variableAttributeRepository,
     chargingStationRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._cache = cache;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._chargingStationRepository = chargingStationRepository;
   }
 
@@ -153,7 +153,7 @@ export class InitiateWebPaymentEndpoint extends AbstractEndpoint<InitiateWebPaym
     ocppConnectionName: string,
     variableName: string,
   ): Promise<string | undefined> {
-    const attributes = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const attributes = await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
       tenantId,
       ocppConnectionName,
       component_name: 'WebPaymentsCtrlr',

@@ -4,7 +4,7 @@
 
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 import {
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
@@ -112,9 +112,9 @@ class TestNetworkProfileFilter extends NetworkProfileFilter {
 }
 
 function aFilter(): TestNetworkProfileFilter {
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: vi.fn().mockResolvedValue([{ value: String(CONFIGURATION_SLOT) }]),
-  } as unknown as IDeviceModelRepository;
+  } as unknown as IVariableAttributeRepository;
 
   const serverNetworkProfileRepository = new SequelizeServerNetworkProfileRepository({
     config,
@@ -123,7 +123,7 @@ function aFilter(): TestNetworkProfileFilter {
   } as never);
 
   return new TestNetworkProfileFilter({
-    deviceModelRepository,
+    variableAttributeRepository,
     serverNetworkProfileRepository,
     logger: new Logger({ type: 'hidden' }),
   });

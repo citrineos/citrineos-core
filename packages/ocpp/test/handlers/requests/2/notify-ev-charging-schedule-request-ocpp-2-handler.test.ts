@@ -68,7 +68,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
     getNextChargingProfileId: ReturnType<typeof vi.fn>;
     getNextStackLevel: ReturnType<typeof vi.fn>;
   };
-  let deviceModelRepository: { readAllByQuerystring: ReturnType<typeof vi.fn> };
+  let variableAttributeRepository: { readAllByQuerystring: ReturnType<typeof vi.fn> };
   let smartChargingService: { checkLimitsOfChargingSchedule: ReturnType<typeof vi.fn> };
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
 
@@ -83,7 +83,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
       getNextChargingProfileId: vi.fn().mockResolvedValue(PROFILE_ID),
       getNextStackLevel: vi.fn().mockResolvedValue(STACK_LEVEL),
     };
-    deviceModelRepository = { readAllByQuerystring: vi.fn().mockResolvedValue([]) };
+    variableAttributeRepository = { readAllByQuerystring: vi.fn().mockResolvedValue([]) };
     smartChargingService = { checkLimitsOfChargingSchedule: vi.fn().mockResolvedValue(undefined) };
     ocppSender = makeMockOcppSender();
 
@@ -93,7 +93,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
         ocppSender,
         transactionEventRepository,
         chargingProfileRepository,
-        deviceModelRepository,
+        variableAttributeRepository,
         smartChargingService,
       }),
     );

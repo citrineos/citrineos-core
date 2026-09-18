@@ -97,7 +97,7 @@ function aService() {
     installCertificateAttemptRepository: new SequelizeInstallCertificateAttemptRepository(deps),
     deleteCertificateAttemptRepository: new SequelizeDeleteCertificateAttemptRepository(deps),
     // Unreachable for a finalize that settles an attempt row.
-    deviceModelRepository: {} as never,
+    variableAttributeRepository: {} as never,
     certificateAuthorityService: {} as never,
     fileStorage: { getFile: async () => undefined } as never,
     logger: new Logger({ type: 'hidden' }),

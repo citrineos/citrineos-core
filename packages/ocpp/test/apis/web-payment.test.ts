@@ -39,7 +39,7 @@ describe(`POST ${URL}`, () => {
     const endpoint = getTestInstance(container, InitiateWebPaymentEndpoint, {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
-      deviceModelRepository: { readAllByQuerystring },
+      variableAttributeRepository: { readAllByQuerystring },
       chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
 

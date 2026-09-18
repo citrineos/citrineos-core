@@ -54,6 +54,9 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
         createOrUpdateDeviceModelByStationId,
         updateResultByStationId,
       },
+      variableAttributeRepository: {
+        readAllByQuerystring: vi.fn().mockResolvedValue([]),
+      },
     });
   });
 

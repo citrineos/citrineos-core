@@ -246,7 +246,7 @@ describe('InstallCertificateHelperService', () => {
       installedCertificateRepository: mockInstalledCertificateRepository,
       installCertificateAttemptRepository: mockInstallCertificateAttemptRepository,
       deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
-      deviceModelRepository: mockDeviceModelRepository,
+      variableAttributeRepository: mockDeviceModelRepository,
       certificateAuthorityService: mockCertificateAuthorityService,
       fileStorage: mockFileStorage,
     });

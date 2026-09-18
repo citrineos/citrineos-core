@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { AttributeEnum } from '@citrineos/types';
-import type { IChargingProfileRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IChargingProfileRepository, IVariableAttributeRepository } from '@citrineos/dal';
 
 export async function generateChargingProfileId(
   chargingProfileRepository: IChargingProfileRepository,
-  deviceModelRepository: IDeviceModelRepository,
+  variableAttributeRepository: IVariableAttributeRepository,
   tenantId: number,
   ocppConnectionName: string,
 ): Promise<number> {
@@ -14,13 +14,16 @@ export async function generateChargingProfileId(
     tenantId,
     ocppConnectionName,
   );
-  const maxExternalConstraintsIds = await deviceModelRepository.readAllByQuerystring(tenantId, {
+  const maxExternalConstraintsIds = await variableAttributeRepository.readAllByQuerystring(
     tenantId,
-    ocppConnectionName,
-    component_name: 'SmartChargingCtrlr',
-    variable_name: 'MaxExternalConstraintsId',
-    type: AttributeEnum.Actual,
-  });
+    {
+      tenantId,
+      ocppConnectionName,
+      component_name: 'SmartChargingCtrlr',
+      variable_name: 'MaxExternalConstraintsId',
+      type: AttributeEnum.Actual,
+    },
+  );
   const maxExternalConstraintsId = Number(maxExternalConstraintsIds[0]?.value);
   return Number.isInteger(maxExternalConstraintsId)
     ? Math.max(nextChargingProfileId, maxExternalConstraintsId + 1)

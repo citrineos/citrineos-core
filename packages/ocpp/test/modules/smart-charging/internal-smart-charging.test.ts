@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { AttributeEnum, OCPP2_0_1 } from '@citrineos/types';
-import type { IChargingProfileRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IChargingProfileRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import type { Transaction } from '@citrineos/dal';
 import { InternalSmartCharging } from '@modules/smart-charging/internal-smart-charging.js';
 import { createTestContainer } from '@test/test-container.js';
@@ -56,7 +56,9 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
 
     smartCharging = new InternalSmartCharging({
       chargingProfileRepository,
-      deviceModelRepository: { readAllByQuerystring } as unknown as IDeviceModelRepository,
+      variableAttributeRepository: {
+        readAllByQuerystring,
+      } as unknown as IVariableAttributeRepository,
       logger: logger as never,
     });
   });

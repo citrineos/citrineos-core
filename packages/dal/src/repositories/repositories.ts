@@ -72,12 +72,6 @@ import type { ChargingStationSequence } from '../models/charging-station-sequenc
 import type { Component } from '../models/device-model/component.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type { Connector } from '../models/location/connector.js';
-import type { Evse } from '../models/location/evse.js';
-import type { Location } from '../models/location/location.js';
-import type { SetNetworkProfile } from '../models/location/set-network-profile.js';
-import type { StatusNotification } from '../models/location/status-notification.js';
-import type { MessageInfo } from '../models/message-info/message-info.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -119,6 +113,17 @@ export interface IBootRepository {
   deleteByKey: (tenantId: number, key: string) => Promise<BootDto | undefined>;
 }
 
+export interface IVariableAttributeRepository {
+  readAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttributeDto[]>;
+  deleteAllByQuerystring(
+    tenantId: number,
+    query: VariableAttributeQuerystring,
+  ): Promise<VariableAttributeDto[]>;
+}
+
 export interface IVariableCharacteristicsRepository {
   findVariableCharacteristicsByVariableNameAndVariableInstance(
     tenantId: number,
@@ -127,7 +132,9 @@ export interface IVariableCharacteristicsRepository {
   ): Promise<VariableCharacteristicsDto | undefined>;
 }
 
-export interface IDeviceModelRepository extends IVariableCharacteristicsRepository {
+export interface IDeviceModelRepository
+  extends IVariableAttributeRepository,
+    IVariableCharacteristicsRepository {
   createOrUpdateDeviceModelByStationId(
     tenantId: number,
     value: OCPP2_common_types.ReportDataType,
@@ -157,14 +164,6 @@ export interface IDeviceModelRepository extends IVariableCharacteristicsReposito
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<OCPP2_common_types.SetVariableDataType[]>;
-  readAllByQuerystring(
-    tenantId: number,
-    query: VariableAttributeQuerystring,
-  ): Promise<VariableAttributeDto[]>;
-  deleteAllByQuerystring(
-    tenantId: number,
-    query: VariableAttributeQuerystring,
-  ): Promise<VariableAttributeDto[]>;
   findVariableAttributeByComponentAndVariable(
     tenantId: number,
     ocppConnectionName: string,

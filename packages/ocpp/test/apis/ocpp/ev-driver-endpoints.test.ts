@@ -259,7 +259,7 @@ describe('evDriver message endpoints', () => {
       getTestInstance(container, RequestStartTransactionEndpoint, {
         ocppSender: { sendCall },
         cache: { set: cacheSet },
-        deviceModelRepository: { readAllByQuerystring },
+        variableAttributeRepository: { readAllByQuerystring },
         chargingProfileRepository: { createOrUpdateChargingProfile },
         transactionEventRepository: {},
       });

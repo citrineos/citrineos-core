@@ -315,13 +315,16 @@ function registerRepositories(container: AwilixContainer): void {
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
-    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    variableAttributeRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
+    ).singleton(),
+    variableCharacteristicsRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
     ).singleton(),
   });
 

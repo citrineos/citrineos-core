@@ -121,7 +121,7 @@ describe('SignCertificateRequestOcpp2Handler', () => {
         ocppSender,
         certificateAuthorityService: { getCertificateChain },
         installCertificateHelperService: { prepareToInstallCertificate },
-        deviceModelRepository: { readAllByQuerystring },
+        variableAttributeRepository: { readAllByQuerystring },
       }),
     );
   });

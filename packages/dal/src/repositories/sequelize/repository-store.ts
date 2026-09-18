@@ -32,6 +32,7 @@ import type {
   ITariffRepository,
   ITenantRepository,
   ITransactionEventRepository,
+  IVariableAttributeRepository,
   IVariableCharacteristicsRepository,
   IVariableMonitoringRepository,
 } from '../repositories.js';
@@ -112,6 +113,7 @@ export class RepositoryStore {
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
   variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 
   constructor({
@@ -144,6 +146,9 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
+    // TODO move all device model cluster into else clause
+    //  after all of them are implemented in drizzle
+    this.variableAttributeRepository = this.deviceModelRepository;
     this.variableCharacteristicsRepository = this.deviceModelRepository;
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
@@ -162,10 +167,15 @@ export class RepositoryStore {
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
+      this.variableAttributeRepository = new DrizzleVariableAttributeRepository({
+        config,
+        logger,
+      });
       this.bootRepository = new DrizzleBootRepository({
         config,
         logger,
-        variableAttributeRepository: new DrizzleVariableAttributeRepository({ config, logger }),
+        variableAttributeRepository: this
+          .variableAttributeRepository as DrizzleVariableAttributeRepository,
       });
       this.certificateRepository = new DrizzleCertificateRepository({ config, logger });
       this.changeConfigurationRepository = new DrizzleChangeConfigurationRepository({

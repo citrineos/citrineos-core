@@ -24,17 +24,17 @@ interface IDeviceModelLookup {
 }
 
 export class BasicAuthenticationFilter extends AuthenticatorFilter {
-  private _deviceModelRepository: IDeviceModelLookup;
+  private _variableAttributeRepository: IDeviceModelLookup;
 
   constructor({
-    deviceModelRepository,
+    variableAttributeRepository,
     logger,
   }: {
-    deviceModelRepository: IDeviceModelLookup;
+    variableAttributeRepository: IDeviceModelLookup;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   protected shouldFilter(options: AuthenticationOptions): boolean {
@@ -63,7 +63,7 @@ export class BasicAuthenticationFilter extends AuthenticatorFilter {
   }
 
   private async _isPasswordValid(tenantId: number, username: string, password: string) {
-    return await this._deviceModelRepository
+    return await this._variableAttributeRepository
       .readAllByQuerystring(tenantId, {
         tenantId,
         ocppConnectionName: username,
