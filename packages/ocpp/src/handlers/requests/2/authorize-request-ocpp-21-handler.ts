@@ -338,6 +338,10 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     );
   }
 
+  /**
+   * Per OCPP C07.FR.13, a contract certificate that was accepted is reported as ContractCancelled
+   * when the token itself is not authorized.
+   */
   private _cancelContractIfNotAuthorized(response: OCPP2_response_types.AuthorizeResponse): void {
     const contractCancelledStatuses: string[] = [
       AuthorizationStatusEnum.Blocked,
