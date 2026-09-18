@@ -15,6 +15,7 @@ import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   BeforeCreate,
   BeforeUpdate,
+  BeforeValidate,
   BelongsTo,
   Column,
   DataType,
@@ -105,7 +106,7 @@ export class MeterValue extends Model implements MeterValueDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  @BeforeCreate
+  @BeforeValidate
   static async resolvePartitionKey(instance: MeterValue): Promise<void> {
     if (instance.transactionCreatedAt != null) {
       return;
