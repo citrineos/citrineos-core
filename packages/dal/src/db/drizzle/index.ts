@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export { DefaultDrizzleInstance } from './util.js';
+export { citext } from './schema/column-types.js';
+export { registeredTables, registeredTableNames, type RegisteredTable } from './schema-registry.js';
+export * as drizzleSchema from './schema/index.js';
 export {
   DrizzleRepository,
-  type DrizzleRepositoryDependencies,
+  DrizzleTenantScopedRepository,
+  type CitrineTable,
   type DrizzleExecutor,
+  type DrizzleRepositoryDependencies,
   type DrizzleWriteContext,
+  type TenantScopedTable,
 } from '../../repositories/drizzle/base.js';
 export {
   DrizzleAuthorizationRepository,

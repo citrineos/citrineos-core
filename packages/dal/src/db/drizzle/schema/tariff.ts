@@ -4,6 +4,7 @@
 
 import { TableName } from '@dal/models/table-name.js';
 import {
+  char,
   integer,
   jsonb,
   numeric,
@@ -22,8 +23,7 @@ import { type z } from 'zod';
 function tariffColumns() {
   return {
     id: serial('id').primaryKey(),
-    // CHAR(3) currency code stored as a fixed-length string.
-    currency: varchar('currency', { length: 3 }).notNull(),
+    currency: char('currency', { length: 3 }).notNull(),
     // DECIMAL columns — drizzle numeric returns strings; coerced to number in the repository layer.
     pricePerKwh: numeric('pricePerKwh').notNull(),
     pricePerMin: numeric('pricePerMin'),
@@ -56,7 +56,7 @@ function tariffColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const tariffTable = pgTable(TableName.Tariffs, tariffColumns(), (t) => [
-  uniqueIndex('tariffs_tariff_id_tenant_id').on(t.tariffId, t.tenantId),
+  uniqueIndex('tariffId_tenantId').on(t.tariffId, t.tenantId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

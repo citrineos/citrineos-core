@@ -57,7 +57,7 @@ export const variableAttributeTable = pgTable(
   variableAttributeColumns(),
   (t) => [
     // Non-unique @Index on the station FK
-    index('variable_attributes_station_id').on(t.stationId),
+    index('variable_attributes_stationId').on(t.stationId),
     // Partial unique indexes from the @Table decorator
     uniqueIndex('variable_attributes_stationId')
       .on(t.stationId)

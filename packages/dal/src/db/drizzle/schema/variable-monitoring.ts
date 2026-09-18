@@ -52,7 +52,7 @@ export const variableMonitoringTable = pgTable(
   (t) => [
     index('variable_monitorings_station_id').on(t.stationId),
     // Composite unique 'stationId_tenantId_Id' (stationId, id, tenantId).
-    uniqueIndex('variable_monitorings_station_id_tenant_id_id').on(t.stationId, t.id, t.tenantId),
+    uniqueIndex('VariableMonitorings_stationId_tenantId_id').on(t.stationId, t.tenantId, t.id),
   ],
 );
 
