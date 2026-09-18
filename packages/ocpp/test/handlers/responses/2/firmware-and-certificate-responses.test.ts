@@ -218,7 +218,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
     installCertificateHelperService = makeInstallCertificateHelperService();
   });
 
-  it('finalizes with the certificate type from the original request and no requestId', async () => {
+  it('finalizes with the certificate and type from the original request and no requestId', async () => {
     ocppMessageRepository = makeOcppMessageRepository({
       payload: {
         certificate: 'pem-cert',
@@ -245,6 +245,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
       OCPP2_0_1.InstallCertificateStatusEnumType.Accepted,
       undefined,
       OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate,
+      'pem-cert',
     );
   });
 
@@ -263,6 +264,7 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
       DEFAULT_TENANT_ID,
       STATION,
       OCPP2_0_1.InstallCertificateStatusEnumType.Failed,
+      undefined,
       undefined,
       undefined,
     );

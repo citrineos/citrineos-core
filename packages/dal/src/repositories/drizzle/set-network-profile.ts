@@ -79,6 +79,32 @@ export class DrizzleSetNetworkProfileRepository
     });
   }
 
+  async readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+    const table = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(table)
+      .where(
+        and(
+          eq(table.stationId, stationId),
+          eq(table.correlationId, correlationId),
+          this.tenantFilter(table, tenantId),
+        ),
+      )
+      .limit(1)) as SetNetworkProfileEntity[];
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
   private async resolveStationId(
     tenantId: number,
     ocppConnectionName?: string,

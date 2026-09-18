@@ -18,9 +18,9 @@ import {
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import {
-  VariableAttribute,
   stationIdFilter,
   type IDeviceModelRepository,
   type IOCPPMessageRepository,
@@ -133,7 +133,9 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     if (applicableSetVariableData) {
       const variableValue = applicableSetVariableData.attributeValue;
       const attributeType = applicableSetVariableData.attributeType ?? AttributeEnum.Actual;
-      const existingVariableAttribute = await this.getExistingOrCreateVariableAttribute(
+      // Ensure the attribute row exists (create it if the charger reported an unknown one)
+      // before the repository records the result and applies the accepted value.
+      await this.getExistingOrCreateVariableAttribute(
         tenantId,
         ocppConnectionName,
         componentName,
@@ -143,15 +145,14 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
         variableValue,
         attributeType,
       );
-      if (setVariableResultType.attributeStatus === SetVariableStatusEnum.Accepted) {
-        existingVariableAttribute?.setDataValue('value', variableValue);
-      }
       await this._deviceModelRepository.updateResultByStationId(
         tenantId,
         setVariableResultType,
         ocppConnectionName,
         timestamp,
-        existingVariableAttribute || undefined,
+        setVariableResultType.attributeStatus === SetVariableStatusEnum.Accepted
+          ? variableValue
+          : undefined,
       );
     }
   }
@@ -165,7 +166,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     variableInstance: string | null,
     variableValue: string,
     attributeType: AttributeEnumType,
-  ): Promise<VariableAttribute | undefined> {
+  ): Promise<VariableAttributeDto | undefined> {
     let existingVariableAttribute =
       await this._deviceModelRepository.findVariableAttributeByComponentAndVariable(
         tenantId,

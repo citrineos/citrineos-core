@@ -131,6 +131,18 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
   }
 `;
 
+export const GET_TRANSACTION_TENANT_PARTNER_QUERY = gql`
+  query GetTransactionTenantPartner($id: Int!) {
+    Transactions(where: { id: { _eq: $id } }, limit: 1) {
+      authorization: Authorization {
+        tenantPartner: TenantPartner {
+          id
+        }
+      }
+    }
+  }
+`;
+
 // Scoped lookup for the OCPI StopSession command: the eMSP only knows the
 // (non-unique) transactionId, so we additionally scope to the calling partner
 // (countryCode/partyId) and to active sessions. The caller must treat a result

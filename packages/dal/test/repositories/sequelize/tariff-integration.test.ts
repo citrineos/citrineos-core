@@ -8,8 +8,8 @@ import { QueryTypes } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
 import { baseCalculateTotalCost, DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
-import { Tenant } from '@dal/db/sequelize/index.js';
-import { DefaultSequelizeInstance, SequelizeTariffRepository, Tariff } from '../../../index.js';
+import { Tariff, Tenant } from '@dal/db/sequelize/index.js';
+import { DefaultSequelizeInstance, SequelizeTariffRepository } from '../../../index.js';
 
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
