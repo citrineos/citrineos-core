@@ -13,7 +13,7 @@ WORKDIR /usr/local/apps/citrineos
 
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter "@citrineos/ocpi-demo..." build
+RUN pnpm --filter "@citrineos/ocpi-server..." build
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
