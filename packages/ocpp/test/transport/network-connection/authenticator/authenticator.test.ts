@@ -30,11 +30,13 @@ describe('Authenticator', () => {
   const basicAuthenticationFilter = getTestInstance(container, BasicAuthenticationFilter, {
     deviceModelRepository,
   });
+  const clientCertificateFilter = { authenticate: vi.fn() };
   const authenticator = getTestInstance(container, Authenticator, {
     unknownStationFilter,
     connectedStationFilter,
     networkProfileFilter,
     basicAuthenticationFilter,
+    clientCertificateFilter,
   });
 
   afterEach(() => {
