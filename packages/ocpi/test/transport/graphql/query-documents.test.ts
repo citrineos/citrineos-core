@@ -208,6 +208,11 @@ describe('location queries', () => {
     expect(GET_EVSE_BY_ID_QUERY).toContain('evses: Evses(where: { id: { _eq: $evseId } })');
   });
 
+  it('GET_EVSE_BY_ID selects the connectors the evse status is derived from', () => {
+    expect(GET_EVSE_BY_ID_QUERY).toContain('connectors: Connectors {');
+    expect(GET_EVSE_BY_ID_QUERY.split('connectors: Connectors {')[1]).toContain('status');
+  });
+
   it('GET_CONNECTOR_BY_ID narrows down to the single connector', () => {
     expect(GET_CONNECTOR_BY_ID_QUERY).toContain('id: { _eq: $locationId }');
     expect(GET_CONNECTOR_BY_ID_QUERY).toContain(
