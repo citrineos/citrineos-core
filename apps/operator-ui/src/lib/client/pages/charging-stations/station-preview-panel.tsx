@@ -7,8 +7,8 @@ import React from 'react';
 import { CanAccess, Link, useList, useOne, useTranslate } from '@refinedev/core';
 import { useDispatch } from 'react-redux';
 import { instanceToPlain } from 'class-transformer';
-import type { ChargingStationDto, OCPPMessageDto } from '@citrineos/types';
-import { ChargingStationProps, OCPPMessageProps } from '@citrineos/types';
+import type { OCPPMessageDto } from '@citrineos/types';
+import { OCPPMessageProps } from '@citrineos/types';
 import { ChevronDown, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import {
@@ -33,9 +33,10 @@ import { isEmpty } from '@lib/utils/assertion';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
-import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { clickableLinkStyle } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { chargingStationPath } from '@lib/utils/resource-paths';
+import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
 
 export interface StationPreviewPanelProps {
   /** The ocppConnectionName of the station to preview (the identifier carried in the URL). */
@@ -56,24 +57,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
   const translate = useTranslate();
   const dispatch = useDispatch();
 
-  // The URL carries the human-readable ocppConnectionName; resolve it to the numeric id that the
-  // detail query fetches by.
-  const {
-    query: { data: idData },
-  } = useList<ChargingStationDto>({
-    resource: ResourceType.CHARGING_STATIONS,
-    meta: { fields: [ChargingStationProps.id] },
-    filters: [
-      {
-        field: ChargingStationProps.ocppConnectionName,
-        operator: 'eq',
-        value: ocppConnectionName,
-      },
-    ],
-    pagination: { pageSize: 1, currentPage: 1 },
-    queryOptions: { enabled: !!ocppConnectionName },
-  });
-  const stationId = idData?.data?.[0]?.id;
+  const { id: stationId } = useChargingStationId(ocppConnectionName);
 
   const {
     query: { data, isLoading },
@@ -97,9 +81,9 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
     sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
     filters: [
       {
-        field: OCPPMessageProps.ocppConnectionName,
+        field: OCPPMessageProps.stationId,
         operator: 'eq',
-        value: station?.ocppConnectionName,
+        value: station?.id,
       },
     ],
     pagination: { pageSize: 1, currentPage: 1 },
@@ -138,7 +122,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
         <div className="flex min-w-0 items-center gap-2">
           {station ? (
             <Link
-              to={`/${MenuSection.CHARGING_STATIONS}/${station.id}`}
+              to={chargingStationPath(station.ocppConnectionName)}
               className={`${clickableLinkStyle} truncate`}
             >
               {station.ocppConnectionName}
@@ -221,7 +205,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
               valueRender={(serverId: any) =>
                 serverId != null ? (
                   <Link
-                    to={`/${MenuSection.CHARGING_STATIONS}/${station.id}?${DETAIL_TAB_STATE}=networkProfiles`}
+                    to={`${chargingStationPath(station.ocppConnectionName)}?${DETAIL_TAB_STATE}=networkProfiles`}
                     className={clickableLinkStyle}
                   >
                     {serverId}

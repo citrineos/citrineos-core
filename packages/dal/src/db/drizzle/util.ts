@@ -37,6 +37,10 @@ export class DefaultDrizzleInstance {
         ...(config.database.ssl && { ssl: config.database.ssl }),
       });
 
+      DefaultDrizzleInstance.pool.on('error', (error) => {
+        DefaultDrizzleInstance.logger.error('Idle Drizzle pool client errored', error);
+      });
+
       DefaultDrizzleInstance.instance = drizzle(DefaultDrizzleInstance.pool);
     }
     return DefaultDrizzleInstance.instance;

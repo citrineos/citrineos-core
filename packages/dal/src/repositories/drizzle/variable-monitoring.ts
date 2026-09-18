@@ -20,7 +20,7 @@ export function toVariableMonitoringDto(entity: VariableMonitoringEntity): Varia
   return {
     databaseId: entity.databaseId,
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     transaction: entity.transaction,
     value: entity.value,
     type: entity.type,

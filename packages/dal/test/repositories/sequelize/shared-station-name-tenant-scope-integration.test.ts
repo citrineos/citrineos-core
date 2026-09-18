@@ -8,15 +8,17 @@ import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
+  ChargingProfile,
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeChargingProfileRepository,
+  SequelizeMessageInfoRepository,
   SequelizeTransactionEventRepository,
-  Tenant,
   Transaction,
 } from '../../../index.js';
+import { Evse } from '../../../src/models/location/evse.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
 const SHARED_STATION_NAME = 'CS-SHARED';
@@ -66,7 +68,7 @@ afterAll(async () => {
 let nextEvseTypeNumber = 1;
 
 async function aStationWithOneEvse(tenantId: number): Promise<number> {
-  await ChargingStation.create({
+  const station = await ChargingStation.create({
     ocppConnectionName: SHARED_STATION_NAME,
     isOnline: true,
     tenantId,
@@ -74,7 +76,7 @@ async function aStationWithOneEvse(tenantId: number): Promise<number> {
   await EvseType.create({ tenantId, id: nextEvseTypeNumber++, connectorId: null } as never);
   const evse = await Evse.create({
     tenantId,
-    ocppConnectionName: SHARED_STATION_NAME,
+    stationId: (station as unknown as { id: number }).id,
     evseTypeId: OCPP_EVSE_NUMBER,
   } as never);
   return (evse as unknown as { id: number }).id;
@@ -85,9 +87,14 @@ async function anActiveTransaction(
   evseDatabaseId: number,
   transactionId: string,
 ) {
+  // Both tenants use the same connection name, so the station must be resolved
+  // within the caller's own tenant — that is exactly what this suite guards.
+  const station = await ChargingStation.findOne({
+    where: { ocppConnectionName: SHARED_STATION_NAME, tenantId },
+  });
   const transaction = await Transaction.create({
     tenantId,
-    ocppConnectionName: SHARED_STATION_NAME,
+    stationId: (station as unknown as { id: number }).id,
     transactionId,
     isActive: true,
     evseId: evseDatabaseId,
@@ -110,9 +117,31 @@ function chargingNeedsOn(evseId: number): OCPP2_0_1.NotifyEVChargingNeedsRequest
   };
 }
 
+function aTxProfileFor(transactionId: string) {
+  return {
+    id: 1,
+    stackLevel: 0,
+    chargingProfilePurpose: 'TxProfile',
+    chargingProfileKind: 'Absolute',
+    chargingSchedule: [
+      { id: 1, chargingRateUnit: 'A', chargingSchedulePeriod: [{ startPeriod: 0, limit: 16 }] },
+    ],
+    transactionId,
+  };
+}
+
+function aDisplayMessage(content: string) {
+  return {
+    id: 1,
+    priority: OCPP2_0_1.MessagePriorityEnumType.NormalCycle,
+    message: { format: OCPP2_0_1.MessageFormatEnumType.UTF8, content },
+  };
+}
+
 describe('Repository reads on a station name shared by two tenants', () => {
   let chargingProfileRepository: SequelizeChargingProfileRepository;
   let transactionEventRepository: SequelizeTransactionEventRepository;
+  let messageInfoRepository: SequelizeMessageInfoRepository;
   let ownEvseDatabaseId: number;
   let otherEvseDatabaseId: number;
 
@@ -128,6 +157,7 @@ describe('Repository reads on a station name shared by two tenants', () => {
     const dependencies = { config, logger: undefined, sequelizeInstance } as never;
     chargingProfileRepository = new SequelizeChargingProfileRepository(dependencies);
     transactionEventRepository = new SequelizeTransactionEventRepository(dependencies);
+    messageInfoRepository = new SequelizeMessageInfoRepository(dependencies);
   });
 
   describe('createChargingNeeds', () => {
@@ -185,6 +215,59 @@ describe('Repository reads on a station name shared by two tenants', () => {
 
       expect(count).toBe(page.length);
       expect(count).toBe(2);
+    });
+  });
+
+  describe('createOrUpdateChargingProfile', () => {
+    it("does not link a TxProfile to the other tenant's transaction with the same id", async () => {
+      await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, '7');
+
+      await chargingProfileRepository.createOrUpdateChargingProfile(
+        DEFAULT_TENANT_ID,
+        aTxProfileFor('7') as never,
+        SHARED_STATION_NAME,
+        OCPP_EVSE_NUMBER,
+      );
+
+      const stored = await ChargingProfile.findOne({
+        where: { tenantId: DEFAULT_TENANT_ID, id: 1 },
+      });
+      expect(stored?.transactionDatabaseId).toBeNull();
+    });
+
+    it("links a TxProfile to the caller's own transaction when both tenants have that id", async () => {
+      await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, '7');
+      const ownTransactionId = await anActiveTransaction(DEFAULT_TENANT_ID, ownEvseDatabaseId, '7');
+
+      await chargingProfileRepository.createOrUpdateChargingProfile(
+        DEFAULT_TENANT_ID,
+        aTxProfileFor('7') as never,
+        SHARED_STATION_NAME,
+        OCPP_EVSE_NUMBER,
+      );
+
+      const stored = await ChargingProfile.findOne({
+        where: { tenantId: DEFAULT_TENANT_ID, id: 1 },
+      });
+      expect(stored?.transactionDatabaseId).toBe(ownTransactionId);
+    });
+  });
+
+  describe('createOrUpdateByMessageInfoTypeAndStationId', () => {
+    it('stores the display message when the other tenant has one with the same id', async () => {
+      await messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(
+        OTHER_TENANT_ID,
+        aDisplayMessage('Other tenant'),
+        SHARED_STATION_NAME,
+      );
+
+      const saved = await messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(
+        DEFAULT_TENANT_ID,
+        aDisplayMessage('Own tenant'),
+        SHARED_STATION_NAME,
+      );
+
+      expect(saved?.tenantId).toBe(DEFAULT_TENANT_ID);
     });
   });
 });

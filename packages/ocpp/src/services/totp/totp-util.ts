@@ -4,88 +4,65 @@
 
 import { createHmac } from 'node:crypto';
 
-const TIME_STEP_SECONDS = 30;
-const DIGITS = 6;
+const BASE62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-/**
- * Computes an HOTP (HMAC-based One-Time Password) for the given counter value.
- * Implements RFC 4226.
- */
-function computeHotp(secret: Buffer, counter: number): string {
-  const buf = Buffer.alloc(8);
-  let tmp = counter;
-  for (let i = 7; i >= 0; i--) {
-    buf[i] = tmp & 0xff;
-    tmp = Math.floor(tmp / 256);
+function computeTotpV1(secret: string, timeInterval: number, length: number): string {
+  const timeBytes = Buffer.alloc(8);
+  timeBytes.writeBigUInt64BE(BigInt(timeInterval));
+
+  const hash = createHmac('sha256', Buffer.from(secret, 'utf-8')).update(timeBytes).digest();
+
+  const offset = hash[hash.length - 1] & 0x0f;
+  let token = '';
+  for (let i = 0; i < length; i++) {
+    token += BASE62[hash[(offset + i) % hash.length] % BASE62.length];
   }
+  return token;
+}
 
-  const hmac = createHmac('sha1', secret);
-  hmac.update(buf);
-  const digest = hmac.digest();
-
-  const offset = digest[digest.length - 1] & 0x0f;
-  const code =
-    ((digest[offset] & 0x7f) << 24) |
-    ((digest[offset + 1] & 0xff) << 16) |
-    ((digest[offset + 2] & 0xff) << 8) |
-    (digest[offset + 3] & 0xff);
-
-  return (code % Math.pow(10, DIGITS)).toString().padStart(DIGITS, '0');
+function currentTimeInterval(validityTime: number): number {
+  return Math.floor(Date.now() / 1000 / validityTime);
 }
 
 /**
- * Parses a shared secret string into a Buffer.
- * Supports hex-encoded secrets (e.g. "AABBCCDD") and raw UTF-8 strings.
- */
-function parseSecret(secret: string): Buffer {
-  // If the string is a non-empty even-length hex string, decode it as hex
-  if (secret.length > 0 && secret.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(secret)) {
-    return Buffer.from(secret, 'hex');
-  }
-  return Buffer.from(secret, 'utf-8');
-}
-
-/**
- * TOTP (Time-based One-Time Password) utility implementing RFC 6238.
+ * TOTP (Time-based One-Time Password) utility implementing "TOTP algorithm, version 1" of
+ * OCPP 2.1 use case C25.
  *
  * Used in C25 QR-code web payment to validate the TOTP embedded in the QR URL.
- * The shared secret is stored in the WebPaymentsCtrlr.SharedSecret device model attribute.
- *
- * Secret encoding: if the attribute value is a non-empty, even-length hex string it is
- * decoded from hex; otherwise it is treated as a raw UTF-8 string.
+ * The shared secret, validity time and length are the WebPaymentsCtrlr.SharedSecret,
+ * ValidityTime and Length device model attributes. The shared secret is used as UTF-8 bytes.
  */
 export class TotpUtil {
   /**
-   * Generates the current TOTP token for the given shared secret.
+   * Generates the TOTP token for the current time interval.
    * Useful for testing and for the charging station side URL generation.
    *
-   * @param secret - Shared secret (hex-encoded or raw UTF-8)
-   * @returns 6-digit zero-padded TOTP string
+   * @param secret - Shared secret
+   * @param validityTime - Validity of a token in seconds
+   * @param length - Number of characters in the token
+   * @returns TOTP token of `length` base62 characters
    */
-  static generate(secret: string): string {
-    const secretBuf = parseSecret(secret);
-    const counter = Math.floor(Date.now() / 1000 / TIME_STEP_SECONDS);
-    return computeHotp(secretBuf, counter);
+  static generate(secret: string, validityTime: number, length: number): string {
+    return computeTotpV1(secret, currentTimeInterval(validityTime), length);
   }
 
   /**
-   * Validates a TOTP token against the shared secret.
-   * Accepts a ±window of time steps to accommodate clock skew between CSMS and CS.
+   * Validates a TOTP token against the tokens of the current, previous and next time interval.
    *
    * C25.FR.07: CSMS SHALL validate the TOTP in the QR URL.
    * C25.FR.08: If TOTP validation fails, CSMS SHALL NOT authorize or forward to PSP.
    * C25.FR.09: If TOTP validation fails, CSMS SHALL NOT start a transaction.
    *
-   * @param secret - Shared secret (hex-encoded or raw UTF-8)
+   * @param secret - Shared secret
    * @param token - The TOTP token from the QR URL to validate
-   * @param window - Number of time steps before/after current step to accept (default 1)
-   * @returns true if the token is valid within the window
+   * @param validityTime - Validity of a token in seconds
+   * @param length - Number of characters in the token
+   * @returns true if the token matches one of the three intervals
    */
-  static validate(secret: string, token: string, window = 1): boolean {
-    const secretBuf = parseSecret(secret);
-    const counter = Math.floor(Date.now() / 1000 / TIME_STEP_SECONDS);
-    for (let i = -window; i <= window; i++) {
-      if (computeHotp(secretBuf, counter + i) === token) {
+  static validate(secret: string, token: string, validityTime: number, length: number): boolean {
+    const timeInterval = currentTimeInterval(validityTime);
+    for (let i = -1; i <= 1; i++) {
+      if (computeTotpV1(secret, timeInterval + i, length) === token) {
         return true;
       }
     }

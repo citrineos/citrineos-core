@@ -6,6 +6,7 @@ import { type OCPPMessageDto } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '../repositories.js';
 import { OCPPMessage } from '../../models/ocpp-message.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
+import { resolveStationIdOrThrow } from './resolve-station-id.js';
 
 export class SequelizeOCPPMessageRepository
   extends SequelizeRepository<OCPPMessage>
@@ -23,8 +24,17 @@ export class SequelizeOCPPMessageRepository
    * @param message
    * @returns
    */
-  public async createOCPPMessage(tenantId: number, message: OCPPMessageDto): Promise<OCPPMessage> {
-    return this.create(tenantId, OCPPMessage.build({ ...message }));
+  public async createOCPPMessage(
+    tenantId: number,
+    ocppConnectionName: string,
+    message: Omit<OCPPMessageDto, 'stationId'>,
+  ): Promise<OCPPMessage> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'persist an OCPP message',
+    );
+    return this.create(tenantId, OCPPMessage.build({ ...message, stationId }));
   }
 
   public async getRequestByCorrelationId(

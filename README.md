@@ -20,6 +20,7 @@ here: <https://github.com/citrineos/citrineos>.
 
 ## Table of Contents
 
+- [For Automated Agents](#for-automated-agents)
 - [Overview](#overview)
 - [Architecture Flow](#architecture-flow)
 - [Repository Structure](#repository-structure)
@@ -35,6 +36,13 @@ here: <https://github.com/citrineos/citrineos>.
 - [Licensing](#licensing)
 - [Support and Contact](#support-and-contact)
 - [Roadmap](#roadmap)
+
+## For Automated Agents
+
+If you are an AI coding agent, read [AGENTS.md](./AGENTS.md) before making any change to this repository. It is
+the operating manual for automated contributors: environment and setup, the exact build/test/lint commands,
+repository layout, the conventions CI enforces, and the working practices expected of you. This README explains
+the project to people; `AGENTS.md` instructs an agent how to work in it.
 
 ## Overview
 
@@ -102,13 +110,16 @@ This repository is a **pnpm monorepo** with the following workspace members:
 ```
 citrineos-core/
 ├── apps/
-│   ├── ocpp-server/          # OCPP server entrypoint, Docker setup, migrations (@citrineos/ocpp-server)
-│   ├── ocpi-server/          # OCPI server (@citrineos/ocpi-server)
+│   ├── ocpp/            # OCPP server entrypoint, Docker setup, migrations (@citrineos/ocpp-server)
+│   ├── ocpi/            # OCPI server entrypoint, Docker setup, migrations (@citrineos/ocpi-demo)
+│   ├── mock-msp/        # Mock MSP for OCPI conformance testing (@citrineos/mock-msp)
 │   └── operator-ui/     # Operator web UI — Next.js + Refine (@citrineos/operator-ui)
 ├── packages/
-│   ├── base/            # Shared types, interfaces, and utilities (@citrineos/base)
+│   ├── types/           # Shared DTOs, enums, and generated OCPP schemas (@citrineos/types)
+│   ├── base/            # Shared interfaces, abstractions, and utilities (@citrineos/base)
 │   ├── dal/             # Persistence layer — models, repositories, mappers (@citrineos/dal)
-│   └── ocpp/            # OCPP modules, handlers, APIs, transport (@citrineos/ocpp)
+│   ├── ocpp/            # OCPP modules, handlers, APIs, transport (@citrineos/ocpp)
+│   └── ocpi/            # OCPI modules, handlers, APIs, transport (@citrineos/ocpi)
 ├── scripts/
 │   └── stack.mjs             # Docker stack launcher (selects compose files + profiles)
 ├── docker-compose.yml        # Base stack — published ghcr.io images, ui/ocpi profiles

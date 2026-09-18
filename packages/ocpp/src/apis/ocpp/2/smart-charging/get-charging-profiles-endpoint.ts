@@ -15,12 +15,12 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableCharacteristicsRepository } from '@citrineos/dal';
 import { OCPP2_PROTOCOLS, ocpp2Schema } from '../schemas.js';
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  deviceModelRepository: IDeviceModelRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 }
 
 export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
@@ -32,12 +32,12 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
 
-  constructor({ logger, ocppSender, deviceModelRepository }: Dependencies) {
+  constructor({ logger, ocppSender, variableCharacteristicsRepository }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableCharacteristicsRepository = variableCharacteristicsRepository;
   }
 
   async handle(
@@ -75,7 +75,7 @@ export class GetChargingProfilesEndpoint extends AbstractMessageEndpoint {
 
     if (chargingProfile.chargingProfileId && chargingProfile.chargingProfileId.length > 1) {
       const chargingProfilesEntries =
-        await this._deviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
+        await this._variableCharacteristicsRepository.findVariableCharacteristicsByVariableNameAndVariableInstance(
           tenantId,
           'Entries',
           'ChargingProfiles',

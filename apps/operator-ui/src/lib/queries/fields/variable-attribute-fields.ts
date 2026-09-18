@@ -10,7 +10,7 @@ import { fieldSet } from '@lib/queries/fields/field-set';
  */
 export const VARIABLE_ATTRIBUTE_FIELDS = fieldSet([
   'id',
-  'ocppConnectionName',
+  'stationId',
   'type',
   'dataType',
   'value',
