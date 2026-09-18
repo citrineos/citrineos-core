@@ -388,6 +388,7 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
+      updateAllByQuery: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     ocppMessageRepository = {
       readOnlyOneByQuery: vi
@@ -457,14 +458,19 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
 describe('ClearChargingProfileResponseOcpp16Handler', () => {
   let handler: ClearChargingProfileResponseOcpp16Handler;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
 
   beforeEach(() => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       updateAllByQuery: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
+    ocppMessageRepository = {
+      readOnlyOneByQuery: vi.fn().mockResolvedValue(requestRow({})),
+    } as unknown as Mocked<IOCPPMessageRepository>;
     handler = getTestInstance(container, ClearChargingProfileResponseOcpp16Handler, {
       chargingProfileRepository,
+      ocppMessageRepository,
     });
   });
 
