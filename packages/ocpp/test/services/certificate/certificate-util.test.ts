@@ -23,8 +23,8 @@ import X509 = jsrsasign.X509;
 import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 
-const sendToPublicOcspResponder = vi.hoisted(() => vi.fn());
-vi.mock('@/services/certificate/ocsp-responder-url.js', () => ({ sendToPublicOcspResponder }));
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
 
 describe('CertificateUtil', () => {
   describe('createSignedCertificateFromCSR', () => {
@@ -133,42 +133,47 @@ describe('CertificateUtil', () => {
     const givenResponderURL = 'https://ocsp.example.com/ocsp';
 
     beforeEach(() => {
-      sendToPublicOcspResponder.mockReset();
+      fetchMock.mockReset();
     });
 
     it('success', async () => {
       const responderDer = Buffer.from([0x30, 0x03, 0x0a, 0x01, 0x00, 0x80, 0x81]);
-      sendToPublicOcspResponder.mockResolvedValueOnce({ status: 200, body: responderDer });
+      fetchMock.mockResolvedValueOnce(new Response(responderDer, { status: 200 }));
 
       const actualResult = await sendOCSPRequest(givenRequest, givenResponderURL);
 
       expect(actualResult).toBe(responderDer.toString('hex'));
-      expect(sendToPublicOcspResponder).toHaveBeenCalledWith(
-        givenResponderURL,
-        Buffer.from(givenRequest.getEncodedHex(), 'hex'),
-        expect.any(Number),
+      const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+      expect(url.toString()).toBe(givenResponderURL);
+      expect(init.redirect).toBe('error');
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      expect(Buffer.from(init.body as Uint8Array).toString('hex')).toBe(
+        givenRequest.getEncodedHex(),
       );
     });
 
     it('fails due to internal server error', async () => {
-      sendToPublicOcspResponder.mockResolvedValueOnce({
-        status: 500,
-        body: Buffer.from('Internal Server Error'),
-      });
+      fetchMock.mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
 
       await expect(() => sendOCSPRequest(givenRequest, givenResponderURL)).rejects.toThrow(
         `Failed to fetch OCSP response from ${givenResponderURL}: 500 with error: Internal Server Error`,
       );
     });
 
-    it('propagates a refusal from the responder check', async () => {
-      sendToPublicOcspResponder.mockRejectedValueOnce(
-        new Error('Refusing OCSP responder URL on a private address: http://169.254.169.254/'),
-      );
+    it('refuses a responder host that is not on the configured list', async () => {
+      await expect(() =>
+        sendOCSPRequest(givenRequest, 'http://169.254.169.254/', ['ocsp.example.com']),
+      ).rejects.toThrow(/not permitted/);
 
-      await expect(() => sendOCSPRequest(givenRequest, 'http://169.254.169.254/')).rejects.toThrow(
-        /private address/,
-      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('reaches any responder when no hosts are configured', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(Buffer.from([0x30]), { status: 200 }));
+
+      await sendOCSPRequest(givenRequest, givenResponderURL, []);
+
+      expect(fetchMock).toHaveBeenCalledOnce();
     });
   });
 

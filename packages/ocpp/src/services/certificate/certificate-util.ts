@@ -14,7 +14,12 @@ import moment from 'moment';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
-import { sendToPublicOcspResponder } from './ocsp-responder-url.js';
+import {
+  assertAllowedOcspResponder,
+  OCSP_REQUEST_TIMEOUT_MS,
+  OCSP_RESPONSE_MAX_BYTES,
+  readCappedBody,
+} from './ocsp-responder-url.js';
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
@@ -301,25 +306,32 @@ export function createOcspRequest(
   });
 }
 
-const OCSP_REQUEST_TIMEOUT_MS = 10_000;
-
 export async function sendOCSPRequest(
   ocspRequest: OCSPRequest,
   responderURL: string,
+  allowedResponderHosts: string[] = [],
 ): Promise<string> {
-  const response = await sendToPublicOcspResponder(
-    responderURL,
-    Buffer.from(ocspRequest.getEncodedHex(), 'hex'),
-    OCSP_REQUEST_TIMEOUT_MS,
-  );
+  const url = assertAllowedOcspResponder(responderURL, allowedResponderHosts);
 
-  if (response.status < 200 || response.status > 299) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/ocsp-request',
+      Accept: 'application/ocsp-response',
+    },
+    body: Uint8Array.from(Buffer.from(ocspRequest.getEncodedHex(), 'hex')),
+    redirect: 'error',
+    signal: AbortSignal.timeout(OCSP_REQUEST_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
     throw new Error(
-      `Failed to fetch OCSP response from ${responderURL}: ${response.status} with error: ${response.body}`,
+      `Failed to fetch OCSP response from ${responderURL}: ${response.status} with error: ${await response.text()}`,
     );
   }
 
-  return response.body.toString('hex');
+  const body = await readCappedBody(response, OCSP_RESPONSE_MAX_BYTES);
+  return body.toString('hex');
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {

@@ -17,9 +17,10 @@ import {
 import { GetCertificateStatusRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { parseOcspRequestHex } from '../../../utils/ocsp-request-parser.js';
+import { aSystemConfig } from '../../../providers/system-config.js';
 
-const sendToPublicOcspResponder = vi.hoisted(() => vi.fn());
-vi.mock('@/services/certificate/ocsp-responder-url.js', () => ({ sendToPublicOcspResponder }));
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
 
 const RESPONDER_URL = 'http://ocsp.example.test/responder';
 
@@ -61,11 +62,13 @@ describe('GetCertificateStatusRequestOcpp2Handler', () => {
   beforeEach(() => {
     const { logger } = createTestContainer();
     ocppSender = makeMockOcppSender();
-    handler = new GetCertificateStatusRequestOcpp2Handler({ logger, ocppSender });
+    handler = new GetCertificateStatusRequestOcpp2Handler({
+      logger,
+      ocppSender,
+      config: aSystemConfig(),
+    });
 
-    sendToPublicOcspResponder
-      .mockReset()
-      .mockResolvedValue({ status: 200, body: Buffer.from(RESPONDER_DER) });
+    fetchMock.mockReset().mockResolvedValue(new Response(RESPONDER_DER, { status: 200 }));
   });
 
   async function handleAndGetResponse(): Promise<OCPP2_1.GetCertificateStatusResponse> {
@@ -77,18 +80,19 @@ describe('GetCertificateStatusRequestOcpp2Handler', () => {
   it('reaches the responder and reports Accepted', async () => {
     const response = await handleAndGetResponse();
 
-    expect(sendToPublicOcspResponder).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledOnce();
     expect(response.status).toBe(GetCertificateStatusEnum.Accepted);
   });
 
   it('posts the DER of an OCSPRequest, not its hex text', async () => {
     await handleAndGetResponse();
 
-    const [url, body] = sendToPublicOcspResponder.mock.calls[0] as [string, Uint8Array];
-    expect(url).toBe(RESPONDER_URL);
-    expect(body).toBeInstanceOf(Uint8Array);
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.toString()).toBe(RESPONDER_URL);
+    expect(init.redirect).toBe('error');
+    expect(init.signal).toBeInstanceOf(AbortSignal);
 
-    const der = Buffer.from(body);
+    const der = Buffer.from(init.body as Uint8Array);
     expect(der[0]).toBe(0x30);
 
     expect(parseOcspRequestHex(der.toString('hex'))).toEqual([
@@ -108,7 +112,7 @@ describe('GetCertificateStatusRequestOcpp2Handler', () => {
   });
 
   it('reports Failed when the responder refuses', async () => {
-    sendToPublicOcspResponder.mockResolvedValue({ status: 500, body: Buffer.from('no') });
+    fetchMock.mockResolvedValue(new Response('no', { status: 500 }));
 
     const response = await handleAndGetResponse();
 

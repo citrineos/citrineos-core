@@ -2,164 +2,89 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import {
+  assertAllowedOcspResponder,
+  OCSP_RESPONSE_MAX_BYTES,
+  readCappedBody,
+} from '@/services/certificate/ocsp-responder-url.js';
 
-const lookup = vi.hoisted(() => vi.fn());
-const httpsRequest = vi.hoisted(() => vi.fn());
-const httpRequest = vi.hoisted(() => vi.fn());
+describe('assertAllowedOcspResponder', () => {
+  it('returns the parsed url when no hosts are configured', () => {
+    const url = assertAllowedOcspResponder('http://ocsp.example.com/status', []);
 
-vi.mock('node:dns/promises', () => ({ lookup }));
-vi.mock('node:https', () => ({ request: httpsRequest }));
-vi.mock('node:http', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('node:http')>()),
-  request: httpRequest,
-}));
+    expect(url.hostname).toBe('ocsp.example.com');
+  });
 
-const OCSP_REQUEST = Uint8Array.from([0x30, 0x00]);
+  it('accepts a host on the configured list', () => {
+    const url = assertAllowedOcspResponder('https://ocsp.example.com/status', ['ocsp.example.com']);
 
-const { isPrivateAddress, resolvePublicOcspResponder, sendToPublicOcspResponder } = await import(
-  '@/services/certificate/ocsp-responder-url.js'
-);
+    expect(url.hostname).toBe('ocsp.example.com');
+  });
 
-describe('isPrivateAddress', () => {
   it.each([
-    '127.0.0.1',
-    '10.1.2.3',
-    '172.16.0.1',
-    '172.31.255.255',
-    '192.168.1.1',
-    '169.254.169.254',
-    '100.64.0.1',
-    '0.0.0.0',
-    '::1',
-    'fe80::1',
-    'fd00::1',
-    '::ffff:169.254.169.254',
-  ])('treats %s as private', (address) => {
-    expect(isPrivateAddress(address)).toBe(true);
-  });
-
-  it.each(['8.8.8.8', '1.1.1.1', '172.32.0.1', '192.169.0.1', '2606:4700:4700::1111'])(
-    'treats %s as public',
-    (address) => {
-      expect(isPrivateAddress(address)).toBe(false);
-    },
-  );
-});
-
-describe('resolvePublicOcspResponder', () => {
-  beforeEach(() => {
-    lookup.mockReset();
-  });
-
-  it('accepts a literal public address without resolving anything', async () => {
-    await expect(resolvePublicOcspResponder('http://8.8.8.8/ocsp')).resolves.toMatchObject({
-      address: '8.8.8.8',
-    });
-    expect(lookup).not.toHaveBeenCalled();
-  });
-
-  it('refuses the cloud metadata address', async () => {
-    await expect(
-      resolvePublicOcspResponder('http://169.254.169.254/latest/meta-data/'),
-    ).rejects.toThrow(/private address/);
-  });
-
-  it.each(['http://127.0.0.1:8080/ocsp', 'http://10.0.0.5/ocsp', 'http://[::1]:8080/ocsp'])(
-    'refuses %s',
-    async (url) => {
-      await expect(resolvePublicOcspResponder(url)).rejects.toThrow(/private address/);
-    },
-  );
-
-  it.each(['file:///etc/passwd', 'ftp://example.com/ocsp', 'gopher://example.com/'])(
-    'refuses the %s scheme',
-    async (url) => {
-      await expect(resolvePublicOcspResponder(url)).rejects.toThrow(/protocol/);
-    },
-  );
-
-  it('refuses something that is not a URL at all', async () => {
-    await expect(resolvePublicOcspResponder('not a url')).rejects.toThrow(/not a URL/);
-  });
-
-  it('refuses a name resolving to a private address', async () => {
-    lookup.mockResolvedValue([{ address: '10.0.0.5' }]);
-
-    await expect(resolvePublicOcspResponder('http://ocsp.example.com/')).rejects.toThrow(
-      /resolving to a private address/,
+    ['upper case in the configured host', ['OCSP.EXAMPLE.COM']],
+    ['surrounding whitespace in the configured host', ['  ocsp.example.com  ']],
+  ])('matches despite %s', (_label, allowed) => {
+    expect(assertAllowedOcspResponder('http://ocsp.example.com/', allowed).hostname).toBe(
+      'ocsp.example.com',
     );
   });
 
-  it('refuses a name that answers with one public and one private address', async () => {
-    lookup.mockResolvedValue([{ address: '8.8.8.8' }, { address: '169.254.169.254' }]);
-
-    await expect(resolvePublicOcspResponder('http://ocsp.example.com/')).rejects.toThrow(
-      /resolving to a private address/,
-    );
+  it('refuses a host that is not on the configured list', () => {
+    expect(() =>
+      assertAllowedOcspResponder('http://169.254.169.254/latest/meta-data', ['ocsp.example.com']),
+    ).toThrow(/not permitted/);
   });
 
-  it('refuses a host that does not resolve', async () => {
-    lookup.mockRejectedValue(new Error('ENOTFOUND'));
+  it.each(['file:///etc/passwd', 'ftp://ocsp.example.com/'])(
+    'refuses the protocol in %s',
+    (url) => {
+      expect(() => assertAllowedOcspResponder(url, [])).toThrow(/protocol/);
+    },
+  );
 
-    await expect(resolvePublicOcspResponder('http://ocsp.example.com/')).rejects.toThrow(
-      /does not resolve/,
-    );
+  it('refuses a value that is not a URL', () => {
+    expect(() => assertAllowedOcspResponder('not-a-url', [])).toThrow(/not a URL/);
   });
 });
 
-describe('sendToPublicOcspResponder', () => {
-  beforeEach(() => {
-    lookup.mockReset();
-    httpsRequest.mockReset();
-    httpRequest.mockReset();
-  });
-
-  function captureRequest(mock: typeof httpsRequest) {
-    mock.mockImplementation((_options: unknown, onResponse: (res: unknown) => void) => {
-      const listeners: Record<string, (arg?: unknown) => void> = {};
-      queueMicrotask(() => {
-        onResponse({
-          statusCode: 200,
-          on: (event: string, handler: (arg?: unknown) => void) => {
-            listeners[event] = handler;
-            if (event === 'end') queueMicrotask(() => handler());
-          },
-        });
-      });
-      return { on: () => undefined, end: () => undefined };
-    });
+function aResponse(chunks: Uint8Array[], contentLength?: number): Response {
+  const headers = new Headers();
+  if (contentLength !== undefined) {
+    headers.set('content-length', String(contentLength));
   }
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+  return new Response(body, { headers });
+}
 
-  it('sends the request to the address that was checked, not to the name', async () => {
-    lookup.mockResolvedValue([{ address: '203.0.113.10' }]);
-    captureRequest(httpsRequest);
+describe('readCappedBody', () => {
+  it('returns the body when it is within the cap', async () => {
+    const body = await readCappedBody(aResponse([Uint8Array.from([1, 2, 3])]), 16);
 
-    await sendToPublicOcspResponder('https://ocsp.example.com/path', OCSP_REQUEST, 5_000);
-
-    expect(httpsRequest).toHaveBeenCalledOnce();
-    expect(httpsRequest.mock.calls[0][0]).toMatchObject({
-      host: '203.0.113.10',
-      servername: 'ocsp.example.com',
-      headers: expect.objectContaining({ Host: 'ocsp.example.com' }),
-    });
+    expect([...body]).toEqual([1, 2, 3]);
   });
 
-  it('returns the responder status and body', async () => {
-    lookup.mockResolvedValue([{ address: '203.0.113.10' }]);
-    captureRequest(httpRequest);
-
-    const reply = await sendToPublicOcspResponder('http://ocsp.example.com/', OCSP_REQUEST, 5_000);
-
-    expect(reply.status).toBe(200);
+  it('refuses a body whose declared length exceeds the cap', async () => {
+    await expect(readCappedBody(aResponse([Uint8Array.from([1])], 99), 16)).rejects.toThrow(
+      /exceeds the 16 byte cap/,
+    );
   });
 
-  it('does not issue a request at all when the responder is private', async () => {
-    await expect(
-      sendToPublicOcspResponder('http://169.254.169.254/latest/meta-data/', OCSP_REQUEST, 5_000),
-    ).rejects.toThrow(/private address/);
+  it('refuses a body that exceeds the cap while streaming', async () => {
+    const chunks = [Uint8Array.from([1, 2, 3, 4]), Uint8Array.from([5, 6, 7, 8])];
 
-    expect(httpRequest).not.toHaveBeenCalled();
-    expect(httpsRequest).not.toHaveBeenCalled();
+    await expect(readCappedBody(aResponse(chunks), 6)).rejects.toThrow(/exceeds the 6 byte cap/);
+  });
+
+  it('caps at 64KiB by default', () => {
+    expect(OCSP_RESPONSE_MAX_BYTES).toBe(65536);
   });
 });

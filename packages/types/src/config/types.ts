@@ -289,6 +289,13 @@ export const configSchema = z.object({
             .prefault({}),
         })
         .optional(),
+      // Hosts the CSMS is permitted to reach for OCSP. Empty means no restriction.
+      // From the environment: CITRINEOS_INTEGRATIONS_OCSP='{"allowedResponderHosts":["ocsp.example.com"]}'
+      ocsp: z
+        .object({
+          allowedResponderHosts: z.array(z.string()).default([]),
+        })
+        .prefault({}),
       // Opt-in, but zero-config: `chargingStationCA: {}` yields ACME against the
       // Let's Encrypt staging directory.
       // From the environment: CITRINEOS_INTEGRATIONS_CHARGINGSTATIONCA='{}'
