@@ -159,6 +159,28 @@ export class MeterValueUtils {
   }
 
   /**
+   * The cumulative Energy.Active.Import.Register reading of one MeterValue, in kWh.
+   */
+  public static energyRegisterKwh(sampledValues: SampledValue[]): number | null {
+    const measurand = MeasurandEnum['Energy.Active.Import.Register'];
+    try {
+      const aggregate = this.findMeasurandValue(sampledValues, measurand, false);
+      if (aggregate !== null) {
+        return aggregate;
+      }
+
+      const phased = this.sumPhasedValues(sampledValues, measurand);
+      if (phased !== null) {
+        return phased;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Find a specific measurand value from sampledValues
    * @param sampledValues Array of sampled values
    * @param measurand The measurand type to look for

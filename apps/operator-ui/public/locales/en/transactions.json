@@ -26,7 +26,8 @@
       "chargingState": "Charging State",
       "startTime": "Start Time",
       "endTime": "End Time",
-      "tariff": "Tariff"
+      "tariff": "Tariff",
+      "timeSpentCharging": "Time Spent Charging"
     },
     "tabs": {
       "meterValueData": "Meter Value Data",
