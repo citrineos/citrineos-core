@@ -47,21 +47,14 @@ export class Connector extends Model implements ConnectorDto {
   @ForeignKey(() => ChargingStation)
   @Column({
     unique: 'stationId_connectorId',
-    allowNull: true,
+    allowNull: false,
     type: DataType.INTEGER,
   })
-  declare stationId?: number;
-
-  @Column({
-    allowNull: false,
-    type: DataType.STRING,
-  })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @ForeignKey(() => Evse)
   @Column({
     unique: 'evseId_evseTypeConnectorId',
-    allowNull: false,
     type: DataType.INTEGER,
   })
   declare evseId: number;
@@ -172,19 +165,6 @@ export class Connector extends Model implements ConnectorDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: Connector): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

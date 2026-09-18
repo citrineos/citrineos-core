@@ -314,11 +314,14 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 100,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 100,
+        },
+      );
     });
 
     it('should include requestId when checking for existing pending attempt', async () => {
@@ -365,12 +368,15 @@ describe('InstallCertificateHelperService', () => {
         42,
       );
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 100,
-        requestId: 42,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 100,
+          requestId: 42,
+        },
+      );
     });
 
     it('should use existing certificate if found and create install attempt', async () => {
@@ -401,11 +407,14 @@ describe('InstallCertificateHelperService', () => {
 
       expect(service.createNewCertificate).not.toHaveBeenCalled();
 
-      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockInstallCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        certificateType: MOCK_CERT_TYPE_V2G,
-        certificateId: 99,
-      });
+        {
+          certificateType: MOCK_CERT_TYPE_V2G,
+          certificateId: 99,
+        },
+      );
     });
 
     describe('AdditionalRootCertificateCheck (M05.FR.10)', () => {
@@ -624,8 +633,7 @@ describe('InstallCertificateHelperService', () => {
       );
       expect(mockFileStorageGetFile).toHaveBeenCalledWith('file123');
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
       });
@@ -707,10 +715,33 @@ describe('InstallCertificateHelperService', () => {
 
       expect(service.getCertificateHash).toHaveBeenCalledWith(MOCK_CERTIFICATE);
       expect(mockFileStorageSaveFile).toHaveBeenCalledWith(
-        `Existing_Cert_123456.pem`,
+        `Existing_Cert_${mockHash}.pem`,
         Buffer.from(MOCK_CERTIFICATE),
       );
       expect(mockCertificateCreate).toHaveBeenCalled();
+    });
+
+    it('should save two certificates with the same serial number to different files', async () => {
+      mockFileStorageSaveFile.mockImplementation((key: string) => Promise.resolve(key));
+      mockCertificateCreate.mockResolvedValue({ id: 1 });
+      vi.spyOn(service, 'getCertificateHash').mockImplementation((pem: string) => `hash-${pem}`);
+
+      for (const certificate of ['CERT-A', 'CERT-B']) {
+        await service.createNewCertificate(
+          tenantId,
+          certificate,
+          null,
+          'Test Issuer',
+          'Test Org',
+          'localhost',
+          'US' as any,
+          new Date('2027-02-17'),
+          'SHA256withECDSA' as any,
+        );
+      }
+
+      const savedFileNames = mockFileStorageSaveFile.mock.calls.map(([fileName]) => fileName);
+      expect(new Set(savedFileNames).size).toBe(2);
     });
 
     it('should save certificate record with correct values', async () => {
@@ -870,8 +901,7 @@ describe('InstallCertificateHelperService', () => {
         mockUploadRequest,
       );
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 99,
       });
@@ -902,8 +932,7 @@ describe('InstallCertificateHelperService', () => {
         mockCertDetails.signatureAlgorithm,
       );
 
-      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, {
-        ocppConnectionName,
+      expect(mockInstalledCreate).toHaveBeenCalledWith(tenantId, ocppConnectionName, {
         certificateType: MOCK_CERT_TYPE_V2G,
         certificateId: 100,
       });
@@ -1593,13 +1622,16 @@ describe('InstallCertificateHelperService', () => {
 
       await service.prepareToDeleteCertificate(tenantId, ocppConnectionName, certificateHashData);
 
-      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(tenantId, {
+      expect(mockDeleteCertificateAttemptCreate).toHaveBeenCalledWith(
+        tenantId,
         ocppConnectionName,
-        hashAlgorithm: certificateHashData.hashAlgorithm,
-        issuerNameHash: certificateHashData.issuerNameHash,
-        issuerKeyHash: certificateHashData.issuerKeyHash,
-        serialNumber: certificateHashData.serialNumber,
-      });
+        {
+          hashAlgorithm: certificateHashData.hashAlgorithm,
+          issuerNameHash: certificateHashData.issuerNameHash,
+          issuerKeyHash: certificateHashData.issuerKeyHash,
+          serialNumber: certificateHashData.serialNumber,
+        },
+      );
     });
 
     it('does not create a second attempt when one is already pending', async () => {

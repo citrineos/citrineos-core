@@ -18,6 +18,7 @@ export function toStopTransactionDto(entity: StopTransactionEntity): StopTransac
     id: entity.id,
     ocppConnectionName: entity.ocppConnectionName,
     transactionDatabaseId: entity.transactionDatabaseId,
+    transactionCreatedAt: entity.transactionCreatedAt,
     meterStop: entity.meterStop,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp.toISOString(),

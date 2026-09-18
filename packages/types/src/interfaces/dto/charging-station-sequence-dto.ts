@@ -9,7 +9,7 @@ import { ChargingStationSequenceTypeSchema } from './types/enums.js';
 
 export const ChargingStationSequenceSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  ocppConnectionName: z.string().max(36),
+  stationId: z.number().int(),
   type: ChargingStationSequenceTypeSchema,
   value: z.number().int().default(0), // BIGINT
   station: ChargingStationSchema.optional(),

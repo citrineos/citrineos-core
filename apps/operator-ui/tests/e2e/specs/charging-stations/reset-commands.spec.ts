@@ -44,7 +44,7 @@ test.describe('charging-stations › Reset command @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.resetButton.click();
     const modal = new ModalHarness(page, /reset/i);
@@ -58,7 +58,7 @@ test.describe('charging-stations › Reset command @everest', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.resetButton.click();
     const modal = new ModalHarness(page, /reset/i);
@@ -74,7 +74,7 @@ test.describe('charging-stations › Reset validation + offline', () => {
     seededStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.resetButton.click();
     const modal = new ModalHarness(page, /reset/i);

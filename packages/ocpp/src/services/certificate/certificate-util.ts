@@ -7,7 +7,7 @@ import { CertificationRequest } from 'pkijs';
 import * as asn1js from 'asn1js';
 import { fromBER } from 'asn1js';
 import { CountryNameEnumType, SignatureAlgorithmEnumType } from '@citrineos/dal';
-import type { CertificateCreate } from '@citrineos/types';
+import type { CertificateCreate, OCPP2_0_1, OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
 import { fromBase64, stringToArrayBuffer } from 'pvutils';
 import moment from 'moment';
@@ -15,7 +15,6 @@ import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
-import Request = jsrsasign.KJUR.asn1.ocsp.Request;
 import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
 
@@ -173,21 +172,17 @@ export function generateCertificate(
   }
 
   // Prepare certificate extensions
-  const keyUsages = ['digitalSignature', 'keyCertSign', 'crlSign'];
+  const keyUsages = ['digitalSignature', 'keyCertSign', 'cRLSign'];
   if (!certificateEntity.isCA) {
     keyUsages.push('keyEncipherment');
   }
-  let basicConstraints: any = {
+  const basicConstraints: any = {
     extname: 'basicConstraints',
     critical: true,
     cA: certificateEntity.isCA,
   };
   if (certificateEntity.pathLen) {
-    basicConstraints = {
-      extname: 'basicConstraints',
-      cA: certificateEntity.isCA,
-      pathLen: certificateEntity.pathLen,
-    };
+    basicConstraints.pathLen = certificateEntity.pathLen;
   }
   const extensions = [
     basicConstraints,
@@ -290,24 +285,23 @@ interface OcspCertIdValueParams {
   sbjsn: string;
 }
 
-export function createOcspRequest(reqData: {
-  hashAlgorithm: string;
-  issuerNameHash: string;
-  issuerKeyHash: string;
-  serialNumber: string;
-}): Request {
-  const params: OcspCertIdValueParams = {
+export function createOcspRequest(
+  reqData: OCPP2_0_1.OCSPRequestDataType | OCPP2_1.OCSPRequestDataType,
+): OCSPRequest {
+  const certId: OcspCertIdValueParams = {
     alg: reqData.hashAlgorithm.toLowerCase(),
     issname: reqData.issuerNameHash,
     isskey: reqData.issuerKeyHash,
     sbjsn: reqData.serialNumber,
   };
 
-  return new Request(params as unknown as ConstructorParameters<typeof Request>[0]);
+  return new OCSPRequest({
+    reqList: [certId as unknown as jsrsasign.KJUR.asn1.ocsp.CertificateRequest],
+  });
 }
 
 export async function sendOCSPRequest(
-  ocspRequest: OCSPRequest | Request,
+  ocspRequest: OCSPRequest,
   responderURL: string,
 ): Promise<string> {
   const response = await fetch(responderURL, {
@@ -316,7 +310,7 @@ export async function sendOCSPRequest(
       'Content-Type': 'application/ocsp-request',
       Accept: 'application/ocsp-response',
     },
-    body: ocspRequest.getEncodedHex(),
+    body: Uint8Array.from(Buffer.from(ocspRequest.getEncodedHex(), 'hex')),
   });
 
   if (!response.ok) {
@@ -325,7 +319,7 @@ export async function sendOCSPRequest(
     );
   }
 
-  return await response.text();
+  return Buffer.from(await response.arrayBuffer()).toString('hex');
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {
@@ -350,28 +344,23 @@ export function generateCSR(certificate: CertificateGenerationInput): [string, s
   let basicConstraintParam: any;
   if (certificate.pathLen) {
     basicConstraintParam = {
+      extname: 'basicConstraints',
       cA: certificate.isCA,
       pathLen: certificate.pathLen,
     };
   } else {
-    basicConstraintParam = { cA: certificate.isCA };
+    basicConstraintParam = { extname: 'basicConstraints', cA: certificate.isCA };
   }
+  const keyUsageParam: any = {
+    extname: 'keyUsage',
+    names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'cRLSign'],
+  };
   const csr = new KJUR.asn1.csr.CertificationRequest({
     subject: {
       str: `/CN=${certificate.commonName}/O=${certificate.organizationName}/C=${certificate.countryName}`,
     },
     sbjpubkey: publicKeyPem,
-    extreq: [
-      { extname: 'basicConstraints', array: [basicConstraintParam] },
-      {
-        extname: 'keyUsage',
-        array: [
-          {
-            names: ['digitalSignature', 'keyEncipherment', 'keyCertSign', 'crlSign'],
-          },
-        ],
-      },
-    ],
+    extreq: [basicConstraintParam, keyUsageParam],
     sigalg: certificate.signatureAlgorithm
       ? certificate.signatureAlgorithm
       : SignatureAlgorithmEnumType.ECDSA,
@@ -410,7 +399,8 @@ export const extractCertificateDetails = (
     cert.readCertPEM(pemString);
 
     // Extract details
-    const serialNumber = parseInt(cert.getSerialNumberHex());
+    const parsedSerialNumber = parseInt(cert.getSerialNumberHex(), 16);
+    const serialNumber = Number.isSafeInteger(parsedSerialNumber) ? parsedSerialNumber : null;
     const issuerName = cert.getIssuerString();
     const organizationName = cert.getSubjectString().match(/\/O=([^/]+)/)?.[1] || null;
     const commonName = cert.getSubjectString().match(/\/CN=([^/]+)/)?.[1] || null;

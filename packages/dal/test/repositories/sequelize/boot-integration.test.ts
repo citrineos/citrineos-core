@@ -3,13 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BootDto, SystemConfig } from '@citrineos/types';
-import {
-  Boot,
-  ChargingStation,
-  DefaultSequelizeInstance,
-  SequelizeBootRepository,
-  Tenant,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeBootRepository } from '../../../index.js';
+import { Boot } from '../../../src/models/boot.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -64,8 +61,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: TENANT_A as any });
-  await Tenant.create({ id: TENANT_B as any });
+  await Tenant.create({ id: TENANT_A as any, name: String(TENANT_A) });
+  await Tenant.create({ id: TENANT_B as any, name: String(TENANT_B) });
 });
 
 function makeRepo(): SequelizeBootRepository {

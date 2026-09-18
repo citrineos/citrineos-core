@@ -25,16 +25,16 @@ describe('evDriver message endpoints', () => {
   });
 
   describe('CancelReservationEndpoint', () => {
-    let readOnlyOneByQuery: ReturnType<typeof vi.fn>;
+    let findByStationAndReservationId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      readOnlyOneByQuery = vi.fn().mockResolvedValue({ id: 7 });
+      findByStationAndReservationId = vi.fn().mockResolvedValue({ id: 7 });
     });
 
     const build = () =>
       getTestInstance(container, CancelReservationEndpoint, {
         ocppSender: { sendCall },
-        reservationRepository: { readOnlyOneByQuery },
+        reservationRepository: { findByStationAndReservationId },
       });
 
     const handle = (identifiers: string[]) =>
@@ -59,14 +59,12 @@ describe('evDriver message endpoints', () => {
     it('looks the reservation up per station and tenant', async () => {
       await handle([STATION]);
 
-      expect(readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        where: { id: 7, ocppConnectionName: STATION, tenantId: DEFAULT_TENANT_ID },
-      });
+      expect(findByStationAndReservationId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, 7);
     });
 
     it('sends to nobody when the reservation is missing on any station', async () => {
-      readOnlyOneByQuery.mockImplementation(async (_tenantId, query) =>
-        query.where.ocppConnectionName === STATION ? { id: 7 } : undefined,
+      findByStationAndReservationId.mockImplementation(async (_tenantId, ocppConnectionName) =>
+        ocppConnectionName === STATION ? { id: 7 } : undefined,
       );
 
       const confirmations = await handle([STATION, OTHER_STATION]);
@@ -78,7 +76,7 @@ describe('evDriver message endpoints', () => {
     });
 
     it('returns one failure per identifier when the lookup throws', async () => {
-      readOnlyOneByQuery.mockRejectedValue(new Error('db down'));
+      findByStationAndReservationId.mockRejectedValue(new Error('db down'));
 
       const confirmations = await handle([STATION, OTHER_STATION]);
 
@@ -314,6 +312,34 @@ describe('evDriver message endpoints', () => {
         payload: 'The Purpose of the ChargingProfile SHALL always be TxProfile.',
       });
       expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses a charging profile that sets a transactionId', async () => {
+      const confirmations = await handle(
+        aRequest({
+          chargingProfile: {
+            id: 1,
+            stackLevel: 0,
+            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
+            transactionId: 'tx-abc',
+            chargingSchedule: [
+              {
+                id: 1,
+                chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.W,
+                chargingSchedulePeriod: [{ startPeriod: 0, limit: 10 }],
+              },
+            ],
+          },
+        }),
+      );
+
+      expect(confirmations[0]).toEqual({
+        success: false,
+        payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+      });
+      expect(sendCall).not.toHaveBeenCalled();
+      expect(createOrUpdateChargingProfile).not.toHaveBeenCalled();
     });
 
     it('caches a 2.1 transaction limit before sending', async () => {

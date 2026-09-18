@@ -2,7 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type {
+  ISetNetworkProfileRepository,
+  SetNetworkProfileCreateInput,
+} from '@dal/repositories/repositories.js';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SetNetworkProfileDto } from '@citrineos/types';
+import { and, eq } from 'drizzle-orm';
+import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import {
   type SetNetworkProfileEntity,
   setNetworkProfileTable,
@@ -16,7 +23,7 @@ import { DrizzleRepository } from './base.js';
 export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetworkProfileDto {
   const dto: Explicit<SetNetworkProfileDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName ?? '',
+    stationId: entity.stationId,
     correlationId: entity.correlationId ?? '',
     websocketServerConfigId: entity.websocketServerConfigId ?? undefined,
     // Relation is not present on a flat DB row.
@@ -39,10 +46,10 @@ export function toSetNetworkProfileDto(entity: SetNetworkProfileEntity): SetNetw
   return dto;
 }
 
-export class DrizzleSetNetworkProfileRepository extends DrizzleRepository<
-  typeof setNetworkProfileTable,
-  SetNetworkProfileDto
-> {
+export class DrizzleSetNetworkProfileRepository
+  extends DrizzleRepository<typeof setNetworkProfileTable, SetNetworkProfileDto>
+  implements ISetNetworkProfileRepository
+{
   protected getTable(tenantId: number): typeof setNetworkProfileTable {
     return this.useTenantSchema ? tenantSetNetworkProfileTable(tenantId) : setNetworkProfileTable;
   }
@@ -51,5 +58,70 @@ export class DrizzleSetNetworkProfileRepository extends DrizzleRepository<
     return toSetNetworkProfileDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createPending(values: SetNetworkProfileCreateInput): Promise<SetNetworkProfileDto> {
+    const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
+    const stationId =
+      values.stationId ??
+      (await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined));
+    return this.insert(tenantId, {
+      stationId,
+      correlationId: values.correlationId,
+      websocketServerConfigId: values.websocketServerConfigId,
+      configurationSlot: values.configurationSlot,
+      ocppVersion: values.ocppVersion,
+      ocppTransport: values.ocppTransport,
+      ocppCsmsUrl: values.ocppCsmsUrl,
+      messageTimeout: values.messageTimeout,
+      securityProfile: values.securityProfile,
+      ocppInterface: values.ocppInterface,
+      apn: values.apn,
+      vpn: values.vpn,
+    });
+  }
+
+  async readByCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SetNetworkProfileDto | undefined> {
+    // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+    const table = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(table)
+      .where(
+        and(
+          eq(table.stationId, stationId),
+          eq(table.correlationId, correlationId),
+          this.tenantFilter(table, tenantId),
+        ),
+      )
+      .limit(1)) as SetNetworkProfileEntity[];
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
+  private async resolveStationId(
+    tenantId: number,
+    ocppConnectionName?: string,
+  ): Promise<number | undefined> {
+    if (!ocppConnectionName) {
+      return undefined;
+    }
+    const rows = await this.db
+      .select({ id: chargingStationTable.id })
+      .from(chargingStationTable)
+      .where(
+        and(
+          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
+          eq(chargingStationTable.tenantId, tenantId),
+        ),
+      )
+      .limit(1);
+    return rows[0]?.id;
+  }
 }

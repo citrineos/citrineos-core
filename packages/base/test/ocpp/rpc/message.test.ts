@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it } from 'vitest';
 import {
   type RawCall,
   type RawCallError,
@@ -19,6 +18,8 @@ import {
   readMessageId,
   UNREADABLE_MESSAGE_ID,
 } from '@ocpp/rpc/message.js';
+import { instanceToPlain } from 'class-transformer';
+import { describe, expect, it } from 'vitest';
 
 const MESSAGE_ID = 'msg-123';
 
@@ -206,6 +207,33 @@ describe('OcppError', () => {
         { errors: ['nope'] },
       ]),
     );
+  });
+
+  it('keeps its description when serialized to JSON', () => {
+    const error = new OcppError(MESSAGE_ID, ErrorCode.InternalError, 'the real cause');
+
+    expect(JSON.parse(JSON.stringify(error))).toMatchObject({
+      message: 'the real cause',
+      _errorCode: ErrorCode.InternalError,
+      _messageId: MESSAGE_ID,
+    });
+  });
+
+  it('still exposes the description through the message getter', () => {
+    const error = new OcppError(MESSAGE_ID, ErrorCode.InternalError, 'the real cause');
+
+    expect(error.message).toBe('the real cause');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  it('survives the message queue round trip with its description intact', () => {
+    const error = new OcppError(MESSAGE_ID, ErrorCode.InternalError, 'the real cause');
+
+    const onTheWire = JSON.parse(JSON.stringify(instanceToPlain({ _payload: error })));
+
+    expect(onTheWire._payload.message).toBe('the real cause');
+
+    expect(onTheWire._payload.message || '').not.toBe('');
   });
 });
 

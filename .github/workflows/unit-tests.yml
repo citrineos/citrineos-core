@@ -45,6 +45,8 @@ jobs:
               - 'packages/base/**'
             server:
               - 'apps/ocpp-server/**'
+              - 'apps/ocpi-server/**'
+              - 'apps/mock-msp/**'
               - 'packages/**'
             operator-ui:
               - 'apps/operator-ui/**'
@@ -79,7 +81,18 @@ jobs:
       - name: Run tests
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
-        run: pnpm test
+        run: pnpm run test:coverage
+
+      - name: Upload test and coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: |
+            coverage/
+            reports/
+          retention-days: 14
+          if-no-files-found: warn
 
   operator-ui-e2e:
     needs: changes
@@ -327,7 +340,7 @@ jobs:
           EVEREST_IMAGE_TAG: 2025.6.1-dt-esdp
           CITRINE_CORE_PATH: ${{ github.workspace }}/apps/ocpp-server
         working-directory: apps/operator-ui
-        run: pnpm exec playwright test --project=everest-serial
+        run: pnpm exec playwright test --project=everest-serial --max-failures=3
 
       - name: Upload Playwright report
         if: always()
@@ -341,7 +354,7 @@ jobs:
           retention-days: 7
 
       - name: Dump backend + EVerest logs on failure
-        if: failure()
+        if: always()
         run: |
           docker ps -a
           echo "=== full everest-manager-1 logs (first boot included) ==="

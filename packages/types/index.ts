@@ -5,6 +5,7 @@
 export {
   ErrorCode,
   MessageTypeId,
+  NO_ACTION,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
@@ -29,6 +30,30 @@ export {
 } from './src/interfaces/messages/internal-types.js';
 export type { HandlerProperties } from './src/interfaces/messages/internal-types.js';
 
+export {
+  ConnectionEventState,
+  FrameDirection,
+  isConnectionEvent,
+  isFrameEvent,
+  MESSAGES_DLX,
+  MESSAGES_EXCHANGE,
+  MESSAGES_QUEUES,
+  MessagesEventKind,
+  MessagesEventSchema,
+  messagesEventRoutingKey,
+  ConnectionEventSchema,
+  FrameEventSchema,
+  type MessagesEvent,
+  type MessagesEventContext,
+  type MessagesQueueSpec,
+  type ConnectionEvent,
+  type FrameEvent,
+  type IConnectionEventProcessor,
+  type IFrameEventProcessor,
+  type IMessagesEventProcessor,
+  type MessagesRecordResult,
+} from '@interfaces/messages/messages-types.js';
+
 export { HttpMethod } from './src/interfaces/api/http-methods.js';
 
 export {
@@ -37,12 +62,14 @@ export {
   HUBJECT_DEFAULT_CLIENTID,
   HUBJECT_DEFAULT_CLIENTSECRET,
   HUBJECT_DEFAULT_TOKENURL,
+  logRedactionSchema,
   OCPP_VERSION_LIST,
   RbacRulesSchema,
   signedMeterValuesSigningMethods,
   websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
+  LogRedactionConfig,
   RbacRules,
   SystemConfig,
   SystemConfigInput,
@@ -85,6 +112,7 @@ export * from './src/interfaces/dto/location-dto.js';
 export * from './src/interfaces/dto/message-info-dto.js';
 export * from './src/interfaces/dto/meter-value-dto.js';
 export * from './src/interfaces/dto/ocpp-message-dto.js';
+export * from './src/interfaces/dto/real-time-authorization.js';
 export * from './src/interfaces/dto/reservation-dto.js';
 export * from './src/interfaces/dto/sales-tariff-dto.js';
 export * from './src/interfaces/dto/security-event-dto.js';

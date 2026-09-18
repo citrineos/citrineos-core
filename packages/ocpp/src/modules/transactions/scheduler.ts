@@ -1,18 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 
+import { childLogger } from '@citrineos/base';
 export abstract class Scheduler {
   protected readonly _logger: Logger<ILogObj>;
 
   private _registry: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(logger?: Logger<ILogObj>) {
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   protected schedule(key: string, task: () => void, intervalSeconds: number): void {

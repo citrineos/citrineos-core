@@ -14,6 +14,8 @@ import {
   type IWebsocketConnection,
 } from '@citrineos/base';
 import {
+  type ChangeConfigurationDto,
+  type ChargingStationDto,
   EventGroup,
   type HandlerProperties,
   OCPP1_6,
@@ -26,7 +28,6 @@ import type {
   IChangeConfigurationRepository,
   IChargingStationRepository,
 } from '@citrineos/dal';
-import { ChangeConfiguration, ChargingStation } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -119,22 +120,19 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
           );
         }
       }
-      await this._chargingStationRepository.createOrUpdateChargingStation(
+      await this._chargingStationRepository.createOrUpdateChargingStation(tenantId, {
         tenantId,
-        ChargingStation.build({
-          tenantId,
-          ocppConnectionName,
-          chargePointVendor: request.chargePointVendor,
-          chargePointModel: request.chargePointModel,
-          chargePointSerialNumber: request.chargePointSerialNumber,
-          chargeBoxSerialNumber: request.chargeBoxSerialNumber,
-          firmwareVersion: request.firmwareVersion,
-          iccid: request.iccid,
-          imsi: request.imsi,
-          meterType: request.meterType,
-          meterSerialNumber: request.meterSerialNumber,
-        }),
-      );
+        ocppConnectionName,
+        chargePointVendor: request.chargePointVendor,
+        chargePointModel: request.chargePointModel,
+        chargePointSerialNumber: request.chargePointSerialNumber,
+        chargeBoxSerialNumber: request.chargeBoxSerialNumber,
+        firmwareVersion: request.firmwareVersion,
+        iccid: request.iccid,
+        imsi: request.imsi,
+        meterType: request.meterType,
+        meterSerialNumber: request.meterSerialNumber,
+      } as ChargingStationDto);
     })().catch((error) => {
       this._logger.error(`Error updating station ${ocppConnectionName} with boot info:`, error);
     });
@@ -175,12 +173,8 @@ export class BootNotificationRequestOcpp16Handler extends AbstractHandler {
     let changeConfigurationsOnPending: boolean = false;
     let getConfigurationsOnPending: boolean = true;
     // Change Configurations on charging station
-    const configurations: ChangeConfiguration[] =
-      await this._changeConfigurationRepository.readAllByQuery(tenantId, {
-        where: {
-          ocppConnectionName,
-        },
-      });
+    const configurations: ChangeConfigurationDto[] =
+      await this._changeConfigurationRepository.listByStation(tenantId, ocppConnectionName);
     // Remove ChangeConfiguration call action from blacklist
     await this._cache.remove(OCPP_CallAction.ChangeConfiguration, identifier);
     // Set each configuration on Charging Station

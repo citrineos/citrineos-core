@@ -11,17 +11,18 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStation,
   Component,
   DefaultSequelizeInstance,
-  OCPPMessage,
   SequelizeDeviceModelRepository,
+  SequelizeLocationRepository,
+  SequelizeTenantRepository,
+  type ITenantRepository,
+  type IOCPPMessageRepository,
   SequelizeOCPPMessageRepository,
-  Tenant,
   Variable,
-  VariableAttribute,
   VariableStatus,
 } from '@citrineos/dal';
+import { VariableAttribute } from '@dal/models/device-model/variable-attribute.js';
 import { SetVariablesResponseOcpp2Handler } from '@handlers/index.js';
 import {
   aSetVariableData,
@@ -49,6 +50,9 @@ const CORRELATION_ID = 'corr-abc-123';
 let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let handler: SetVariablesResponseOcpp2Handler;
+let locationRepository: SequelizeLocationRepository;
+let tenantRepository: ITenantRepository;
+let ocppMessageRepository: IOCPPMessageRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -88,6 +92,22 @@ beforeAll(async () => {
   VariableAttribute.hasMany(VariableStatus, { foreignKey: 'variableAttributeId' });
   VariableStatus.belongsTo(VariableAttribute, { foreignKey: 'variableAttributeId' });
   await sequelizeInstance.sync({ force: true });
+
+  locationRepository = new SequelizeLocationRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  tenantRepository = new SequelizeTenantRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
+  ocppMessageRepository = new SequelizeOCPPMessageRepository({
+    config: dbConfig,
+    logger: undefined,
+    sequelizeInstance,
+  } as never);
 
   // The handler is stateless across tests (each test truncates + seeds the DB and
   // asserts on return values / DB state, not on mocks), so build it once.
@@ -132,13 +152,15 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
 // Seed helpers
 // ---------------------------------------------------------------------------
 
+let stationId: number;
+
 async function seedBase(): Promise<void> {
-  await Tenant.create({ id: TENANT_ID as any });
-  await ChargingStation.create({
+  await tenantRepository.createTenant({ name: String(TENANT_ID), isUserTenant: false });
+  const station = await locationRepository.createOrUpdateChargingStation(TENANT_ID, {
     ocppConnectionName: OCPP_CONNECTION_NAME,
     isOnline: false,
-    tenantId: TENANT_ID,
   });
+  stationId = (station as unknown as { id: number }).id;
 }
 
 async function seedComponent(name: string, instance: string | null = null): Promise<Component> {
@@ -156,7 +178,7 @@ async function seedVariableAttribute(
   type: OCPP2_0_1.AttributeEnumType = OCPP2_0_1.AttributeEnumType.Actual,
 ): Promise<VariableAttribute> {
   return VariableAttribute.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+    stationId,
     componentId,
     variableId,
     type,
@@ -182,10 +204,9 @@ async function seedVariableStatus(
 async function seedSetVariablesRequest(
   setVariableData: OCPP2_0_1.SetVariableDataType[],
   correlationId: string = CORRELATION_ID,
-): Promise<OCPPMessage> {
+) {
   const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
-  return OCPPMessage.create({
-    ocppConnectionName: OCPP_CONNECTION_NAME,
+  return ocppMessageRepository.createOCPPMessage(TENANT_ID, OCPP_CONNECTION_NAME, {
     correlationId,
     origin: MessageOrigin.ChargingStationManagementSystem,
     type: MessageTypeId.Call,
@@ -194,7 +215,6 @@ async function seedSetVariablesRequest(
     payload,
     raw: JSON.stringify([MessageTypeId.Call, correlationId, 'SetVariables', payload]),
     timestamp: new Date().toISOString(),
-    tenantId: TENANT_ID,
   });
 }
 
@@ -312,7 +332,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result.id).toBe(seeded.id);
       // Only the one we seeded exists
       const allAttrs = await VariableAttribute.findAll({
-        where: { ocppConnectionName: OCPP_CONNECTION_NAME },
+        where: { stationId },
       });
       expect(allAttrs).toHaveLength(1);
     });
@@ -335,7 +355,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(result).toBeDefined();
       const inDb = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [
@@ -694,7 +714,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
 
       const created = await VariableAttribute.findOne({
         where: {
-          ocppConnectionName: OCPP_CONNECTION_NAME,
+          stationId,
           type: OCPP2_0_1.AttributeEnumType.Actual,
         },
         include: [

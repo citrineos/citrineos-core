@@ -3,17 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FastifyRequest } from 'fastify';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
 import type { JwtPayload } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import JwksRsa from 'jwks-rsa';
 import {
-  type IApiAuthProvider,
-  type UserInfo,
   ApiAuthenticationResult,
   ApiAuthorizationResult,
+  childLogger,
+  type IApiAuthProvider,
+  notNull,
+  type UserInfo,
 } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
 import { RbacRulesLoader } from '../rbac/rbac-rules-loader.js';
@@ -58,9 +59,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       ...config,
     };
 
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
 
     this._logger.info('OIDC auth provider config', this._config);
     // Create the JWKS client
@@ -115,7 +114,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
         name: payload.preferred_username || payload.name || payload.sub,
         email: payload.email || '',
         roles: this.extractRoles(payload),
-        tenantId: payload.tenant_id || this._defaultTenantId,
+        tenantId: String(payload.tenant_id || this._defaultTenantId),
         metadata: {
           firstName: payload.given_name,
           lastName: payload.family_name,
@@ -148,7 +147,15 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       // Get the requested resource and method
       const url = request.url;
       const method = request.method;
-      const tenantId = (request.query as { tenantId?: string }).tenantId || this._defaultTenantId;
+      const tenantId = user.tenantId;
+      const requestedTenantId =
+        (request.query as { tenantId?: string }).tenantId ??
+        (request.body as { tenantId?: number | string } | undefined)?.tenantId;
+      if (notNull(requestedTenantId) && String(requestedTenantId) !== tenantId) {
+        return ApiAuthorizationResult.failure(
+          `Token tenant ${tenantId} may not act on tenant ${requestedTenantId}`,
+        );
+      }
 
       const requiredRoles = this._rulesLoader.getRequiredRoles(tenantId, url, method);
 

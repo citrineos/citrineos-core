@@ -19,7 +19,7 @@
 // 2001 under strictInbound), envelope building, header echo, and recording.
 //
 // Zero schema drift: every request/response schema below is a reused
-// @citrineos/ocpi-base schema (imported from the barrel), never redefined.
+// @citrineos/ocpi schema (imported from the barrel), never redefined.
 // ============================================================================
 import {
   OcpiEmptyResponseSchema,
@@ -33,7 +33,7 @@ import {
 import type { MockContext, ModuleDef, OcpiReply } from '../core/types.js';
 
 // ---- Response envelopes for the GET readers (compose from reused schemas) ---
-// These mirror ocpi-base's own LocationResponseSchema / EvseResponseSchema /
+// These mirror ocpi's own LocationResponseSchema / EvseResponseSchema /
 // ConnectorResponseSchema (= OcpiResponseSchema(<DTO>)) without adding a second
 // import site for the *ResponseSchema names (not re-exported by the barrel).
 const LocationGetResponseSchema = OcpiResponseSchema(LocationDTOSchema);

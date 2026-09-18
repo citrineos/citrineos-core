@@ -4,7 +4,10 @@
 
 import { gql } from 'graphql-tag';
 import { LOCATION_CORE_FIELDS } from '@lib/queries/fields/location-fields';
-import { CHARGING_STATION_CORE_FIELDS } from '@lib/queries/fields/charging-station-fields';
+import {
+  CHARGING_STATION_CORE_FIELDS,
+  CHARGING_STATION_DETAIL_FIELDS,
+} from '@lib/queries/fields/charging-station-fields';
 import { AUTHORIZATION_FIELDS } from '@lib/queries/fields/authorization-fields';
 import { TRANSACTION_DETAIL_FIELDS } from '@lib/queries/fields/transaction-fields';
 import { TARIFF_FIELDS } from '@lib/queries/fields/tariff-fields';
@@ -50,6 +53,7 @@ export const GET_CHARGING_STATIONS_FOR_TARIFF = gql`
       where: { Connectors: { tariffId: { _eq: $tariffId } }, _and: $where }
     ) {
       ${CHARGING_STATION_CORE_FIELDS}
+      ${CHARGING_STATION_DETAIL_FIELDS}
       location: Location {
         ${LOCATION_CORE_FIELDS}
       }
@@ -81,7 +85,7 @@ export const GET_TRANSACTIONS_FOR_TARIFF = gql`
       order_by: $order_by
       where: { tariffId: { _eq: $tariffId }, _and: $where }
     ) {
-      ${TRANSACTION_DETAIL_FIELDS.omit('ocppConnectionName')}
+      ${TRANSACTION_DETAIL_FIELDS}
       chargingStation: ChargingStation {
         ${CHARGING_STATION_CORE_FIELDS}
         location: Location {

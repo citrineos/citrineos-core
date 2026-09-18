@@ -16,6 +16,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CancelReservation)
 export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
@@ -48,22 +49,21 @@ export class CancelReservationResponseOcpp2Handler extends AbstractHandler {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
         tenantId: message.context.tenantId,
-        ocppConnectionName: message.context.ocppConnectionName,
+        stationId: await stationIdFilter(
+          message.context.tenantId,
+          message.context.ocppConnectionName,
+        ),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },
     });
     if (request) {
-      await this._reservationRepository.updateAllByQuery(
+      await this._reservationRepository.updateByStationAndReservationId(
         message.context.tenantId,
+        message.context.ocppConnectionName,
+        request.payload.reservationId,
         {
           isActive: message.payload.status === CancelReservationStatusEnum.Rejected,
-        },
-        {
-          where: {
-            ocppConnectionName: message.context.ocppConnectionName,
-            id: request.payload.reservationId,
-          },
         },
       );
     } else {

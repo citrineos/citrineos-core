@@ -4,10 +4,10 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type {
-  TenantDto,
   AuthorizationDto,
   LocalListVersionDto,
   SendLocalListDto,
+  TenantDto,
 } from '@citrineos/types';
 import {
   BeforeCreate,
@@ -48,7 +48,10 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   @Column(DataType.ARRAY(DataType.STRING))
   declare disallowedEvseIdPrefixes?: string[];
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare idToken: string;
 
   @Column(DataType.STRING)
@@ -57,7 +60,10 @@ export class LocalListAuthorization extends Model implements AuthorizationRestri
   @Column(DataType.JSONB)
   declare additionalInfo?: any | null;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare status: string;
 
   @Column(DataType.DATE)

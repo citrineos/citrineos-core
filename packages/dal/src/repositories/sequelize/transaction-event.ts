@@ -4,6 +4,7 @@
 import { CrudRepository, MeterValueUtils } from '@citrineos/base';
 import {
   type MeterValueDto,
+  type TransactionDto,
   ChargingStationSequenceTypeEnum,
   OCPP1_6,
   OCPP2_0_1,
@@ -23,12 +24,33 @@ import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { MeterValue } from '../../models/transaction-event/meter-value.js';
+import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 import { StartTransaction } from '../../models/transaction-event/start-transaction.js';
 import { StopTransaction } from '../../models/transaction-event/stop-transaction.js';
 import { Transaction } from '../../models/transaction-event/transaction.js';
 import { TransactionEvent } from '../../models/transaction-event/transaction-event.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { SequelizeChargingStationSequenceRepository } from './charging-station-sequence.js';
+
+/** Seconds between the transaction start and the newest meter value; 1.6 has no reported value. */
+function elapsedSecondsSinceStart(
+  startTime: string | undefined,
+  meterValues: MeterValueDto[],
+): number | undefined {
+  if (!startTime || meterValues.length === 0) {
+    return undefined;
+  }
+
+  const startTimestamp = new Date(startTime).getTime();
+  const latestMeterValueTimestamp = Math.max(
+    ...meterValues.map((meterValue) => new Date(meterValue.timestamp).getTime()),
+  );
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(latestMeterValueTimestamp)) {
+    return undefined;
+  }
+
+  return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
+}
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>
@@ -111,12 +133,17 @@ export class SequelizeTransactionEventRepository
   ): Promise<Transaction> {
     // In OCPP 2.1, transactionEventRequest contains tariffId
     const infoTariffId = (value.transactionInfo as { tariffId?: string | null }).tariffId;
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'record a transaction event',
+    );
     return await this.s.transaction(async (sequelizeTransaction) => {
       let finalTransaction: Transaction;
       let created = false;
       const existingTransaction = await this.transaction.readOnlyOneByQuery(tenantId, {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId,
           transactionId: value.transactionInfo.transactionId,
         },
         transaction: sequelizeTransaction,
@@ -128,9 +155,10 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              ocppConnectionName: ocppConnectionName,
+              stationId,
               evseTypeId: value.evse.id,
             },
+            defaults: { stationId },
           });
           evseId = evse.id;
         }
@@ -140,17 +168,19 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              ocppConnectionName: ocppConnectionName,
+              stationId,
               evseTypeId: value.evse.id,
             },
+            defaults: { stationId },
           });
           const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              ocppConnectionName: ocppConnectionName,
+              stationId,
               evseId: evse.id,
               evseTypeConnectorId: value.evse.connectorId,
             },
+            defaults: { stationId },
             include: [Tariff],
           });
           connectorId = connector.id;
@@ -205,7 +235,7 @@ export class SequelizeTransactionEventRepository
       } else {
         const newTransaction = Transaction.build({
           tenantId,
-          ocppConnectionName: ocppConnectionName,
+          stationId,
           isActive: value.eventType !== OCPP2_0_1.TransactionEventEnumType.Ended,
           startTime:
             value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
@@ -218,20 +248,24 @@ export class SequelizeTransactionEventRepository
           const [evse] = await this.evse.readOrCreateByQuery(tenantId, {
             where: {
               tenantId,
-              ocppConnectionName: ocppConnectionName,
+              stationId,
               evseTypeId: value.evse.id,
             },
+            defaults: { stationId },
           });
           newTransaction.set('evseId', evse.id);
           if (value.evse?.connectorId) {
             const [connector] = await this.connector.readOrCreateByQuery(tenantId, {
               where: {
                 tenantId,
-                ocppConnectionName: ocppConnectionName,
+                stationId,
                 evseId: evse.id,
                 evseTypeConnectorId: value.evse.connectorId,
               },
-              defaults: { connectorId: value.evse.connectorId },
+              defaults: {
+                connectorId: value.evse.connectorId,
+                stationId,
+              },
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
@@ -288,11 +322,16 @@ export class SequelizeTransactionEventRepository
       }
 
       const transactionDatabaseId = finalTransaction.id;
+      // Passed transactionCreatedAt explicitly because the
+      // models' @BeforeCreate fallback reads outside this sequelize transaction and so
+      // cannot see a Transaction created moments ago in it.
+      const transactionCreatedAt = finalTransaction.createdAt;
 
       let event = TransactionEvent.build({
         tenantId,
         ocppConnectionName: ocppConnectionName,
         transactionDatabaseId,
+        transactionCreatedAt,
         ...value,
       });
 
@@ -328,6 +367,7 @@ export class SequelizeTransactionEventRepository
                 tenantId,
                 transactionEventId: event.id,
                 transactionDatabaseId: transactionDatabaseId,
+                transactionCreatedAt,
                 transactionId: finalTransaction.transactionId,
                 tariffId: finalTransaction.tariffId,
                 ...meterValueType,
@@ -399,7 +439,7 @@ export class SequelizeTransactionEventRepository
     transactionId: string,
   ): Promise<Transaction | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
-      where: { ocppConnectionName: ocppConnectionName, transactionId },
+      where: { stationId: await stationIdFilter(tenantId, ocppConnectionName), transactionId },
     });
   }
 
@@ -426,7 +466,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}),
         },
         include: includeObj,
@@ -441,6 +481,42 @@ export class SequelizeTransactionEventRepository
     return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true, authorizationId },
     });
+  }
+
+  async readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]> {
+    const rows = await this.transaction.readAllByQuery(tenantId, {
+      where: {
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
+        isActive: true,
+        authorizationId: { [Op.ne]: null },
+      },
+      include: [
+        {
+          model: Authorization,
+          as: 'authorization',
+          required: true,
+          where: { tariffId: { [Op.ne]: null } },
+          include: [
+            {
+              model: Tariff,
+              as: 'tariff',
+              required: true,
+            },
+          ],
+        },
+        {
+          model: Evse,
+          as: 'evse',
+          required: true,
+          ...(evseTypeId !== undefined ? { where: { evseTypeId } } : {}),
+        },
+      ],
+    });
+    return rows as unknown as TransactionDto[];
   }
 
   async readAllMeterValuesByTransactionDataBaseId(
@@ -505,7 +581,7 @@ export class SequelizeTransactionEventRepository
 
   async getTransactionsCount(tenantId: number, dateFrom?: Date, dateTo?: Date): Promise<number> {
     const queryOptions: WhereOptions<any> = {
-      where: {},
+      where: { tenantId },
     };
 
     if (dateFrom) {
@@ -531,7 +607,7 @@ export class SequelizeTransactionEventRepository
   ): Promise<number[]> {
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         isActive: true,
       },
       include: [Evse],
@@ -555,7 +631,7 @@ export class SequelizeTransactionEventRepository
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
-          ocppConnectionName: ocppConnectionName,
+          stationId: await stationIdFilter(tenantId, ocppConnectionName),
           isActive: true,
         },
         include: [
@@ -582,11 +658,13 @@ export class SequelizeTransactionEventRepository
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
+    transactionCreatedAt?: Date,
   ): Promise<MeterValue> {
     const meterValueType = MeterValueMapper.fromMeterValueType(meterValue);
     const savedMeterValue = await MeterValue.create({
       tenantId,
       transactionDatabaseId: transactionDatabaseId,
+      transactionCreatedAt,
       transactionId,
       tariffId,
       ...meterValueType,
@@ -626,8 +704,10 @@ export class SequelizeTransactionEventRepository
     await Promise.all(
       meterValues.map(async (meterValue) => {
         meterValue.transactionDatabaseId = transaction.id;
+        meterValue.transactionCreatedAt = transaction.createdAt;
         meterValue.transactionId = transaction.transactionId;
         meterValue.tariffId = transaction.tariffId;
+        meterValue.connectorId = transaction.connectorId ?? undefined;
         const createdMeterValue = await MeterValue.create(meterValue);
         this.meterValue.emit('created', [createdMeterValue]);
       }),
@@ -642,6 +722,7 @@ export class SequelizeTransactionEventRepository
           meterStart ?? undefined,
         ),
         meterStart: meterStart,
+        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
       });
     } else {
       await transaction.update({
@@ -650,6 +731,7 @@ export class SequelizeTransactionEventRepository
           transaction.totalKwh ?? 0,
           transaction.meterStart ?? undefined,
         ),
+        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
       });
     }
   }
@@ -659,6 +741,11 @@ export class SequelizeTransactionEventRepository
     request: OCPP1_6.StartTransactionRequest,
     ocppConnectionName: string,
   ): Promise<Transaction> {
+    const stationId = await resolveStationIdOrThrow(
+      tenantId,
+      ocppConnectionName,
+      'start a transaction',
+    );
     return await this.s.transaction(async (sequelizeTransaction) => {
       // Build StartTransaction event
       let event = StartTransaction.build({
@@ -671,7 +758,7 @@ export class SequelizeTransactionEventRepository
       const connector = await this.connector.readOnlyOneByQuery(tenantId, {
         where: {
           connectorId: request.connectorId,
-          ocppConnectionName: ocppConnectionName,
+          stationId,
         },
         include: [Tariff],
         sequelizeTransaction,
@@ -703,7 +790,7 @@ export class SequelizeTransactionEventRepository
       // Store transaction in db
       let newTransaction = Transaction.build({
         tenantId,
-        ocppConnectionName: ocppConnectionName,
+        stationId,
         evseId: connector.evseId,
         connectorId: connector.id,
         tariffId: connector.tariff?.id,
@@ -731,6 +818,7 @@ export class SequelizeTransactionEventRepository
 
       // Store StartTransaction in db
       event.transactionDatabaseId = newTransaction.id;
+      event.transactionCreatedAt = newTransaction.createdAt;
       event = await event.save({ transaction: sequelizeTransaction });
       this.startTransaction.emit('created', [event]);
 
@@ -767,6 +855,7 @@ export class SequelizeTransactionEventRepository
       tenantId,
       ocppConnectionName: ocppConnectionName,
       transactionDatabaseId,
+      transactionCreatedAt: transaction.createdAt,
       meterStop,
       timestamp: timestamp.toISOString(),
       reason,
@@ -783,6 +872,7 @@ export class SequelizeTransactionEventRepository
         meterValues.map(async (meterValue) => {
           meterValue.tenantId = tenantId;
           meterValue.transactionDatabaseId = transactionDatabaseId;
+          meterValue.transactionCreatedAt = transaction.createdAt;
           const createdMeterValue = MeterValue.build(meterValue);
           createdMeterValue.stopTransactionDatabaseId = stopTransaction.id;
           await createdMeterValue.save();
@@ -804,7 +894,7 @@ export class SequelizeTransactionEventRepository
       where: {
         // unique constraint
         transactionId,
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
       },
     });
     return transactions.length > 0 ? transactions[0] : undefined;
@@ -822,7 +912,7 @@ export class SequelizeTransactionEventRepository
 
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
-        ocppConnectionName: ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         isActive: true,
         transactionId: { [Op.ne]: excludeTransactionId },
       },

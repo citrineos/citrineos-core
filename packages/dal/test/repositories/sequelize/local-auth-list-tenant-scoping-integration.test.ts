@@ -5,15 +5,13 @@
 import {
   AuthorizationStatusEnum,
   IdTokenEnum,
+  OCPP1_6,
   OCPP2_0_1,
   type SystemConfig,
 } from '@citrineos/types';
-import {
-  Authorization,
-  DefaultSequelizeInstance,
-  SequelizeLocalAuthListRepository,
-  Tenant,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeLocalAuthListRepository } from '../../../index.js';
+import { Authorization } from '../../../src/models/authorization/authorization.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -65,8 +63,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: TENANT_A as any });
-  await Tenant.create({ id: TENANT_B as any });
+  await Tenant.create({ id: TENANT_A as any, name: String(TENANT_A) });
+  await Tenant.create({ id: TENANT_B as any, name: String(TENANT_B) });
 });
 
 function aRepo(): SequelizeLocalAuthListRepository {
@@ -140,5 +138,37 @@ describe('SequelizeLocalAuthListRepository tenant scoping', () => {
         authorizationData,
       ),
     ).rejects.toThrow(/Authorization not found/);
+  });
+
+  it("persists the 2.0.1 list entry under the request's own tenant, not the default tenant", async () => {
+    await enrolSharedTokenForBothTenants();
+
+    const sendLocalList = await aRepo().createSendLocalListFromRequestData(
+      TENANT_B,
+      STATION,
+      'corr-3',
+      OCPP2_0_1.UpdateEnumType.Full,
+      1,
+      authorizationData,
+    );
+
+    const [entry] = sendLocalList.localAuthorizationList!;
+    expect(entry.tenantId).toBe(TENANT_B);
+  });
+
+  it("persists the 1.6 list entry under the request's own tenant, not the default tenant", async () => {
+    await enrolSharedTokenForBothTenants();
+
+    const sendLocalList = await aRepo().createSendLocalListFromRequestData16(
+      TENANT_B,
+      STATION,
+      'corr-4',
+      OCPP1_6.SendLocalListRequestUpdateType.Full,
+      1,
+      [{ idTag: SHARED_TOKEN, idTagInfo: { status: OCPP1_6.SendLocalListRequestStatus.Accepted } }],
+    );
+
+    const [entry] = sendLocalList.localAuthorizationList!;
+    expect(entry.tenantId).toBe(TENANT_B);
   });
 });

@@ -8,9 +8,10 @@ import {
   type VariableAttributeEntity,
   variableAttributeTable,
 } from '../../db/drizzle/schema/variable-attribute.js';
+import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import { DrizzleRepository } from './base.js';
 import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/variable-attribute.js';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external VariableAttributeDto contract.
@@ -20,7 +21,7 @@ import { and, eq } from 'drizzle-orm';
 export function toVariableAttributeDto(entity: VariableAttributeEntity): VariableAttributeDto {
   return {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    stationId: entity.stationId,
     type: entity.type ?? null,
     dataType: entity.dataType,
     value: entity.value ?? null,
@@ -52,11 +53,14 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
     return toVariableAttributeDto(row);
   }
 
-  private createVariableAttributeConditions(query: VariableAttributeQuerystring) {
+  private async createVariableAttributeConditions(query: VariableAttributeQuerystring) {
     const conditions = [];
 
     if (query.ocppConnectionName) {
-      conditions.push(eq(variableAttributeTable.ocppConnectionName, query.ocppConnectionName));
+      const stationId = await this.resolveStationId(query.tenantId, query.ocppConnectionName);
+      conditions.push(
+        stationId === undefined ? sql`false` : eq(variableAttributeTable.stationId, stationId),
+      );
     }
 
     if (query.tenantId) {
@@ -68,6 +72,24 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
     return conditions;
   }
 
+  private async resolveStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | undefined> {
+    const rows = await this.db
+      .select({ id: chargingStationTable.id })
+      .from(chargingStationTable)
+      .where(
+        and(
+          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
+          eq(chargingStationTable.tenantId, tenantId),
+        ),
+      )
+      .limit(1);
+
+    return rows[0]?.id;
+  }
+
   async updateAllByQueryString(
     query: VariableAttributeQuerystring,
     value: object,
@@ -75,7 +97,7 @@ export class DrizzleVariableAttributeRepository extends DrizzleRepository<
     const rows = (await this.db
       .update(variableAttributeTable)
       .set(value)
-      .where(and(...this.createVariableAttributeConditions(query)))
+      .where(and(...(await this.createVariableAttributeConditions(query))))
       .returning()) as VariableAttributeEntity[];
 
     const dtos = rows.map((row) => this.toDto(row));

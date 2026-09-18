@@ -123,7 +123,7 @@ describe('smartCharging message endpoints', () => {
     const build = () =>
       getTestInstance(container, GetChargingProfilesEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: {
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
       });
@@ -217,21 +217,21 @@ describe('smartCharging message endpoints', () => {
   });
 
   describe('GetCompositeScheduleEndpoint', () => {
-    let findEvseByIdAndConnectorId: ReturnType<typeof vi.fn>;
+    let readEvseByStationIdAndOcpp201EvseId: ReturnType<typeof vi.fn>;
     let findVariableCharacteristics: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      findEvseByIdAndConnectorId = vi.fn().mockResolvedValue({ id: 1 });
+      readEvseByStationIdAndOcpp201EvseId = vi.fn().mockResolvedValue({ id: 1 });
       findVariableCharacteristics = vi.fn().mockResolvedValue(undefined);
     });
 
     const build = () =>
       getTestInstance(container, GetCompositeScheduleEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: {
-          findEvseByIdAndConnectorId,
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: findVariableCharacteristics,
         },
+        evseRepository: { readEvseByStationIdAndOcpp201EvseId },
       });
 
     const handle = (request: OCPP2_0_1.GetCompositeScheduleRequest) =>
@@ -240,7 +240,7 @@ describe('smartCharging message endpoints', () => {
     it('sends for the whole station when evseId is 0, without an EVSE lookup', async () => {
       const confirmations = await handle({ duration: 60, evseId: 0 });
 
-      expect(findEvseByIdAndConnectorId).not.toHaveBeenCalled();
+      expect(readEvseByStationIdAndOcpp201EvseId).not.toHaveBeenCalled();
       expect(confirmations[0].success).toBe(true);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
         action: OCPP_CallAction.GetCompositeSchedule,
@@ -251,12 +251,16 @@ describe('smartCharging message endpoints', () => {
     it('looks up a non-zero EVSE before sending', async () => {
       const confirmations = await handle({ duration: 60, evseId: 2 });
 
-      expect(findEvseByIdAndConnectorId).toHaveBeenCalledWith(DEFAULT_TENANT_ID, 2, null);
+      expect(readEvseByStationIdAndOcpp201EvseId).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        STATION,
+        2,
+      );
       expect(confirmations[0].success).toBe(true);
     });
 
     it('refuses an unknown EVSE without sending', async () => {
-      findEvseByIdAndConnectorId.mockResolvedValue(undefined);
+      readEvseByStationIdAndOcpp201EvseId.mockResolvedValue(undefined);
 
       const confirmations = await handle({ duration: 60, evseId: 2 });
 
@@ -311,24 +315,30 @@ describe('smartCharging message endpoints', () => {
     let readAllByQuerystring: ReturnType<typeof vi.fn>;
     let createOrUpdateChargingProfile: ReturnType<typeof vi.fn>;
     let readAllByQuery: ReturnType<typeof vi.fn>;
+    let existByQuery: ReturnType<typeof vi.fn>;
+    let readTransactionByStationIdAndTransactionId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       readAllByQuerystring = vi.fn().mockResolvedValue([]);
       createOrUpdateChargingProfile = vi.fn().mockResolvedValue({ id: 1 });
       readAllByQuery = vi.fn().mockResolvedValue([]);
+      existByQuery = vi.fn().mockResolvedValue(0);
+      readTransactionByStationIdAndTransactionId = vi
+        .fn()
+        .mockResolvedValue({ id: 42, transactionId: 'tx-001', evseId: null });
     });
 
     const build = () =>
       getTestInstance(container, SetChargingProfileEndpoint, {
         ocppSender: { sendCall },
-        deviceModelRepository: {
-          readAllByQuerystring,
+        deviceModelRepository: { readAllByQuerystring },
+        variableCharacteristicsRepository: {
           findVariableCharacteristicsByVariableNameAndVariableInstance: vi
             .fn()
             .mockResolvedValue(undefined),
         },
-        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery },
-        transactionEventRepository: {},
+        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery, existByQuery },
+        transactionEventRepository: { readTransactionByStationIdAndTransactionId },
       });
 
     const aProfile = (
@@ -523,6 +533,41 @@ describe('smartCharging message endpoints', () => {
 
       expect(confirmations[0].success).toBe(true);
       expect(sendCall).toHaveBeenCalled();
+    });
+
+    describe('for a TxProfile', () => {
+      const aTxProfile = (id: number): OCPP2_0_1.SetChargingProfileRequest => ({
+        ...aProfile({
+          id,
+          chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+          transactionId: 'tx-001',
+        }),
+        evseId: 1,
+      });
+
+      const withStoredTxProfiles = (profiles: { id: number }[]) => {
+        existByQuery.mockResolvedValue(profiles.length);
+        readAllByQuery.mockResolvedValue(profiles);
+      };
+
+      it('sends an update to the TxProfile already stored under the same id', async () => {
+        withStoredTxProfiles([{ id: 10 }]);
+
+        const confirmations = await handle(aTxProfile(10));
+
+        expect(confirmations[0].success).toBe(true);
+        expect(sendCall).toHaveBeenCalled();
+      });
+
+      it('refuses a second TxProfile at the same stack level for the transaction', async () => {
+        withStoredTxProfiles([{ id: 10 }]);
+
+        const confirmations = await handle(aTxProfile(11));
+
+        expect(confirmations[0].success).toBe(false);
+        expect(String(confirmations[0].payload)).toContain('already exists');
+        expect(sendCall).not.toHaveBeenCalled();
+      });
     });
   });
 });

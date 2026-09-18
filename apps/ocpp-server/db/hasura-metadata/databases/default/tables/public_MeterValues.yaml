@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: MeterValues
+  schema: public
+object_relationships:
+  - name: StopTransaction
+    using:
+      manual_configuration:
+        remote_table:
+          name: StopTransactions
+          schema: public
+        column_mapping:
+          stopTransactionDatabaseId: id
+          transactionCreatedAt: transactionCreatedAt
+  - name: Tariff
+    using:
+      foreign_key_constraint_on: tariffId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+  - name: Transaction
+    using:
+      manual_configuration:
+        remote_table:
+          name: Transactions
+          schema: public
+        column_mapping:
+          transactionDatabaseId: id
+          transactionCreatedAt: createdAt
+  - name: TransactionEvent
+    using:
+      manual_configuration:
+        remote_table:
+          name: TransactionEvents
+          schema: public
+        column_mapping:
+          transactionEventId: id
+          transactionCreatedAt: transactionCreatedAt
+select_permissions:
+  - role: user
+    permission:
+      columns: "*"
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

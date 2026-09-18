@@ -3,7 +3,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 
 # Build context is the monorepo root (citrineos-core). @citrineos/base,
-# @citrineos/ocpp and @citrineos/ocpi-base are resolved as workspace packages,
+# @citrineos/ocpp and @citrineos/ocpi are resolved as workspace packages,
 # so there is no longer any tarball packing or cross-repo copying.
 FROM --platform=${BUILDPLATFORM:-linux/amd64} node:24.16.0 AS build
 
@@ -13,7 +13,7 @@ WORKDIR /usr/local/apps/citrineos
 
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter "@citrineos/ocpi-demo..." build
+RUN pnpm --filter "@citrineos/ocpi-server..." build
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size

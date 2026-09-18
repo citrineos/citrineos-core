@@ -13,7 +13,7 @@
 //
 // ----------------------------------------------------------------------------
 // Candidate gap: Citrine's CPO seed advertises a chargingprofiles
-// RECEIVER endpoint for the eMSP (apps/ocpi-server/seeders/20250806120002-
+// RECEIVER endpoint for the eMSP (apps/ocpi-server/db/seeders/20250806120002-
 // default-tenant-partner.ts registers CHARGING_PROFILES_RECEIVER at
 // .../emsp/chargingprofiles), BUT the CPO->eMSP push that would exercise it is
 // dead code on Citrine's side:
@@ -37,7 +37,7 @@ import { ActiveChargingProfileSchema, OcpiEmptyResponseSchema, ModuleId } from '
 // PUT /ocpi/2.2.1/emsp/chargingprofiles/:session_id
 // Body: ActiveChargingProfile ({ start_date_time, charging_profile }). This is the
 // CPO -> eMSP push of the active charging profile result for a session. Reused
-// ocpi-base ActiveChargingProfileSchema is the request validator (zero schema drift);
+// ocpi ActiveChargingProfileSchema is the request validator (zero schema drift);
 // a validation failure is recorded as a Finding by the dispatcher.
 function handlePutChargingProfile(ctx: MockContext): OcpiReply {
   // session_id is available at ctx.req.params.session_id; the full inbound Exchange
@@ -51,7 +51,7 @@ function handlePutChargingProfile(ctx: MockContext): OcpiReply {
 
 // POST /ocpi/2.2.1/emsp/chargingprofiles/:session_id/:uid
 // Stub for a response_url-style async callback. No charging-profile *result* schema is
-// re-exported by ocpi-base's barrel, and Citrine's AsyncResponder for this module is
+// re-exported by ocpi's barrel, and Citrine's AsyncResponder for this module is
 // commented out, so we host the route (empty-envelope ack) without a requestSchema.
 function handleChargingProfileCallback(ctx: MockContext): OcpiReply {
   return ctx.empty();
@@ -79,7 +79,7 @@ export const chargingprofilesModule: ModuleDef = {
       operation: 'chargingprofiles.result.callback',
       auth: 'functional',
       requireRoutingHeaders: true,
-      // No requestSchema: ocpi-base does not re-export a charging-profile-result
+      // No requestSchema: ocpi does not re-export a charging-profile-result
       // object schema, and this callback is never driven by current Citrine.
       responseSchema: OcpiEmptyResponseSchema,
       handle: handleChargingProfileCallback,

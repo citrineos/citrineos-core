@@ -10,6 +10,7 @@ export * from '@services/index.js';
 export * from '@util/index.js';
 
 // Module exports
+export * from '@modules/california-pricing/index.js';
 export * from '@modules/certificates/index.js';
 export * from '@modules/configuration/index.js';
 export * from '@modules/ev-driver/index.js';
@@ -19,6 +20,7 @@ export * from '@modules/reporting/index.js';
 export * from '@modules/smart-charging/index.js';
 export * from '@modules/tenant/index.js';
 export * from '@modules/transactions/index.js';
+export * from '@modules/messages/index.js';
 
 // Handler exports
 export * from '@handlers/index.js';
