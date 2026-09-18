@@ -41,6 +41,7 @@ export class CertificateAuthorityService {
   private readonly _chargingStationClientPromise?: Promise<IChargingStationCertificateAuthorityClient>;
   private readonly _logger: Logger<ILogObj>;
   private readonly _fileStorage: IFileStorage;
+  private readonly _allowedOcspResponderHosts: string[];
 
   constructor({
     config,
@@ -55,6 +56,7 @@ export class CertificateAuthorityService {
   }) {
     this._logger = logger.getSubLogger({ name: this.constructor.name });
     this._fileStorage = fileStorage;
+    this._allowedOcspResponderHosts = config.integrations.ocsp.allowedResponderHosts;
     if (config.integrations.v2gCA) {
       this._v2gClient = CertificateAuthorityService._instantiateV2GClient(config, cache, logger);
     }
@@ -230,7 +232,7 @@ export class CertificateAuthorityService {
 
           this._logger.debug(`OCSP response URL: ${ocspUrls[0]}`);
           const ocspResponse = KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo(
-            await sendOCSPRequest(ocspRequest, ocspUrls[0]),
+            await sendOCSPRequest(ocspRequest, ocspUrls[0], this._allowedOcspResponderHosts),
           );
           const certStatus = ocspResponse.certStatus;
           if (certStatus === 'revoked') {
@@ -260,7 +262,7 @@ export class CertificateAuthorityService {
 
       try {
         const ocspResponse = KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo(
-          await sendOCSPRequest(ocspRequest, reqData.responderURL),
+          await sendOCSPRequest(ocspRequest, reqData.responderURL, this._allowedOcspResponderHosts),
         );
         // Cert statuses: good, revoked, unknown
         // source: https://kjur.github.io/jsrsasign/api/symbols/KJUR.asn1.ocsp.OCSPUtil.html#.getOCSPResponseInfo

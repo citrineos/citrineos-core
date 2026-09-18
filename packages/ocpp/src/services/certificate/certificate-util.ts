@@ -14,6 +14,12 @@ import moment from 'moment';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import KJUR = jsrsasign.KJUR;
+import {
+  assertAllowedOcspResponder,
+  OCSP_REQUEST_TIMEOUT_MS,
+  OCSP_RESPONSE_MAX_BYTES,
+  readCappedBody,
+} from './ocsp-responder-url.js';
 import OCSPRequest = jsrsasign.KJUR.asn1.ocsp.OCSPRequest;
 import X509 = jsrsasign.X509;
 import KEYUTIL = jsrsasign.KEYUTIL;
@@ -303,14 +309,19 @@ export function createOcspRequest(
 export async function sendOCSPRequest(
   ocspRequest: OCSPRequest,
   responderURL: string,
+  allowedResponderHosts: string[] = [],
 ): Promise<string> {
-  const response = await fetch(responderURL, {
+  const url = assertAllowedOcspResponder(responderURL, allowedResponderHosts);
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/ocsp-request',
       Accept: 'application/ocsp-response',
     },
     body: Uint8Array.from(Buffer.from(ocspRequest.getEncodedHex(), 'hex')),
+    redirect: 'error',
+    signal: AbortSignal.timeout(OCSP_REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -319,7 +330,8 @@ export async function sendOCSPRequest(
     );
   }
 
-  return Buffer.from(await response.arrayBuffer()).toString('hex');
+  const body = await readCappedBody(response, OCSP_RESPONSE_MAX_BYTES);
+  return body.toString('hex');
 }
 
 export function parseCSRForVerification(csrPem: string): CertificationRequest {
