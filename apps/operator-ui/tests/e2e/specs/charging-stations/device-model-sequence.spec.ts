@@ -51,6 +51,53 @@ async function waitForDeviceModel(apiClient: { gql: <T>(q: string) => Promise<T>
     .toBeGreaterThan(0);
 }
 
+/**
+ * The name of a component holding at least one variable that is not ReadOnly.
+ */
+async function aWritableComponentName(apiClient: {
+  gql: <T>(q: string) => Promise<T>;
+}): Promise<string> {
+  const data = await apiClient.gql<{ Components: { name: string }[] }>(
+    `query WritableComponent {
+       Components(
+         where: { ComponentVariables: { Variable: { VariableAttributes: { mutability: { _neq: "ReadOnly" } } } } }
+         order_by: { id: asc }
+         limit: 1
+       ) { name }
+     }`,
+  );
+  const name = data.Components[0]?.name;
+  if (!name) {
+    throw new Error(
+      'No component exposes a writable variable, so SetVariables has nothing to offer: the ' +
+        'device model is populated but every attribute is ReadOnly.',
+    );
+  }
+  return name;
+}
+
+// Opens the combobox anchored on the given group label and picks the option matching
+// `optionLabel`, or the first option when no label is given.
+async function selectOption(
+  page: Page,
+  modal: ModalHarness,
+  groupLabel: RegExp,
+  optionLabel?: string,
+): Promise<void> {
+  const trigger = modal.dialog
+    .getByRole('group')
+    .filter({ hasText: groupLabel })
+    .getByRole('combobox')
+    .first();
+  await expect(trigger).toBeEnabled({ timeout: 15_000 });
+  await trigger.click();
+  const option = optionLabel
+    ? page.getByRole('option', { name: optionLabel, exact: true }).first()
+    : page.getByRole('option').first();
+  await expect(option).toBeVisible({ timeout: 15_000 });
+  await option.click();
+}
+
 // Opens the combobox anchored on the given group label and picks its first
 // real option. Waits for an option to render before clicking so a still-
 // loading useSelect query (the trigger flips enabled before the option list
@@ -118,13 +165,13 @@ test.describe('charging-stations › device model sequence @everest', () => {
 
     const detail = new ChargingStationDetailPage(page);
     await detail.goto(everestStation.ocppConnectionName);
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await detail.expectLoaded();
     await detail.commandBar.openViaOtherCommands(/set variables/i);
     const setVars = new ModalHarness(page, /set variables/i);
     await setVars.expectOpen();
 
-    await selectFirstOption(page, setVars, /component #1/i);
+    // SetVariables lists only writable variables, and the
+    // first component has none, which would leave the variable combobox empty.
+    await selectOption(page, setVars, /component #1/i, await aWritableComponentName(apiClient));
     await selectFirstOption(page, setVars, /variable #1/i);
 
     await setVars.dialog
