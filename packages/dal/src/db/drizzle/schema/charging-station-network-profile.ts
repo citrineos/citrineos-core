@@ -11,7 +11,7 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function chargingStationNetworkProfileColumns() {
   return {
-    stationId: integer('stationId'),
+    stationId: integer('stationId').notNull(),
     configurationSlot: integer('configurationSlot'),
     setNetworkProfileId: integer('setNetworkProfileId').notNull(),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),
