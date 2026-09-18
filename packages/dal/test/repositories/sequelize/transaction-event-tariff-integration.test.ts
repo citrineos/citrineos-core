@@ -8,13 +8,11 @@ import type { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { OCPP2_request_types, SystemConfig } from '@citrineos/types';
 import {
-  ChargingStation,
   DefaultSequelizeInstance,
   SequelizeTransactionEventRepository,
-  Tariff,
-  Tenant,
   Transaction,
 } from '../../../index.js';
+import { ChargingStation, Tariff, Tenant } from '@dal/db/sequelize/index.js';
 
 const STATION_NAME = 'CS-2.1';
 const TRANSACTION_ID = 'TX-2.1';
