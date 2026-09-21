@@ -95,7 +95,12 @@ const SetVariableRow = ({
     meta: {
       gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
       gqlVariables: numericComponentId
-        ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: 'ReadOnly' }
+        ? {
+            componentId: numericComponentId,
+            offset: 0,
+            limit: 100,
+            attributeWhere: { mutability: { _neq: OCPP2_0_1.MutabilityEnumType.ReadOnly } },
+          }
         : undefined,
     },
     pagination: { mode: 'off' },
