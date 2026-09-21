@@ -285,7 +285,7 @@ describe('CertificateUtil gaps', () => {
         extname: 'basicConstraints',
         critical: true,
       });
-      expect(cert.getExtKeyUsage().names).toContain('keyEncipherment');
+      expect(cert.getExtKeyUsage().names).toEqual(['digitalSignature', 'keyEncipherment']);
       expect(keyPem).toContain(pemMarker('PRIVATE KEY', 'BEGIN'));
     });
   });
