@@ -16,22 +16,27 @@ import {
   OCPP_CallAction,
   OCPP2_request_types,
   OCPP2_response_types,
+  type SystemConfig,
 } from '@citrineos/types';
 import { createOcspRequest, sendOCSPRequest } from '@services/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetCertificateStatus)
 export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
+  private readonly _allowedOcspResponderHosts: string[];
 
   constructor({
     logger,
     ocppSender,
+    config,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
+    config: SystemConfig;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
+    this._allowedOcspResponderHosts = config.integrations.ocsp.allowedResponderHosts;
   }
 
   async handle(
@@ -49,6 +54,7 @@ export class GetCertificateStatusRequestOcpp2Handler extends AbstractHandler {
       const ocspResponseHex = await sendOCSPRequest(
         createOcspRequest(reqData),
         reqData.responderURL,
+        this._allowedOcspResponderHosts,
       );
       const response: OCPP2_response_types.GetCertificateStatusResponse = {
         status: OCPP2_1.GetCertificateStatusEnumType.Accepted,

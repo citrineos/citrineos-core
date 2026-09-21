@@ -145,7 +145,8 @@ export class SequelizeTransactionEventRepository
     ocppConnectionName: string,
   ): Promise<Transaction> {
     // In OCPP 2.1, transactionEventRequest contains tariffId
-    const infoTariffId = (value.transactionInfo as { tariffId?: string | null }).tariffId;
+    const { tariffId: infoTariffId, ...transactionInfo } =
+      value.transactionInfo as typeof value.transactionInfo & { tariffId?: string | null };
     const stationId = await resolveStationIdOrThrow(
       tenantId,
       ocppConnectionName,
@@ -246,6 +247,12 @@ export class SequelizeTransactionEventRepository
           },
         );
       } else {
+        const infoTariff = infoTariffId
+          ? await Tariff.findOne({
+              where: { tariffId: infoTariffId, tenantId },
+              transaction: sequelizeTransaction,
+            })
+          : null;
         const newTransaction = Transaction.build({
           tenantId,
           stationId,
@@ -282,15 +289,7 @@ export class SequelizeTransactionEventRepository
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
-            if (infoTariffId) {
-              const tariff = await Tariff.findOne({
-                where: { tariffId: infoTariffId, tenantId },
-                transaction: sequelizeTransaction,
-              });
-              newTransaction.set('tariffId', tariff?.id ?? connector.tariff?.id);
-            } else {
-              newTransaction.set('tariffId', connector.tariff?.id);
-            }
+            newTransaction.set('tariffId', infoTariff?.id ?? connector.tariff?.id);
           }
         }
 
