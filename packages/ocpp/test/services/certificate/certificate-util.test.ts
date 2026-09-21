@@ -219,6 +219,18 @@ describe('CertificateUtil', () => {
         pathLen: 1,
       });
     });
+
+    it('requests pathLen 0 for a sub CA that must not issue further CAs', () => {
+      const [csrPem] = generateCSR(csrInput({ isCA: true, pathLen: 0 }));
+
+      const actualParams = KJUR.asn1.csr.CSRUtil.getParam(csrPem);
+
+      expect(actualParams.extreq?.[0]).toEqual({
+        extname: 'basicConstraints',
+        cA: true,
+        pathLen: 0,
+      });
+    });
   });
 
   describe('extractCertificateDetails', () => {
