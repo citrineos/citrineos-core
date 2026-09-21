@@ -57,15 +57,24 @@ function aTransaction(isActive: boolean) {
   };
 }
 
-function makeHandler(transaction: ReturnType<typeof aTransaction> | null) {
+function anAuthorization(overrides: Record<string, unknown> = {}) {
+  return { id: 7, idToken: 'TAG001', status: AuthorizationStatusEnum.Accepted, ...overrides };
+}
+
+function makeHandler(
+  transaction: ReturnType<typeof aTransaction> | null,
+  authorizations: ReturnType<typeof anAuthorization>[] = [anAuthorization()],
+) {
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
   const authorizationRepository = {
-    readOnlyOneByQuerystring: vi.fn().mockResolvedValue({
-      id: 7,
-      idToken: 'TAG001',
-      status: AuthorizationStatusEnum.Accepted,
+    readAllByQuerystring: vi.fn().mockResolvedValue(authorizations),
+    readOnlyOneByQuerystring: vi.fn(async () => {
+      if (authorizations.length > 1) {
+        throw new Error('More than one value found for query');
+      }
+      return authorizations[0];
     }),
   };
 
@@ -168,6 +177,73 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     await handler.handle(makeMessage({ ...request, idTag: undefined, reason: undefined }));
 
     expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe('Local');
+  });
+
+  it('answers Invalid when the idTag matches more than one authorization', async () => {
+    const { handler, ocppSender } = makeHandler(aTransaction(true), [
+      anAuthorization({ id: 7, idTokenType: 'ISO14443' }),
+      anAuthorization({ id: 8, idTokenType: 'Central' }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        idTagInfo: expect.objectContaining({
+          status: OCPP1_6.StopTransactionResponseStatus.Invalid,
+        }),
+      }),
+    );
+  });
+
+  it('still closes the transaction when the idTag matches more than one authorization', async () => {
+    const transaction = aTransaction(true);
+    const { handler, transactionEventRepository } = makeHandler(transaction, [
+      anAuthorization({ id: 7, idTokenType: 'ISO14443' }),
+      anAuthorization({ id: 8, idTokenType: 'Central' }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(transactionEventRepository.createStopTransaction).toHaveBeenCalledOnce();
+    expect(transaction.save).toHaveBeenCalledOnce();
+  });
+
+  it('answers Expired for an accepted authorization whose cache expiry has passed', async () => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { handler, ocppSender } = makeHandler(aTransaction(true), [
+      anAuthorization({ cacheExpiryDateTime: yesterday }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        idTagInfo: expect.objectContaining({
+          status: OCPP1_6.StopTransactionResponseStatus.Expired,
+        }),
+      }),
+    );
+  });
+
+  it('answers Accepted while the cache expiry is still ahead', async () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { handler, ocppSender } = makeHandler(aTransaction(true), [
+      anAuthorization({ cacheExpiryDateTime: tomorrow }),
+    ]);
+
+    await handler.handle(makeMessage(request));
+
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        idTagInfo: expect.objectContaining({
+          status: OCPP1_6.StopTransactionResponseStatus.Accepted,
+        }),
+      }),
+    );
   });
 
   it('stores no SignedData sampled value from transactionData', async () => {

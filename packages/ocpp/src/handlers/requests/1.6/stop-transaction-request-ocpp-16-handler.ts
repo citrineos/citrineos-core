@@ -63,16 +63,28 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
 
-    const authorization: AuthorizationDto | undefined = request.idTag
-      ? await this._authorizationRepository.readOnlyOneByQuerystring(tenantId, {
+    const authorizations: AuthorizationDto[] = request.idTag
+      ? await this._authorizationRepository.readAllByQuerystring(tenantId, {
           idToken: request.idTag,
         })
-      : undefined;
+      : [];
+    if (authorizations.length > 1) {
+      this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
+    }
+    const authorization: AuthorizationDto | undefined =
+      authorizations.length === 1 ? authorizations[0] : undefined;
 
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = 'Invalid';
+    }
+    if (
+      idTokenInfoStatus === AuthorizationStatusEnum.Accepted &&
+      authorization?.cacheExpiryDateTime &&
+      new Date() > new Date(authorization.cacheExpiryDateTime)
+    ) {
+      idTokenInfoStatus = AuthorizationStatusEnum.Expired;
     }
     switch (idTokenInfoStatus) {
       case AuthorizationStatusEnum.Accepted:
