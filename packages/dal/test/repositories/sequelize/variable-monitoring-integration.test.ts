@@ -151,7 +151,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       );
     });
 
-    it('updates the row matched on station, component and variable instead of inserting', async () => {
+    it('updates the row matched on station and monitor id instead of inserting', async () => {
       const component = await aComponent('EVSE');
       const variable = await aVariable('Power');
       const repo = makeRepo();
@@ -176,7 +176,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
         TENANT_A,
         monitoringData([
           {
-            id: 9,
+            id: 7,
             transaction: true,
             value: 99,
             type: OCPP2_0_1.MonitorEnumType.LowerThreshold,
@@ -189,7 +189,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       );
 
       expect(updated.databaseId).toBe(original.databaseId);
-      expect(updated.id).toBe(9);
+      expect(updated.id).toBe(7);
       expect(updated.value).toBe(99);
       expect(updated.type).toBe('LowerThreshold');
       expect(updated.severity).toBe(2);
@@ -267,6 +267,7 @@ describe('SequelizeVariableMonitoringRepository', () => {
       const original = await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
         TENANT_A,
         {
+          id: 12,
           value: 100,
           type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
           severity: 4,

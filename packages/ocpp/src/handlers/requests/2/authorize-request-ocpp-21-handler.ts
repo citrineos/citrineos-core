@@ -137,7 +137,10 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
         response = {
           ...response,
           idTokenInfo: {
-            status: AuthorizationStatusEnum.Invalid,
+            status:
+              response.certificateStatus === AuthorizeCertificateStatusEnum.CertificateExpired
+                ? AuthorizationStatusEnum.Expired
+                : AuthorizationStatusEnum.Invalid,
           },
         } as OCPP2_response_types.AuthorizeResponse;
         const messageConfirmation = await this._sendAuthorizeResult(message, response);
@@ -166,6 +169,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
         ) {
           response = {
+            ...response,
             idTokenInfo: {
               status: AuthorizationStatusEnum.Invalid,
               groupIdToken: idTokenInfo.groupIdToken,
@@ -193,6 +197,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           }
           if (evseIds && evseIds.size === 0) {
             response = {
+              ...response,
               idTokenInfo: {
                 status: AuthorizationStatusEnum.NotAllowedTypeEVSE,
                 groupIdToken: idTokenInfo.groupIdToken,
@@ -227,6 +232,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
             }
             if (evseIds && evseIds.size === 0) {
               response = {
+                ...response,
                 idTokenInfo: {
                   status: AuthorizationStatusEnum.NotAtThisLocation,
                   groupIdToken: idTokenInfo.groupIdToken,
@@ -285,6 +291,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
       }
     } else {
       // Status is Unknown if no authorization found
+      this._cancelContractIfNotAuthorized(response);
       const messageConfirmation = await this._sendAuthorizeResult(message, response);
       this._logger.debug(
         this.createHandlerSentMessageLog('Authorize 2.1 Response'),
@@ -323,11 +330,31 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
       }
     }
 
+    this._cancelContractIfNotAuthorized(response);
     const messageConfirmation = await this._sendAuthorizeResult(message, response);
     this._logger.debug(
       this.createHandlerSentMessageLog('Authorize 2.1 Response'),
       messageConfirmation,
     );
+  }
+
+  /**
+   * Per OCPP C07.FR.13, a contract certificate that was accepted is reported as ContractCancelled
+   * when the token itself is not authorized.
+   */
+  private _cancelContractIfNotAuthorized(response: OCPP2_response_types.AuthorizeResponse): void {
+    const contractCancelledStatuses: string[] = [
+      AuthorizationStatusEnum.Blocked,
+      AuthorizationStatusEnum.Expired,
+      AuthorizationStatusEnum.Invalid,
+      AuthorizationStatusEnum.Unknown,
+    ];
+    if (
+      response.certificateStatus === AuthorizeCertificateStatusEnum.Accepted &&
+      contractCancelledStatuses.includes(response.idTokenInfo.status)
+    ) {
+      response.certificateStatus = OCPP2_1.AuthorizeCertificateStatusEnumType.ContractCancelled;
+    }
   }
 
   /**

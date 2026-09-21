@@ -2,11 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { Authenticator, BasicAuthenticationFilter } from '@/transport/index.js';
+import {
+  Authenticator,
+  BasicAuthenticationFilter,
+  ClientCertificateFilter,
+} from '@/transport/index.js';
 import { UpgradeUnknownError } from '@/transport/network-connection/authenticator/errors/unknown-error.js';
+import { UpgradeAuthenticationError } from '@/transport/network-connection/authenticator/errors/authentication-error.js';
 import {
   aRequest,
   aRequestWithAuthorization,
+  aTlsSocket,
   basicAuth,
 } from '../../../providers/incoming-message-provider.js';
 import { anAuthenticationOptions } from '../../../providers/authentication-options-provider.js';
@@ -24,11 +30,13 @@ describe('Authenticator', () => {
   const basicAuthenticationFilter = getTestInstance(container, BasicAuthenticationFilter, {
     variableAttributeRepository,
   });
+  const clientCertificateFilter = { authenticate: vi.fn() };
   const authenticator = getTestInstance(container, Authenticator, {
     unknownStationFilter,
     connectedStationFilter,
     networkProfileFilter,
     basicAuthenticationFilter,
+    clientCertificateFilter,
   });
 
   afterEach(() => {
@@ -70,5 +78,43 @@ describe('Authenticator', () => {
       ),
     ).rejects.toBeInstanceOf(UpgradeUnknownError);
     expect(unknownStationFilter.authenticate).not.toHaveBeenCalled();
+  });
+});
+
+describe('Authenticator client certificate identity', () => {
+  const { container } = createTestContainer();
+  const unknownStationFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
+  const connectedStationFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
+  const networkProfileFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
+  const basicAuthenticationFilter = { authenticate: vi.fn().mockResolvedValue(undefined) };
+  const chargingStationRepository = {
+    readChargingStationByOcppConnectionName: vi.fn().mockResolvedValue(undefined),
+  };
+  const clientCertificateFilter = getTestInstance(container, ClientCertificateFilter, {
+    chargingStationRepository,
+  });
+  const authenticator = getTestInstance(container, Authenticator, {
+    unknownStationFilter,
+    connectedStationFilter,
+    networkProfileFilter,
+    basicAuthenticationFilter,
+    clientCertificateFilter,
+  });
+  const securityProfile3 = anAuthenticationOptions({ securityProfile: 3 });
+
+  it('rejects a security profile 3 upgrade whose client certificate CN is not the station identity', async () => {
+    const request = aRequest({ url: '/ocpp/CS-B', socket: aTlsSocket('CS-A') });
+
+    await expect(
+      authenticator.authenticate(request, DEFAULT_TENANT_ID, securityProfile3),
+    ).rejects.toThrow(UpgradeAuthenticationError);
+  });
+
+  it('accepts a security profile 3 upgrade whose client certificate CN is the station identity', async () => {
+    const request = aRequest({ url: '/ocpp/CS-A', socket: aTlsSocket('CS-A') });
+
+    await expect(
+      authenticator.authenticate(request, DEFAULT_TENANT_ID, securityProfile3),
+    ).resolves.toEqual({ identifier: 'CS-A' });
   });
 });

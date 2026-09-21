@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
@@ -17,6 +17,10 @@ import {
 import { GetCertificateStatusRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { parseOcspRequestHex } from '../../../utils/ocsp-request-parser.js';
+import { aSystemConfig } from '../../../providers/system-config.js';
+
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
 
 const RESPONDER_URL = 'http://ocsp.example.test/responder';
 
@@ -54,24 +58,17 @@ function aGetCertificateStatusRequest(): OCPP2_1.GetCertificateStatusRequest {
 describe('GetCertificateStatusRequestOcpp2Handler', () => {
   let handler: GetCertificateStatusRequestOcpp2Handler;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     const { logger } = createTestContainer();
     ocppSender = makeMockOcppSender();
-    handler = new GetCertificateStatusRequestOcpp2Handler({ logger, ocppSender });
+    handler = new GetCertificateStatusRequestOcpp2Handler({
+      logger,
+      ocppSender,
+      config: aSystemConfig(),
+    });
 
-    fetchMock = vi.fn().mockResolvedValue(
-      new Response(RESPONDER_DER, {
-        status: 200,
-        headers: { 'Content-Type': 'application/ocsp-response' },
-      }),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
+    fetchMock.mockReset().mockResolvedValue(new Response(RESPONDER_DER, { status: 200 }));
   });
 
   async function handleAndGetResponse(): Promise<OCPP2_1.GetCertificateStatusResponse> {
@@ -90,9 +87,10 @@ describe('GetCertificateStatusRequestOcpp2Handler', () => {
   it('posts the DER of an OCSPRequest, not its hex text', async () => {
     await handleAndGetResponse();
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(RESPONDER_URL);
-    expect(init.body).toBeInstanceOf(Uint8Array);
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.toString()).toBe(RESPONDER_URL);
+    expect(init.redirect).toBe('error');
+    expect(init.signal).toBeInstanceOf(AbortSignal);
 
     const der = Buffer.from(init.body as Uint8Array);
     expect(der[0]).toBe(0x30);

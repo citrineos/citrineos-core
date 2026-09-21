@@ -64,7 +64,10 @@ export class SequelizeVariableMonitoringRepository
               const existingVariableMonitoring = await this.s.models[
                 VariableMonitoring.MODEL_NAME
               ].findOne({
-                where: { stationId, variableId, componentId },
+                where: {
+                  stationId,
+                  id: variableMonitoring.id,
+                },
                 transaction,
               });
 
@@ -136,10 +139,13 @@ export class SequelizeVariableMonitoringRepository
     let result: VariableMonitoring | null = null;
 
     await this.s.transaction(async (transaction) => {
-      const savedVariableMonitoring = await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
-        where: { stationId, variableId, componentId },
-        transaction,
-      });
+      const savedVariableMonitoring =
+        value.id != null
+          ? await this.s.models[VariableMonitoring.MODEL_NAME].findOne({
+              where: { stationId, id: value.id },
+              transaction,
+            })
+          : null;
 
       if (!savedVariableMonitoring) {
         const variableMonitoring = VariableMonitoring.build({
@@ -240,6 +246,7 @@ export class SequelizeVariableMonitoringRepository
             },
           },
         ],
+        order: [['id', 'ASC NULLS FIRST']],
       })
       .then((variableMonitorings) => variableMonitorings[0]); // TODO: Make sure this uniqueness constraint is actually enforced.
 

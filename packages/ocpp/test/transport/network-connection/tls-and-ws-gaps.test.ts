@@ -221,6 +221,29 @@ describe('CertificateUtil gaps', () => {
       expect(isSignedBy(certPem, certPem)).toBe(true);
     });
 
+    it('keeps pathLen 0 so the sub CA cannot issue further CAs', () => {
+      const input: CertificateGenerationInput = {
+        signatureAlgorithm: SignatureAlgorithmEnumType.ECDSA,
+        commonName: 'Test SubCA',
+        organizationName: 'S44',
+        countryName: 'US',
+        isCA: true,
+        pathLen: 0,
+        validBefore: '2027-03-05T06:07:08.000Z',
+      } as CertificateGenerationInput;
+
+      const [certPem] = generateCertificate(input, logger);
+
+      const cert = new X509();
+      cert.readCertPEM(certPem);
+      expect(cert.getExtBasicConstraints()).toEqual({
+        extname: 'basicConstraints',
+        critical: true,
+        cA: true,
+        pathLen: 0,
+      });
+    });
+
     it('caps validity at the issuer notAfter and chains to the issuer', () => {
       const input: CertificateGenerationInput = {
         signatureAlgorithm: SignatureAlgorithmEnumType.ECDSA,
@@ -262,7 +285,7 @@ describe('CertificateUtil gaps', () => {
         extname: 'basicConstraints',
         critical: true,
       });
-      expect(cert.getExtKeyUsage().names).toContain('keyEncipherment');
+      expect(cert.getExtKeyUsage().names).toEqual(['digitalSignature', 'keyEncipherment']);
       expect(keyPem).toContain(pemMarker('PRIVATE KEY', 'BEGIN'));
     });
   });

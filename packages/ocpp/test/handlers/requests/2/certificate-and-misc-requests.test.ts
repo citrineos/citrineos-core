@@ -22,6 +22,7 @@ import {
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
+  type SystemConfig,
 } from '@citrineos/types';
 import {
   ClearedChargingLimitRequestOcpp2Handler,
@@ -37,6 +38,7 @@ import {
 import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-container.js';
 import { createOcspRequest, sendOCSPRequest } from '@services/certificate/certificate-util.js';
 import type { CertificateAuthorityService } from '@services/index.js';
+import { aSystemConfig } from '../../../providers/system-config.js';
 
 // GetCertificateStatusRequestOcpp2Handler calls these as module-level functions, so they are
 // mocked at the module boundary. The rest of the certificate util module stays real.
@@ -72,13 +74,16 @@ function sentResponse<T>(ocppSender: ReturnType<typeof makeMockOcppSender>): T {
   return ocppSender.sendCallResultWithMessage.mock.calls[0][1] as T;
 }
 
-type SimpleHandlerDeps = AbstractHandlerDependencies & { ocppSender: IOcppSender };
+type SimpleHandlerDeps = AbstractHandlerDependencies & {
+  ocppSender: IOcppSender;
+  config: SystemConfig;
+};
 
 // Handlers whose only dependencies are logger and ocppSender.
 function makeSimpleHandler<T>(Handler: new (deps: SimpleHandlerDeps) => T) {
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
-  const handler = new Handler({ logger, ocppSender });
+  const handler = new Handler({ logger, ocppSender, config: aSystemConfig() });
   return { handler, ocppSender, logger };
 }
 
@@ -192,6 +197,7 @@ describe('GetCertificateStatusRequestOcpp2Handler', () => {
     expect(mockSendOCSPRequest).toHaveBeenCalledWith(
       ocspRequest,
       'https://ocsp.example.com/status',
+      [],
     );
     expect(ocppSender.sendCallResultWithMessage.mock.calls[0][0]).toBe(message);
     expect(sentResponse(ocppSender)).toEqual({

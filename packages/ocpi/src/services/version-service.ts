@@ -29,7 +29,10 @@ export class VersionService {
       GetTenantByIdQueryResult,
       GetTenantByIdQueryVariables
     >(GET_TENANT_BY_ID, { id: tenantId });
-    const tenant = response.Tenants[0] as TenantDto;
+    const tenant = response.Tenants[0] as TenantDto | undefined;
+    if (!tenant) {
+      throw new NotFoundError('Tenant not found');
+    }
     const versions: Version[] = Array.from(tenant.serverProfileOCPI?.versionDetails || []);
     return {
       data: versions.map((version: Version) => ({
@@ -49,7 +52,10 @@ export class VersionService {
       GetTenantByIdQueryResult,
       GetTenantByIdQueryVariables
     >(GET_TENANT_BY_ID, { id: tenantId });
-    const tenant = response.Tenants[0] as TenantDto;
+    const tenant = response.Tenants[0] as TenantDto | undefined;
+    if (!tenant) {
+      throw new NotFoundError('Tenant not found');
+    }
     const tenantVersionEndpoints: Endpoint[] | undefined =
       tenant.serverProfileOCPI?.versionEndpoints &&
       tenant.serverProfileOCPI.versionEndpoints[RegistrationMapper.toOCPIVersionNumber(version)];
