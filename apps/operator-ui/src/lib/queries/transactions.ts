@@ -173,6 +173,9 @@ export const TRANSACTION_GET_QUERY = gql`
       authorization: Authorization {
         ${AUTHORIZATION_FIELDS.omit('allowedConnectorTypes', 'disallowedEvseIdPrefixes', 'realTimeAuth', 'realTimeAuthUrl')}
       }
+      station: ChargingStation {
+        ${CHARGING_STATION_CORE_FIELDS}
+      }
     }
   }
 `;
