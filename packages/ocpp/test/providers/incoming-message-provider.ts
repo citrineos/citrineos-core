@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { IncomingMessage } from 'http';
+import type { TLSSocket } from 'tls';
 import { toBase64 } from 'pvutils';
 
 export function aRequest(override?: Partial<IncomingMessage>): IncomingMessage {
@@ -24,4 +25,12 @@ export function aRequestWithAuthorization(
 
 export function basicAuth(username?: string, password?: string) {
   return `Basic ${toBase64(`${username}:${password}`)}`;
+}
+
+export function aTlsSocket(commonName?: string, authorized = true): TLSSocket {
+  const certificate = commonName === undefined ? {} : { subject: { CN: commonName } };
+  return {
+    authorized,
+    getPeerCertificate: () => certificate,
+  } as unknown as TLSSocket;
 }
