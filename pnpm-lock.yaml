@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@aws-sdk/client-s3':
-      specifier: 3.1133.0
-      version: 3.1133.0
+      specifier: 3.1137.0
+      version: 3.1137.0
     '@eslint/js':
       specifier: 9.16.0
       version: 9.16.0
@@ -490,10 +490,10 @@ importers:
     dependencies:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
-        version: 3.1133.0
+        version: 3.1137.0
       '@aws-sdk/s3-request-presigner':
-        specifier: 3.1133.0
-        version: 3.1133.0
+        specifier: 3.1137.0
+        version: 3.1137.0
       '@citrineos/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -791,7 +791,7 @@ importers:
     dependencies:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
-        version: 3.1133.0
+        version: 3.1137.0
       '@citrineos/types':
         specifier: workspace:*
         version: link:../types
@@ -1109,7 +1109,7 @@ importers:
     dependencies:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
-        version: 3.1133.0
+        version: 3.1137.0
       '@citrineos/base':
         specifier: workspace:*
         version: link:../base
@@ -1341,8 +1341,8 @@ packages:
     resolution: {integrity: sha512-6uTniZc87q+B5eXouGTl+7Tmc482rEeCcvxpsvREP8EfF0gvloRZ41UOA9sbSJlyy8TbqIBXb3kKfKarEArUQA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-s3@3.1133.0':
-    resolution: {integrity: sha512-b7IVvFjNxNt6i//qUr2tWQC1JhUY0HpIiM41vvXv30br/nuXjYtKAADrMFluxGYX0X7LQB5GvzUcFDxNOoLMLg==}
+  '@aws-sdk/client-s3@3.1137.0':
+    resolution: {integrity: sha512-ppiYnDyy2qCDT3PIV83XJwAi0BhVUZ/jOHxUgC5tlMCaFeKRL8PVVub8A0pUMkF1yvZtzNOp3ClbmTCcIa9w3g==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.978.0':
@@ -1389,8 +1389,8 @@ packages:
     resolution: {integrity: sha512-mooq9Q+jLa18VoM7HouczmslZU60iiB0aKc/Ztnq/luIL1ud0z4DnYprLR/ZO1gp331S9tJctM1HZr7u6YKBXQ==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/s3-request-presigner@3.1133.0':
-    resolution: {integrity: sha512-8e9ouff7Lenl1d6XF5o2n/BxFq1cdq8mSvFy9/PjXG2OKSLmTBvaX3d8QnOCTGMZe7Pptr7fVEYb+Va+JpaV+w==}
+  '@aws-sdk/s3-request-presigner@3.1137.0':
+    resolution: {integrity: sha512-OJQwS0qt5fQMoZSccncZQBLLvSZ3Jw7Lo+E3MYBNNPRnUkvJxn5LeY246K+1QvoL9o8zHpYVPa7YgCL+zf+xtg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/signature-v4-multi-region@3.996.46':
@@ -10535,7 +10535,7 @@ snapshots:
       '@smithy/types': 4.18.0
       tslib: 2.8.1
 
-  '@aws-sdk/client-s3@3.1133.0':
+  '@aws-sdk/client-s3@3.1137.0':
     dependencies:
       '@aws-sdk/checksums': 3.1001.0
       '@aws-sdk/core': 3.978.0
@@ -10664,7 +10664,7 @@ snapshots:
       '@smithy/types': 4.18.0
       tslib: 2.8.1
 
-  '@aws-sdk/s3-request-presigner@3.1133.0':
+  '@aws-sdk/s3-request-presigner@3.1137.0':
     dependencies:
       '@aws-sdk/core': 3.978.0
       '@aws-sdk/signature-v4-multi-region': 3.996.46
