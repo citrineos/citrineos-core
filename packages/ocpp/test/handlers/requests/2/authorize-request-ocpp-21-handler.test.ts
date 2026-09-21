@@ -157,9 +157,9 @@ describe('AuthorizeRequestOcpp21Handler', () => {
         authorizationRepository: {
           readOnlyOneByQuerystring: vi.fn().mockResolvedValue(authorization),
         } as unknown as IAuthorizationRepository,
-        deviceModelRepository: {
+        variableAttributeRepository: {
           readAllByQuerystring: vi.fn().mockResolvedValue([]),
-        } as unknown as IDeviceModelRepository,
+        } as unknown as IVariableAttributeRepository,
         tariffRepository: {} as unknown as ITariffRepository,
       });
 
