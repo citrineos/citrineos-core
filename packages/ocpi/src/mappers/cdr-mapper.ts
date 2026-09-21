@@ -196,14 +196,13 @@ export class CdrMapper extends BaseTransactionMapper {
     return undefined;
   }
 
-  // The current Tariff model has no parking/reservation price dimensions
-  // (OCPP 2.1's reservationTime/reservationFixed fields are untyped `any`
-  // placeholders and aren't populated), so these stay unsupported rather
-  // than guessing at a calculation with no backing data.
+  // TODO: Implement writes idleTime and calculate the cost
   private calculateTotalParkingCost(): Price | undefined {
     return undefined;
   }
 
+  // TODO: Implement price reservations once a duration is reachable. A CDR carries
+  //  no reservation time and Transaction has only reservationId.
   private calculateTotalReservationCost(): Price | undefined {
     return undefined;
   }
