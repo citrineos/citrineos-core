@@ -146,10 +146,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    // TODO move all device model cluster into else clause
-    //  after all of them are implemented in drizzle
-    this.variableAttributeRepository = this.deviceModelRepository;
-    this.variableCharacteristicsRepository = this.deviceModelRepository;
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
@@ -286,6 +282,9 @@ export class RepositoryStore {
       this.evseRepository = locationRepository;
       this.connectorRepository = locationRepository;
       this.statusNotificationRepository = locationRepository;
+      // DeviceModel cluster
+      this.variableAttributeRepository = this.deviceModelRepository;
+      this.variableCharacteristicsRepository = this.deviceModelRepository;
     }
 
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
