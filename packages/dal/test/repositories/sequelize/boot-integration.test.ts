@@ -7,6 +7,7 @@ import { DefaultSequelizeInstance, SequelizeBootRepository } from '../../../inde
 import { Boot } from '../../../src/models/boot.js';
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
+import { Component, Variable, VariableAttribute } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -153,5 +154,51 @@ describe('SequelizeBootRepository tenant scoping', () => {
     await station.destroy();
 
     expect(await repo.existsByKey(TENANT_A, SHARED_NAME)).toBe(false);
+  });
+});
+
+describe('SequelizeBootRepository pending boot SetVariables', () => {
+  async function anAttribute(tenantId: number, stationId: number): Promise<VariableAttribute> {
+    const component = await Component.create({ name: 'OCPPCommCtrlr', tenantId } as any);
+    const variable = await Variable.create({ name: 'HeartbeatInterval', tenantId } as any);
+    return VariableAttribute.create({
+      stationId,
+      componentId: component.id,
+      variableId: variable.id,
+      value: '30',
+      tenantId,
+    } as any);
+  }
+
+  async function aPendingBootWith(attribute: VariableAttribute): Promise<void> {
+    await makeRepo().createOrUpdateByKey(
+      TENANT_A,
+      { ...aBootConfig('Pending'), pendingBootSetVariableIds: [attribute.id] },
+      SHARED_NAME,
+    );
+  }
+
+  it('readByKey returns the variable attributes assigned to the boot', async () => {
+    const station = await aStation(TENANT_A);
+    const attribute = await anAttribute(TENANT_A, station.id);
+    await aPendingBootWith(attribute);
+
+    const boot = await makeRepo().readByKey(TENANT_A, SHARED_NAME);
+
+    expect(boot?.pendingBootSetVariables?.map((a) => a.id)).toEqual([attribute.id]);
+  });
+
+  it('updateByKey returns the variable attributes assigned to the boot', async () => {
+    const station = await aStation(TENANT_A);
+    const attribute = await anAttribute(TENANT_A, station.id);
+    await aPendingBootWith(attribute);
+
+    const boot = await makeRepo().updateByKey(
+      TENANT_A,
+      { lastBootTime: new Date().toISOString() },
+      SHARED_NAME,
+    );
+
+    expect(boot?.pendingBootSetVariables?.map((a) => a.id)).toEqual([attribute.id]);
   });
 });
