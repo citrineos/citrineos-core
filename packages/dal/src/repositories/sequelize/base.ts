@@ -12,7 +12,7 @@ import type {
   ModelStatic,
   WhereOptions,
 } from 'sequelize';
-import { QueryTypes } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { type Model, type Sequelize } from 'sequelize-typescript';
 import type { ILogObj, Logger } from 'tslog';
 import { DefaultSequelizeInstance } from '../../db/sequelize/util.js';
@@ -214,12 +214,23 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     const { where, ...rest } = query as FindOptions<any>;
     const scopedWhere = { ...where, tenantId };
     return this.s.transaction(async (transaction) => {
-      const entriesToDelete = await this.s.models[namespace]
+      const model = this.s.models[namespace];
+      const entriesToDelete = await model
         .findAll({ where: scopedWhere, ...rest, transaction })
         .then((rows) => rows as T[]);
 
-      const deletedCount = await this.s.models[namespace].destroy({
-        where: scopedWhere,
+      if (entriesToDelete.length === 0) {
+        return entriesToDelete;
+      }
+
+      // use plural primaryKeys in case of a composite key in a table
+      const primaryKeys = model.primaryKeyAttributes;
+      const deletedCount = await model.destroy({
+        where: {
+          [Op.or]: entriesToDelete.map((entry) =>
+            Object.fromEntries(primaryKeys.map((key) => [key, entry.get(key)])),
+          ),
+        },
         transaction,
       });
 

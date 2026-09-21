@@ -290,3 +290,65 @@ describe('createOrUpdateByGetVariablesResultAndStationId', () => {
     });
   });
 });
+
+describe('deleteAllByQuerystring', () => {
+  // Components and Variables are unique on (tenantId, name), so rows that share a
+  // component or a variable have to reuse the existing row rather than create one.
+  async function seedSharedVariableAttribute(
+    componentName: string,
+    variableName: string,
+    value: string,
+  ): Promise<VariableAttribute> {
+    const [component] = await Component.findOrCreate({
+      where: { name: componentName, tenantId: TENANT_ID },
+    });
+    const [variable] = await Variable.findOrCreate({
+      where: { name: variableName, tenantId: TENANT_ID },
+    });
+    return VariableAttribute.create({
+      stationId,
+      componentId: component.id,
+      variableId: variable.id,
+      type: OCPP2_0_1.AttributeEnumType.Actual,
+      value,
+      generatedAt: new Date(),
+      tenantId: TENANT_ID,
+    });
+  }
+
+  it('deletes only the attributes the component and variable filters match', async () => {
+    await seedBase();
+    const target = await seedSharedVariableAttribute('InternalCtrlr', 'ICCID', 'target');
+    await seedSharedVariableAttribute('InternalCtrlr', 'IMSI', 'same-component');
+    await seedSharedVariableAttribute('SecurityCtrlr', 'ICCID', 'same-variable');
+    await seedSharedVariableAttribute('OCPPCommCtrlr', 'Priority', 'unrelated');
+
+    const deleted = await makeRepo().deleteAllByQuerystring(TENANT_ID, {
+      tenantId: TENANT_ID,
+      ocppConnectionName: OCPP_CONNECTION_NAME,
+      component_name: 'InternalCtrlr',
+      variable_name: 'ICCID',
+    });
+
+    expect(deleted).toHaveLength(1);
+    expect(deleted[0].id).toBe(target.id);
+
+    const survivors = await VariableAttribute.findAll();
+    expect(survivors).toHaveLength(3);
+    expect(survivors.map((row) => row.id)).not.toContain(target.id);
+  });
+
+  it('deletes nothing when the filters match nothing', async () => {
+    await seedBase();
+    await seedSharedVariableAttribute('InternalCtrlr', 'ICCID', 'target');
+
+    const deleted = await makeRepo().deleteAllByQuerystring(TENANT_ID, {
+      tenantId: TENANT_ID,
+      ocppConnectionName: OCPP_CONNECTION_NAME,
+      component_name: 'NoSuchCtrlr',
+    });
+
+    expect(deleted).toHaveLength(0);
+    expect(await VariableAttribute.count()).toBe(1);
+  });
+});

@@ -59,13 +59,13 @@ export class DeleteStationVariablesEndpoint extends AbstractEndpoint<StationVari
   }
 
   async handle(request: FastifyRequest<StationVariableRoute>): Promise<IMessageConfirmation> {
-    const deletedCount = await this._variableAttributeRepository.deleteAllByQuerystring(
+    const deleted = await this._variableAttributeRepository.deleteAllByQuerystring(
       request.query.tenantId,
       request.query,
     );
     return {
       success: true,
-      payload: `${deletedCount} rows successfully deleted`,
+      payload: `${deleted.length} rows successfully deleted`,
     };
   }
 }
