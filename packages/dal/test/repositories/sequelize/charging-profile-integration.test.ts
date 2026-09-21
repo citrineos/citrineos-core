@@ -343,6 +343,16 @@ describe('SequelizeChargingProfileRepository', () => {
       expect(await repo.getNextChargingProfileId(TENANT_A, OTHER_STATION)).toBe(1);
     });
 
+    it('getNextChargingProfileId is scoped per tenant for a shared station name', async () => {
+      const repo = makeRepo();
+
+      await aProfileRow({ id: 42, tenantId: TENANT_A });
+      await aProfileRow({ id: 900, tenantId: TENANT_A });
+
+      expect(await repo.getNextChargingProfileId(TENANT_B, STATION)).toBe(1);
+      expect(await repo.getNextChargingProfileId(TENANT_A, STATION)).toBe(901);
+    });
+
     it('getNextChargingScheduleId advances past the station schedule max', async () => {
       const repo = makeRepo();
       expect(await repo.getNextChargingScheduleId(TENANT_A, STATION)).toBe(1);

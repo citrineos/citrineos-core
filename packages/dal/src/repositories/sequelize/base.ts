@@ -76,7 +76,8 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     startValue?: number,
     namespace: string = this.namespace,
   ): Promise<number> {
-    const options = query ? (query as AggregateOptions<any>) : undefined;
+    const { where, ...rest } = (query ?? {}) as AggregateOptions<any>;
+    const options: AggregateOptions<any> = { ...rest, where: { ...where, tenantId } };
     const maxValue = await this.s.models[namespace].max(columnName, options);
     if (maxValue === null || maxValue === undefined) {
       return startValue ?? 1;
