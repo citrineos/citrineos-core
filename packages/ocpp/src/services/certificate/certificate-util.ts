@@ -187,7 +187,7 @@ export function generateCertificate(
     critical: true,
     cA: certificateEntity.isCA,
   };
-  if (certificateEntity.pathLen) {
+  if (certificateEntity.pathLen !== undefined && certificateEntity.pathLen !== null) {
     basicConstraints.pathLen = certificateEntity.pathLen;
   }
   const extensions = [
@@ -353,15 +353,9 @@ export function generateCSR(certificate: CertificateGenerationInput): [string, s
   const privateKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.prvKeyObj, 'PKCS8PRV');
   const publicKeyPem = jsrsasign.KEYUTIL.getPEM(keyPair.pubKeyObj);
 
-  let basicConstraintParam: any;
-  if (certificate.pathLen) {
-    basicConstraintParam = {
-      extname: 'basicConstraints',
-      cA: certificate.isCA,
-      pathLen: certificate.pathLen,
-    };
-  } else {
-    basicConstraintParam = { extname: 'basicConstraints', cA: certificate.isCA };
+  const basicConstraintParam: any = { extname: 'basicConstraints', cA: certificate.isCA };
+  if (certificate.pathLen !== undefined && certificate.pathLen !== null) {
+    basicConstraintParam.pathLen = certificate.pathLen;
   }
   const keyUsageParam: any = {
     extname: 'keyUsage',
