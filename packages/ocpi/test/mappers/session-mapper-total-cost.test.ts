@@ -53,6 +53,16 @@ function aCompletedTransaction(): TransactionDto {
   } as unknown as TransactionDto;
 }
 
+/** A meter value whose cumulative import register reads `wh` watt-hours. */
+function meterValue(timestamp: string, wh: number) {
+  return {
+    timestamp,
+    sampledValue: [
+      { value: wh, measurand: 'Energy.Active.Import.Register', unitOfMeasure: { unit: 'Wh' } },
+    ],
+  };
+}
+
 async function sessionFor(transaction: TransactionDto, tariff: TariffDto) {
   const sessions = await mapper().mapTransactionsToSessionsHelper(
     [transaction],
@@ -87,6 +97,41 @@ describe('Session total_cost', () => {
     const session = await sessionFor(aCompletedTransaction(), aTariff());
 
     expect(session.total_cost?.incl_vat).toBe(30.24);
+  });
+
+  // The session path has to price off the transaction's own charging time, exactly as the CDR
+  // path does. Falling back to the periods' PARKING_TIME dimensions would make a session and the
+  // CDR that closes it disagree.
+  it('bills the whole session for 1.6, whose timeSpentCharging is wall-clock elapsed', async () => {
+    // One flat-register hour after a charging hour: the EV finished but stayed plugged in.
+    const parked = {
+      ...aCompletedTransaction(),
+      endTime: '2026-08-20T12:00:00Z',
+      timeSpentCharging: 2 * 60 * 60,
+      meterValues: [
+        meterValue('2026-08-20T10:00:00Z', 0),
+        meterValue('2026-08-20T11:00:00Z', 5000),
+        meterValue('2026-08-20T12:00:00Z', 5000),
+      ],
+    } as unknown as TransactionDto;
+
+    const session = await sessionFor(parked, aTariff());
+
+    // 2 hours billed: 120 min x 0.02 = 2.40, on top of 22.50 energy and the 1.50 fee.
+    expect(session.total_cost?.excl_vat).toBe(26.4);
+  });
+
+  it('bills only the reported charging time when the station reports less', async () => {
+    const partly = {
+      ...aCompletedTransaction(),
+      endTime: '2026-08-20T12:00:00Z',
+      timeSpentCharging: 60 * 60,
+    } as unknown as TransactionDto;
+
+    const session = await sessionFor(partly, aTariff());
+
+    // 60 min x 0.02 = 1.20, not the 2.40 the full two hours would cost.
+    expect(session.total_cost?.excl_vat).toBe(25.2);
   });
 
   it('leaves an unfinished session unpriced', async () => {
