@@ -46,6 +46,7 @@ describe('CertificateAuthorityService', () => {
       integrations: {
         v2gCA: { name: 'hubject' },
         chargingStationCA: { name: 'acme' },
+        ocsp: { allowedResponderHosts: [] },
       },
     } as unknown as Mocked<SystemConfig>;
 
@@ -241,6 +242,7 @@ describe('CertificateAuthorityService', () => {
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
         expect.any(KJUR.asn1.ocsp.OCSPRequest),
         mockOCSPURL,
+        [],
       );
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
     });
@@ -300,6 +302,7 @@ describe('CertificateAuthorityService', () => {
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
         expect.any(KJUR.asn1.ocsp.OCSPRequest),
         givenResponderURL,
+        [],
       );
       const capturedRequest = mockCertUtil.sendOCSPRequest.mock.calls.find(
         ([, url]) => url === givenResponderURL,
