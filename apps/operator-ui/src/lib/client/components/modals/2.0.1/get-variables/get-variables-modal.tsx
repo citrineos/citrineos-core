@@ -88,7 +88,7 @@ const GetVariableRow = ({
     meta: {
       gqlQuery: VARIABLE_LIST_BY_COMPONENT_QUERY,
       gqlVariables: numericComponentId
-        ? { componentId: numericComponentId, offset: 0, limit: 100, mutability: '' }
+        ? { componentId: numericComponentId, offset: 0, limit: 100 }
         : undefined,
     },
     pagination: { mode: 'off' },

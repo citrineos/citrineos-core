@@ -49,6 +49,7 @@
       "vendorModel": "Fabricante / Modelo",
       "vendor": "Fabricante",
       "floorLevel": "Andar",
+      "chargePointSerialNumber": "Número de Série do Ponto de Recarga",
       "parkingRestrictions": "Restrições de Estacionamento",
       "capabilities": "Capacidades",
       "firmwareVersion": "Versão do Firmware",

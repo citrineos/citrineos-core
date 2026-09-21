@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 ![CitrineOS Logo](../../logo_white.png#gh-dark-mode-only)
 ![CitrineOS Logo](../../logo_black.png#gh-light-mode-only)
 
-# CitrineOS OCPI Server (`@citrineos/ocpi-demo`)
+# CitrineOS OCPI Server (`@citrineos/ocpi-server`)
 
 The **CitrineOS OCPI Server** is the runnable application that exposes the
 [Open Charge Point Interface (OCPI)](https://evroaming.org/ocpi/) APIs for **CitrineOS**, an open-source, modular
