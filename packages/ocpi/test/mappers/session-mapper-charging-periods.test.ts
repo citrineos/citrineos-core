@@ -144,3 +144,105 @@ describe('SessionMapper.getChargingPeriods CURRENT dimension', () => {
     expect(volumeOf(periods[0].dimensions, CdrDimensionType.CURRENT)).not.toBe(0.4);
   });
 });
+
+describe('SessionMapper.getChargingPeriods time dimensions', () => {
+  const AT = (minutes: number) => new Date(Date.UTC(2026, 7, 20, 10, minutes)).toISOString();
+
+  function periodsOver(
+    readings: readonly [number, number][],
+    sessionStartTime?: string,
+  ): ReturnType<SessionMapper['getChargingPeriods']> {
+    return mapper().getChargingPeriods(
+      readings.map(([minutes, wh]) => meterValue(AT(minutes), energyRegister(wh, 'Wh'))),
+      TARIFF_ID,
+      sessionStartTime,
+    );
+  }
+
+  function timeKinds(periods: ReturnType<SessionMapper['getChargingPeriods']>) {
+    return periods.map((period) =>
+      period.dimensions
+        .filter(
+          (dimension) =>
+            dimension.type === CdrDimensionType.TIME ||
+            dimension.type === CdrDimensionType.PARKING_TIME,
+        )
+        .map((dimension) => [dimension.type, dimension.volume] as const),
+    );
+  }
+
+  it('gives every period exactly one of TIME or PARKING_TIME', () => {
+    const kinds = timeKinds(
+      periodsOver([
+        [0, 0],
+        [30, 5000],
+        [60, 5000],
+      ]),
+    );
+
+    expect(kinds.map((period) => period.length)).toEqual([1, 1, 1]);
+  });
+
+  it('reports TIME for an interval whose register rose', () => {
+    const periods = periodsOver([
+      [0, 0],
+      [30, 5000],
+    ]);
+
+    expect(volumeOf(periods[1].dimensions, CdrDimensionType.TIME)).toBeCloseTo(0.5, 10);
+    expect(volumeOf(periods[1].dimensions, CdrDimensionType.PARKING_TIME)).toBeUndefined();
+  });
+
+  it('reports PARKING_TIME for an interval whose register stayed flat', () => {
+    // The car is still plugged in but no longer drawing: this must not be billed as charging.
+    const periods = periodsOver([
+      [0, 5000],
+      [60, 5000],
+    ]);
+
+    expect(volumeOf(periods[1].dimensions, CdrDimensionType.PARKING_TIME)).toBeCloseTo(1, 10);
+    expect(volumeOf(periods[1].dimensions, CdrDimensionType.TIME)).toBeUndefined();
+  });
+
+  it('makes the first period parking, since nothing precedes its reading', () => {
+    const periods = periodsOver([
+      [30, 0],
+      [60, 5000],
+    ]);
+
+    expect(volumeOf(periods[0].dimensions, CdrDimensionType.PARKING_TIME)).toBe(0);
+  });
+
+  it('folds the wait before the first reading into the first period', () => {
+    // Session opens at 10:00, first meter value at 10:30: half an hour of parking.
+    const periods = periodsOver(
+      [
+        [30, 0],
+        [60, 5000],
+      ],
+      AT(0),
+    );
+
+    expect(volumeOf(periods[0].dimensions, CdrDimensionType.PARKING_TIME)).toBeCloseTo(0.5, 10);
+  });
+
+  it('leaves the first period at zero when no session start is given', () => {
+    const periods = periodsOver([
+      [30, 0],
+      [60, 5000],
+    ]);
+
+    expect(volumeOf(periods[0].dimensions, CdrDimensionType.PARKING_TIME)).toBe(0);
+  });
+
+  it("does not reorder the caller's meter values", () => {
+    const readings = [
+      meterValue(AT(60), energyRegister(5000, 'Wh')),
+      meterValue(AT(0), energyRegister(0, 'Wh')),
+    ];
+
+    mapper().getChargingPeriods(readings, TARIFF_ID);
+
+    expect(readings[0].timestamp).toBe(AT(60));
+  });
+});

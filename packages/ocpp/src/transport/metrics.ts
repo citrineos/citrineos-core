@@ -175,6 +175,26 @@ export function recordWsSendFailure(reason: WsSendFailureReason): void {
   wsSendFailureTotal.add(1, { reason });
 }
 
+/**
+ * Seeds a zero-valued data point for every closed-set label combination of the
+ * transport counters, plus the active-connection gauge.
+ *
+ * Only closed label vocabularies are seeded. `ocpp_version`, `action` and close
+ * `code` are open-ended and are left to appear on first use.
+ */
+export function initWsTransportMetrics(): void {
+  for (const result of Object.values(WsUpgradeResult)) {
+    wsUpgradeTotal.add(0, { result });
+  }
+  for (const reason of Object.values(WsRejectReason)) {
+    wsConnectionRejectedTotal.add(0, { reason });
+  }
+  for (const reason of Object.values(WsSendFailureReason)) {
+    wsSendFailureTotal.add(0, { reason });
+  }
+  wsActiveConnections.add(0);
+}
+
 // --- OCPP message flow -------------------------------------------------------
 
 /** Every inbound OCPP frame, by `message_type` (Call|CallResult|CallError) and `ocpp_version`. */

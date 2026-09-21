@@ -147,7 +147,7 @@ export default {
       pricePerSession: 1.5,
       authorizationAmount: 25.0,
       paymentFee: 0.35,
-      taxRate: 0.0875, // 8.75% tax rate
+      taxRate: 8.75, // Applicable VAT percentage for this tariff dimension
       tenantId: TENANT_ID,
       createdAt: now,
       updatedAt: now,

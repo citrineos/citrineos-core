@@ -5,12 +5,11 @@ import 'reflect-metadata';
 import type { TenantPartnerDto } from '@citrineos/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
-
-import { CommandsClientApi } from '../../src/trigger/commands-client-api.js';
 import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
 } from '../../src/util/consts.js';
+import { CommandsClientApi } from '../../src/transport/trigger/commands-client-api.js';
 
 const COMMAND_ID = 'cmd-1';
 const COMMAND_TIMEOUT_SECONDS = 30;

@@ -236,7 +236,7 @@ export class EvseMapper {
   }
 
   fromGraphql(station: ChargingStationDto, evse: EvseDto): EvseDTO | undefined {
-    let connectors = evse.connectors
+    const connectors = evse.connectors
       ?.map((connector) => this.connectorMapper.fromGraphql(connector))
       ?.filter((c) => c !== undefined);
     if (!connectors || connectors.length === 0) {
@@ -244,9 +244,7 @@ export class EvseMapper {
         stationId: station.id,
         evseId: evse.id,
       });
-      connectors = undefined;
-      // return;
-      // TODO: solve this case
+      return undefined;
     }
 
     return {
@@ -266,7 +264,7 @@ export class EvseMapper {
       parking_restrictions: station.parkingRestrictions
         ?.map((r) => this.mapEvseParkingRestrictions(r))
         .filter((r) => r !== null),
-      connectors: connectors || [],
+      connectors: connectors,
       floor_level: station.floorLevel,
       last_updated: evse.updatedAt!,
     };
@@ -275,10 +273,17 @@ export class EvseMapper {
   fromPartialGraphql(
     station: Partial<ChargingStationDto>,
     evse: Partial<EvseDto>,
-  ): Partial<EvseDTO> {
+  ): Partial<EvseDTO> | undefined {
     const connectors = evse.connectors
       ?.map((connector) => this.connectorMapper.fromGraphql(connector))
       .filter((c) => c !== undefined);
+    if (connectors && connectors.length === 0) {
+      this.logger.warn('EVSE has no valid connectors', {
+        stationId: station.id,
+        evseId: evse.id,
+      });
+      return undefined;
+    }
 
     return {
       evse_id: evse.evseId,
@@ -450,14 +455,22 @@ export class ConnectorMapper {
         return ConnectorType.DOMESTIC_B;
       case ConnectorTypeEnum.DomesticC:
         return ConnectorType.DOMESTIC_C;
+      case ConnectorTypeEnum.DomesticD:
+        return ConnectorType.DOMESTIC_D;
+      case ConnectorTypeEnum.DomesticE:
+        return ConnectorType.DOMESTIC_E;
       case ConnectorTypeEnum.DomesticF:
         return ConnectorType.DOMESTIC_F;
       case ConnectorTypeEnum.DomesticG:
         return ConnectorType.DOMESTIC_G;
+      case ConnectorTypeEnum.DomesticH:
+        return ConnectorType.DOMESTIC_H;
       case ConnectorTypeEnum.DomesticI:
         return ConnectorType.DOMESTIC_I;
       case ConnectorTypeEnum.DomesticJ:
         return ConnectorType.DOMESTIC_J;
+      case ConnectorTypeEnum.DomesticK:
+        return ConnectorType.DOMESTIC_K;
       case ConnectorTypeEnum.DomesticL:
         return ConnectorType.DOMESTIC_L;
       case ConnectorTypeEnum.DomesticM:

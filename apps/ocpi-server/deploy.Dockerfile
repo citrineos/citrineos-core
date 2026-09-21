@@ -13,7 +13,7 @@ WORKDIR /usr/local/apps/citrineos
 
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter "@citrineos/ocpi-demo..." build
+RUN pnpm --filter "@citrineos/ocpi-server..." build
 
 # Prune to a production-only bundle of ocpi-server + its workspace deps —
 # same slim formula as apps/ocpp-server/deploy.Dockerfile. --legacy: pnpm 10
