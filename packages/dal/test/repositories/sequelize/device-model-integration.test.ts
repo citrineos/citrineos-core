@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import { VariableAttribute } from '@dal/db/sequelize/index.js';
-import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,
   DefaultSequelizeInstance,
@@ -12,12 +10,14 @@ import {
   Variable,
   VariableStatus,
 } from '@citrineos/dal';
-import { Tenant } from '../../../src/models/tenant.js';
-import { ChargingStation } from '../../../src/models/location/charging-station.js';
-import { aGetVariableResult } from '../../providers/monitoring.js';
+import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
+import { VariableAttribute } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ChargingStation } from '../../../src/models/location/charging-station.js';
+import { Tenant } from '../../../src/models/tenant.js';
+import { aGetVariableResult } from '../../providers/monitoring.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -124,6 +124,63 @@ async function seedVariableAttribute(
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe('createOrUpdateDeviceModelByStationId', () => {
+  it.each([
+    ['a newly created attribute', 'FreshVariable'],
+    ['an updated existing attribute', 'MaxVoltage'],
+  ])(
+    'exposes component and variable as readable properties for %s',
+    async (_case, variableName) => {
+      await seedBase();
+      await seedVariableAttribute('Connector', 'MaxVoltage', 'original-value');
+
+      const saved = await makeRepo().createOrUpdateDeviceModelByStationId(
+        TENANT_ID,
+        {
+          component: { name: 'Connector' },
+          variable: { name: variableName },
+          variableAttribute: [
+            {
+              type: OCPP2_0_1.AttributeEnumType.Actual,
+              value: 'some-value',
+              mutability: OCPP2_0_1.MutabilityEnumType.ReadWrite,
+            },
+          ],
+        },
+        OCPP_CONNECTION_NAME,
+        TIMESTAMP,
+      );
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].component?.name).toBe('Connector');
+      expect(saved[0].variable?.name).toBe(variableName);
+    },
+  );
+
+  it('keeps the relations in the serialized row as well', async () => {
+    await seedBase();
+
+    const saved = await makeRepo().createOrUpdateDeviceModelByStationId(
+      TENANT_ID,
+      {
+        component: { name: 'Connector' },
+        variable: { name: 'MaxVoltage' },
+        variableAttribute: [{ type: OCPP2_0_1.AttributeEnumType.Actual, value: 'some-value' }],
+      },
+      OCPP_CONNECTION_NAME,
+      TIMESTAMP,
+    );
+
+    // Round-tripping through JSON invokes the row's own toJSON, which reads
+    // dataValues rather than the assigned properties.
+    const serialized = JSON.parse(JSON.stringify(saved[0]));
+    expect(serialized).toMatchObject({
+      component: expect.objectContaining({ name: 'Connector' }),
+      variable: expect.objectContaining({ name: 'MaxVoltage' }),
+    });
+  });
+});
 
 describe('createOrUpdateByGetVariablesResultAndStationId', () => {
   describe('when attributeStatus is Accepted', () => {
