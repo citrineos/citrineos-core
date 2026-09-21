@@ -236,7 +236,7 @@ export class SequelizeTransactionEventRepository
               value.eventType === OCPP2_0_1.TransactionEventEnumType.Ended
                 ? value.timestamp
                 : undefined,
-            ...transactionInfoForRow(value.transactionInfo),
+            ...transactionInfoForRow(transactionInfo),
             authorizationId,
             evseId,
             connectorId,
@@ -261,7 +261,8 @@ export class SequelizeTransactionEventRepository
             value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
               ? value.timestamp
               : undefined,
-          ...transactionInfoForRow(value.transactionInfo),
+          ...transactionInfoForRow(transactionInfo),
+          tariffId: infoTariff?.id,
         });
 
         if (value.evse) {
