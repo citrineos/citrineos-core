@@ -220,7 +220,7 @@ describe('location queries', () => {
     );
     expect(GET_CONNECTOR_BY_ID_QUERY).toContain('evses: Evses(where: { id: { _eq: $evseId } })');
     expect(GET_CONNECTOR_BY_ID_QUERY).toContain(
-      'connectors: Connectors(where: { connectorId: { _eq: $connectorId } })',
+      'connectors: Connectors(where: { id: { _eq: $connectorId } })',
     );
   });
 });
