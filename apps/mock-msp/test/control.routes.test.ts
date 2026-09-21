@@ -404,10 +404,20 @@ describe('/_mock registration routes against a stub CPO', () => {
     expect(cpo.requests).toHaveLength(1);
     const sent = cpo.requests[0];
     expect(sent.path).toBe('/ocpi/2.2.1/credentials/register-credentials-token-a');
-    const body = sent.body as { token: string; url: string; roles: Array<{ role: string }> };
-    expect(body.token).toBe(res.json().registration.tokenA);
-    expect(body.url).toBe(`${ctx.config.publicBaseUrl}/versions`);
-    expect(body.roles[0].role).toBe('EMSP');
+    const body = sent.body as {
+      url: string;
+      role: { role: string; party_id: string; country_code: string };
+      credentials: { token: string; url: string; roles: Array<{ role: string }> };
+    };
+    expect(body.url).toBe(
+      ctx.config.citrineVersionsUrl ?? `${ctx.config.citrineOcpiBaseUrl}/versions`,
+    );
+    expect(body.role.role).toBe('CPO');
+    expect(body.role.party_id).toBe(ctx.config.cpoPartyId);
+    expect(body.role.country_code).toBe(ctx.config.cpoCountryCode);
+    expect(body.credentials.token).toBe(res.json().registration.tokenA);
+    expect(body.credentials.url).toBe(`${ctx.config.publicBaseUrl}/versions`);
+    expect(body.credentials.roles[0].role).toBe('EMSP');
     // The rest of the handshake happens inbound, so the status is still pending here.
     expect(ctx.store.domain.registration.status).toBe('unregistered');
   });

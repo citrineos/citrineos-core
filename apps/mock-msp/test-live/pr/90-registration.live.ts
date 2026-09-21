@@ -128,22 +128,14 @@ describe('registration', () => {
     expect(r.status).toBe(200);
     const ex = (await exchanges({ operation: 'credentials.register-token-a' })).at(-1);
     expect(ex).toBeDefined();
-    if (ex!.response.httpStatus === 200) {
-      // Citrine finishes the handshake by POSTing its credentials to us
-      await waitFor(
-        { direction: 'inbound', operation: 'credentials.post', minSeq: floor + 1 },
-        30_000,
-      );
-      expect((await health()).registration.status).toBe('registered');
-      expect((await ctl<any>('/pull/locations', {})).body.exchange.response.httpStatus).toBe(200);
-      return;
-    }
-    // Citrine's register-credentials-token-a declares versionUrl / cpoCountryCode /
-    // cpoPartyId as route params on a route that has none, so no client can
-    // satisfy it today. Pin that so a fix upstream shows up here.
-    expect(ex!.response.httpStatus).toBe(500);
-    expect(JSON.stringify(ex!.response.body)).toContain('versionUrl');
-    expect((await health()).registration.status).toBe('unregistered');
+    expect(ex!.response.httpStatus).toBe(200);
+    // Citrine finishes the handshake by POSTing its credentials to us
+    await waitFor(
+      { direction: 'inbound', operation: 'credentials.post', minSeq: floor + 1 },
+      30_000,
+    );
+    expect((await health()).registration.status).toBe('registered');
+    expect((await ctl<any>('/pull/locations', {})).body.exchange.response.httpStatus).toBe(200);
   });
 
   it('register.ts drives the same handshake', async () => {

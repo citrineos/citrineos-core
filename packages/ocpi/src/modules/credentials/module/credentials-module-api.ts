@@ -6,6 +6,7 @@ import type {
   CredentialsDTO,
   CredentialsResponse,
   OcpiEmptyResponse,
+  RegisterCredentialsTokenARequestDTO,
   UnregisterClientRequestDTO,
 } from '../../../../index.js';
 import {
@@ -28,6 +29,8 @@ import {
   OcpiEmptyResponseSchema,
   OcpiEmptyResponseSchemaName,
   OcpiResponseStatusCode,
+  RegisterCredentialsTokenARequestDTOSchema,
+  RegisterCredentialsTokenARequestDTOSchemaName,
   ResponseSchema,
   UnregisterClientRequestDTOSchema,
   UnregisterClientRequestDTOSchemaName,
@@ -193,19 +196,19 @@ export class CredentialsModuleApi extends BaseController implements ICredentials
   })
   async registerCredentialsTokenA(
     @VersionNumberParam() versionNumber: VersionNumber,
-    @Param('versionUrl') versionUrl: string, // CPO version url
-    @Param('cpoCountryCode') cpoCountryCode: string,
-    @Param('cpoPartyId') cpoPartyId: string,
-    @BodyWithSchema(CredentialsDTOSchema, CredentialsDTOSchemaName)
-    credentials: CredentialsDTO, // Partner credentials
+    @BodyWithSchema(
+      RegisterCredentialsTokenARequestDTOSchema,
+      RegisterCredentialsTokenARequestDTOSchemaName,
+    )
+    request: RegisterCredentialsTokenARequestDTO,
   ): Promise<CredentialsResponse> {
-    this.logger.info('registerCredentialsTokenA', credentials);
+    this.logger.info('registerCredentialsTokenA', request);
     const serverCredentials: CredentialsDTO =
       await this.credentialsService?.registerCredentialsTokenA(
-        cpoCountryCode,
-        cpoPartyId,
-        versionUrl,
-        credentials,
+        request.role.country_code,
+        request.role.party_id,
+        request.url,
+        request.credentials,
         versionNumber,
       );
     return buildCredentialsResponse(serverCredentials);

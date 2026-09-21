@@ -278,9 +278,18 @@ class OcpiClientImpl implements OcpiClient {
         operation: 'credentials.register-token-a',
         functional: false,
         body: {
-          token: ourTokenA,
-          url: versionsListUrl(config.publicBaseUrl),
-          roles: [this.ourRole()],
+          url: citrineVersionsUrl,
+          role: {
+            role: Role.CPO,
+            party_id: config.cpoPartyId,
+            country_code: config.cpoCountryCode,
+            business_details: { name: 'CitrineOSElectricVehicleSolutions' },
+          },
+          credentials: {
+            token: ourTokenA,
+            url: versionsListUrl(config.publicBaseUrl),
+            roles: [this.ourRole()],
+          },
         },
         responseSchema: CredentialsResponseSchema,
       });
