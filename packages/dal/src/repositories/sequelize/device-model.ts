@@ -10,14 +10,14 @@ import {
 } from '@citrineos/types';
 import { Op } from 'sequelize';
 import { type VariableAttributeQuerystring } from '../../interfaces/queries/variable-attribute.js';
-import { type IDeviceModelRepository } from '../repositories.js';
-import { Component } from '../../models/device-model/component.js';
 import { ComponentVariable } from '../../models/device-model/component-variable.js';
+import { Component } from '../../models/device-model/component.js';
 import { EvseType } from '../../models/device-model/evse-type.js';
-import { Variable } from '../../models/device-model/variable.js';
 import { VariableAttribute } from '../../models/device-model/variable-attribute.js';
 import { VariableCharacteristics } from '../../models/device-model/variable-characteristics.js';
 import { VariableStatus } from '../../models/device-model/variable-status.js';
+import { Variable } from '../../models/device-model/variable.js';
+import { type IDeviceModelRepository } from '../repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 
@@ -198,6 +198,8 @@ export class SequelizeDeviceModelRepository
     for (const savedVariableAttribute of savedVariableAttributes) {
       savedVariableAttribute.setDataValue('component', component);
       savedVariableAttribute.setDataValue('variable', variable);
+      savedVariableAttribute.component = component;
+      savedVariableAttribute.variable = variable;
     }
     return savedVariableAttributes;
   }
@@ -494,7 +496,7 @@ export class SequelizeDeviceModelRepository
     const variableAttributeArray = await super.readAllByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        bootConfigSetId: { [Op.ne]: null },
+        bootConfigId: { [Op.ne]: null },
       },
       include: [{ model: Component, include: [EvseType] }, Variable],
     });
@@ -619,10 +621,22 @@ export class SequelizeDeviceModelRepository
         attributeType: input.type,
         attributeValue: input.value,
         component: {
-          ...input.component,
+          name: input.component.name,
+          ...(input.component.instance ? { instance: input.component.instance } : {}),
+          ...(input.component.evse
+            ? {
+                evse: {
+                  id: input.component.evse.id,
+                  ...(input.component.evse.connectorId
+                    ? { connectorId: input.component.evse.connectorId }
+                    : {}),
+                },
+              }
+            : {}),
         },
         variable: {
-          ...input.variable,
+          name: input.variable.name,
+          ...(input.variable.instance ? { instance: input.variable.instance } : {}),
         },
       };
     }

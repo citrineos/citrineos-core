@@ -148,6 +148,7 @@ export class CredentialsService {
       versionsUrl: credentials.url,
       token: credentials.token,
     };
+    tenantPartner = await this.getVersionDetails(tenantPartner, credentials.url);
     tenantPartner.partnerProfileOCPI!.roles = credentials.roles.map((value: CredentialsRoleDTO) =>
       RegistrationMapper.toCredentialsRole(value),
     );

@@ -228,6 +228,31 @@ export const GET_EVSE_BY_ID_QUERY = gql`
           removed
           createdAt
           updatedAt
+          connectors: Connectors {
+            id
+            stationId
+            evseId
+            connectorId
+            evseTypeConnectorId
+            format
+            maximumAmperage
+            maximumPowerWatts
+            maximumVoltage
+            powerType
+            termsAndConditionsUrl
+            type
+            tariff: Tariff {
+              id
+            }
+            status
+            errorCode
+            timestamp
+            info
+            vendorId
+            vendorErrorCode
+            createdAt
+            updatedAt
+          }
         }
       }
     }
@@ -251,7 +276,7 @@ export const GET_CONNECTOR_BY_ID_QUERY = gql`
     ) {
       chargingPool: ChargingStations(where: { ocppConnectionName: { _eq: $stationId } }) {
         evses: Evses(where: { id: { _eq: $evseId } }) {
-          connectors: Connectors(where: { connectorId: { _eq: $connectorId } }) {
+          connectors: Connectors(where: { id: { _eq: $connectorId } }) {
             id
             stationId
             evseId

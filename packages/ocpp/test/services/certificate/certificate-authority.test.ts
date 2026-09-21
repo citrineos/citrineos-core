@@ -46,6 +46,7 @@ describe('CertificateAuthorityService', () => {
       integrations: {
         v2gCA: { name: 'hubject' },
         chargingStationCA: { name: 'acme' },
+        ocsp: { allowedResponderHosts: [] },
       },
     } as unknown as Mocked<SystemConfig>;
 
@@ -241,6 +242,7 @@ describe('CertificateAuthorityService', () => {
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
         expect.any(KJUR.asn1.ocsp.OCSPRequest),
         mockOCSPURL,
+        [],
       );
       expect(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).toHaveBeenCalledWith(mockOCSPResponse);
     });
@@ -259,18 +261,58 @@ describe('CertificateAuthorityService', () => {
     });
 
     it('fails when found 0 certificates in chain', async () => {
+      mockCertUtil.parseCertificateChainPem.mockReturnValue([]);
       const result = await certificateAuthorityService.validateCertificateChainPem(
         faker.lorem.sentence(),
       );
-      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable);
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
     });
 
     it('fails when no root certificates match', async () => {
+      mockCertUtil.parseCertificateChainPem.mockReturnValue([
+        readFile('SubCACertificateSample.pem'),
+      ]);
       (mockV2GClient.getRootCertificates as Mock).mockReturnValueOnce([]);
       const result = await certificateAuthorityService.validateCertificateChainPem(
         readFile('SubCACertificateSample.pem'), //aInvalidCertificateChainWithoutRoot(),
       );
-      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.NoCertificateAvailable);
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
+    });
+
+    function aChainTheResponderIsAskedAbout() {
+      const mockIssuerCert = readFile('RootCertificateSample.pem');
+      const mockLeafCert = aValidSignedCertificateWithOCSPInfo(
+        faker.internet.url(),
+        mockIssuerCert,
+        readFile('RootKeySample.pem'),
+      ).getPEM();
+      mockCertUtil.parseCertificateChainPem.mockReturnValue([mockLeafCert]);
+      mockV2GClient.getRootCertificates.mockReturnValueOnce(Promise.resolve([mockIssuerCert]));
+    }
+
+    it('fails when the OCSP responder does not know the certificate', async () => {
+      aChainTheResponderIsAskedAbout();
+      mockCertUtil.sendOCSPRequest.mockReturnValue(Promise.resolve(faker.lorem.word()));
+      vi.mocked(KJUR.asn1.ocsp.OCSPUtil.getOCSPResponseInfo).mockReturnValueOnce({
+        certStatus: 'unknown',
+      } as never);
+
+      const result = await certificateAuthorityService.validateCertificateChainPem(
+        faker.lorem.word(),
+      );
+
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
+    });
+
+    it('fails when the OCSP responder cannot be reached', async () => {
+      aChainTheResponderIsAskedAbout();
+      mockCertUtil.sendOCSPRequest.mockRejectedValueOnce(new Error('connect ECONNREFUSED'));
+
+      const result = await certificateAuthorityService.validateCertificateChainPem(
+        faker.lorem.word(),
+      );
+
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
     });
   });
 
@@ -300,6 +342,7 @@ describe('CertificateAuthorityService', () => {
       expect(mockCertUtil.sendOCSPRequest).toHaveBeenCalledWith(
         expect.any(KJUR.asn1.ocsp.OCSPRequest),
         givenResponderURL,
+        [],
       );
       const capturedRequest = mockCertUtil.sendOCSPRequest.mock.calls.find(
         ([, url]) => url === givenResponderURL,
@@ -331,6 +374,22 @@ describe('CertificateAuthorityService', () => {
           sbjsn: givenOCSPRequest.serialNumber,
         },
       ]);
+    });
+
+    it('fails when the OCSP responder cannot be reached', async () => {
+      mockCertUtil.sendOCSPRequest.mockRejectedValueOnce(new Error('connect ECONNREFUSED'));
+
+      const result = await certificateAuthorityService.validateCertificateHashData([
+        {
+          hashAlgorithm: OCPP2_0_1.HashAlgorithmEnumType.SHA256,
+          issuerNameHash: 'aa'.repeat(32),
+          issuerKeyHash: 'bb'.repeat(32),
+          serialNumber: '0102030405',
+          responderURL: faker.internet.url(),
+        } as OCPP2_0_1.OCSPRequestDataType,
+      ]);
+
+      expect(result).toBe(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertChainError);
     });
   });
 });
