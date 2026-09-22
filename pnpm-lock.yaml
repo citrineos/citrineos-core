@@ -36,6 +36,9 @@ catalogs:
     '@peculiar/webcrypto':
       specifier: 1.7.1
       version: 1.7.1
+    '@playwright/test':
+      specifier: 1.63.0
+      version: 1.63.0
     '@types/amqplib':
       specifier: 0.10.8
       version: 0.10.8
@@ -90,6 +93,15 @@ catalogs:
     cross-env:
       specifier: 7.0.3
       version: 7.0.3
+    drizzle-kit:
+      specifier: 0.31.10
+      version: 0.31.10
+    drizzle-orm:
+      specifier: 0.45.2
+      version: 0.45.2
+    drizzle-zod:
+      specifier: 0.8.3
+      version: 0.8.3
     eslint:
       specifier: 9.16.0
       version: 9.16.0
@@ -129,6 +141,9 @@ catalogs:
     pg:
       specifier: 8.11.3
       version: 8.11.3
+    pg-hstore:
+      specifier: 2.3.4
+      version: 2.3.4
     pkijs:
       specifier: 3.4.0
       version: 3.4.0
@@ -314,7 +329,7 @@ importers:
         specifier: 'catalog:'
         version: 9.16.0
       '@playwright/test':
-        specifier: ^1.49.0
+        specifier: 'catalog:'
         version: 1.63.0
       '@types/node':
         specifier: 'catalog:'
@@ -727,7 +742,7 @@ importers:
         specifier: 'catalog:'
         version: 9.16.0
       '@playwright/test':
-        specifier: ^1.49.0
+        specifier: 'catalog:'
         version: 1.63.0
       '@tailwindcss/postcss':
         specifier: '4'
@@ -902,16 +917,16 @@ importers:
         specifier: workspace:*
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.0
-        version: 0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
+        specifier: 'catalog:'
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
+        specifier: 'catalog:'
+        version: 0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
       pg:
         specifier: 'catalog:'
         version: 8.11.3
       pg-hstore:
-        specifier: 2.3.4
+        specifier: 'catalog:'
         version: 2.3.4
       sequelize:
         specifier: 'catalog:'
@@ -939,8 +954,8 @@ importers:
         specifier: 'catalog:'
         version: 13.0.5
       drizzle-kit:
-        specifier: ^0.31.0
-        version: 0.31.11
+        specifier: 'catalog:'
+        version: 0.31.10
       eslint:
         specifier: 'catalog:'
         version: 9.16.0(jiti@2.7.0)
@@ -1171,11 +1186,11 @@ importers:
         specifier: 'catalog:'
         version: 0.5.1
       drizzle-orm:
-        specifier: ^0.45.0
-        version: 0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
+        specifier: 'catalog:'
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
+        specifier: 'catalog:'
+        version: 0.8.3(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(knex@3.1.0(pg@8.11.3)(sqlite3@5.1.7))(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
       fastify:
         specifier: 'catalog:'
         version: 5.12.5
@@ -1210,7 +1225,7 @@ importers:
         specifier: 'catalog:'
         version: 8.11.3
       pg-hstore:
-        specifier: 2.3.4
+        specifier: 'catalog:'
         version: 2.3.4
       pkijs:
         specifier: 'catalog:'
@@ -1265,8 +1280,8 @@ importers:
         specifier: 'catalog:'
         version: 8.18.1
       drizzle-kit:
-        specifier: ^0.31.0
-        version: 0.31.11
+        specifier: 'catalog:'
+        version: 0.31.10
       eslint:
         specifier: 'catalog:'
         version: 9.16.0(jiti@2.7.0)
