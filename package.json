@@ -75,7 +75,7 @@
     "pkijs": "catalog:",
     "pvutils": "catalog:",
     "redis": "catalog:",
-    "sequelize-cli": "^6.6.2",
+    "sequelize-cli": "catalog:",
     "sequelize-typescript": "catalog:",
     "tsconfig-paths": "^4.2.0",
     "utf-8-validate": "catalog:"

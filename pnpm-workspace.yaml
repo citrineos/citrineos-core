@@ -51,6 +51,7 @@ catalog:
 
   # -- Persistence & messaging --
   sequelize: 6.37.8
+  sequelize-cli: 6.6.5
   sequelize-typescript: 2.1.6
   pg: 8.11.3
   redis: 4.7.1

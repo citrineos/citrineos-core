@@ -49,7 +49,7 @@
     "cross-env": "catalog:",
     "fastify": "catalog:",
     "sequelize": "catalog:",
-    "sequelize-cli": "^6.6.2",
+    "sequelize-cli": "catalog:",
     "sequelize-typescript": "catalog:",
     "sqlite3": "catalog:",
     "tslog": "catalog:",
