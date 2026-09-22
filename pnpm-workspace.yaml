@@ -68,7 +68,7 @@ catalog:
   jsrsasign: 11.1.5
   jwks-rsa: 4.1.0
   "@peculiar/webcrypto": 1.7.1
-  pkijs: 3.4.0
+  pkijs: 3.4.1
   pvutils: 1.2.0
 
   # -- Runtime & infrastructure --
