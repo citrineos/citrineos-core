@@ -12,7 +12,6 @@ import {
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
-import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AttributeEnum,
   AuthorizationStatusEnum,
@@ -28,12 +27,13 @@ import {
   OCPPVersion,
   OCPP2_request_types,
   OCPP2_response_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import { CertificateAuthorityService } from '@services/index.js';
 import { validateOcpp21IdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITariffRepository,
 } from '@citrineos/dal';
 import { OCPP2_1_Mapper } from '@citrineos/dal';
@@ -44,7 +44,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _authorizers: IAuthorizer[];
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _tariffRepository: ITariffRepository;
 
   constructor({
@@ -53,14 +53,14 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     certificateAuthorityService,
     authorizers,
     authorizationRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     tariffRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     certificateAuthorityService: CertificateAuthorityService;
     authorizers: IAuthorizer[];
     authorizationRepository: IAuthorizationRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     tariffRepository: ITariffRepository;
   }) {
     super(logger);
@@ -68,7 +68,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     this._certificateAuthorityService = certificateAuthorityService;
     this._authorizers = authorizers;
     this._authorizationRepository = authorizationRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._tariffRepository = tariffRepository;
   }
 
@@ -182,7 +182,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           if (hasConnectorTypeRestriction) {
             evseIds = new Set();
             const connectorTypes: VariableAttributeDto[] =
-              await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+              await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
                 tenantId: context.tenantId,
                 ocppConnectionName: message.context.ocppConnectionName,
                 component_name: 'Connector',
@@ -211,7 +211,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
             ) {
               evseIds = evseIds ? evseIds : new Set();
               const evseIdAttributes: VariableAttributeDto[] =
-                await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+                await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
                   tenantId: context.tenantId,
                   ocppConnectionName: message.context.ocppConnectionName,
                   component_name: 'EVSE',
@@ -302,7 +302,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
 
     if (response.idTokenInfo.status === AuthorizationStatusEnum.Accepted) {
       const tariffEnabled: VariableAttributeDto[] =
-        await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+        await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           component_name: 'TariffCostCtrlr',

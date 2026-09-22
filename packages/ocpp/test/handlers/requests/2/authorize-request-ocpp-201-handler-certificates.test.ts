@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type IAuthorizer, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IAuthorizationRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   AuthorizationStatusEnum,
@@ -56,9 +56,9 @@ function makeHandler(
     authorizationRepository: {
       readOnlyOneByQuerystring: vi.fn().mockResolvedValue(authorization),
     } as unknown as IAuthorizationRepository,
-    deviceModelRepository: {
+    variableAttributeRepository: {
       readAllByQuerystring: vi.fn().mockResolvedValue([]),
-    } as unknown as IDeviceModelRepository,
+    } as unknown as IVariableAttributeRepository,
   } as never);
 
   return { handler, ocppSender };

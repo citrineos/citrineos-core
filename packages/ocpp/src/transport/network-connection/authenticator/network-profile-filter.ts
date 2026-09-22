@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
-import type { IDeviceModelRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
 import { ChargingStationNetworkProfile, resolveStationId } from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
@@ -15,20 +15,20 @@ import { UpgradeAuthenticationError } from './errors/authentication-error.js';
  * Filter used to block connections when charging stations attempt to connect to disallowed security profiles
  */
 export class NetworkProfileFilter extends AuthenticatorFilter {
-  private _deviceModelRepository: IDeviceModelRepository;
+  private _variableAttributeRepository: IVariableAttributeRepository;
   private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
 
   constructor({
-    deviceModelRepository,
+    variableAttributeRepository,
     serverNetworkProfileRepository,
     logger,
   }: {
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
   }
 
@@ -59,7 +59,7 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
     identifier: string,
     securityProfile: number,
   ) {
-    const r = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const r = await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
       tenantId,
       ocppConnectionName: identifier,
       component_name: 'OCPPCommCtrlr',

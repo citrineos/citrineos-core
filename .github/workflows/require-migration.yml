@@ -1,0 +1,120 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Require Migration
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  require-migration:
+    name: Require Migration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for a migration alongside DAL model changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const MODEL_PREFIX = 'packages/dal/src/models/';
+            const MIGRATION_PREFIX = 'apps/ocpp-server/db/migrations/';
+            const MIGRATION_FILENAME = /^\d{14}-[a-z0-9-]+\.ts$/;
+            const EXEMPT_LABEL = 'no-migration-needed';
+            const MARKER = '<!-- citrineos:require-migration -->';
+
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const modelChanges = files.filter((file) => file.filename.startsWith(MODEL_PREFIX));
+            const addedMigrations = files.filter(
+              (file) => file.filename.startsWith(MIGRATION_PREFIX) && file.status === 'added',
+            );
+
+            const exempt = pr.labels.some((label) => label.name === EXEMPT_LABEL);
+
+            const badNames = addedMigrations
+              .map((file) => file.filename.slice(MIGRATION_PREFIX.length))
+              .filter((name) => !MIGRATION_FILENAME.test(name));
+
+            const failures = [];
+
+            if (modelChanges.length > 0 && addedMigrations.length === 0 && !exempt) {
+              for (const file of modelChanges) {
+                core.error('Model changed with no migration in this pull request.', { file: file.filename });
+              }
+              failures.push(
+                [
+                  `This pull request changes ${modelChanges.length} file(s) under \`${MODEL_PREFIX}\` but adds no migration to \`${MIGRATION_PREFIX}\`.`,
+                  '',
+                  'A model change on its own leaves every database that already exists behind. Add a migration named',
+                  '`<14-digit UTC timestamp>-<what-it-does>.ts`, following the newest file in that directory for structure.',
+                  '',
+                  `If this change genuinely does not alter the database shape, apply the \`${EXEMPT_LABEL}\` label.`,
+                  '',
+                  'Model files changed:',
+                  ...modelChanges.map((file) => `- \`${file.filename}\``),
+                ].join('\n'),
+              );
+            }
+
+            for (const name of badNames) {
+              core.error('Migration filename must be <14-digit UTC timestamp>-<what-it-does>.ts, lower case.', {
+                file: `${MIGRATION_PREFIX}${name}`,
+              });
+            }
+
+            if (badNames.length > 0) {
+              failures.push(
+                [
+                  'These added migrations do not follow the `<14-digit UTC timestamp>-<what-it-does>.ts` naming convention (lower case, hyphen separated):',
+                  ...badNames.map((name) => `- \`${name}\``),
+                  '',
+                  'Migrations run in filename order, so the timestamp prefix is what fixes their sequence.',
+                ].join('\n'),
+              );
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => (comment.body || '').includes(MARKER));
+
+            if (failures.length === 0) {
+              if (existing) {
+                await github.rest.issues.deleteComment({ owner, repo, comment_id: existing.id });
+              }
+              core.info('Migration check passed.');
+              return;
+            }
+
+            const body = [MARKER, ...failures].join('\n\n');
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+            }
+
+            core.setFailed(
+              modelChanges.length > 0 && addedMigrations.length === 0 && !exempt
+                ? 'DAL model changed without a migration.'
+                : 'Migration filename does not follow the naming convention.',
+            );

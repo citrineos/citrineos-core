@@ -44,6 +44,9 @@
     "@citrineos/dal": "workspace:*",
     "@citrineos/types": "workspace:*",
     "cross-env": "catalog:",
+    "sequelize": "catalog:",
+    "sequelize-cli": "catalog:",
+    "sequelize-typescript": "catalog:",
     "sqlite3": "catalog:",
     "ws": "catalog:"
   },

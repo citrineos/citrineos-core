@@ -32,7 +32,7 @@ import {
 import {
   ChargingSchedule,
   type IChargingProfileRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITransactionEventRepository,
   OCPP2_0_1_Mapper,
   Transaction,
@@ -50,7 +50,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _costCalculator: CostCalculator;
   protected _costNotifier: CostNotifier;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _signedMeterValuesUtil: SignedMeterValuesUtil;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionService: TransactionService;
@@ -66,7 +66,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     config,
     costCalculator,
     costNotifier,
-    deviceModelRepository,
+    variableAttributeRepository,
     signedMeterValuesUtil,
     transactionEventRepository,
     transactionService,
@@ -77,7 +77,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     config: SystemConfig;
     costCalculator: CostCalculator;
     costNotifier: CostNotifier;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     signedMeterValuesUtil: SignedMeterValuesUtil;
     transactionEventRepository: ITransactionEventRepository;
     transactionService: TransactionService;
@@ -89,7 +89,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     this._chargingProfileRepository = chargingProfileRepository;
     this._costCalculator = costCalculator;
     this._costNotifier = costNotifier;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._signedMeterValuesUtil = signedMeterValuesUtil;
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
@@ -337,7 +337,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       if (!ocpp21Response.transactionLimit) {
         try {
           const authAmountAttributes: VariableAttributeDto[] =
-            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+            await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
               tenantId,
               ocppConnectionName,
               component_name: 'PaymentCtrlr',
@@ -417,7 +417,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
 
       // I06 - Update Tariff Information During Transaction
       const tariffAvailableAttributes: VariableAttributeDto[] =
-        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
           tenantId,
           ocppConnectionName: ocppConnectionName,
           component_name: 'TariffCostCtrlr',
@@ -527,7 +527,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       (!transaction.totalKwh || transaction.totalKwh <= 0)
     ) {
       const tariffEnabled: VariableAttributeDto[] =
-        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
           tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           component_name: 'TariffCostCtrlr',
@@ -558,7 +558,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
       try {
         const settlementByCSMSAttributes: VariableAttributeDto[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+          await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName,
             component_name: 'PaymentCtrlr',

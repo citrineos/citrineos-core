@@ -92,7 +92,7 @@ function makeHandler(
 
   const chargingProfileRepository = { readAllByQuery: vi.fn().mockResolvedValue([]) };
   const deviceModelVariables = overrides.deviceModelVariables ?? {};
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
       const key = [query.component_name, query.variable_name, query.variable_instance]
         .filter(Boolean)
@@ -114,7 +114,7 @@ function makeHandler(
     config: overrides.config ?? makeConfig(),
     costCalculator: costCalculator as any,
     costNotifier: costNotifier as any,
-    deviceModelRepository: deviceModelRepository as any,
+    variableAttributeRepository: variableAttributeRepository as any,
     signedMeterValuesUtil: signedMeterValuesUtil as any,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
@@ -129,6 +129,7 @@ function makeHandler(
     transactionService,
     costCalculator,
     signedMeterValuesUtil,
+    variableAttributeRepository,
   };
 }
 

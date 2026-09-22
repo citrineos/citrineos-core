@@ -16,7 +16,7 @@ import {
 } from '@citrineos/types';
 import type {
   IAuthorizationRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ITariffRepository,
 } from '@citrineos/dal';
 import { AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
@@ -57,14 +57,14 @@ describe('AuthorizeRequestOcpp21Handler', () => {
    */
   describe('driver tariff in the AuthorizeResponse', () => {
     let ocppSender: ReturnType<typeof makeMockOcppSender>;
-    let deviceModelRepository: { readAllByQuerystring: ReturnType<typeof vi.fn> };
+    let variableAttributeRepository: { readAllByQuerystring: ReturnType<typeof vi.fn> };
     let handler: AuthorizeRequestOcpp21Handler;
 
     function makeHandler(tariffEnabled: string | null | undefined) {
       const { logger } = createTestContainer();
       ocppSender = makeMockOcppSender();
 
-      deviceModelRepository = {
+      variableAttributeRepository = {
         readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
           if (query.component_name === 'TariffCostCtrlr' && query.variable_name === 'Enabled') {
             return tariffEnabled === undefined ? [] : [{ value: tariffEnabled }];
@@ -96,7 +96,8 @@ describe('AuthorizeRequestOcpp21Handler', () => {
         certificateAuthorityService: {} as unknown as CertificateAuthorityService,
         authorizers: [],
         authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
-        deviceModelRepository: deviceModelRepository as unknown as IDeviceModelRepository,
+        variableAttributeRepository:
+          variableAttributeRepository as unknown as IVariableAttributeRepository,
         tariffRepository: tariffRepository as unknown as ITariffRepository,
       });
     }
@@ -156,9 +157,9 @@ describe('AuthorizeRequestOcpp21Handler', () => {
         authorizationRepository: {
           readOnlyOneByQuerystring: vi.fn().mockResolvedValue(authorization),
         } as unknown as IAuthorizationRepository,
-        deviceModelRepository: {
+        variableAttributeRepository: {
           readAllByQuerystring: vi.fn().mockResolvedValue([]),
-        } as unknown as IDeviceModelRepository,
+        } as unknown as IVariableAttributeRepository,
         tariffRepository: {} as unknown as ITariffRepository,
       });
 

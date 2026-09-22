@@ -16,7 +16,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { NotifySettlementRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -62,7 +62,7 @@ function makeHandler(
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
   };
 
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: overrides.deviceModelError
       ? vi.fn().mockRejectedValue(overrides.deviceModelError)
       : vi.fn().mockResolvedValue(overrides.receiptByCSMSAttributes ?? []),
@@ -72,12 +72,13 @@ function makeHandler(
     logger,
     ocppSender,
     config: overrides.config ?? makeConfig('https://receipts.example.com'),
-    deviceModelRepository: deviceModelRepository as unknown as IDeviceModelRepository,
+    variableAttributeRepository:
+      variableAttributeRepository as unknown as IVariableAttributeRepository,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
   });
 
-  return { handler, ocppSender, logger, transactionEventRepository, deviceModelRepository };
+  return { handler, ocppSender, logger, transactionEventRepository, variableAttributeRepository };
 }
 
 function sentResponse(
@@ -110,7 +111,7 @@ const settledRequest: OCPP2_1.NotifySettlementRequest = {
 describe('NotifySettlementRequestOcpp21Handler', () => {
   describe('receipt generation (C21.FR.03)', () => {
     it('returns receiptUrl and receiptId when Settled and ReceiptByCSMS is true', async () => {
-      const { handler, ocppSender, deviceModelRepository } = makeHandler({
+      const { handler, ocppSender, variableAttributeRepository } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
       });
       const message = makeMessage(settledRequest);
@@ -124,14 +125,17 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       });
       expect(ocppSender.sendCallResultWithMessage.mock.calls[0][0]).toBe(message);
 
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledOnce();
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: 'station-001',
-        component_name: 'PaymentCtrlr',
-        variable_name: 'ReceiptByCSMS',
-        type: AttributeEnum.Actual,
-      });
+      expect(variableAttributeRepository.readAllByQuerystring).toHaveBeenCalledOnce();
+      expect(variableAttributeRepository.readAllByQuerystring).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        {
+          tenantId: DEFAULT_TENANT_ID,
+          ocppConnectionName: 'station-001',
+          component_name: 'PaymentCtrlr',
+          variable_name: 'ReceiptByCSMS',
+          type: AttributeEnum.Actual,
+        },
+      );
 
       // The generated URL is then pushed to the station display.
       const displayCall = sentDisplayCall(ocppSender);
@@ -259,8 +263,13 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
     });
 
     it('stores a Rejected settlement without receipt fields and skips receipt generation (C22.FR.01)', async () => {
-      const { handler, ocppSender, logger, transactionEventRepository, deviceModelRepository } =
-        makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
+      const {
+        handler,
+        ocppSender,
+        logger,
+        transactionEventRepository,
+        variableAttributeRepository,
+      } = makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
 
       await handler.handle(
         makeMessage({
@@ -281,7 +290,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(settlement).not.toHaveProperty('vatNumber');
 
       expect(sentResponse(ocppSender)).toEqual({});
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
       expect(ocppSender.sendCall).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledOnce();
     });

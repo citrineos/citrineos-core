@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   CertificateSigningUseEnum,
@@ -58,9 +58,9 @@ function makeHandler() {
       certificateAuthorityService as unknown as CertificateAuthorityService,
     installCertificateHelperService:
       installCertificateHelperService as unknown as InstallCertificateHelperService,
-    deviceModelRepository: {
+    variableAttributeRepository: {
       readAllByQuerystring: vi.fn().mockResolvedValue([{ value: 'Pionix' }]),
-    } as unknown as IDeviceModelRepository,
+    } as unknown as IVariableAttributeRepository,
   } as never);
 
   return { handler, ocppSender, certificateAuthorityService, installCertificateHelperService };
