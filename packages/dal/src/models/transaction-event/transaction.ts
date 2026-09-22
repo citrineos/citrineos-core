@@ -61,14 +61,10 @@ export class Transaction extends Model implements TransactionDto {
   @ForeignKey(() => ChargingStation)
   @Column({
     type: DataType.INTEGER,
-    unique: 'stationId_transactionId',
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
   })
-  declare stationId: number;
-
-  @Column({
-    type: DataType.STRING,
-  })
-  ocppConnectionName!: string;
+  declare stationId?: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   station!: ChargingStationDto;
@@ -101,10 +97,7 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tariff, 'tariffId')
   tariff?: TariffDto;
 
-  @Column({
-    type: DataType.STRING,
-    unique: 'stationId_transactionId',
-  })
+  @Column(DataType.STRING)
   declare transactionId: string;
 
   @Column(DataType.BOOLEAN)
@@ -186,17 +179,18 @@ export class Transaction extends Model implements TransactionDto {
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
 
-  @BeforeCreate
-  static async resolveStationId(instance: Transaction): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
+  static async resolveCreatedAt(transactionDatabaseId?: number | null): Promise<Date> {
+    if (transactionDatabaseId != null) {
+      const transaction = await Transaction.findOne({
+        where: { id: transactionDatabaseId },
+        attributes: ['createdAt'],
       });
-      if (station) {
-        instance.stationId = station.id;
+      const createdAt = transaction?.get('createdAt') as Date | undefined;
+      if (createdAt) {
+        return createdAt;
       }
     }
+    return new Date();
   }
 
   @BeforeUpdate

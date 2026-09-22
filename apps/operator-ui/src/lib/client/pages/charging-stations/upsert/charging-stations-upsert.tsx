@@ -25,7 +25,6 @@ import {
 } from '@lib/client/components/form/field';
 import { Checkbox } from '@lib/client/components/ui/checkbox';
 import { Label } from '@lib/client/components/ui/label';
-import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { Input } from '@lib/client/components/ui/input';
 import { ChargingStationClass } from '@lib/cls/charging-station-dto';
 import {
@@ -52,15 +51,18 @@ import z from 'zod';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';
 import { heading2Style, pageMargin } from '@lib/client/styles/page';
-import { S3_BUCKET_FOLDER_IMAGES_CHARGING_STATIONS } from '@lib/utils/consts';
+import { NEW_IDENTIFIER, S3_BUCKET_FOLDER_IMAGES_CHARGING_STATIONS } from '@lib/utils/consts';
 import { Field, FieldLabel } from '@lib/client/components/ui/field';
 import { Button } from '@lib/client/components/ui/button';
 import { buttonIconSize } from '@lib/client/styles/icon';
 import { uploadFileViaPresignedUrl } from '@lib/server/actions/file/upload-file-via-presigned-url';
 import { useTenantId } from '@lib/client/hooks/use-tenant-id';
+import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
+import { chargingStationPath } from '@lib/utils/resource-paths';
+import { NoDataFoundCard } from '@lib/client/components/no-data-found-card';
 
 type ChargingStationUpsertProps = {
-  params?: { id?: number };
+  params?: { ocppConnectionName?: string };
   allowImageUpload?: boolean;
 };
 
@@ -69,9 +71,21 @@ const ChargingStationCreateSchema = ChargingStationSchema.pick({
   [ChargingStationProps.ocppConnectionName]: true,
   [ChargingStationProps.locationId]: true,
   [ChargingStationProps.floorLevel]: true,
+  [ChargingStationProps.chargePointSerialNumber]: true,
   [ChargingStationProps.parkingRestrictions]: true,
   [ChargingStationProps.capabilities]: true,
   [ChargingStationProps.use16StatusNotification0]: true,
+}).extend({
+  [ChargingStationProps.ocppConnectionName]: ChargingStationSchema.shape.ocppConnectionName
+    .refine((value) => value.trim().length > 0, {
+      message: 'Name cannot be empty',
+    })
+    .refine((value) => !value.includes('/'), {
+      message: 'Name cannot contain "/"',
+    })
+    .refine((value) => value !== NEW_IDENTIFIER, {
+      message: `"${NEW_IDENTIFIER}" is reserved`,
+    }),
 });
 
 const defaultChargingStation = {
@@ -79,6 +93,7 @@ const defaultChargingStation = {
   [ChargingStationProps.ocppConnectionName]: '',
   [ChargingStationProps.locationId]: undefined,
   [ChargingStationProps.floorLevel]: '',
+  [ChargingStationProps.chargePointSerialNumber]: '',
   [ChargingStationProps.parkingRestrictions]: [],
   [ChargingStationProps.capabilities]: [],
   [ChargingStationProps.use16StatusNotification0]: true,
@@ -98,7 +113,9 @@ export const ChargingStationUpsert = ({
   params,
   allowImageUpload = false,
 }: ChargingStationUpsertProps) => {
-  const { id } = params || {};
+  const { ocppConnectionName } = params || {};
+  const isEditing = !!ocppConnectionName;
+  const { id, isNotFound } = useChargingStationId(ocppConnectionName);
   const searchParams = useSearchParams();
   const locationId = searchParams?.get('locationId');
 
@@ -119,10 +136,14 @@ export const ChargingStationUpsert = ({
       resource: ResourceType.CHARGING_STATIONS,
       redirect: false,
       mutationMode: 'pessimistic',
-      action: id ? 'edit' : 'create',
+      action: isEditing ? 'edit' : 'create',
+      id,
+      queryOptions: { enabled: isEditing && id != null },
       meta: {
         gqlQuery: CHARGING_STATIONS_GET_QUERY,
-        gqlMutation: id ? CHARGING_STATIONS_EDIT_MUTATION : CHARGING_STATIONS_CREATE_MUTATION,
+        gqlMutation: isEditing
+          ? CHARGING_STATIONS_EDIT_MUTATION
+          : CHARGING_STATIONS_CREATE_MUTATION,
       },
     },
     defaultValues: defaultChargingStation,
@@ -184,7 +205,7 @@ export const ChargingStationUpsert = ({
   // Initialize coordinates from station data when editing
   useEffect(() => {
     const station = form.refineCore.query?.data?.data;
-    if (station && id) {
+    if (station && isEditing) {
       const coords = (station as any).coordinates;
       if (coords) {
         setLatitude(coords.coordinates[1]);
@@ -194,7 +215,7 @@ export const ChargingStationUpsert = ({
         setUseLocationCoordinates(true);
       }
     }
-  }, [form.refineCore.query?.data?.data, id]);
+  }, [form.refineCore.query?.data?.data, isEditing]);
 
   // Update coordinates when location changes and useLocationCoordinates is true
   useEffect(() => {
@@ -225,7 +246,7 @@ export const ChargingStationUpsert = ({
       };
     }
 
-    if (!id) {
+    if (!isEditing) {
       newItem.tenantId = tenantId;
       newItem.createdAt = now;
     }
@@ -233,7 +254,9 @@ export const ChargingStationUpsert = ({
 
     form.refineCore.onFinish(newItem).then((result) => {
       if (result) {
-        const finalStationId = id || (result as any).data?.id;
+        const finalStationId = id ?? (result as any).data?.id;
+        const finalStationName =
+          (result as any).data?.ocppConnectionName ?? values.ocppConnectionName;
 
         // Upload image to S3
         if (uploadedFile && finalStationId) {
@@ -255,12 +278,20 @@ export const ChargingStationUpsert = ({
               });
             });
         }
-        replace(`/${MenuSection.CHARGING_STATIONS}/${finalStationId}`);
-      } else if (id) {
+        replace(chargingStationPath(finalStationName));
+      } else if (isEditing) {
         back();
       }
     });
   };
+
+  if (isNotFound) {
+    return (
+      <div className={pageMargin}>
+        <NoDataFoundCard />
+      </div>
+    );
+  }
 
   return (
     <CanAccess
@@ -274,7 +305,7 @@ export const ChargingStationUpsert = ({
           <div className={cardHeaderFlex}>
             <ChevronLeft onClick={() => back()} className="cursor-pointer" />
             <h2 className={heading2Style}>
-              {translate(`actions.${id ? 'edit' : 'create'}`)}{' '}
+              {translate(`actions.${isEditing ? 'edit' : 'create'}`)}{' '}
               {translate('ChargingStations.chargingStation')}
             </h2>
           </div>
@@ -305,6 +336,13 @@ export const ChargingStationUpsert = ({
                 control={form.control}
                 label={translate('ChargingStations.columns.floorLevel')}
                 name={ChargingStationProps.floorLevel}
+              >
+                <Input />
+              </FormField>
+              <FormField
+                control={form.control}
+                label={translate('ChargingStations.columns.chargePointSerialNumber')}
+                name={ChargingStationProps.chargePointSerialNumber}
               >
                 <Input />
               </FormField>

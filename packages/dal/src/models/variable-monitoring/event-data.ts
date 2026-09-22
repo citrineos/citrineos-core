@@ -36,12 +36,11 @@ export class EventData extends Model implements EventDataDto {
    */
 
   @ForeignKey(() => ChargingStation)
-  @Column(DataType.INTEGER)
-  declare stationId?: number;
-
   @Index
-  @Column(DataType.STRING)
-  declare ocppConnectionName: string;
+  @Column({
+    type: DataType.INTEGER,
+  })
+  declare stationId?: number;
 
   // Not unique per station: eventId is assigned by the charging station and
   // restarts from zero on reboot, so ids are reused across boots.
@@ -122,21 +121,6 @@ export class EventData extends Model implements EventDataDto {
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: EventData): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      // Lazy load ChargingStation to avoid circular dependency
-      const { ChargingStation } = await import('../location/index.js');
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

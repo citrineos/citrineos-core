@@ -30,7 +30,9 @@ class StubEndpoint extends AbstractEndpoint {
 function aCapturingLogger(): { logger: Logger<ILogObj>; errors: ILogObj[] } {
   const errors: ILogObj[] = [];
   const logger = new Logger<ILogObj>({ type: 'hidden', minLevel: 5 });
-  logger.attachTransport((logObj) => errors.push(logObj));
+  logger.attachTransport((logObj) => {
+    errors.push(logObj);
+  });
   return { logger, errors };
 }
 

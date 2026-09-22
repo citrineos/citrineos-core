@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import 'ts-node/register';
-import { getOcpiSystemConfig } from '@citrineos/ocpi-base';
+import { getOcpiSystemConfig } from '@citrineos/ocpi';
 import { createLocalOcpiConfig } from './envs/local.js';
 import { createDockerOcpiConfig } from './envs/docker.js';
 
@@ -27,7 +26,6 @@ export default (async () => {
       port,
       database,
       username,
-      password,
     });
 
     return {

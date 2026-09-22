@@ -7,7 +7,12 @@
  * Extracts the charging station identifier (ocppConnectionName) from a WebSocket upgrade URL.
  */
 export function getClientIdFromUrl(url: string): string {
-  return url.split('?')[0].split('/').pop() as string;
+  const pathSegment = url.split('?')[0].split('/').pop() as string;
+  try {
+    return decodeURIComponent(pathSegment);
+  } catch {
+    throw new UpgradeUnknownError(`Unknown identifier ${pathSegment}`);
+  }
 }
 
 import {
@@ -37,6 +42,7 @@ import { Logger } from 'tslog';
 import type { ErrorEvent, MessageEvent } from 'ws';
 import { WebSocket, WebSocketServer } from 'ws';
 import {
+  initWsTransportMetrics,
   recordWsActiveConnectionsDelta,
   recordWsConnectionClosed,
   recordWsConnectionEstablished,
@@ -50,6 +56,7 @@ import {
 } from '../metrics.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
 import type { IUpgradeError } from './authenticator/errors/i-upgrade-error.js';
+import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
@@ -115,7 +122,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     this._getAllTenantWebsocketServerPaths = getAllTenantWebsocketServerPaths;
     this._cache = cache;
     this._config = config;
-    this._doesChargingStationExistByOcppConnectionName = doesChargingStationExistByOcppConnectionName;
+    this._doesChargingStationExistByOcppConnectionName =
+      doesChargingStationExistByOcppConnectionName;
     this._connectionManager = connectionManager;
     this._fileStorage = fileStorage;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
@@ -125,6 +133,8 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   }
 
   public async initialize(): Promise<void> {
+    initWsTransportMetrics();
+
     this._websocketServers = await ConfigLoader.loadWebsocketServersConfig(
       this._fileStorage,
       this._config.websocketServerConfigFile,
@@ -973,6 +983,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         handleProtocols: (protocols, req) =>
           this._handleProtocols(protocols, req, wsConfig.protocols, wsConfig.forceProtocol),
         clientTracking: false,
+        perMessageDeflate: wsConfig.perMessageDeflate ?? true,
       });
 
       wss.on('connection', (ws, req) =>

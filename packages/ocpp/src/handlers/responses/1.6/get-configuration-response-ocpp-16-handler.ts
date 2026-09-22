@@ -9,7 +9,6 @@ import {
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { IChangeConfigurationRepository } from '@citrineos/dal';
-import { ChangeConfiguration } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetConfiguration)
 export class GetConfigurationResponseOcpp16Handler extends AbstractHandler {
@@ -50,7 +49,7 @@ export class GetConfigurationResponseOcpp16Handler extends AbstractHandler {
           key: config.key,
           value: config.value,
           readonly: config.readonly,
-        } as ChangeConfiguration);
+        });
       }
     }
   }

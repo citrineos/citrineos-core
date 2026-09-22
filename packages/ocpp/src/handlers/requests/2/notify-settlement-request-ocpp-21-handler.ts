@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { createHash } from 'node:crypto';
 import {
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITransactionEventRepository,
   Transaction,
-  VariableAttribute,
 } from '@citrineos/dal';
 import {
   AbstractHandler,
@@ -24,6 +24,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
   type SystemConfig,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 
 /**
@@ -43,26 +44,26 @@ import {
 export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _config: SystemConfig;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
 
   constructor({
     logger,
     ocppSender,
     config,
-    deviceModelRepository,
+    variableAttributeRepository,
     transactionEventRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     config: SystemConfig;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     transactionEventRepository: ITransactionEventRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._config = config;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
 
@@ -161,8 +162,8 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
     // Do NOT include receiptUrl or receiptId for Rejected/Failed statuses.
     if (isSettled) {
       try {
-        const receiptByCSMSAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        const receiptByCSMSAttributes: VariableAttributeDto[] =
+          await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName,
             component_name: 'PaymentCtrlr',
@@ -177,11 +178,11 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
         if (receiptByCSMS) {
           const receiptBaseUrl = this._config.transactions.receiptBaseUrl;
           if (receiptBaseUrl) {
-            const receiptId = request.transactionId
+            const receiptReference = request.transactionId
               ? `${ocppConnectionName}-${request.transactionId}-${request.pspRef}`
               : `${ocppConnectionName}-${request.pspRef}`;
-            response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptId)}`;
-            response.receiptId = receiptId;
+            response.receiptUrl = `${receiptBaseUrl}/${encodeURIComponent(receiptReference)}`;
+            response.receiptId = createHash('sha256').update(receiptReference).digest('base64url');
             this._logger.info(`ReceiptByCSMS is true, generated receiptUrl=${response.receiptUrl}`);
           } else {
             this._logger.warn(

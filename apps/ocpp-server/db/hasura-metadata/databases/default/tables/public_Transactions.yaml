@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: Transactions
+  schema: public
+object_relationships:
+  - name: Authorization
+    using:
+      foreign_key_constraint_on: authorizationId
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: Connector
+    using:
+      foreign_key_constraint_on: connectorId
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseId
+  - name: Location
+    using:
+      foreign_key_constraint_on: locationId
+  - name: StartTransaction
+    using:
+      manual_configuration:
+        remote_table:
+          name: StartTransactions
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
+  - name: StopTransaction
+    using:
+      manual_configuration:
+        remote_table:
+          name: StopTransactions
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
+  - name: Tariff
+    using:
+      foreign_key_constraint_on: tariffId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: ChargingNeeds
+    using:
+      manual_configuration:
+        remote_table:
+          name: ChargingNeeds
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
+  - name: ChargingProfiles
+    using:
+      manual_configuration:
+        remote_table:
+          name: ChargingProfiles
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+  - name: MeterValues
+    using:
+      manual_configuration:
+        remote_table:
+          name: MeterValues
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
+  - name: TransactionEvents
+    using:
+      manual_configuration:
+        remote_table:
+          name: TransactionEvents
+          schema: public
+        column_mapping:
+          id: transactionDatabaseId
+          createdAt: transactionCreatedAt
+select_permissions:
+  - role: user
+    permission:
+      columns: "*"
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

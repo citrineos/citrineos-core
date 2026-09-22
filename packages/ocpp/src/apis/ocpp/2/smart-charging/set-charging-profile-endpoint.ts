@@ -21,8 +21,9 @@ import {
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ITransactionEventRepository,
+  IVariableCharacteristicsRepository,
 } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import {
@@ -37,7 +38,8 @@ type ChargingProfile = SetChargingProfileRequest['chargingProfile'];
 
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
-  deviceModelRepository: IDeviceModelRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
+  variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   chargingProfileRepository: IChargingProfileRepository;
   transactionEventRepository: ITransactionEventRepository;
 }
@@ -51,20 +53,23 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
   };
 
   private readonly _ocppSender: IOcppSender;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
+  private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
   private readonly _transactionEventRepository: ITransactionEventRepository;
 
   constructor({
     logger,
     ocppSender,
-    deviceModelRepository,
+    variableAttributeRepository,
+    variableCharacteristicsRepository,
     chargingProfileRepository,
     transactionEventRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
+    this._variableCharacteristicsRepository = variableCharacteristicsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
@@ -89,7 +94,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             chargingProfile,
             tenantId,
             ocppConnectionName,
-            this._deviceModelRepository,
+            this._variableAttributeRepository,
             this._chargingProfileRepository,
             this._transactionEventRepository,
             this._logger,
@@ -265,7 +270,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       };
     }
 
-    const numExisted = await this._chargingProfileRepository.existByQuery(tenantId, {
+    const existedChargingProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
       where: {
         stackLevel: chargingProfile.stackLevel,
         transactionDatabaseId: transaction.id,
@@ -274,6 +279,9 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
         tenantId,
       },
     });
+    const numExisted = existedChargingProfiles.filter(
+      (existedProfile) => existedProfile.id !== chargingProfile.id,
+    ).length;
     if (numExisted > 0) {
       return {
         success: false,
@@ -291,7 +299,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
   ): Promise<IMessageConfirmation | undefined> {
     const chargingProfile = request.chargingProfile;
 
-    const acPhaseSwitchingSupported = await this._deviceModelRepository.readAllByQuerystring(
+    const acPhaseSwitchingSupported = await this._variableAttributeRepository.readAllByQuerystring(
       tenantId,
       {
         tenantId,
@@ -308,7 +316,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       )}`,
     );
     const rateUnitMemberList = await readChargingRateUnitMemberList(
-      this._deviceModelRepository,
+      this._variableCharacteristicsRepository,
       tenantId,
       this._logger,
     );

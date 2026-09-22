@@ -5,6 +5,7 @@
 export { resolveStationProtocol } from './station-protocol.js';
 export type { ReadChargingStation, StationProtocolResolution } from './station-protocol.js';
 export { getSizeOfRequest, getBatches, stringToSet } from './parser.js';
+export { keyCodeRedactionRule } from './key-code-redaction.js';
 export {
   validateLanguageTag,
   validateChargingProfileType,
@@ -29,3 +30,18 @@ export {
   type ChargingProfileValidation,
 } from './validator.js';
 export { IdGenerator } from './id-generator.js';
+export { generateChargingProfileId } from './charging-profile-id.js';
+
+export {
+  assertSequelizeSchemaMatches,
+  compareNullability,
+  compareTypes,
+  DEFAULT_SCHEMA,
+  SchemaValidationError,
+  validateSequelizeSchema,
+  type SchemaFinding,
+  type SchemaFindingKind,
+  type SchemaFindingSeverity,
+  type SchemaValidationOptions,
+  type SchemaValidationReport,
+} from './sequelize-schema-validator.js';

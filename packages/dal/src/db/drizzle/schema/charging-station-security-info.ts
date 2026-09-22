@@ -20,8 +20,7 @@ import { type z } from 'zod';
 function chargingStationSecurityInfoColumns() {
   return {
     id: serial('id').primaryKey(),
-    stationId: integer('stationId'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
+    stationId: integer('stationId').notNull(),
     publicKeyFileId: varchar('publicKeyFileId', { length: 255 }),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
@@ -38,10 +37,7 @@ export const chargingStationSecurityInfoTable = pgTable(
   TableName.ChargingStationSecurityInfos,
   chargingStationSecurityInfoColumns(),
   (t) => [
-    uniqueIndex('charging_station_security_infos_station_name_tenant_id').on(
-      t.ocppConnectionName,
-      t.tenantId,
-    ),
+    uniqueIndex('charging_station_security_infos_station_id_tenant_id').on(t.stationId, t.tenantId),
   ],
 );
 

@@ -1,0 +1,524 @@
+// SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import type { Session } from '../types/session.js';
+import {
+  type MeterValueDto,
+  type TariffDto,
+  type TransactionDto,
+  type TransactionEventDto,
+  MeasurandEnum,
+} from '@citrineos/types';
+import { AuthMethod } from '../types/auth-method.js';
+import type { ChargingPeriod } from '../types/charging-period.js';
+import { CdrDimensionType } from '../types/cdr-dimension-type.js';
+import type { CdrToken } from '../types/cdr-token.js';
+import { SessionStatus } from '../types/session-status.js';
+import type { CdrDimension } from '../types/cdr-dimension.js';
+import type { TokenDTO } from '../types/dto/token-dto.js';
+import type { OcpiTransactionMapperDependencies } from './base-transaction-mapper.js';
+import { BaseTransactionMapper } from './base-transaction-mapper.js';
+
+import type { LocationDTO } from '../types/dto/location-dto.js';
+import { UID_FORMAT } from '../types/dto/evse-dto.js';
+import { calculateTotalCdrCost } from './cdr-cost.js';
+import { MeterValueUtils } from '@citrineos/base';
+
+interface ChargingPeriodSpan {
+  meterValue: MeterValueDto;
+  previousMeterValue?: MeterValueDto;
+  hours: number;
+  energyFlowed: boolean;
+}
+
+export class SessionMapper extends BaseTransactionMapper {
+  constructor(dependencies: OcpiTransactionMapperDependencies) {
+    super(dependencies);
+  }
+
+  /**
+   * Maps a single transaction to a session
+   */
+  public async mapTransactionToSession(transaction: TransactionDto): Promise<Session> {
+    const [locationMap, tokenMap, tariffMap] =
+      await this.getLocationsTokensAndTariffsMapsForTransactions([transaction]);
+
+    const location = locationMap.get(transaction.transactionId!);
+    const token = tokenMap.get(transaction.transactionId!);
+    const tariff = tariffMap.get(transaction.transactionId!);
+
+    if (!location || !token || !tariff) {
+      const missing = [];
+      if (!location) missing.push('location');
+      if (!token) missing.push('token');
+      if (!tariff) missing.push('tariff');
+
+      throw new Error(
+        `Cannot map transaction ${transaction.transactionId} to session. Missing: ${missing.join(', ')}`,
+      );
+    }
+
+    return this.mapTransactionWithContextToSession(transaction, location, token, tariff);
+  }
+
+  /**
+   * Maps a partial transaction to a partial session
+   */
+  public async mapPartialTransactionToPartialSession(
+    transaction: Partial<TransactionDto>,
+  ): Promise<Partial<Session>> {
+    // If we don't have a transaction ID, we can only map basic fields
+    if (!transaction.transactionId) {
+      return this.mapPartialTransactionWithoutContext(transaction);
+    }
+
+    try {
+      // Try to fetch context data, but handle failures gracefully
+      const [locationMap, tokenMap, tariffMap] =
+        await this.getLocationsTokensAndTariffsMapsForTransactions([transaction as TransactionDto]);
+
+      const location = locationMap.get(transaction.transactionId);
+      const token = tokenMap.get(transaction.transactionId);
+      const tariff = tariffMap.get(transaction.transactionId);
+
+      return this.mapPartialTransactionWithContext(transaction, location, token, tariff);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to fetch context for partial transaction ${transaction.transactionId}. Mapping without context.`,
+        error,
+      );
+      return this.mapPartialTransactionWithoutContext(transaction);
+    }
+  }
+
+  public async getLocationsTokensAndTariffsMapsForTransactions(
+    transactions: TransactionDto[],
+  ): Promise<[Map<string, LocationDTO>, Map<string, TokenDTO>, Map<string, TariffDto>]> {
+    return await Promise.all([
+      this.getLocationDTOsForTransactions(transactions),
+      this.getTokensForTransactions(transactions),
+      this.getTariffsForTransactions(transactions),
+    ]);
+  }
+
+  public async mapTransactionsToSessions(transactions: TransactionDto[]): Promise<Session[]> {
+    const [transactionIdToLocationMap, transactionIdToTokenMap, transactionIdToTariffMap] =
+      await this.getLocationsTokensAndTariffsMapsForTransactions(transactions);
+    return await this.mapTransactionsToSessionsHelper(
+      transactions,
+      transactionIdToLocationMap,
+      transactionIdToTokenMap,
+      transactionIdToTariffMap,
+    );
+  }
+
+  public async mapTransactionsToSessionsHelper(
+    transactions: TransactionDto[],
+    transactionIdToLocationMap: Map<string, LocationDTO>,
+    transactionIdToTokenMap: Map<string, TokenDTO>,
+    transactionIdToTariffMap: Map<string, TariffDto>,
+  ): Promise<Session[]> {
+    const result: Session[] = [];
+    const skipped: string[] = [];
+    for (const transaction of transactions) {
+      const location = transactionIdToLocationMap.get(transaction.transactionId!);
+      const token = transactionIdToTokenMap.get(transaction.transactionId!);
+      const tariff = transactionIdToTariffMap.get(transaction.transactionId!);
+
+      if (location && token && tariff) {
+        result.push(this.mapTransactionWithContextToSession(transaction, location, token, tariff));
+      } else {
+        const missing = [
+          ...(location ? [] : ['location']),
+          ...(token ? [] : ['token']),
+          ...(tariff ? [] : ['tariff']),
+        ];
+        skipped.push(`${transaction.transactionId} (no ${missing.join(', ')})`);
+      }
+    }
+    if (skipped.length > 0) {
+      this.logger.warn(
+        `Skipped ${skipped.length} of ${transactions.length} transactions: ${skipped.join('; ')}`,
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Maps a partial transaction with available context data
+   */
+  private mapPartialTransactionWithContext(
+    transaction: Partial<TransactionDto>,
+    location?: LocationDTO,
+    token?: TokenDTO,
+    tariff?: TariffDto,
+  ): Partial<Session> {
+    const session: Partial<Session> = {};
+
+    // Map basic transaction fields
+    if (transaction.transactionId !== undefined) {
+      session.id = transaction.transactionId;
+    }
+
+    if (transaction.startTime !== undefined) {
+      session.start_date_time = transaction.startTime ? new Date(transaction.startTime) : undefined;
+    }
+
+    if (transaction.endTime !== undefined) {
+      session.end_date_time = transaction.endTime ? new Date(transaction.endTime) : null;
+    }
+
+    if (transaction.totalKwh !== undefined) {
+      session.kwh = transaction.totalKwh || 0;
+    }
+
+    if (transaction.updatedAt !== undefined) {
+      session.last_updated = transaction.updatedAt!;
+    }
+
+    // Map context-dependent fields if available
+    session.country_code = transaction.tenant!.countryCode!;
+    session.party_id = transaction.tenant!.partyId!;
+
+    if (transaction.locationId) {
+      session.location_id = transaction.locationId.toString();
+    }
+
+    if (token) {
+      session.cdr_token = this.createCdrToken(token);
+    }
+
+    if (tariff) {
+      session.currency = tariff.currency;
+      if (transaction.totalKwh !== undefined && transaction.endTime !== undefined) {
+        session.total_cost =
+          session.start_date_time && session.end_date_time
+            ? calculateTotalCdrCost(
+                {
+                  kwh: session.kwh ?? 0,
+                  start_date_time: session.start_date_time,
+                  end_date_time: session.end_date_time,
+                },
+                tariff,
+              )
+            : null;
+      }
+    }
+
+    // Map fields that depend on transaction structure
+    if (transaction.evseId && transaction.station?.ocppConnectionName) {
+      session.evse_uid = this.getEvseUid(transaction as TransactionDto);
+    }
+
+    if (transaction.connectorId) {
+      session.connector_id = transaction.connectorId.toString();
+    }
+
+    // Map meter values if available
+    if (transaction.meterValues && tariff) {
+      session.charging_periods = this.getChargingPeriods(
+        transaction.meterValues,
+        String(tariff.id),
+        transaction.startTime,
+      );
+    }
+
+    // Map status if we can determine it
+    if (transaction.endTime !== undefined) {
+      session.status = this.getTransactionStatus(transaction as TransactionDto);
+    }
+
+    if (transaction.remoteStartId !== undefined) {
+      session.auth_method = this.getAuthMethod(transaction);
+    }
+
+    // Set optional fields that are typically null in your implementation
+    session.authorization_reference = null;
+    session.meter_id = null;
+
+    return session;
+  }
+
+  /**
+   * Maps a partial transaction without context data (location, token, tariff)
+   */
+  private mapPartialTransactionWithoutContext(
+    transaction: Partial<TransactionDto>,
+  ): Partial<Session> {
+    const session: Partial<Session> = {};
+
+    if (transaction.transactionId !== undefined) {
+      session.id = transaction.transactionId;
+    }
+
+    if (transaction.startTime !== undefined) {
+      session.start_date_time = transaction.startTime ? new Date(transaction.startTime) : undefined;
+    }
+
+    if (transaction.endTime !== undefined) {
+      session.end_date_time = transaction.endTime ? new Date(transaction.endTime) : null;
+    }
+
+    if (transaction.totalKwh !== undefined) {
+      session.kwh = transaction.totalKwh || 0;
+    }
+
+    if (transaction.updatedAt !== undefined) {
+      session.last_updated = transaction.updatedAt!;
+    }
+
+    if (transaction.evseId && transaction.station?.ocppConnectionName) {
+      session.evse_uid = this.getEvseUid(transaction as TransactionDto);
+    }
+
+    if (transaction.connectorId) {
+      session.connector_id = transaction.connectorId.toString();
+    }
+
+    if (transaction.endTime !== undefined) {
+      session.status = this.getTransactionStatus(transaction as TransactionDto);
+    }
+
+    // Set defaults for fields that don't depend on external context
+    if (transaction.remoteStartId !== undefined) {
+      session.auth_method = this.getAuthMethod(transaction);
+    }
+    session.authorization_reference = null;
+    session.meter_id = null;
+
+    return session;
+  }
+
+  private mapTransactionWithContextToSession(
+    transaction: TransactionDto,
+    location: LocationDTO,
+    token: TokenDTO,
+    tariff: TariffDto,
+  ): Session {
+    const session: Session = {
+      country_code: location.country_code,
+      party_id: location.party_id,
+      id: transaction.transactionId!,
+      start_date_time: transaction.startTime
+        ? new Date(transaction.startTime)
+        : (() => {
+            this.logger.error(
+              `Transaction ${transaction.transactionId} has no startTime. Using createdAt as placeholder.`,
+            );
+            return transaction.createdAt!;
+          })(),
+      end_date_time: transaction.endTime ? new Date(transaction.endTime) : null,
+      kwh: transaction.totalKwh || 0,
+      cdr_token: this.createCdrToken(token),
+      auth_method: this.getAuthMethod(transaction),
+      location_id: this.getLocationId(location),
+      evse_uid: this.getEvseUid(transaction),
+      connector_id: transaction.connectorId!.toString(),
+      currency: tariff.currency,
+      charging_periods: this.getChargingPeriods(
+        transaction.meterValues,
+        String(tariff?.id),
+        transaction.startTime,
+      ),
+      status: this.getTransactionStatus(transaction),
+      last_updated: transaction.updatedAt!,
+      // TODO: Fill in optional values
+      authorization_reference: null,
+      total_cost: null,
+      meter_id: null,
+    };
+    session.total_cost = session.end_date_time
+      ? calculateTotalCdrCost(
+          { ...session, timeSpentChargingSeconds: transaction.timeSpentCharging },
+          tariff,
+        )
+      : null;
+    return session;
+  }
+
+  private getLatestEvent(transactionEvents: TransactionEventDto[]): Date {
+    return transactionEvents.reduce((latestDate, current) => {
+      const currentDate = new Date(current.timestamp);
+      if (!latestDate || currentDate > latestDate) {
+        return currentDate;
+      }
+      return latestDate;
+    }, new Date(transactionEvents[0].timestamp));
+  }
+
+  private createCdrToken(token: TokenDTO): CdrToken {
+    return {
+      uid: token?.uid,
+      type: token?.type,
+      contract_id: token?.contract_id,
+      country_code: token?.country_code,
+      party_id: token?.party_id,
+    };
+  }
+
+  private getLocationId(location: LocationDTO) {
+    if (!location.id) {
+      this.logger.warn(`Location missing for location ${location.id}`);
+    }
+
+    return location.id ?? '';
+  }
+
+  private getEvseUid(transaction: TransactionDto): string {
+    return UID_FORMAT(transaction.station!.ocppConnectionName, transaction.evseId!);
+  }
+
+  private getCurrency(location: LocationDTO): string {
+    switch (location.country_code) {
+      case 'US':
+      default:
+        return '';
+    }
+  }
+
+  public getChargingPeriods(
+    meterValues: MeterValueDto[] = [],
+    tariffId: string,
+    sessionStartTime?: string,
+  ): ChargingPeriod[] {
+    return this.toChargingPeriodSpans(meterValues, sessionStartTime).map((span) => ({
+      start_date_time: new Date(span.meterValue.timestamp),
+      dimensions: this.getCdrDimensions(
+        span.hours,
+        span.energyFlowed,
+        span.meterValue,
+        span.previousMeterValue,
+      ),
+      tariff_id: tariffId,
+    }));
+  }
+
+  private toChargingPeriodSpans(
+    meterValues: MeterValueDto[],
+    sessionStartTime?: string,
+  ): ChargingPeriodSpan[] {
+    const sorted = [...meterValues].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+    const spans = sorted.map((meterValue, index) => {
+      const previousMeterValue = index > 0 ? sorted[index - 1] : undefined;
+      return {
+        meterValue,
+        previousMeterValue,
+        hours: this.getTimeElapsedForMeterValue(meterValue, previousMeterValue),
+        energyFlowed: this.didEnergyFlow(meterValue, previousMeterValue),
+      };
+    });
+    if (spans.length === 0) {
+      return spans;
+    }
+
+    // The first period has no reading before it, so it can only ever be parking; the wait between
+    // the session starting and the first reading is therefore folded into it.
+    spans[0].hours += this.hoursBetween(sessionStartTime, spans[0].meterValue.timestamp);
+    return spans;
+  }
+
+  /**
+   * Hours between two ISO timestamps; zero when `from` is absent, when either fails to parse, or
+   * when the span runs backwards.
+   */
+  private hoursBetween(from: string | undefined, to: string): number {
+    if (from == null) {
+      return 0;
+    }
+    const hours = (new Date(to).getTime() - new Date(from).getTime()) / 3600000;
+    return Number.isFinite(hours) ? Math.max(0, hours) : 0;
+  }
+
+  private didEnergyFlow(meterValue: MeterValueDto, previousMeterValue?: MeterValueDto): boolean {
+    const current = this.getEnergyImportForMeterValue(meterValue);
+    const previous = this.getEnergyImportForMeterValue(previousMeterValue);
+    return current !== undefined && previous !== undefined && current > previous;
+  }
+
+  private getCdrDimensions(
+    periodHours: number,
+    energyFlowed: boolean,
+    meterValue: MeterValueDto,
+    previousMeterValue?: MeterValueDto,
+  ): CdrDimension[] {
+    const cdrDimensions: CdrDimension[] = [];
+    for (const sampledValue of meterValue.sampledValue) {
+      switch (sampledValue.measurand) {
+        case MeasurandEnum['Current.Import']:
+          if (!sampledValue.phase) {
+            cdrDimensions.push({
+              type: CdrDimensionType.CURRENT,
+              volume: Number(sampledValue.value),
+            });
+          }
+          break;
+        case MeasurandEnum['Energy.Active.Import.Register']:
+          if (!sampledValue.phase) {
+            // OCPI energy dimensions are expressed in kWh; normalize the raw meter
+            // reading (commonly Wh) via the same conversion that feeds session.kwh.
+            const energyImportKwh = MeterValueUtils.normalizeToKwh(sampledValue);
+            cdrDimensions.push({
+              type: CdrDimensionType.ENERGY_IMPORT,
+              volume: energyImportKwh,
+            });
+            const previousEnergyImport = this.getEnergyImportForMeterValue(previousMeterValue);
+            if (previousEnergyImport !== undefined) {
+              cdrDimensions.push({
+                type: CdrDimensionType.ENERGY,
+                volume: energyImportKwh - previousEnergyImport,
+              });
+            }
+          }
+          break;
+        case MeasurandEnum['SoC']:
+          cdrDimensions.push({
+            type: CdrDimensionType.STATE_OF_CHARGE,
+            volume: Number(sampledValue.value),
+          });
+          break;
+      }
+    }
+    cdrDimensions.push({
+      type: energyFlowed ? CdrDimensionType.TIME : CdrDimensionType.PARKING_TIME,
+      volume: periodHours,
+    });
+    return cdrDimensions;
+  }
+
+  private getEnergyImportForMeterValue(meterValue?: MeterValueDto): number | undefined {
+    const sampledValue = meterValue?.sampledValue.find(
+      (sampledValue) =>
+        sampledValue.measurand === MeasurandEnum['Energy.Active.Import.Register'] &&
+        !sampledValue.phase,
+    );
+    if (!sampledValue) {
+      return undefined;
+    }
+    // Return kWh to keep the ENERGY delta consistent with ENERGY_IMPORT.
+    return MeterValueUtils.normalizeToKwh(sampledValue);
+  }
+
+  private getTimeElapsedForMeterValue(
+    meterValue: MeterValueDto,
+    previousMeterValue?: MeterValueDto,
+  ): number {
+    const timeDiffMs = previousMeterValue
+      ? new Date(meterValue.timestamp).getTime() - new Date(previousMeterValue.timestamp).getTime()
+      : 0;
+
+    // Convert milliseconds to hours
+    return timeDiffMs / (1000 * 60 * 60); // 1000 ms/sec * 60 sec/min * 60 min/hour
+  }
+
+  private getAuthMethod(transaction: Partial<TransactionDto>): AuthMethod {
+    return transaction.remoteStartId != null ? AuthMethod.COMMAND : AuthMethod.WHITELIST;
+  }
+
+  private getTransactionStatus(transaction: TransactionDto): SessionStatus {
+    // TODO: Implement other session status
+    return transaction.endTime ? SessionStatus.COMPLETED : SessionStatus.ACTIVE;
+  }
+}

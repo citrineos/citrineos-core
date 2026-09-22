@@ -18,14 +18,14 @@ It is one workspace member of the `citrineos-core` pnpm monorepo. For repository
 `pnpm install`, building, the full-stack Docker Compose files, and the operator UI), see the
 [root README](../../README.md).
 
-The server class itself lives in `@citrineos/core` as
-[`CitrineOSServer`](../../packages/core/src/server/CitrineOSServer.ts); this app is only the
+The server class itself lives in `@citrineos/ocpp` as
+[`CitrineOSServer`](../../packages/ocpp/src/server/citrineos-server.ts); this app is only the
 entrypoint that loads config and runs it. Downstream distributions should subclass that class rather
-than copy it — see [Extending `CitrineOSServer`](../../packages/core/src/server/README.md).
+than copy it — see [Extending `CitrineOSServer`](../../packages/ocpp/src/server/README.md).
 
 How the server wires its dependencies — the Awilix container, module/service registration, and the
 bootstrap sequence — is documented in
-[`DEPENDENCY_INJECTION.md`](../../packages/core/src/server/DEPENDENCY_INJECTION.md), alongside the
+[`DEPENDENCY_INJECTION.md`](../../packages/ocpp/src/server/DEPENDENCY_INJECTION.md), alongside the
 server class it describes.
 
 ## Table of Contents
@@ -36,6 +36,7 @@ server class it describes.
 - [Attaching a Debugger](#attaching-a-debugger)
 - [Server Ports](#server-ports)
 - [Database Migrations](#database-migrations)
+  - [Table Partitioning](#table-partitioning)
 - [Configuration](#configuration)
   - [Naming](#naming)
   - [Server and logging](#server-and-logging)
@@ -88,7 +89,7 @@ cd apps/ocpp-server
 pnpm run start
 ```
 
-This launches the server via `nodemon` (see `nodemon.json`), which builds the workspace, runs database migrations,
+This launches the server via `nodemon` (see `config/nodemon.json`), which builds the workspace, runs database migrations,
 and then starts the process with the Node.js inspector listening on port 9229.
 
 The schema defaults are the local-development values, so this needs no configuration to come up. To change how your
@@ -101,7 +102,7 @@ for the websocket endpoints themselves. Make sure local-only changes to that fil
 Whether you run the application with Docker or locally with pnpm, you can attach a debugger to port 9229 and set
 breakpoints in the TypeScript code directly from your IDE.
 
-To make the process **wait for the debugger to attach** before executing, modify the `nodemon.json` exec command from:
+To make the process **wait for the debugger to attach** before executing, modify the `config/nodemon.json` exec command from:
 
 ```shell
 pnpm run build --prefix ../../ && pnpm run db:migrate && node --inspect=0.0.0.0:9229 ./dist/index.js
@@ -130,8 +131,69 @@ file and the published ports in `docker-compose.yml` together.
 ## Database Migrations
 
 CitrineOS uses Sequelize migrations to manage database schema changes. The `pnpm run db:migrate` script — run
-automatically on start via `nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
+automatically on start via `config/nodemon.json`, and on container start via `entrypoint.sh` — applies any pending
 migrations.
+
+### Table Partitioning
+
+#### OCPPMessages
+
+`OCPPMessages` is range partitioned on `createdAt`, one partition per ISO week, keeping a rolling retention window.
+Migration `20260813120000-partition-ocpp-messages` performs the conversion: it copies only the rows inside the
+retention window into the partitioned table. Everything older is left behind in
+`OCPPMessages_old` for you to archive and drop. That is how old data leaves the live table.
+
+Two things to know when working with the model:
+
+- The primary key is the composite `(id, "createdAt")`, since a unique constraint on a partitioned table must contain
+  the partition key. `id` alone is no longer database-enforced unique — only the shared sequence keeps it so, so never
+  supply `id` explicitly outside a migration.
+- `requestMessageId` has no foreign key: a foreign key must target a complete unique key, and `(id)` is no longer one.
+  The link is maintained solely by the correlation triggers.
+
+There is deliberately no `DEFAULT` partition, so an insert whose `createdAt` falls outside every provisioned week fails
+outright. `rotate_ocpp_messages_partitions(retain_weeks, future_weeks, dry_run)` provisions upcoming weeks and drops
+expired ones; `entrypoint.sh` calls it on every start to provision only, never to drop when running locally.
+
+All week boundaries are computed in UTC. Every component that creates partitions must agree on the timezone, or a new
+partition's lower bound will not meet the previous partition's upper bound.
+
+```shell
+# provision upcoming partitions by hand (never drops anything)
+pnpm run db:partitions
+```
+
+#### The `Transactions` cluster
+
+`Transactions` is range partitioned on `createdAt`, one partition per month. Its children —
+`TransactionEvents`, `StartTransactions`, `StopTransactions`, `ChargingNeeds`, `MeterValues` — are partitioned on a
+new `transactionCreatedAt` column so their partitions line up with the parent's. Migration
+`20260818120000-partition-transactions` performs the conversion and, as above, leaves rows outside the retention
+window behind in the matching `*_old` tables. `transactions.retain_months` (default 12) sets that window.
+
+- `transactionCreatedAt` **must be supplied on insert**: tuple routing to a partition happens before any `BEFORE INSERT`
+  trigger fires, so the database cannot fill it in. The repositories pass the parent's `createdAt`; the models'
+  `@BeforeCreate` hook resolves it as a fallback, and an unlinked row gets its own timestamp.
+- Every child foreign key is now composite — `(transactionDatabaseId, transactionCreatedAt)` referencing
+  `Transactions(id, "createdAt")` — which is what rejects a wrong partition key.
+- `ChargingProfiles` is deliberately left unpartitioned and its `transactionDatabaseId` foreign key dropped, so a
+  station-level profile (`transactionDatabaseId IS NULL`) survives transaction retention.
+- The old `UNIQUE (stationId, transactionId)` cannot exist on a partitioned table, and no single column can reference
+  `Transactions(id, "createdAt")`, so `TransactionKeys.transactionDatabaseId` has no foreign key. That unpartitioned
+  registry enforces the pair globally instead — `AFTER INSERT` claims, `AFTER DELETE` releases, rotation prunes keys
+  whose transaction is gone (a partition drop is DDL, so no row trigger fires). Callers still see a unique violation.
+
+`rotate_transactions_partitions(retain_months, future_months, dry_run)` provisions upcoming months and drops expired
+ones, and the same `pnpm run db:partitions` provisions both clusters. Unlike the weekly rotation it must
+`DETACH PARTITION` before `DROP TABLE`, children before `Transactions`: a plain drop is refused while an inbound
+composite foreign key depends on the partition, and `DROP ... CASCADE` would delete the child constraints themselves.
+
+Neither cluster is ever pruned locally. `entrypoint.sh` and `pnpm run db:partitions` call both procedures with a
+`retain` of 9999, which puts the drop cutoff centuries in the past so nothing can qualify and the call can only create;
+dropping is destructive.
+
+The oldest partition the migration creates is `MINVALUE`-bounded, so it accepts anything older than itself. That
+catch-all is gone once it rotates away, after which a row predating the oldest partition has no partition to land in.
 
 ## Configuration
 
@@ -181,6 +243,39 @@ after changing configuration.
 | `CITRINEOS_SWAGGER_ENABLED`  | `true`                | Set `false` to stop serving the docs                  |
 | `CITRINEOS_SWAGGER_PATH`     | `/docs`               | Where the docs are mounted                            |
 | `CITRINEOS_SWAGGER_LOGOPATH` | `src/assets/logo.png` | Resolved from the working directory, not `fileAccess` |
+
+#### Keeping secrets out of the logs
+
+The logger redacts what `logRedaction` names, everywhere it appears in anything logged — no call site has to
+remember to strip it, and adding to the list needs no code change.
+
+| Variable                                | Default        | Notes                                                             |
+| --------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| `CITRINEOS_LOGREDACTION_KEYS`           | `["password"]` | Property names to censor at any depth, matched case-insensitively |
+| `CITRINEOS_LOGREDACTION_PATHS`          | `[]`           | Dotted paths to censor, where `*` matches one segment             |
+| `CITRINEOS_LOGREDACTION_PATTERNS`       | `[]`           | Regexes matched against logged strings; each is applied globally  |
+| `CITRINEOS_LOGREDACTION_PLACEHOLDER`    | `[***]`        | What a censored value is replaced with                            |
+| `CITRINEOS_LOGREDACTION_REDACTKEYCODES` | `true`         | Redact OCPP `KeyCode` idTokens — see below                        |
+
+Values are JSON, so a list is set as one:
+
+```bash
+CITRINEOS_LOGREDACTION_KEYS='["password","clientSecret","authorization"]'
+CITRINEOS_LOGREDACTION_PATHS='["credentials.token","*.privateKey"]'
+CITRINEOS_LOGREDACTION_PATTERNS='["sk-[A-Za-z0-9]{20,}"]'
+```
+
+Pick the narrowest one that fits: `keys` for a name that means the same thing wherever it appears, `paths` when
+only one location is sensitive, `patterns` for a value recognizable by shape rather than by position.
+
+`redactKeyCodes` is separate because it cannot be expressed as any of the three. An OCPP `idToken` is a public
+tag id or a driver's typed PIN depending on its sibling `type` field, and OCPP 2.x C04.FR.04 requires that a
+`KeyCode` one never appear in logging. It is applied by a rule that inspects the whole object, so it holds
+wherever a key code could reach a log rather than only where someone remembered. Leave it on unless the
+deployment is somewhere the rule is moot.
+
+To redact something else that depends on an object's shape, write a `RedactionRule` and return it from
+`CitrineOSServer.redactionRules()`.
 
 ### Database
 
@@ -354,11 +449,7 @@ field-level validation that the official schemas lack.
 
 It is possible to add custom JSON schemas to validate the data fields of DataTransfer messages, which are supported by
 all OCPP versions.
-<<<<<<< HEAD
-The OCPP message validator is created in `packages/core/src/server/CitrineOSServer.ts`. Register a DataTransfer schema by
-=======
-The OCPP message validator is created in `apps/ocpp-server/src/citrine-os-server.ts`. Register a DataTransfer schema by
->>>>>>> next
+The OCPP message validator is created in `packages/ocpp/src/server/citrineos-server.ts`. Register a DataTransfer schema by
 compiling it onto that validator's AJV and passing it in:
 
 ```ts
@@ -397,7 +488,7 @@ evse as inactive, leading to an inconsistent state with the charging station.
 ## Hasura Metadata
 
 In order for Hasura to track the existing Citrine tables and relationships, this repository comes with Hasura metadata
-already exported into the `apps/ocpp-server/hasura-metadata` folder.
+already exported into the `apps/ocpp-server/db/hasura-metadata` folder.
 Running the Docker container will automatically import this metadata and track all tables and relationships.
 
 Unfortunately, Hasura doesn't currently support importing metadata from a JSON (which is the format if you export your
@@ -441,7 +532,7 @@ hasura metadata export
 ```
 
 - Find the exported files in the `graphql-engine` container's files in the metadata filepath `<name of project i.e. citrine>/metadata` and pull that metadata backup onto your local machine
-- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/hasura-metadata` folder in this repository
+- Copy the contents of the copied `metadata` folder into the `apps/ocpp-server/db/hasura-metadata` folder in this repository
 
 ## Testing with EVerest
 

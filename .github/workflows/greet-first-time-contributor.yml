@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Greet First-Time Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  greet:
+    name: Greet first-time contributors
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post the welcome comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const FIRST_TIME = ['FIRST_TIME_CONTRIBUTOR', 'FIRST_TIMER'];
+            const CONTRIBUTING = 'https://github.com/citrineos/citrineos/blob/main/CONTRIBUTING.md';
+
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            if (pr.user?.type === 'Bot') return;
+            if (!FIRST_TIME.includes(pr.author_association)) {
+              core.info(`#${pr.number}: author association is ${pr.author_association}; no greeting needed.`);
+              return;
+            }
+
+            const branch = context.payload.repository.default_branch;
+            const fileUrl = (path) => `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body: [
+                `Howdy there. Thanks for making your first pull request to ${repo}, @${pr.user.login}. We appreciate it.`,
+                '',
+                "In case you haven't seen these yet, here are three documents worth a peek:",
+                '',
+                `- [CONTRIBUTING.md](${CONTRIBUTING}) — how contributions are proposed and reviewed across the project.`,
+                `- [README.md](${fileUrl('README.md')}) — the architecture, how to bring the stack up locally, and general stack guidance for the repo.`,
+                `- [AGENTS.md](${fileUrl('AGENTS.md')}) — the repository's working rules for automated agents. Several are enforced by checks on any pull request, and some of them can close PRs automatically.`,
+                '',
+                'A maintainer will take a look as soon as they can. Welcome!',
+              ].join('\n'),
+            });
+
+            core.info(`#${pr.number}: greeted ${pr.user.login}.`);

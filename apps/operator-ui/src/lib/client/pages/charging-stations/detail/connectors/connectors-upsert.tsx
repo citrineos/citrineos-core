@@ -6,11 +6,11 @@
 import React from 'react';
 import {
   type ConnectorDto,
-  type TariffDto,
   ConnectorFormatEnum,
   ConnectorPowerTypeEnum,
   ConnectorProps,
   ConnectorTypeEnum,
+  type TariffDto,
 } from '@citrineos/types';
 import { Form } from '@lib/client/components/form';
 import {
@@ -143,14 +143,12 @@ export const ConnectorsUpsert: React.FC<ConnectorUpsertProps> = ({
 
     newItem.updatedAt = now;
     newItem.stationId = (connector as any)?.stationId ?? selectedChargingStation?.id;
-    newItem.ocppConnectionName =
-      (connector as any)?.ocppConnectionName ?? selectedChargingStation?.ocppConnectionName;
 
     form.refineCore.onFinish(newItem).then(() => reset());
   };
 
   return (
-    <Form {...form} submitHandler={handleOnFinish}>
+    <Form {...form} submitHandler={handleOnFinish} hideCancel>
       <ScrollArea>
         <div className={evsesFormUpsertGrid}>
           <FormField

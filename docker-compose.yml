@@ -41,14 +41,14 @@ services:
       CITRINEOS_MESSAGEBROKER_AMQP_URL: 'amqp://guest:guest@amqp-broker:5672'
       CITRINEOS_TIMEOUTS_MAXCALLLENGTHSECONDS: '20'
       # The fileAccess root, which websocket-servers.json, the TLS material and the ACME
-      # account key are all read relative to. It has to be respelled here because it is
-      # itself relative to the process working directory, and in the image that is the
-      # repo root (entrypoint.sh runs `node <repo>/apps/ocpp-server/dist/index.js` from
-      # WORKDIR /usr/local/apps/citrineos) rather than the app directory as it is locally.
-      CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: 'apps/ocpp-server/src/assets'
-      # The Swagger logo is the one path read straight from the working directory instead
-      # of through fileAccess, so it needs the full prefix.
-      CITRINEOS_SWAGGER_LOGOPATH: 'apps/ocpp-server/src/assets/logo.png'
+      # account key are all read relative to. Absolute on purpose: the schema default is
+      # relative to the process working directory, and that differs between image
+      # generations (repo root in the fat image, the app directory in the slim one).
+      # dist/assets is populated by the build's copy-assets step and present in both.
+      CITRINEOS_FILEACCESS_LOCAL_DEFAULTFILEPATH: '/usr/local/apps/citrineos/apps/ocpp-server/dist/assets'
+      # The Swagger logo is the one path read straight from the filesystem instead of
+      # through fileAccess, so it needs the full path too.
+      CITRINEOS_SWAGGER_LOGOPATH: '/usr/local/apps/citrineos/apps/ocpp-server/dist/assets/logo.png'
 
       # Certificate authorities are opt-in and off by default; the stack turns both on.
       # '{}' takes every default of the block: the Hubject test PKI, and ACME against the
@@ -156,7 +156,7 @@ services:
       start_period: 30s
 
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio
     container_name: minio
     ports:
       - '9000:9000'
@@ -177,7 +177,7 @@ services:
       start_period: 20s
 
   minio-init:
-    image: minio/mc
+    image: quay.io/minio/mc
     depends_on:
       minio:
         condition: service_healthy
@@ -190,7 +190,7 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.40.3.cli-migrations-v3
     volumes:
-      - ./apps/ocpp-server/hasura-metadata:/hasura-metadata
+      - ./apps/ocpp-server/db/hasura-metadata:/hasura-metadata
     ports:
       - 8090:8080
     restart: always

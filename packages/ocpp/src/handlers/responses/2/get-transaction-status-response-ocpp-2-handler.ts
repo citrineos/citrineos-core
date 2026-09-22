@@ -41,6 +41,9 @@ export class GetTransactionStatusResponseOcpp2Handler extends AbstractHandler {
     );
 
     const response = message.payload;
+    if (response.ongoingIndicator === false && response.messagesInQueue) {
+      return;
+    }
     if (response.ongoingIndicator !== null && response.ongoingIndicator !== undefined) {
       await this._transactionService.updateTransactionStatus(
         message.context.tenantId,

@@ -23,6 +23,13 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const STATION_DB_ID = vi.hoisted(() => 4242);
+vi.mock('@citrineos/dal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@citrineos/dal')>()),
+  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
+  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
+}));
+
 const STATION = 'station-001';
 
 /**
@@ -56,8 +63,7 @@ describe('reservation response handlers address the reservation by its OCPP id',
 
   beforeEach(() => {
     reservationRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
-      updateByKey: vi.fn().mockResolvedValue(undefined),
+      updateByStationAndReservationId: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IReservationRepository>;
   });
 
@@ -80,11 +86,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateByKey).not.toHaveBeenCalled();
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { reserveStatus: ReserveNowStatusEnum.Accepted, isActive: true },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 
@@ -101,11 +107,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateByKey).not.toHaveBeenCalled();
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { isActive: false },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 
@@ -122,10 +128,11 @@ describe('reservation response handlers address the reservation by its OCPP id',
       } as never),
     );
 
-    expect(reservationRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
+      STATION,
+      OCPP_RESERVATION_ID,
       { isActive: true },
-      { where: { ocppConnectionName: STATION, id: OCPP_RESERVATION_ID } },
     );
   });
 });

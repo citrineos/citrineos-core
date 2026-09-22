@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: OCPPMessages
+  schema: public
+object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: OCPPMessage
+    using:
+      manual_configuration:
+        remote_table:
+          name: OCPPMessages
+          schema: public
+        column_mapping:
+          requestMessageId: id
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: OCPPMessages
+    using:
+      manual_configuration:
+        remote_table:
+          name: OCPPMessages
+          schema: public
+        column_mapping:
+          id: requestMessageId
+select_permissions:
+  - role: user
+    permission:
+      columns: "*"
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ""

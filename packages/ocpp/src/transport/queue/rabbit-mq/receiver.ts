@@ -10,6 +10,13 @@ import { Logger } from 'tslog';
 import { RabbitMQChannelManager } from './channel-manager.js';
 
 /**
+ * AMQP header carrying how many times a message has been retried. Lives on the delivery rather
+ * than in the message body: it is transport bookkeeping that no handler should see, and keeping
+ * it out of the body means the republished content is byte-identical to the original.
+ */
+const RETRY_HEADER = 'x-retries';
+
+/**
  * Implementation of a {@link IMessageHandler} using RabbitMQ as the underlying transport.
  *
  * Supports two operating modes:
@@ -46,6 +53,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   protected _instanceQueueReady?: Promise<void>;
   protected _instanceConsumerTags: string[] = [];
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
+  protected _messageMaxAgeSeconds: number;
 
   constructor({
     config,
@@ -62,6 +70,14 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
   }) {
     super(logger, module);
     this._channelManager = channelManager;
+    // Upper bound on how long a message may be retried for. Unlike the stale-Call guard in
+    // AbstractRouter -- which is opt-in, and only drops on delivery -- this cap always applies:
+    // a message that can never be handled within `maxCallLengthSeconds` is not worth retrying
+    // regardless of deployment, and without a bound a permanently blocked station would have us
+    // requeueing forever. It falls back to `maxCallLengthSeconds` when the operator has not
+    // opted into a stricter staleness policy.
+    this._messageMaxAgeSeconds =
+      config.timeouts.staleCallMaxAgeSeconds ?? config.timeouts.maxCallLengthSeconds;
     const exchange = config.messageBroker.amqp?.exchange;
     if (!exchange) {
       throw new Error('RabbitMQ exchange is not configured');
@@ -116,7 +132,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     });
 
     const { consumerTag } = await channel.consume(queueName, (msg) =>
-      this._onMessage(msg, channel),
+      this._onMessage(msg, channel, queueName),
     );
     this._instanceConsumerTags.push(consumerTag);
 
@@ -185,7 +201,7 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     // Re-create the single consumer on the new channel
     this._instanceConsumerTags = [];
     const { consumerTag } = await channel.consume(queueName, (msg) =>
-      this._onMessage(msg, channel),
+      this._onMessage(msg, channel, queueName),
     );
     this._instanceConsumerTags.push(consumerTag);
 
@@ -315,7 +331,9 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
     }
 
     // Start consuming messages
-    const consume = await channel.consume(queueName, (msg) => this._onMessage(msg, channel));
+    const consume = await channel.consume(queueName, (msg) =>
+      this._onMessage(msg, channel, queueName),
+    );
     const existing = this._consumerTags.get(identifier) ?? [];
     this._consumerTags.set(identifier, [...existing, consume.consumerTag]);
 
@@ -424,10 +442,12 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
    *
    * @param message The AMQPMessage to process
    * @param channel
+   * @param queueName The queue `message` was consumed from, used to requeue retries
    */
   protected async _onMessage(
     message: amqplib.ConsumeMessage | null,
     channel: amqplib.Channel,
+    queueName: string,
   ): Promise<void> {
     if (message) {
       try {
@@ -448,18 +468,51 @@ export class RabbitMqReceiver extends AbstractMessageHandler {
           messageData.payload || messageData._payload, // Keep payload as generic object
           messageData.protocol || messageData._protocol,
         );
-        await this.handle(parsed, message.properties);
-      } catch (error) {
-        if (error instanceof RetryMessageError) {
-          this._logger.warn('Retrying message: ', error.message);
-          // Retryable error, usually ongoing call with station when trying to send new call
-          channel.nack(message);
-          return;
-        } else {
-          this._logger.error('Error while processing message:', error, message);
+
+        try {
+          await this.handle(parsed, message.properties);
+        } catch (error) {
+          if (error instanceof RetryMessageError) {
+            const attempt = Number(message.properties.headers?.[RETRY_HEADER]) || 0;
+            const backoff = this._backoff(attempt);
+
+            if (!this._willStillBeFresh(parsed.context.timestamp, backoff)) {
+              this._logger.error(
+                `Dropping ${parsed.action} for ${parsed.context.ocppConnectionName} after ` +
+                  `${attempt} retries: would exceed the ${this._messageMaxAgeSeconds}s retry ` +
+                  `window. correlationId=${parsed.context.correlationId}`,
+              );
+              channel.nack(message, false, false); // discarded: no DLQ is configured
+              return;
+            }
+            if (attempt === 0) this._logger.warn('Retrying message: ', error.message);
+
+            await new Promise((resolve) => setTimeout(resolve, backoff));
+
+            channel.sendToQueue(queueName, message.content, {
+              ...message.properties,
+              headers: { ...message.properties.headers, [RETRY_HEADER]: attempt + 1 },
+            });
+            channel.ack(message);
+            return;
+          } else {
+            this._logger.error('Error while processing message:', error, message);
+          }
         }
+      } catch (error) {
+        this._logger.error('Error while parsing message:', error, message);
       }
       channel.ack(message);
     }
+  }
+
+  private _backoff(attempt: number): number {
+    const base = Math.min(50 * 2 ** attempt, 1000);
+    return base * (0.75 + Math.random() * 0.5); // ±25% jitter
+  }
+
+  private _willStillBeFresh(timestamp: string, backoff: number): boolean {
+    const age = Date.now() - new Date(timestamp).getTime();
+    return age + backoff < this._messageMaxAgeSeconds * 1000;
   }
 }

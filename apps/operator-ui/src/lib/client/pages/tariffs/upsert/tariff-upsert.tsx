@@ -35,14 +35,14 @@ type TariffUpsertProps = {
 
 const TariffFormSchema = TariffSchema.pick({
   [TariffProps.currency]: true,
-  [TariffProps.tariffAltText]: true,
 }).extend({
   [TariffProps.pricePerKwh]: z.coerce.number().min(0),
-  [TariffProps.pricePerMin]: z.coerce.number().min(0).nullable().optional(),
-  [TariffProps.pricePerSession]: z.coerce.number().min(0).nullable().optional(),
-  [TariffProps.authorizationAmount]: z.coerce.number().min(0).nullable().optional(),
-  [TariffProps.paymentFee]: z.coerce.number().min(0).nullable().optional(),
-  [TariffProps.taxRate]: z.coerce.number().min(0).nullable().optional(),
+  [TariffProps.pricePerMin]: z.coerce.number().min(0).nullish(),
+  [TariffProps.pricePerSession]: z.coerce.number().min(0).nullish(),
+  [TariffProps.authorizationAmount]: z.coerce.number().min(0).nullish(),
+  [TariffProps.paymentFee]: z.coerce.number().min(0).nullish(),
+  [TariffProps.taxRate]: z.coerce.number().min(0).nullish(),
+  [TariffProps.tariffAltText]: z.union([z.string(), z.record(z.string(), z.any())]).nullish(),
 });
 
 const defaultValues = {
@@ -101,7 +101,11 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
       try {
         newItem.tariffAltText = newItem.tariffAltText ? JSON.parse(newItem.tariffAltText) : null;
       } catch {
-        newItem.tariffAltText = null;
+        form.setError(TariffProps.tariffAltText, {
+          type: 'custom',
+          message: 'Tariff Alt Text must be a valid JSON.',
+        });
+        return;
       }
     }
 

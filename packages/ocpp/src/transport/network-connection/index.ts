@@ -5,5 +5,6 @@
 export { Authenticator } from './authenticator/authenticator.js';
 export { WebsocketNetworkConnection } from './websocket-network-connection.js';
 export { BasicAuthenticationFilter } from './authenticator/basic-authentication-filter.js';
+export { ClientCertificateFilter } from './authenticator/client-certificate-filter.js';
 export { ConnectedStationFilter } from './authenticator/connected-station-filter.js';
 export { UnknownStationFilter } from './authenticator/unknown-station-filter.js';

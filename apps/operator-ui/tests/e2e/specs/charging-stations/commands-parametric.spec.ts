@@ -73,7 +73,7 @@ test.describe('charging-stations › parametric modal harness (smoke)', () => {
 
       try {
         const detail = new ChargingStationDetailPage(page);
-        await detail.goto(station.id);
+        await detail.goto(station.ocppConnectionName);
         const modal = new ModalHarness(page, spec.titlePattern);
 
         // Strategy 1: primary command-bar button. Only probe for the modal when

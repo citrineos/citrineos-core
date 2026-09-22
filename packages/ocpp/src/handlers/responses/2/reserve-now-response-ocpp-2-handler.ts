@@ -17,6 +17,7 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReserveNow)
 export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
@@ -45,24 +46,23 @@ export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
     const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
       where: {
         tenantId: message.context.tenantId,
-        ocppConnectionName: message.context.ocppConnectionName,
+        stationId: await stationIdFilter(
+          message.context.tenantId,
+          message.context.ocppConnectionName,
+        ),
         correlationId: message.context.correlationId,
         origin: MessageOrigin.ChargingStationManagementSystem,
       },
     });
     if (request) {
       const status = message.payload.status as ReserveNowStatusEnumType;
-      await this._reservationRepository.updateAllByQuery(
+      await this._reservationRepository.updateByStationAndReservationId(
         message.context.tenantId,
+        message.context.ocppConnectionName,
+        request.payload.id,
         {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,
-        },
-        {
-          where: {
-            ocppConnectionName: message.context.ocppConnectionName,
-            id: request.payload.id,
-          },
         },
       );
     } else {

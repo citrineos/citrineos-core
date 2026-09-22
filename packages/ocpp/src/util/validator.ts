@@ -10,14 +10,14 @@ import {
   OCPP2_1,
   type IdTokenEnumType,
   type OCPP2_common_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import type { ChargingNeeds, Transaction } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
@@ -55,7 +55,7 @@ export interface ChargingProfileValidation {
  * @param chargingProfileType ChargingProfileType from the request
  * @param tenantId tenant id the profile belongs to
  * @param ocppConnectionName - The connection name of the charging station
- * @param deviceModelRepository deviceModelRepository
+ * @param variableAttributeRepository variableAttributeRepository
  * @param chargingProfileRepository chargingProfileRepository
  * @param transactionEventRepository transactionEventRepository
  * @param logger logger
@@ -65,7 +65,7 @@ export async function validateChargingProfileType(
   chargingProfileType: OCPP2_common_types.ChargingProfileType | OCPP2_1.ChargingProfileType,
   tenantId: number,
   ocppConnectionName: string,
-  deviceModelRepository: IDeviceModelRepository,
+  variableAttributeRepository: IVariableAttributeRepository,
   chargingProfileRepository: IChargingProfileRepository,
   transactionEventRepository: ITransactionEventRepository,
   logger: Logger<ILogObj>,
@@ -117,16 +117,14 @@ export async function validateChargingProfileType(
     transactionContext = { transaction, chargingNeeds: receivedChargingNeeds };
   }
 
-  const periodsPerSchedules: VariableAttribute[] = await deviceModelRepository.readAllByQuerystring(
-    tenantId,
-    {
+  const periodsPerSchedules: VariableAttributeDto[] =
+    await variableAttributeRepository.readAllByQuerystring(tenantId, {
       tenantId: tenantId,
       ocppConnectionName: ocppConnectionName,
       component_name: 'SmartChargingCtrlr',
       variable_name: 'PeriodsPerSchedule',
       type: AttributeEnum.Actual,
-    },
-  );
+    });
   logger.info(`Found PeriodsPerSchedule: ${JSON.stringify(periodsPerSchedules)}`);
   let periodsPerSchedule;
   if (periodsPerSchedules.length > 0 && periodsPerSchedules[0].value) {
@@ -656,7 +654,7 @@ export function validateUTF8Content(content: string): boolean {
 /**
  * Message content validator - routes to appropriate validator based on format
  * Returns validation result with detailed error message if invalid
- * @param format Message format type (ASCII, HTML, URI, UTF8)
+ * @param format Message format type (ASCII, HTML, URI, UTF8, QRCODE)
  * @param content Message content to validate
  * @returns {ValidationResult} Validation result with error message if invalid
  */
@@ -701,6 +699,15 @@ export function validateMessageContent(
         isValid: false,
         errorMessage:
           'UTF8 format requires valid UTF-8 encoded content without unpaired surrogate characters',
+      };
+
+    case MessageFormatEnum.QRCODE:
+      if (content) {
+        return { isValid: true };
+      }
+      return {
+        isValid: false,
+        errorMessage: 'QRCODE format requires the text to display as a QR code',
       };
 
     default:

@@ -6,12 +6,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import type { SystemConfig } from '@citrineos/types';
-import {
-  DefaultSequelizeInstance,
-  SequelizeTariffRepository,
-  Tariff,
-  Tenant,
-} from '@citrineos/dal';
+import { DefaultSequelizeInstance, SequelizeTariffRepository } from '@citrineos/dal';
+import { Tariff } from '../../../src/models/tariff/tariffs.js';
+import { Tenant } from '../../../src/models/tenant.js';
 import type { TariffQueryString } from '@dal/interfaces/queries/tariff.js';
 
 // ---------------------------------------------------------------------------
@@ -65,8 +62,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
-  await Tenant.create({ id: TENANT_A as any });
-  await Tenant.create({ id: TENANT_B as any });
+  await Tenant.create({ id: TENANT_A as any, name: String(TENANT_A) });
+  await Tenant.create({ id: TENANT_B as any, name: String(TENANT_B) });
 });
 
 function makeRepo(): SequelizeTariffRepository {

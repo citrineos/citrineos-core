@@ -110,19 +110,13 @@ export class VariableAttribute
    */
 
   @ForeignKey(() => ChargingStation)
+  @Index
   @Column({
     type: DataType.INTEGER,
     unique: 'stationId_type_variableId_componentId',
-    allowNull: true,
-  })
-  declare stationId?: number;
-
-  @Index
-  @Column({
-    type: DataType.STRING,
     allowNull: false,
   })
-  declare ocppConnectionName: string;
+  declare stationId: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation: ChargingStationDto;
@@ -230,19 +224,6 @@ export class VariableAttribute
 
   @BelongsTo(() => Tenant, 'tenantId')
   declare tenant?: TenantDto;
-
-  @BeforeCreate
-  static async resolveStationId(instance: VariableAttribute): Promise<void> {
-    if (instance.stationId == null && instance.ocppConnectionName && instance.tenantId != null) {
-      const station = await ChargingStation.findOne({
-        where: { ocppConnectionName: instance.ocppConnectionName, tenantId: instance.tenantId },
-        attributes: ['id'],
-      });
-      if (station) {
-        instance.stationId = station.id;
-      }
-    }
-  }
 
   @BeforeUpdate
   @BeforeCreate

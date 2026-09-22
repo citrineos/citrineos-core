@@ -23,28 +23,34 @@ import {
   Transaction,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
+import { stationIdFilter } from '@citrineos/dal';
+import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
+  protected _costCalculator: CostCalculator;
 
   constructor({
     logger,
     ocppSender,
     authorizationRepository,
     transactionEventRepository,
+    costCalculator,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     transactionEventRepository: ITransactionEventRepository;
+    costCalculator: CostCalculator;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._transactionEventRepository = transactionEventRepository;
+    this._costCalculator = costCalculator;
   }
 
   async handle(
@@ -57,16 +63,28 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
 
-    const authorization: AuthorizationDto | undefined = request.idTag
-      ? await this._authorizationRepository.readOnlyOneByQuerystring(tenantId, {
+    const authorizations: AuthorizationDto[] = request.idTag
+      ? await this._authorizationRepository.readAllByQuerystring(tenantId, {
           idToken: request.idTag,
         })
-      : undefined;
+      : [];
+    if (authorizations.length > 1) {
+      this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
+    }
+    const authorization: AuthorizationDto | undefined =
+      authorizations.length === 1 ? authorizations[0] : undefined;
 
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = 'Invalid';
+    }
+    if (
+      idTokenInfoStatus === AuthorizationStatusEnum.Accepted &&
+      authorization?.cacheExpiryDateTime &&
+      new Date() > new Date(authorization.cacheExpiryDateTime)
+    ) {
+      idTokenInfoStatus = AuthorizationStatusEnum.Expired;
     }
     switch (idTokenInfoStatus) {
       case AuthorizationStatusEnum.Accepted:
@@ -105,7 +123,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     const transaction = await Transaction.findOne({
       where: {
-        ocppConnectionName,
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
         tenantId,
         transactionId: request.transactionId.toString(),
       },
@@ -136,11 +154,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       ocppConnectionName,
       request.meterStop,
       new Date(request.timestamp),
-      request.transactionData?.map((data) =>
-        OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
-          data as OCPP1_6.MeterValuesRequest['meterValue'][0],
-        ),
-      ) || [],
+      request.transactionData
+        ?.map((data) =>
+          OCPP1_6_Mapper.MeterValueMapper.fromMeterValueType(
+            data as OCPP1_6.MeterValuesRequest['meterValue'][0],
+          ),
+        )
+        .filter((meterValue) => meterValue.sampledValue.length > 0) || [],
       stoppedReason,
       authorization?.id,
     );
@@ -155,13 +175,31 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
     } else {
       this._logger.warn(
-        `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}. 
+        `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}.
         Cannot calculate totalKwh.`,
       );
     }
     transaction.isActive = false;
     transaction.stoppedReason = stoppedReason;
     transaction.endTime = request.timestamp;
+
+    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
+    // session is billed as charging time. Always set, so cost calculation never sees it unset.
+    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
+    const stopTime = Date.parse(request.timestamp);
+    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
+    transaction.timeSpentCharging = Number.isFinite(elapsedSeconds)
+      ? Math.max(0, elapsedSeconds)
+      : 0;
     await transaction.save();
+
+    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
+    if (totalCost != null) {
+      await this._transactionEventRepository.updateTransactionTotalCostById(
+        tenantId,
+        totalCost,
+        transaction.id,
+      );
+    }
   }
 }

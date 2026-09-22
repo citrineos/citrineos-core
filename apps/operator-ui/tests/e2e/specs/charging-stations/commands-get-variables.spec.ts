@@ -14,7 +14,7 @@ test.describe('charging-stations › GetVariables command', () => {
     everestStation,
   }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(everestStation.id);
+    await detail.goto(everestStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/get variables/i);
     const modal = new ModalHarness(page, /get variables/i);
@@ -32,7 +32,7 @@ test.describe('charging-stations › GetVariables command', () => {
 
   test('E2E-080: GetVariables validation when no rows present', async ({ page, seededStation }) => {
     const detail = new ChargingStationDetailPage(page);
-    await detail.goto(seededStation.id);
+    await detail.goto(seededStation.ocppConnectionName);
 
     await detail.commandBar.openViaOtherCommands(/get variables/i);
     const modal = new ModalHarness(page, /get variables/i);

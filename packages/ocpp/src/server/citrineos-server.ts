@@ -4,13 +4,17 @@
 
 import { apiAuthPluginFp, initSwagger } from '@/apis/index.js';
 import { GcpCloudStorage, LocalStorage, S3Storage } from '@/config/index.js';
-import { MemoryCache, RedisCache } from '@/services/index.js';
 import type {
   BrokerAwareMessageSender,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
   WebsocketNetworkConnection,
 } from '@/transport/index.js';
+import {
+  assertSequelizeSchemaMatches,
+  keyCodeRedactionRule,
+  type SchemaValidationReport,
+} from '@/util/index.js';
 import {
   type AbstractModule,
   Ajv,
@@ -21,7 +25,12 @@ import {
   type IFileStorage,
   type IMessageRouter,
   type IModule,
+  loggerDefaults,
+  MemoryCache,
   OCPPValidator,
+  redactionMiddleware,
+  type RedactionRule,
+  RedisCache,
 } from '@citrineos/base';
 import {
   DefaultDrizzleInstance,
@@ -32,6 +41,7 @@ import {
 import { EventGroup, eventGroupFromString, type SystemConfig } from '@citrineos/types';
 import cors, { type FastifyCorsOptions } from '@fastify/cors';
 import { type JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import { MessagesModule } from '@modules/messages/index.js';
 import { asValue, type AwilixContainer } from 'awilix';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import fastify from 'fastify';
@@ -111,10 +121,12 @@ export class CitrineOSServer {
   protected _authenticator?: IAuthenticator;
   protected _router?: IMessageRouter;
   protected _networkConnection?: WebsocketNetworkConnection;
+  protected _messagesModule?: MessagesModule;
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
   protected _isShuttingDown = false;
+  protected _schemaValidationReport: SchemaValidationReport | null = null;
 
   // Single source of truth mapping each module's EventGroup to the container token
   // needed to initialize it. initAllModules() and initModule() both read from this
@@ -144,6 +156,9 @@ export class CitrineOSServer {
     [EventGroup.Tenant]: {
       moduleToken: 'tenantModule',
     },
+    [EventGroup.CaliforniaPricing]: {
+      moduleToken: 'californiaPricingModule',
+    },
   };
 
   protected static readonly DEFAULT_API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
@@ -158,7 +173,12 @@ export class CitrineOSServer {
    * `{ ...super.moduleSpecs, [EventGroup.Foo]: { moduleToken: 'fooModule' } }`.
    */
   protected get moduleSpecs(): Partial<Record<EventGroup, ModuleInitSpec>> {
-    return CitrineOSServer.DEFAULT_MODULE_SPECS;
+    if (this._config.californiaPricing.enabled) {
+      return CitrineOSServer.DEFAULT_MODULE_SPECS;
+    }
+    const { [EventGroup.CaliforniaPricing]: _californiaPricing, ...enabled } =
+      CitrineOSServer.DEFAULT_MODULE_SPECS;
+    return enabled;
   }
 
   /** API groups this server can start, keyed by the EventGroup that selects them. */
@@ -222,6 +242,7 @@ export class CitrineOSServer {
     await this.initMessageBrokerConnection();
     await this.initSystem();
     await this.initDb();
+    await this.initMessagesModule();
     this.initHealthCheckService();
     this.registerShutdownHandlers();
     await this.onInitialized();
@@ -305,11 +326,22 @@ export class CitrineOSServer {
   /** Split out so a subclass swapping the Logger implementation can reuse the settings. */
   protected loggerSettings(isCloud = process.env.DEPLOYMENT_TARGET === 'cloud') {
     return {
+      ...loggerDefaults(this._config.env, this._config.logRedaction),
+      middleware: [redactionMiddleware(this.redactionRules())],
       name: 'CitrineOS Logger',
       minLevel: this._config.logLevel,
-      hideLogPositionForProduction: this._config.env === 'production',
       type: isCloud ? ('json' as const) : ('pretty' as const),
     };
+  }
+
+  /**
+   * The shape-dependent redaction applied to every log, on top of the keys, paths and patterns
+   * `logRedaction` names. Override to add a rule of your own; the middleware is registered on the
+   * root logger, so anything returned here reaches every sub-logger beneath it.
+   */
+  protected redactionRules(): RedactionRule[] {
+    const { redactKeyCodes, placeholder } = this._config.logRedaction;
+    return redactKeyCodes ? [keyCodeRedactionRule(placeholder)] : [];
   }
 
   protected createFastifyInstance(): FastifyInstance {
@@ -488,6 +520,9 @@ export class CitrineOSServer {
     } else if (this.apiSpecs[this.eventGroup]) {
       this._logger.info(`Initializing in API mode: ${this.appName}`);
       this.initApiInScope(this.apiSpecs[this.eventGroup]!.apiTokens);
+    } else if (this.eventGroup === EventGroup.Messages) {
+      // Log only because MessagesModule will be initialized by initMessagesModule()
+      this._logger.info('Initializing in MESSAGES mode: general frame processing only');
     } else {
       await this.initModule();
     }
@@ -505,6 +540,18 @@ export class CitrineOSServer {
     await this._networkConnection.initialize(); // creates the WebSocket servers and starts listening for connections
 
     this.initApiInScope(this.networkApiTokens);
+  }
+
+  /**
+   * Starts the messages module, which consumes the `messages` exchange.
+   */
+  protected async initMessagesModule(): Promise<void> {
+    const shouldRun = this.eventGroup === EventGroup.Messages || this.eventGroup === EventGroup.All;
+    if (!shouldRun) return;
+
+    this._logger.info('Initializing messages module (general message processing)');
+    this._messagesModule = this._container.resolve<MessagesModule>('messagesModule');
+    await this._messagesModule.start();
   }
 
   protected async initAllModules() {
@@ -557,6 +604,13 @@ export class CitrineOSServer {
 
   protected async initDb() {
     await sequelize.DefaultSequelizeInstance.initializeSequelize();
+
+    this._schemaValidationReport = await assertSequelizeSchemaMatches(
+      this._sequelizeInstance,
+      this._config,
+      this._logger,
+    );
+
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
     }
@@ -574,6 +628,7 @@ export class CitrineOSServer {
       this._config.timeouts.notReadyThresholdSeconds,
       this._logger,
     );
+    this._healthCheckService.setSchemaValidationReport(this._schemaValidationReport);
   }
 
   protected registerShutdownHandlers(): void {

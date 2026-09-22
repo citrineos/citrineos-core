@@ -6,14 +6,15 @@ import { fieldSet } from '@lib/queries/fields/field-set';
 
 /**
  * The top-level transaction-detail selection (list/detail pages). Queries that also carry
- * `stationId` / `locationId` / `authorizationId` add them inline; tariffs omits `ocppConnectionName`.
+ * `locationId` / `authorizationId` add them inline. The station's connection name is not a
+ * transaction column — reach it through the `ChargingStation` relation.
  */
 export const TRANSACTION_DETAIL_FIELDS = fieldSet([
   'id',
   'timeSpentCharging',
   'isActive',
   'chargingState',
-  'ocppConnectionName',
+  'stationId',
   'stoppedReason',
   'transactionId',
   'evseId',
@@ -30,7 +31,7 @@ export const ACTIVE_TRANSACTION_FIELDS = fieldSet([
   'timeSpentCharging',
   'isActive',
   'chargingState',
-  'ocppConnectionName',
+  'stationId',
   'stoppedReason',
   'transactionId',
   'evseId',

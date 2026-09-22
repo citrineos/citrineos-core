@@ -7,15 +7,23 @@ import {
   MutabilityEnum,
   SetVariableStatusEnum,
   type OCPP2_common_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
-import { Component, Variable, VariableAttribute } from '@citrineos/dal';
+import type { IDeviceModelRepository, IVariableAttributeRepository } from '@citrineos/dal';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
+  constructor({
+    deviceModelRepository,
+    variableAttributeRepository,
+  }: {
+    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
+  }) {
     this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async provisionVariableAttributes(
@@ -23,7 +31,7 @@ export class DeviceModelService {
     ocppConnectionName: string,
     reportData: OCPP2_common_types.ReportDataType,
     setOnCharger: boolean,
-  ): Promise<VariableAttribute[]> {
+  ): Promise<VariableAttributeDto[]> {
     const timestamp = new Date().toISOString();
     const withDefaultedMutability = {
       ...reportData,
@@ -45,22 +53,21 @@ export class DeviceModelService {
       return variableAttributes;
     }
 
-    const acceptedAttributes: VariableAttribute[] = [];
+    const acceptedAttributes: VariableAttributeDto[] = [];
     for (const variableAttribute of variableAttributes) {
-      const reloaded = await variableAttribute.reload({ include: [Variable, Component] });
       await this._deviceModelRepository.updateResultByStationId(
         tenantId,
         {
-          attributeType: reloaded.type,
+          attributeType: variableAttribute.type,
           attributeStatus: SetVariableStatusEnum.Accepted,
           attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-          component: reloaded.component,
-          variable: reloaded.variable,
+          component: variableAttribute.component,
+          variable: variableAttribute.variable,
         } as OCPP2_common_types.SetVariableResultType,
         ocppConnectionName,
         timestamp,
       );
-      acceptedAttributes.push(reloaded);
+      acceptedAttributes.push(variableAttribute);
     }
     return acceptedAttributes;
   }
@@ -81,8 +88,8 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const itemsPerMessageAttributes: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: componentName,
@@ -116,8 +123,8 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const bytesPerMessageAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const bytesPerMessageAttributes: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: componentName,

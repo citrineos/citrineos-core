@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import type { ILogObj, Logger } from 'tslog';
+import { childLogger } from '@base-util/logging.js';
 import type { IMessage } from './message.js';
 import type { IMessageHandler } from './message-handler.js';
 import {
@@ -33,9 +33,7 @@ export abstract class AbstractMessageHandler implements IMessageHandler {
    */
   constructor(logger?: Logger<ILogObj>, module?: IModule) {
     this._module = module;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   /**

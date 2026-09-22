@@ -1,46 +1,44 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { AttributeEnum, OCPP1_6, UpdateEnum, OCPP2_request_types } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import {
+  AttributeEnum,
+  OCPP1_6,
+  UpdateEnum,
+  OCPP2_request_types,
+  type VariableAttributeDto,
+} from '@citrineos/types';
+import { childLogger } from '@citrineos/base';
+import type { ILogObj, Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   IChangeConfigurationRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ILocalAuthListRepository,
 } from '@citrineos/dal';
-import {
-  SendLocalList,
-  Variable,
-  VariableAttribute,
-  LocalListVersion,
-  LocalListAuthorization,
-} from '@citrineos/dal';
+import { SendLocalList, Variable, LocalListVersion, LocalListAuthorization } from '@citrineos/dal';
 
 export class LocalAuthListService {
   protected _localAuthListRepository: ILocalAuthListRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
   protected _logger: Logger<ILogObj>;
 
   constructor({
     localAuthListRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     changeConfigurationRepository,
     logger,
   }: {
     localAuthListRepository: ILocalAuthListRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
     logger: Logger<ILogObj>;
   }) {
     this._localAuthListRepository = localAuthListRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
-    this._logger = logger
-      ? logger.getSubLogger({ name: this.constructor.name })
-      : new Logger<ILogObj>({ name: this.constructor.name });
+    this._logger = childLogger(logger, this.constructor.name);
   }
 
   async prepareSendLocalList(
@@ -190,12 +188,17 @@ export class LocalAuthListService {
       case UpdateEnum.Full:
         return sendLocalList?.localAuthorizationList?.length ?? 0;
       case UpdateEnum.Differential: {
-        const uniqueAuths = new Set(
-          [
-            ...(sendLocalList.localAuthorizationList ?? []),
-            ...(localListVersion?.localAuthorizationList ?? []),
-          ].map((auth) => auth.authorizationId),
-        );
+        const currentAuths = localListVersion?.localAuthorizationList ?? [];
+        const uniqueAuths = new Set(currentAuths.map((auth) => auth.authorizationId));
+        for (const auth of sendLocalList.localAuthorizationList ?? []) {
+          if (!auth.authorizationId && auth.status === 'Invalid') {
+            currentAuths
+              .filter((current) => current.idToken === auth.idToken)
+              .forEach((current) => uniqueAuths.delete(current.authorizationId));
+          } else {
+            uniqueAuths.add(auth.authorizationId);
+          }
+        }
         return uniqueAuths.size;
       }
       default:
@@ -207,8 +210,8 @@ export class LocalAuthListService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageSendLocalList: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const itemsPerMessageSendLocalList: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: 'LocalAuthListCtrlr',
@@ -333,9 +336,11 @@ export class LocalAuthListService {
     ocppConnectionName: string,
     key: string,
   ): Promise<number | null> {
-    const configuration = await this._changeConfigurationRepository.readOnlyOneByQuery(tenantId, {
-      where: { tenantId, ocppConnectionName, key },
-    });
+    const configuration = await this._changeConfigurationRepository.findByStationAndKey(
+      tenantId,
+      ocppConnectionName,
+      key,
+    );
     if (configuration?.value == null) {
       return null;
     }
@@ -347,8 +352,8 @@ export class LocalAuthListService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const entriesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const entriesAttributes: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: 'LocalAuthListCtrlr',

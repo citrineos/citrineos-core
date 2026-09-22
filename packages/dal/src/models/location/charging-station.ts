@@ -12,13 +12,13 @@ import {
   type InstalledCertificateDto,
   type LocationDto,
   type OCPPMessageDto,
+  OCPPVersion,
   type Point,
   type ServerNetworkProfileDto,
   type StatusNotificationDto,
   type TenantDto,
   type VariableAttributeDto,
   type VariableMonitoringDto,
-  OCPPVersion,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
@@ -76,6 +76,7 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @Column({
     type: DataType.STRING(36),
     unique: 'ChargingStations_stationName_tenantId_key',
+    allowNull: false,
   })
   declare ocppConnectionName: string;
 
@@ -140,6 +141,7 @@ export class ChargingStation extends Model implements ChargingStationDto {
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true,
+    allowNull: false,
   })
   declare use16StatusNotification0: boolean;
 

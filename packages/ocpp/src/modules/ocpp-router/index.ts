@@ -3,4 +3,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export { MessageRouterImpl } from './router.js';
-export { WebhookDispatcher } from './webhook-dispatcher.js';
+export { registerOcppRouterServices } from './register.js';
+export { CallbackUrlNotifier } from './callback-url-notifier.js';

@@ -6,6 +6,7 @@
 import React, { useCallback } from 'react';
 import type { TransactionDto } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
+import { chargingStationPath } from '@lib/utils/resource-paths';
 import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import { Badge } from '@lib/client/components/ui/badge';
 import { Button } from '@lib/client/components/ui/button';
@@ -22,6 +23,24 @@ import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { NOT_APPLICABLE } from '@lib/utils/consts';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
+
+/**
+ * Contains the total seconds that energy flowed from EVSE to EV during the transaction,
+ * in clock notation: "02:30:00".
+ */
+const formatTimeSpentCharging = (seconds?: number | string | null): string | undefined => {
+  // The column is a bigint, which some drivers hand back as a string.
+  const total = Math.floor(Number(seconds));
+  if (seconds == null || !Number.isFinite(total) || total < 0) {
+    return undefined;
+  }
+
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = total % 60;
+
+  return [hours, minutes, remainder].map((part) => String(part).padStart(2, '0')).join(':');
+};
 
 export interface TransactionDetailCardProps {
   transaction: TransactionDto;
@@ -105,28 +124,36 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.stationId')}
             value={''}
-            valueRender={() => (
-              <Link
-                to={`/${MenuSection.CHARGING_STATIONS}/${transaction.stationId}`}
-                className={clickableLinkStyle}
-                title={transaction.ocppConnectionName}
-              >
-                {transaction.ocppConnectionName}
-              </Link>
-            )}
+            valueRender={() =>
+              transaction.station?.ocppConnectionName ? (
+                <Link
+                  to={chargingStationPath(transaction.station.ocppConnectionName)}
+                  className={clickableLinkStyle}
+                  title={transaction.station.ocppConnectionName}
+                >
+                  {transaction.station.ocppConnectionName}
+                </Link>
+              ) : (
+                <span>{NOT_APPLICABLE}</span>
+              )
+            }
           />
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.location')}
             value={''}
-            valueRender={() => (
-              <Link
-                to={`/${MenuSection.LOCATIONS}/${transaction.locationId}`}
-                className={clickableLinkStyle}
-                title={transaction.locationId}
-              >
-                {transaction.location?.name ?? NOT_APPLICABLE}
-              </Link>
-            )}
+            valueRender={() =>
+              transaction.locationId ? (
+                <Link
+                  to={`/${MenuSection.LOCATIONS}/${transaction.locationId}`}
+                  className={clickableLinkStyle}
+                  title={String(transaction.locationId)}
+                >
+                  {transaction.location?.name ?? String(transaction.locationId)}
+                </Link>
+              ) : (
+                <span>{NOT_APPLICABLE}</span>
+              )
+            }
           />
           <KeyValueDisplay
             keyLabel={translate('Transactions.detail.totalKwh')}
@@ -162,6 +189,10 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
                 <span>{NOT_APPLICABLE}</span>
               )
             }
+          />
+          <KeyValueDisplay
+            keyLabel={translate('Transactions.detail.timeSpentCharging')}
+            value={formatTimeSpentCharging(transaction.timeSpentCharging)}
           />
         </div>
       </CardContent>

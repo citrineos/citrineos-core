@@ -45,6 +45,7 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column({
     type: DataType.CITEXT,
     unique: 'idToken_type',
+    allowNull: false,
   })
   declare idToken: string;
 
@@ -57,7 +58,10 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column(DataType.JSONB)
   declare additionalInfo?: [AdditionalInfo, ...AdditionalInfo[]] | null; // JSONB for AdditionalInfo
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare status: AuthorizationStatusEnumType;
 
   @Column({
@@ -112,7 +116,10 @@ export class Authorization extends Model implements AuthorizationDto {
   declare concurrentTransaction?: boolean;
 
   @Default(false)
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare isPrepaid?: boolean;
 
   @Column(DataType.DECIMAL)

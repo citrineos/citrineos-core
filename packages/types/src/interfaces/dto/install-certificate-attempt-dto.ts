@@ -8,8 +8,7 @@ import { CertificateUseEnumSchema, InstallCertificateStatusEnumSchema } from './
 
 export const InstallCertificateAttemptSchema = BaseSchema.extend({
   id: z.number().int().optional(),
-  stationId: z.number().int().nullable().optional(),
-  ocppConnectionName: z.string().max(36),
+  stationId: z.number().int(),
   certificateType: CertificateUseEnumSchema,
   certificateId: z.number().int().nullable().optional(),
   requestId: z.number().int().nullable().optional(),

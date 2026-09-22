@@ -55,6 +55,7 @@ function makeHandler(
     transactionService?: Record<string, unknown>;
     config?: SystemConfig;
     deviceModelVariables?: Record<string, { value: string | null }[]>;
+    totalCost?: number;
   } = {},
 ) {
   const { logger } = createTestContainer();
@@ -68,6 +69,7 @@ function makeHandler(
       totalKwh: null,
     }),
     readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(null),
+    readAllByStationIdAndTransactionId: vi.fn().mockResolvedValue([]),
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
     updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
     ...overrides.transactionEventRepository,
@@ -90,7 +92,7 @@ function makeHandler(
 
   const chargingProfileRepository = { readAllByQuery: vi.fn().mockResolvedValue([]) };
   const deviceModelVariables = overrides.deviceModelVariables ?? {};
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
       const key = [query.component_name, query.variable_name, query.variable_instance]
         .filter(Boolean)
@@ -99,7 +101,9 @@ function makeHandler(
     }),
   };
   const signedMeterValuesUtil = { validateMeterValues: vi.fn().mockResolvedValue(true) };
-  const costCalculator = { calculateTotalCost: vi.fn().mockResolvedValue(0) };
+  const costCalculator = {
+    calculateTotalCost: vi.fn().mockResolvedValue(overrides.totalCost ?? 0),
+  };
   const costNotifier = { notifyWhileActive: vi.fn() };
 
   const handler = new TransactionEventRequestOcpp2Handler({
@@ -110,7 +114,7 @@ function makeHandler(
     config: overrides.config ?? makeConfig(),
     costCalculator: costCalculator as any,
     costNotifier: costNotifier as any,
-    deviceModelRepository: deviceModelRepository as any,
+    variableAttributeRepository: variableAttributeRepository as any,
     signedMeterValuesUtil: signedMeterValuesUtil as any,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
@@ -123,7 +127,9 @@ function makeHandler(
     transactionEventRepository,
     cache,
     transactionService,
-    deviceModelRepository,
+    costCalculator,
+    signedMeterValuesUtil,
+    variableAttributeRepository,
   };
 }
 
@@ -171,6 +177,186 @@ describe('TransactionEventRequestOcpp2Handler', () => {
       const response = await handleWithTariffEnabled('true');
 
       expect(response.totalCost).toBeUndefined();
+    });
+  });
+
+  // timeSpentCharging is the seconds energy actually flowed, reported by the station in
+  // transactionInfo and declared identically in OCPP 2.0.1 and 2.1. Cost is charged on it rather
+  // than on the transaction's own duration, which also counts time parked and not charging.
+  describe('timeSpentCharging reported by the station', () => {
+    function anUpdatedEvent(
+      timeSpentCharging: number | null | undefined,
+    ): OCPP2_0_1.TransactionEventRequest {
+      const transactionInfo: Record<string, unknown> = { transactionId: 'txn-001' };
+      if (timeSpentCharging !== undefined) {
+        transactionInfo.timeSpentCharging = timeSpentCharging;
+      }
+      return {
+        eventType: OCPP2_0_1.TransactionEventEnumType.Updated,
+        triggerReason: OCPP2_0_1.TriggerReasonEnumType.MeterValuePeriodic,
+        timestamp: new Date().toISOString(),
+        seqNo: 2,
+        transactionInfo,
+      } as unknown as OCPP2_0_1.TransactionEventRequest;
+    }
+
+    /** A Wh reading of the cumulative import register. */
+    function energy(wh: number) {
+      return {
+        value: wh,
+        measurand: 'Energy.Active.Import.Register',
+        unitOfMeasure: { unit: 'Wh' },
+      };
+    }
+
+    function makeHandlerWithTransaction(
+      stored: { timeSpentCharging?: number | null } = {},
+      history: unknown[] = [],
+    ) {
+      const transaction: {
+        id: number;
+        transactionId: string;
+        isActive: boolean;
+        totalKwh: number | null;
+        timeSpentCharging?: number | null;
+      } = {
+        id: 1,
+        transactionId: 'txn-001',
+        isActive: true,
+        totalKwh: null,
+        ...stored,
+      };
+      return {
+        transaction,
+        ...makeHandler({
+          transactionEventRepository: {
+            createOrUpdateTransactionByTransactionEventAndStationId: vi
+              .fn()
+              .mockResolvedValue(transaction),
+            readAllByStationIdAndTransactionId: vi.fn().mockResolvedValue(history),
+          } as never,
+        }),
+      };
+    }
+
+    it.each([
+      ['OCPP 2.0.1', OCPPVersion.OCPP2_0_1],
+      ['OCPP 2.1', OCPPVersion.OCPP2_1],
+    ])('persists the reported value on %s', async (_label, protocol) => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), protocol));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        { timeSpentCharging: 2820 },
+        'txn-001',
+        'station-001',
+      );
+      expect(transaction.timeSpentCharging).toBe(2820);
+    });
+
+    it('leaves an earlier value alone when the event omits the field', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction({
+        timeSpentCharging: 1800,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('leaves an earlier value alone when the event reports null', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction({
+        timeSpentCharging: 1800,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(null), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('takes a reported zero, which is not the same as no report', async () => {
+      const { handler, transaction } = makeHandlerWithTransaction({ timeSpentCharging: 1800 });
+
+      await handler.handle(makeMessage(anUpdatedEvent(0), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(0);
+    });
+
+    it('does not write again when the station repeats the stored value', async () => {
+      const { handler, transactionEventRepository } = makeHandlerWithTransaction({
+        timeSpentCharging: 2820,
+      });
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('does not read the event history when the station reports the field', async () => {
+      const { handler, transactionEventRepository } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(2820), OCPPVersion.OCPP2_0_1));
+
+      // The station is the authority, so the fallback must not cost a query.
+      expect(transactionEventRepository.readAllByStationIdAndTransactionId).not.toHaveBeenCalled();
+    });
+
+    it('derives from the chargingState timeline when the station does not report it', async () => {
+      // Charging from 10:00 to 10:30, then parked - 1800 seconds of charging.
+      const { handler, transaction } = makeHandlerWithTransaction({}, [
+        { timestamp: '2026-08-20T10:00:00Z', transactionInfo: { chargingState: 'Charging' } },
+        { timestamp: '2026-08-20T10:30:00Z', transactionInfo: { chargingState: 'SuspendedEV' } },
+        { timestamp: '2026-08-20T11:00:00Z', transactionInfo: { chargingState: 'SuspendedEV' } },
+      ]);
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('falls back to the energy register when no event carries a chargingState', async () => {
+      // The register rises over the first half hour only.
+      const { handler, transaction } = makeHandlerWithTransaction({}, [
+        {
+          timestamp: '2026-08-20T10:00:00Z',
+          meterValue: [{ timestamp: '2026-08-20T10:00:00Z', sampledValue: [energy(0)] }],
+        },
+        {
+          timestamp: '2026-08-20T10:30:00Z',
+          meterValue: [{ timestamp: '2026-08-20T10:30:00Z', sampledValue: [energy(5000)] }],
+        },
+        {
+          timestamp: '2026-08-20T11:00:00Z',
+          meterValue: [{ timestamp: '2026-08-20T11:00:00Z', sampledValue: [energy(5000)] }],
+        },
+      ]);
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(transaction.timeSpentCharging).toBe(1800);
+    });
+
+    it('leaves the value unset when neither source can answer', async () => {
+      const { handler, transactionEventRepository, transaction } = makeHandlerWithTransaction();
+
+      await handler.handle(makeMessage(anUpdatedEvent(undefined), OCPPVersion.OCPP2_0_1));
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+      expect(transaction.timeSpentCharging).toBeUndefined();
     });
   });
 
@@ -1023,6 +1209,127 @@ describe('TransactionEventRequestOcpp2Handler', () => {
         ).not.toHaveBeenCalled();
         expect(createOrUpdateSpy).toHaveBeenCalledOnce();
       });
+    });
+  });
+
+  describe('transaction bookkeeping is independent of the idToken', () => {
+    const ENDED_WITH_IDTOKEN: OCPP2_0_1.TransactionEventRequest = {
+      eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
+      timestamp: new Date().toISOString(),
+      triggerReason: OCPP2_0_1.TriggerReasonEnumType.StopAuthorized,
+      seqNo: 9,
+      transactionInfo: { transactionId: 'txn-ended' },
+      idToken: { idToken: 'TAG-1', type: OCPP2_0_1.IdTokenEnumType.ISO14443 },
+    };
+
+    const ENDED_WITHOUT_IDTOKEN: OCPP2_0_1.TransactionEventRequest = {
+      eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
+      timestamp: new Date().toISOString(),
+      triggerReason: OCPP2_0_1.TriggerReasonEnumType.EVCommunicationLost,
+      seqNo: 9,
+      transactionInfo: { transactionId: 'txn-ended' },
+    };
+
+    function makeEndedHandler() {
+      return makeHandler({
+        totalCost: 4.25,
+        transactionEventRepository: {
+          createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
+            id: 55,
+            transactionId: 'txn-ended',
+            isActive: false,
+            connectorId: 3,
+            totalKwh: 17,
+          }),
+        },
+        transactionService: {
+          authorizeOcpp201IdToken: vi.fn().mockResolvedValue({
+            idTokenInfo: { status: AuthorizationStatusEnum.Accepted },
+          }),
+        },
+      });
+    }
+
+    it('calculates totalCost for an Ended event that carries an idToken', async () => {
+      const { handler, costCalculator } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({ id: 55, totalKwh: 17 }),
+      );
+    });
+
+    it('stores totalCost for an Ended event that carries an idToken', async () => {
+      const { handler, transactionEventRepository } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        4.25,
+        55,
+      );
+    });
+
+    it('returns totalCost to the charger for an Ended event that carries an idToken', async () => {
+      const { handler, ocppSender } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ totalCost: 4.25 }),
+      );
+    });
+
+    it('validates signed meter values on an event that carries an idToken', async () => {
+      const { handler, signedMeterValuesUtil } = makeEndedHandler();
+
+      await handler.handle(
+        makeMessage({
+          ...ENDED_WITH_IDTOKEN,
+          meterValue: [
+            {
+              timestamp: new Date().toISOString(),
+              sampledValue: [{ value: 17 }],
+            },
+          ],
+        } as OCPP2_0_1.TransactionEventRequest),
+      );
+
+      expect(signedMeterValuesUtil.validateMeterValues).toHaveBeenCalledOnce();
+    });
+
+    it('still calculates and stores totalCost when the Ended event carries no idToken', async () => {
+      const { handler, costCalculator, transactionEventRepository } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITHOUT_IDTOKEN));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        expect.objectContaining({ id: 55, totalKwh: 17 }),
+      );
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        4.25,
+        55,
+      );
+    });
+
+    it('still returns the authorization result alongside the cost', async () => {
+      const { handler, ocppSender } = makeEndedHandler();
+
+      await handler.handle(makeMessage(ENDED_WITH_IDTOKEN));
+
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          idTokenInfo: { status: AuthorizationStatusEnum.Accepted },
+          totalCost: 4.25,
+        }),
+      );
     });
   });
 });
